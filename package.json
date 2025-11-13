@@ -1,0 +1,13 @@
+{
+  "name": "@salesforce/b2c-cli-root",
+  "version": "0.0.1",
+  "description": "Salesforce Commerce Cloud B2C Command Line Tools",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.17.1"
+}

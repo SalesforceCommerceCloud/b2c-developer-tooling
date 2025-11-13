@@ -1,0 +1,7 @@
+# Packages must be at least 2 days (2880 minutes) old to be installed
+minimumReleaseAge: 2880
+minimumReleaseAgeExclude: []
+trustPolicy: no-downgrade
+trustPolicyExclude: []
+packages:
+  - 'packages/*'
