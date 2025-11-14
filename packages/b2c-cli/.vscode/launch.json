@@ -14,7 +14,7 @@
       "name": "Execute Command",
       "skipFiles": ["<node_internals>/**"],
       "runtimeExecutable": "node",
-      "runtimeArgs": ["--loader", "ts-node/esm", "--no-warnings=ExperimentalWarning"],
+      "runtimeArgs": ["--import", "tsx"],
       "program": "${workspaceFolder}/bin/dev.js",
       "args": ["hello", "world"]
     }
