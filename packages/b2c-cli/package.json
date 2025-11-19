@@ -61,6 +61,9 @@
     "topics": {
       "hello": {
         "description": "Say hello to the world and others"
+      },
+      "code": {
+        "description": "Manage cartridge code on instances"
       }
     }
   },
@@ -71,7 +74,7 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && oclif readme",
-    "pretest": "tsc --noEmit && tsc --noEmit -p test",
+    "pretest": "tsc --noEmit -p test",
     "test": "OCLIF_TEST_ROOT=. mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif readme && git add README.md"
   },

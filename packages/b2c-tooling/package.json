@@ -22,6 +22,66 @@
         "types": "./dist/cjs/index.d.ts",
         "default": "./dist/cjs/index.js"
       }
+    },
+    "./auth": {
+      "import": {
+        "types": "./dist/esm/auth/index.d.ts",
+        "default": "./dist/esm/auth/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/auth/index.d.ts",
+        "default": "./dist/cjs/auth/index.js"
+      }
+    },
+    "./instance": {
+      "import": {
+        "types": "./dist/esm/instance/index.d.ts",
+        "default": "./dist/esm/instance/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/instance/index.d.ts",
+        "default": "./dist/cjs/instance/index.js"
+      }
+    },
+    "./platform": {
+      "import": {
+        "types": "./dist/esm/platform/index.d.ts",
+        "default": "./dist/esm/platform/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/platform/index.d.ts",
+        "default": "./dist/cjs/platform/index.js"
+      }
+    },
+    "./operations/code": {
+      "import": {
+        "types": "./dist/esm/operations/code/index.d.ts",
+        "default": "./dist/esm/operations/code/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/code/index.d.ts",
+        "default": "./dist/cjs/operations/code/index.js"
+      }
+    },
+    "./operations/jobs": {
+      "import": {
+        "types": "./dist/esm/operations/jobs/index.d.ts",
+        "default": "./dist/esm/operations/jobs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/jobs/index.d.ts",
+        "default": "./dist/cjs/operations/jobs/index.js"
+      }
+    },
+    "./operations/sites": {
+      "import": {
+        "types": "./dist/esm/operations/sites/index.d.ts",
+        "default": "./dist/esm/operations/sites/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/sites/index.d.ts",
+        "default": "./dist/cjs/operations/sites/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
