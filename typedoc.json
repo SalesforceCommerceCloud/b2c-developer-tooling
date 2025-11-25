@@ -8,7 +8,7 @@
     "./packages/b2c-tooling/src/operations/jobs/index.ts",
     "./packages/b2c-tooling/src/operations/sites/index.ts",
     "./packages/b2c-tooling/src/i18n/index.ts",
-    "./packages/b2c-tooling/src/logger.ts"
+    "./packages/b2c-tooling/src/logging/index.ts"
   ],
   "out": "./docs/api",
   "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],

@@ -1,30 +1,30 @@
 import {Command, Flags, Interfaces} from '@oclif/core';
 import {loadConfig, ResolvedConfig, LoadConfigOptions} from './config.js';
-import {setLogger, consoleLogger} from '../logger.js';
 import {setLanguage} from '../i18n/index.js';
+import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
 
+const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as const;
+
 /**
  * Base command class for B2C CLI tools.
- * Provides minimal common flags: debug, config file path, instance selection.
- *
- * All flags support environment variables with SFCC_ prefix.
- *
- * For commands that need authentication, extend one of:
- * - OAuthCommand: For platform operations requiring OAuth (ODS, etc.)
- * - InstanceCommand: For B2C instance operations (sites, code, etc.)
- * - MrtCommand: For Managed Runtime operations
  */
 export abstract class BaseCommand<T extends typeof Command> extends Command {
   static baseFlags = {
+    'log-level': Flags.option({
+      description: 'Set logging verbosity level',
+      env: 'SFCC_LOG_LEVEL',
+      options: LOG_LEVELS,
+      helpGroup: 'LOGGING',
+    })(),
     debug: Flags.boolean({
       char: 'D',
-      description: 'Enable debug logging',
+      description: 'Enable debug logging (shorthand for --log-level debug)',
       env: 'SFCC_DEBUG',
       default: false,
-      helpGroup: 'GLOBAL',
+      helpGroup: 'LOGGING',
     }),
     lang: Flags.string({
       char: 'L',
@@ -47,6 +47,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected flags!: Flags<T>;
   protected args!: Args<T>;
   protected resolvedConfig!: ResolvedConfig;
+  protected logger!: Logger;
 
   public async init(): Promise<void> {
     await super.init();
@@ -61,25 +62,32 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     this.flags = flags as Flags<T>;
     this.args = args as Args<T>;
 
-    // Set language first so all messages are localized
-    // Flag takes precedence (env var is handled by i18n module at import time)
     if (this.flags.lang) {
       setLanguage(this.flags.lang);
     }
 
-    if (this.flags.debug) {
-      setLogger(consoleLogger);
-    }
-
-    // Load config - subclasses will augment with their specific flags
+    this.configureLogging();
     this.resolvedConfig = this.loadConfiguration();
   }
 
-  /**
-   * Load configuration from flags and dw.json.
-   * Environment variables are handled by OCLIF's flag parsing.
-   * Subclasses should override to add their specific flag mappings.
-   */
+  protected configureLogging(): void {
+    let level: LogLevel = 'info';
+
+    if (this.flags['log-level']) {
+      level = this.flags['log-level'] as LogLevel;
+    } else if (this.flags.debug) {
+      level = 'debug';
+    }
+
+    configureLogger({
+      level,
+      destination: process.stderr,
+      baseContext: {command: this.id},
+    });
+
+    this.logger = getLogger();
+  }
+
   protected loadConfiguration(): ResolvedConfig {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,

@@ -92,6 +92,16 @@
         "types": "./dist/cjs/cli/index.d.ts",
         "default": "./dist/cjs/cli/index.js"
       }
+    },
+    "./logging": {
+      "import": {
+        "types": "./dist/esm/logging/index.d.ts",
+        "default": "./dist/esm/logging/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/logging/index.d.ts",
+        "default": "./dist/cjs/logging/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
@@ -116,7 +126,7 @@
     "@oclif/core": "^4",
     "@oclif/prettier-config": "^0.2.1",
     "@salesforce/dev-config": "^4.3.2",
-    "@types/node": "^18",
+    "@types/node": "^18.19.130",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
     "eslint-plugin-prettier": "^5.5.4",
@@ -137,6 +147,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "i18next": "^25.6.3"
+    "i18next": "^25.6.3",
+    "pino": "^10.1.0"
   }
 }

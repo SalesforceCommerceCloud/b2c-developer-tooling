@@ -1,5 +1,10 @@
-// Logger
-export {Logger, noopLogger, consoleLogger, setLogger, getLogger} from './logger.js';
+// Logging
+export {createLogger, configureLogger, getLogger, resetLogger, createSilentLogger} from './logging/index.js';
+export type {Logger, LoggerOptions, LogLevel, LogContext} from './logging/index.js';
+
+// Legacy logger exports (deprecated - use logging module instead)
+export {noopLogger, consoleLogger, setLogger, getLogger as getLegacyLogger} from './logger.js';
+export type {Logger as LegacyLogger} from './logger.js';
 
 // i18n
 export {t, setLanguage, getLanguage, getI18nInstance, registerTranslations, B2C_NAMESPACE} from './i18n/index.js';
