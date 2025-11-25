@@ -10,6 +10,12 @@ const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as cons
 
 /**
  * Base command class for B2C CLI tools.
+ *
+ * Environment variables for logging:
+ * - SFCC_LOG_TO_STDOUT: Send logs to stdout instead of stderr
+ * - SFCC_LOG_COLORIZE: Force colors on/off (default: auto-detect TTY)
+ * - SFCC_REDACT_SECRETS: Set to 'false' to disable secret redaction
+ * - NO_COLOR: Industry standard to disable colors
  */
 export abstract class BaseCommand<T extends typeof Command> extends Command {
   static baseFlags = {
@@ -23,6 +29,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       char: 'D',
       description: 'Enable debug logging (shorthand for --log-level debug)',
       env: 'SFCC_DEBUG',
+      default: false,
+      helpGroup: 'LOGGING',
+    }),
+    json: Flags.boolean({
+      description: 'Output logs as JSON lines',
       default: false,
       helpGroup: 'LOGGING',
     }),
@@ -70,6 +81,26 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     this.resolvedConfig = this.loadConfiguration();
   }
 
+  /**
+   * Determine colorize setting based on env vars and TTY.
+   * Priority: NO_COLOR > SFCC_LOG_COLORIZE > TTY detection
+   */
+  private shouldColorize(): boolean {
+    // NO_COLOR is the industry standard
+    if (process.env.NO_COLOR !== undefined) {
+      return false;
+    }
+
+    // Explicit override
+    const colorizeEnv = process.env.SFCC_LOG_COLORIZE;
+    if (colorizeEnv !== undefined) {
+      return colorizeEnv !== 'false' && colorizeEnv !== '0';
+    }
+
+    // Default: colorize if stderr is a TTY
+    return process.stderr.isTTY ?? false;
+  }
+
   protected configureLogging(): void {
     let level: LogLevel = 'info';
 
@@ -79,13 +110,40 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       level = 'debug';
     }
 
+    // Default to stderr (fd 2), allow override to stdout (fd 1)
+    const fd = process.env.SFCC_LOG_TO_STDOUT ? 1 : 2;
+
+    // Redaction: default true, can be disabled
+    const redact = process.env.SFCC_REDACT_SECRETS !== 'false';
+
     configureLogger({
       level,
-      destination: process.stderr,
+      fd,
       baseContext: {command: this.id},
+      json: this.flags.json,
+      colorize: this.shouldColorize(),
+      redact,
     });
 
     this.logger = getLogger();
+  }
+
+  /**
+   * Override oclif's log() to use pino.
+   */
+  log(message?: string, ...args: unknown[]): void {
+    if (message !== undefined) {
+      this.logger.info(args.length > 0 ? `${message} ${args.join(' ')}` : message);
+    }
+  }
+
+  /**
+   * Override oclif's warn() to use pino.
+   */
+  warn(input: string | Error): string | Error {
+    const message = input instanceof Error ? input.message : input;
+    this.logger.warn(message);
+    return input;
   }
 
   protected loadConfiguration(): ResolvedConfig {

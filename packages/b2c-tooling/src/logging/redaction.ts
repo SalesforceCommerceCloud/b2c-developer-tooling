@@ -17,10 +17,6 @@ const REDACT_FIELDS = [
   'authorization',
 ];
 
-export function isRedactionDisabled(): boolean {
-  return process.env.SFCC_REDACT_SECRETS === 'false';
-}
-
 export function getRedactPaths(): string[] {
   return REDACT_FIELDS.flatMap((field) => [field, `*.${field}`]);
 }

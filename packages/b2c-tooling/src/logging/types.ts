@@ -9,10 +9,18 @@ export interface LogContext {
 }
 
 export interface LoggerOptions {
+  /** Log level. Default: 'info' */
   level?: LogLevel;
-  destination?: NodeJS.WritableStream;
+  /** File descriptor to write to (1=stdout, 2=stderr). Default: 2 */
+  fd?: number;
+  /** Base context included in all log entries */
   baseContext?: LogContext;
+  /** Enable secret redaction. Default: true */
   redact?: boolean;
+  /** Output JSON lines instead of pretty print. Default: false */
+  json?: boolean;
+  /** Enable colors in pretty print mode. Default: true */
+  colorize?: boolean;
 }
 
 export interface Logger {
