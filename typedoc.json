@@ -1,6 +1,15 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["./packages/b2c-tooling/src/index.ts"],
+  "entryPoints": [
+    "./packages/b2c-tooling/src/auth/index.ts",
+    "./packages/b2c-tooling/src/instance/index.ts",
+    "./packages/b2c-tooling/src/platform/index.ts",
+    "./packages/b2c-tooling/src/operations/code/index.ts",
+    "./packages/b2c-tooling/src/operations/jobs/index.ts",
+    "./packages/b2c-tooling/src/operations/sites/index.ts",
+    "./packages/b2c-tooling/src/i18n/index.ts",
+    "./packages/b2c-tooling/src/logger.ts"
+  ],
   "out": "./docs/api",
   "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
   "tsconfig": "./packages/b2c-tooling/tsconfig.json",
@@ -10,8 +19,8 @@
   "excludeInternal": true,
   "hideGenerator": true,
   "githubPages": false,
-  "entryPointStrategy": "expand",
-  "outputFileStrategy": "modules",
+  "entryPointStrategy": "resolve",
+  "docsRoot": "./docs",
   "navigation": {
     "includeCategories": true,
     "includeGroups": true

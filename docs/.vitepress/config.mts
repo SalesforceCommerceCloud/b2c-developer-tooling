@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress';
+import typedocSidebar from '../api/typedoc-sidebar.json';
 
 export default defineConfig({
   title: 'B2C CLI',
@@ -48,6 +49,7 @@ export default defineConfig({
           text: 'API Reference',
           items: [{ text: 'Overview', link: '/api/' }],
         },
+        ...typedocSidebar,
       ],
     },
 
