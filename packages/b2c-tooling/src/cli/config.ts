@@ -1,67 +1,67 @@
-import * as fs from 'node:fs'
-import * as path from 'node:path'
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 export interface ResolvedConfig {
-  hostname?: string
-  webdavHostname?: string
-  codeVersion?: string
-  username?: string
-  password?: string
-  clientId?: string
-  clientSecret?: string
-  scopes?: string[]
-  shortCode?: string
-  mrtApiKey?: string
-  instanceName?: string
+  hostname?: string;
+  webdavHostname?: string;
+  codeVersion?: string;
+  username?: string;
+  password?: string;
+  clientId?: string;
+  clientSecret?: string;
+  scopes?: string[];
+  shortCode?: string;
+  mrtApiKey?: string;
+  instanceName?: string;
 }
 
 /**
  * dw.json single config structure
  */
 interface DwJsonConfig {
-  name?: string
-  active?: boolean
-  hostname?: string
-  'code-version'?: string
-  username?: string
-  password?: string
-  'client-id'?: string
-  'client-secret'?: string
-  'oauth-scopes'?: string[]
-  shortCode?: string
-  'short-code'?: string
-  secureHostname?: string
-  'secure-server'?: string
+  name?: string;
+  active?: boolean;
+  hostname?: string;
+  'code-version'?: string;
+  username?: string;
+  password?: string;
+  'client-id'?: string;
+  'client-secret'?: string;
+  'oauth-scopes'?: string[];
+  shortCode?: string;
+  'short-code'?: string;
+  secureHostname?: string;
+  'secure-server'?: string;
 }
 
 /**
  * dw.json with multi-config support
  */
 interface DwJsonMultiConfig extends DwJsonConfig {
-  configs?: DwJsonConfig[]
+  configs?: DwJsonConfig[];
 }
 
 export interface LoadConfigOptions {
-  instance?: string
-  configPath?: string
+  instance?: string;
+  configPath?: string;
 }
 
 /**
  * Finds dw.json by walking up from current directory.
  */
 export function findDwJson(startDir: string = process.cwd()): string | null {
-  let dir = startDir
-  const root = path.parse(dir).root
+  let dir = startDir;
+  const root = path.parse(dir).root;
 
   while (dir !== root) {
-    const dwJsonPath = path.join(dir, 'dw.json')
+    const dwJsonPath = path.join(dir, 'dw.json');
     if (fs.existsSync(dwJsonPath)) {
-      return dwJsonPath
+      return dwJsonPath;
     }
-    dir = path.dirname(dir)
+    dir = path.dirname(dir);
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -79,7 +79,7 @@ function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
     scopes: json['oauth-scopes'],
     shortCode: json.shortCode || json['short-code'],
     instanceName: json.name,
-  }
+  };
 }
 
 /**
@@ -87,40 +87,39 @@ function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
  * Supports multi-config format with 'configs' array.
  */
 function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig {
-  const dwJsonPath = configPath || findDwJson()
+  const dwJsonPath = configPath || findDwJson();
   if (!dwJsonPath || !fs.existsSync(dwJsonPath)) {
-    return {}
+    return {};
   }
 
   try {
-    const content = fs.readFileSync(dwJsonPath, 'utf8')
-    const json = JSON.parse(content) as DwJsonMultiConfig
+    const content = fs.readFileSync(dwJsonPath, 'utf8');
+    const json = JSON.parse(content) as DwJsonMultiConfig;
 
-    let selectedConfig: DwJsonConfig = json
+    let selectedConfig: DwJsonConfig = json;
 
     // Handle multi-config format
     if (Array.isArray(json.configs)) {
       if (instanceName) {
         // Find by instance name
-        const found =
-          json.name === instanceName ? json : json.configs.find((c) => c.name === instanceName)
+        const found = json.name === instanceName ? json : json.configs.find((c) => c.name === instanceName);
         if (found) {
-          selectedConfig = found
+          selectedConfig = found;
         }
       } else if (json.active === false) {
         // Root config is inactive, find active one in configs
-        const activeConfig = json.configs.find((c) => c.active === true)
+        const activeConfig = json.configs.find((c) => c.active === true);
         if (activeConfig) {
-          selectedConfig = activeConfig
+          selectedConfig = activeConfig;
         }
       }
       // Otherwise use root config
     }
 
-    return mapDwJsonToConfig(selectedConfig)
+    return mapDwJsonToConfig(selectedConfig);
   } catch {
     // Silently ignore parse errors
-    return {}
+    return {};
   }
 }
 
@@ -134,7 +133,7 @@ function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig 
 function mergeConfigs(
   flags: Partial<ResolvedConfig>,
   dwJson: ResolvedConfig,
-  options: LoadConfigOptions
+  options: LoadConfigOptions,
 ): ResolvedConfig {
   return {
     hostname: flags.hostname || dwJson.hostname,
@@ -148,7 +147,7 @@ function mergeConfigs(
     shortCode: flags.shortCode || dwJson.shortCode,
     mrtApiKey: flags.mrtApiKey,
     instanceName: dwJson.instanceName || options.instance,
-  }
+  };
 }
 
 /**
@@ -157,10 +156,7 @@ function mergeConfigs(
  * OCLIF handles environment variables automatically via flag `env` properties.
  * The flags parameter already contains resolved env var values.
  */
-export function loadConfig(
-  flags: Partial<ResolvedConfig> = {},
-  options: LoadConfigOptions = {}
-): ResolvedConfig {
-  const dwJsonConfig = loadDwJson(options.instance, options.configPath)
-  return mergeConfigs(flags, dwJsonConfig, options)
+export function loadConfig(flags: Partial<ResolvedConfig> = {}, options: LoadConfigOptions = {}): ResolvedConfig {
+  const dwJsonConfig = loadDwJson(options.instance, options.configPath);
+  return mergeConfigs(flags, dwJsonConfig, options);
 }

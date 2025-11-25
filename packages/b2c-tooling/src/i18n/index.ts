@@ -1,8 +1,8 @@
-import i18next, { TOptions, Resource } from 'i18next'
+import i18next, {TOptions, Resource} from 'i18next';
 
 // Re-export TOptions for consumers
-export type { TOptions } from 'i18next'
-import { locales } from './locales/index.js'
+export type {TOptions} from 'i18next';
+import {locales} from './locales/index.js';
 
 /**
  * i18n module for B2C CLI tools.
@@ -35,9 +35,9 @@ import { locales } from './locales/index.js'
  */
 
 /** The namespace used by b2c-tooling messages */
-export const B2C_NAMESPACE = 'b2c'
+export const B2C_NAMESPACE = 'b2c';
 
-const instance = i18next.createInstance()
+const instance = i18next.createInstance();
 
 /**
  * Detect language from environment variables.
@@ -47,11 +47,11 @@ function detectLanguage(): string {
   // LANGUAGE is the GNU gettext standard, supports colon-separated list
   // e.g., "de:en:fr" means prefer German, then English, then French
   if (process.env.LANGUAGE) {
-    const langs = process.env.LANGUAGE.split(':')
+    const langs = process.env.LANGUAGE.split(':');
     for (const lang of langs) {
-      const normalized = normalizeLocale(lang)
+      const normalized = normalizeLocale(lang);
       if (normalized && normalized !== 'c' && normalized !== 'posix') {
-        return normalized
+        return normalized;
       }
     }
   }
@@ -59,13 +59,13 @@ function detectLanguage(): string {
   // LANG is the Unix standard locale
   // e.g., "de_DE.UTF-8"
   if (process.env.LANG) {
-    const normalized = normalizeLocale(process.env.LANG)
+    const normalized = normalizeLocale(process.env.LANG);
     if (normalized && normalized !== 'c' && normalized !== 'posix') {
-      return normalized
+      return normalized;
     }
   }
 
-  return 'en'
+  return 'en';
 }
 
 /**
@@ -81,34 +81,34 @@ function detectLanguage(): string {
  * - "POSIX" -> "posix" (special POSIX locale)
  */
 function normalizeLocale(locale: string): string {
-  if (!locale) return 'en'
+  if (!locale) return 'en';
 
   // Trim whitespace
-  locale = locale.trim()
+  locale = locale.trim();
 
   // Handle special POSIX locales
   if (locale.toUpperCase() === 'C' || locale.toUpperCase() === 'POSIX') {
-    return locale.toLowerCase()
+    return locale.toLowerCase();
   }
 
   // Extract language code: first 2-3 letters before any separator (_, -, ., @)
-  const match = locale.match(/^([a-z]{2,3})/i)
-  return match ? match[1].toLowerCase() : 'en'
+  const match = locale.match(/^([a-z]{2,3})/i);
+  return match ? match[1].toLowerCase() : 'en';
 }
 
 /**
  * Build i18next resources from locale files.
  */
 function buildResources(): Resource {
-  const resources: Resource = {}
+  const resources: Resource = {};
 
   for (const [lang, translations] of Object.entries(locales)) {
     resources[lang] = {
       [B2C_NAMESPACE]: translations,
-    }
+    };
   }
 
-  return resources
+  return resources;
 }
 
 instance.init({
@@ -128,7 +128,7 @@ instance.init({
   interpolation: {
     escapeValue: false, // CLI doesn't need HTML escaping
   },
-})
+});
 
 /**
  * Translate a message key with an inline default.
@@ -155,7 +155,7 @@ instance.init({
  * t('info.uploadProgress', 'Uploading {{file}} ({{percent}}%)', { file: name, percent: 50 })
  */
 export function t(key: string, defaultValue: string, options?: TOptions): string {
-  return instance.t(key, { defaultValue, ...options })
+  return instance.t(key, {defaultValue, ...options});
 }
 
 /**
@@ -171,14 +171,14 @@ export function t(key: string, defaultValue: string, options?: TOptions): string
  * }
  */
 export function setLanguage(lang: string): void {
-  instance.changeLanguage(normalizeLocale(lang))
+  instance.changeLanguage(normalizeLocale(lang));
 }
 
 /**
  * Get the currently active language.
  */
 export function getLanguage(): string {
-  return instance.language
+  return instance.language;
 }
 
 /**
@@ -205,7 +205,7 @@ export function getLanguage(): string {
  * })
  */
 export function getI18nInstance() {
-  return instance
+  return instance;
 }
 
 /**
@@ -226,10 +226,6 @@ export function getI18nInstance() {
  *   }
  * })
  */
-export function registerTranslations(
-  namespace: string,
-  lang: string,
-  resources: Record<string, unknown>
-): void {
-  instance.addResourceBundle(lang, namespace, resources, true, true)
+export function registerTranslations(namespace: string, lang: string, resources: Record<string, unknown>): void {
+  instance.addResourceBundle(lang, namespace, resources, true, true);
 }

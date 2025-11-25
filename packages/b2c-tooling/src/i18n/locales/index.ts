@@ -10,7 +10,7 @@
  * 2. Import and add to the resources object below
  */
 
-import { de } from './de.js'
+import {de} from './de.js';
 
 /**
  * All locale resources for the 'b2c' namespace.
@@ -18,6 +18,6 @@ import { de } from './de.js'
  */
 export const locales = {
   de,
-}
+};
 
-export type SupportedLocale = keyof typeof locales
+export type SupportedLocale = keyof typeof locales;

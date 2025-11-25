@@ -106,16 +106,21 @@
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
     "test": "echo \"Error: no test specified\" && exit 0",
     "posttest": "pnpm run lint"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
     "@oclif/core": "^4",
+    "@oclif/prettier-config": "^0.2.1",
     "@salesforce/dev-config": "^4.3.2",
     "@types/node": "^18",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
     "shx": "^0.3.3",
     "typescript": "^5",
     "typescript-eslint": "^8"

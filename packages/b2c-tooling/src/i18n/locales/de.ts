@@ -3,8 +3,7 @@
  */
 export const de = {
   error: {
-    serverRequired:
-      'Server ist erforderlich. Setzen Sie --server, SFCC_SERVER Umgebungsvariable, oder dw.json.',
+    serverRequired: 'Server ist erforderlich. Setzen Sie --server, SFCC_SERVER Umgebungsvariable, oder dw.json.',
     codeVersionRequired:
       'Code-Version ist erforderlich. Setzen Sie --code-version, SFCC_CODE_VERSION Umgebungsvariable, oder dw.json.',
     oauthCredentialsRequired:
@@ -13,7 +12,6 @@ export const de = {
       'WebDAV-Anmeldedaten erforderlich. Geben Sie --username/--password oder --client-id/--client-secret an, oder setzen Sie SFCC_USERNAME/SFCC_PASSWORD oder SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.',
     webdavCredentialsRequiredShort:
       'WebDAV-Anmeldedaten erforderlich. Geben Sie --username/--password oder --client-id/--client-secret an, oder setzen Sie entsprechende SFCC_* Umgebungsvariablen.',
-    mrtApiKeyRequired:
-      'MRT API-Schlüssel erforderlich. Geben Sie --api-key an oder setzen Sie SFCC_MRT_API_KEY.',
+    mrtApiKeyRequired: 'MRT API-Schlüssel erforderlich. Geben Sie --api-key an oder setzen Sie SFCC_MRT_API_KEY.',
   },
-}
+};

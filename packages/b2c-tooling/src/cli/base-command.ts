@@ -1,12 +1,10 @@
-import { Command, Flags, Interfaces } from '@oclif/core'
-import { loadConfig, ResolvedConfig, LoadConfigOptions } from './config.js'
-import { setLogger, consoleLogger } from '../logger.js'
-import { setLanguage } from '../i18n/index.js'
+import {Command, Flags, Interfaces} from '@oclif/core';
+import {loadConfig, ResolvedConfig, LoadConfigOptions} from './config.js';
+import {setLogger, consoleLogger} from '../logger.js';
+import {setLanguage} from '../i18n/index.js';
 
-export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
-  (typeof BaseCommand)['baseFlags'] & T['flags']
->
-export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
+export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
+export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
 
 /**
  * Base command class for B2C CLI tools.
@@ -44,37 +42,37 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       env: 'SFCC_INSTANCE',
       helpGroup: 'CONFIG',
     }),
-  }
+  };
 
-  protected flags!: Flags<T>
-  protected args!: Args<T>
-  protected resolvedConfig!: ResolvedConfig
+  protected flags!: Flags<T>;
+  protected args!: Args<T>;
+  protected resolvedConfig!: ResolvedConfig;
 
   public async init(): Promise<void> {
-    await super.init()
+    await super.init();
 
-    const { args, flags } = await this.parse({
+    const {args, flags} = await this.parse({
       flags: this.ctor.flags,
       baseFlags: (super.ctor as typeof BaseCommand).baseFlags,
       args: this.ctor.args,
       strict: this.ctor.strict,
-    })
+    });
 
-    this.flags = flags as Flags<T>
-    this.args = args as Args<T>
+    this.flags = flags as Flags<T>;
+    this.args = args as Args<T>;
 
     // Set language first so all messages are localized
     // Flag takes precedence (env var is handled by i18n module at import time)
     if (this.flags.lang) {
-      setLanguage(this.flags.lang)
+      setLanguage(this.flags.lang);
     }
 
     if (this.flags.debug) {
-      setLogger(consoleLogger)
+      setLogger(consoleLogger);
     }
 
     // Load config - subclasses will augment with their specific flags
-    this.resolvedConfig = this.loadConfiguration()
+    this.resolvedConfig = this.loadConfiguration();
   }
 
   /**
@@ -86,8 +84,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
-    }
+    };
 
-    return loadConfig({}, options)
+    return loadConfig({}, options);
   }
 }

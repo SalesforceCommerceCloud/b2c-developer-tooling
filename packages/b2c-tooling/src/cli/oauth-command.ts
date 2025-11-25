@@ -1,9 +1,9 @@
-import { Command, Flags } from '@oclif/core'
-import { BaseCommand } from './base-command.js'
-import { loadConfig, ResolvedConfig, LoadConfigOptions } from './config.js'
-import { AuthStrategy } from '../auth/types.js'
-import { OAuthStrategy } from '../auth/oauth.js'
-import { t } from '../i18n/index.js'
+import {Command, Flags} from '@oclif/core';
+import {BaseCommand} from './base-command.js';
+import {loadConfig, ResolvedConfig, LoadConfigOptions} from './config.js';
+import {AuthStrategy} from '../auth/types.js';
+import {OAuthStrategy} from '../auth/oauth.js';
+import {t} from '../i18n/index.js';
 
 /**
  * Base command for operations requiring OAuth authentication.
@@ -28,50 +28,50 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       env: 'SFCC_CLIENT_SECRET',
       helpGroup: 'AUTH',
     }),
-  }
+  };
 
   protected override loadConfiguration(): ResolvedConfig {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
-    }
+    };
 
     const flagConfig: Partial<ResolvedConfig> = {
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
-    }
+    };
 
-    return loadConfig(flagConfig, options)
+    return loadConfig(flagConfig, options);
   }
 
   /**
    * Gets an OAuth auth strategy.
    */
   protected getOAuthStrategy(): AuthStrategy {
-    const config = this.resolvedConfig
+    const config = this.resolvedConfig;
 
     if (config.clientId && config.clientSecret) {
       return new OAuthStrategy({
         clientId: config.clientId,
         clientSecret: config.clientSecret,
         scopes: config.scopes,
-      })
+      });
     }
 
     throw new Error(
       t(
         'error.oauthCredentialsRequired',
-        'OAuth credentials required. Provide --client-id/--client-secret or set SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.'
-      )
-    )
+        'OAuth credentials required. Provide --client-id/--client-secret or set SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.',
+      ),
+    );
   }
 
   /**
    * Check if OAuth credentials are available.
    */
   protected hasOAuthCredentials(): boolean {
-    const config = this.resolvedConfig
-    return Boolean(config.clientId && config.clientSecret)
+    const config = this.resolvedConfig;
+    return Boolean(config.clientId && config.clientSecret);
   }
 
   /**
@@ -82,9 +82,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       this.error(
         t(
           'error.oauthCredentialsRequired',
-          'OAuth credentials required. Provide --client-id/--client-secret or set SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.'
-        )
-      )
+          'OAuth credentials required. Provide --client-id/--client-secret or set SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.',
+        ),
+      );
     }
   }
 }

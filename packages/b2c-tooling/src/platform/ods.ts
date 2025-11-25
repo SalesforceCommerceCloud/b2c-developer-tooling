@@ -1,4 +1,4 @@
-import { AuthStrategy } from '../auth/types.js';
+import {AuthStrategy} from '../auth/types.js';
 
 export interface OdsConfig {
   region?: string;
@@ -11,7 +11,7 @@ export interface OdsConfig {
 export class OdsClient {
   constructor(
     public readonly config: OdsConfig,
-    public readonly auth: AuthStrategy
+    public readonly auth: AuthStrategy,
   ) {}
 
   /**

@@ -1,11 +1,11 @@
-import { Command, Flags } from '@oclif/core'
-import { OAuthCommand } from './oauth-command.js'
-import { loadConfig, ResolvedConfig, LoadConfigOptions } from './config.js'
-import { AuthStrategy } from '../auth/types.js'
-import { BasicAuthStrategy } from '../auth/basic.js'
-import { OAuthStrategy } from '../auth/oauth.js'
-import { B2CInstance } from '../instance/index.js'
-import { t } from '../i18n/index.js'
+import {Command, Flags} from '@oclif/core';
+import {OAuthCommand} from './oauth-command.js';
+import {loadConfig, ResolvedConfig, LoadConfigOptions} from './config.js';
+import {AuthStrategy} from '../auth/types.js';
+import {BasicAuthStrategy} from '../auth/basic.js';
+import {OAuthStrategy} from '../auth/oauth.js';
+import {B2CInstance} from '../instance/index.js';
+import {t} from '../i18n/index.js';
 
 /**
  * Base command for B2C instance operations.
@@ -57,13 +57,13 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       env: 'SFCC_PASSWORD',
       helpGroup: 'AUTH',
     }),
-  }
+  };
 
   protected override loadConfiguration(): ResolvedConfig {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
-    }
+    };
 
     const flagConfig: Partial<ResolvedConfig> = {
       hostname: this.flags.server,
@@ -73,9 +73,9 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       password: this.flags.password,
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
-    }
+    };
 
-    return loadConfig(flagConfig, options)
+    return loadConfig(flagConfig, options);
   }
 
   /**
@@ -83,11 +83,11 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    * Prefers Basic auth for performance, falls back to OAuth.
    */
   protected getWebDavAuth(): AuthStrategy {
-    const config = this.resolvedConfig
+    const config = this.resolvedConfig;
 
     // Prefer Basic auth for WebDAV
     if (config.username && config.password) {
-      return new BasicAuthStrategy(config.username, config.password)
+      return new BasicAuthStrategy(config.username, config.password);
     }
 
     // Fall back to OAuth
@@ -96,15 +96,15 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
         clientId: config.clientId,
         clientSecret: config.clientSecret,
         scopes: config.scopes,
-      })
+      });
     }
 
     throw new Error(
       t(
         'error.webdavCredentialsRequired',
-        'WebDAV credentials required. Provide --username/--password or --client-id/--client-secret, or set SFCC_USERNAME/SFCC_PASSWORD or SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.'
-      )
-    )
+        'WebDAV credentials required. Provide --username/--password or --client-id/--client-secret, or set SFCC_USERNAME/SFCC_PASSWORD or SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.',
+      ),
+    );
   }
 
   /**
@@ -112,14 +112,14 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    * Always uses OAuth.
    */
   protected getApiAuth(): AuthStrategy {
-    return this.getOAuthStrategy()
+    return this.getOAuthStrategy();
   }
 
   /**
    * Creates a B2CInstance configured for WebDAV operations.
    */
   protected createWebDavInstance(): B2CInstance {
-    this.requireServer()
+    this.requireServer();
 
     return new B2CInstance(
       {
@@ -127,34 +127,32 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
         codeVersion: this.resolvedConfig.codeVersion,
         webdavHostname: this.resolvedConfig.webdavHostname,
       },
-      this.getWebDavAuth()
-    )
+      this.getWebDavAuth(),
+    );
   }
 
   /**
    * Creates a B2CInstance configured for OCAPI operations.
    */
   protected createApiInstance(): B2CInstance {
-    this.requireServer()
-    this.requireOAuthCredentials()
+    this.requireServer();
+    this.requireOAuthCredentials();
 
     return new B2CInstance(
       {
         hostname: this.resolvedConfig.hostname!,
         codeVersion: this.resolvedConfig.codeVersion,
       },
-      this.getApiAuth()
-    )
+      this.getApiAuth(),
+    );
   }
 
   /**
    * Check if WebDAV credentials are available.
    */
   protected hasWebDavCredentials(): boolean {
-    const config = this.resolvedConfig
-    return Boolean(
-      (config.username && config.password) || (config.clientId && config.clientSecret)
-    )
+    const config = this.resolvedConfig;
+    return Boolean((config.username && config.password) || (config.clientId && config.clientSecret));
   }
 
   /**
@@ -162,9 +160,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    */
   protected requireServer(): void {
     if (!this.resolvedConfig.hostname) {
-      this.error(
-        t('error.serverRequired', 'Server is required. Set via --server, SFCC_SERVER env var, or dw.json.')
-      )
+      this.error(t('error.serverRequired', 'Server is required. Set via --server, SFCC_SERVER env var, or dw.json.'));
     }
   }
 
@@ -176,9 +172,9 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       this.error(
         t(
           'error.codeVersionRequired',
-          'Code version is required. Set via --code-version, SFCC_CODE_VERSION env var, or dw.json.'
-        )
-      )
+          'Code version is required. Set via --code-version, SFCC_CODE_VERSION env var, or dw.json.',
+        ),
+      );
     }
   }
 
@@ -190,9 +186,9 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       this.error(
         t(
           'error.webdavCredentialsRequiredShort',
-          'WebDAV credentials required. Provide --username/--password or --client-id/--client-secret, or set corresponding SFCC_* env vars.'
-        )
-      )
+          'WebDAV credentials required. Provide --username/--password or --client-id/--client-secret, or set corresponding SFCC_* env vars.',
+        ),
+      );
     }
   }
 }

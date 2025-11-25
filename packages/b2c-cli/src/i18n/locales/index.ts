@@ -10,8 +10,8 @@
  * 2. Import and add to the locales object below
  */
 
-import { de } from './de.js'
-import { en } from './en.js'
+import {de} from './de.js';
+import {en} from './en.js';
 
 /**
  * All locale resources for the 'cli' namespace.
@@ -19,6 +19,6 @@ import { en } from './en.js'
 export const locales = {
   de,
   en,
-}
+};
 
-export type SupportedLocale = keyof typeof locales
+export type SupportedLocale = keyof typeof locales;

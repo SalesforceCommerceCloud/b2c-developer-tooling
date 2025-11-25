@@ -1,4 +1,4 @@
-import { B2CInstance } from '../../instance/index.js';
+import {B2CInstance} from '../../instance/index.js';
 
 export interface JobExecutionResult {
   jobId: string;
@@ -10,10 +10,7 @@ export interface JobExecutionResult {
 /**
  * Runs a job on an instance.
  */
-export async function runJob(
-  instance: B2CInstance,
-  jobId: string
-): Promise<JobExecutionResult> {
+export async function runJob(instance: B2CInstance, jobId: string): Promise<JobExecutionResult> {
   console.log(`Running job ${jobId} on ${instance.config.hostname}...`);
 
   // TODO: Implement actual job execution via OCAPI
@@ -32,7 +29,7 @@ export async function runJob(
 export async function getJobStatus(
   instance: B2CInstance,
   jobId: string,
-  executionId: string
+  executionId: string,
 ): Promise<JobExecutionResult> {
   console.log(`Getting status of job ${jobId} execution ${executionId}...`);
 

@@ -1,4 +1,4 @@
-import { B2CInstance } from '../../instance/index.js';
+import {B2CInstance} from '../../instance/index.js';
 
 export interface Site {
   id: string;
@@ -21,10 +21,7 @@ export async function listSites(instance: B2CInstance): Promise<Site[]> {
 /**
  * Gets details for a specific site.
  */
-export async function getSite(
-  instance: B2CInstance,
-  siteId: string
-): Promise<Site | null> {
+export async function getSite(instance: B2CInstance, siteId: string): Promise<Site | null> {
   console.log(`Getting site ${siteId} on ${instance.config.hostname}...`);
 
   // TODO: Implement actual site retrieval via OCAPI

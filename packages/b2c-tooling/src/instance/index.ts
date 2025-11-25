@@ -1,4 +1,4 @@
-import { AuthStrategy } from '../auth/types.js';
+import {AuthStrategy} from '../auth/types.js';
 
 export interface InstanceConfig {
   hostname: string;
@@ -16,7 +16,7 @@ const DEFAULT_OCAPI_VERSION = 'v24_5';
 export class B2CInstance {
   constructor(
     public readonly config: InstanceConfig,
-    public readonly auth: AuthStrategy
+    public readonly auth: AuthStrategy,
   ) {}
 
   /**
@@ -56,7 +56,7 @@ export class B2CInstance {
   async ocapiDataRequest(
     path: string,
     init?: RequestInit,
-    apiVersion: string = DEFAULT_OCAPI_VERSION
+    apiVersion: string = DEFAULT_OCAPI_VERSION,
   ): Promise<Response> {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     const url = `https://${this.config.hostname}/s/-/dw/data/${apiVersion}/${cleanPath}`;
@@ -74,7 +74,7 @@ export class B2CInstance {
     siteId: string,
     path: string,
     init?: RequestInit,
-    apiVersion: string = DEFAULT_OCAPI_VERSION
+    apiVersion: string = DEFAULT_OCAPI_VERSION,
   ): Promise<Response> {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     const url = `https://${this.config.hostname}/s/${siteId}/dw/shop/${apiVersion}/${cleanPath}`;

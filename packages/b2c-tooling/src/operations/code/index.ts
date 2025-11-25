@@ -1,1 +1,1 @@
-export { uploadCartridges, activateCodeVersion } from './upload.js';
+export {uploadCartridges, activateCodeVersion} from './upload.js';

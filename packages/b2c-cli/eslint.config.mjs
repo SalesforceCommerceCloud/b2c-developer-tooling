@@ -1,15 +1,15 @@
-import {includeIgnoreFile} from '@eslint/compat'
-import oclif from 'eslint-config-oclif'
-import prettier from 'eslint-config-prettier'
-import path from 'node:path'
-import {fileURLToPath} from 'node:url'
+import {includeIgnoreFile} from '@eslint/compat';
+import oclif from 'eslint-config-oclif';
+import prettierPlugin from 'eslint-plugin-prettier/recommended';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.gitignore')
+const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.gitignore');
 
 export default [
   includeIgnoreFile(gitignorePath),
   ...oclif,
-  prettier,
+  prettierPlugin,
   {
     rules: {
       // Disable perfectionist rules - we use prettier for formatting
@@ -36,4 +36,4 @@ export default [
       ],
     },
   },
-]
+];

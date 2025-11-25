@@ -1,4 +1,4 @@
-import { AuthStrategy } from './types.js';
+import {AuthStrategy} from './types.js';
 
 export class BasicAuthStrategy implements AuthStrategy {
   private encoded: string;
@@ -10,7 +10,7 @@ export class BasicAuthStrategy implements AuthStrategy {
   async fetch(url: string, init: RequestInit = {}): Promise<Response> {
     const headers = new Headers(init.headers);
     headers.set('Authorization', `Basic ${this.encoded}`);
-    return fetch(url, { ...init, headers });
+    return fetch(url, {...init, headers});
   }
 
   async getAuthorizationHeader(): Promise<string> {

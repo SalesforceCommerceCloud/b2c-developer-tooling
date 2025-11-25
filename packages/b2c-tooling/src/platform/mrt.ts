@@ -1,4 +1,4 @@
-import { AuthStrategy } from '../auth/types.js';
+import {AuthStrategy} from '../auth/types.js';
 
 export interface MrtProject {
   org: string;
@@ -13,7 +13,7 @@ export interface MrtProject {
 export class MrtClient {
   constructor(
     public readonly project: MrtProject,
-    public readonly auth: AuthStrategy
+    public readonly auth: AuthStrategy,
   ) {}
 
   /**

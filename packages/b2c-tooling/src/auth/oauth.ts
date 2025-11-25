@@ -1,5 +1,5 @@
-import { AuthStrategy, AccessTokenResponse, DecodedJWT } from './types.js';
-import { getLogger } from '../logger.js';
+import {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
+import {getLogger} from '../logger.js';
 
 const DEFAULT_ACCOUNT_MANAGER_HOST = 'account.demandware.com';
 
@@ -23,15 +23,14 @@ function decodeJWT(jwt: string): DecodedJWT {
   }
   const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
   const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-  return { header, payload };
+  return {header, payload};
 }
 
 export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
 
   constructor(private config: OAuthConfig) {
-    this.accountManagerHost =
-      config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
+    this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
   }
 
   async fetch(url: string, init: RequestInit = {}): Promise<Response> {
@@ -41,7 +40,7 @@ export class OAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    let res = await fetch(url, { ...init, headers });
+    let res = await fetch(url, {...init, headers});
 
     // RESILIENCE: If the server says 401, the token might have expired or been revoked.
     // We retry exactly once after invalidating the cached token.
@@ -49,7 +48,7 @@ export class OAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, { ...init, headers });
+      res = await fetch(url, {...init, headers});
     }
 
     return res;
@@ -85,14 +84,10 @@ export class OAuthStrategy implements AuthStrategy {
     if (cached) {
       const now = new Date();
       const requiredScopes = this.config.scopes || [];
-      const hasAllScopes = requiredScopes.every((scope) =>
-        cached.scopes.includes(scope)
-      );
+      const hasAllScopes = requiredScopes.every((scope) => cached.scopes.includes(scope));
 
       if (!hasAllScopes) {
-        logger.warn(
-          'Access token missing scopes; invalidating and re-authenticating'
-        );
+        logger.warn('Access token missing scopes; invalidating and re-authenticating');
         ACCESS_TOKEN_CACHE.delete(this.config.clientId);
       } else if (now.getTime() > cached.expires.getTime()) {
         logger.warn('Access token expired; invalidating and re-authenticating');
@@ -124,27 +119,20 @@ export class OAuthStrategy implements AuthStrategy {
       params.append('scope', this.config.scopes.join(' '));
     }
 
-    const credentials = Buffer.from(
-      `${this.config.clientId}:${this.config.clientSecret}`
-    ).toString('base64');
+    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64');
 
-    const response = await fetch(
-      `https://${this.accountManagerHost}/dwsso/oauth2/access_token`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params.toString(),
-      }
-    );
+    const response = await fetch(`https://${this.accountManagerHost}/dwsso/oauth2/access_token`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `Failed to get access token: ${response.status} ${response.statusText} - ${errorText}`
-      );
+      throw new Error(`Failed to get access token: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = (await response.json()) as {
@@ -168,4 +156,4 @@ export class OAuthStrategy implements AuthStrategy {
   }
 }
 
-export { decodeJWT };
+export {decodeJWT};
