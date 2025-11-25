@@ -1,38 +1,63 @@
+/**
+ * Internationalization (i18n) support for B2C CLI tools.
+ *
+ * This module provides translation utilities using i18next, with support for
+ * multiple languages and environment-based language detection.
+ *
+ * ## Key Features
+ *
+ * - Default strings are stored inline at point of use (no separate en.ts needed)
+ * - TypeScript locale files for type safety and bundling
+ * - Namespace separation: 'b2c' for tooling, 'cli' for CLI-specific messages
+ *
+ * ## Language Detection
+ *
+ * Language is detected in this order:
+ * 1. Explicit {@link setLanguage} call (from --lang flag)
+ * 2. `LANGUAGE` environment variable (GNU gettext standard)
+ * 3. `LANG` system environment variable (Unix standard)
+ * 4. Default: 'en'
+ *
+ * ## Supported Locale Formats
+ *
+ * - `de` - simple language code
+ * - `de_DE` - language with country
+ * - `de-DE` - language with country (hyphen)
+ * - `de_DE.UTF-8` - with encoding
+ * - `de:en:fr` - colon-separated preference list (LANGUAGE only)
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * import { t } from '@salesforce/b2c-tooling';
+ *
+ * // Simple translation with inline default
+ * const message = t('error.serverRequired', 'Server is required.');
+ *
+ * // With interpolation
+ * const fileError = t('error.fileNotFound', 'File {{path}} not found.', {
+ *   path: '/foo/bar'
+ * });
+ * ```
+ *
+ * ## Adding Translations
+ *
+ * ```typescript
+ * import { registerTranslations } from '@salesforce/b2c-tooling';
+ *
+ * // Register translations for a new namespace
+ * registerTranslations('my-package', 'de', {
+ *   greeting: 'Hallo Welt'
+ * });
+ * ```
+ *
+ * @module i18n
+ */
 import i18next, {TOptions, Resource} from 'i18next';
 
 // Re-export TOptions for consumers
 export type {TOptions} from 'i18next';
 import {locales} from './locales/index.js';
-
-/**
- * i18n module for B2C CLI tools.
- *
- * Key features:
- * - Default strings are stored inline at point of use (no separate en.ts needed)
- * - TypeScript locale files for type safety and bundling
- * - Namespace separation: 'b2c' for tooling, 'cli' for CLI-specific messages
- *
- * Language detection precedence:
- * 1. Explicit setLanguage() call (from --lang flag)
- * 2. LANGUAGE environment variable (GNU gettext standard, supports colon-separated list)
- * 3. LANG system environment variable (Unix standard)
- * 4. Default: 'en'
- *
- * Supported locale formats:
- * - "de" - simple language code
- * - "de_DE" - language with country
- * - "de-DE" - language with country (hyphen)
- * - "de_DE.UTF-8" - with encoding
- * - "de_DE@euro" - with modifier
- * - "de:en:fr" - colon-separated preference list (LANGUAGE only)
- *
- * Usage:
- *   import { t } from '@salesforce/b2c-tooling'
- *   throw new Error(t('error.serverRequired', 'Server is required.'))
- *
- * With interpolation:
- *   t('error.fileNotFound', 'File {{path}} not found.', { path: '/foo/bar' })
- */
 
 /** The namespace used by b2c-tooling messages */
 export const B2C_NAMESPACE = 'b2c';

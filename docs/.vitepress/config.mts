@@ -12,6 +12,7 @@ export default defineConfig({
   },
 
   themeConfig: {
+    logo: '/logo.svg',
     outline: {
       level: [2, 3],
     },
@@ -20,6 +21,11 @@ export default defineConfig({
       { text: 'CLI Reference', link: '/cli/' },
       { text: 'API Reference', link: '/api/' },
     ],
+
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: `Copyright © ${new Date().getFullYear()} Salesforce, Inc. All rights reserved.`,
+    },
 
     sidebar: {
       '/guide/': [

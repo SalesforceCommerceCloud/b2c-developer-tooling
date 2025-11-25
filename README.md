@@ -22,3 +22,9 @@ pnpm install
 pnpm start # start the cli in dev mode; see CLI readme for more details
 pnpm test
 ```
+
+Docs development
+
+```bash
+pnpm run docs:dev
+```

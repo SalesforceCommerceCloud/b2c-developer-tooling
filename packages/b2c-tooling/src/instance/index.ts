@@ -1,3 +1,32 @@
+/**
+ * B2C Instance management.
+ *
+ * This module provides the {@link B2CInstance} class which represents a connection
+ * to a specific B2C Commerce instance. It combines instance configuration with
+ * an authentication strategy to make API requests.
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * import { B2CInstance } from '@salesforce/b2c-tooling';
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling/auth';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ * });
+ *
+ * const instance = new B2CInstance(
+ *   { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
+ *   auth
+ * );
+ *
+ * // Make OCAPI requests
+ * const response = await instance.ocapiDataRequest('sites');
+ * ```
+ *
+ * @module instance
+ */
 import {AuthStrategy} from '../auth/types.js';
 
 export interface InstanceConfig {
