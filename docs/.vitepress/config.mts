@@ -45,7 +45,7 @@ export default defineConfig({
     ],
 
     footer: {
-      message: 'Released under the MIT License.',
+      message: 'All rights reserved.',
       copyright: `Copyright © ${new Date().getFullYear()} Salesforce, Inc. All rights reserved.`,
     },
 
