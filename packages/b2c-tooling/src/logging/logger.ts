@@ -68,7 +68,7 @@ function createPinoLogger(options: LoggerOptions): Logger {
     hideObject: !isVerbose,
   });
 
-  return pino(pinoOptions, prettyStream) as unknown as Logger;
+  return pino(pinoOptions, prettyStream);
 }
 
 export function createLogger(options: LoggerOptions = {}): Logger {
