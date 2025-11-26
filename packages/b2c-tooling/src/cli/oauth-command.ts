@@ -1,7 +1,8 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
-import {loadConfig, ResolvedConfig, LoadConfigOptions} from './config.js';
-import {AuthStrategy} from '../auth/types.js';
+import {loadConfig} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions} from './config.js';
+import type {AuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {t} from '../i18n/index.js';
 

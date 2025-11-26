@@ -1,4 +1,4 @@
-import {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
+import type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
 import {getLogger} from '../logger.js';
 
 const DEFAULT_ACCOUNT_MANAGER_HOST = 'account.demandware.com';

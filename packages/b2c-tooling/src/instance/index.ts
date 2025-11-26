@@ -27,7 +27,7 @@
  *
  * @module instance
  */
-import {AuthStrategy} from '../auth/types.js';
+import type {AuthStrategy} from '../auth/types.js';
 
 export interface InstanceConfig {
   hostname: string;

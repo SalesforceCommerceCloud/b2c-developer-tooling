@@ -30,6 +30,10 @@ These flags are available on all commands that interact with B2C instances:
 - [Sandbox Commands](./sandbox) - Create and manage sandboxes
 - [MRT Commands](./mrt) - Manage Managed Runtime environments
 
+## Configuration
+
+- [Logging](./logging) - Log levels, output formats, and environment variables
+
 ## Getting Help
 
 Get help for any command:

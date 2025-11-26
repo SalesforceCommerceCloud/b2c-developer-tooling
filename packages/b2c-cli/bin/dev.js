@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --import tsx
+#!/usr/bin/env -S node --conditions development --import tsx
 
 import {execute} from '@oclif/core';
 

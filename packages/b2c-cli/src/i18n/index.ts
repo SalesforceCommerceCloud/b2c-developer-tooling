@@ -9,7 +9,7 @@
  *   this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', { hostname }))
  */
 
-import {registerTranslations, t as toolingT, TOptions} from '@salesforce/b2c-tooling';
+import {registerTranslations, t as toolingT, type TOptions} from '@salesforce/b2c-tooling';
 import {locales} from './locales/index.js';
 
 /** The namespace used by b2c-cli messages */

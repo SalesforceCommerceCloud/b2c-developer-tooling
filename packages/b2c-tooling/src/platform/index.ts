@@ -32,5 +32,7 @@
  *
  * @module platform
  */
-export {MrtClient, MrtProject} from './mrt.js';
-export {OdsClient, OdsConfig} from './ods.js';
+export {MrtClient} from './mrt.js';
+export type {MrtProject} from './mrt.js';
+export {OdsClient} from './ods.js';
+export type {OdsConfig} from './ods.js';

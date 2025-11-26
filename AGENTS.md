@@ -1,9 +1,14 @@
 
+- this is a monorepo project; packages:
+  - ./packages/b2c-cli - the command line interface built with oclif
+  - ./packages/b2c-tooling - the SDK/library for B2C Commerce operations; support the CLI and can be used standalone
+
 ## Setup/Packaging
 
 - use `pnpm` over `npm` for package management
 - the `pnpm run test` commands also run the linter after tests
 - use `pnpm run -r format` (or individually in packages) to format code with prettier
+- use `exports` field in package.json files to define public API surface for packages; use `development` field for nodejs --conditions for development ergonomics (packages/b2c-cli/bin/dev.js will use this condition)
 
 ## Documentation
 

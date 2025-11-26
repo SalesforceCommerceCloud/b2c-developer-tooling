@@ -53,7 +53,7 @@
  *
  * @module i18n
  */
-import i18next, {TOptions, Resource} from 'i18next';
+import i18next, {type TOptions, type Resource} from 'i18next';
 
 // Re-export TOptions for consumers
 export type {TOptions} from 'i18next';

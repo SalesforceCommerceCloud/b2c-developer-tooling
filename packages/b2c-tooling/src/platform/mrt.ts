@@ -1,4 +1,4 @@
-import {AuthStrategy} from '../auth/types.js';
+import type {AuthStrategy} from '../auth/types.js';
 
 export interface MrtProject {
   org: string;
