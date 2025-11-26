@@ -5,7 +5,30 @@
 import pino from 'pino';
 import pretty from 'pino-pretty';
 import type {Logger, LoggerOptions} from './types.js';
-import {getRedactPaths} from './redaction.js';
+
+const REDACT_FIELDS = [
+  'password',
+  'client_secret',
+  'clientSecret',
+  'access_token',
+  'accessToken',
+  'refresh_token',
+  'refreshToken',
+  'api_key',
+  'apiKey',
+  'token',
+  'secret',
+  'authorization',
+];
+
+const REDACT_PATHS = REDACT_FIELDS.flatMap((field) => [field, `*.${field}`]);
+
+function censor(value: unknown): string {
+  if (typeof value === 'string' && value.length > 10) {
+    return `${value.slice(0, 4)}REDACTED`;
+  }
+  return 'REDACTED';
+}
 
 let globalLogger: Logger | null = null;
 let globalOptions: LoggerOptions = {level: 'info'};
@@ -25,8 +48,8 @@ function createPinoLogger(options: LoggerOptions): Logger {
 
   if (options.redact !== false) {
     pinoOptions.redact = {
-      paths: getRedactPaths(),
-      censor: '[REDACTED]',
+      paths: REDACT_PATHS,
+      censor,
     };
   }
 

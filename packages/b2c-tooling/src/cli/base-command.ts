@@ -1,5 +1,6 @@
-import {Command, Flags, Interfaces} from '@oclif/core';
-import {loadConfig, ResolvedConfig, LoadConfigOptions} from './config.js';
+import {Command, Flags, type Interfaces} from '@oclif/core';
+import {loadConfig} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions} from './config.js';
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 

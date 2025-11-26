@@ -41,4 +41,5 @@
  *
  * @module operations/jobs
  */
-export {runJob, getJobStatus, JobExecutionResult} from './run.js';
+export {runJob, getJobStatus} from './run.js';
+export type {JobExecutionResult} from './run.js';

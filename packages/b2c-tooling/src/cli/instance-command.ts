@@ -1,7 +1,8 @@
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
-import {loadConfig, ResolvedConfig, LoadConfigOptions} from './config.js';
-import {AuthStrategy} from '../auth/types.js';
+import {loadConfig} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions} from './config.js';
+import type {AuthStrategy} from '../auth/types.js';
 import {BasicAuthStrategy} from '../auth/basic.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {B2CInstance} from '../instance/index.js';

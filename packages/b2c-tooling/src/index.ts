@@ -11,28 +11,24 @@ export {t, setLanguage, getLanguage, getI18nInstance, registerTranslations, B2C_
 export type {TOptions} from './i18n/index.js';
 
 // Auth Layer - Strategies
-export {
-  AuthStrategy,
-  AccessTokenResponse,
-  DecodedJWT,
-  BasicAuthStrategy,
-  OAuthStrategy,
-  OAuthConfig,
-  ApiKeyStrategy,
-  decodeJWT,
-} from './auth/index.js';
+export {BasicAuthStrategy, OAuthStrategy, ApiKeyStrategy, decodeJWT} from './auth/index.js';
+export type {AuthStrategy, AccessTokenResponse, DecodedJWT, OAuthConfig} from './auth/index.js';
 
 // Context Layer - Instance
-export {B2CInstance, InstanceConfig} from './instance/index.js';
+export {B2CInstance} from './instance/index.js';
+export type {InstanceConfig} from './instance/index.js';
 
 // Context Layer - Platform
-export {MrtClient, MrtProject, OdsClient, OdsConfig} from './platform/index.js';
+export {MrtClient, OdsClient} from './platform/index.js';
+export type {MrtProject, OdsConfig} from './platform/index.js';
 
 // Operations - Code
 export {uploadCartridges, activateCodeVersion} from './operations/code/index.js';
 
 // Operations - Jobs
-export {runJob, getJobStatus, JobExecutionResult} from './operations/jobs/index.js';
+export {runJob, getJobStatus} from './operations/jobs/index.js';
+export type {JobExecutionResult} from './operations/jobs/index.js';
 
 // Operations - Sites
-export {listSites, getSite, Site} from './operations/sites/index.js';
+export {listSites, getSite} from './operations/sites/index.js';
+export type {Site} from './operations/sites/index.js';

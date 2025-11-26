@@ -3,7 +3,8 @@
   "compilerOptions": {
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true
   },
   "include": ["src/**/*"]
 }

@@ -1,4 +1,4 @@
-import {AuthStrategy} from './types.js';
+import type {AuthStrategy} from './types.js';
 
 export class ApiKeyStrategy implements AuthStrategy {
   constructor(

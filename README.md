@@ -5,7 +5,9 @@
 
 - Separate CLI and SDK
 - Logging
+  - redaction
 - Localization Support
+- supply chain security
 
 ## CLI
 
