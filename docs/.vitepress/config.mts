@@ -61,7 +61,7 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/salesforce/b2c-cli' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/SalesforceCommerceCloud/b2c-cli' }],
 
     search: {
       provider: 'local',
