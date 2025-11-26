@@ -72,6 +72,17 @@ In debug/trace mode, context objects are displayed:
 | `SFCC_LOG_COLORIZE` | Force colors on/off |
 | `SFCC_REDACT_SECRETS` | Set to `false` to disable secret redaction |
 | `NO_COLOR` | Industry standard to disable colors |
+| `DEBUG` | Set to `oclif*` for CLI framework debug logs |
+
+### CLI Framework Debugging
+
+For low-level debugging of the CLI parser and command loading, use the oclif debug flag:
+
+```bash
+DEBUG=oclif* b2c code deploy
+```
+
+This outputs internal oclif framework logs, useful for troubleshooting command resolution, plugin loading, and argument parsing issues.
 
 ## Output Streams
 
