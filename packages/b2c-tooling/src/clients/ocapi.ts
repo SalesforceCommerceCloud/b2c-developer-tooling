@@ -81,9 +81,10 @@ export function createLoggingMiddleware(): Middleware {
       // Debug: Log request start
       logger.debug({method: request.method, url}, `[OCAPI REQ] ${request.method} ${url}`);
 
-      // Trace: Log request details
+      // Trace: Log request details (body is in options for openapi-fetch)
+      const body = (options as {body?: unknown}).body;
       logger.trace(
-        {headers: headersToObject(request.headers), body: options.body},
+        {headers: headersToObject(request.headers), body},
         `[OCAPI REQ BODY] ${request.method} ${url}`,
       );
 

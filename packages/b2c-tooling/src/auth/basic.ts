@@ -4,10 +4,7 @@ import {getLogger} from '../logging/logger.js';
 export class BasicAuthStrategy implements AuthStrategy {
   private encoded: string;
 
-  constructor(
-    private user: string,
-    pass: string,
-  ) {
+  constructor(user: string, pass: string) {
     this.encoded = Buffer.from(`${user}:${pass}`).toString('base64');
 
     const logger = getLogger();

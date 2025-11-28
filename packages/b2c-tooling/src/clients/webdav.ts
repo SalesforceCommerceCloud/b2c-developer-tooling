@@ -102,7 +102,7 @@ export class WebDavClient {
   /**
    * Converts Headers to a plain object for logging.
    */
-  private headersToObject(headers?: HeadersInit | Headers): Record<string, string> | undefined {
+  private headersToObject(headers?: RequestInit['headers'] | Headers): Record<string, string> | undefined {
     if (!headers) return undefined;
 
     const result: Record<string, string> = {};
@@ -123,7 +123,7 @@ export class WebDavClient {
   /**
    * Formats body for logging, describing binary data.
    */
-  private formatBody(body?: BodyInit | null): string | undefined {
+  private formatBody(body?: RequestInit['body']): string | undefined {
     if (!body) return undefined;
     if (typeof body === 'string') {
       return body;
