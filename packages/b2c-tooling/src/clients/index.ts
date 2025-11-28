@@ -30,4 +30,4 @@ export {WebDavClient} from './webdav.js';
 export type {PropfindEntry} from './webdav.js';
 
 export {OcapiClient} from './ocapi.js';
-export type {OcapiError, OcapiPagedResponse, OcapiRequestOptions} from './ocapi.js';
+export type {OcapiError, OcapiResponse, paths as OcapiPaths, components as OcapiComponents} from './ocapi.js';

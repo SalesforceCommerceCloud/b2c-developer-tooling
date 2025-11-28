@@ -33,7 +33,7 @@ export type {InstanceConfig, FromDwJsonOptions, B2CInstanceOptions} from './inst
 
 // Clients
 export {WebDavClient, OcapiClient} from './clients/index.js';
-export type {PropfindEntry, OcapiError, OcapiPagedResponse, OcapiRequestOptions} from './clients/index.js';
+export type {PropfindEntry, OcapiError, OcapiResponse, OcapiPaths, OcapiComponents} from './clients/index.js';
 
 // Context Layer - Platform
 export {MrtClient, OdsClient} from './platform/index.js';

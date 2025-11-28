@@ -1,14 +1,26 @@
 /**
  * OCAPI client for B2C Commerce Data API operations.
  *
- * Provides typed methods for common OCAPI Data API operations with
- * proper error handling and JSON parsing.
+ * Provides a fully typed client for OCAPI Data API operations using
+ * openapi-fetch, with proper error handling and authentication.
  *
  * @module clients/ocapi
  */
+import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
+import type {paths, components} from './ocapi.generated.js';
 
-const DEFAULT_API_VERSION = 'v24_5';
+const DEFAULT_API_VERSION = 'v25_6';
+
+/**
+ * Re-export generated types for external use.
+ */
+export type {paths, components};
+
+/**
+ * Helper type to extract response data from an operation.
+ */
+export type OcapiResponse<T> = T extends {content: {'application/json': infer R}} ? R : never;
 
 /**
  * Standard OCAPI error response structure.
@@ -22,226 +34,126 @@ export interface OcapiError {
 }
 
 /**
- * OCAPI paginated response structure.
- */
-export interface OcapiPagedResponse<T> {
-  _v: string;
-  count: number;
-  total: number;
-  start?: number;
-  data: T[];
-  next?: string;
-  previous?: string;
-}
-
-/**
- * Request options for OCAPI calls.
- */
-export interface OcapiRequestOptions {
-  /** Query parameters */
-  params?: Record<string, string | number | boolean>;
-  /** Request headers */
-  headers?: Record<string, string>;
-  /** API version override */
-  apiVersion?: string;
-}
-
-/**
  * OCAPI client for B2C Commerce Data API.
  *
- * Provides typed HTTP methods for OCAPI Data API operations.
- * Always uses OAuth authentication.
+ * Provides a fully typed client based on the OpenAPI specification.
+ * All operations are type-safe with request/response validation.
  *
  * @example
  * const client = new OcapiClient('sandbox.demandware.net', authStrategy);
  *
- * // GET request
- * const sites = await client.get<SitesResponse>('sites');
+ * // Typed GET request
+ * const { data, error } = await client.GET('/sites', {});
  *
- * // POST request
- * await client.post('jobs/my-job/executions', { ... });
- *
- * // PATCH request
- * await client.patch('code_versions/v1', { active: true });
+ * // Typed POST request with body
+ * const { data, error } = await client.POST('/jobs/{job_id}/executions', {
+ *   params: { path: { job_id: 'my-job' } },
+ *   body: {},
+ * });
  */
 export class OcapiClient {
+  private client: Client<paths>;
+
   /**
    * Creates a new OCAPI client.
    *
    * @param hostname - B2C instance hostname
    * @param auth - OAuth authentication strategy
-   * @param apiVersion - Default API version (defaults to v24_5)
+   * @param apiVersion - API version (defaults to v24_5)
    */
   constructor(
-    private hostname: string,
+    hostname: string,
     private auth: AuthStrategy,
-    private apiVersion: string = DEFAULT_API_VERSION,
-  ) {}
+    apiVersion: string = DEFAULT_API_VERSION,
+  ) {
+    const baseUrl = `https://${hostname}/s/-/dw/data/${apiVersion}`;
 
-  /**
-   * Builds the full URL for an OCAPI Data API path.
-   */
-  private buildUrl(path: string, options?: OcapiRequestOptions): string {
-    const version = options?.apiVersion || this.apiVersion;
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    let url = `https://${this.hostname}/s/-/dw/data/${version}/${cleanPath}`;
-
-    if (options?.params) {
-      const searchParams = new URLSearchParams();
-      for (const [key, value] of Object.entries(options.params)) {
-        searchParams.set(key, String(value));
-      }
-      url += `?${searchParams.toString()}`;
-    }
-
-    return url;
-  }
-
-  /**
-   * Makes a raw OCAPI request.
-   *
-   * @param path - API path relative to /s/-/dw/data/{version}/
-   * @param init - Fetch init options
-   * @param options - OCAPI-specific options
-   * @returns Response from the server
-   */
-  async request(path: string, init?: RequestInit, options?: OcapiRequestOptions): Promise<Response> {
-    const headers = new Headers(init?.headers);
-    headers.set('Content-Type', 'application/json');
-
-    if (options?.headers) {
-      for (const [key, value] of Object.entries(options.headers)) {
-        headers.set(key, value);
-      }
-    }
-
-    return this.auth.fetch(this.buildUrl(path, options), {
-      ...init,
-      headers,
+    // Create the openapi-fetch client with custom fetch that handles auth
+    this.client = createClient<paths>({
+      baseUrl,
+      fetch: this.authenticatedFetch.bind(this),
     });
   }
 
   /**
-   * Handles response and throws on error.
+   * Custom fetch function that adds authentication headers.
    */
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      let errorMessage = `${response.status} ${response.statusText}`;
-      try {
-        const errorBody = (await response.json()) as OcapiError;
-        if (errorBody.fault) {
-          errorMessage = `${errorBody.fault.type}: ${errorBody.fault.message}`;
-        }
-      } catch {
-        // Response wasn't JSON, use status text
-      }
-      throw new Error(`OCAPI request failed: ${errorMessage}`);
-    }
-
-    // Handle 204 No Content
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return response.json() as Promise<T>;
+  private async authenticatedFetch(request: Request): Promise<Response> {
+    return this.auth.fetch(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      duplex: request.body ? 'half' : undefined,
+    } as RequestInit);
   }
 
   /**
-   * Performs a GET request.
-   *
-   * @param path - API path
-   * @param options - Request options
-   * @returns Parsed JSON response
+   * Performs a typed GET request.
    *
    * @example
-   * const sites = await client.get<SitesResponse>('sites');
-   * const site = await client.get<Site>('sites/RefArch', { params: { select: '(**)' } });
+   * const { data, error } = await client.GET('/sites', {});
+   * const { data, error } = await client.GET('/sites/{site_id}', {
+   *   params: { path: { site_id: 'RefArch' } }
+   * });
    */
-  async get<T>(path: string, options?: OcapiRequestOptions): Promise<T> {
-    const response = await this.request(path, {method: 'GET'}, options);
-    return this.handleResponse<T>(response);
+  get GET() {
+    return this.client.GET.bind(this.client);
   }
 
   /**
-   * Performs a POST request.
-   *
-   * @param path - API path
-   * @param body - Request body (will be JSON stringified)
-   * @param options - Request options
-   * @returns Parsed JSON response
+   * Performs a typed POST request.
    *
    * @example
-   * const result = await client.post<JobExecution>('jobs/my-job/executions', {});
+   * const { data, error } = await client.POST('/site_search', {
+   *   body: { query: { text_query: { fields: ['id'], search_phrase: 'RefArch' } } }
+   * });
    */
-  async post<T>(path: string, body?: unknown, options?: OcapiRequestOptions): Promise<T> {
-    const response = await this.request(
-      path,
-      {
-        method: 'POST',
-        body: body ? JSON.stringify(body) : undefined,
-      },
-      options,
-    );
-    return this.handleResponse<T>(response);
+  get POST() {
+    return this.client.POST.bind(this.client);
   }
 
   /**
-   * Performs a PUT request.
-   *
-   * @param path - API path
-   * @param body - Request body (will be JSON stringified)
-   * @param options - Request options
-   * @returns Parsed JSON response
+   * Performs a typed PUT request.
    *
    * @example
-   * await client.put('sites/RefArch', siteData);
+   * const { data, error } = await client.PUT('/sites/{site_id}', {
+   *   params: { path: { site_id: 'RefArch' } },
+   *   body: { ... }
+   * });
    */
-  async put<T>(path: string, body?: unknown, options?: OcapiRequestOptions): Promise<T> {
-    const response = await this.request(
-      path,
-      {
-        method: 'PUT',
-        body: body ? JSON.stringify(body) : undefined,
-      },
-      options,
-    );
-    return this.handleResponse<T>(response);
+  get PUT() {
+    return this.client.PUT.bind(this.client);
   }
 
   /**
-   * Performs a PATCH request.
-   *
-   * @param path - API path
-   * @param body - Request body (will be JSON stringified)
-   * @param options - Request options
-   * @returns Parsed JSON response
+   * Performs a typed PATCH request.
    *
    * @example
-   * await client.patch('code_versions/v1', { active: true });
+   * const { data, error } = await client.PATCH('/code_versions/{code_version_id}', {
+   *   params: { path: { code_version_id: 'v1' } },
+   *   body: { active: true }
+   * });
    */
-  async patch<T>(path: string, body?: unknown, options?: OcapiRequestOptions): Promise<T> {
-    const response = await this.request(
-      path,
-      {
-        method: 'PATCH',
-        body: body ? JSON.stringify(body) : undefined,
-      },
-      options,
-    );
-    return this.handleResponse<T>(response);
+  get PATCH() {
+    return this.client.PATCH.bind(this.client);
   }
 
   /**
-   * Performs a DELETE request.
-   *
-   * @param path - API path
-   * @param options - Request options
+   * Performs a typed DELETE request.
    *
    * @example
-   * await client.delete('code_versions/old-version');
+   * const { data, error } = await client.DELETE('/code_versions/{code_version_id}', {
+   *   params: { path: { code_version_id: 'old-version' } }
+   * });
    */
-  async delete(path: string, options?: OcapiRequestOptions): Promise<void> {
-    const response = await this.request(path, {method: 'DELETE'}, options);
-    await this.handleResponse<void>(response);
+  get DELETE() {
+    return this.client.DELETE.bind(this.client);
+  }
+
+  /**
+   * Gets the underlying openapi-fetch client for advanced use cases.
+   */
+  get raw(): Client<paths> {
+    return this.client;
   }
 }
