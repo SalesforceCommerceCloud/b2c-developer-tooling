@@ -9,6 +9,7 @@
 import createClient, {type Client, type Middleware} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ocapi.generated.js';
+import {getLogger} from '../logging/logger.js';
 
 const DEFAULT_API_VERSION = 'v25_6';
 
@@ -61,6 +62,64 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
 }
 
 /**
+ * Creates logging middleware for openapi-fetch.
+ *
+ * Logs HTTP requests at debug level (summary) and trace level (full details).
+ *
+ * @returns Middleware that logs requests and responses
+ */
+export function createLoggingMiddleware(): Middleware {
+  return {
+    async onRequest({request, options}) {
+      const logger = getLogger();
+      const url = new URL(request.url);
+      const path = url.pathname;
+
+      // Debug: Log request start
+      logger.debug({method: request.method, path}, `[OCAPI REQ] ${request.method} ${path}`);
+
+      // Trace: Log request body
+      if (options.body) {
+        logger.trace({body: options.body}, `[OCAPI REQ BODY] ${request.method} ${path}`);
+      }
+
+      // Store start time for duration calculation
+      (request as Request & {_startTime?: number})._startTime = Date.now();
+
+      return request;
+    },
+
+    async onResponse({request, response}) {
+      const logger = getLogger();
+      const startTime = (request as Request & {_startTime?: number})._startTime ?? Date.now();
+      const duration = Date.now() - startTime;
+
+      const url = new URL(request.url);
+      const path = url.pathname;
+
+      // Debug: Log response summary
+      logger.debug(
+        {method: request.method, path, status: response.status, duration},
+        `[OCAPI RESP] ${request.method} ${path} ${response.status} ${duration}ms`,
+      );
+
+      // Trace: Log response body
+      const clonedResponse = response.clone();
+      let responseBody: unknown;
+      try {
+        responseBody = await clonedResponse.json();
+      } catch {
+        responseBody = await clonedResponse.text();
+      }
+
+      logger.trace({body: responseBody}, `[OCAPI RESP BODY] ${request.method} ${path}`);
+
+      return response;
+    },
+  };
+}
+
+/**
  * Creates a typed OCAPI Data API client.
  *
  * Returns the openapi-fetch client directly, with authentication
@@ -99,6 +158,9 @@ export function createOcapiClient(
   const client = createClient<paths>({
     baseUrl: `https://${hostname}/s/-/dw/data/${apiVersion}`,
   });
+
+  // Add logging middleware (runs first to capture timing)
+  client.use(createLoggingMiddleware());
 
   // Add authentication middleware
   client.use(createAuthMiddleware(auth));

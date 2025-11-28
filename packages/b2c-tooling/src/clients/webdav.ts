@@ -7,6 +7,7 @@
  * @module clients/webdav
  */
 import type {AuthStrategy} from '../auth/types.js';
+import {getLogger} from '../logging/logger.js';
 
 /**
  * Result of a PROPFIND operation.
@@ -63,7 +64,53 @@ export class WebDavClient {
    * @returns Response from the server
    */
   async request(path: string, init?: RequestInit): Promise<Response> {
-    return this.auth.fetch(this.buildUrl(path), init);
+    const logger = getLogger();
+    const url = this.buildUrl(path);
+    const method = init?.method ?? 'GET';
+
+    // Debug: Log request start
+    logger.debug({method, path}, `[WebDAV REQ] ${method} ${path}`);
+
+    // Trace: Log request body
+    if (init?.body) {
+      logger.trace({body: this.formatBody(init.body)}, `[WebDAV REQ BODY] ${method} ${path}`);
+    }
+
+    const startTime = Date.now();
+    const response = await this.auth.fetch(url, init);
+    const duration = Date.now() - startTime;
+
+    // Debug: Log response summary
+    logger.debug(
+      {method, path, status: response.status, duration},
+      `[WebDAV RESP] ${method} ${path} ${response.status} ${duration}ms`,
+    );
+
+    // Trace: Log response body (only for non-binary responses)
+    if (response.headers.get('content-type')?.includes('xml')) {
+      const clonedResponse = response.clone();
+      const responseBody = await clonedResponse.text();
+      logger.trace({body: responseBody}, `[WebDAV RESP BODY] ${method} ${path}`);
+    }
+
+    return response;
+  }
+
+  /**
+   * Formats body for logging, describing binary data.
+   */
+  private formatBody(body?: BodyInit | null): string | undefined {
+    if (!body) return undefined;
+    if (typeof body === 'string') {
+      return body;
+    }
+    if (body instanceof Buffer || body instanceof ArrayBuffer) {
+      return `[Binary: ${body instanceof Buffer ? body.length : body.byteLength} bytes]`;
+    }
+    if (body instanceof Blob) {
+      return `[Blob: ${body.size} bytes]`;
+    }
+    return '[Body]';
   }
 
   /**
