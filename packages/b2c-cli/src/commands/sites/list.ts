@@ -21,29 +21,16 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
   ];
 
   async run(): Promise<void> {
-    this.requireServer();
     this.requireOAuthCredentials();
 
-    const instance = this.createApiInstance();
     const hostname = this.resolvedConfig.hostname!;
 
     this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', {hostname}));
 
     try {
-      const response = await instance.ocapiDataRequest('sites?select=(**)');
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        this.error(
-          t('commands.sites.list.fetchFailed', 'Failed to fetch sites: {{status}} {{statusText}}\n{{error}}', {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorText,
-          }),
-        );
-      }
-
-      const data = (await response.json()) as SitesResponse;
+      const data = await this.instance.ocapi.get<SitesResponse>('sites', {
+        params: {select: '(**)'},
+      });
 
       if (data.count === 0) {
         this.log(t('commands.sites.list.noSites', 'No sites found.'));

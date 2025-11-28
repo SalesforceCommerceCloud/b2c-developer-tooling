@@ -2,10 +2,8 @@ import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {loadConfig} from './config.js';
 import type {ResolvedConfig, LoadConfigOptions} from './config.js';
-import type {AuthStrategy} from '../auth/types.js';
-import {BasicAuthStrategy} from '../auth/basic.js';
-import {OAuthStrategy} from '../auth/oauth.js';
 import {B2CInstance} from '../instance/index.js';
+import type {AuthConfig} from '../auth/types.js';
 import {t} from '../i18n/index.js';
 
 /**
@@ -24,7 +22,16 @@ import {t} from '../i18n/index.js';
  * Provides:
  * - Server/hostname connection flags
  * - Both Basic auth and OAuth support
- * - Helper methods for creating B2CInstance
+ * - Unified B2CInstance with typed API clients
+ *
+ * @example
+ * export default class MySiteCommand extends InstanceCommand<typeof MySiteCommand> {
+ *   async run(): Promise<void> {
+ *     // Single instance for all operations
+ *     const sites = await this.instance.ocapi.get('sites');
+ *     await this.instance.webdav.mkcol('Cartridges/v1');
+ *   }
+ * }
  */
 export abstract class InstanceCommand<T extends typeof Command> extends OAuthCommand<T> {
   static baseFlags = {
@@ -60,6 +67,8 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
     }),
   };
 
+  private _instance?: B2CInstance;
+
   protected override loadConfiguration(): ResolvedConfig {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
@@ -80,76 +89,55 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   }
 
   /**
-   * Gets an auth strategy for WebDAV operations.
-   * Prefers Basic auth for performance, falls back to OAuth.
+   * Gets the B2CInstance for this command.
+   *
+   * The instance is lazily created from the resolved configuration.
+   * It provides typed API clients for WebDAV and OCAPI operations.
+   *
+   * @example
+   * // WebDAV operations (uses Basic auth if available)
+   * await this.instance.webdav.mkcol('Cartridges/v1');
+   *
+   * // OCAPI operations (uses OAuth)
+   * const sites = await this.instance.ocapi.get('sites');
    */
-  protected getWebDavAuth(): AuthStrategy {
-    const config = this.resolvedConfig;
+  protected get instance(): B2CInstance {
+    if (!this._instance) {
+      this.requireServer();
 
-    // Prefer Basic auth for WebDAV
-    if (config.username && config.password) {
-      return new BasicAuthStrategy(config.username, config.password);
+      const config = this.resolvedConfig;
+
+      const authConfig: AuthConfig = {};
+
+      if (config.username && config.password) {
+        authConfig.basic = {
+          username: config.username,
+          password: config.password,
+        };
+      }
+
+      if (config.clientId && config.clientSecret) {
+        authConfig.oauth = {
+          clientId: config.clientId,
+          clientSecret: config.clientSecret,
+          scopes: config.scopes,
+        };
+      }
+
+      this._instance = new B2CInstance(
+        {
+          hostname: config.hostname!,
+          codeVersion: config.codeVersion,
+          webdavHostname: config.webdavHostname,
+        },
+        authConfig,
+      );
     }
-
-    // Fall back to OAuth
-    if (config.clientId && config.clientSecret) {
-      return new OAuthStrategy({
-        clientId: config.clientId,
-        clientSecret: config.clientSecret,
-        scopes: config.scopes,
-      });
-    }
-
-    throw new Error(
-      t(
-        'error.webdavCredentialsRequired',
-        'WebDAV credentials required. Provide --username/--password or --client-id/--client-secret, or set SFCC_USERNAME/SFCC_PASSWORD or SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.',
-      ),
-    );
+    return this._instance;
   }
 
   /**
-   * Gets an auth strategy for OCAPI operations.
-   * Always uses OAuth.
-   */
-  protected getApiAuth(): AuthStrategy {
-    return this.getOAuthStrategy();
-  }
-
-  /**
-   * Creates a B2CInstance configured for WebDAV operations.
-   */
-  protected createWebDavInstance(): B2CInstance {
-    this.requireServer();
-
-    return new B2CInstance(
-      {
-        hostname: this.resolvedConfig.hostname!,
-        codeVersion: this.resolvedConfig.codeVersion,
-        webdavHostname: this.resolvedConfig.webdavHostname,
-      },
-      this.getWebDavAuth(),
-    );
-  }
-
-  /**
-   * Creates a B2CInstance configured for OCAPI operations.
-   */
-  protected createApiInstance(): B2CInstance {
-    this.requireServer();
-    this.requireOAuthCredentials();
-
-    return new B2CInstance(
-      {
-        hostname: this.resolvedConfig.hostname!,
-        codeVersion: this.resolvedConfig.codeVersion,
-      },
-      this.getApiAuth(),
-    );
-  }
-
-  /**
-   * Check if WebDAV credentials are available.
+   * Check if WebDAV credentials are available (Basic or OAuth).
    */
   protected hasWebDavCredentials(): boolean {
     const config = this.resolvedConfig;

@@ -30,7 +30,15 @@
  *
  * @module auth
  */
-export type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
+export type {
+  AuthStrategy,
+  AccessTokenResponse,
+  DecodedJWT,
+  AuthConfig,
+  BasicAuthConfig,
+  OAuthAuthConfig,
+  ApiKeyAuthConfig,
+} from './types.js';
 export {BasicAuthStrategy} from './basic.js';
 export {OAuthStrategy, decodeJWT} from './oauth.js';
 export type {OAuthConfig} from './oauth.js';

@@ -3,110 +3,259 @@
  *
  * This module provides the {@link B2CInstance} class which represents a connection
  * to a specific B2C Commerce instance. It combines instance configuration with
- * an authentication strategy to make API requests.
+ * authentication to provide typed API clients.
  *
  * ## Usage
  *
+ * ### From dw.json (recommended)
+ *
  * ```typescript
  * import { B2CInstance } from '@salesforce/b2c-tooling';
- * import { OAuthStrategy } from '@salesforce/b2c-tooling/auth';
  *
- * const auth = new OAuthStrategy({
- *   clientId: 'your-client-id',
- *   clientSecret: 'your-client-secret',
+ * // Load from dw.json, override secrets from environment
+ * const instance = B2CInstance.fromDwJson({
+ *   clientId: process.env.SFCC_CLIENT_ID,
+ *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
  *
+ * // Use typed clients
+ * await instance.webdav.put('Cartridges/v1/app.zip', content);
+ * const sites = await instance.ocapi.get('sites');
+ * ```
+ *
+ * ### Direct construction
+ *
+ * ```typescript
  * const instance = new B2CInstance(
  *   { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
- *   auth
+ *   { oauth: { clientId: '...', clientSecret: '...' } }
  * );
- *
- * // Make OCAPI requests
- * const response = await instance.ocapiDataRequest('sites');
  * ```
  *
  * @module instance
  */
-import type {AuthStrategy} from '../auth/types.js';
+import type {AuthConfig, AuthStrategy} from '../auth/types.js';
+import {BasicAuthStrategy} from '../auth/basic.js';
+import {OAuthStrategy} from '../auth/oauth.js';
+import {WebDavClient} from '../clients/webdav.js';
+import {OcapiClient} from '../clients/ocapi.js';
+import {loadDwJson} from '../config/dw-json.js';
 
+/**
+ * Instance configuration (hostname, code version, etc.)
+ */
 export interface InstanceConfig {
+  /** B2C instance hostname */
   hostname: string;
+  /** Code version for deployments */
   codeVersion?: string;
   /** Separate hostname for WebDAV (if different from main hostname) */
   webdavHostname?: string;
 }
 
-const DEFAULT_OCAPI_VERSION = 'v24_5';
+/**
+ * Options for creating a B2CInstance from dw.json.
+ */
+export interface FromDwJsonOptions {
+  /** Named instance from dw.json "configs" array */
+  instance?: string;
+  /** Path to dw.json (defaults to searching up from cwd) */
+  configPath?: string;
+
+  // Overrides (take precedence over dw.json values)
+  /** B2C instance hostname */
+  hostname?: string;
+  /** Code version */
+  codeVersion?: string;
+  /** WebDAV hostname (if different) */
+  webdavHostname?: string;
+  /** Username for Basic auth */
+  username?: string;
+  /** Password for Basic auth */
+  password?: string;
+  /** OAuth client ID */
+  clientId?: string;
+  /** OAuth client secret */
+  clientSecret?: string;
+  /** OAuth scopes */
+  scopes?: string[];
+}
 
 /**
- * Represents a specific B2C Instance.
- * Holds configuration + An authentication strategy.
+ * Represents a connection to a B2C Commerce instance.
+ *
+ * Provides lazy-loaded, typed API clients for WebDAV and OCAPI operations.
+ * Authentication is handled automatically based on the configured credentials.
+ *
+ * @example
+ * // From dw.json
+ * const instance = B2CInstance.fromDwJson({
+ *   clientSecret: process.env.SFCC_CLIENT_SECRET,
+ * });
+ *
+ * // WebDAV uses Basic auth if available, falls back to OAuth
+ * await instance.webdav.mkcol('Cartridges/v1');
+ *
+ * // OCAPI always uses OAuth
+ * const sites = await instance.ocapi.get('sites');
  */
 export class B2CInstance {
+  private _webdav?: WebDavClient;
+  private _ocapi?: OcapiClient;
+
+  /**
+   * Creates a B2CInstance from a dw.json file with optional overrides.
+   *
+   * Searches upward from the current directory for a dw.json file,
+   * then applies any provided overrides.
+   *
+   * @param options - Loading options and overrides
+   * @returns Configured B2CInstance
+   * @throws Error if no dw.json found or required configuration missing
+   *
+   * @example
+   * // Auto-find dw.json, override secrets
+   * const instance = B2CInstance.fromDwJson({
+   *   clientId: process.env.SFCC_CLIENT_ID,
+   *   clientSecret: process.env.SFCC_CLIENT_SECRET,
+   * });
+   *
+   * // Use named instance
+   * const instance = B2CInstance.fromDwJson({
+   *   instance: 'staging',
+   * });
+   */
+  static fromDwJson(options: FromDwJsonOptions = {}): B2CInstance {
+    const dwConfig = loadDwJson({
+      instance: options.instance,
+      path: options.configPath,
+    });
+
+    // Merge dw.json with overrides (overrides win)
+    const hostname = options.hostname ?? dwConfig?.hostname;
+    const codeVersion = options.codeVersion ?? dwConfig?.['code-version'];
+    const webdavHostname = options.webdavHostname ?? dwConfig?.['webdav-hostname'];
+    const username = options.username ?? dwConfig?.username;
+    const password = options.password ?? dwConfig?.password;
+    const clientId = options.clientId ?? dwConfig?.['client-id'];
+    const clientSecret = options.clientSecret ?? dwConfig?.['client-secret'];
+    const scopes = options.scopes ?? dwConfig?.['oauth-scopes'];
+
+    if (!hostname) {
+      throw new Error(
+        'Hostname is required. Set in dw.json or provide via options. ' + (dwConfig ? '' : 'No dw.json file found.'),
+      );
+    }
+
+    const config: InstanceConfig = {
+      hostname,
+      codeVersion,
+      webdavHostname,
+    };
+
+    const auth: AuthConfig = {};
+
+    if (username && password) {
+      auth.basic = {username, password};
+    }
+
+    if (clientId) {
+      auth.oauth = {
+        clientId,
+        clientSecret,
+        scopes,
+      };
+    }
+
+    return new B2CInstance(config, auth);
+  }
+
+  /**
+   * Creates a new B2CInstance.
+   *
+   * @param config - Instance configuration (hostname, code version)
+   * @param auth - Authentication configuration
+   */
   constructor(
     public readonly config: InstanceConfig,
-    public readonly auth: AuthStrategy,
+    public readonly auth: AuthConfig,
   ) {}
 
   /**
    * The hostname to use for WebDAV operations.
    * Falls back to main hostname if not specified.
    */
-  get webdavHost(): string {
+  get webdavHostname(): string {
     return this.config.webdavHostname || this.config.hostname;
   }
 
   /**
-   * Helper to make requests relative to the instance root.
-   * Delegates the actual network call to the Auth Strategy.
+   * WebDAV client for file operations.
+   *
+   * Uses Basic auth if username/password are configured,
+   * otherwise falls back to OAuth.
+   *
+   * @example
+   * await instance.webdav.mkcol('Cartridges/v1');
+   * await instance.webdav.put('Cartridges/v1/app.zip', content);
+   * const entries = await instance.webdav.propfind('Cartridges');
    */
-  async request(path: string, init?: RequestInit): Promise<Response> {
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const url = `https://${this.config.hostname}/${cleanPath}`;
-    return this.auth.fetch(url, init);
+  get webdav(): WebDavClient {
+    if (!this._webdav) {
+      this._webdav = new WebDavClient(this.webdavHostname, this.getWebDavAuthStrategy());
+    }
+    return this._webdav;
   }
 
   /**
-   * Helper to make WebDAV requests.
-   * Uses webdavHostname if configured, otherwise falls back to hostname.
+   * OCAPI Data API client.
+   *
+   * Always uses OAuth authentication.
+   *
+   * @example
+   * const sites = await instance.ocapi.get('sites');
+   * await instance.ocapi.patch('code_versions/v1', { active: true });
    */
-  async webdavRequest(path: string, init?: RequestInit): Promise<Response> {
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const url = `https://${this.webdavHost}/on/demandware.servlet/webdav/Sites/${cleanPath}`;
-    return this.auth.fetch(url, init);
+  get ocapi(): OcapiClient {
+    if (!this._ocapi) {
+      this._ocapi = new OcapiClient(this.config.hostname, this.getOAuthStrategy());
+    }
+    return this._ocapi;
   }
 
   /**
-   * Helper to make OCAPI Data API requests.
-   * @param path - The API path (e.g., 'sites', 'code_versions')
-   * @param init - Optional fetch init options
-   * @param apiVersion - OCAPI version (defaults to v24_5)
+   * Gets the auth strategy for WebDAV operations.
+   * Prefers Basic auth, falls back to OAuth.
    */
-  async ocapiDataRequest(
-    path: string,
-    init?: RequestInit,
-    apiVersion: string = DEFAULT_OCAPI_VERSION,
-  ): Promise<Response> {
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const url = `https://${this.config.hostname}/s/-/dw/data/${apiVersion}/${cleanPath}`;
-    return this.auth.fetch(url, init);
+  private getWebDavAuthStrategy(): AuthStrategy {
+    if (this.auth.basic) {
+      return new BasicAuthStrategy(this.auth.basic.username, this.auth.basic.password);
+    }
+
+    return this.getOAuthStrategy();
   }
 
   /**
-   * Helper to make OCAPI Shop API requests.
-   * @param siteId - The site ID
-   * @param path - The API path
-   * @param init - Optional fetch init options
-   * @param apiVersion - OCAPI version (defaults to v24_5)
+   * Gets the OAuth auth strategy.
+   * @throws Error if OAuth credentials not configured
    */
-  async ocapiShopRequest(
-    siteId: string,
-    path: string,
-    init?: RequestInit,
-    apiVersion: string = DEFAULT_OCAPI_VERSION,
-  ): Promise<Response> {
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const url = `https://${this.config.hostname}/s/${siteId}/dw/shop/${apiVersion}/${cleanPath}`;
-    return this.auth.fetch(url, init);
+  private getOAuthStrategy(): AuthStrategy {
+    if (!this.auth.oauth) {
+      throw new Error('OAuth credentials required. Provide clientId and clientSecret.');
+    }
+
+    if (!this.auth.oauth.clientSecret) {
+      throw new Error('OAuth client secret required for non-interactive use.');
+    }
+
+    return new OAuthStrategy({
+      clientId: this.auth.oauth.clientId,
+      clientSecret: this.auth.oauth.clientSecret,
+      scopes: this.auth.oauth.scopes,
+      accountManagerHost: this.auth.oauth.accountManagerHost,
+    });
   }
 }
+
+// Re-export types for convenience
+export type {AuthConfig, FromDwJsonOptions as B2CInstanceOptions};
