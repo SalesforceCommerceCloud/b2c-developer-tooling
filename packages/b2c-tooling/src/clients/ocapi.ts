@@ -2,11 +2,11 @@
  * OCAPI client for B2C Commerce Data API operations.
  *
  * Provides a fully typed client for OCAPI Data API operations using
- * openapi-fetch, with proper error handling and authentication.
+ * openapi-fetch with authentication middleware.
  *
  * @module clients/ocapi
  */
-import createClient, {type Client} from 'openapi-fetch';
+import createClient, {type Client, type Middleware} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ocapi.generated.js';
 
@@ -16,6 +16,11 @@ const DEFAULT_API_VERSION = 'v25_6';
  * Re-export generated types for external use.
  */
 export type {paths, components};
+
+/**
+ * The typed OCAPI client - this is the actual openapi-fetch Client.
+ */
+export type OcapiClient = Client<paths>;
 
 /**
  * Helper type to extract response data from an operation.
@@ -34,126 +39,69 @@ export interface OcapiError {
 }
 
 /**
- * OCAPI client for B2C Commerce Data API.
+ * Creates authentication middleware for openapi-fetch.
  *
- * Provides a fully typed client based on the OpenAPI specification.
- * All operations are type-safe with request/response validation.
+ * This middleware intercepts requests and adds OAuth authentication headers
+ * using the provided AuthStrategy.
+ *
+ * @param auth - The authentication strategy to use
+ * @returns Middleware that adds auth headers to requests
+ */
+export function createAuthMiddleware(auth: AuthStrategy): Middleware {
+  return {
+    async onRequest({request}) {
+      // Get the authorization header from the auth strategy
+      if (auth.getAuthorizationHeader) {
+        const authHeader = await auth.getAuthorizationHeader();
+        request.headers.set('Authorization', authHeader);
+      }
+      return request;
+    },
+  };
+}
+
+/**
+ * Creates a typed OCAPI Data API client.
+ *
+ * Returns the openapi-fetch client directly, with authentication
+ * handled via middleware. This gives full access to all openapi-fetch
+ * features with type-safe paths, parameters, and responses.
+ *
+ * @param hostname - B2C instance hostname
+ * @param auth - OAuth authentication strategy
+ * @param apiVersion - API version (defaults to v25_6)
+ * @returns Typed openapi-fetch client
  *
  * @example
- * const client = new OcapiClient('sandbox.demandware.net', authStrategy);
+ * const client = createOcapiClient('sandbox.demandware.net', authStrategy);
  *
- * // Typed GET request
- * const { data, error } = await client.GET('/sites', {});
+ * // Fully typed GET request
+ * const { data, error } = await client.GET('/sites', {
+ *   params: { query: { select: '(**)' } }
+ * });
  *
- * // Typed POST request with body
- * const { data, error } = await client.POST('/jobs/{job_id}/executions', {
- *   params: { path: { job_id: 'my-job' } },
- *   body: {},
+ * // Path parameters are type-checked
+ * const { data, error } = await client.GET('/sites/{site_id}', {
+ *   params: { path: { site_id: 'RefArch' } }
+ * });
+ *
+ * // Request bodies are typed
+ * const { data, error } = await client.PATCH('/code_versions/{code_version_id}', {
+ *   params: { path: { code_version_id: 'v1' } },
+ *   body: { active: true }
  * });
  */
-export class OcapiClient {
-  private client: Client<paths>;
+export function createOcapiClient(
+  hostname: string,
+  auth: AuthStrategy,
+  apiVersion: string = DEFAULT_API_VERSION,
+): OcapiClient {
+  const client = createClient<paths>({
+    baseUrl: `https://${hostname}/s/-/dw/data/${apiVersion}`,
+  });
 
-  /**
-   * Creates a new OCAPI client.
-   *
-   * @param hostname - B2C instance hostname
-   * @param auth - OAuth authentication strategy
-   * @param apiVersion - API version (defaults to v24_5)
-   */
-  constructor(
-    hostname: string,
-    private auth: AuthStrategy,
-    apiVersion: string = DEFAULT_API_VERSION,
-  ) {
-    const baseUrl = `https://${hostname}/s/-/dw/data/${apiVersion}`;
+  // Add authentication middleware
+  client.use(createAuthMiddleware(auth));
 
-    // Create the openapi-fetch client with custom fetch that handles auth
-    this.client = createClient<paths>({
-      baseUrl,
-      fetch: this.authenticatedFetch.bind(this),
-    });
-  }
-
-  /**
-   * Custom fetch function that adds authentication headers.
-   */
-  private async authenticatedFetch(request: Request): Promise<Response> {
-    return this.auth.fetch(request.url, {
-      method: request.method,
-      headers: request.headers,
-      body: request.body,
-      duplex: request.body ? 'half' : undefined,
-    } as RequestInit);
-  }
-
-  /**
-   * Performs a typed GET request.
-   *
-   * @example
-   * const { data, error } = await client.GET('/sites', {});
-   * const { data, error } = await client.GET('/sites/{site_id}', {
-   *   params: { path: { site_id: 'RefArch' } }
-   * });
-   */
-  get GET() {
-    return this.client.GET.bind(this.client);
-  }
-
-  /**
-   * Performs a typed POST request.
-   *
-   * @example
-   * const { data, error } = await client.POST('/site_search', {
-   *   body: { query: { text_query: { fields: ['id'], search_phrase: 'RefArch' } } }
-   * });
-   */
-  get POST() {
-    return this.client.POST.bind(this.client);
-  }
-
-  /**
-   * Performs a typed PUT request.
-   *
-   * @example
-   * const { data, error } = await client.PUT('/sites/{site_id}', {
-   *   params: { path: { site_id: 'RefArch' } },
-   *   body: { ... }
-   * });
-   */
-  get PUT() {
-    return this.client.PUT.bind(this.client);
-  }
-
-  /**
-   * Performs a typed PATCH request.
-   *
-   * @example
-   * const { data, error } = await client.PATCH('/code_versions/{code_version_id}', {
-   *   params: { path: { code_version_id: 'v1' } },
-   *   body: { active: true }
-   * });
-   */
-  get PATCH() {
-    return this.client.PATCH.bind(this.client);
-  }
-
-  /**
-   * Performs a typed DELETE request.
-   *
-   * @example
-   * const { data, error } = await client.DELETE('/code_versions/{code_version_id}', {
-   *   params: { path: { code_version_id: 'old-version' } }
-   * });
-   */
-  get DELETE() {
-    return this.client.DELETE.bind(this.client);
-  }
-
-  /**
-   * Gets the underlying openapi-fetch client for advanced use cases.
-   */
-  get raw(): Client<paths> {
-    return this.client;
-  }
+  return client;
 }

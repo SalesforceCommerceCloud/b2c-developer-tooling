@@ -38,7 +38,7 @@ import type {AuthConfig, AuthStrategy} from '../auth/types.js';
 import {BasicAuthStrategy} from '../auth/basic.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {WebDavClient} from '../clients/webdav.js';
-import {OcapiClient} from '../clients/ocapi.js';
+import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
 import {loadDwJson} from '../config/dw-json.js';
 
 /**
@@ -210,15 +210,19 @@ export class B2CInstance {
   /**
    * OCAPI Data API client.
    *
+   * Returns the openapi-fetch client directly with full type safety.
    * Always uses OAuth authentication.
    *
    * @example
-   * const sites = await instance.ocapi.get('sites');
-   * await instance.ocapi.patch('code_versions/v1', { active: true });
+   * const { data, error } = await instance.ocapi.GET('/sites', {});
+   * const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version_id}', {
+   *   params: { path: { code_version_id: 'v1' } },
+   *   body: { active: true }
+   * });
    */
   get ocapi(): OcapiClient {
     if (!this._ocapi) {
-      this._ocapi = new OcapiClient(this.config.hostname, this.getOAuthStrategy());
+      this._ocapi = createOcapiClient(this.config.hostname, this.getOAuthStrategy());
     }
     return this._ocapi;
   }

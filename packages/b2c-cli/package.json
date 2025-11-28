@@ -11,7 +11,8 @@
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
-    "@salesforce/b2c-tooling": "workspace:*"
+    "@salesforce/b2c-tooling": "workspace:*",
+    "cliui": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/compat": "^1",

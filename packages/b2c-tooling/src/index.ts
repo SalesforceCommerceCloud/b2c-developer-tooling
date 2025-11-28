@@ -32,8 +32,15 @@ export {B2CInstance} from './instance/index.js';
 export type {InstanceConfig, FromDwJsonOptions, B2CInstanceOptions} from './instance/index.js';
 
 // Clients
-export {WebDavClient, OcapiClient} from './clients/index.js';
-export type {PropfindEntry, OcapiError, OcapiResponse, OcapiPaths, OcapiComponents} from './clients/index.js';
+export {WebDavClient, createOcapiClient, createAuthMiddleware} from './clients/index.js';
+export type {
+  PropfindEntry,
+  OcapiClient,
+  OcapiError,
+  OcapiResponse,
+  OcapiPaths,
+  OcapiComponents,
+} from './clients/index.js';
 
 // Context Layer - Platform
 export {MrtClient, OdsClient} from './platform/index.js';
