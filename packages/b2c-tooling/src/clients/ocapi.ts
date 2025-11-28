@@ -62,26 +62,30 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
 }
 
 /**
- * Creates logging middleware for openapi-fetch.
- *
- * Logs HTTP requests at debug level (summary) and trace level (full details).
- *
- * @returns Middleware that logs requests and responses
+ * Converts Headers to a plain object for logging.
  */
+function headersToObject(headers: Headers): Record<string, string> {
+  const result: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    result[key] = value;
+  });
+  return result;
+}
+
 export function createLoggingMiddleware(): Middleware {
   return {
     async onRequest({request, options}) {
       const logger = getLogger();
-      const url = new URL(request.url);
-      const path = url.pathname;
+      const url = request.url;
 
       // Debug: Log request start
-      logger.debug({method: request.method, path}, `[OCAPI REQ] ${request.method} ${path}`);
+      logger.debug({method: request.method, url}, `[OCAPI REQ] ${request.method} ${url}`);
 
-      // Trace: Log request body
-      if (options.body) {
-        logger.trace({body: options.body}, `[OCAPI REQ BODY] ${request.method} ${path}`);
-      }
+      // Trace: Log request details
+      logger.trace(
+        {headers: headersToObject(request.headers), body: options.body},
+        `[OCAPI REQ BODY] ${request.method} ${url}`,
+      );
 
       // Store start time for duration calculation
       (request as Request & {_startTime?: number})._startTime = Date.now();
@@ -93,17 +97,15 @@ export function createLoggingMiddleware(): Middleware {
       const logger = getLogger();
       const startTime = (request as Request & {_startTime?: number})._startTime ?? Date.now();
       const duration = Date.now() - startTime;
-
-      const url = new URL(request.url);
-      const path = url.pathname;
+      const url = request.url;
 
       // Debug: Log response summary
       logger.debug(
-        {method: request.method, path, status: response.status, duration},
-        `[OCAPI RESP] ${request.method} ${path} ${response.status} ${duration}ms`,
+        {method: request.method, url, status: response.status, duration},
+        `[OCAPI RESP] ${request.method} ${url} ${response.status} ${duration}ms`,
       );
 
-      // Trace: Log response body
+      // Trace: Log response details
       const clonedResponse = response.clone();
       let responseBody: unknown;
       try {
@@ -112,7 +114,10 @@ export function createLoggingMiddleware(): Middleware {
         responseBody = await clonedResponse.text();
       }
 
-      logger.trace({body: responseBody}, `[OCAPI RESP BODY] ${request.method} ${path}`);
+      logger.trace(
+        {headers: headersToObject(response.headers), body: responseBody},
+        `[OCAPI RESP BODY] ${request.method} ${url}`,
+      );
 
       return response;
     },

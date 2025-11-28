@@ -19,13 +19,39 @@ const REDACT_FIELDS = [
   'token',
   'secret',
   'authorization',
+  'Authorization',
 ];
 
 const REDACT_PATHS = REDACT_FIELDS.flatMap((field) => [field, `*.${field}`]);
 
-function censor(value: unknown): string {
+function censor(value: unknown, path: string[]): string {
+  // Special handling for authorization headers
+  if (path[path.length - 1].toLowerCase() === 'authorization' && typeof value === 'string') {
+    const parts = value.split(' ');
+    if (parts.length === 2) {
+      const [scheme, credentials] = parts;
+
+      // For Basic auth, decode, redact password, and re-encode
+      if (scheme.toLowerCase() === 'basic') {
+        try {
+          const decoded = Buffer.from(credentials, 'base64').toString('utf-8');
+          const colonIndex = decoded.indexOf(':');
+          if (colonIndex !== -1) {
+            const username = decoded.slice(0, colonIndex);
+            const redacted = Buffer.from(`${username}:REDACTED`).toString('base64');
+            return `Basic ${redacted}`;
+          }
+        } catch {
+          // If decoding fails, fall through to default behavior
+        }
+      }
+
+      // For other schemes (Bearer, etc.), show scheme and partial token
+      return `${scheme} ${credentials.slice(0, 6)}...REDACTED`;
+    }
+  }
   if (typeof value === 'string' && value.length > 10) {
-    return `${value.slice(0, 4)}REDACTED`;
+    return `${value.slice(0, 4)}...REDACTED`;
   }
   return 'REDACTED';
 }

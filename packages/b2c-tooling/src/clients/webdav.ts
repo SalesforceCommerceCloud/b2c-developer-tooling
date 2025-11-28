@@ -69,12 +69,13 @@ export class WebDavClient {
     const method = init?.method ?? 'GET';
 
     // Debug: Log request start
-    logger.debug({method, path}, `[WebDAV REQ] ${method} ${path}`);
+    logger.debug({method, url}, `[WebDAV REQ] ${method} ${url}`);
 
-    // Trace: Log request body
-    if (init?.body) {
-      logger.trace({body: this.formatBody(init.body)}, `[WebDAV REQ BODY] ${method} ${path}`);
-    }
+    // Trace: Log request details
+    logger.trace(
+      {headers: this.headersToObject(init?.headers), body: this.formatBody(init?.body)},
+      `[WebDAV REQ BODY] ${method} ${url}`,
+    );
 
     const startTime = Date.now();
     const response = await this.auth.fetch(url, init);
@@ -82,18 +83,41 @@ export class WebDavClient {
 
     // Debug: Log response summary
     logger.debug(
-      {method, path, status: response.status, duration},
-      `[WebDAV RESP] ${method} ${path} ${response.status} ${duration}ms`,
+      {method, url, status: response.status, duration},
+      `[WebDAV RESP] ${method} ${url} ${response.status} ${duration}ms`,
     );
 
-    // Trace: Log response body (only for non-binary responses)
+    // Trace: Log response details
+    const responseHeaders = this.headersToObject(response.headers);
+    let responseBody: string | undefined;
     if (response.headers.get('content-type')?.includes('xml')) {
       const clonedResponse = response.clone();
-      const responseBody = await clonedResponse.text();
-      logger.trace({body: responseBody}, `[WebDAV RESP BODY] ${method} ${path}`);
+      responseBody = await clonedResponse.text();
     }
+    logger.trace({headers: responseHeaders, body: responseBody}, `[WebDAV RESP BODY] ${method} ${url}`);
 
     return response;
+  }
+
+  /**
+   * Converts Headers to a plain object for logging.
+   */
+  private headersToObject(headers?: HeadersInit | Headers): Record<string, string> | undefined {
+    if (!headers) return undefined;
+
+    const result: Record<string, string> = {};
+    if (headers instanceof Headers) {
+      headers.forEach((value, key) => {
+        result[key] = value;
+      });
+    } else if (Array.isArray(headers)) {
+      for (const [key, value] of headers) {
+        result[key] = value;
+      }
+    } else {
+      Object.assign(result, headers);
+    }
+    return result;
   }
 
   /**
