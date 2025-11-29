@@ -11,7 +11,7 @@
  *
  * ## Usage
  *
- * **Note:** These clients are typically accessed via {@link B2CInstance} rather than
+ * **Note:** These clients are typically accessed via `B2CInstance` rather than
  * instantiated directly. The `B2CInstance` class handles authentication setup
  * and provides convenient `webdav` and `ocapi` getters.
  *

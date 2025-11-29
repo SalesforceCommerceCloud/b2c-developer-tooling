@@ -27,7 +27,7 @@ export interface PropfindEntry {
  * Handles WebDAV requests with proper authentication and provides
  * typed methods for common operations.
  *
- * **Note:** This client is typically accessed via {@link B2CInstance.webdav} rather
+ * **Note:** This client is typically accessed via `B2CInstance.webdav` rather
  * than instantiated directly. The `B2CInstance` class handles authentication setup.
  *
  * @example

@@ -11,6 +11,7 @@
     "./packages/b2c-tooling/src/i18n/index.ts",
     "./packages/b2c-tooling/src/logging/index.ts"
   ],
+  "exclude": ["**/*.generated.ts"],
   "out": "./docs/api",
   "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
   "tsconfig": "./packages/b2c-tooling/tsconfig.json",

@@ -21,7 +21,7 @@ export type {paths, components};
 /**
  * The typed OCAPI client - this is the openapi-fetch Client with full type safety.
  *
- * **Note:** This client is typically accessed via {@link B2CInstance.ocapi} rather
+ * **Note:** This client is typically accessed via `B2CInstance.ocapi` rather
  * than created directly. The `B2CInstance` class handles authentication setup.
  *
  * @see {@link createOcapiClient} for direct instantiation
@@ -134,7 +134,7 @@ export function createLoggingMiddleware(): Middleware {
  * handled via middleware. This gives full access to all openapi-fetch
  * features with type-safe paths, parameters, and responses.
  *
- * **Note:** This client is typically accessed via {@link B2CInstance.ocapi} rather
+ * **Note:** This client is typically accessed via `B2CInstance.ocapi` rather
  * than created directly. The `B2CInstance` class handles authentication setup.
  *
  * @param hostname - B2C instance hostname
