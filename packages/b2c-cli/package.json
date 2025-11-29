@@ -63,6 +63,9 @@
     ],
     "topicSeparator": " ",
     "topics": {
+      "auth": {
+        "description": "Authentication and token management"
+      },
       "hello": {
         "description": "Say hello to the world and others"
       },

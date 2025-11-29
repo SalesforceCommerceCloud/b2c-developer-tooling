@@ -68,6 +68,31 @@ export class OAuthStrategy implements AuthStrategy {
   }
 
   /**
+   * Gets the full token response including expiration and scopes.
+   * Useful for commands that need to display or return token metadata.
+   */
+  async getTokenResponse(): Promise<AccessTokenResponse> {
+    const logger = getLogger();
+    const cached = ACCESS_TOKEN_CACHE.get(this.config.clientId);
+
+    if (cached) {
+      const now = new Date();
+      const requiredScopes = this.config.scopes || [];
+      const hasAllScopes = requiredScopes.every((scope) => cached.scopes.includes(scope));
+
+      if (hasAllScopes && now.getTime() <= cached.expires.getTime()) {
+        logger.debug('Reusing cached access token');
+        return cached;
+      }
+    }
+
+    // Get new token via client credentials
+    const tokenResponse = await this.clientCredentialsGrant();
+    ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
+    return tokenResponse;
+  }
+
+  /**
    * Invalidates the cached token, forcing re-authentication on next request
    */
   invalidateToken(): void {
