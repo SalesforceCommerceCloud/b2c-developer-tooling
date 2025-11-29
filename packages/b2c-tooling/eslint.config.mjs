@@ -8,6 +8,9 @@ const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 
 export default [
   includeIgnoreFile(gitignorePath),
+  {
+    ignores: ['**/*.generated.ts'],
+  },
   ...tseslint.configs.recommended,
   prettierPlugin,
   {

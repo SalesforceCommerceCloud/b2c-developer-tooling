@@ -12,12 +12,7 @@ export async function uploadCartridges(instance: B2CInstance, _rootDir: string):
   console.log(`Uploading to ${instance.config.hostname} (Version: ${instance.config.codeVersion})...`);
 
   // Create the version directory
-  const res = await instance.webdavRequest(`Cartridges/${instance.config.codeVersion}`, {method: 'MKCOL'});
-
-  // 405 means directory already exists, which is fine
-  if (!res.ok && res.status !== 405) {
-    throw new Error(`Failed to create directory: ${res.status} ${res.statusText}`);
-  }
+  await instance.webdav.mkcol(`Cartridges/${instance.config.codeVersion}`);
 
   // TODO: Implement actual file upload logic
   // - Zip the cartridges from rootDir

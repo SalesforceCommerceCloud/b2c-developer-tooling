@@ -1,10 +1,14 @@
 import type {AuthStrategy} from './types.js';
+import {getLogger} from '../logging/logger.js';
 
 export class BasicAuthStrategy implements AuthStrategy {
   private encoded: string;
 
   constructor(user: string, pass: string) {
     this.encoded = Buffer.from(`${user}:${pass}`).toString('base64');
+
+    const logger = getLogger();
+    logger.debug({username: user}, `[Auth] Using Basic authentication for user: ${user}`);
   }
 
   async fetch(url: string, init: RequestInit = {}): Promise<Response> {

@@ -1,72 +1,82 @@
+import {ux} from '@oclif/core';
+import cliui from 'cliui';
 import {InstanceCommand} from '@salesforce/b2c-tooling/cli';
+import type {OcapiComponents} from '@salesforce/b2c-tooling';
 import {t} from '../../i18n/index.js';
 
-interface SitesResponse {
-  _v: string;
-  count: number;
-  data: Array<{
-    id: string;
-    display_name?: {default?: string};
-    status?: string;
-  }>;
-  total: number;
-}
+type Sites = OcapiComponents['schemas']['sites'];
+type Site = OcapiComponents['schemas']['site'];
 
 export default class SitesList extends InstanceCommand<typeof SitesList> {
   static description = t('commands.sites.list.description', 'List sites on a B2C Commerce instance');
 
+  static enableJsonFlag = true;
+
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --server my-sandbox.demandware.net',
+    '<%= config.bin %> <%= command.id %> --json',
   ];
 
-  async run(): Promise<void> {
-    this.requireServer();
+  async run(): Promise<Sites> {
     this.requireOAuthCredentials();
 
-    const instance = this.createApiInstance();
     const hostname = this.resolvedConfig.hostname!;
 
     this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', {hostname}));
 
-    try {
-      const response = await instance.ocapiDataRequest('sites?select=(**)');
+    // eslint-disable-next-line new-cap
+    const {data, error} = await this.instance.ocapi.GET('/sites', {
+      params: {query: {select: '(**)'}},
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        this.error(
-          t('commands.sites.list.fetchFailed', 'Failed to fetch sites: {{status}} {{statusText}}\n{{error}}', {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorText,
-          }),
-        );
-      }
-
-      const data = (await response.json()) as SitesResponse;
-
-      if (data.count === 0) {
-        this.log(t('commands.sites.list.noSites', 'No sites found.'));
-        return;
-      }
-
-      this.log('');
-      this.log(t('commands.sites.list.foundSites', 'Found {{count}} site(s):', {count: data.count}));
-      this.log('');
-
-      for (const site of data.data) {
-        const displayName = site.display_name?.default || site.id;
-        const status = site.status || 'unknown';
-        this.log(`  ${site.id}`);
-        this.log(`    ${t('commands.sites.list.displayName', 'Display Name: {{name}}', {name: displayName})}`);
-        this.log(`    ${t('commands.sites.list.status', 'Status: {{status}}', {status})}`);
-        this.log('');
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(t('commands.sites.list.error', 'Failed to fetch sites: {{message}}', {message: error.message}));
-      }
-      throw error;
+    if (error) {
+      this.error(t('commands.sites.list.error', 'Failed to fetch sites: {{message}}', {message: String(error)}));
     }
+
+    const sites = data as Sites;
+
+    // In JSON mode, just return the data - oclif handles output to stdout
+    if (this.jsonEnabled()) {
+      return sites;
+    }
+
+    // Human-readable table output to stdout
+    if (!sites || sites.count === 0) {
+      ux.stdout(t('commands.sites.list.noSites', 'No sites found.'));
+      return sites;
+    }
+
+    this.printSitesTable(sites.data ?? []);
+
+    return sites;
+  }
+
+  private printSitesTable(sites: Site[]): void {
+    const ui = cliui({width: process.stdout.columns || 80});
+
+    // Header
+    ui.div(
+      {text: 'ID', width: 30, padding: [0, 2, 0, 0]},
+      {text: 'Display Name', width: 30, padding: [0, 2, 0, 0]},
+      {text: 'Status', padding: [0, 0, 0, 0]},
+    );
+
+    // Separator
+    ui.div({text: '─'.repeat(70), padding: [0, 0, 0, 0]});
+
+    // Rows
+    for (const site of sites) {
+      const displayName = site.display_name?.default || site.id || '';
+      const status = site.storefront_status || 'unknown';
+
+      ui.div(
+        {text: site.id || '', width: 30, padding: [0, 2, 0, 0]},
+        {text: displayName, width: 30, padding: [0, 2, 0, 0]},
+        {text: status, padding: [0, 0, 0, 0]},
+      );
+    }
+
+    ux.stdout(ui.toString());
   }
 }

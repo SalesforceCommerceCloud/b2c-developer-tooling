@@ -10,13 +10,37 @@ export type {Logger as LegacyLogger} from './logger.js';
 export {t, setLanguage, getLanguage, getI18nInstance, registerTranslations, B2C_NAMESPACE} from './i18n/index.js';
 export type {TOptions} from './i18n/index.js';
 
+// Config
+export {loadDwJson, findDwJson} from './config/index.js';
+export type {DwJsonConfig, DwJsonMultiConfig, LoadDwJsonOptions} from './config/index.js';
+
 // Auth Layer - Strategies
 export {BasicAuthStrategy, OAuthStrategy, ApiKeyStrategy, decodeJWT} from './auth/index.js';
-export type {AuthStrategy, AccessTokenResponse, DecodedJWT, OAuthConfig} from './auth/index.js';
+export type {
+  AuthStrategy,
+  AccessTokenResponse,
+  DecodedJWT,
+  OAuthConfig,
+  AuthConfig,
+  BasicAuthConfig,
+  OAuthAuthConfig,
+  ApiKeyAuthConfig,
+} from './auth/index.js';
 
 // Context Layer - Instance
 export {B2CInstance} from './instance/index.js';
-export type {InstanceConfig} from './instance/index.js';
+export type {InstanceConfig, FromDwJsonOptions, B2CInstanceOptions} from './instance/index.js';
+
+// Clients
+export {WebDavClient, createOcapiClient, createAuthMiddleware} from './clients/index.js';
+export type {
+  PropfindEntry,
+  OcapiClient,
+  OcapiError,
+  OcapiResponse,
+  OcapiPaths,
+  OcapiComponents,
+} from './clients/index.js';
 
 // Context Layer - Platform
 export {MrtClient, OdsClient} from './platform/index.js';

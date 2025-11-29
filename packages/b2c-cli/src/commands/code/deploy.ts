@@ -20,11 +20,9 @@ export default class Deploy extends InstanceCommand<typeof Deploy> {
   ];
 
   async run(): Promise<void> {
-    this.requireServer();
     this.requireCodeVersion();
     this.requireWebDavCredentials();
 
-    const instance = this.createWebDavInstance();
     const path = this.args.cartridgePath;
     const hostname = this.resolvedConfig.hostname!;
     const version = this.resolvedConfig.codeVersion!;
@@ -34,7 +32,7 @@ export default class Deploy extends InstanceCommand<typeof Deploy> {
     this.log(t('commands.code.deploy.codeVersion', 'Code Version: {{version}}', {version}));
 
     try {
-      await uploadCartridges(instance, path);
+      await uploadCartridges(this.instance, path);
       this.log(t('commands.code.deploy.complete', 'Deployment complete'));
     } catch (error) {
       if (error instanceof Error) {

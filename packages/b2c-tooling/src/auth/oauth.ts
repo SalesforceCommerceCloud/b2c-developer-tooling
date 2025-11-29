@@ -1,5 +1,5 @@
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
-import {getLogger} from '../logger.js';
+import {getLogger} from '../logging/logger.js';
 
 const DEFAULT_ACCOUNT_MANAGER_HOST = 'account.demandware.com';
 
@@ -109,7 +109,8 @@ export class OAuthStrategy implements AuthStrategy {
    */
   private async clientCredentialsGrant(): Promise<AccessTokenResponse> {
     const logger = getLogger();
-    logger.debug('Getting access token from client credentials');
+    const url = `https://${this.accountManagerHost}/dwsso/oauth2/access_token`;
+    const method = 'POST';
 
     const params = new URLSearchParams({
       grant_type: 'client_credentials',
@@ -120,18 +121,44 @@ export class OAuthStrategy implements AuthStrategy {
     }
 
     const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64');
+    const requestHeaders = {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
 
-    const response = await fetch(`https://${this.accountManagerHost}/dwsso/oauth2/access_token`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+    logger.debug(
+      {clientId: this.config.clientId},
+      `[Auth] Using OAuth client_credentials grant for client: ${this.config.clientId}`,
+    );
+    // Debug: Log request start
+    logger.debug({method, url}, `[Auth REQ] ${method} ${url}`);
+
+    // Trace: Log request details
+    logger.trace({headers: requestHeaders, body: params.toString()}, `[Auth REQ BODY] ${method} ${url}`);
+
+    const startTime = Date.now();
+    const response = await fetch(url, {
+      method,
+      headers: requestHeaders,
       body: params.toString(),
+    });
+    const duration = Date.now() - startTime;
+
+    // Debug: Log response summary
+    logger.debug(
+      {method, url, status: response.status, duration},
+      `[Auth RESP] ${method} ${url} ${response.status} ${duration}ms`,
+    );
+
+    // Get response headers
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
     });
 
     if (!response.ok) {
       const errorText = await response.text();
+      logger.trace({headers: responseHeaders, body: errorText}, `[Auth RESP BODY] ${method} ${url}`);
       throw new Error(`Failed to get access token: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
@@ -141,8 +168,11 @@ export class OAuthStrategy implements AuthStrategy {
       scope?: string;
     };
 
+    // Trace: Log response details
+    logger.trace({headers: responseHeaders, body: data}, `[Auth RESP BODY] ${method} ${url}`);
+
     const jwt = decodeJWT(data.access_token);
-    logger.debug(`JWT payload: ${JSON.stringify(jwt.payload, null, 2)}`);
+    logger.trace({jwt: jwt.payload}, '[Auth] JWT payload');
 
     const now = new Date();
     const expiration = new Date(now.getTime() + data.expires_in * 1000);
