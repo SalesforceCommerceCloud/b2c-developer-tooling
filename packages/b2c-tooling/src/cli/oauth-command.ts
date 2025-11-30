@@ -34,6 +34,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       multiple: true,
       helpGroup: 'AUTH',
     }),
+    'short-code': Flags.string({
+      description: 'SCAPI short code',
+      env: 'SFCC_SHORTCODE',
+      helpGroup: 'AUTH',
+    }),
   };
 
   protected override loadConfiguration(): ResolvedConfig {
@@ -45,6 +50,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     const flagConfig: Partial<ResolvedConfig> = {
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
+      shortCode: this.flags['short-code'],
     };
 
     const config = loadConfig(flagConfig, options);

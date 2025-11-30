@@ -32,8 +32,12 @@ export interface DwJsonConfig {
   'client-secret'?: string;
   /** OAuth scopes */
   'oauth-scopes'?: string[];
-  /** SCAPI short code */
+  /** SCAPI short code (kebab-case) */
   'short-code'?: string;
+  /** SCAPI short code (camelCase) */
+  shortCode?: string;
+  /** SCAPI short code (alternate kebab-case) */
+  'scapi-shortcode'?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
   'webdav-hostname'?: string;
 }

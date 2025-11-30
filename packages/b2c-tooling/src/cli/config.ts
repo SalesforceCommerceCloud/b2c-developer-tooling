@@ -28,8 +28,10 @@ interface DwJsonConfig {
   'client-id'?: string;
   'client-secret'?: string;
   'oauth-scopes'?: string[];
+  /** SCAPI short code (multiple key formats supported) */
   shortCode?: string;
   'short-code'?: string;
+  'scapi-shortcode'?: string;
   secureHostname?: string;
   'secure-server'?: string;
 }
@@ -77,7 +79,7 @@ function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
     clientId: json['client-id'],
     clientSecret: json['client-secret'],
     scopes: json['oauth-scopes'],
-    shortCode: json.shortCode || json['short-code'],
+    shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
     instanceName: json.name,
   };
 }

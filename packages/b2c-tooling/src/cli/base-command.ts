@@ -24,19 +24,19 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       description: 'Set logging verbosity level',
       env: 'SFCC_LOG_LEVEL',
       options: LOG_LEVELS,
-      helpGroup: 'LOGGING',
+      helpGroup: 'GLOBAL',
     })(),
     debug: Flags.boolean({
       char: 'D',
       description: 'Enable debug logging (shorthand for --log-level debug)',
       env: 'SFCC_DEBUG',
       default: false,
-      helpGroup: 'LOGGING',
+      helpGroup: 'GLOBAL',
     }),
     json: Flags.boolean({
       description: 'Output logs as JSON lines',
       default: false,
-      helpGroup: 'LOGGING',
+      helpGroup: 'GLOBAL',
     }),
     lang: Flags.string({
       char: 'L',
@@ -44,15 +44,15 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
     }),
     config: Flags.string({
-      description: 'Path to config file (defaults to dw.json)',
+      description: 'Path to config file (in dw.json format; defaults to ./dw.json)',
       env: 'SFCC_CONFIG',
-      helpGroup: 'CONFIG',
+      helpGroup: 'GLOBAL',
     }),
     instance: Flags.string({
       char: 'i',
-      description: 'Instance/config name from dw.json',
+      description: 'Instance name from configuration file (i.e. dw.json, etc)',
       env: 'SFCC_INSTANCE',
-      helpGroup: 'CONFIG',
+      helpGroup: 'GLOBAL',
     }),
   };
 
