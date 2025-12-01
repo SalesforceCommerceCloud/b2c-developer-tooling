@@ -1,8 +1,9 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
-import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions} from './config.js';
+import {loadConfig, ALL_AUTH_METHODS} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions, AuthMethod} from './config.js';
 import {OAuthStrategy} from '../auth/oauth.js';
+import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {t} from '../i18n/index.js';
 
 /**
@@ -39,6 +40,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       env: 'SFCC_SHORTCODE',
       helpGroup: 'AUTH',
     }),
+    'auth-method': Flags.string({
+      description: 'Allowed auth methods in priority order (can be specified multiple times)',
+      env: 'SFCC_AUTH_METHODS',
+      multiple: true,
+      options: ALL_AUTH_METHODS,
+      helpGroup: 'AUTH',
+    }),
   };
 
   protected override loadConfiguration(): ResolvedConfig {
@@ -51,6 +59,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
       shortCode: this.flags['short-code'],
+      authMethods: this.flags['auth-method'] as AuthMethod[] | undefined,
     };
 
     const config = loadConfig(flagConfig, options);
@@ -64,45 +73,81 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
-   * Gets an OAuth auth strategy.
+   * Gets an OAuth auth strategy based on allowed auth methods and available credentials.
+   *
+   * Iterates through allowed methods (in priority order) and returns the first
+   * strategy for which the required credentials are available.
+   *
+   * @throws Error if no allowed method has the required credentials configured
    */
-  protected getOAuthStrategy(): OAuthStrategy {
+  protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy {
     const config = this.resolvedConfig;
+    // Default to client-credentials and implicit if no methods specified
+    const allowedMethods = config.authMethods || (['client-credentials', 'implicit'] as AuthMethod[]);
 
-    if (config.clientId && config.clientSecret) {
-      return new OAuthStrategy({
-        clientId: config.clientId,
-        clientSecret: config.clientSecret,
-        scopes: config.scopes,
-      });
+    for (const method of allowedMethods) {
+      switch (method) {
+        case 'client-credentials':
+          if (config.clientId && config.clientSecret) {
+            return new OAuthStrategy({
+              clientId: config.clientId,
+              clientSecret: config.clientSecret,
+              scopes: config.scopes,
+            });
+          }
+          break;
+
+        case 'implicit':
+          if (config.clientId) {
+            return new ImplicitOAuthStrategy({
+              clientId: config.clientId,
+              scopes: config.scopes,
+            });
+          }
+          break;
+
+        // 'basic' and 'api-key' are not applicable for OAuth strategies
+        // They would be handled by different command bases (e.g., InstanceCommand, MRTCommand)
+      }
     }
 
+    // Build helpful error message based on what methods were allowed
+    const methodsStr = allowedMethods.join(', ');
     throw new Error(
       t(
-        'error.oauthCredentialsRequired',
-        'OAuth credentials required. Provide --client-id/--client-secret or set SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.',
+        'error.noValidAuthMethod',
+        `No valid auth method available. Allowed methods: [${methodsStr}]. ` +
+          `Ensure required credentials are configured for at least one method.`,
       ),
     );
   }
 
   /**
    * Check if OAuth credentials are available.
+   * Returns true if clientId is configured (with or without clientSecret).
    */
   protected hasOAuthCredentials(): boolean {
+    const config = this.resolvedConfig;
+    return Boolean(config.clientId);
+  }
+
+  /**
+   * Check if full OAuth credentials (client credentials flow) are available.
+   * Returns true only if both clientId and clientSecret are configured.
+   */
+  protected hasFullOAuthCredentials(): boolean {
     const config = this.resolvedConfig;
     return Boolean(config.clientId && config.clientSecret);
   }
 
   /**
    * Validates that OAuth credentials are configured, errors if not.
+   * Only clientId is required (implicit flow can be used without clientSecret).
    */
   protected requireOAuthCredentials(): void {
     if (!this.hasOAuthCredentials()) {
       this.error(
-        t(
-          'error.oauthCredentialsRequired',
-          'OAuth credentials required. Provide --client-id/--client-secret or set SFCC_CLIENT_ID/SFCC_CLIENT_SECRET.',
-        ),
+        t('error.oauthClientIdRequired', 'OAuth client ID required. Provide --client-id or set SFCC_CLIENT_ID.'),
       );
     }
   }

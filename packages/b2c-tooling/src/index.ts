@@ -14,17 +14,31 @@ export type {TOptions} from './i18n/index.js';
 export {loadDwJson, findDwJson} from './config/index.js';
 export type {DwJsonConfig, DwJsonMultiConfig, LoadDwJsonOptions} from './config/index.js';
 
-// Auth Layer - Strategies
-export {BasicAuthStrategy, OAuthStrategy, ApiKeyStrategy, decodeJWT} from './auth/index.js';
+// Auth Layer - Strategies and Resolution
+export {
+  BasicAuthStrategy,
+  OAuthStrategy,
+  ImplicitOAuthStrategy,
+  ApiKeyStrategy,
+  decodeJWT,
+  resolveAuthStrategy,
+  checkAvailableAuthMethods,
+  ALL_AUTH_METHODS,
+} from './auth/index.js';
 export type {
   AuthStrategy,
   AccessTokenResponse,
   DecodedJWT,
   OAuthConfig,
+  ImplicitOAuthConfig,
   AuthConfig,
   BasicAuthConfig,
   OAuthAuthConfig,
   ApiKeyAuthConfig,
+  AuthMethod,
+  AuthCredentials,
+  ResolveAuthStrategyOptions,
+  AvailableAuthMethods,
 } from './auth/index.js';
 
 // Context Layer - Instance

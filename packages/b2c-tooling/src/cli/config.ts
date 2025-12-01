@@ -1,5 +1,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import type {AuthMethod} from '../auth/types.js';
+import {ALL_AUTH_METHODS} from '../auth/types.js';
+
+// Re-export for convenience
+export type {AuthMethod};
+export {ALL_AUTH_METHODS};
 
 export interface ResolvedConfig {
   hostname?: string;
@@ -13,6 +19,8 @@ export interface ResolvedConfig {
   shortCode?: string;
   mrtApiKey?: string;
   instanceName?: string;
+  /** Allowed authentication methods (in priority order). If not set, all methods are allowed. */
+  authMethods?: AuthMethod[];
 }
 
 /**
@@ -34,6 +42,8 @@ interface DwJsonConfig {
   'scapi-shortcode'?: string;
   secureHostname?: string;
   'secure-server'?: string;
+  /** Allowed authentication methods (in priority order) */
+  'auth-methods'?: AuthMethod[];
 }
 
 /**
@@ -81,6 +91,7 @@ function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
     scopes: json['oauth-scopes'],
     shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
     instanceName: json.name,
+    authMethods: json['auth-methods'],
   };
 }
 
@@ -149,6 +160,7 @@ function mergeConfigs(
     shortCode: flags.shortCode || dwJson.shortCode,
     mrtApiKey: flags.mrtApiKey,
     instanceName: dwJson.instanceName || options.instance,
+    authMethods: flags.authMethods || dwJson.authMethods,
   };
 }
 
