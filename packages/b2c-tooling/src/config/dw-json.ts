@@ -8,6 +8,7 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import type {AuthMethod} from '../auth/types.js';
 
 /**
  * Configuration structure matching dw.json file format.
@@ -40,6 +41,8 @@ export interface DwJsonConfig {
   'scapi-shortcode'?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
   'webdav-hostname'?: string;
+  /** Allowed authentication methods in priority order */
+  'auth-methods'?: AuthMethod[];
 }
 
 /**

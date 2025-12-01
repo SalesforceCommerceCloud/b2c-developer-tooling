@@ -34,9 +34,9 @@
  *
  * @module instance
  */
-import type {AuthConfig, AuthStrategy} from '../auth/types.js';
+import type {AuthConfig, AuthStrategy, AuthMethod, AuthCredentials} from '../auth/types.js';
 import {BasicAuthStrategy} from '../auth/basic.js';
-import {OAuthStrategy} from '../auth/oauth.js';
+import {resolveAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
 import {loadDwJson} from '../config/dw-json.js';
@@ -79,6 +79,8 @@ export interface FromDwJsonOptions {
   clientSecret?: string;
   /** OAuth scopes */
   scopes?: string[];
+  /** Allowed auth methods in priority order */
+  authMethods?: AuthMethod[];
 }
 
 /**
@@ -140,6 +142,7 @@ export class B2CInstance {
     const clientId = options.clientId ?? dwConfig?.['client-id'];
     const clientSecret = options.clientSecret ?? dwConfig?.['client-secret'];
     const scopes = options.scopes ?? dwConfig?.['oauth-scopes'];
+    const authMethods = options.authMethods ?? (dwConfig?.['auth-methods'] as AuthMethod[] | undefined);
 
     if (!hostname) {
       throw new Error(
@@ -153,7 +156,9 @@ export class B2CInstance {
       webdavHostname,
     };
 
-    const auth: AuthConfig = {};
+    const auth: AuthConfig = {
+      authMethods,
+    };
 
     if (username && password) {
       auth.basic = {username, password};
@@ -229,35 +234,50 @@ export class B2CInstance {
 
   /**
    * Gets the auth strategy for WebDAV operations.
-   * Prefers Basic auth, falls back to OAuth.
+   * Uses authMethods to determine priority, defaulting to basic then OAuth methods.
    */
   private getWebDavAuthStrategy(): AuthStrategy {
-    if (this.auth.basic) {
+    // For WebDAV, default priority is basic first, then OAuth methods
+    const webdavMethods = this.auth.authMethods || (['basic', 'client-credentials', 'implicit'] as AuthMethod[]);
+
+    // If basic auth is allowed and configured, use it directly
+    if (webdavMethods.includes('basic') && this.auth.basic) {
       return new BasicAuthStrategy(this.auth.basic.username, this.auth.basic.password);
     }
 
+    // Otherwise try OAuth methods
     return this.getOAuthStrategy();
   }
 
   /**
-   * Gets the OAuth auth strategy.
-   * @throws Error if OAuth credentials not configured
+   * Gets the OAuth auth strategy based on allowed methods and available credentials.
+   * Uses resolveAuthStrategy to automatically select the best OAuth method.
+   *
+   * @throws Error if no valid OAuth method is available
    */
   private getOAuthStrategy(): AuthStrategy {
     if (!this.auth.oauth) {
-      throw new Error('OAuth credentials required. Provide clientId and clientSecret.');
+      throw new Error('OAuth credentials required. Provide at least clientId.');
     }
 
-    if (!this.auth.oauth.clientSecret) {
-      throw new Error('OAuth client secret required for non-interactive use.');
-    }
-
-    return new OAuthStrategy({
+    // Build credentials for resolution
+    const credentials: AuthCredentials = {
       clientId: this.auth.oauth.clientId,
       clientSecret: this.auth.oauth.clientSecret,
       scopes: this.auth.oauth.scopes,
       accountManagerHost: this.auth.oauth.accountManagerHost,
-    });
+    };
+
+    // Filter to only OAuth methods (client-credentials, implicit)
+    const oauthMethods = (this.auth.authMethods || (['client-credentials', 'implicit'] as AuthMethod[])).filter(
+      (m): m is 'client-credentials' | 'implicit' => m === 'client-credentials' || m === 'implicit',
+    );
+
+    if (oauthMethods.length === 0) {
+      throw new Error('No OAuth methods allowed. Check authMethods configuration.');
+    }
+
+    return resolveAuthStrategy(credentials, {allowedMethods: oauthMethods});
   }
 }
 

@@ -1,7 +1,7 @@
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions, AuthMethod} from './config.js';
 import {B2CInstance} from '../instance/index.js';
 import type {AuthConfig} from '../auth/types.js';
 import {t} from '../i18n/index.js';
@@ -83,9 +83,17 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       password: this.flags.password,
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
+      authMethods: this.flags['auth-method'] as AuthMethod[] | undefined,
     };
 
-    return loadConfig(flagConfig, options);
+    const config = loadConfig(flagConfig, options);
+
+    // Merge scopes from flags with config file scopes (flags take precedence if provided)
+    if (this.flags.scope && this.flags.scope.length > 0) {
+      config.scopes = this.flags.scope;
+    }
+
+    return config;
   }
 
   /**
@@ -107,7 +115,9 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
 
       const config = this.resolvedConfig;
 
-      const authConfig: AuthConfig = {};
+      const authConfig: AuthConfig = {
+        authMethods: config.authMethods,
+      };
 
       if (config.username && config.password) {
         authConfig.basic = {
@@ -116,7 +126,8 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
         };
       }
 
-      if (config.clientId && config.clientSecret) {
+      // Only require clientId for OAuth - clientSecret is optional for implicit flow
+      if (config.clientId) {
         authConfig.oauth = {
           clientId: config.clientId,
           clientSecret: config.clientSecret,
@@ -137,11 +148,12 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   }
 
   /**
-   * Check if WebDAV credentials are available (Basic or OAuth).
+   * Check if WebDAV credentials are available (Basic or OAuth including implicit).
    */
   protected hasWebDavCredentials(): boolean {
     const config = this.resolvedConfig;
-    return Boolean((config.username && config.password) || (config.clientId && config.clientSecret));
+    // Basic auth, or OAuth (client-credentials needs secret, implicit only needs clientId)
+    return Boolean((config.username && config.password) || config.clientId);
   }
 
   /**

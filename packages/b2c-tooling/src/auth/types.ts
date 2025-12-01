@@ -57,6 +57,12 @@ export interface AuthConfig {
 
   /** API key for MRT/external services */
   apiKey?: ApiKeyAuthConfig;
+
+  /**
+   * Allowed authentication methods in priority order.
+   * If not set, defaults to all methods: ['client-credentials', 'implicit', 'basic', 'api-key']
+   */
+  authMethods?: AuthMethod[];
 }
 
 /**
