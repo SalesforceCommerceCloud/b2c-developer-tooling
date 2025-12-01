@@ -16,6 +16,7 @@
 - TypeDoc and vitepress will generate documentation from these comments in the `./docs/api` folder
 - module level jsdocs will be used for organization; for example packages/b2c-tooling/src/auth/index.ts barrel file has the module level docs for the `auth` module
 - see the typedoc.json file for configuration options including the entry points for documentation generation
+- update the docs/ markdown files (non-generated) for user guides and CLI reference when updating major CLI functionalty or adding new commands
 
 ## Logging
 

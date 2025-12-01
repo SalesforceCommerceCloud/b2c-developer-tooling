@@ -34,15 +34,21 @@ export type OcapiClient = Client<paths>;
 export type OcapiResponse<T> = T extends {content: {'application/json': infer R}} ? R : never;
 
 /**
- * Standard OCAPI error response structure.
+ * OCAPI error/fault response type from the generated schema.
+ *
+ * @example
+ * ```typescript
+ * const { data, error } = await client.DELETE('/code_versions/{code_version_id}', {
+ *   params: { path: { code_version_id: 'v1' } }
+ * });
+ * if (error) {
+ *   // Access the structured error message
+ *   console.error(error.fault?.message);
+ *   // e.g., "Code version 'v1' was not found"
+ * }
+ * ```
  */
-export interface OcapiError {
-  _v: string;
-  fault: {
-    type: string;
-    message: string;
-  };
-}
+export type OcapiError = components['schemas']['fault'];
 
 // Re-export middleware for backwards compatibility
 export {createAuthMiddleware, createLoggingMiddleware};

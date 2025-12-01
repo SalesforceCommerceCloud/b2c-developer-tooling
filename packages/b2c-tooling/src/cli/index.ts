@@ -3,6 +3,7 @@ export {BaseCommand} from './base-command.js';
 export type {Flags, Args} from './base-command.js';
 export {OAuthCommand} from './oauth-command.js';
 export {InstanceCommand} from './instance-command.js';
+export {CartridgeCommand} from './cartridge-command.js';
 export {MrtCommand} from './mrt-command.js';
 
 // Config utilities

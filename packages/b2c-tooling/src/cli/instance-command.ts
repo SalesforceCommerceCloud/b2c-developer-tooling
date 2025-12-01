@@ -43,7 +43,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       helpGroup: 'INSTANCE',
     }),
     'webdav-server': Flags.string({
-      description: 'Separate hostname for WebDAV (if different)',
+      description: 'Separate hostname for WebDAV (cert. hostname, etc)',
       env: 'SFCC_WEBDAV_SERVER',
       helpGroup: 'INSTANCE',
     }),

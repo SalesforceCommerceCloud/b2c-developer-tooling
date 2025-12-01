@@ -53,7 +53,29 @@ export {MrtClient, OdsClient} from './platform/index.js';
 export type {MrtProject, OdsConfig} from './platform/index.js';
 
 // Operations - Code
-export {uploadCartridges, activateCodeVersion} from './operations/code/index.js';
+export {
+  findCartridges,
+  listCodeVersions,
+  getActiveCodeVersion,
+  activateCodeVersion,
+  reloadCodeVersion,
+  deleteCodeVersion,
+  createCodeVersion,
+  findAndDeployCartridges,
+  uploadCartridges,
+  deleteCartridges,
+  watchCartridges,
+} from './operations/code/index.js';
+export type {
+  CartridgeMapping,
+  FindCartridgesOptions,
+  CodeVersion,
+  CodeVersionResult,
+  DeployOptions,
+  DeployResult,
+  WatchOptions,
+  WatchResult,
+} from './operations/code/index.js';
 
 // Operations - Jobs
 export {runJob, getJobStatus} from './operations/jobs/index.js';

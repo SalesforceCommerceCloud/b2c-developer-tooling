@@ -1,38 +1,80 @@
 /**
  * Code deployment operations for B2C Commerce.
  *
- * This module provides functions for uploading cartridges and managing
- * code versions on B2C Commerce instances via WebDAV.
+ * This module provides functions for managing cartridge code versions
+ * on B2C Commerce instances via WebDAV and OCAPI.
  *
- * ## Functions
+ * ## Cartridge Discovery
  *
- * - {@link uploadCartridges} - Upload cartridge code to an instance
- * - {@link activateCodeVersion} - Activate a code version on an instance
+ * - {@link findCartridges} - Find cartridges by .project files
+ *
+ * ## Code Versions
+ *
+ * - {@link listCodeVersions} - List all code versions on an instance
+ * - {@link getActiveCodeVersion} - Get the currently active code version
+ * - {@link activateCodeVersion} - Activate a code version
+ * - {@link reloadCodeVersion} - Reload (re-activate) a code version
+ * - {@link deleteCodeVersion} - Delete a code version
+ * - {@link createCodeVersion} - Create a new code version
+ *
+ * ## Deployment
+ *
+ * - {@link findAndDeployCartridges} - Find and deploy cartridges to an instance
+ * - {@link uploadCartridges} - Low-level cartridge upload
+ * - {@link deleteCartridges} - Low-level cartridge deletion
+ * - {@link watchCartridges} - Watch and sync file changes
  *
  * ## Usage
  *
  * ```typescript
- * import { uploadCartridges, activateCodeVersion } from '@salesforce/b2c-tooling/operations/code';
- * import { B2CInstance, BasicAuthStrategy } from '@salesforce/b2c-tooling';
+ * import {
+ *   findCartridges,
+ *   findAndDeployCartridges,
+ *   listCodeVersions,
+ *   activateCodeVersion,
+ *   watchCartridges,
+ * } from '@salesforce/b2c-tooling/operations/code';
+ * import { B2CInstance } from '@salesforce/b2c-tooling';
  *
- * const auth = new BasicAuthStrategy('username', 'access-key');
- * const instance = new B2CInstance(
- *   { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
- *   auth
- * );
+ * const instance = B2CInstance.fromDwJson();
  *
- * // Upload cartridges from local directory
- * await uploadCartridges(instance, './cartridges');
+ * // Deploy cartridges (requires instance.config.codeVersion to be set)
+ * await findAndDeployCartridges(instance, './cartridges', { reload: true });
  *
- * // Activate the code version
- * await activateCodeVersion(instance, 'v1');
+ * // List code versions
+ * const versions = await listCodeVersions(instance);
+ *
+ * // Watch for changes
+ * const watcher = await watchCartridges(instance, './cartridges');
  * ```
  *
  * ## Authentication
  *
- * Code deployment uses WebDAV, which supports both Basic Auth and OAuth.
- * Basic Auth is recommended for better performance.
+ * - WebDAV operations support both Basic Auth and OAuth
+ * - OCAPI operations (code versions) require OAuth
  *
  * @module operations/code
  */
-export {uploadCartridges, activateCodeVersion} from './upload.js';
+
+// Cartridge discovery
+export {findCartridges} from './cartridges.js';
+export type {CartridgeMapping, FindCartridgesOptions} from './cartridges.js';
+
+// Code version management
+export {
+  listCodeVersions,
+  getActiveCodeVersion,
+  activateCodeVersion,
+  reloadCodeVersion,
+  deleteCodeVersion,
+  createCodeVersion,
+} from './versions.js';
+export type {CodeVersion, CodeVersionResult} from './versions.js';
+
+// Deployment
+export {findAndDeployCartridges, uploadCartridges, deleteCartridges} from './deploy.js';
+export type {DeployOptions, DeployResult} from './deploy.js';
+
+// Watch
+export {watchCartridges} from './watch.js';
+export type {WatchOptions, WatchResult} from './watch.js';
