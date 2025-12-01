@@ -110,7 +110,7 @@ export type {PropfindEntry} from './webdav.js';
 
 export {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 
-export {createOcapiClient, isOcapiError, formatOcapiError} from './ocapi.js';
+export {createOcapiClient} from './ocapi.js';
 export type {
   OcapiClient,
   OcapiError,

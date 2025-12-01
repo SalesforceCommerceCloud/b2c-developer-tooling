@@ -75,18 +75,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
       }),
     );
 
-    try {
-      await deleteCodeVersion(this.instance, codeVersion);
-      this.log(t('commands.code.delete.deleted', 'Code version {{codeVersion}} deleted successfully', {codeVersion}));
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.code.delete.failed', 'Failed to delete code version: {{message}}', {
-            message: error.message,
-          }),
-        );
-      }
-      throw error;
-    }
+    await deleteCodeVersion(this.instance, codeVersion);
+    this.log(t('commands.code.delete.deleted', 'Code version {{codeVersion}} deleted successfully', {codeVersion}));
   }
 }

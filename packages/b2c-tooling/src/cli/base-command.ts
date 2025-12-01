@@ -148,4 +148,20 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     return loadConfig({}, options);
   }
+
+  /**
+   * Handle errors thrown during command execution.
+   *
+   * Logs the error using the structured logger (including cause if available),
+   * then uses oclif's error() to exit with proper code.
+   */
+  protected async catch(err: Error & {exitCode?: number}): Promise<never> {
+    // Log if logger is available (may not be if error during init)
+    if (this.logger) {
+      this.logger.error({cause: err?.cause}, err.message);
+    }
+
+    // Use oclif's error() for proper exit code and display
+    this.error(err.message, {exit: err.exitCode ?? 1});
+  }
 }

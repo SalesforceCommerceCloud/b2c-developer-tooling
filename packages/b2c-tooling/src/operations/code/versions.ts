@@ -1,5 +1,5 @@
 import type {B2CInstance} from '../../instance/index.js';
-import {formatOcapiError, type OcapiComponents} from '../../clients/index.js';
+import {type OcapiComponents} from '../../clients/index.js';
 import {getLogger} from '../../logging/logger.js';
 
 /** Code version type from OCAPI */
@@ -24,13 +24,10 @@ export type CodeVersionResult = OcapiComponents['schemas']['code_version_result'
  * ```
  */
 export async function listCodeVersions(instance: B2CInstance): Promise<CodeVersion[]> {
-  const logger = getLogger();
-
   const {data, error} = await instance.ocapi.GET('/code_versions', {});
 
   if (error) {
-    logger.error({error}, 'Failed to list code versions');
-    throw new Error(`Failed to list code versions: ${formatOcapiError(error)}`);
+    throw new Error('Failed to list code versions', {cause: error});
   }
 
   return (data as CodeVersionResult).data ?? [];
@@ -78,8 +75,7 @@ export async function activateCodeVersion(instance: B2CInstance, codeVersionId: 
   });
 
   if (error) {
-    logger.error({error, codeVersionId}, 'Failed to activate code version');
-    throw new Error(`Failed to activate code version: ${formatOcapiError(error)}`);
+    throw new Error('Failed to activate code version', {cause: error});
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
@@ -155,8 +151,7 @@ export async function deleteCodeVersion(instance: B2CInstance, codeVersionId: st
   });
 
   if (error) {
-    logger.error({error, codeVersionId}, 'Failed to delete code version');
-    throw new Error(`Failed to delete code version: ${formatOcapiError(error)}`);
+    throw new Error('Failed to delete code version', {cause: error});
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} deleted`);
@@ -184,8 +179,7 @@ export async function createCodeVersion(instance: B2CInstance, codeVersionId: st
   });
 
   if (error) {
-    logger.error({error, codeVersionId}, 'Failed to create code version');
-    throw new Error(`Failed to create code version: ${formatOcapiError(error)}`);
+    throw new Error('Failed to create code version', {cause: error});
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} created`);

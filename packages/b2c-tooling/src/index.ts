@@ -32,14 +32,7 @@ export {B2CInstance} from './instance/index.js';
 export type {InstanceConfig, FromDwJsonOptions, B2CInstanceOptions} from './instance/index.js';
 
 // Clients
-export {
-  WebDavClient,
-  createOcapiClient,
-  createAuthMiddleware,
-  createSlasClient,
-  isOcapiError,
-  formatOcapiError,
-} from './clients/index.js';
+export {WebDavClient, createOcapiClient, createAuthMiddleware, createSlasClient} from './clients/index.js';
 export type {
   PropfindEntry,
   OcapiClient,
