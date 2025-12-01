@@ -32,7 +32,14 @@ export {B2CInstance} from './instance/index.js';
 export type {InstanceConfig, FromDwJsonOptions, B2CInstanceOptions} from './instance/index.js';
 
 // Clients
-export {WebDavClient, createOcapiClient, createAuthMiddleware, createSlasClient} from './clients/index.js';
+export {
+  WebDavClient,
+  createOcapiClient,
+  createAuthMiddleware,
+  createSlasClient,
+  isOcapiError,
+  formatOcapiError,
+} from './clients/index.js';
 export type {
   PropfindEntry,
   OcapiClient,
@@ -53,7 +60,29 @@ export {MrtClient, OdsClient} from './platform/index.js';
 export type {MrtProject, OdsConfig} from './platform/index.js';
 
 // Operations - Code
-export {uploadCartridges, activateCodeVersion} from './operations/code/index.js';
+export {
+  findCartridges,
+  listCodeVersions,
+  getActiveCodeVersion,
+  activateCodeVersion,
+  reloadCodeVersion,
+  deleteCodeVersion,
+  createCodeVersion,
+  findAndDeployCartridges,
+  uploadCartridges,
+  deleteCartridges,
+  watchCartridges,
+} from './operations/code/index.js';
+export type {
+  CartridgeMapping,
+  FindCartridgesOptions,
+  CodeVersion,
+  CodeVersionResult,
+  DeployOptions,
+  DeployResult,
+  WatchOptions,
+  WatchResult,
+} from './operations/code/index.js';
 
 // Operations - Jobs
 export {runJob, getJobStatus} from './operations/jobs/index.js';

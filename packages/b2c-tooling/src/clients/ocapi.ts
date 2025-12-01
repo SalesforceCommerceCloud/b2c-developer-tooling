@@ -41,7 +41,59 @@ export interface OcapiError {
   fault: {
     type: string;
     message: string;
+    arguments?: Record<string, unknown>;
   };
+}
+
+/**
+ * Type guard to check if an error is an OCAPI error response.
+ */
+export function isOcapiError(error: unknown): error is OcapiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'fault' in error &&
+    typeof (error as OcapiError).fault === 'object' &&
+    typeof (error as OcapiError).fault?.message === 'string'
+  );
+}
+
+/**
+ * Formats an OCAPI error for display.
+ *
+ * Extracts the error message from OCAPI error responses, falling back
+ * to standard error handling for other error types.
+ *
+ * @param error - Error from OCAPI response
+ * @returns Human-readable error message
+ *
+ * @example
+ * ```typescript
+ * const { error } = await client.DELETE('/code_versions/{id}', {...});
+ * if (error) {
+ *   throw new Error(formatOcapiError(error));
+ * }
+ * ```
+ */
+export function formatOcapiError(error: unknown): string {
+  if (isOcapiError(error)) {
+    return error.fault.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  // Last resort - try JSON stringify for objects
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Unknown error';
+  }
 }
 
 // Re-export middleware for backwards compatibility
