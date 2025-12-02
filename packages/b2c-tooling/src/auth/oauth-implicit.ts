@@ -11,6 +11,9 @@ const DEFAULT_LOCAL_PORT = 8080;
 // Module-level token cache to support multiple instances with same clientId
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
 
+// Module-level pending auth promises to prevent concurrent auth flows for the same clientId
+const PENDING_AUTH: Map<string, Promise<AccessTokenResponse>> = new Map();
+
 /**
  * Configuration for the implicit OAuth flow.
  */
@@ -196,13 +199,15 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Gets an access token, using cache if valid
+   * Gets an access token, using cache if valid.
+   * Uses a mutex to prevent concurrent auth flows for the same clientId.
    */
   private async getAccessToken(): Promise<string> {
     const logger = getLogger();
-    const cached = ACCESS_TOKEN_CACHE.get(this.config.clientId);
+    const clientId = this.config.clientId;
+    const cached = ACCESS_TOKEN_CACHE.get(clientId);
 
-    logger.trace({clientId: this.config.clientId, hasCached: !!cached}, '[Auth] Getting access token');
+    logger.trace({clientId, hasCached: !!cached}, '[Auth] Getting access token');
 
     if (cached) {
       const now = new Date();
@@ -226,13 +231,13 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
           {cachedScopes: cached.scopes, requiredScopes},
           '[Auth] Access token missing scopes; invalidating and re-authenticating',
         );
-        ACCESS_TOKEN_CACHE.delete(this.config.clientId);
+        ACCESS_TOKEN_CACHE.delete(clientId);
       } else if (now.getTime() > cached.expires.getTime()) {
         logger.warn(
           {expiresAt: cached.expires.toISOString()},
           '[Auth] Access token expired; invalidating and re-authenticating',
         );
-        ACCESS_TOKEN_CACHE.delete(this.config.clientId);
+        ACCESS_TOKEN_CACHE.delete(clientId);
       } else {
         logger.debug(
           {timeUntilExpiryMs: timeUntilExpiry},
@@ -242,15 +247,31 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       }
     }
 
-    // Get new token via implicit flow
+    // Check if there's already an auth flow in progress for this clientId
+    const pendingAuth = PENDING_AUTH.get(clientId);
+    if (pendingAuth) {
+      logger.debug('[Auth] Auth flow already in progress, waiting for it to complete');
+      const tokenResponse = await pendingAuth;
+      return tokenResponse.accessToken;
+    }
+
+    // Start new auth flow and store the promise so concurrent calls can wait
     logger.debug('[Auth] No valid cached token, starting implicit flow login');
-    const tokenResponse = await this.implicitFlowLogin();
-    ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
-    logger.debug(
-      {expiresAt: tokenResponse.expires.toISOString(), scopes: tokenResponse.scopes},
-      '[Auth] New token cached',
-    );
-    return tokenResponse.accessToken;
+    const authPromise = this.implicitFlowLogin();
+    PENDING_AUTH.set(clientId, authPromise);
+
+    try {
+      const tokenResponse = await authPromise;
+      ACCESS_TOKEN_CACHE.set(clientId, tokenResponse);
+      logger.debug(
+        {expiresAt: tokenResponse.expires.toISOString(), scopes: tokenResponse.scopes},
+        '[Auth] New token cached',
+      );
+      return tokenResponse.accessToken;
+    } finally {
+      // Clean up pending auth promise
+      PENDING_AUTH.delete(clientId);
+    }
   }
 
   /**

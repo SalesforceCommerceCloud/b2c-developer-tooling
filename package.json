@@ -4,8 +4,11 @@
   "description": "Salesforce Commerce Cloud B2C Command Line Tools",
   "main": "index.js",
   "scripts": {
-    "test": "pnpm -r test",
     "start": "pnpm --filter @salesforce/b2c-cli run dev",
+    "test": "pnpm -r test",
+    "format": "pnpm -r run format",
+    "lint": "pnpm -r run lint",
+    "build": "pnpm -r run build",
     "docs:api": "typedoc",
     "docs:dev": "pnpm run docs:api && vitepress dev docs",
     "docs:build": "pnpm run docs:api && vitepress build docs",

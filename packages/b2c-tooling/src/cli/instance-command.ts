@@ -1,7 +1,7 @@
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions, AuthMethod} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions} from './config.js';
 import {B2CInstance} from '../instance/index.js';
 import type {AuthConfig} from '../auth/types.js';
 import {t} from '../i18n/index.js';
@@ -83,7 +83,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       password: this.flags.password,
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
-      authMethods: this.flags['auth-method'] as AuthMethod[] | undefined,
+      authMethods: this.parseAuthMethods(),
     };
 
     const config = loadConfig(flagConfig, options);

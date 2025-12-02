@@ -2,13 +2,14 @@
  * API clients for B2C Commerce operations.
  *
  * This module provides typed client classes for interacting with B2C Commerce
- * APIs including WebDAV, OCAPI, and SCAPI.
+ * APIs including WebDAV, OCAPI, SCAPI, and ODS.
  *
  * ## Available Clients
  *
  * - {@link WebDavClient} - File operations via WebDAV
  * - {@link OcapiClient} - Data API operations via OCAPI (openapi-fetch Client)
  * - {@link SlasClient} - SLAS Admin API for managing tenants and clients
+ * - {@link OdsClient} - On-Demand Sandbox API for managing developer sandboxes
  *
  * ## Usage
  *
@@ -128,3 +129,13 @@ export type {
   paths as SlasPaths,
   components as SlasComponents,
 } from './slas-admin.js';
+
+export {createOdsClient} from './ods.js';
+export type {
+  OdsClient,
+  OdsClientConfig,
+  OdsError,
+  OdsResponse,
+  paths as OdsPaths,
+  components as OdsComponents,
+} from './ods.js';

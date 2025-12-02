@@ -26,6 +26,8 @@ export default [
       'no-warning-comments': 'off',
       // Don't require destructuring
       'prefer-destructuring': 'off',
+      // Disable new-cap - incompatible with openapi-fetch (uses GET, POST, etc. methods)
+      'new-cap': 'off',
       // Allow underscore-prefixed unused variables
       '@typescript-eslint/no-unused-vars': [
         'error',

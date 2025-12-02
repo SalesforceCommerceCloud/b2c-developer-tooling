@@ -42,7 +42,6 @@ export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGe
 
     const slasClient = this.getSlasClient();
 
-    // eslint-disable-next-line new-cap
     const {data, error} = await slasClient.GET('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},

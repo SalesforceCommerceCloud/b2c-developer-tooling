@@ -40,7 +40,6 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
 
     const slasClient = this.getSlasClient();
 
-    // eslint-disable-next-line new-cap
     const {error} = await slasClient.DELETE('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},

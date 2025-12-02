@@ -1,0 +1,3673 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1.0",
+        "title": "B2C Commerce Developer Sandbox REST API",
+        "description": "B2C Commerce provides a REST API to manage developer sandboxes. The API allows you to create, manage, and delete developer sandboxes.",
+        "contact": {
+            "name": "Salesforce B2C Commerce Infocenter",
+            "url": "https://documentation.b2c.commercecloud.salesforce.com/DOC1/topic/com.demandware.dochelp/content/b2c_commerce/topics/sandboxes/b2c_developer_sandboxes.html?cp=0_6_4"
+        }
+    },
+    "tags": [
+        {
+            "name": "Common",
+            "x-sfdc-group-id": "Common",
+            "description": "General purpose API endpoints."
+        },
+        {
+            "name": "Realms",
+            "x-sfdc-group-id": "realms",
+            "description": "Operations on the realm level."
+        },
+        {
+            "name": "Sandboxes",
+            "x-sfdc-group-id": "sandboxes",
+            "description": "Operations on the sandbox level."
+        }
+    ],
+    "paths": {
+        "/": {
+            "get": {
+                "operationId": "getApiInfo",
+                "summary": "Retrieve API information.",
+                "description": "Return API version information.",
+                "tags": [
+                    "Common"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API version information.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiVersionResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "operationId": "getUserInfo",
+                "summary": "Retrieve user information.",
+                "description": "Return information about the user interacting with the API.",
+                "tags": [
+                    "Common"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Metadata about the authenticated API user.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserInfoResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/system": {
+            "get": {
+                "operationId": "getSystemInfo",
+                "summary": "Retrieve system information",
+                "description": "Returns information about the system, the user is interacting with.",
+                "tags": [
+                    "Common"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Metadata about the system",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemInfoResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/realms/{realm}/system": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/realmParam"
+                }
+            ],
+            "get": {
+                "operationId": "getRealmSystemInfo",
+                "summary": "Retrieve system information",
+                "description": "Returns information about the system, the user is interacting with.",
+                "tags": [
+                    "Common"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Metadata about the system",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemInfoResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/realms/{realm}": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/realmParam"
+                },
+                {
+                    "in": "query",
+                    "name": "expand",
+                    "description": "Additional information, which should be shown in the realm query. Available options are: [configuration,usage, accountdetails].",
+                    "style": "form",
+                    "explode": false,
+                    "schema": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "configuration",
+                                "usage",
+                                "accountdetails"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getRealm",
+                "summary": "Show realm information.",
+                "description": "Return metadata about a realm.",
+                "tags": [
+                    "Realms"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Realm metadata.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RealmResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The ID is not a valid realm ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "The user isn't authenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/realms/{realm}/configuration": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/realmParam"
+                }
+            ],
+            "get": {
+                "operationId": "getRealmConfiguration",
+                "summary": "Show realm configuration.",
+                "description": "Return the current configuration values of the realm.",
+                "tags": [
+                    "Realms"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Current configuration values of the realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RealmConfigurationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The ID isn't valid or the configuration isn't valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to that realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "patchRealmConfiguration",
+                "summary": "Update realm configuration.",
+                "description": "Update the customizable configuration of a realm. Note that the internal time format in weekday schedules is [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Times).",
+                "tags": [
+                    "Realms"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RealmConfigurationUpdateRequestModel"
+                            }
+                        }
+                    },
+                    "description": "Realm values to update.",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated realm configuration data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RealmConfigurationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The ID isn't a valid realm ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "The user isn't authenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to that realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/realms/{realm}/usage": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/realmParam"
+                },
+                {
+                    "$ref": "#/components/parameters/fromParam"
+                },
+                {
+                    "$ref": "#/components/parameters/toParam"
+                },
+                {
+                    "$ref": "#/components/parameters/detailedReportParam"
+                },
+                {
+                    "$ref": "#/components/parameters/granularityParam"
+                }
+            ],
+            "get": {
+                "operationId": "getRealmUsage",
+                "summary": "Show usage information for realm.",
+                "description": "Return information about the realm's usage.",
+                "tags": [
+                    "Realms"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Realm's usage information.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RealmUsageResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RealmUsageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The ID isn't valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/realms/usages": {
+            "post": {
+                "operationId": "searchRealmUsage",
+                "summary": "Show usage information for given realms.",
+                "description": "Update the customizable configuration of a realm. Note that the internal time format in weekday schedules is [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Times).",
+                "tags": [
+                    "Realms"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MultiRealmUsageRequest"
+                            }
+                        }
+                    },
+                    "description": "Return information for given all realm's usage",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Aggregates all realm usage data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MultiRealmUsageResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MultiRealmUsageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The ID isn't a valid realm ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "The user isn't authenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to that realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes": {
+            "get": {
+                "operationId": "getSandboxes",
+                "summary": "List sandboxes.",
+                "description": "Return all sandboxes of a realm.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "parameters": [
+                    {
+                        "name": "include_deleted",
+                        "in": "query",
+                        "required": false,
+                        "description": "If set, return deleted sandboxes.",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "filter_params",
+                        "in": "query",
+                        "required": false,
+                        "description": "If passed in supported format, returns sandboxes that matches the query. Supported format: realm=zzzz&state=active&resourceProfile=medium&createdBy=user1&tags=[tag1,tag2,tag3].",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of sandboxes.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to that realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "createSandbox",
+                "summary": "Create sandbox.",
+                "description": "Create a new sandbox within the realm.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SandboxProvisioningRequestModel"
+                            }
+                        }
+                    },
+                    "description": "Metadata about the new sandbox.",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "The sandbox creation has started.",
+                        "headers": {
+                            "Location": {
+                                "description": "URI of the created sandbox.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "There were server errors initiating the sandbox deployment.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                }
+            ],
+            "get": {
+                "operationId": "getSandbox",
+                "summary": "Retrieve sandbox information.",
+                "description": "Return details on a specific sandbox in a realm.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details on the sandbox (including its state).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the requested realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any realm with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "patchSandbox",
+                "summary": "Update sandbox.",
+                "description": "Update a sandbox.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SandboxUpdateRequestModel"
+                            }
+                        }
+                    },
+                    "description": "Sandbox values to update.",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated details on the sandbox (including its state).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "deleteSandbox",
+                "summary": "Delete sandbox.",
+                "description": "Delete a specific sandbox in a realm.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "202": {
+                        "description": "The request for deleting the sandbox has been accepted by the API server. This doesn't mean that the sandbox has already been deleted, since the actual deletion process does not necessarily start immediately and might take a while. You can track the deletion process using sandbox GET requests.\n",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to that realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "ID not found.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/aliases": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                }
+            ],
+            "post": {
+                "operationId": "createAlias",
+                "summary": "Create sandbox alias.",
+                "description": "Create a new sandbox alias.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SandboxAliasModel"
+                            }
+                        }
+                    },
+                    "description": "The alias for the sandbox",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "The sandbox alias already exists.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxAliasResponse"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "The alias has been created.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxAliasResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "get": {
+                "operationId": "getAliases",
+                "summary": "Read all sandbox aliases",
+                "description": "Retrieve a list of all past and present operations on a sandbox within the realm.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of Alias configurations.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxAliasListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm or sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/aliases/{sandboxAliasId}": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                },
+                {
+                    "$ref": "#/components/parameters/sandboxAliasIdParam"
+                }
+            ],
+            "get": {
+                "operationId": "getAlias",
+                "summary": "Read Alias configuration",
+                "description": "Retrieves a dedicated alias for the sandbox. Can be called without authentication to get cookie values for the alias.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The Alias configuration.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxAliasResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm or sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox or any alias with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "deleteAlias",
+                "summary": "Delete Alias configuration",
+                "description": "Deletes a dedicated alias configuration for a sandbox.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Shows, that alias currently gets deleted.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm or sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox or any alias with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/operations": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                }
+            ],
+            "post": {
+                "operationId": "createSandboxOperation",
+                "summary": "Run sandbox operation.",
+                "description": "Request an operation on a sandbox within the realm.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SandboxOperationRequestModel"
+                            }
+                        }
+                    },
+                    "description": "Operation to be carried out on a sandbox.",
+                    "required": true
+                },
+                "responses": {
+                    "202": {
+                        "description": "The operation has been accepted.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxOperationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The operation isn't allowed in the current state of the sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "There were server errors during the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "get": {
+                "operationId": "getSandboxOperations",
+                "summary": "List sandbox operations.",
+                "description": "Retrieve a list of all past and present operations on a sandbox within the realm.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/fromParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/toParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/operationStateParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/operationStatusParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/operationTypeParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/sortOrderParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/sortByOperationParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/pageParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/perPageParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of operations.",
+                        "headers": {
+                            "Link": {
+                                "description": "Paging metadata, as described in <a href=\"https://tools.ietf.org/html/rfc5988\">RFC-5988</a>",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "X-Pagination-Count": {
+                                "description": "Total count of elements.",
+                                "schema": {
+                                    "type": "integer",
+                                    "format": "int32"
+                                }
+                            },
+                            "X-Pagination-Page": {
+                                "description": "Current page index.",
+                                "schema": {
+                                    "type": "integer",
+                                    "format": "int32"
+                                }
+                            },
+                            "X-Pagination-Limit": {
+                                "description": "Maximum count of pages.",
+                                "schema": {
+                                    "type": "integer",
+                                    "format": "int32"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxOperationListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "There were server errors during the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/operations/{operationId}": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                },
+                {
+                    "$ref": "#/components/parameters/operationIdParam"
+                }
+            ],
+            "get": {
+                "operationId": "getSandboxOperation",
+                "summary": "Retrieve sandbox operation.",
+                "description": "Return details of a sandbox operation that was recently submitted, is currently in progress, or has already finished.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details of the sandbox operation's state and the state of its target.  If the operation has already finished, indicates whether the operation was successful.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxOperationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the requested operation or sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox or realm matching the given parameters.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/settings": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                }
+            ],
+            "get": {
+                "operationId": "getSandboxSettings",
+                "summary": "Show sandbox settings.",
+                "description": "Return all settings of the sandbox.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details of the sandbox settings.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxSettingsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The sandbox ID isn't valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the requested sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox matching the ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/usage": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                },
+                {
+                    "$ref": "#/components/parameters/fromParam"
+                },
+                {
+                    "$ref": "#/components/parameters/toParam"
+                }
+            ],
+            "get": {
+                "operationId": "getSandboxUsage",
+                "summary": "Show sandbox usage.",
+                "description": "Return information on sandbox usage.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sandbox usage information.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxUsageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The sandbox ID isn't valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the requested sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox matching the ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/storage": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                }
+            ],
+            "get": {
+                "operationId": "getSandboxStorage",
+                "summary": "Show sandbox storage",
+                "description": "Return information on sandbox storage capacity for a currently running sandbox.",
+                "tags": [
+                    "Sandboxes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sandbox storage information.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxStorageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The sandbox ID isn't valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the requested sandbox.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox matching the ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "/api/v1"
+        }
+    ],
+    "components": {
+        "parameters": {
+            "realmParam": {
+                "name": "realm",
+                "in": "path",
+                "required": true,
+                "description": "The four-letter ID of the realm.",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "sandboxIdParam": {
+                "name": "sandboxId",
+                "in": "path",
+                "required": true,
+                "description": "The sandbox UUID.",
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            },
+            "sandboxAliasIdParam": {
+                "name": "sandboxAliasId",
+                "in": "path",
+                "required": true,
+                "description": "The sandbox alias UUID.",
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            },
+            "operationIdParam": {
+                "name": "operationId",
+                "in": "path",
+                "required": true,
+                "description": "The operation UUID.",
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            },
+            "pageParam": {
+                "name": "page",
+                "in": "query",
+                "required": false,
+                "description": "The page to access in a paged response. Page numbers start with '0', which is the default value.",
+                "schema": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                }
+            },
+            "perPageParam": {
+                "name": "per_page",
+                "in": "query",
+                "required": false,
+                "description": "Count of elements on a page. The default value is '20'.",
+                "schema": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 1
+                }
+            },
+            "fromParam": {
+                "name": "from",
+                "in": "query",
+                "required": false,
+                "description": "Earliest date for which data is in the response. Thirty days in the past by default. Format is <a href=\"https://en.wikipedia.org/wiki/ISO_8601\">ISO 8601</a>.",
+                "schema": {
+                    "type": "string",
+                    "format": "date"
+                }
+            },
+            "toParam": {
+                "name": "to",
+                "in": "query",
+                "required": false,
+                "description": "Latest date for which data is included in the response. Today's date by default. Format is <a href=\"https://en.wikipedia.org/wiki/ISO_8601\">ISO 8601</a>.",
+                "schema": {
+                    "type": "string",
+                    "format": "date"
+                }
+            },
+            "sortOrderParam": {
+                "name": "sort_order",
+                "in": "query",
+                "required": false,
+                "description": "Order of the list. Default value is ''asc''.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                }
+            },
+            "sortByOperationParam": {
+                "name": "sort_by",
+                "in": "query",
+                "required": false,
+                "description": "Field by which to order the list. By default, the list is not ordered.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "created",
+                        "operation_state",
+                        "status",
+                        "operation"
+                    ]
+                }
+            },
+            "operationStateParam": {
+                "name": "operation_state",
+                "in": "query",
+                "required": false,
+                "description": "State of operations included in the response. By default, all operations are included.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "running",
+                        "finished"
+                    ]
+                }
+            },
+            "operationStatusParam": {
+                "name": "status",
+                "in": "query",
+                "required": false,
+                "description": "Status of operations included in the response. By default, all operations are included.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "success",
+                        "failure"
+                    ]
+                }
+            },
+            "operationTypeParam": {
+                "name": "operation",
+                "in": "query",
+                "required": false,
+                "description": "Type of operations included in the response. By default, all operations are included.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "start",
+                        "stop",
+                        "restart",
+                        "reset",
+                        "create",
+                        "delete",
+                        "upgrade"
+                    ]
+                }
+            },
+            "detailedReportParam": {
+                "name": "detailedReport",
+                "in": "query",
+                "required": false,
+                "description": "Field to check whether detailed report is to be retrieved, by default detailed report will not be pulled",
+                "schema": {
+                    "type": "boolean",
+                    "enum": [
+                        false,
+                        true
+                    ],
+                    "default": false
+                }
+            },
+            "granularityParam": {
+                "name": "granularity",
+                "in": "query",
+                "required": false,
+                "description": "Granularity of usage to be included in the response. By default, granular usage is not returned.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "daily",
+                        "weekly",
+                        "monthly"
+                    ]
+                }
+            }
+        },
+        "securitySchemes": {
+            "AccountManager": {
+                "type": "oauth2",
+                "description": "Authenticate using Commerce Cloud Account Manager with your SSO credentials.",
+                "flows": {
+                    "implicit": {
+                        "authorizationUrl": "https://account.demandware.com:443/dwsso/oauth2/authorize",
+                        "scopes": {}
+                    }
+                }
+            },
+            "ClientCredentials": {
+                "type": "oauth2",
+                "description": "Authenticate using Commerce Cloud Account Manager with your client credentials.",
+                "flows": {
+                    "clientCredentials": {
+                        "tokenUrl": "https://account.demandware.com:443/dwsso/oauth2/access_token",
+                        "scopes": {}
+                    }
+                }
+            }
+        },
+        "schemas": {
+            "Response": {
+                "type": "object",
+                "required": [
+                    "kind",
+                    "code"
+                ],
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "description": "Type of response object.",
+                        "enum": [
+                            "ApiVersion",
+                            "UserInfo",
+                            "SystemInfo",
+                            "Realm",
+                            "RealmConfiguration",
+                            "RealmUsage",
+                            "MultiRealmUsage",
+                            "Sandbox",
+                            "SandboxList",
+                            "SandboxAlias",
+                            "SandboxAliasList",
+                            "SandboxSettings",
+                            "SandboxUsage",
+                            "SandboxStorage",
+                            "SandboxOperationList",
+                            "Status"
+                        ]
+                    },
+                    "code": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Response code sent along with the status."
+                    }
+                }
+            },
+            "StatusResponse": {
+                "required": [
+                    "status"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Response"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "status": {
+                                "type": "string",
+                                "description": "String with value 'Success' or 'Failure' to indicate request outcome.",
+                                "enum": [
+                                    "Success",
+                                    "Failure"
+                                ]
+                            }
+                        }
+                    }
+                ]
+            },
+            "PagedResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "metadata": {
+                                "$ref": "#/components/schemas/PagingMetadata"
+                            }
+                        }
+                    }
+                ]
+            },
+            "PagingMetadata": {
+                "properties": {
+                    "page": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Index of the current page."
+                    },
+                    "perPage": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Maximum count of elements per page."
+                    },
+                    "pageCount": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Total count of pages."
+                    },
+                    "totalCount": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total count of elements."
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/PagingLinks"
+                    }
+                }
+            },
+            "PagingLinks": {
+                "properties": {
+                    "self": {
+                        "type": "string",
+                        "description": "Relative link to this page."
+                    },
+                    "first": {
+                        "type": "string",
+                        "description": "Relative link to the first page."
+                    },
+                    "previous": {
+                        "type": "string",
+                        "description": "Relative link to the previous page. 'null' if the current page is the first page."
+                    },
+                    "next": {
+                        "type": "string",
+                        "description": "Relative link to the next page. 'null' if the current page is the last page."
+                    },
+                    "last": {
+                        "type": "string",
+                        "description": "Relative link to the last page."
+                    }
+                }
+            },
+            "RealmResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/RealmModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "RealmModel": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "GUID of the realm in the system."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Human-readable four-letter ID of the realm."
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Flag indicating whether the realm is enabled for any operations."
+                    },
+                    "usage": {
+                        "$ref": "#/components/schemas/RealmUsageSummaryModel"
+                    },
+                    "configuration": {
+                        "$ref": "#/components/schemas/RealmConfigurationModel"
+                    },
+                    "accountdetails": {
+                        "$ref": "#/components/schemas/AccountDetailsModel"
+                    }
+                }
+            },
+            "RealmUsageSummaryModel": {
+                "type": "object",
+                "required": [
+                    "activeSandboxes"
+                ],
+                "properties": {
+                    "activeSandboxes": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Number of currently active sandboxes for a realm.",
+                        "example": 42
+                    }
+                }
+            },
+            "RealmConfigurationResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/RealmConfigurationModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "ConfigurationIntegerValue": {
+                "type": "object",
+                "description": "Object that holds an integer-based configuration property. A zero value means \"unlimited\".",
+                "properties": {
+                    "fixedValue": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Fixed value for this configuration property. You can't use this along with a maximum or default value."
+                    },
+                    "maximum": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Maximum value for this property."
+                    },
+                    "defaultValue": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Default value for this property."
+                    }
+                }
+            },
+            "WeekdaySchedule": {
+                "type": "object",
+                "description": "A schedule definition for a dedicated time on specific weekdays.",
+                "properties": {
+                    "weekdays": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "MONDAY",
+                                "TUESDAY",
+                                "WEDNESDAY",
+                                "THURSDAY",
+                                "FRIDAY",
+                                "SATURDAY",
+                                "SUNDAY"
+                            ]
+                        },
+                        "description": "List of weekdays, where the action should take place"
+                    },
+                    "time": {
+                        "type": "string",
+                        "description": "Time (with timezone) where the action should take place on the specified weekdays. Time format is [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Times). If no time zone is given, the timezone defaults to GMT.",
+                        "example": "20:10:00Z"
+                    }
+                }
+            },
+            "RealmSandboxConfigurationModel": {
+                "type": "object",
+                "description": "Configuration object related to sandboxes of a realm.",
+                "required": [
+                    "limitsEnabled",
+                    "totalNumberOfSandboxes",
+                    "sandboxTTL",
+                    "localUsersAllowed"
+                ],
+                "properties": {
+                    "limitsEnabled": {
+                        "type": "boolean",
+                        "description": "Flag indicating whether sandbox specific limits are enforced for the realm."
+                    },
+                    "totalNumberOfSandboxes": {
+                        "type": "integer",
+                        "description": "Total number of sandboxes (regardless of state) that the realm can hold."
+                    },
+                    "sandboxTTL": {
+                        "$ref": "#/components/schemas/ConfigurationIntegerValue"
+                    },
+                    "localUsersAllowed": {
+                        "type": "boolean",
+                        "description": "Flag indicating whether users outside the Account Manager are allowed."
+                    }
+                },
+                "example": {
+                    "limitsEnabled": true,
+                    "totalNumberOfSandboxes": 50,
+                    "sandboxTTL": {
+                        "maximum": 240,
+                        "defaultValue": 8
+                    },
+                    "localUsersAllowed": false
+                }
+            },
+            "RealmSandboxConfigurationUpdateModel": {
+                "type": "object",
+                "description": "Update data for configuration data related to sandboxes of a realm. The time formats within the weekday schedules have to be passed in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Times) format.",
+                "properties": {
+                    "sandboxTTL": {
+                        "$ref": "#/components/schemas/ConfigurationIntegerValue"
+                    },
+                    "startScheduler": {
+                        "x-type-overwrite": "WeekdaySchedule",
+                        "nullable": true
+                    },
+                    "stopScheduler": {
+                        "x-type-overwrite": "WeekdaySchedule",
+                        "nullable": true
+                    }
+                },
+                "example": {
+                    "sandboxTTL": {
+                        "maximum": 240,
+                        "defaultValue": 24
+                    },
+                    "startScheduler": {
+                        "weekdays": [
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY"
+                        ],
+                        "time": "08:00:00+03:00"
+                    },
+                    "stopScheduler": {
+                        "weekdays": [
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY"
+                        ],
+                        "time": "19:00:00Z"
+                    }
+                },
+                "nullable": true
+            },
+            "RealmRequestConfigurationModel": {
+                "type": "object",
+                "description": "Configuration object related to requests targeting the sandboxes of a realm.",
+                "required": [
+                    "enforced"
+                ],
+                "properties": {
+                    "enforced": {
+                        "type": "boolean",
+                        "description": "If enabled, rate limiting is active."
+                    },
+                    "maxRate": {
+                        "type": "integer",
+                        "description": "Maximum requests allowed per time period."
+                    },
+                    "timePeriod": {
+                        "type": "integer",
+                        "description": "Number of seconds during which to count requests."
+                    }
+                },
+                "example": {
+                    "enforced": true,
+                    "maxRate": 50000,
+                    "timePeriod": 60
+                }
+            },
+            "RealmConfigurationModel": {
+                "type": "object",
+                "properties": {
+                    "emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "(.+)@(.+)"
+                        },
+                        "example": [
+                            "email1@example.com",
+                            "email2@example.com"
+                        ]
+                    },
+                    "sandbox": {
+                        "$ref": "#/components/schemas/RealmSandboxConfigurationModel"
+                    },
+                    "requests": {
+                        "$ref": "#/components/schemas/RealmRequestConfigurationModel"
+                    },
+                    "startScheduler": {
+                        "$ref": "#/components/schemas/WeekdaySchedule"
+                    },
+                    "stopScheduler": {
+                        "$ref": "#/components/schemas/WeekdaySchedule"
+                    }
+                }
+            },
+            "RealmConfigurationUpdateRequestModel": {
+                "type": "object",
+                "properties": {
+                    "emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "(.+)@(.+)"
+                        },
+                        "example": [
+                            "email1@example.com",
+                            "email2@example.com"
+                        ]
+                    },
+                    "sandbox": {
+                        "$ref": "#/components/schemas/RealmSandboxConfigurationUpdateModel"
+                    }
+                }
+            },
+            "RealmUsageResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/RealmUsageModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "MultiRealmUsageModel": {
+                "type": "object",
+                "required": [
+                    "realmName"
+                ],
+                "properties": {
+                    "realmName": {
+                        "type": "string",
+                        "description": "GUID of the realm in the system."
+                    },
+                    "realmUsage": {
+                        "$ref": "#/components/schemas/RealmUsageModel"
+                    },
+                    "error": {
+                        "type": "string",
+                        "description": "Error while getting usage."
+                    }
+                }
+            },
+            "RealmUsageModel": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "GUID of the realm in the system."
+                    },
+                    "accountId": {
+                        "type": "string",
+                        "description": "account/SFID of the realm in clusterstate table or org62 Tenant table"
+                    },
+                    "createdSandboxes": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total number of sandboxes created during the requested timeframe (by default, the previous 30 days).",
+                        "example": 93
+                    },
+                    "activeSandboxes": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total number of sandboxes active during the requested timeframe (by default, the previous 30 days).",
+                        "example": 128
+                    },
+                    "deletedSandboxes": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total number of sandboxes deleted during the requested timeframe (by default, the previous 30 days).",
+                        "example": 86
+                    },
+                    "sandboxSeconds": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total number of seconds sandboxes ran during the requested timeframe (by default, the previous 30 days).",
+                        "example": 360000
+                    },
+                    "minutesUpByProfile": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "profile": {
+                                    "$ref": "#/components/schemas/SandboxResourceProfile"
+                                },
+                                "minutes": {
+                                    "type": "integer",
+                                    "format": "int64",
+                                    "description": "How many minutes sandboxes of this profile type were running during the report timeframe."
+                                }
+                            }
+                        }
+                    },
+                    "minutesUp": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Sum of minutes sandboxes in this realm were running during the requested timeframe (by default, the previous 30 days).",
+                        "example": 360000
+                    },
+                    "minutesDown": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Sum of minutes sandboxes in this realm were not running during the requested timeframe (by default, the previous 30 days).",
+                        "example": 180000
+                    },
+                    "sandboxDetails": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SandboxInfo"
+                        }
+                    },
+                    "granularUsage": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GranularUsage"
+                        }
+                    }
+                }
+            },
+            "AccountDetailsModel": {
+                "type": "object",
+                "properties": {
+                    "accountName": {
+                        "type": "string",
+                        "example": "Disney",
+                        "description": "Account name."
+                    },
+                    "creditBalance": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Total Credit Balance left.",
+                        "example": 93.234
+                    }
+                }
+            },
+            "MultiRealmUsageRequest": {
+                "type": "object",
+                "properties": {
+                    "from": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Time the sandbox was started."
+                    },
+                    "to": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Time the sandbox was stopped. If the sandbox is still running, this value will not exist for the last block."
+                    },
+                    "realms": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "detailedReport": {
+                        "type": "boolean",
+                        "default": false,
+                        "enum": [
+                            false,
+                            true
+                        ],
+                        "description": "Field to check whether detailed report is to be retrieved, by default detailed report will not be pulled."
+                    }
+                }
+            },
+            "MultiRealmUsageResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object"
+                    }
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MultiRealmUsageModel"
+                        }
+                    }
+                }
+            },
+            "SandboxListResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SandboxModel"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxStorageModel": {
+                "type": "object",
+                "description": "Shows all filesystem storages and how much space is left on them.",
+                "additionalProperties": {
+                    "$ref": "#/components/schemas/StorageUsageModel"
+                }
+            },
+            "StorageUsageModel": {
+                "type": "object",
+                "description": "Represents a single filesystem storage unit with its available space.",
+                "properties": {
+                    "spaceTotal": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total available space in MB."
+                    },
+                    "spaceUsed": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Used space in MB."
+                    },
+                    "percentageUsed": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Used space in percent, compared to total space."
+                    }
+                }
+            },
+            "SandboxModel": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "realm": {
+                        "type": "string"
+                    },
+                    "emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "(.+)@(.+)"
+                        }
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Flag indicating whether the sandbox is enabled for any operations."
+                    },
+                    "instance": {
+                        "type": "string"
+                    },
+                    "versions": {
+                        "type": "object",
+                        "title": "SandboxModelVersions",
+                        "description": "Versions of the components that make up the sandbox.",
+                        "properties": {
+                            "app": {
+                                "type": "string",
+                                "pattern": "\\d(\\.\\d)*",
+                                "description": "Version of the commerce application."
+                            },
+                            "web": {
+                                "type": "string",
+                                "description": "Version of the web proxy.",
+                                "pattern": "\\d(\\.\\d)*"
+                            }
+                        }
+                    },
+                    "autoScheduled": {
+                        "type": "boolean",
+                        "description": "Defaults to false. If set to true, the sandbox is covered by automatic start/stop actions, which can be set to a dedicated time via realm- configuration API."
+                    },
+                    "analyticsEnabled": {
+                        "type": "boolean",
+                        "description": "Defaults to false. If set to true, analytics will be enabled in ODS."
+                    },
+                    "resourceProfile": {
+                        "$ref": "#/components/schemas/SandboxResourceProfile"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/SandboxState"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "createdBy": {
+                        "type": "string"
+                    },
+                    "deletedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Time when the delete operation was created."
+                    },
+                    "deletedBy": {
+                        "type": "string",
+                        "description": "User who requested the sandbox deletion."
+                    },
+                    "eol": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "hostName": {
+                        "type": "string"
+                    },
+                    "links": {
+                        "type": "object",
+                        "description": "Set of named links for accessing the sandbox.",
+                        "properties": {
+                            "bm": {
+                                "type": "string",
+                                "description": "Fully qualified URL of the sandbox Business Manager web app."
+                            },
+                            "ocapi": {
+                                "type": "string",
+                                "description": "Fully qualified URL of OCAPI data API (excluding version selector)."
+                            },
+                            "impex": {
+                                "type": "string",
+                                "description": "Fully qualified WebDAV URL for accessing import and export files."
+                            },
+                            "code": {
+                                "type": "string",
+                                "description": "Fully qualified WebDAV URL for accessing code."
+                            },
+                            "logs": {
+                                "type": "string",
+                                "description": "Fully qualified WebDAV URL for accessing log files."
+                            }
+                        }
+                    },
+                    "startScheduler": {
+                        "$ref": "#/components/schemas/WeekdaySchedule"
+                    },
+                    "stopScheduler": {
+                        "$ref": "#/components/schemas/WeekdaySchedule"
+                    }
+                }
+            },
+            "GranularUsage": {
+                "type": "object",
+                "properties": {
+                    "usageDate": {
+                        "type": "string",
+                        "description": "start of the usage being returned"
+                    },
+                    "creditsUp": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Credits consumed when sandboxes were up during the requested timeframe.",
+                        "example": 3600.001
+                    },
+                    "creditsDown": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Credits consumed when sandboxes were down during the requested timeframe.",
+                        "example": 1440.001
+                    },
+                    "minutesUp": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Minutes sandboxes were up during the requested timeframe.",
+                        "example": 360000
+                    },
+                    "minutesDown": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Minutes sandboxes were down during the requested timeframe.",
+                        "example": 180000
+                    }
+                }
+            },
+            "SandboxInfo": {
+                "type": "object",
+                "properties": {
+                    "realm": {
+                        "type": "string"
+                    },
+                    "resourceProfile": {
+                        "$ref": "#/components/schemas/SandboxResourceProfile"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "deletedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Time when the delete operation was created."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the sandbox"
+                    },
+                    "instanceId": {
+                        "type": "string",
+                        "description": "instanceId of the sandbox"
+                    },
+                    "minutesUpByProfile": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "profile": {
+                                    "$ref": "#/components/schemas/SandboxResourceProfile"
+                                },
+                                "minutes": {
+                                    "type": "integer",
+                                    "format": "int64",
+                                    "description": "How many minutes sandboxes of this profile type were running during the report timeframe."
+                                }
+                            }
+                        }
+                    },
+                    "minutesUp": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Minutes sandbox in this realm was running during the requested timeframe (by default, the previous 30 days).",
+                        "example": 360000
+                    },
+                    "minutesDown": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Minutes sandbox in this realm was not running during the requested timeframe (by default, the previous 30 days).",
+                        "example": 180000
+                    },
+                    "autoScheduled": {
+                        "type": "boolean",
+                        "description": "Defaults to false. If set to true, the sandbox is covered by automatic start/stop actions, which can be set to a dedicated time via realm- configuration API.:"
+                    },
+                    "startScheduler": {
+                        "$ref": "#/components/schemas/WeekdaySchedule"
+                    },
+                    "stopScheduler": {
+                        "$ref": "#/components/schemas/WeekdaySchedule"
+                    },
+                    "clusterName": {
+                        "type": "string",
+                        "description": "Cluster where sandbox resides."
+                    }
+                }
+            },
+            "SandboxState": {
+                "type": "string",
+                "enum": [
+                    "new",
+                    "creating",
+                    "starting",
+                    "started",
+                    "stopping",
+                    "stopped",
+                    "deleting",
+                    "deleted",
+                    "resetting",
+                    "failed",
+                    "unknown",
+                    "upgrading"
+                ]
+            },
+            "SandboxResourceProfile": {
+                "type": "string",
+                "enum": [
+                    "medium",
+                    "large",
+                    "xlarge",
+                    "xxlarge"
+                ],
+                "description": "Determines the resource allocation for the sandbox, \"medium\" is the default. Be careful, more powerful profiles consume more credits."
+            },
+            "SandboxOperationRequestModel": {
+                "type": "object",
+                "required": [
+                    "operation"
+                ],
+                "properties": {
+                    "operation": {
+                        "type": "string",
+                        "enum": [
+                            "start",
+                            "stop",
+                            "restart",
+                            "reset"
+                        ]
+                    }
+                }
+            },
+            "SandboxAliasResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxAliasModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxAliasListResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SandboxAliasModel"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxAliasModel": {
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true,
+                        "description": "The sandbox alias UUID."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "The alias name.",
+                        "example": "www.example.com"
+                    },
+                    "unique": {
+                        "type": "boolean",
+                        "description": "Define if it's a unique configuration",
+                        "example": false
+                    },
+                    "requestLetsEncryptCertificate": {
+                        "type": "boolean",
+                        "description": "Request a valid certificate to be generated on the fly through Lets Encrypt. This action consumes certificate requests from the domain quota imposed by Let's Encrypt, please read the Alias documentation carefully.",
+                        "example": false
+                    },
+                    "sandboxId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true,
+                        "description": "The UUID of the sandbox the sandbox alias is pointing to."
+                    },
+                    "cookie": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            },
+                            "path": {
+                                "type": "string"
+                            },
+                            "domain": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "value"
+                        ],
+                        "readOnly": true,
+                        "description": "The cookie required for each request to this alias."
+                    },
+                    "registration": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The link that can be used to save the required cookie for this alias in the browser."
+                    },
+                    "domainVerificationRecord": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The verification code to be added as TXT record in the DNS"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "verified"
+                        ],
+                        "readOnly": true,
+                        "description": "The status of the alias creation process"
+                    }
+                }
+            },
+            "SandboxOperationResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxOperationModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxOperationListResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/PagedResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SandboxOperationModel"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxSettingsResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxSettings"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxStorageResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxStorageModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxUsageResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxUsageModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxUsageModel": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "sandboxSeconds": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total number of seconds during which the sandbox ran."
+                    },
+                    "minutesUpByProfile": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "profile": {
+                                    "$ref": "#/components/schemas/SandboxResourceProfile"
+                                },
+                                "minutes": {
+                                    "type": "integer",
+                                    "format": "int64",
+                                    "description": "How many minutes sandboxes of this profile type were running during the report timeframe."
+                                }
+                            }
+                        }
+                    },
+                    "minutesUp": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Sum of minutes sandboxes in this realm were running during the requested timeframe (by default, the previous 30 days).",
+                        "example": 360000
+                    },
+                    "minutesDown": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Sum of minutes sandboxes in this realm were not running during the requested timeframe (by default, the previous 30 days).",
+                        "example": 180000
+                    },
+                    "granularUsage": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GranularUsage"
+                        }
+                    },
+                    "history": {
+                        "description": "List of blocks, which describe the separate uptimes of a sandbox",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "from"
+                            ],
+                            "properties": {
+                                "from": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "Time the sandbox was started."
+                                },
+                                "to": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "Time the sandbox was stopped. If the sandbox is still running, this value will not exist for the last block."
+                                },
+                                "sandboxSeconds": {
+                                    "type": "integer",
+                                    "format": "int64",
+                                    "description": "Number of seconds that the sandbox was running for this block."
+                                },
+                                "resourceProfile": {
+                                    "$ref": "#/components/schemas/SandboxResourceProfile"
+                                },
+                                "exceedsTimeframe": {
+                                    "type": "boolean",
+                                    "description": "This property is set to true if the block exceeds the given timeframe and was therefore trimmed."
+                                },
+                                "clusterName": {
+                                    "type": "string",
+                                    "description": "Cluster where sandbox resides."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "SandboxOperationModel": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "operation",
+                    "operationState"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "operation": {
+                        "type": "string",
+                        "enum": [
+                            "start",
+                            "stop",
+                            "restart",
+                            "reset",
+                            "create",
+                            "delete",
+                            "upgrade"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "operationBy": {
+                        "type": "string"
+                    },
+                    "operationState": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "running",
+                            "finished"
+                        ]
+                    },
+                    "sandboxState": {
+                        "$ref": "#/components/schemas/SandboxState"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Indicates whether the operation finished successfully ('Success') or not ('Failure').",
+                        "enum": [
+                            "success",
+                            "failure"
+                        ]
+                    }
+                }
+            },
+            "SandboxProvisioningRequestModel": {
+                "type": "object",
+                "properties": {
+                    "realm": {
+                        "type": "string"
+                    },
+                    "emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "(.+)@(.+)"
+                        }
+                    },
+                    "ttl": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Number of hours the sandbox will live (must adhere to the maximum TTL quotas). If set to 0 or less, the sandbox will have an infinite lifetime."
+                    },
+                    "autoScheduled": {
+                        "type": "boolean",
+                        "description": "Defaults to false. If set to true, the sandbox is covered by automatic start/stop actions, which can be set to a dedicated time via realm- configuration API."
+                    },
+                    "analyticsEnabled": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Defaults to false. If set to true, analytics will be enabled in ODS."
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "startScheduler": {
+                        "x-type-overwrite": "WeekdaySchedule",
+                        "nullable": true
+                    },
+                    "stopScheduler": {
+                        "x-type-overwrite": "WeekdaySchedule",
+                        "nullable": true
+                    },
+                    "resourceProfile": {
+                        "$ref": "#/components/schemas/SandboxResourceProfile"
+                    },
+                    "settings": {
+                        "$ref": "#/components/schemas/SandboxSettings"
+                    }
+                },
+                "required": [
+                    "realm"
+                ],
+                "example": {
+                    "realm": "<your realm id>",
+                    "emails": [
+                        "email1@example.com",
+                        "email2@example.com"
+                    ],
+                    "ttl": 24,
+                    "autoScheduled": false,
+                    "tags": [
+                        "<your-custom-tag>"
+                    ],
+                    "analyticsEnabled": false,
+                    "startScheduler": {
+                        "weekdays": [
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY"
+                        ],
+                        "time": "08:00:00+03:00"
+                    },
+                    "stopScheduler": {
+                        "weekdays": [
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY"
+                        ],
+                        "time": "19:00:00Z"
+                    },
+                    "resourceProfile": "medium",
+                    "settings": {
+                        "ocapi": [
+                            {
+                                "client_id": "<your client id>",
+                                "resources": [
+                                    {
+                                        "resource_id": "/**",
+                                        "methods": [
+                                            "get",
+                                            "post",
+                                            "put",
+                                            "patch",
+                                            "delete"
+                                        ],
+                                        "read_attributes": "(**)",
+                                        "write_attributes": ""
+                                    }
+                                ]
+                            }
+                        ],
+                        "webdav": [
+                            {
+                                "client_id": "<your client id>",
+                                "permissions": [
+                                    {
+                                        "path": "/cartridges",
+                                        "operations": [
+                                            "read_write"
+                                        ]
+                                    },
+                                    {
+                                        "path": "/impex",
+                                        "operations": [
+                                            "read_write"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            "SandboxUpdateRequestModel": {
+                "type": "object",
+                "properties": {
+                    "emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "(.+)@(.+)"
+                        }
+                    },
+                    "ttl": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Number of hours added to the sandbox lifetime (must, together with previous extensions, adhere to the maximum TTL configuration). If set to 0 or less, the sandbox will have an infinite lifetime."
+                    },
+                    "resourceProfile": {
+                        "$ref": "#/components/schemas/SandboxResourceProfile"
+                    },
+                    "autoScheduled": {
+                        "type": "boolean",
+                        "description": "If set to true, this sandbox will be captured by automated start-/stop -management."
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "startScheduler": {
+                        "x-type-overwrite": "WeekdaySchedule",
+                        "nullable": true
+                    },
+                    "stopScheduler": {
+                        "x-type-overwrite": "WeekdaySchedule",
+                        "nullable": true
+                    }
+                },
+                "example": {
+                    "emails": [
+                        "email1@example.com",
+                        "email2@example.com"
+                    ],
+                    "ttl": null,
+                    "autoScheduled": false,
+                    "resourceProfile": "desiredProfile",
+                    "tags": [
+                        "<your-custom-tag>"
+                    ],
+                    "startScheduler": {
+                        "weekdays": [
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY"
+                        ],
+                        "time": "08:00:00+03:00"
+                    },
+                    "stopScheduler": {
+                        "weekdays": [
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY"
+                        ],
+                        "time": "19:00:00Z"
+                    }
+                }
+            },
+            "SandboxSettings": {
+                "description": "Map of additional settings evaluated when the sandbox is provisioned and initialized.",
+                "type": "object",
+                "properties": {
+                    "ocapi": {
+                        "$ref": "#/components/schemas/OcapiSettings"
+                    },
+                    "webdav": {
+                        "$ref": "#/components/schemas/WebDavSettings"
+                    }
+                }
+            },
+            "OcapiSettings": {
+                "description": "Use this document to configure Open Commerce API permissions for multiple client applications in the context of a single site.",
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "description": "Describes Open Commerce API permissions for a client application.",
+                    "type": "object",
+                    "required": [
+                        "client_id"
+                    ],
+                    "properties": {
+                        "client_id": {
+                            "description": "Client application ID.",
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "resources": {
+                            "description": "Array of resource-specific permission documents.",
+                            "type": "array",
+                            "items": {
+                                "description": "Configures resource specific permissions and settings.",
+                                "type": "object",
+                                "required": [
+                                    "methods",
+                                    "resource_id"
+                                ],
+                                "properties": {
+                                    "methods": {
+                                        "description": "Open Commerce API HTTP method filter. For example, the filter [\"get\",\"patch\"] allows access to the GET and PATCH methods for the specified resource path. You can specify methods that are supported for a resource. You can list all available resources and methods for the Shop API, version 18.1, with the following meta data call: http://{your-domain}/dw/meta/rest/shop/v18_1?client_id={your-client-id}\n",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "get",
+                                                "delete",
+                                                "patch",
+                                                "post",
+                                                "put"
+                                            ]
+                                        }
+                                    },
+                                    "read_attributes": {
+                                        "description": "String that controls which properties are included in the response document. The configuration value must be specified using property selection syntax.\n",
+                                        "type": "string"
+                                    },
+                                    "write_attributes": {
+                                        "description": "String that controls which properties can be included in the request document. The configuration value must be specified using property selection syntax.\n",
+                                        "type": "string"
+                                    },
+                                    "resource_id": {
+                                        "description": "OCAPI resource identifier. For example: /products/*/images or /products/specific_id/images. This property supports Ant path style to describe resource IDs. You can specify wildcards or specific product IDs; you can also specify the pattern /products/** to access to all available sub-resources. You can list all resource identifiers for the Shop API, version 18.1, with the following meta data call: http://{your-domain}/dw/meta/rest/shop/v18_1?client_id={your-client-id}\n",
+                                        "type": "string"
+                                    },
+                                    "version_range": {
+                                        "description": "Version range documents granting permissions only to a subset of OCAPI versions.",
+                                        "type": "array",
+                                        "items": {
+                                            "description": "Use this document to grant resource permissions only to a subset of Open Commerce API versions. You can use the properties from and until to define the range. At least one of both must be specified.\n",
+                                            "type": "object",
+                                            "properties": {
+                                                "from": {
+                                                    "description": "From version (for example, 18.1). If you don't specify the from version, all versions including the oldest are accessible.",
+                                                    "type": "string"
+                                                },
+                                                "until": {
+                                                    "description": "Until version (for example, 18.1). The until version is exclusive, which means that it is not part of the range. If you don't specify the until version, all versions including the most recent one are accessible.\n",
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "WebDavSettings": {
+                "description": "WebDAV settings contain WebDAV client permissions for multiple client applications in the context of your organization. WebDAV client permissions enable you to configure which API clients can access your WebDAV files. These permissions also give you fine-grained control over which directories each client can access.\n",
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "description": "An array of client-specific permission documents.",
+                    "type": "object",
+                    "required": [
+                        "client_id",
+                        "permissions"
+                    ],
+                    "properties": {
+                        "client_id": {
+                            "description": "Client ID indicating the API client for which the permissions are configured.",
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "permissions": {
+                            "description": "Array of directory-based permissions documents. Multiple permissions paths cannot intersect each other; for example, the following two paths intersect and are therefore invalid: /impex/src and /impex/src/foo.\n",
+                            "type": "array",
+                            "items": {
+                                "description": "Use this document to configure WebDAV permissions.",
+                                "type": "object",
+                                "required": [
+                                    "path",
+                                    "operations"
+                                ],
+                                "properties": {
+                                    "path": {
+                                        "description": "Directory for which the WebDAV permission is granted, including all subdirectories. File-specific permissions are not permitted.\n",
+                                        "type": "string"
+                                    },
+                                    "operations": {
+                                        "description": "Array of operations granted on this directory. Possible values are read and read_write.\n",
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "read",
+                                                "read_write"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "ApiVersionResponse": {
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/ApiVersion"
+                            }
+                        }
+                    }
+                ]
+            },
+            "ApiVersion": {
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "string",
+                        "enum": [
+                            "v1"
+                        ]
+                    },
+                    "git": {
+                        "type": "object",
+                        "properties": {
+                            "commit": {
+                                "type": "string"
+                            },
+                            "time": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        }
+                    },
+                    "build": {
+                        "type": "object",
+                        "properties": {
+                            "version": {
+                                "type": "string"
+                            },
+                            "time": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        }
+                    }
+                }
+            },
+            "UserInfoResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/UserInfoSpec"
+                            }
+                        }
+                    }
+                ]
+            },
+            "UserInfoSpec": {
+                "type": "object",
+                "properties": {
+                    "user": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "description": "User's unique ID on Account Manager.",
+                                "type": "string"
+                            },
+                            "email": {
+                                "description": "User's email address.",
+                                "type": "string"
+                            },
+                            "name": {
+                                "description": "User's human-readable, full name.",
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "client": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "description": "OAuth client ID used to retrieve the access token.",
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "roles": {
+                        "description": "User's roles as returned by Account Manager.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "realms": {
+                        "description": "Realms that the user is allowed to access. All sandboxes within these realms are accessible.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "sandboxes": {
+                        "description": "Sandboxes that the user is allowed to access.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "SystemInfoResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SystemInfoSpec"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SystemInfoSpec": {
+                "type": "object",
+                "properties": {
+                    "region": {
+                        "type": "string",
+                        "description": "The region, the system is deployed on."
+                    },
+                    "systemIps": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Public IP addresses of internal services like API server"
+                    },
+                    "sandboxIps": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Public IP addresses of all sandboxes"
+                    },
+                    "inboundIps": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "IP addresses for incoming traffic."
+                    },
+                    "outboundIps": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "IP addresses for outgoing traffic."
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "error": {
+                                "$ref": "#/components/schemas/ErrorModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "ErrorModel": {
+                "type": "object",
+                "required": [
+                    "status"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "description": "String with value 'Success' or 'Failure' to indicate request outcome.",
+                        "enum": [
+                            "Success",
+                            "Failure"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Human-readable description of the error."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "Machine-readable, one-word, CamelCase description of why the operation failed. If this value is empty, there is no information available. The reason clarifies an HTTP status code but does not override it."
+                    },
+                    "details": {
+                        "description": "Extended data associated with the reason. Each reason can define its own extended details. This field is optional, and the data returned is not guaranteed to conform to any schema except that defined by the reason type.",
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

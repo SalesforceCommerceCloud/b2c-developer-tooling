@@ -30,6 +30,8 @@ export default [
           varsIgnorePattern: '^_',
         },
       ],
+      // Disable new-cap - incompatible with openapi-fetch (uses GET, POST, etc. methods)
+      'new-cap': 'off',
     },
   },
 ];

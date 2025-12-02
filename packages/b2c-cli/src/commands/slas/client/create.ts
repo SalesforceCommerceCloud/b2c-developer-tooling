@@ -93,7 +93,6 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
 
     const slasClient = this.getSlasClient();
 
-    // eslint-disable-next-line new-cap
     const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},

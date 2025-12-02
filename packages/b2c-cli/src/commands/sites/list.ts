@@ -25,7 +25,6 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
 
     this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', {hostname}));
 
-    // eslint-disable-next-line new-cap
     const {data, error} = await this.instance.ocapi.GET('/sites', {
       params: {query: {select: '(**)'}},
     });

@@ -83,7 +83,6 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     const slasClient = this.getSlasClient();
 
     // First, fetch the existing client
-    // eslint-disable-next-line new-cap
     const {data: existingData, error: getError} = await slasClient.GET('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},
@@ -155,7 +154,6 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     }
 
     // Update the client
-    // eslint-disable-next-line new-cap
     const {data, error} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},
