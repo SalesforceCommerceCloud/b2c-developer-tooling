@@ -5,6 +5,7 @@ import type {ResolvedConfig, LoadConfigOptions, AuthMethod} from './config.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {t} from '../i18n/index.js';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
 /**
  * Base command for operations requiring OAuth authentication.
@@ -45,6 +46,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       env: 'SFCC_AUTH_METHODS',
       multiple: true,
       options: ALL_AUTH_METHODS,
+      helpGroup: 'AUTH',
+    }),
+    'account-manager-host': Flags.string({
+      description: 'Account Manager hostname for OAuth',
+      env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: DEFAULT_ACCOUNT_MANAGER_HOST,
       helpGroup: 'AUTH',
     }),
   };
@@ -97,6 +104,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
+   * Gets the configured Account Manager host.
+   */
+  protected get accountManagerHost(): string {
+    return this.flags['account-manager-host'] ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+  }
+
+  /**
    * Gets an OAuth auth strategy based on allowed auth methods and available credentials.
    *
    * Iterates through allowed methods (in priority order) and returns the first
@@ -106,6 +120,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    */
   protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy {
     const config = this.resolvedConfig;
+    const accountManagerHost = this.accountManagerHost;
     // Default to client-credentials and implicit if no methods specified
     const allowedMethods = config.authMethods || (['client-credentials', 'implicit'] as AuthMethod[]);
 
@@ -117,6 +132,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
               clientId: config.clientId,
               clientSecret: config.clientSecret,
               scopes: config.scopes,
+              accountManagerHost,
             });
           }
           break;
@@ -126,6 +142,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
             return new ImplicitOAuthStrategy({
               clientId: config.clientId,
               scopes: config.scopes,
+              accountManagerHost,
             });
           }
           break;

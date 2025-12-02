@@ -4,8 +4,8 @@ import {URL} from 'node:url';
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
-const DEFAULT_ACCOUNT_MANAGER_HOST = 'account.demandware.com';
 const DEFAULT_LOCAL_PORT = 8080;
 
 // Module-level token cache to support multiple instances with same clientId

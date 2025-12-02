@@ -112,3 +112,6 @@ export type {JobExecutionResult} from './operations/jobs/index.js';
 // Operations - Sites
 export {listSites, getSite} from './operations/sites/index.js';
 export type {Site} from './operations/sites/index.js';
+
+// Defaults
+export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';

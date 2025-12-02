@@ -1,11 +1,7 @@
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {createOdsClient, type OdsClient} from '../clients/ods.js';
-
-/**
- * Default ODS API host.
- */
-const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
+import {DEFAULT_ODS_HOST} from '../defaults.js';
 
 /**
  * Base command for ODS (On-Demand Sandbox) operations.
@@ -79,6 +75,6 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
    * Gets the configured ODS API host.
    */
   protected get odsHost(): string {
-    return this.flags.host ?? DEFAULT_ODS_HOST;
+    return this.flags['sandbox-api-host'] ?? DEFAULT_ODS_HOST;
   }
 }

@@ -1,7 +1,6 @@
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
 import {getLogger} from '../logging/logger.js';
-
-const DEFAULT_ACCOUNT_MANAGER_HOST = 'account.demandware.com';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
 // Module-level token cache to support multiple instances with same clientId
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
