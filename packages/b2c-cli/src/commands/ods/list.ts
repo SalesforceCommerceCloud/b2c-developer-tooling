@@ -182,33 +182,6 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
   }
 
   /**
-   * Determines which columns to display based on flags.
-   */
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      // User specified explicit columns
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = requested.filter((c) => c in COLUMNS);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${Object.keys(COLUMNS).join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      // Show all columns
-      return Object.keys(COLUMNS);
-    }
-
-    // Default columns (non-extended)
-    return DEFAULT_COLUMNS;
-  }
-
-  /**
    * Calculate dynamic column widths based on content.
    * Each column width = max(header length, max data length) + padding
    */
@@ -235,6 +208,33 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
     return widths;
   }
 
+  /**
+   * Determines which columns to display based on flags.
+   */
+  private getSelectedColumns(): string[] {
+    const columnsFlag = this.flags.columns;
+    const extended = this.flags.extended;
+
+    if (columnsFlag) {
+      // User specified explicit columns
+      const requested = columnsFlag.split(',').map((c) => c.trim());
+      const valid = requested.filter((c) => c in COLUMNS);
+      if (valid.length === 0) {
+        this.warn(`No valid columns specified. Available: ${Object.keys(COLUMNS).join(', ')}`);
+        return DEFAULT_COLUMNS;
+      }
+      return valid;
+    }
+
+    if (extended) {
+      // Show all columns
+      return Object.keys(COLUMNS);
+    }
+
+    // Default columns (non-extended)
+    return DEFAULT_COLUMNS;
+  }
+
   private printSandboxesTable(sandboxes: SandboxModel[], columnKeys: string[]): void {
     const termWidth = process.stdout.columns || 120;
     const ui = cliui({width: termWidth});
@@ -254,7 +254,7 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
     ui.div(...headerCols);
 
     // Separator
-    const totalWidth = Array.from(widths.values()).reduce((sum, w) => sum + w, 0);
+    const totalWidth = [...widths.values()].reduce((sum, w) => sum + w, 0);
     ui.div({text: '─'.repeat(Math.min(totalWidth, termWidth)), padding: [0, 0, 0, 0]});
 
     // Rows
