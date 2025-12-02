@@ -11,6 +11,16 @@ import type {AuthStrategy} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
 
 /**
+ * Configuration for extra parameters middleware.
+ */
+export interface ExtraParamsConfig {
+  /** Extra query parameters to add to the URL */
+  query?: Record<string, string | number | boolean | undefined>;
+  /** Extra body fields to merge into JSON request bodies */
+  body?: Record<string, unknown>;
+}
+
+/**
  * Converts Headers to a plain object for logging.
  */
 function headersToObject(headers: Headers): Record<string, string> {
@@ -104,6 +114,90 @@ export function createLoggingMiddleware(prefix?: string): Middleware {
       );
 
       return response;
+    },
+  };
+}
+
+/**
+ * Creates middleware that adds extra query parameters and/or body fields to requests.
+ *
+ * This is useful for internal/power-user scenarios where you need to pass
+ * parameters that aren't in the typed OpenAPI schema.
+ *
+ * @param config - Configuration with extra query and/or body params
+ * @returns Middleware that adds extra params to requests
+ *
+ * @example
+ * ```typescript
+ * const client = createOdsClient(config, auth);
+ * client.use(createExtraParamsMiddleware({
+ *   query: { debug: 'true', internal_flag: '1' },
+ *   body: { _internal: { trace: true } }
+ * }));
+ * ```
+ */
+export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middleware {
+  const logger = getLogger();
+
+  return {
+    async onRequest({request}) {
+      let modifiedRequest = request;
+
+      // Add extra query parameters
+      if (config.query && Object.keys(config.query).length > 0) {
+        const url = new URL(request.url);
+        for (const [key, value] of Object.entries(config.query)) {
+          if (value !== undefined) {
+            url.searchParams.set(key, String(value));
+          }
+        }
+        logger.trace(
+          {extraQuery: config.query, originalUrl: request.url, newUrl: url.toString()},
+          '[ExtraParams] Adding extra query params to URL',
+        );
+        modifiedRequest = new Request(url.toString(), {
+          method: request.method,
+          headers: request.headers,
+          body: request.body,
+          duplex: request.body ? 'half' : undefined,
+        } as RequestInit);
+      }
+
+      // Merge extra body fields for JSON requests
+      if (config.body && Object.keys(config.body).length > 0) {
+        const contentType = modifiedRequest.headers.get('content-type');
+        if (contentType?.includes('application/json') && modifiedRequest.body) {
+          const clonedRequest = modifiedRequest.clone();
+          const originalBody = await clonedRequest.text();
+          try {
+            const parsedBody = JSON.parse(originalBody) as Record<string, unknown>;
+            const mergedBody = {...parsedBody, ...config.body};
+            logger.trace(
+              {originalBody: parsedBody, extraBody: config.body, mergedBody},
+              '[ExtraParams] Merging extra body fields into request',
+            );
+            modifiedRequest = new Request(modifiedRequest.url, {
+              method: modifiedRequest.method,
+              headers: modifiedRequest.headers,
+              body: JSON.stringify(mergedBody),
+            });
+          } catch {
+            logger.warn('[ExtraParams] Could not parse request body as JSON, skipping body merge');
+          }
+        } else if (!modifiedRequest.body) {
+          // No existing body, create one with extra fields
+          logger.trace({body: config.body}, '[ExtraParams] Creating new body with extra fields');
+          const headers = new Headers(modifiedRequest.headers);
+          headers.set('content-type', 'application/json');
+          modifiedRequest = new Request(modifiedRequest.url, {
+            method: modifiedRequest.method,
+            headers,
+            body: JSON.stringify(config.body),
+          });
+        }
+      }
+
+      return modifiedRequest;
     },
   };
 }

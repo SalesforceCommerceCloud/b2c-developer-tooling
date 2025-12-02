@@ -31,11 +31,11 @@ const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<T> {
   static baseFlags = {
     ...OAuthCommand.baseFlags,
-    host: Flags.string({
+    'sandbox-api-host': Flags.string({
       description: 'ODS API hostname',
       env: 'SFCC_SANDBOX_API_HOST',
       default: DEFAULT_ODS_HOST,
-      helpGroup: 'ODS',
+      // helpGroup: 'ODS',
     }),
   };
 
@@ -64,7 +64,13 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
     if (!this._odsClient) {
       this.requireOAuthCredentials();
       const authStrategy = this.getOAuthStrategy();
-      this._odsClient = createOdsClient({host: this.odsHost}, authStrategy);
+      this._odsClient = createOdsClient(
+        {
+          host: this.odsHost,
+          extraParams: this.getExtraParams(),
+        },
+        authStrategy,
+      );
     }
     return this._odsClient;
   }

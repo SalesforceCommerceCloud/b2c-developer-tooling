@@ -103,8 +103,9 @@ export function createSlasClient(config: SlasClientConfig, auth: AuthStrategy): 
     baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/shopper/auth-admin/v1`,
   });
 
-  client.use(createLoggingMiddleware('SLAS'));
+  // Middleware order: auth → logging (logging sees fully modified request)
   client.use(createAuthMiddleware(auth));
+  client.use(createLoggingMiddleware('SLAS'));
 
   return client;
 }

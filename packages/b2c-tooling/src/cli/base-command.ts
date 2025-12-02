@@ -3,6 +3,7 @@ import {loadConfig} from './config.js';
 import type {ResolvedConfig, LoadConfigOptions} from './config.js';
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
+import type {ExtraParamsConfig} from '../clients/middleware.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
@@ -53,6 +54,16 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       description: 'Instance name from configuration file (i.e. dw.json, etc)',
       env: 'SFCC_INSTANCE',
       helpGroup: 'GLOBAL',
+    }),
+    'extra-query': Flags.string({
+      description: 'Extra query parameters as JSON (e.g., \'{"debug":"true"}\')',
+      helpGroup: 'GLOBAL',
+      hidden: true,
+    }),
+    'extra-body': Flags.string({
+      description: 'Extra body fields to merge as JSON (e.g., \'{"_internal":true}\')',
+      helpGroup: 'GLOBAL',
+      hidden: true,
     }),
   };
 
@@ -163,5 +174,40 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Use oclif's error() for proper exit code and display
     this.error(err.message, {exit: err.exitCode ?? 1});
+  }
+
+  /**
+   * Parse extra params from --extra-query and --extra-body flags.
+   * Returns undefined if no extra params are specified.
+   *
+   * @returns ExtraParamsConfig or undefined
+   */
+  protected getExtraParams(): ExtraParamsConfig | undefined {
+    const extraQuery = this.flags['extra-query'];
+    const extraBody = this.flags['extra-body'];
+
+    if (!extraQuery && !extraBody) {
+      return undefined;
+    }
+
+    const config: ExtraParamsConfig = {};
+
+    if (extraQuery) {
+      try {
+        config.query = JSON.parse(extraQuery) as Record<string, string | number | boolean | undefined>;
+      } catch {
+        this.error(`Invalid JSON for --extra-query: ${extraQuery}`);
+      }
+    }
+
+    if (extraBody) {
+      try {
+        config.body = JSON.parse(extraBody) as Record<string, unknown>;
+      } catch {
+        this.error(`Invalid JSON for --extra-body: ${extraBody}`);
+      }
+    }
+
+    return config;
   }
 }

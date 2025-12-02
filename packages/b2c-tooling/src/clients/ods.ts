@@ -11,7 +11,8 @@
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ods.generated.js';
-import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
+import {createAuthMiddleware, createLoggingMiddleware, createExtraParamsMiddleware} from './middleware.js';
+import type {ExtraParamsConfig} from './middleware.js';
 
 /**
  * Default ODS API host for US region.
@@ -62,6 +63,13 @@ export interface OdsClientConfig {
    * @example "admin.dx.commercecloud.salesforce.com"
    */
   host?: string;
+
+  /**
+   * Extra parameters to add to all requests.
+   * Useful for internal/power-user scenarios where you need to pass
+   * parameters that aren't in the typed OpenAPI schema.
+   */
+  extraParams?: ExtraParamsConfig;
 }
 
 /**
@@ -132,8 +140,13 @@ export function createOdsClient(config: OdsClientConfig, auth: AuthStrategy): Od
     baseUrl: `https://${host}/api/v1`,
   });
 
-  client.use(createLoggingMiddleware('ODS'));
+  // Middleware order: extraParams → auth → logging
+  // This ensures logging sees the fully modified request (with auth headers and extra params)
+  if (config.extraParams) {
+    client.use(createExtraParamsMiddleware(config.extraParams));
+  }
   client.use(createAuthMiddleware(auth));
+  client.use(createLoggingMiddleware('ODS'));
 
   return client;
 }

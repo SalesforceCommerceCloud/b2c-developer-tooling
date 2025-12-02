@@ -50,11 +50,13 @@ export {
   WebDavClient,
   createOcapiClient,
   createAuthMiddleware,
+  createExtraParamsMiddleware,
   createSlasClient,
   createOdsClient,
 } from './clients/index.js';
 export type {
   PropfindEntry,
+  ExtraParamsConfig,
   OcapiClient,
   OcapiError,
   OcapiResponse,

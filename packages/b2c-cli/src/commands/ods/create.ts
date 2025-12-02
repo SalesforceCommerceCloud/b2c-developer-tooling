@@ -1,4 +1,4 @@
-import {Args, Flags, ux} from '@oclif/core';
+import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling/cli';
 import type {OdsComponents} from '@salesforce/b2c-tooling';
@@ -11,26 +11,24 @@ type SandboxResourceProfile = OdsComponents['schemas']['SandboxResourceProfile']
  * Command to create a new on-demand sandbox.
  */
 export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
-  static args = {
-    realm: Args.string({
-      description: 'Realm ID (four-letter ID)',
-      required: true,
-    }),
-  };
-
   static description = t('commands.ods.create.description', 'Create a new on-demand sandbox');
 
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> abcd',
-    '<%= config.bin %> <%= command.id %> abcd --ttl 48',
-    '<%= config.bin %> <%= command.id %> abcd --profile large',
-    '<%= config.bin %> <%= command.id %> abcd --auto-scheduled',
-    '<%= config.bin %> <%= command.id %> abcd --json',
+    '<%= config.bin %> <%= command.id %> --realm abcd',
+    '<%= config.bin %> <%= command.id %> --realm abcd --ttl 48',
+    '<%= config.bin %> <%= command.id %> --realm abcd --profile large',
+    '<%= config.bin %> <%= command.id %> --realm abcd --auto-scheduled',
+    '<%= config.bin %> <%= command.id %> --realm abcd --json',
   ];
 
   static flags = {
+    realm: Flags.string({
+      char: 'r',
+      description: 'Realm ID (four-letter ID)',
+      required: true,
+    }),
     ttl: Flags.integer({
       description: 'Time to live in hours (0 for infinite)',
       default: 24,
@@ -47,7 +45,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
   };
 
   async run(): Promise<SandboxModel> {
-    const realm = this.args.realm;
+    const realm = this.flags.realm;
     const profile = this.flags.profile as SandboxResourceProfile;
     const ttl = this.flags.ttl;
     const autoScheduled = this.flags['auto-scheduled'];

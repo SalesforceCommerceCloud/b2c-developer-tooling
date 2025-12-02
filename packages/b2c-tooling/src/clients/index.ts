@@ -87,9 +87,9 @@
  *     baseUrl: `https://${config.host}/api/v1`,
  *   });
  *
- *   // Add middleware - use a short identifier for log prefixes
- *   client.use(createLoggingMiddleware('MYAPI'));
+ *   // Add middleware - auth first, logging last (so logging sees complete request)
  *   client.use(createAuthMiddleware(auth));
+ *   client.use(createLoggingMiddleware('MYAPI'));
  *
  *   return client;
  * }
@@ -109,7 +109,8 @@
 export {WebDavClient} from './webdav.js';
 export type {PropfindEntry} from './webdav.js';
 
-export {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
+export {createAuthMiddleware, createLoggingMiddleware, createExtraParamsMiddleware} from './middleware.js';
+export type {ExtraParamsConfig} from './middleware.js';
 
 export {createOcapiClient} from './ocapi.js';
 export type {

@@ -102,8 +102,9 @@ export function createOcapiClient(
     baseUrl: `https://${hostname}/s/-/dw/data/${apiVersion}`,
   });
 
-  client.use(createLoggingMiddleware('OCAPI'));
+  // Middleware order: auth → logging (logging sees fully modified request)
   client.use(createAuthMiddleware(auth));
+  client.use(createLoggingMiddleware('OCAPI'));
 
   return client;
 }
