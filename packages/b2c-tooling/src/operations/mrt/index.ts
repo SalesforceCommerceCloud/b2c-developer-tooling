@@ -47,3 +47,13 @@ export type {CreateBundleOptions, Bundle} from './bundle.js';
 // Push operations
 export {pushBundle, uploadBundle, listBundles} from './push.js';
 export type {PushOptions, PushResult} from './push.js';
+
+// Environment variable operations
+export {listEnvVars, setEnvVar, deleteEnvVar} from './env-var.js';
+export type {
+  EnvVarOptions,
+  SetEnvVarOptions,
+  DeleteEnvVarOptions,
+  ListEnvVarsResult,
+  EnvironmentVariable,
+} from './env-var.js';

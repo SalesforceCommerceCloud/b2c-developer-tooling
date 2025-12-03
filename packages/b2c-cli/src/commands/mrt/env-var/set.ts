@@ -1,10 +1,10 @@
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling/cli';
+import {setEnvVar} from '@salesforce/b2c-tooling/operations/mrt';
 import {t} from '../../../i18n/index.js';
 
 /**
- * Stub command demonstrating MrtCommand usage.
- * MRT operations use API key authentication.
+ * Set an environment variable on an MRT project environment.
  */
 export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
   static args = {
@@ -20,47 +20,52 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
 
   static description = t(
     'commands.mrt.envVar.set.description',
-    'Set an environment variable on a Managed Runtime project',
+    'Set an environment variable on a Managed Runtime environment',
   );
+
+  static enableJsonFlag = true;
 
   static examples = [
     '<%= config.bin %> <%= command.id %> MY_VAR "my value" --project acme-storefront --environment production',
+    '<%= config.bin %> <%= command.id %> API_KEY "secret123" -p my-project -e staging',
   ];
 
   static flags = {
+    ...MrtCommand.baseFlags,
     project: Flags.string({
-      description: 'MRT project ID',
+      char: 'p',
+      description: 'MRT project slug',
       required: true,
     }),
     environment: Flags.string({
       char: 'e',
-      description: 'Target environment',
+      description: 'Target environment (e.g., staging, production)',
       required: true,
     }),
   };
 
-  async run(): Promise<void> {
+  async run(): Promise<{key: string; project: string; environment: string}> {
     this.requireMrtCredentials();
 
-    const key = this.args.key;
-    const value = this.args.value;
-    const project = this.flags.project;
-    const environment = this.flags.environment;
+    const {key, value} = this.args;
+    const {project, environment} = this.flags;
 
-    this.log(
-      t('commands.mrt.envVar.set.setting', 'Setting {{key}} on {{project}}/{{environment}}...', {
-        key,
-        project,
+    await setEnvVar(
+      {
+        projectSlug: project,
         environment,
-      }),
+        key,
+        value,
+      },
+      this.getMrtAuth(),
     );
 
-    // TODO: Implement actual MRT API call using this.createMrtClient()
+    this.log(t('commands.mrt.envVar.set.success', 'Set {{key}} on {{project}}/{{environment}}', {
+      key,
+      project,
+      environment,
+    }));
 
-    this.log('');
-    this.log(t('commands.mrt.envVar.set.stub', '(stub) Environment variable setting not yet implemented'));
-    this.log(t('commands.mrt.envVar.set.wouldSet', 'Would set {{key}}={{value}}', {key, value}));
-    this.log(t('commands.mrt.envVar.set.project', 'Project: {{project}}', {project}));
-    this.log(t('commands.mrt.envVar.set.environment', 'Environment: {{environment}}', {environment}));
+    return {key, project, environment};
   }
 }

@@ -34,8 +34,8 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront',
-    '<%= config.bin %> <%= command.id %> --project my-storefront --target staging',
-    '<%= config.bin %> <%= command.id %> --project my-storefront --target production --message "Release v1.0.0"',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --environment production --message "Release v1.0.0"',
     '<%= config.bin %> <%= command.id %> --project my-storefront --build-dir ./dist',
     '<%= config.bin %> <%= command.id %> --project my-storefront --node-version 20.x',
     '<%= config.bin %> <%= command.id %> --project my-storefront --ssr-param SSRProxyPath=/api',
@@ -48,9 +48,9 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
       description: 'MRT project slug',
       required: true,
     }),
-    target: Flags.string({
-      char: 't',
-      description: 'Target environment to deploy to after push (e.g., staging, production)',
+    environment: Flags.string({
+      char: 'e',
+      description: 'Environment to deploy to after push (e.g., staging, production)',
     }),
     message: Flags.string({
       char: 'm',
@@ -83,7 +83,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
   async run(): Promise<PushResult> {
     this.requireMrtCredentials();
 
-    const {project, target, message} = this.flags;
+    const {project, environment: target, message} = this.flags;
     const buildDir = this.flags['build-dir'];
     const ssrOnly = this.flags['ssr-only'].split(',').map((s) => s.trim());
     const ssrShared = this.flags['ssr-shared'].split(',').map((s) => s.trim());
@@ -99,7 +99,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
     this.log(t('commands.mrt.push.pushing', 'Pushing bundle to {{project}}...', {project}));
 
     if (target) {
-      this.log(t('commands.mrt.push.willDeploy', 'Bundle will be deployed to {{target}}', {target}));
+      this.log(t('commands.mrt.push.willDeploy', 'Bundle will be deployed to {{environment}}', {environment: target}));
     }
 
     try {
