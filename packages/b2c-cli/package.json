@@ -70,22 +70,35 @@
     "topicSeparator": " ",
     "topics": {
       "auth": {
-        "description": "Authentication and token management"
-      },
-      "hello": {
-        "description": "Say hello to the world and others"
+        "description": "Manage authentication credentials and tokens"
       },
       "code": {
-        "description": "Manage cartridge code on instances"
+        "description": "Deploy and manage code versions on instances"
       },
-      "sites": {
-        "description": "Manage sites on instances"
-      },
-      "sandbox": {
-        "description": "Manage on-demand sandboxes"
+      "job": {
+        "description": "Run jobs and import/export site archives"
       },
       "mrt": {
-        "description": "Managed Runtime operations"
+        "description": "Manage Managed Runtime projects and deployments",
+        "subtopics": {
+          "env-var": {
+            "description": "Manage environment variables on MRT projects"
+          }
+        }
+      },
+      "ods": {
+        "description": "Manage On-Demand Sandboxes"
+      },
+      "sites": {
+        "description": "List and inspect storefront sites"
+      },
+      "slas": {
+        "description": "Manage SLAS API clients and credentials",
+        "subtopics": {
+          "client": {
+            "description": "Manage SLAS client configurations"
+          }
+        }
       }
     }
   },

@@ -68,7 +68,7 @@ export const en = {
     },
     sandbox: {
       create: {
-        description: 'Create a new on-demand sandbox',
+        description: '',
         creating: 'Creating sandbox in realm {{realm}}...',
         profile: 'Profile: {{profile}}',
         ttl: 'TTL: {{ttl}} hours',
