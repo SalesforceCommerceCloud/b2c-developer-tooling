@@ -30,6 +30,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
     status: Flags.string({
       description: 'Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     count: Flags.integer({

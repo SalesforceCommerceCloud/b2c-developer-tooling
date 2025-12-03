@@ -41,21 +41,25 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     channels: Flags.string({
       description: 'Site IDs/channels (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     scopes: Flags.string({
       description: 'OAuth scopes for the client (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'redirect-uri': Flags.string({
       description: 'Redirect URIs (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'callback-uri': Flags.string({
       description: 'Callback URIs for passwordless login (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     replace: Flags.boolean({

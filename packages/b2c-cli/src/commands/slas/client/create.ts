@@ -37,23 +37,27 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       description: 'Site IDs/channels (comma-separated)',
       required: true,
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     scopes: Flags.string({
       description: 'OAuth scopes for the client (comma-separated)',
       required: true,
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'redirect-uri': Flags.string({
       description: 'Redirect URIs (comma-separated)',
       required: true,
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'callback-uri': Flags.string({
       description: 'Callback URIs for passwordless login (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     secret: Flags.string({

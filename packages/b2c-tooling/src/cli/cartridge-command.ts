@@ -30,12 +30,14 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
       char: 'c',
       description: 'Include specific cartridge(s) (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'exclude-cartridge': Flags.string({
       char: 'x',
       description: 'Exclude specific cartridge(s) (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
   };

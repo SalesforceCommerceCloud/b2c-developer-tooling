@@ -35,6 +35,7 @@ export default class JobExport extends InstanceCommand<typeof JobExport> {
     site: Flags.string({
       description: 'Site IDs to export (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'site-data': Flags.string({
@@ -43,21 +44,25 @@ export default class JobExport extends InstanceCommand<typeof JobExport> {
     catalog: Flags.string({
       description: 'Catalog IDs to export (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     library: Flags.string({
       description: 'Library IDs to export (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'inventory-list': Flags.string({
       description: 'Inventory list IDs to export (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'price-book': Flags.string({
       description: 'Price book IDs to export (comma-separated)',
       multiple: true,
+      multipleNonGreedy: true,
       delimiter: ',',
     }),
     'global-data': Flags.string({
