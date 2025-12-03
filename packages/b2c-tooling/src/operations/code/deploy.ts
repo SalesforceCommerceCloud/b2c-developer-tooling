@@ -1,5 +1,6 @@
 import path from 'node:path';
-import archiver from 'archiver';
+import fs from 'node:fs';
+import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
@@ -30,18 +31,22 @@ export interface DeployResult {
 }
 
 /**
- * Converts an archiver stream to a Buffer.
+ * Recursively adds a directory to a JSZip instance.
  */
-async function archiverToBuffer(archive: archiver.Archiver): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
+async function addDirectoryToZip(zip: JSZip, dirPath: string, zipPath: string): Promise<void> {
+  const entries = await fs.promises.readdir(dirPath, {withFileTypes: true});
 
-    archive.on('data', (chunk: Buffer) => chunks.push(chunk));
-    archive.on('end', () => resolve(Buffer.concat(chunks)));
-    archive.on('error', reject);
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    const entryZipPath = path.join(zipPath, entry.name);
 
-    archive.finalize();
-  });
+    if (entry.isDirectory()) {
+      await addDirectoryToZip(zip, fullPath, entryZipPath);
+    } else if (entry.isFile()) {
+      const content = await fs.promises.readFile(fullPath);
+      zip.file(entryZipPath, content);
+    }
+  }
 }
 
 /**
@@ -129,15 +134,17 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
 
   // Create zip archive
   logger.debug('Creating cartridge archive...');
-  const archive = archiver('zip', {
-    zlib: {level: 9},
-  });
+  const zip = new JSZip();
 
   for (const c of cartridges) {
-    archive.directory(c.src, path.join(codeVersion, c.dest));
+    await addDirectoryToZip(zip, c.src, path.join(codeVersion, c.dest));
   }
 
-  const buffer = await archiverToBuffer(archive);
+  const buffer = await zip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: {level: 9},
+  });
   logger.debug({size: buffer.length}, `Archive created: ${buffer.length} bytes`);
 
   // Upload archive

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import {watch, type FSWatcher} from 'chokidar';
-import archiver from 'archiver';
+import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
@@ -78,21 +78,6 @@ function debounce<T extends () => void>(fn: T, delay: number): T {
       fn();
     }, delay);
   }) as T;
-}
-
-/**
- * Converts an archiver stream to a Buffer.
- */
-async function archiverToBuffer(archive: archiver.Archiver): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-
-    archive.on('data', (chunk: Buffer) => chunks.push(chunk));
-    archive.on('end', () => resolve(Buffer.concat(chunks)));
-    archive.on('error', reject);
-
-    archive.finalize();
-  });
 }
 
 /**
@@ -204,19 +189,22 @@ export async function watchCartridges(
       const uploadPath = `${webdavLocation}/_upload-${now}.zip`;
 
       try {
-        const archive = archiver('zip', {
-          zlib: {level: 5},
-        });
+        const zip = new JSZip();
 
         for (const f of validUploadFiles) {
           try {
-            archive.file(f.src, {name: f.dest});
+            const content = await fs.promises.readFile(f.src);
+            zip.file(f.dest, content);
           } catch (error) {
             logger.debug({file: f.src, error}, 'Failed to add file to archive');
           }
         }
 
-        const buffer = await archiverToBuffer(archive);
+        const buffer = await zip.generateAsync({
+          type: 'nodebuffer',
+          compression: 'DEFLATE',
+          compressionOptions: {level: 5},
+        });
 
         await webdav.put(uploadPath, buffer, 'application/zip');
         logger.debug({uploadPath}, 'Archive uploaded');

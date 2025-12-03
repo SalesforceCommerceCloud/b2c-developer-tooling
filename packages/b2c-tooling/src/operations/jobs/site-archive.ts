@@ -6,7 +6,7 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import archiver from 'archiver';
+import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {
@@ -224,20 +224,35 @@ export async function siteArchiveImport(
  * Creates a zip archive from a directory.
  */
 async function createArchiveFromDirectory(dirPath: string, archiveDirName: string): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
+  const zip = new JSZip();
+  const rootFolder = zip.folder(archiveDirName)!;
 
-    const archive = archiver('zip', {
-      zlib: {level: 9},
-    });
+  await addDirectoryToZip(rootFolder, dirPath);
 
-    archive.on('data', (chunk: Buffer) => chunks.push(chunk));
-    archive.on('end', () => resolve(Buffer.concat(chunks)));
-    archive.on('error', reject);
-
-    archive.directory(dirPath, archiveDirName);
-    archive.finalize();
+  return zip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: {level: 9},
   });
+}
+
+/**
+ * Recursively adds directory contents to a JSZip folder.
+ */
+async function addDirectoryToZip(zipFolder: JSZip, dirPath: string): Promise<void> {
+  const entries = await fs.promises.readdir(dirPath, {withFileTypes: true});
+
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+
+    if (entry.isDirectory()) {
+      const subFolder = zipFolder.folder(entry.name)!;
+      await addDirectoryToZip(subFolder, fullPath);
+    } else if (entry.isFile()) {
+      const content = await fs.promises.readFile(fullPath);
+      zipFolder.file(entry.name, content);
+    }
+  }
 }
 
 /**
@@ -527,17 +542,26 @@ export async function siteArchiveExportToPath(
     // Extract to directory
     await fs.promises.mkdir(outputPath, {recursive: true});
 
-    // Use AdmZip for extraction (we'd need to add this dependency)
-    // For now, just save the zip and let the caller handle extraction
-    const zipPath = path.join(outputPath, result.archiveFilename);
-    await fs.promises.writeFile(zipPath, result.data);
+    const zip = await JSZip.loadAsync(result.data);
 
-    logger.debug(`Archive saved to: ${zipPath}`);
-    logger.debug('Note: Automatic extraction requires additional setup. Archive saved as zip.');
+    for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
+      const fullPath = path.join(outputPath, relativePath);
+
+      if (zipEntry.dir) {
+        await fs.promises.mkdir(fullPath, {recursive: true});
+      } else {
+        // Ensure parent directory exists
+        await fs.promises.mkdir(path.dirname(fullPath), {recursive: true});
+        const content = await zipEntry.async('nodebuffer');
+        await fs.promises.writeFile(fullPath, content);
+      }
+    }
+
+    logger.debug(`Archive extracted to: ${outputPath}`);
 
     return {
       ...result,
-      localPath: zipPath,
+      localPath: outputPath,
     };
   }
 }

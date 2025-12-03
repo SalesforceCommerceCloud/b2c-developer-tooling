@@ -137,7 +137,6 @@
     "@oclif/core": "^4",
     "@oclif/prettier-config": "^0.2.1",
     "@salesforce/dev-config": "^4.3.2",
-    "@types/archiver": "^7.0.0",
     "@types/node": "^18.19.130",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
@@ -160,10 +159,10 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
-    "archiver": "^7.0.1",
     "chokidar": "^5.0.0",
     "glob": "^13.0.0",
     "i18next": "^25.6.3",
+    "jszip": "^3.10.1",
     "open": "^11.0.0",
     "openapi-fetch": "^0.15.0",
     "pino": "^10.1.0",
