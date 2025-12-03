@@ -8,6 +8,38 @@ import {
 } from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
 
+/**
+ * Column definition for table output.
+ */
+interface ColumnDef {
+  header: string;
+  get: (e: JobExecution) => string;
+}
+
+/**
+ * Available columns for job execution list output.
+ */
+const COLUMNS: Record<string, ColumnDef> = {
+  id: {
+    header: 'Execution ID',
+    get: (e) => e.id ?? '-',
+  },
+  jobId: {
+    header: 'Job ID',
+    get: (e) => e.job_id ?? '-',
+  },
+  status: {
+    header: 'Status',
+    get: (e) => e.exit_status?.code || e.execution_status || '-',
+  },
+  startTime: {
+    header: 'Start Time',
+    get: (e) => (e.start_time ? new Date(e.start_time).toISOString().replace('T', ' ').slice(0, 19) : '-'),
+  },
+};
+
+const DEFAULT_COLUMNS = ['id', 'jobId', 'status', 'startTime'];
+
 export default class JobSearch extends InstanceCommand<typeof JobSearch> {
   static description = t('commands.job.search.description', 'Search for job executions on a B2C Commerce instance');
 
@@ -97,33 +129,55 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
     return results;
   }
 
+  /**
+   * Calculate dynamic column widths based on content.
+   */
+  private calculateColumnWidths(executions: JobExecution[], columnKeys: string[]): Map<string, number> {
+    const widths = new Map<string, number>();
+    const padding = 2;
+
+    for (const key of columnKeys) {
+      const col = COLUMNS[key];
+      let maxWidth = col.header.length;
+
+      for (const exec of executions) {
+        const value = col.get(exec);
+        maxWidth = Math.max(maxWidth, value.length);
+      }
+
+      widths.set(key, maxWidth + padding);
+    }
+
+    return widths;
+  }
+
   private printExecutionsTable(executions: JobExecution[]): void {
-    const ui = cliui({width: process.stdout.columns || 120});
+    const termWidth = process.stdout.columns || 120;
+    const ui = cliui({width: termWidth});
+    const columnKeys = DEFAULT_COLUMNS;
+
+    const widths = this.calculateColumnWidths(executions, columnKeys);
 
     // Header
-    ui.div(
-      {text: 'Execution ID', width: 38, padding: [0, 1, 0, 0]},
-      {text: 'Job ID', width: 30, padding: [0, 1, 0, 0]},
-      {text: 'Status', width: 12, padding: [0, 1, 0, 0]},
-      {text: 'Start Time', width: 20, padding: [0, 0, 0, 0]},
-    );
+    const headerCols = columnKeys.map((key) => ({
+      text: COLUMNS[key].header,
+      width: widths.get(key),
+      padding: [0, 1, 0, 0] as [number, number, number, number],
+    }));
+    ui.div(...headerCols);
 
     // Separator
-    ui.div({text: '─'.repeat(100), padding: [0, 0, 0, 0]});
+    const totalWidth = [...widths.values()].reduce((sum, w) => sum + w, 0);
+    ui.div({text: '─'.repeat(Math.min(totalWidth, termWidth)), padding: [0, 0, 0, 0]});
 
     // Rows
     for (const exec of executions) {
-      const status = exec.exit_status?.code || exec.execution_status;
-      const startTime = exec.start_time
-        ? new Date(exec.start_time).toISOString().replace('T', ' ').slice(0, 19)
-        : 'N/A';
-
-      ui.div(
-        {text: exec.id ?? '', width: 38, padding: [0, 1, 0, 0]},
-        {text: exec.job_id ?? '', width: 30, padding: [0, 1, 0, 0]},
-        {text: status ?? '', width: 12, padding: [0, 1, 0, 0]},
-        {text: startTime, width: 20, padding: [0, 0, 0, 0]},
-      );
+      const rowCols = columnKeys.map((key) => ({
+        text: COLUMNS[key].get(exec),
+        width: widths.get(key),
+        padding: [0, 1, 0, 0] as [number, number, number, number],
+      }));
+      ui.div(...rowCols);
     }
 
     ux.stdout(ui.toString());
