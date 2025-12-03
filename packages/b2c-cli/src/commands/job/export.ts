@@ -1,4 +1,5 @@
 import {Flags} from '@oclif/core';
+import {JobCommand} from '@salesforce/b2c-tooling/cli';
 import {
   siteArchiveExportToPath,
   JobExecutionError,
@@ -6,7 +7,6 @@ import {
   type ExportDataUnitsConfiguration,
 } from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
-import {JobCommand} from './base.js';
 
 export default class JobExport extends JobCommand<typeof JobExport> {
   static description = t(
@@ -157,7 +157,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
               const elapsedSec = Math.floor(elapsed / 1000);
               this.log(
                 t('commands.job.export.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.executionStatus,
+                  status: exec.execution_status,
                   elapsed: elapsedSec.toString(),
                 }),
               );
@@ -169,7 +169,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       const durationSec = result.execution.duration ? (result.execution.duration / 1000).toFixed(1) : 'N/A';
       this.log(
         t('commands.job.export.completed', 'Export completed: {{status}} (duration: {{duration}}s)', {
-          status: result.execution.exitStatus || result.execution.executionStatus,
+          status: result.execution.exit_status?.code || result.execution.execution_status,
           duration: durationSec,
         }),
       );
@@ -198,7 +198,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         }
         this.error(
           t('commands.job.export.failed', 'Export failed: {{status}}', {
-            status: error.execution.exitStatus || 'ERROR',
+            status: error.execution.exit_status?.code || 'ERROR',
           }),
         );
       }

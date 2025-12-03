@@ -68,6 +68,7 @@ export {
   searchJobExecutions,
   findRunningJobExecution,
   getJobLog,
+  getJobErrorMessage,
   JobExecutionError,
 } from './run.js';
 
@@ -94,11 +95,3 @@ export type {
   ExportSitesConfiguration,
   ExportGlobalDataConfiguration,
 } from './site-archive.js';
-
-// Legacy exports for backwards compatibility (deprecated)
-/** @deprecated Use executeJob instead */
-export {executeJob as runJob} from './run.js';
-/** @deprecated Use getJobExecution instead */
-export {getJobExecution as getJobStatus} from './run.js';
-/** @deprecated Use JobExecution instead */
-export type {JobExecution as JobExecutionResult} from './run.js';

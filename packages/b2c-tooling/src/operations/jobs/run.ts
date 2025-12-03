@@ -8,93 +8,28 @@ import type {components} from '../../clients/ocapi.generated.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
+ * Job execution from OCAPI.
+ * Type alias to the generated schema.
+ */
+export type JobExecution = components['schemas']['job_execution'];
+
+/**
+ * Job step execution from OCAPI.
+ * Type alias to the generated schema.
+ */
+export type JobStepExecution = components['schemas']['job_step_execution'];
+
+/**
  * Job execution status from OCAPI.
+ * Type alias to the generated schema's execution_status field.
  */
-export type JobExecutionStatus =
-  | 'pending'
-  | 'running'
-  | 'pausing'
-  | 'paused'
-  | 'resuming'
-  | 'resumed'
-  | 'restarting'
-  | 'restarted'
-  | 'retrying'
-  | 'retried'
-  | 'aborting'
-  | 'aborted'
-  | 'finished'
-  | 'unknown';
-
-/**
- * Job execution result from OCAPI.
- */
-export interface JobExecution {
-  /** Unique execution ID */
-  id: string;
-  /** Job ID this execution belongs to */
-  jobId: string;
-  /** Human-readable job description */
-  jobDescription?: string;
-  /** Current execution status */
-  executionStatus: JobExecutionStatus;
-  /** Exit status code (e.g., 'OK', 'ERROR') when finished */
-  exitStatus?: string;
-  /** Overall status combining execution and exit status */
-  status?: string;
-  /** Execution start time */
-  startTime?: Date;
-  /** Execution end time */
-  endTime?: Date;
-  /** Duration in milliseconds */
-  duration?: number;
-  /** WebDAV path to log file */
-  logFilePath?: string;
-  /** Whether log file exists */
-  isLogFileExisting?: boolean;
-  /** Client ID that started the job */
-  clientId?: string;
-  /** User login that started the job */
-  userLogin?: string;
-  /** Step executions within this job */
-  stepExecutions?: JobStepExecution[];
-  /** Original OCAPI response */
-  _raw: components['schemas']['job_execution'];
-}
-
-/**
- * Job step execution information.
- */
-export interface JobStepExecution {
-  /** Step execution ID */
-  id?: string;
-  /** Step ID within the job */
-  stepId?: string;
-  /** Step type ID */
-  stepTypeId?: string;
-  /** Step description */
-  stepDescription?: string;
-  /** Execution status of this step */
-  executionStatus?: JobExecutionStatus;
-  /** Exit status of this step */
-  exitStatus?: string;
-  /** Step duration in milliseconds */
-  duration?: number;
-  /** Start time */
-  startTime?: Date;
-  /** End time */
-  endTime?: Date;
-}
+export type JobExecutionStatus = NonNullable<JobExecution['execution_status']>;
 
 /**
  * Job execution parameter for starting jobs.
+ * Type alias to the generated schema.
  */
-export interface JobExecutionParameter {
-  /** Parameter name */
-  name: string;
-  /** Parameter value */
-  value: string;
-}
+export type JobExecutionParameter = components['schemas']['job_execution_parameter'];
 
 /**
  * Options for executing a job.
@@ -116,39 +51,6 @@ export interface WaitForJobOptions {
   timeout?: number;
   /** Callback for progress updates */
   onProgress?: (execution: JobExecution, elapsedMs: number) => void;
-}
-
-/**
- * Converts raw OCAPI job execution to our typed interface.
- */
-function toJobExecution(raw: components['schemas']['job_execution']): JobExecution {
-  return {
-    id: raw.id!,
-    jobId: raw.job_id!,
-    jobDescription: raw.job_description,
-    executionStatus: (raw.execution_status ?? 'unknown') as JobExecutionStatus,
-    exitStatus: raw.exit_status?.code,
-    status: raw.status,
-    startTime: raw.start_time ? new Date(raw.start_time) : undefined,
-    endTime: raw.end_time ? new Date(raw.end_time) : undefined,
-    duration: raw.duration,
-    logFilePath: raw.log_file_path,
-    isLogFileExisting: raw.is_log_file_existing,
-    clientId: raw.client_id,
-    userLogin: raw.user_login,
-    stepExecutions: raw.step_executions?.map((step) => ({
-      id: step.id,
-      stepId: step.step_id,
-      stepTypeId: step.step_type_id,
-      stepDescription: step.step_description,
-      executionStatus: (step.execution_status ?? 'unknown') as JobExecutionStatus,
-      exitStatus: step.exit_status?.code,
-      duration: step.duration,
-      startTime: step.start_time ? new Date(step.start_time) : undefined,
-      endTime: step.end_time ? new Date(step.end_time) : undefined,
-    })),
-    _raw: raw,
-  };
 }
 
 /**
@@ -207,7 +109,7 @@ export async function executeJob(
         const runningExecution = await findRunningJobExecution(instance, jobId);
         if (runningExecution) {
           logger.debug({executionId: runningExecution.id}, `Found running execution ${runningExecution.id}`);
-          await waitForJob(instance, jobId, runningExecution.id);
+          await waitForJob(instance, jobId, runningExecution.id!);
           // Retry execution after the running job finishes
           return executeJob(instance, jobId, {...options, waitForRunning: false});
         }
@@ -223,10 +125,9 @@ export async function executeJob(
     throw new Error(message);
   }
 
-  const execution = toJobExecution(data);
-  logger.info({executionId: execution.id, status: execution.executionStatus}, `Job ${jobId} started: ${execution.id}`);
+  logger.debug({executionId: data.id, status: data.execution_status}, `Job ${jobId} started: ${data.id}`);
 
-  return execution;
+  return data;
 }
 
 /**
@@ -241,7 +142,7 @@ export async function executeJob(
  * @example
  * ```typescript
  * const status = await getJobExecution(instance, 'my-job', 'exec-123');
- * console.log(`Status: ${status.executionStatus}`);
+ * console.log(`Status: ${status.execution_status}`);
  * ```
  */
 export async function getJobExecution(
@@ -258,7 +159,7 @@ export async function getJobExecution(
     throw new Error(message);
   }
 
-  return toJobExecution(data);
+  return data;
 }
 
 /**
@@ -282,7 +183,7 @@ export async function getJobExecution(
  * // With progress callback
  * const result = await waitForJob(instance, 'my-job', 'exec-123', {
  *   onProgress: (exec, elapsed) => {
- *     console.log(`Status: ${exec.executionStatus}, elapsed: ${elapsed}ms`);
+ *     console.log(`Status: ${exec.execution_status}, elapsed: ${elapsed}ms`);
  *   }
  * });
  * ```
@@ -315,24 +216,24 @@ export async function waitForJob(
     }
 
     // Check for terminal states
-    if (execution.executionStatus === 'aborted' || execution.exitStatus === 'ERROR') {
-      logger.error({execution}, `Job ${jobId} failed`);
+    if (execution.execution_status === 'aborted' || execution.exit_status?.code === 'ERROR') {
+      logger.debug({execution}, `Job ${jobId} failed`);
       throw new JobExecutionError(`Job ${jobId} failed`, execution);
     }
 
-    if (execution.executionStatus === 'finished') {
+    if (execution.execution_status === 'finished') {
       const durationSec = (execution.duration ?? 0) / 1000;
-      logger.info(
-        {executionId, status: execution.exitStatus, duration: durationSec},
-        `Job ${jobId} finished. Status: ${execution.exitStatus} (duration: ${durationSec}s)`,
+      logger.debug(
+        {executionId, status: execution.exit_status?.code, duration: durationSec},
+        `Job ${jobId} finished. Status: ${execution.exit_status?.code} (duration: ${durationSec}s)`,
       );
       return execution;
     }
 
     // Log periodic updates
     if (ticks % 5 === 0) {
-      logger.info(
-        {executionId, status: execution.executionStatus, elapsed: elapsed / 1000},
+      logger.debug(
+        {executionId, status: execution.execution_status, elapsed: elapsed / 1000},
         `Waiting for job ${jobId} to finish (${(elapsed / 1000).toFixed(0)}s elapsed)...`,
       );
     }
@@ -352,6 +253,38 @@ export class JobExecutionError extends Error {
     super(message);
     this.name = 'JobExecutionError';
   }
+}
+
+/**
+ * Extracts the error message from a failed job execution.
+ *
+ * Looks for the last step execution with exit_status code 'ERROR' and returns its message.
+ *
+ * @param execution - The job execution to extract the error message from
+ * @returns The error message if found, undefined otherwise
+ *
+ * @example
+ * ```typescript
+ * const errorMsg = getJobErrorMessage(execution);
+ * if (errorMsg) {
+ *   console.error(`Job failed: ${errorMsg}`);
+ * }
+ * ```
+ */
+export function getJobErrorMessage(execution: JobExecution): string | undefined {
+  if (!execution.step_executions || execution.step_executions.length === 0) {
+    return undefined;
+  }
+
+  // Find the last step with ERROR status that has a message
+  for (let i = execution.step_executions.length - 1; i >= 0; i--) {
+    const step = execution.step_executions[i];
+    if (step.exit_status?.code === 'ERROR' && step.exit_status?.message) {
+      return step.exit_status.message;
+    }
+  }
+
+  return undefined;
 }
 
 /**
@@ -457,7 +390,7 @@ export async function searchJobExecutions(
     total: data.total ?? 0,
     count: data.count ?? 0,
     start: data.start ?? 0,
-    hits: (data.hits ?? []).map(toJobExecution),
+    hits: (data.hits ?? []) as JobExecution[],
   };
 }
 
@@ -493,7 +426,7 @@ export async function findRunningJobExecution(instance: B2CInstance, jobId: stri
  * try {
  *   const result = await waitForJob(instance, 'my-job', 'exec-123');
  * } catch (error) {
- *   if (error instanceof JobExecutionError && error.execution.isLogFileExisting) {
+ *   if (error instanceof JobExecutionError && error.execution.is_log_file_existing) {
  *     const log = await getJobLog(instance, error.execution);
  *     console.error('Job log:', log);
  *   }
@@ -501,17 +434,17 @@ export async function findRunningJobExecution(instance: B2CInstance, jobId: stri
  * ```
  */
 export async function getJobLog(instance: B2CInstance, execution: JobExecution): Promise<string> {
-  if (!execution.logFilePath) {
+  if (!execution.log_file_path) {
     throw new Error('No log file path available');
   }
 
-  if (!execution.isLogFileExisting) {
+  if (!execution.is_log_file_existing) {
     throw new Error('Log file does not exist');
   }
 
   // log_file_path from OCAPI is "/Sites/LOGS/jobs/..."
   // WebDAV client base is /webdav/Sites, so strip the leading /Sites/
-  const logPath = execution.logFilePath.replace(/^\/Sites\//, '');
+  const logPath = execution.log_file_path.replace(/^\/Sites\//, '');
 
   const content = await instance.webdav.get(logPath);
   return new TextDecoder().decode(content);

@@ -113,13 +113,11 @@ export {
   searchJobExecutions,
   findRunningJobExecution,
   getJobLog,
+  getJobErrorMessage,
   JobExecutionError,
   siteArchiveImport,
   siteArchiveExport,
   siteArchiveExportToPath,
-  // Legacy exports (deprecated)
-  runJob,
-  getJobStatus,
 } from './operations/jobs/index.js';
 export type {
   JobExecution,
@@ -137,8 +135,6 @@ export type {
   ExportDataUnitsConfiguration,
   ExportSitesConfiguration,
   ExportGlobalDataConfiguration,
-  // Legacy exports (deprecated)
-  JobExecutionResult,
 } from './operations/jobs/index.js';
 
 // Operations - Sites

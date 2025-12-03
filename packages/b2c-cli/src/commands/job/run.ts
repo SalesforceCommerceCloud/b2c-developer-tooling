@@ -1,7 +1,7 @@
 import {Args, Flags} from '@oclif/core';
+import {JobCommand} from '@salesforce/b2c-tooling/cli';
 import {executeJob, waitForJob, JobExecutionError, type JobExecution} from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
-import {JobCommand} from './base.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {
   static args = {
@@ -83,7 +83,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     this.log(
       t('commands.job.run.started', 'Job started: {{executionId}} (status: {{status}})', {
         executionId: execution.id,
-        status: execution.executionStatus,
+        status: execution.execution_status,
       }),
     );
 
@@ -92,14 +92,14 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 
       try {
-        execution = await waitForJob(this.instance, jobId, execution.id, {
+        execution = await waitForJob(this.instance, jobId, execution.id!, {
           timeout: timeout ? timeout * 1000 : undefined,
           onProgress: (exec, elapsed) => {
             if (!this.jsonEnabled()) {
               const elapsedSec = Math.floor(elapsed / 1000);
               this.log(
                 t('commands.job.run.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.executionStatus,
+                  status: exec.execution_status,
                   elapsed: elapsedSec.toString(),
                 }),
               );
@@ -110,7 +110,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         const durationSec = execution.duration ? (execution.duration / 1000).toFixed(1) : 'N/A';
         this.log(
           t('commands.job.run.completed', 'Job completed: {{status}} (duration: {{duration}}s)', {
-            status: execution.exitStatus || execution.executionStatus,
+            status: execution.exit_status?.code || execution.execution_status,
             duration: durationSec,
           }),
         );
@@ -121,7 +121,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
           }
           this.error(
             t('commands.job.run.jobFailed', 'Job failed: {{status}}', {
-              status: error.execution.exitStatus || 'ERROR',
+              status: error.execution.exit_status?.code || 'ERROR',
             }),
           );
         }

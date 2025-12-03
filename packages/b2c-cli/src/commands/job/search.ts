@@ -113,13 +113,15 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
 
     // Rows
     for (const exec of executions) {
-      const status = exec.exitStatus || exec.executionStatus;
-      const startTime = exec.startTime ? exec.startTime.toISOString().replace('T', ' ').slice(0, 19) : 'N/A';
+      const status = exec.exit_status?.code || exec.execution_status;
+      const startTime = exec.start_time
+        ? new Date(exec.start_time).toISOString().replace('T', ' ').slice(0, 19)
+        : 'N/A';
 
       ui.div(
-        {text: exec.id, width: 38, padding: [0, 1, 0, 0]},
-        {text: exec.jobId, width: 30, padding: [0, 1, 0, 0]},
-        {text: status, width: 12, padding: [0, 1, 0, 0]},
+        {text: exec.id ?? '', width: 38, padding: [0, 1, 0, 0]},
+        {text: exec.job_id ?? '', width: 30, padding: [0, 1, 0, 0]},
+        {text: status ?? '', width: 12, padding: [0, 1, 0, 0]},
         {text: startTime, width: 20, padding: [0, 0, 0, 0]},
       );
     }

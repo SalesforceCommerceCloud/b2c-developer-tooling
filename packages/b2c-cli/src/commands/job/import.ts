@@ -1,11 +1,11 @@
 import {Args, Flags} from '@oclif/core';
+import {JobCommand} from '@salesforce/b2c-tooling/cli';
 import {
   siteArchiveImport,
   JobExecutionError,
   type SiteArchiveImportResult,
 } from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
-import {JobCommand} from './base.js';
 
 export default class JobImport extends JobCommand<typeof JobImport> {
   static args = {
@@ -88,7 +88,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
               const elapsedSec = Math.floor(elapsed / 1000);
               this.log(
                 t('commands.job.import.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.executionStatus,
+                  status: exec.execution_status,
                   elapsed: elapsedSec.toString(),
                 }),
               );
@@ -100,7 +100,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       const durationSec = result.execution.duration ? (result.execution.duration / 1000).toFixed(1) : 'N/A';
       this.log(
         t('commands.job.import.completed', 'Import completed: {{status}} (duration: {{duration}}s)', {
-          status: result.execution.exitStatus || result.execution.executionStatus,
+          status: result.execution.exit_status?.code || result.execution.execution_status,
           duration: durationSec,
         }),
       );
@@ -121,7 +121,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         }
         this.error(
           t('commands.job.import.failed', 'Import failed: {{status}}', {
-            status: error.execution.exitStatus || 'ERROR',
+            status: error.execution.exit_status?.code || 'ERROR',
           }),
         );
       }

@@ -1,7 +1,7 @@
 import {Args, Flags} from '@oclif/core';
+import {JobCommand} from '@salesforce/b2c-tooling/cli';
 import {waitForJob, JobExecutionError, type JobExecution} from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
-import {JobCommand} from './base.js';
 
 export default class JobWait extends JobCommand<typeof JobWait> {
   static args = {
@@ -63,7 +63,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
             const elapsedSec = Math.floor(elapsed / 1000);
             this.log(
               t('commands.job.wait.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                status: exec.executionStatus,
+                status: exec.execution_status,
                 elapsed: elapsedSec.toString(),
               }),
             );
@@ -74,7 +74,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
       const durationSec = execution.duration ? (execution.duration / 1000).toFixed(1) : 'N/A';
       this.log(
         t('commands.job.wait.completed', 'Job completed: {{status}} (duration: {{duration}}s)', {
-          status: execution.exitStatus || execution.executionStatus,
+          status: execution.exit_status?.code || execution.execution_status,
           duration: durationSec,
         }),
       );
@@ -87,7 +87,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
         }
         this.error(
           t('commands.job.wait.jobFailed', 'Job failed: {{status}}', {
-            status: error.execution.exitStatus || 'ERROR',
+            status: error.execution.exit_status?.code || 'ERROR',
           }),
         );
       }

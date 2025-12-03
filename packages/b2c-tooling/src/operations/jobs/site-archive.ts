@@ -139,7 +139,7 @@ export async function siteArchiveImport(
   }
 
   // Execute the import job
-  logger.info(`Executing ${IMPORT_JOB_ID} job`);
+  logger.debug(`Executing ${IMPORT_JOB_ID} job`);
 
   let execution: JobExecution;
   try {
@@ -170,14 +170,7 @@ export async function siteArchiveImport(
       throw new Error(error?.fault?.message ?? 'Failed to execute import job');
     }
 
-    execution = {
-      id: data.id!,
-      jobId: data.job_id!,
-      executionStatus: (data.execution_status ?? 'unknown') as JobExecution['executionStatus'],
-      exitStatus: data.exit_status?.code,
-      status: data.status,
-      _raw: data,
-    };
+    execution = data;
   } catch {
     // Try with parameters format for internal users
     logger.warn('Retrying with parameters format for internal users');
@@ -193,27 +186,20 @@ export async function siteArchiveImport(
       throw new Error(error?.fault?.message ?? 'Failed to execute import job');
     }
 
-    execution = {
-      id: data.id!,
-      jobId: data.job_id!,
-      executionStatus: (data.execution_status ?? 'unknown') as JobExecution['executionStatus'],
-      exitStatus: data.exit_status?.code,
-      status: data.status,
-      _raw: data,
-    };
+    execution = data;
   }
 
-  logger.info({executionId: execution.id}, `Import job started: ${execution.id}`);
+  logger.debug({executionId: execution.id}, `Import job started: ${execution.id}`);
 
   // Wait for completion
   try {
-    execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id, waitOptions);
+    execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id!, waitOptions);
   } catch (error) {
     if (error instanceof JobExecutionError) {
       // Try to get log file
       try {
         const log = await getJobLog(instance, error.execution);
-        logger.error({logFile: error.execution.logFilePath}, `Job log:\n${log}`);
+        logger.error({logFile: error.execution.log_file_path}, `Job log:\n${log}`);
       } catch {
         logger.error('Could not retrieve job log');
       }
@@ -410,7 +396,7 @@ export async function siteArchiveExport(
   const zipFilename = `${archiveDirName}.zip`;
   const webdavPath = `Impex/src/instance/${zipFilename}`;
 
-  logger.info(`Executing ${EXPORT_JOB_ID} job`);
+  logger.debug(`Executing ${EXPORT_JOB_ID} job`);
   logger.debug({dataUnits}, 'Export data units');
 
   let execution: JobExecution;
@@ -429,14 +415,7 @@ export async function siteArchiveExport(
       throw new Error(error?.fault?.message ?? 'Failed to execute export job');
     }
 
-    execution = {
-      id: data.id!,
-      jobId: data.job_id!,
-      executionStatus: (data.execution_status ?? 'unknown') as JobExecution['executionStatus'],
-      exitStatus: data.exit_status?.code,
-      status: data.status,
-      _raw: data,
-    };
+    execution = data;
   } catch {
     // Try parameters format for internal users
     logger.warn('Retrying with parameters format for internal users');
@@ -455,27 +434,20 @@ export async function siteArchiveExport(
       throw new Error(error?.fault?.message ?? 'Failed to execute export job');
     }
 
-    execution = {
-      id: data.id!,
-      jobId: data.job_id!,
-      executionStatus: (data.execution_status ?? 'unknown') as JobExecution['executionStatus'],
-      exitStatus: data.exit_status?.code,
-      status: data.status,
-      _raw: data,
-    };
+    execution = data;
   }
 
-  logger.info({executionId: execution.id}, `Export job started: ${execution.id}`);
+  logger.debug({executionId: execution.id}, `Export job started: ${execution.id}`);
 
   // Wait for completion
   try {
-    execution = await waitForJob(instance, EXPORT_JOB_ID, execution.id, waitOptions);
+    execution = await waitForJob(instance, EXPORT_JOB_ID, execution.id!, waitOptions);
   } catch (error) {
     if (error instanceof JobExecutionError) {
       // Try to get log file
       try {
         const log = await getJobLog(instance, error.execution);
-        logger.error({logFile: error.execution.logFilePath}, `Job log:\n${log}`);
+        logger.error({logFile: error.execution.log_file_path}, `Job log:\n${log}`);
       } catch {
         logger.error('Could not retrieve job log');
       }
@@ -545,7 +517,7 @@ export async function siteArchiveExportToPath(
     await fs.promises.mkdir(path.dirname(zipPath), {recursive: true});
     await fs.promises.writeFile(zipPath, result.data);
 
-    logger.info(`Archive saved to: ${zipPath}`);
+    logger.debug(`Archive saved to: ${zipPath}`);
 
     return {
       ...result,
@@ -560,8 +532,8 @@ export async function siteArchiveExportToPath(
     const zipPath = path.join(outputPath, result.archiveFilename);
     await fs.promises.writeFile(zipPath, result.data);
 
-    logger.info(`Archive saved to: ${zipPath}`);
-    logger.info('Note: Automatic extraction requires additional setup. Archive saved as zip.');
+    logger.debug(`Archive saved to: ${zipPath}`);
+    logger.debug('Note: Automatic extraction requires additional setup. Archive saved as zip.');
 
     return {
       ...result,
