@@ -4,42 +4,101 @@
  * This module provides functions for running and monitoring jobs
  * on B2C Commerce instances via OCAPI.
  *
- * ## Functions
+ * ## Core Job Functions
  *
- * - {@link runJob} - Start a job execution
- * - {@link getJobStatus} - Check the status of a running job
+ * - {@link executeJob} - Start a job execution
+ * - {@link getJobExecution} - Get the status of a job execution
+ * - {@link waitForJob} - Wait for a job to complete
+ * - {@link searchJobExecutions} - Search for job executions
+ * - {@link findRunningJobExecution} - Find a running execution
+ * - {@link getJobLog} - Retrieve job log file content
+ *
+ * ## System Jobs
+ *
+ * - {@link siteArchiveImport} - Import a site archive
+ * - {@link siteArchiveExport} - Export a site archive
+ * - {@link siteArchiveExportToPath} - Export and save to local path
  *
  * ## Usage
  *
  * ```typescript
- * import { runJob, getJobStatus } from '@salesforce/b2c-tooling/operations/jobs';
- * import { B2CInstance, OAuthStrategy } from '@salesforce/b2c-tooling';
+ * import {
+ *   executeJob,
+ *   waitForJob,
+ *   searchJobExecutions,
+ *   siteArchiveImport,
+ *   siteArchiveExport,
+ * } from '@salesforce/b2c-tooling/operations/jobs';
+ * import { B2CInstance } from '@salesforce/b2c-tooling';
  *
- * const auth = new OAuthStrategy({
- *   clientId: 'your-client-id',
- *   clientSecret: 'your-client-secret',
+ * const instance = B2CInstance.fromDwJson();
+ *
+ * // Run a custom job and wait for completion
+ * const execution = await executeJob(instance, 'my-job-id');
+ * const result = await waitForJob(instance, 'my-job-id', execution.id);
+ *
+ * // Search for recent job executions
+ * const results = await searchJobExecutions(instance, {
+ *   jobId: 'my-job-id',
+ *   count: 10
  * });
- * const instance = new B2CInstance(
- *   { hostname: 'your-sandbox.demandware.net' },
- *   auth
- * );
  *
- * // Start a job
- * const result = await runJob(instance, 'my-job-id');
+ * // Import a site archive
+ * await siteArchiveImport(instance, './my-import-data');
  *
- * // Poll for completion
- * let status = await getJobStatus(instance, result.jobId, result.executionId);
- * while (status.status === 'running') {
- *   await new Promise(resolve => setTimeout(resolve, 5000));
- *   status = await getJobStatus(instance, result.jobId, result.executionId);
- * }
+ * // Export site data
+ * const exportResult = await siteArchiveExport(instance, {
+ *   global_data: { meta_data: true }
+ * });
  * ```
  *
  * ## Authentication
  *
- * Job operations require OAuth authentication with appropriate OCAPI permissions.
+ * Job operations require OAuth authentication with appropriate OCAPI permissions
+ * for the /jobs and /job_execution_search resources.
  *
  * @module operations/jobs
  */
-export {runJob, getJobStatus} from './run.js';
-export type {JobExecutionResult} from './run.js';
+
+// Core job execution
+export {
+  executeJob,
+  getJobExecution,
+  waitForJob,
+  searchJobExecutions,
+  findRunningJobExecution,
+  getJobLog,
+  JobExecutionError,
+} from './run.js';
+
+export type {
+  JobExecution,
+  JobStepExecution,
+  JobExecutionStatus,
+  JobExecutionParameter,
+  ExecuteJobOptions,
+  WaitForJobOptions,
+  SearchJobExecutionsOptions,
+  JobExecutionSearchResult,
+} from './run.js';
+
+// Site archive import/export
+export {siteArchiveImport, siteArchiveExport, siteArchiveExportToPath} from './site-archive.js';
+
+export type {
+  SiteArchiveImportOptions,
+  SiteArchiveImportResult,
+  SiteArchiveExportOptions,
+  SiteArchiveExportResult,
+  ExportDataUnitsConfiguration,
+  ExportSitesConfiguration,
+  ExportGlobalDataConfiguration,
+} from './site-archive.js';
+
+// Legacy exports for backwards compatibility (deprecated)
+/** @deprecated Use executeJob instead */
+export {executeJob as runJob} from './run.js';
+/** @deprecated Use getJobExecution instead */
+export {getJobExecution as getJobStatus} from './run.js';
+/** @deprecated Use JobExecution instead */
+export type {JobExecution as JobExecutionResult} from './run.js';

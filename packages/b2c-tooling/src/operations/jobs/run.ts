@@ -1,45 +1,529 @@
+/**
+ * Job execution operations for B2C Commerce.
+ *
+ * Provides functions for executing and monitoring jobs on B2C Commerce instances.
+ */
 import {B2CInstance} from '../../instance/index.js';
+import type {components} from '../../clients/ocapi.generated.js';
+import {getLogger} from '../../logging/logger.js';
 
-export interface JobExecutionResult {
+/**
+ * Job execution status from OCAPI.
+ */
+export type JobExecutionStatus =
+  | 'pending'
+  | 'running'
+  | 'pausing'
+  | 'paused'
+  | 'resuming'
+  | 'resumed'
+  | 'restarting'
+  | 'restarted'
+  | 'retrying'
+  | 'retried'
+  | 'aborting'
+  | 'aborted'
+  | 'finished'
+  | 'unknown';
+
+/**
+ * Job execution result from OCAPI.
+ */
+export interface JobExecution {
+  /** Unique execution ID */
+  id: string;
+  /** Job ID this execution belongs to */
   jobId: string;
-  status: 'running' | 'completed' | 'failed';
-  startTime: Date;
+  /** Human-readable job description */
+  jobDescription?: string;
+  /** Current execution status */
+  executionStatus: JobExecutionStatus;
+  /** Exit status code (e.g., 'OK', 'ERROR') when finished */
+  exitStatus?: string;
+  /** Overall status combining execution and exit status */
+  status?: string;
+  /** Execution start time */
+  startTime?: Date;
+  /** Execution end time */
+  endTime?: Date;
+  /** Duration in milliseconds */
+  duration?: number;
+  /** WebDAV path to log file */
+  logFilePath?: string;
+  /** Whether log file exists */
+  isLogFileExisting?: boolean;
+  /** Client ID that started the job */
+  clientId?: string;
+  /** User login that started the job */
+  userLogin?: string;
+  /** Step executions within this job */
+  stepExecutions?: JobStepExecution[];
+  /** Original OCAPI response */
+  _raw: components['schemas']['job_execution'];
+}
+
+/**
+ * Job step execution information.
+ */
+export interface JobStepExecution {
+  /** Step execution ID */
+  id?: string;
+  /** Step ID within the job */
+  stepId?: string;
+  /** Step type ID */
+  stepTypeId?: string;
+  /** Step description */
+  stepDescription?: string;
+  /** Execution status of this step */
+  executionStatus?: JobExecutionStatus;
+  /** Exit status of this step */
+  exitStatus?: string;
+  /** Step duration in milliseconds */
+  duration?: number;
+  /** Start time */
+  startTime?: Date;
+  /** End time */
   endTime?: Date;
 }
 
 /**
- * Runs a job on an instance.
+ * Job execution parameter for starting jobs.
  */
-export async function runJob(instance: B2CInstance, jobId: string): Promise<JobExecutionResult> {
-  console.log(`Running job ${jobId} on ${instance.config.hostname}...`);
+export interface JobExecutionParameter {
+  /** Parameter name */
+  name: string;
+  /** Parameter value */
+  value: string;
+}
 
-  // TODO: Implement actual job execution via OCAPI
-  // POST /s/-/dw/data/v21_10/jobs/{job_id}/executions
+/**
+ * Options for executing a job.
+ */
+export interface ExecuteJobOptions {
+  /** Job parameters to pass */
+  parameters?: JobExecutionParameter[];
+  /** Wait for running jobs to finish before starting (default: true) */
+  waitForRunning?: boolean;
+}
 
+/**
+ * Options for waiting on a job.
+ */
+export interface WaitForJobOptions {
+  /** Polling interval in milliseconds (default: 3000) */
+  pollInterval?: number;
+  /** Maximum time to wait in milliseconds (default: no limit) */
+  timeout?: number;
+  /** Callback for progress updates */
+  onProgress?: (execution: JobExecution, elapsedMs: number) => void;
+}
+
+/**
+ * Converts raw OCAPI job execution to our typed interface.
+ */
+function toJobExecution(raw: components['schemas']['job_execution']): JobExecution {
   return {
-    jobId,
-    status: 'running',
-    startTime: new Date(),
+    id: raw.id!,
+    jobId: raw.job_id!,
+    jobDescription: raw.job_description,
+    executionStatus: (raw.execution_status ?? 'unknown') as JobExecutionStatus,
+    exitStatus: raw.exit_status?.code,
+    status: raw.status,
+    startTime: raw.start_time ? new Date(raw.start_time) : undefined,
+    endTime: raw.end_time ? new Date(raw.end_time) : undefined,
+    duration: raw.duration,
+    logFilePath: raw.log_file_path,
+    isLogFileExisting: raw.is_log_file_existing,
+    clientId: raw.client_id,
+    userLogin: raw.user_login,
+    stepExecutions: raw.step_executions?.map((step) => ({
+      id: step.id,
+      stepId: step.step_id,
+      stepTypeId: step.step_type_id,
+      stepDescription: step.step_description,
+      executionStatus: (step.execution_status ?? 'unknown') as JobExecutionStatus,
+      exitStatus: step.exit_status?.code,
+      duration: step.duration,
+      startTime: step.start_time ? new Date(step.start_time) : undefined,
+      endTime: step.end_time ? new Date(step.end_time) : undefined,
+    })),
+    _raw: raw,
   };
 }
 
 /**
- * Gets the status of a job execution.
+ * Executes a job on a B2C Commerce instance.
+ *
+ * Starts a job execution and returns immediately with the execution details.
+ * Use {@link waitForJob} to wait for completion.
+ *
+ * @param instance - B2C instance to execute on
+ * @param jobId - Job ID to execute
+ * @param options - Execution options
+ * @returns Job execution details
+ * @throws Error if job is already running (when waitForRunning is false)
+ * @throws Error if job not found or cannot be executed
+ *
+ * @example
+ * ```typescript
+ * // Execute a simple job
+ * const execution = await executeJob(instance, 'my-job-id');
+ *
+ * // Execute with parameters
+ * const execution = await executeJob(instance, 'CustomerImportJob', {
+ *   parameters: [
+ *     { name: 'SiteScope', value: '{"all_storefront_sites":true}' }
+ *   ]
+ * });
+ * ```
  */
-export async function getJobStatus(
+export async function executeJob(
+  instance: B2CInstance,
+  jobId: string,
+  options: ExecuteJobOptions = {},
+): Promise<JobExecution> {
+  const logger = getLogger();
+  const {parameters = [], waitForRunning = true} = options;
+
+  logger.debug({jobId, parameters}, `Executing job ${jobId}`);
+
+  // Build request body - OCAPI accepts either parameters array or job-specific fields
+  const body = parameters.length > 0 ? {parameters} : undefined;
+
+  const {data, error, response} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
+    params: {path: {job_id: jobId}},
+    body: body as unknown as string,
+  });
+
+  // Handle JobAlreadyRunningException
+  if (response.status === 400) {
+    // Need to check fault type - read raw response
+    const errorBody = await response.text().catch(() => '');
+    if (errorBody.includes('JobAlreadyRunningException')) {
+      if (waitForRunning) {
+        logger.warn(`Job ${jobId} already running, waiting for it to finish...`);
+
+        // Search for the running execution
+        const runningExecution = await findRunningJobExecution(instance, jobId);
+        if (runningExecution) {
+          logger.debug({executionId: runningExecution.id}, `Found running execution ${runningExecution.id}`);
+          await waitForJob(instance, jobId, runningExecution.id);
+          // Retry execution after the running job finishes
+          return executeJob(instance, jobId, {...options, waitForRunning: false});
+        }
+        // Couldn't find running job, try again
+        return executeJob(instance, jobId, {...options, waitForRunning: false});
+      }
+      throw new Error(`Job ${jobId} is already running`);
+    }
+  }
+
+  if (error || !data) {
+    const message = error?.fault?.message ?? `Failed to execute job ${jobId}`;
+    throw new Error(message);
+  }
+
+  const execution = toJobExecution(data);
+  logger.info({executionId: execution.id, status: execution.executionStatus}, `Job ${jobId} started: ${execution.id}`);
+
+  return execution;
+}
+
+/**
+ * Gets the current status of a job execution.
+ *
+ * @param instance - B2C instance
+ * @param jobId - Job ID
+ * @param executionId - Execution ID
+ * @returns Current execution status
+ * @throws Error if execution not found
+ *
+ * @example
+ * ```typescript
+ * const status = await getJobExecution(instance, 'my-job', 'exec-123');
+ * console.log(`Status: ${status.executionStatus}`);
+ * ```
+ */
+export async function getJobExecution(
   instance: B2CInstance,
   jobId: string,
   executionId: string,
-): Promise<JobExecutionResult> {
-  console.log(`Getting status of job ${jobId} execution ${executionId}...`);
+): Promise<JobExecution> {
+  const {data, error} = await instance.ocapi.GET('/jobs/{job_id}/executions/{id}', {
+    params: {path: {job_id: jobId, id: executionId}},
+  });
 
-  // TODO: Implement actual status check via OCAPI
-  // GET /s/-/dw/data/v21_10/jobs/{job_id}/executions/{execution_id}
+  if (error || !data) {
+    const message = error?.fault?.message ?? `Failed to get job execution ${executionId}`;
+    throw new Error(message);
+  }
+
+  return toJobExecution(data);
+}
+
+/**
+ * Waits for a job execution to complete.
+ *
+ * Polls the job status until it reaches a terminal state (finished or aborted).
+ *
+ * @param instance - B2C instance
+ * @param jobId - Job ID
+ * @param executionId - Execution ID to wait for
+ * @param options - Wait options
+ * @returns Final execution status
+ * @throws Error if job fails (status ERROR or aborted)
+ * @throws Error if timeout is exceeded
+ *
+ * @example
+ * ```typescript
+ * // Simple wait
+ * const result = await waitForJob(instance, 'my-job', 'exec-123');
+ *
+ * // With progress callback
+ * const result = await waitForJob(instance, 'my-job', 'exec-123', {
+ *   onProgress: (exec, elapsed) => {
+ *     console.log(`Status: ${exec.executionStatus}, elapsed: ${elapsed}ms`);
+ *   }
+ * });
+ * ```
+ */
+export async function waitForJob(
+  instance: B2CInstance,
+  jobId: string,
+  executionId: string,
+  options: WaitForJobOptions = {},
+): Promise<JobExecution> {
+  const logger = getLogger();
+  const {pollInterval = 3000, timeout, onProgress} = options;
+
+  const startTime = Date.now();
+  let ticks = 0;
+
+  while (true) {
+    await sleep(pollInterval);
+
+    const elapsed = Date.now() - startTime;
+    if (timeout && elapsed > timeout) {
+      throw new Error(`Timeout waiting for job ${jobId} execution ${executionId}`);
+    }
+
+    const execution = await getJobExecution(instance, jobId, executionId);
+
+    // Call progress callback
+    if (onProgress) {
+      onProgress(execution, elapsed);
+    }
+
+    // Check for terminal states
+    if (execution.executionStatus === 'aborted' || execution.exitStatus === 'ERROR') {
+      logger.error({execution}, `Job ${jobId} failed`);
+      throw new JobExecutionError(`Job ${jobId} failed`, execution);
+    }
+
+    if (execution.executionStatus === 'finished') {
+      const durationSec = (execution.duration ?? 0) / 1000;
+      logger.info(
+        {executionId, status: execution.exitStatus, duration: durationSec},
+        `Job ${jobId} finished. Status: ${execution.exitStatus} (duration: ${durationSec}s)`,
+      );
+      return execution;
+    }
+
+    // Log periodic updates
+    if (ticks % 5 === 0) {
+      logger.info(
+        {executionId, status: execution.executionStatus, elapsed: elapsed / 1000},
+        `Waiting for job ${jobId} to finish (${(elapsed / 1000).toFixed(0)}s elapsed)...`,
+      );
+    }
+
+    ticks++;
+  }
+}
+
+/**
+ * Error thrown when a job execution fails.
+ */
+export class JobExecutionError extends Error {
+  constructor(
+    message: string,
+    public readonly execution: JobExecution,
+  ) {
+    super(message);
+    this.name = 'JobExecutionError';
+  }
+}
+
+/**
+ * Search options for job executions.
+ */
+export interface SearchJobExecutionsOptions {
+  /** Filter by job ID */
+  jobId?: string;
+  /** Filter by status (RUNNING, PENDING, OK, ERROR, etc.) */
+  status?: string | string[];
+  /** Maximum results to return (default: 25) */
+  count?: number;
+  /** Starting index for pagination */
+  start?: number;
+  /** Sort by field (default: start_time desc) */
+  sortBy?: string;
+  /** Sort order */
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * Search results for job executions.
+ */
+export interface JobExecutionSearchResult {
+  /** Total matching executions */
+  total: number;
+  /** Number of results returned */
+  count: number;
+  /** Starting index */
+  start: number;
+  /** Job executions */
+  hits: JobExecution[];
+}
+
+/**
+ * Searches for job executions.
+ *
+ * @param instance - B2C instance
+ * @param options - Search options
+ * @returns Search results
+ *
+ * @example
+ * ```typescript
+ * // Search for all running jobs
+ * const results = await searchJobExecutions(instance, {
+ *   status: ['RUNNING', 'PENDING']
+ * });
+ *
+ * // Search for a specific job's recent executions
+ * const results = await searchJobExecutions(instance, {
+ *   jobId: 'my-job',
+ *   count: 10
+ * });
+ * ```
+ */
+export async function searchJobExecutions(
+  instance: B2CInstance,
+  options: SearchJobExecutionsOptions = {},
+): Promise<JobExecutionSearchResult> {
+  const {jobId, status, count = 25, start = 0, sortBy = 'start_time', sortOrder = 'desc'} = options;
+
+  // Build query
+  const queries: unknown[] = [];
+
+  if (jobId) {
+    queries.push({
+      term_query: {fields: ['job_id'], operator: 'is', values: [jobId]},
+    });
+  }
+
+  if (status) {
+    const statusValues = Array.isArray(status) ? status : [status];
+    queries.push({
+      term_query: {fields: ['status'], operator: 'one_of', values: statusValues},
+    });
+  }
+
+  // Build the query object
+  let query: unknown;
+  if (queries.length === 0) {
+    query = {match_all_query: {}};
+  } else if (queries.length === 1) {
+    query = queries[0];
+  } else {
+    query = {bool_query: {must: queries}};
+  }
+
+  const {data, error} = await instance.ocapi.POST('/job_execution_search', {
+    body: {
+      query,
+      count,
+      start,
+      sorts: [{field: sortBy, sort_order: sortOrder}],
+    } as unknown as components['schemas']['search_request'],
+  });
+
+  if (error || !data) {
+    const message = error?.fault?.message ?? 'Failed to search job executions';
+    throw new Error(message);
+  }
 
   return {
-    jobId,
-    status: 'completed',
-    startTime: new Date(),
-    endTime: new Date(),
+    total: data.total ?? 0,
+    count: data.count ?? 0,
+    start: data.start ?? 0,
+    hits: (data.hits ?? []).map(toJobExecution),
   };
+}
+
+/**
+ * Finds a currently running job execution.
+ *
+ * @param instance - B2C instance
+ * @param jobId - Job ID to search for
+ * @returns Running execution or undefined if none found
+ */
+export async function findRunningJobExecution(instance: B2CInstance, jobId: string): Promise<JobExecution | undefined> {
+  const results = await searchJobExecutions(instance, {
+    jobId,
+    status: ['RUNNING', 'PENDING'],
+    sortBy: 'start_time',
+    sortOrder: 'asc',
+    count: 1,
+  });
+
+  return results.hits[0];
+}
+
+/**
+ * Gets the log file content for a job execution.
+ *
+ * @param instance - B2C instance
+ * @param execution - Job execution with log file path
+ * @returns Log file content as string
+ * @throws Error if log file doesn't exist or cannot be retrieved
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   const result = await waitForJob(instance, 'my-job', 'exec-123');
+ * } catch (error) {
+ *   if (error instanceof JobExecutionError && error.execution.isLogFileExisting) {
+ *     const log = await getJobLog(instance, error.execution);
+ *     console.error('Job log:', log);
+ *   }
+ * }
+ * ```
+ */
+export async function getJobLog(instance: B2CInstance, execution: JobExecution): Promise<string> {
+  if (!execution.logFilePath) {
+    throw new Error('No log file path available');
+  }
+
+  if (!execution.isLogFileExisting) {
+    throw new Error('Log file does not exist');
+  }
+
+  // Log file path is relative to /webdav not /webdav/Sites
+  // We need to construct a custom request
+  const logPath = execution.logFilePath;
+
+  // The log path is typically like /on/demandware.servlet/webdav/Sites/Impex/log/...
+  // We need to adjust for our WebDAV client which uses /webdav/Sites as base
+  const adjustedPath = logPath.replace(/^.*\/webdav\/Sites\//, '');
+
+  const content = await instance.webdav.get(adjustedPath);
+  return new TextDecoder().decode(content);
+}
+
+/**
+ * Helper function for sleeping.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
