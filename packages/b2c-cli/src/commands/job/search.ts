@@ -16,7 +16,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --job-id my-custom-job',
-    '<%= config.bin %> <%= command.id %> --status RUNNING --status PENDING',
+    '<%= config.bin %> <%= command.id %> --status RUNNING,PENDING',
     '<%= config.bin %> <%= command.id %> --count 50',
     '<%= config.bin %> <%= command.id %> --json',
   ];
@@ -28,8 +28,9 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       description: 'Filter by job ID',
     }),
     status: Flags.string({
-      description: 'Filter by status (RUNNING, PENDING, OK, ERROR, etc.)',
+      description: 'Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR)',
       multiple: true,
+      delimiter: ',',
     }),
     count: Flags.integer({
       char: 'n',
@@ -85,8 +86,8 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
 
     this.log(
       t('commands.job.search.found', 'Found {{total}} job execution(s) (showing {{count}})', {
-        total: results.total.toString(),
-        count: results.hits.length.toString(),
+        total: results.total,
+        count: results.hits.length,
       }),
     );
 

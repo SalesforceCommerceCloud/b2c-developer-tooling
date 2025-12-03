@@ -24,7 +24,7 @@ export default class JobRun extends InstanceCommand<typeof JobRun> {
   static examples = [
     '<%= config.bin %> <%= command.id %> my-custom-job',
     '<%= config.bin %> <%= command.id %> my-custom-job --wait',
-    String.raw`<%= config.bin %> <%= command.id %> my-custom-job --param "SiteScope={\"all_storefront_sites\":true}"`,
+    String.raw`<%= config.bin %> <%= command.id %> my-custom-job -P "SiteScope={\"all_storefront_sites\":true}" -P OtherParam=value`,
     '<%= config.bin %> <%= command.id %> my-custom-job --wait --timeout 600',
   ];
 
@@ -41,8 +41,9 @@ export default class JobRun extends InstanceCommand<typeof JobRun> {
     }),
     param: Flags.string({
       char: 'P',
-      description: 'Job parameter in format "name=value" (can be specified multiple times)',
+      description: 'Job parameter in format "name=value" (use -P multiple times for multiple params)',
       multiple: true,
+      multipleNonGreedy: true,
     }),
     'no-wait-running': Flags.boolean({
       description: 'Do not wait for running job to finish before starting',

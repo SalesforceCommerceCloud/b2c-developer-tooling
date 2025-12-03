@@ -31,9 +31,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       helpGroup: 'AUTH',
     }),
     scope: Flags.string({
-      description: 'OAuth scopes to request (can be specified multiple times)',
+      description: 'OAuth scopes to request (comma-separated)',
       env: 'SFCC_OAUTH_SCOPES',
       multiple: true,
+      multipleNonGreedy: true,
+      delimiter: ',',
       helpGroup: 'AUTH',
     }),
     'short-code': Flags.string({
@@ -42,9 +44,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       helpGroup: 'AUTH',
     }),
     'auth-methods': Flags.string({
-      description: 'Allowed auth methods in priority order (comma-separated or multiple flags)',
+      description: 'Allowed auth methods in priority order (comma-separated)',
       env: 'SFCC_AUTH_METHODS',
       multiple: true,
+      multipleNonGreedy: true,
+      delimiter: ',',
       options: ALL_AUTH_METHODS,
       helpGroup: 'AUTH',
     }),
@@ -57,7 +61,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   };
 
   /**
-   * Parses auth methods from flags, supporting both comma-separated values and multiple flags.
+   * Parses auth methods from flags.
    * Returns methods in the order specified (priority order).
    */
   protected parseAuthMethods(): AuthMethod[] | undefined {
@@ -66,16 +70,10 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       return undefined;
     }
 
-    // Flatten comma-separated values while preserving order
-    const methods: AuthMethod[] = [];
-    for (const value of flagValues) {
-      const parts = value.split(',').map((s) => s.trim());
-      for (const part of parts) {
-        if (part && ALL_AUTH_METHODS.includes(part as AuthMethod)) {
-          methods.push(part as AuthMethod);
-        }
-      }
-    }
+    // Filter to valid auth methods (oclif handles comma splitting via delimiter)
+    const methods = flagValues
+      .map((s) => s.trim())
+      .filter((s): s is AuthMethod => ALL_AUTH_METHODS.includes(s as AuthMethod));
 
     return methods.length > 0 ? methods : undefined;
   }

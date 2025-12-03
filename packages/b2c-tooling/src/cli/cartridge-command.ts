@@ -28,13 +28,15 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
   static cartridgeFlags = {
     cartridge: Flags.string({
       char: 'c',
-      description: 'Include specific cartridge(s) (can be specified multiple times)',
+      description: 'Include specific cartridge(s) (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     'exclude-cartridge': Flags.string({
       char: 'x',
-      description: 'Exclude specific cartridge(s) (can be specified multiple times)',
+      description: 'Exclude specific cartridge(s) (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
   };
 

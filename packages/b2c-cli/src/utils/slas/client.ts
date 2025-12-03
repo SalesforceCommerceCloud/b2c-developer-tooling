@@ -8,13 +8,6 @@ export type Client = SlasComponents['schemas']['Client'];
 export type ClientRequest = SlasComponents['schemas']['ClientRequest'];
 
 /**
- * Parse comma-separated values and flatten arrays.
- */
-export function parseMultiple(values: string[]): string[] {
-  return values.flatMap((v) => v.split(',').map((s) => s.trim()));
-}
-
-/**
  * JSON output structure for SLAS client commands
  */
 export interface ClientOutput {

@@ -33,27 +33,32 @@ export default class JobExport extends InstanceCommand<typeof JobExport> {
       default: './export',
     }),
     site: Flags.string({
-      description: 'Site ID to export (can be specified multiple times)',
+      description: 'Site IDs to export (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     'site-data': Flags.string({
       description: 'Site data units to export (comma-separated: content,site_preferences,etc.)',
     }),
     catalog: Flags.string({
-      description: 'Catalog ID to export (can be specified multiple times)',
+      description: 'Catalog IDs to export (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     library: Flags.string({
-      description: 'Library ID to export (can be specified multiple times)',
+      description: 'Library IDs to export (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     'inventory-list': Flags.string({
-      description: 'Inventory list ID to export (can be specified multiple times)',
+      description: 'Inventory list IDs to export (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     'price-book': Flags.string({
-      description: 'Price book ID to export (can be specified multiple times)',
+      description: 'Price book IDs to export (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     'global-data': Flags.string({
       description: 'Global data units to export (comma-separated: meta_data,custom_types,etc.)',

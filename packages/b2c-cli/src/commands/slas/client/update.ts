@@ -4,7 +4,6 @@ import {
   type Client,
   type ClientRequest,
   type ClientOutput,
-  parseMultiple,
   normalizeClientResponse,
   printClientDetails,
   formatApiError,
@@ -40,20 +39,24 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
       description: 'New client secret (rotates the existing secret)',
     }),
     channels: Flags.string({
-      description: 'Site IDs/channels (comma-separated or multiple flags)',
+      description: 'Site IDs/channels (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     scopes: Flags.string({
-      description: 'OAuth scopes for the client (comma-separated or multiple flags)',
+      description: 'OAuth scopes for the client (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     'redirect-uri': Flags.string({
-      description: 'Redirect URIs (comma-separated or multiple flags)',
+      description: 'Redirect URIs (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     'callback-uri': Flags.string({
-      description: 'Callback URIs for passwordless login (comma-separated or multiple flags)',
+      description: 'Callback URIs for passwordless login (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     replace: Flags.boolean({
       description: 'Replace list values instead of appending (affects channels, scopes, redirect-uri, callback-uri)',
@@ -114,11 +117,11 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
         ? [existing.redirectUri]
         : [];
 
-    // Parse new values
-    const newChannels = channels ? parseMultiple(channels) : [];
-    const newScopes = scopes ? parseMultiple(scopes) : [];
-    const newRedirectUri = redirectUri ? parseMultiple(redirectUri) : [];
-    const newCallbackUri = callbackUri ? parseMultiple(callbackUri) : [];
+    // oclif handles comma-separation via delimiter option
+    const newChannels = channels ?? [];
+    const newScopes = scopes ?? [];
+    const newRedirectUri = redirectUri ?? [];
+    const newCallbackUri = callbackUri ?? [];
 
     // Merge or replace values
     const mergedChannels = replace ? newChannels : [...new Set([...(existing.channels ?? []), ...newChannels])];

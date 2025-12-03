@@ -4,7 +4,6 @@ import {
   SlasClientCommand,
   type Client,
   type ClientOutput,
-  parseMultiple,
   normalizeClientResponse,
   printClientDetails,
   formatApiError,
@@ -35,23 +34,27 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       description: 'Display name for the client (generates timestamped name if omitted)',
     }),
     channels: Flags.string({
-      description: 'Site IDs/channels (comma-separated or multiple flags)',
+      description: 'Site IDs/channels (comma-separated)',
       required: true,
       multiple: true,
+      delimiter: ',',
     }),
     scopes: Flags.string({
-      description: 'OAuth scopes for the client (comma-separated or multiple flags)',
+      description: 'OAuth scopes for the client (comma-separated)',
       required: true,
       multiple: true,
+      delimiter: ',',
     }),
     'redirect-uri': Flags.string({
-      description: 'Redirect URIs (comma-separated or multiple flags)',
+      description: 'Redirect URIs (comma-separated)',
       required: true,
       multiple: true,
+      delimiter: ',',
     }),
     'callback-uri': Flags.string({
-      description: 'Callback URIs for passwordless login (comma-separated or multiple flags)',
+      description: 'Callback URIs for passwordless login (comma-separated)',
       multiple: true,
+      delimiter: ',',
     }),
     secret: Flags.string({
       description: 'Client secret for private clients (if omitted, one will be generated)',
@@ -82,10 +85,11 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     // Use provided name or generate a timestamped name
     const clientName = name ?? `b2c-cli client ${new Date().toISOString()}`;
 
-    const parsedChannels = parseMultiple(channels);
-    const parsedScopes = parseMultiple(scopes);
-    const parsedRedirectUri = parseMultiple(redirectUri);
-    const parsedCallbackUri = callbackUri ? parseMultiple(callbackUri) : undefined;
+    // oclif handles comma-separation via delimiter option
+    const parsedChannels = channels;
+    const parsedScopes = scopes;
+    const parsedRedirectUri = redirectUri;
+    const parsedCallbackUri = callbackUri;
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.create.creating', 'Creating/updating SLAS client {{clientId}}...', {clientId}));
