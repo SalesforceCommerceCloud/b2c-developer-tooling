@@ -9,10 +9,7 @@ import {
 import {t} from '../../i18n/index.js';
 
 export default class JobExport extends JobCommand<typeof JobExport> {
-  static description = t(
-    'commands.job.export.description',
-    'Export a site archive from a B2C Commerce instance using sfcc-site-archive-export job',
-  );
+  static description = t('commands.job.export.description', 'Job execution and site archive import/export (IMPEX)');
 
   static enableJsonFlag = true;
 
