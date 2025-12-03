@@ -509,15 +509,11 @@ export async function getJobLog(instance: B2CInstance, execution: JobExecution):
     throw new Error('Log file does not exist');
   }
 
-  // Log file path is relative to /webdav not /webdav/Sites
-  // We need to construct a custom request
-  const logPath = execution.logFilePath;
+  // log_file_path from OCAPI is "/Sites/LOGS/jobs/..."
+  // WebDAV client base is /webdav/Sites, so strip the leading /Sites/
+  const logPath = execution.logFilePath.replace(/^\/Sites\//, '');
 
-  // The log path is typically like /on/demandware.servlet/webdav/Sites/Impex/log/...
-  // We need to adjust for our WebDAV client which uses /webdav/Sites as base
-  const adjustedPath = logPath.replace(/^.*\/webdav\/Sites\//, '');
-
-  const content = await instance.webdav.get(adjustedPath);
+  const content = await instance.webdav.get(logPath);
   return new TextDecoder().decode(content);
 }
 

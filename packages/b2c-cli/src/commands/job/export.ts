@@ -1,15 +1,14 @@
 import {Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling/cli';
 import {
   siteArchiveExportToPath,
   JobExecutionError,
-  getJobLog,
   type SiteArchiveExportResult,
   type ExportDataUnitsConfiguration,
 } from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
+import {JobCommand} from './base.js';
 
-export default class JobExport extends InstanceCommand<typeof JobExport> {
+export default class JobExport extends JobCommand<typeof JobExport> {
   static description = t(
     'commands.job.export.description',
     'Export a site archive from a B2C Commerce instance using sfcc-site-archive-export job',
@@ -26,7 +25,7 @@ export default class JobExport extends InstanceCommand<typeof JobExport> {
   ];
 
   static flags = {
-    ...InstanceCommand.baseFlags,
+    ...JobCommand.baseFlags,
     output: Flags.string({
       char: 'o',
       description: 'Output path (directory or .zip file)',
@@ -194,15 +193,8 @@ export default class JobExport extends InstanceCommand<typeof JobExport> {
       return result;
     } catch (error) {
       if (error instanceof JobExecutionError) {
-        if (showLog && error.execution.isLogFileExisting) {
-          try {
-            const log = await getJobLog(this.instance, error.execution);
-            this.log(t('commands.job.export.logHeader', '\n--- Job Log ---'));
-            this.log(log);
-            this.log(t('commands.job.export.logFooter', '--- End Log ---\n'));
-          } catch {
-            this.warn(t('commands.job.export.logFetchFailed', 'Could not retrieve job log'));
-          }
+        if (showLog) {
+          await this.showJobLog(error.execution);
         }
         this.error(
           t('commands.job.export.failed', 'Export failed: {{status}}', {

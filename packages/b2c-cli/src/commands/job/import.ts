@@ -1,14 +1,13 @@
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling/cli';
 import {
   siteArchiveImport,
   JobExecutionError,
-  getJobLog,
   type SiteArchiveImportResult,
 } from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
+import {JobCommand} from './base.js';
 
-export default class JobImport extends InstanceCommand<typeof JobImport> {
+export default class JobImport extends JobCommand<typeof JobImport> {
   static args = {
     target: Args.string({
       description: 'Directory, zip file, or remote filename to import',
@@ -31,7 +30,7 @@ export default class JobImport extends InstanceCommand<typeof JobImport> {
   ];
 
   static flags = {
-    ...InstanceCommand.baseFlags,
+    ...JobCommand.baseFlags,
     'keep-archive': Flags.boolean({
       char: 'k',
       description: 'Keep archive on instance after import',
@@ -117,15 +116,8 @@ export default class JobImport extends InstanceCommand<typeof JobImport> {
       return result;
     } catch (error) {
       if (error instanceof JobExecutionError) {
-        if (showLog && error.execution.isLogFileExisting) {
-          try {
-            const log = await getJobLog(this.instance, error.execution);
-            this.log(t('commands.job.import.logHeader', '\n--- Job Log ---'));
-            this.log(log);
-            this.log(t('commands.job.import.logFooter', '--- End Log ---\n'));
-          } catch {
-            this.warn(t('commands.job.import.logFetchFailed', 'Could not retrieve job log'));
-          }
+        if (showLog) {
+          await this.showJobLog(error.execution);
         }
         this.error(
           t('commands.job.import.failed', 'Import failed: {{status}}', {

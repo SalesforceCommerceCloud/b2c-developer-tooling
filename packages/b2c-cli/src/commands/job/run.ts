@@ -1,15 +1,9 @@
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling/cli';
-import {
-  executeJob,
-  waitForJob,
-  JobExecutionError,
-  getJobLog,
-  type JobExecution,
-} from '@salesforce/b2c-tooling/operations/jobs';
+import {executeJob, waitForJob, JobExecutionError, type JobExecution} from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
+import {JobCommand} from './base.js';
 
-export default class JobRun extends InstanceCommand<typeof JobRun> {
+export default class JobRun extends JobCommand<typeof JobRun> {
   static args = {
     jobId: Args.string({
       description: 'Job ID to execute',
@@ -29,7 +23,7 @@ export default class JobRun extends InstanceCommand<typeof JobRun> {
   ];
 
   static flags = {
-    ...InstanceCommand.baseFlags,
+    ...JobCommand.baseFlags,
     wait: Flags.boolean({
       char: 'w',
       description: 'Wait for job to complete',
@@ -122,7 +116,7 @@ export default class JobRun extends InstanceCommand<typeof JobRun> {
         );
       } catch (error) {
         if (error instanceof JobExecutionError) {
-          if (showLog && error.execution.isLogFileExisting) {
+          if (showLog) {
             await this.showJobLog(error.execution);
           }
           this.error(
@@ -156,16 +150,5 @@ export default class JobRun extends InstanceCommand<typeof JobRun> {
         value: p.slice(eqIndex + 1),
       };
     });
-  }
-
-  private async showJobLog(execution: JobExecution): Promise<void> {
-    try {
-      const log = await getJobLog(this.instance, execution);
-      this.log(t('commands.job.run.logHeader', '\n--- Job Log ---'));
-      this.log(log);
-      this.log(t('commands.job.run.logFooter', '--- End Log ---\n'));
-    } catch {
-      this.warn(t('commands.job.run.logFetchFailed', 'Could not retrieve job log'));
-    }
   }
 }
