@@ -26,6 +26,7 @@ These flags are available on all commands that interact with B2C instances:
 ## Command Topics
 
 - [Code Commands](./code) - Deploy cartridges and manage code versions
+- [Job Commands](./jobs) - Execute and monitor jobs, import/export site archives
 - [Sites Commands](./sites) - List and manage sites
 - [Sandbox Commands](./sandbox) - Create and manage sandboxes
 - [MRT Commands](./mrt) - Manage Managed Runtime environments
