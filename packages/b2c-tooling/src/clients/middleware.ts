@@ -53,14 +53,64 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
 }
 
 /**
+ * Configuration for logging middleware.
+ */
+export interface LoggingMiddlewareConfig {
+  /**
+   * Prefix for log messages (e.g., 'OCAPI', 'SLAS', 'MRT').
+   */
+  prefix?: string;
+
+  /**
+   * Body keys to mask in logs (replaced with '...' placeholder).
+   * Useful for large payloads like base64-encoded file data.
+   * @example ['data', 'password', 'secret']
+   */
+  maskBodyKeys?: string[];
+}
+
+/**
+ * Masks specified keys in an object for logging.
+ * Only masks top-level keys, replaces values with '...' placeholder.
+ */
+function maskBody(body: unknown, keysToMask?: string[]): unknown {
+  if (!keysToMask || keysToMask.length === 0 || typeof body !== 'object' || body === null) {
+    return body;
+  }
+
+  const masked = {...(body as Record<string, unknown>)};
+  for (const key of keysToMask) {
+    if (key in masked) {
+      masked[key] = '...';
+    }
+  }
+  return masked;
+}
+
+/**
  * Creates logging middleware for openapi-fetch clients.
  *
  * Logs request/response details at debug and trace levels.
  *
- * @param prefix - Optional prefix for log messages (e.g., 'OCAPI', 'SLAS')
+ * @param config - Logging configuration or prefix string for backwards compatibility
  * @returns Middleware that logs requests and responses
+ *
+ * @example
+ * // Simple usage with just a prefix
+ * client.use(createLoggingMiddleware('OCAPI'));
+ *
+ * @example
+ * // With body masking for large payloads
+ * client.use(createLoggingMiddleware({
+ *   prefix: 'MRT',
+ *   maskBodyKeys: ['data']  // Masks base64-encoded bundle data
+ * }));
  */
-export function createLoggingMiddleware(prefix?: string): Middleware {
+export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfig): Middleware {
+  // Support both string (prefix) and config object for backwards compatibility
+  const {prefix, maskBodyKeys} =
+    typeof config === 'string' ? {prefix: config, maskBodyKeys: undefined} : (config ?? {});
+
   const reqTag = prefix ? `[${prefix} REQ]` : '';
   const respTag = prefix ? `[${prefix} RESP]` : '';
 
@@ -82,7 +132,13 @@ export function createLoggingMiddleware(prefix?: string): Middleware {
           body = text;
         }
       }
-      logger.trace({headers: headersToObject(request.headers), body}, `${reqTag} ${request.method} ${url} body`);
+
+      // Mask sensitive/large body keys before logging
+      const maskedBody = maskBody(body, maskBodyKeys);
+      logger.trace(
+        {headers: headersToObject(request.headers), body: maskedBody},
+        `${reqTag} ${request.method} ${url} body`,
+      );
 
       (request as Request & {_startTime?: number})._startTime = Date.now();
 
@@ -108,8 +164,10 @@ export function createLoggingMiddleware(prefix?: string): Middleware {
         responseBody = await clonedResponse.text();
       }
 
+      // Mask sensitive/large body keys before logging
+      const maskedResponseBody = maskBody(responseBody, maskBodyKeys);
       logger.trace(
-        {headers: headersToObject(response.headers), body: responseBody},
+        {headers: headersToObject(response.headers), body: maskedResponseBody},
         `${respTag} ${request.method} ${url} body`,
       );
 

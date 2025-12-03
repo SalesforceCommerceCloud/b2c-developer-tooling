@@ -110,7 +110,7 @@ export {WebDavClient} from './webdav.js';
 export type {PropfindEntry} from './webdav.js';
 
 export {createAuthMiddleware, createLoggingMiddleware, createExtraParamsMiddleware} from './middleware.js';
-export type {ExtraParamsConfig} from './middleware.js';
+export type {ExtraParamsConfig, LoggingMiddlewareConfig} from './middleware.js';
 
 export {createOcapiClient} from './ocapi.js';
 export type {
@@ -140,3 +140,14 @@ export type {
   paths as OdsPaths,
   components as OdsComponents,
 } from './ods.js';
+
+export {createMrtClient, DEFAULT_MRT_ORIGIN} from './mrt.js';
+export type {
+  MrtClient,
+  MrtClientConfig,
+  MrtError,
+  MrtResponse,
+  BuildPushResponse,
+  paths as MrtPaths,
+  components as MrtComponents,
+} from './mrt.js';

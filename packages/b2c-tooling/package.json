@@ -90,6 +90,17 @@
         "default": "./dist/cjs/operations/sites/index.js"
       }
     },
+    "./operations/mrt": {
+      "development": "./src/operations/mrt/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/mrt/index.d.ts",
+        "default": "./dist/esm/operations/mrt/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/mrt/index.d.ts",
+        "default": "./dist/cjs/operations/mrt/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {
@@ -121,7 +132,7 @@
     "specs"
   ],
   "scripts": {
-    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts",
+    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts",
     "build": "pnpm run generate:types && pnpm run build:esm && pnpm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
@@ -137,6 +148,7 @@
     "@oclif/core": "^4",
     "@oclif/prettier-config": "^0.2.1",
     "@salesforce/dev-config": "^4.3.2",
+    "@types/archiver": "^7.0.0",
     "@types/node": "^18.19.130",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
@@ -159,10 +171,12 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "archiver": "^7.0.1",
     "chokidar": "^5.0.0",
     "glob": "^13.0.0",
     "i18next": "^25.6.3",
     "jszip": "^3.10.1",
+    "minimatch": "^10.1.1",
     "open": "^11.0.0",
     "openapi-fetch": "^0.15.0",
     "pino": "^10.1.0",

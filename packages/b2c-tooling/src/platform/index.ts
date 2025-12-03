@@ -6,7 +6,7 @@
  *
  * ## Available Clients
  *
- * - {@link MrtClient} - Managed Runtime (MRT) API for PWA Kit deployments
+ * - {@link MrtClient} - Managed Runtime (MRT) API for deployments
  * - {@link OdsClient} - On-Demand Sandbox API for sandbox management
  *
  * ## Usage

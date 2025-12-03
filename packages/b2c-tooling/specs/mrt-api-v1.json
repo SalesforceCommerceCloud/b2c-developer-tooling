@@ -1,0 +1,5555 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Managed Runtime API",
+    "version": "v1",
+    "description": "Set up how a storefront or other headless commerce application is deployed to Managed Runtime. <br /><br />Note: Where possible, we changed noninclusive terms to align with our company value of Equality. We maintained certain terms to avoid any effect on customer implementations."
+  },
+  "paths": {
+    "/api/organizations/": {
+      "get": {
+        "operationId": "organizations_list",
+        "description": "List organizations.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPIOrganizationList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "uuid": "58c8da00-a596-4e62-9b93-dfc26a73528e",
+                          "name": "my org",
+                          "slug": "my-org",
+                          "has_mobify_tag_project": false,
+                          "created_at": "2020-07-14T19:33:21.197800Z",
+                          "updated_at": "2020-07-21T17:02:38.745978Z",
+                          "permissions": {
+                            "browse": true,
+                            "create_project": true,
+                            "delete_organization": true,
+                            "edit_organization": true
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/": {
+      "get": {
+        "operationId": "projects_list",
+        "description": "List projects.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "organization",
+            "required": false,
+            "in": "query",
+            "description": "An organization to search within.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPIProjectV2CreateList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "name": "Progressive SSR project",
+                          "url": "https://www.example.com/",
+                          "slug": "project-slug",
+                          "organization": "my-organization",
+                          "permissions": {
+                            "browse": true,
+                            "deploy": true,
+                            "delete_bundle": true,
+                            "delete_project": true,
+                            "edit_redirect": true,
+                            "edit_roles": true,
+                            "edit_settings": true,
+                            "validate_tag": true,
+                            "edit_environment": true,
+                            "create_environment": true,
+                            "delete_environment": true,
+                            "create_notification": true,
+                            "list_notifications": true,
+                            "retrieve_notification": true,
+                            "edit_notification": true,
+                            "delete_notification": true,
+                            "create_jwt": true,
+                            "upload_bundle": true,
+                            "edit_environment_variable": true,
+                            "edit_access_control_header": true
+                          },
+                          "deletion_status": "ACTIVE",
+                          "created_at": "2025-07-24T07:30:22.288165Z",
+                          "updated_at": "2025-07-24T08:30:22.288165Z"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "projects_create",
+        "description": "Create a project.",
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIProjectV2Create"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "organization": "my-org",
+                    "name": "My project",
+                    "slug": "my-project"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APIProjectV2Create"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APIProjectV2Create"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIProjectV2Create"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "name": "My project",
+                      "url": "https://www.mobify.com",
+                      "slug": "my-project",
+                      "organization": "my-organization",
+                      "permissions": {
+                        "browse": true,
+                        "deploy": true,
+                        "delete_bundle": true,
+                        "delete_project": true,
+                        "edit_redirect": true,
+                        "edit_roles": true,
+                        "edit_settings": true,
+                        "validate_tag": true,
+                        "edit_environment": true,
+                        "create_environment": true,
+                        "delete_environment": true,
+                        "create_notification": true,
+                        "list_notifications": true,
+                        "retrieve_notification": true,
+                        "edit_notification": true,
+                        "delete_notification": true,
+                        "create_jwt": true,
+                        "upload_bundle": true,
+                        "edit_environment_variable": true,
+                        "edit_access_control_header": true
+                      },
+                      "deletion_status": "ACTIVE",
+                      "created_at": "2025-07-24T07:30:22.288165Z",
+                      "updated_at": "2025-07-24T07:30:22.288165Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/": {
+      "get": {
+        "operationId": "projects_retrieve",
+        "description": "Read data about a project.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIProjectV2Update"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "name": "test project",
+                      "url": "https://www.google.com",
+                      "slug": "test-project",
+                      "organization": "my-organization",
+                      "permissions": {
+                        "browse": true,
+                        "deploy": true,
+                        "delete_bundle": true,
+                        "delete_project": true,
+                        "edit_redirect": true,
+                        "edit_roles": true,
+                        "edit_settings": true,
+                        "validate_tag": true,
+                        "edit_environment": true,
+                        "create_environment": true,
+                        "delete_environment": true,
+                        "create_notification": true,
+                        "list_notifications": true,
+                        "retrieve_notification": true,
+                        "edit_notification": true,
+                        "delete_notification": true,
+                        "create_jwt": true,
+                        "upload_bundle": true,
+                        "edit_environment_variable": true,
+                        "edit_access_control_header": true
+                      },
+                      "deletion_status": "ACTIVE",
+                      "created_at": "2025-07-24T07:30:22.288165Z",
+                      "updated_at": "2025-07-24T07:30:22.288165Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "projects_partial_update",
+        "description": "Update a project.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIProjectV2Update"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "name": "new name",
+                    "url": "https://www.mobify.com",
+                    "organization": "my-organization"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIProjectV2Update"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIProjectV2Update"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIProjectV2Update"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "name": "test project",
+                      "url": "https://www.google.com",
+                      "slug": "test-project",
+                      "organization": "my-organization",
+                      "permissions": {
+                        "browse": true,
+                        "deploy": true,
+                        "delete_bundle": true,
+                        "delete_project": true,
+                        "edit_redirect": true,
+                        "edit_roles": true,
+                        "edit_settings": true,
+                        "validate_tag": true,
+                        "edit_environment": true,
+                        "create_environment": true,
+                        "delete_environment": true,
+                        "create_notification": true,
+                        "list_notifications": true,
+                        "retrieve_notification": true,
+                        "edit_notification": true,
+                        "delete_notification": true,
+                        "create_jwt": true,
+                        "upload_bundle": true,
+                        "edit_environment_variable": true,
+                        "edit_access_control_header": true
+                      },
+                      "deletion_status": "ACTIVE",
+                      "created_at": "2025-07-24T07:30:22.288165Z",
+                      "updated_at": "2025-07-24T08:30:22.288165Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "projects_destroy",
+        "description": "Delete a project.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/builds/": {
+      "post": {
+        "operationId": "projects_builds_create",
+        "description": "Upload a bundle.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Bundle"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Bundle"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Bundle"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "message": "Successfully pushed bundle for 'my-project'",
+                      "bundle_id": 2
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/builds/{target_slug}/": {
+      "post": {
+        "operationId": "projects_builds_create_and_deploy",
+        "description": "Upload a bundle and deploy it to an environment asynchronously.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Bundle"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Bundle"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Bundle"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "message": "Successfully pushed bundle for 'my-project'",
+                      "bundle_id": 2
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/bundles/": {
+      "get": {
+        "operationId": "projects_bundles_list",
+        "description": "List bundles of a project",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedBundleListList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "id": 3,
+                          "message": "Bundle 2",
+                          "status": 0,
+                          "deletion_status": "ACTIVE",
+                          "user": "fixture+progressive.ssr@test.com",
+                          "created_at": "2020-05-27T22:45:35.781615Z",
+                          "updated_at": "2020-07-09T04:59:37.733245Z",
+                          "is_uploaded": true,
+                          "is_ssr_bundle": true,
+                          "ssr_runtime": "12.x",
+                          "ssr_runtime_description": "NodeJS 12.x"
+                        }
+                      ]
+                    }
+                  },
+                  "ResponseExample2": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "id": 2,
+                          "message": "Bundle 1",
+                          "status": 0,
+                          "deletion_status": "ACTIVE",
+                          "user": "fixture+progressive.ssr@test.com",
+                          "created_at": "2020-05-27T22:45:35.703516Z",
+                          "updated_at": "2020-07-09T04:57:02.399510Z",
+                          "is_uploaded": true,
+                          "is_ssr_bundle": true,
+                          "ssr_runtime": "10.x",
+                          "ssr_runtime_description": "NodeJS 10.x"
+                        }
+                      ]
+                    }
+                  },
+                  "ResponseExample3": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "id": 1,
+                          "message": "Bundle 0",
+                          "status": 0,
+                          "deletion_status": "ACTIVE",
+                          "user": "fixture+progressive.ssr@test.com",
+                          "created_at": "2020-05-27T22:45:35.646125Z",
+                          "updated_at": "2020-07-09T06:12:19.633249Z",
+                          "is_uploaded": true,
+                          "is_ssr_bundle": true,
+                          "ssr_runtime": "8.10",
+                          "ssr_runtime_description": "NodeJS 8.10"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/bundles/{bundle_id}/download/": {
+      "get": {
+        "operationId": "projects_bundles_download_retrieve",
+        "description": "Get a presigned URL (active for one hour) to download a bundle archive.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bundle_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The bundle's id",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BundleDownload"
+                },
+                "examples": {
+                  "ResponseExample": {
+                    "value": {
+                      "download_url": "https://bundles.s3.amazonaws.com/build_archives/build_archive_id_1.tgz"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/members/": {
+      "get": {
+        "operationId": "projects_members_list",
+        "description": "List a project's members.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3
+              ]
+            },
+            "description": "* `0` - Admin\n* `1` - Developer\n* `2` - Marketer\n* `3` - Read Only\n\n* `0` - Admin\n* `1` - Developer\n* `2` - Marketer\n* `3` - Read Only"
+          },
+          {
+            "in": "path",
+            "name": "role",
+            "schema": {
+              "type": "string"
+            },
+            "description": "A role to filter on. Admin=0, Developer=1, Marketer=2, Read Only=3.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPIProjectMemberList"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "projects_members_create",
+        "description": "Create a new project member.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIProjectMember"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APIProjectMember"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APIProjectMember"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIProjectMember"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/members/{email}/": {
+      "get": {
+        "operationId": "projects_members_retrieve",
+        "description": "Read data about a project member's permissions.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project member's email address.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIProjectMember"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "projects_members_partial_update",
+        "description": "Update a project member's permissions.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project member's email address.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIProjectMember"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIProjectMember"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIProjectMember"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIProjectMember"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "projects_members_destroy",
+        "description": "Delete a project member.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project member's email address.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/notifications/": {
+      "get": {
+        "operationId": "projects_notifications_list",
+        "description": "List notifications for a project",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "targets__slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPolymorphicNotificationList"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "projects_notifications_create",
+        "description": "Create notification for a Project",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolymorphicNotification"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PolymorphicNotification"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PolymorphicNotification"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolymorphicNotification"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/notifications/{id}/": {
+      "get": {
+        "operationId": "projects_notifications_retrieve",
+        "description": "Read data about a notification.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The notification's unique UUID",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolymorphicNotification"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "projects_notifications_partial_update",
+        "description": "Update a project's notification.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The notification's unique UUID",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPolymorphicNotification"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPolymorphicNotification"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPolymorphicNotification"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolymorphicNotification"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "projects_notifications_destroy",
+        "description": "Delete a notification.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The notification's unique UUID",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/": {
+      "get": {
+        "operationId": "projects_target_list",
+        "description": "List a project's targets.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPITargetV2CreateList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "slug": "production",
+                          "name": "Production",
+                          "state": "CREATE_IN_PROGRESS",
+                          "deletion_status": "ACTIVE",
+                          "hostname": null,
+                          "current_deploy": {
+                            "status": "queued",
+                            "is_ssr_deploy": false,
+                            "updated_at": "2018-07-25T21:35:24.312882+00:00",
+                            "bundle": {
+                              "status": 0,
+                              "deletion_status": "ACTIVE",
+                              "api_bundle_preview_email_url": "/api/projects/project-slug/bundle/0/preview-email/",
+                              "go_preview_url": null,
+                              "updated_at": "2018-07-25T21:35:24.311809+00:00",
+                              "app_preview_url": null,
+                              "message": "Reset Bundle. Disables adaptation.",
+                              "id": 0,
+                              "is_uploaded": true,
+                              "created_at": "2018-07-25T21:35:24.311775+00:00",
+                              "preview_url": null,
+                              "is_ssr_bundle": false,
+                              "user_email": ""
+                            },
+                            "is_in_progress": true,
+                            "deploy_settings": null,
+                            "deploy_type": "reset_bundle",
+                            "created_at": "2018-07-25T21:35:24.312855+00:00",
+                            "deploy_duration": 778590.636166,
+                            "applied_deploy_settings": false,
+                            "status_message": "Queueing Bundle"
+                          },
+                          "ssr_external_hostname": "www-testing.example.com",
+                          "ssr_external_domain": "example.com",
+                          "ssr_region": "eu-central-1",
+                          "ssr_whitelisted_ips": "103.12.25.0/24",
+                          "ssr_proxy_configs": [
+                            {
+                              "host": "www.proxyhost1.com",
+                              "protocol": "https"
+                            },
+                            {
+                              "host": "www.proxyhost2.com"
+                            }
+                          ],
+                          "allow_cookies": false,
+                          "enable_source_maps": false,
+                          "log_level": "INFO"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "projects_target_create",
+        "description": "Create a new target.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2Create"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "name": "Testing EU",
+                    "slug": "testing-eu",
+                    "ssr_external_hostname": "www-testing.example.com",
+                    "ssr_external_domain": "example.com",
+                    "ssr_region": "eu-central-1",
+                    "ssr_whitelisted_ips": "103.12.25.0/24",
+                    "ssr_proxy_configs": [
+                      {
+                        "host": "www.proxyhost1.com",
+                        "protocol": "https"
+                      },
+                      {
+                        "host": "www.proxyhost2.com"
+                      }
+                    ],
+                    "allow_cookies": false,
+                    "enable_source_maps": false,
+                    "log_level": "INFO"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2Create"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2Create"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APITargetV2Create"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "name": "Testing EU",
+                      "slug": "testing-eu",
+                      "ssr_external_hostname": "www-testing.example.com",
+                      "ssr_external_domain": "example.com",
+                      "ssr_region": "eu-central-1",
+                      "ssr_whitelisted_ips": "103.12.25.0/24",
+                      "ssr_proxy_configs": [
+                        {
+                          "host": "www.proxyhost1.com",
+                          "protocol": "https"
+                        },
+                        {
+                          "host": "www.proxyhost2.com"
+                        }
+                      ],
+                      "allow_cookies": true,
+                      "enable_source_maps": false,
+                      "log_level": "INFO"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/": {
+      "get": {
+        "operationId": "projects_target_retrieve",
+        "description": "Read data about a target.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APITargetV2Update"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "slug": "ssr-target-successful",
+                      "name": "Testing EU",
+                      "state": "ACTIVE",
+                      "deletion_status": "ACTIVE",
+                      "hostname": "www0.somewhere.com",
+                      "current_deploy": {
+                        "status": "queued",
+                        "is_ssr_deploy": true,
+                        "updated_at": "2018-08-10T16:54:38.871068+00:00",
+                        "bundle": {
+                          "status": 0,
+                          "deletion_status": "ACTIVE",
+                          "api_bundle_preview_email_url": "/api/projects/project-slug/bundle/2/preview-email/",
+                          "go_preview_url": null,
+                          "updated_at": "2018-07-25T21:35:24.801637+00:00",
+                          "app_preview_url": null,
+                          "description": "NodeJS 16.x",
+                          "ssr_runtime_state": "available",
+                          "message": "SSR Bundle 1 (failed deploy 81)",
+                          "id": 2,
+                          "is_uploaded": true,
+                          "created_at": "2018-07-25T21:35:24.762928+00:00",
+                          "preview_url": null,
+                          "is_ssr_bundle": true,
+                          "user_email": "fixture+progressive.ssr@test.com"
+                        },
+                        "external_publish_id": "None",
+                        "external_progress_update": null,
+                        "external_progress_percentage": null,
+                        "is_in_progress": true,
+                        "deploy_settings": null,
+                        "external_progress_status": null,
+                        "deploy_type": "publish",
+                        "created_at": "2018-08-10T16:54:38.871027+00:00",
+                        "deploy_duration": 2.356207,
+                        "external_progress_message": null,
+                        "applied_deploy_settings": false,
+                        "status_message": "Queueing Bundle",
+                        "user_email": "fixture+tag.page.staff@test.com",
+                        "external_progress_description": null
+                      },
+                      "ssr_external_hostname": "www-testing.example.com",
+                      "ssr_external_domain": "example.com",
+                      "ssr_region": "eu-central-1",
+                      "ssr_whitelisted_ips": "103.12.25.0/24",
+                      "ssr_proxy_configs": [
+                        {
+                          "host": "www.proxyhost1.com",
+                          "protocol": "http"
+                        },
+                        {
+                          "host": "www.proxyhost2.com",
+                          "protocol": "https"
+                        }
+                      ],
+                      "allow_cookies": false,
+                      "enable_source_maps": false,
+                      "log_level": "INFO"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "projects_target_partial_update",
+        "description": "Update a target. Important: This endpoint automatically re-deploys the current bundle if any of the SSR-related properties are changed.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPITargetV2Update"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "name": "Testing EU",
+                    "ssr_external_hostname": "www-testing.example.com",
+                    "ssr_external_domain": "example.com",
+                    "ssr_region": "eu-central-1",
+                    "ssr_whitelisted_ips": "103.12.25.0/24",
+                    "ssr_proxy_configs": [
+                      {
+                        "host": "www.proxyhost1.com",
+                        "protocol": "http"
+                      },
+                      {
+                        "host": "www.proxyhost2.com",
+                        "protocol": "https"
+                      }
+                    ],
+                    "allow_cookies": true,
+                    "enable_source_maps": true,
+                    "log_level": "INFO"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPITargetV2Update"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPITargetV2Update"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APITargetV2Update"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "slug": "ssr-target-successful",
+                      "name": "Testing EU",
+                      "state": "ACTIVE",
+                      "deletion_status": "ACTIVE",
+                      "hostname": "www0.somewhere.com",
+                      "current_deploy": {
+                        "status": "queued",
+                        "is_ssr_deploy": true,
+                        "updated_at": "2018-08-10T16:54:38.871068+00:00",
+                        "bundle": {
+                          "status": 0,
+                          "deletion_status": "ACTIVE",
+                          "api_bundle_preview_email_url": "/api/projects/project-slug/bundle/2/preview-email/",
+                          "go_preview_url": null,
+                          "updated_at": "2018-07-25T21:35:24.801637+00:00",
+                          "app_preview_url": null,
+                          "message": "SSR Bundle 1 (failed deploy 81)",
+                          "id": 2,
+                          "is_uploaded": true,
+                          "created_at": "2018-07-25T21:35:24.762928+00:00",
+                          "preview_url": null,
+                          "is_ssr_bundle": true,
+                          "user_email": "fixture+progressive.ssr@test.com"
+                        },
+                        "external_publish_id": "None",
+                        "external_progress_update": null,
+                        "external_progress_percentage": null,
+                        "is_in_progress": true,
+                        "deploy_settings": null,
+                        "external_progress_status": null,
+                        "deploy_type": "publish",
+                        "created_at": "2018-08-10T16:54:38.871027+00:00",
+                        "deploy_duration": 2.356207,
+                        "external_progress_message": null,
+                        "applied_deploy_settings": false,
+                        "status_message": "Queueing Bundle",
+                        "user_email": "fixture+tag.page.staff@test.com",
+                        "external_progress_description": null
+                      },
+                      "ssr_external_hostname": "www-testing.example.com",
+                      "ssr_external_domain": "example.com",
+                      "ssr_region": "eu-central-1",
+                      "ssr_whitelisted_ips": "103.12.25.0/24",
+                      "ssr_proxy_configs": [
+                        {
+                          "host": "www.proxyhost1.com",
+                          "protocol": "http"
+                        },
+                        {
+                          "host": "www.proxyhost2.com",
+                          "protocol": "https"
+                        }
+                      ],
+                      "allow_cookies": true,
+                      "enable_source_maps": true,
+                      "log_level": "INFO"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "projects_target_destroy",
+        "description": "Delete a target.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/access-control-header/": {
+      "get": {
+        "operationId": "projects_target_access_control_header_list",
+        "description": "List a target's access control headers.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPIAccessControlHeaderV2CreateList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "id": "ff832a9e-0e55-11ef-8f23-0242ac110002",
+                          "value": "****************by0z",
+                          "user_email": "jane.doe@mobify.com",
+                          "created_at": "2024-04-28T09:23:28.872916Z",
+                          "publishing_status": 0,
+                          "publishing_status_description": "Pending"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "projects_target_access_control_header_create",
+        "description": "Create an access control header to restrict access to an environment so that only trusted traffic coming from your content delivery network (CDN) or development team is allowed. Requests to this environment must contain the header `x-sfdc-access-control` with the value provided or they will be rejected. Accepts an object with a value for a single access control header. See [Access Control Headers](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html?q=access%20control%20header#access-control-headers).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIAccessControlHeaderV2Create"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "value": "jfoWikeaby0z"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APIAccessControlHeaderV2Create"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APIAccessControlHeaderV2Create"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIAccessControlHeaderV2Create"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "id": "ff832a9e-0e55-11ef-8f23-0242ac110002",
+                      "value": "****************by0z",
+                      "user_email": "jane.doe@mobify.com",
+                      "created_at": "2024-04-28T09:23:28.872916Z",
+                      "publishing_status": 0,
+                      "publishing_status_description": "Pending"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/access-control-header/{id}/": {
+      "get": {
+        "operationId": "projects_target_access_control_header_retrieve",
+        "description": "Read data about an access control header by its id.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The access control header's id.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIAccessControlHeaderV2Create"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "id": "ff832a9e-0e55-11ef-8f23-0242ac110002",
+                      "value": "****************by0z",
+                      "user_email": "jane.doe@mobify.com",
+                      "created_at": "2024-04-28T09:23:28.872916Z",
+                      "publishing_status": 0,
+                      "publishing_status_description": "Pending"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "projects_target_access_control_header_destroy",
+        "description": "Delete an access control header by its id.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The access control header's id.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/deploy/": {
+      "get": {
+        "operationId": "projects_target_deploy_list",
+        "description": "Get the deployment history of a target.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedDeployListList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "user": "fixture+progressive.ssr@test.com",
+                          "duration": "00:01:16.867967",
+                          "bundle": {
+                            "id": 2,
+                            "message": "Bundle 1 (failed deploy 242)",
+                            "status": 0,
+                            "deletion_status": "ACTIVE",
+                            "user": "fixture+progressive.ssr@test.com",
+                            "created_at": "2020-10-13T23:09:39.309698Z",
+                            "updated_at": "2020-10-13T23:09:39.344068Z",
+                            "is_uploaded": true,
+                            "is_ssr_bundle": true,
+                            "ssr_runtime": "10.x",
+                            "ssr_runtime_description": "NodeJS 10.x"
+                          },
+                          "created_at": "2020-10-14T23:36:35.238529Z",
+                          "updated_at": "2020-10-15T00:14:34.227033Z",
+                          "status": "Finished",
+                          "deploy_type": "Publish",
+                          "external_publish_id": "b035a4d7-ec6b-4dcd-af8f-3a847b10fed8",
+                          "deploy_settings": null
+                        }
+                      ]
+                    }
+                  },
+                  "ResponseExample2": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "user": "fixture+progressive.ssr@test.com",
+                          "duration": "00:01:16.867967",
+                          "bundle": {
+                            "id": 1,
+                            "message": "Reset Bundle. Disables adaptation.",
+                            "status": 0,
+                            "deletion_status": "ACTIVE",
+                            "user": null,
+                            "created_at": "2020-10-13T23:09:39.285998Z",
+                            "updated_at": "2020-10-13T23:09:39.286030Z",
+                            "is_uploaded": true,
+                            "is_ssr_bundle": false,
+                            "ssr_runtime": null,
+                            "ssr_runtime_description": null
+                          },
+                          "created_at": "2020-10-14T23:26:44.018200Z",
+                          "updated_at": "2020-10-14T23:36:26.168594Z",
+                          "status": "Finished",
+                          "deploy_type": "Reset Bundle",
+                          "external_publish_id": "b035a4d7-ec6b-4dcd-af8f-3a847b10fed8",
+                          "deploy_settings": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "projects_target_deploy_create",
+        "description": "Deploys a bundle to a target. Returns the status of the deploy. Deployment details are not immediately available in the response as this endpoint is asynchronous. Request the target for progress updates.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeployCreate"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "bundle_id": "22"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/DeployCreate"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/DeployCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeployCreate"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "status": "queued",
+                      "is_ssr_deploy": true,
+                      "updated_at": "2019-10-09T19:43:04.108157+00:00",
+                      "bundle_id": 3,
+                      "bundle": {
+                        "status": 0,
+                        "deletion_status": "ACTIVE",
+                        "api_bundle_preview_email_url": "/api/projects/project-slug/bundle/3/preview-email/",
+                        "go_preview_url": null,
+                        "updated_at": "2019-10-09T17:31:00.418509+00:00",
+                        "app_preview_url": null,
+                        "message": "SSR Bundle 2 (running deploy 83)",
+                        "id": 3,
+                        "is_uploaded": true,
+                        "created_at": "2019-10-09T17:31:00.383617+00:00",
+                        "preview_url": null,
+                        "is_ssr_bundle": true,
+                        "user_email": "fixture+progressive.ssr@test.com"
+                      },
+                      "external_publish_id": "None",
+                      "external_progress_update": null,
+                      "external_progress_percentage": null,
+                      "is_in_progress": true,
+                      "deploy_settings": null,
+                      "external_progress_status": null,
+                      "deploy_type": "publish",
+                      "created_at": "2019-10-09T19:43:04.108107+00:00",
+                      "deploy_duration": 0.305502,
+                      "external_progress_message": null,
+                      "external_publish_details": {},
+                      "applied_deploy_settings": false,
+                      "status_message": "Queueing Bundle",
+                      "user_email": "fixture+progressive.ssr@test.com",
+                      "external_progress_description": null
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/env-var/": {
+      "get": {
+        "operationId": "projects_target_env_var_list",
+        "description": "List a target's environment variables.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedEnvironmentVariableListList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "SUPER_SECRET_API_KEY": {
+                            "value": "****************6dIR",
+                            "created_by": "john.doe@mobify.com",
+                            "created_at": "2020-02-26T18:05:28.873516Z",
+                            "updated_at": "2020-02-26T18:05:35.625877Z",
+                            "updated_by": "john.doe@mobify.com",
+                            "publishing_status": 0,
+                            "publishing_status_description": "Pending"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "projects_target_env_var_partial_update",
+        "description": "Create, update, or delete environment variables. Accepts an object with values for single or multiple environment variables. If the variable does not exist, it is created. If the variable exists, it is updated. And if the variable exists and the value is null, it is deleted.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "CREATE-ENV-VAR": {
+                      "value": "new-value"
+                    },
+                    "UPDATE-ENV-VAR": {
+                      "value": "updated-value"
+                    },
+                    "DELETE-ENV-VAR": {
+                      "value": null
+                    }
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body. The request was processed successfully."
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/invalidation/": {
+      "post": {
+        "operationId": "projects_target_invalidation_create",
+        "description": "Invalidate a target's cached objects in the CDN. Cache invalidations are asynchronous and usually complete within two minutes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2CreateInvalidation"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "pattern": "/path/to/products/*/"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2CreateInvalidation"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2CreateInvalidation"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APITargetV2CreateInvalidation"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "result": "Cache invalidation is in progress.",
+                      "slug": "testing-eu"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/redirect/": {
+      "get": {
+        "operationId": "projects_target_redirect_list",
+        "description": "List a target's redirects. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPIRedirectV2CreateUpdateList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "from_path": "/spring",
+                          "to_url": "/summer",
+                          "forward_querystring": false,
+                          "http_status_code": 301,
+                          "publishing_status": "Pending",
+                          "user_email": "john.doe@mobify.com",
+                          "updated_by": "john.doe@mobify.com",
+                          "created_at": "2020-02-26T18:05:28.873516Z",
+                          "updated_at": "2020-02-26T18:05:35.625877Z"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "projects_target_redirect_create",
+        "description": "Create one or more redirects. This endpoint accepts either an object with values for a single redirect, or an array of objects for bulk creation. For example, consider a seasonal campaign page for spring. When the spring campaign ends and is replaced with a summer campaign, you can redirect from the spring URL to the summer URL. We recommend that you always create redirects in your staging target (environment) and then [clone](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=projects_target_redirect_clone_create) them to your production target. This allows you to test the redirects and verify that they work as expected. Changes may take up to 20 minutes to take effect on your site. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+              },
+              "examples": {
+                "RequestExample1-BulkRedirectCreation": {
+                  "value": [
+                    {
+                      "from_path": "/spring/category1",
+                      "to_url": "/summer/category1",
+                      "forward_querystring": false,
+                      "forward_wildcard": true
+                    },
+                    {
+                      "from_path": "/spring/category2",
+                      "to_url": "/summer/category2",
+                      "forward_querystring": false,
+                      "forward_wildcard": true
+                    },
+                    {
+                      "from_path": "/spring/category3",
+                      "to_url": "/summer/category3",
+                      "forward_querystring": false,
+                      "forward_wildcard": true
+                    }
+                  ],
+                  "summary": "RequestExample1 - Bulk Redirect Creation"
+                },
+                "RequestExample2-SingleRedirectCreation": {
+                  "value": {
+                    "from_path": "/spring/*",
+                    "to_url": "/summer",
+                    "forward_querystring": false,
+                    "forward_wildcard": true
+                  },
+                  "summary": "RequestExample2 - Single Redirect Creation"
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+                },
+                "examples": {
+                  "ResponseExample1-BulkRedirectCreation": {
+                    "value": "// No response body. The request was processed successfully.",
+                    "summary": "ResponseExample1 - Bulk Redirect Creation"
+                  },
+                  "ResponseExample2-SingleRedirectCreation": {
+                    "value": {
+                      "from_path": "/spring/*",
+                      "to_url": "/summer",
+                      "forward_querystring": false,
+                      "forward_wildcard": true,
+                      "http_status_code": 301,
+                      "publishing_status": "Pending",
+                      "user_email": "john.doe@example.com",
+                      "updated_by": "john.doe@example.com",
+                      "created_at": "2024-05-23T00:00:00.000Z",
+                      "updated_at": "2024-05-23T00:00:00.000Z"
+                    },
+                    "summary": "ResponseExample2 - Single Redirect Creation"
+                  }
+                }
+              }
+            },
+            "description": "The request was processed successfully."
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/redirect/{from_path}": {
+      "get": {
+        "operationId": "projects_target_redirect_retrieve",
+        "description": "Read data about a redirect by `from_path`. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "from_path",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The redirect's `from_path`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "projects_target_redirect_partial_update",
+        "description": "Update a redirect by `from_path`. For example, you can change a redirect if your content moved or you rebranded with new pages. We recommend that you always change redirects in your staging target (environment), and then [clone](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=projects_target_redirect_clone_create) the changes to your production target. Changes may take up to 20 minutes to take effect on your site. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "from_path",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The redirect's `from_path`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIRedirectV2CreateUpdate"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "from_path": "/spring",
+                    "to_url": "/summer-newbranding",
+                    "http_status_code": 301
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIRedirectV2CreateUpdate"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIRedirectV2CreateUpdate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "from_path": "/spring",
+                      "to_url": "/summer-newbranding",
+                      "http_status_code": 301,
+                      "publishing_status": "Pending",
+                      "user_email": "john.doe@example.com",
+                      "updated_by": "john.doe@example.com",
+                      "created_at": "2024-05-23T00:00:00.000Z",
+                      "updated_at": "2024-05-23T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "The request was processed successfully."
+          }
+        }
+      },
+      "delete": {
+        "operationId": "projects_target_redirect_destroy",
+        "description": "Delete a redirect by `from_path`. For example, you can delete a redirect that's no longer needed because a seasonal campaign is over, you removed a page, or you want to streamline your redirect structure and improve search engine ranking. We recommend that you always delete redirects in your staging target (environment), and then [clone](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=projects_target_redirect_clone_create) the changes to your production target. Changes may take up to 20 minutes to take effect on your site. When you delete a redirect, you no longer see it in Runtime Admin. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "from_path",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The redirect's `from_path`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body. The request was processed successfully."
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{to_target_slug}/redirect/clone/": {
+      "post": {
+        "operationId": "projects_target_redirect_clone_create",
+        "description": "Clone redirects from one target to another. Important: when you clone redirects, you're replacing all the redirects in one target with all the redirects in the other. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "to_target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The destination target identifier for the clone operation.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIRedirectV2Clone"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "from_target_slug": "staging"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APIRedirectV2Clone"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APIRedirectV2Clone"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIRedirectV2Clone"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/users/me/api_key/": {
+      "post": {
+        "operationId": "users_me_api_key_create",
+        "description": "Generate or reset the API key.",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "api_key": "qLh_IRpIh594lPeURV4giczpW0q-Ki0YIcOdDz0aw0g"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/users/me/email-preferences/": {
+      "get": {
+        "operationId": "users_me_email_preferences_retrieve",
+        "description": "Get email notification preferences for the authenticated user.",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEmailPreferences"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "node_deprecation_notifications": true,
+                      "created_at": "2024-01-15T10:30:00Z",
+                      "updated_at": "2024-01-15T10:30:00Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "users_me_email_preferences_partial_update",
+        "description": "Update email notification preferences for the authenticated user.",
+        "tags": [
+          "users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUserEmailPreferences"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "node_deprecation_notifications": false
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUserEmailPreferences"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUserEmailPreferences"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEmailPreferences"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "node_deprecation_notifications": false,
+                      "created_at": "2024-01-15T10:30:00Z",
+                      "updated_at": "2024-01-15T10:35:00Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/users/me/profile/": {
+      "get": {
+        "operationId": "users_me_profile_retrieve",
+        "description": "Get the profile information for the authenticated user.",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIUserProfile"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "firstname": "thomas",
+                      "lastname": "berko",
+                      "email": "thomas.berko@example.com"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIAccessControlHeaderV2Create": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "description": "Id for this Access Control Header."
+          },
+          "value": {
+            "type": "string",
+            "description": "Value to be encrypted. A header value is made up of your chosen set of characters. For the constraints that apply to the value, see [Access Control Headers](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html?q=access%20control%20header#access-control-headers)."
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "publishing_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishingStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "publishing_status_description": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "APIOrganization": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "create_project": {
+                "type": "boolean"
+              }
+            },
+            "readOnly": true
+          },
+          "has_mobify_tag_project": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "limits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationLimits"
+              }
+            ],
+            "readOnly": true
+          },
+          "auto_delete": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationAutoDelete"
+              }
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ]
+      },
+      "APIProjectMember": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address"
+          },
+          "role": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "required": [
+          "role",
+          "user"
+        ]
+      },
+      "APIProjectV2Create": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "User-friendly name for this project",
+            "maxLength": 64
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2000
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 20,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "organization": {
+            "type": "string",
+            "description": "User-friendly identifier for this instance."
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "project_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectTypeEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "browse": {
+                "type": "boolean"
+              },
+              "deploy": {
+                "type": "boolean"
+              },
+              "delete_bundle": {
+                "type": "boolean"
+              },
+              "delete_project": {
+                "type": "boolean"
+              },
+              "edit_redirect": {
+                "type": "boolean"
+              },
+              "edit_roles": {
+                "type": "boolean"
+              },
+              "edit_settings": {
+                "type": "boolean"
+              },
+              "validate_tag": {
+                "type": "boolean"
+              },
+              "edit_environment": {
+                "type": "boolean"
+              },
+              "create_environment": {
+                "type": "boolean"
+              },
+              "delete_environment": {
+                "type": "boolean"
+              },
+              "create_notification": {
+                "type": "boolean"
+              },
+              "list_notifications": {
+                "type": "boolean"
+              },
+              "retrieve_notification": {
+                "type": "boolean"
+              },
+              "edit_notification": {
+                "type": "boolean"
+              },
+              "delete_notification": {
+                "type": "boolean"
+              },
+              "create_jwt": {
+                "type": "boolean"
+              },
+              "upload_bundle": {
+                "type": "boolean"
+              },
+              "edit_environment_variable": {
+                "type": "boolean"
+              },
+              "edit_access_control_header": {
+                "type": "boolean"
+              }
+            },
+            "readOnly": true
+          },
+          "ssr_region": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SsrRegionEnum"
+              }
+            ],
+            "title": "SSR AWS Region",
+            "description": "The default AWS region for newly created targets\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          }
+        },
+        "required": [
+          "name",
+          "organization"
+        ]
+      },
+      "APIProjectV2Update": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "User-friendly name for this project",
+            "maxLength": 64
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2000
+          },
+          "slug": {
+            "type": "string",
+            "readOnly": true,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "organization": {
+            "type": "string",
+            "description": "User-friendly identifier for this instance."
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "project_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectTypeEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "browse": {
+                "type": "boolean"
+              },
+              "deploy": {
+                "type": "boolean"
+              },
+              "delete_bundle": {
+                "type": "boolean"
+              },
+              "delete_project": {
+                "type": "boolean"
+              },
+              "edit_redirect": {
+                "type": "boolean"
+              },
+              "edit_roles": {
+                "type": "boolean"
+              },
+              "edit_settings": {
+                "type": "boolean"
+              },
+              "validate_tag": {
+                "type": "boolean"
+              },
+              "edit_environment": {
+                "type": "boolean"
+              },
+              "create_environment": {
+                "type": "boolean"
+              },
+              "delete_environment": {
+                "type": "boolean"
+              },
+              "create_notification": {
+                "type": "boolean"
+              },
+              "list_notifications": {
+                "type": "boolean"
+              },
+              "retrieve_notification": {
+                "type": "boolean"
+              },
+              "edit_notification": {
+                "type": "boolean"
+              },
+              "delete_notification": {
+                "type": "boolean"
+              },
+              "create_jwt": {
+                "type": "boolean"
+              },
+              "upload_bundle": {
+                "type": "boolean"
+              },
+              "edit_environment_variable": {
+                "type": "boolean"
+              },
+              "edit_access_control_header": {
+                "type": "boolean"
+              }
+            },
+            "readOnly": true
+          },
+          "ssr_region": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SsrRegionEnum"
+              }
+            ],
+            "title": "SSR AWS Region",
+            "description": "The default AWS region for newly created targets\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "APIRedirectV2Clone": {
+        "type": "object",
+        "properties": {
+          "from_target_slug": {
+            "type": "string",
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          }
+        },
+        "required": [
+          "from_target_slug"
+        ]
+      },
+      "APIRedirectV2CreateUpdate": {
+        "type": "object",
+        "properties": {
+          "from_path": {
+            "type": "string",
+            "description": "A relative URL. For example, the `from_path` value `/spring` redirects shoppers from the URL `www.example.com/spring`. An asterisk (`*`) at the end of the `from_path` indicates a wildcard. For example, a redirect from `/a/*` matches `/a/`, `/a/b`, and `/a/b/c`.",
+            "maxLength": 2000
+          },
+          "to_url": {
+            "type": "string",
+            "description": "A relative or absolute URL. For example, the `to_url` value `/summer` redirects shoppers to the URL `www.example.com/summer`.",
+            "maxLength": 2000
+          },
+          "forward_querystring": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Some requests contain query string parameters to include in the redirected request. For example, the relative path `/spring-landing-page` can be appended with a query string for analytics tracking, such as `/spring-landing-page?gclid=123`. The `true` value includes query string parameters in the redirect. The `false` value excludes query string parameters from the redirect. The default value is `false`."
+          },
+          "forward_wildcard": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "The `true` value automatically includes any path that comes after the wildcard portion of the `from_path` in the `to_url`. For example: if `/a/*` matches `/a/b/c` in the `from_path` and the `to_url` is `/z/`, the redirect URL is `/z/b/c`. The `false` value excludes the wildcard portion. The default value is `false`. "
+          },
+          "http_status_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HttpStatusCodeEnum"
+              }
+            ],
+            "description": "The HTTP status code to be returned in the response. 301 (Moved Permanently) is the recommended and default value. 302 (Found or Moved Temporarily) is another allowable value. For more information about HTTP status codes, see this [status code explainer](https://moz.com/learn/seo/redirection).\n\n* `301` - Permanent 301\n* `302` - Temporary 302"
+          },
+          "publishing_status": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The status of the redeployment that happens after you call this API. Allowable values: Pending, Completed, Failed. If the request failed, you can [redeploy the environment](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pushing-and-deploying-bundles.html) specified in your request."
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true,
+            "description": "Email of the user who created the redirect."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true,
+            "description": "Email of the user who last updated the redirect."
+          }
+        },
+        "required": [
+          "from_path",
+          "to_url"
+        ]
+      },
+      "APITargetV2Create": {
+        "type": "object",
+        "description": "This is the serializer for target create/list APIs.",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "description": "User-friendly name for this target",
+            "maxLength": 64
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StateEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "Target State\n\n* `CREATE_IN_PROGRESS` - Create in Progress\n* `PUBLISH_IN_PROGRESS` - Publish in Progress\n* `ACTIVE` - Active\n* `CREATE_FAILED` - Create Failed\n* `PUBLISH_FAILED` - Publish Failed"
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "hostname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hostname (literal or JavaScript regular expression between / characters) on which this target should be loaded by the V8 Tag",
+            "maxLength": 128
+          },
+          "current_deploy": {
+            "type": "object",
+            "additionalProperties": {},
+            "readOnly": true
+          },
+          "ssr_external_hostname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Full hostname to used by the environment eg. www.customer.com.",
+            "maxLength": 128
+          },
+          "ssr_external_domain": {
+            "type": "string",
+            "nullable": true,
+            "description": "The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)",
+            "maxLength": 128
+          },
+          "ssr_region": {
+            "title": "SSR AWS Region",
+            "description": "The AWS region to which a Universal PWA SSR should be deployed (e.g. us-east-1)\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrRegionEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "ssr_whitelisted_ips": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs."
+          },
+          "ssr_proxy_configs": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "host": {
+                  "type": "string"
+                },
+                "protocol": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "host"
+              ]
+            }
+          },
+          "is_production": {
+            "type": "boolean",
+            "title": "Production",
+            "description": "Treat this target as a production environment."
+          },
+          "allow_cookies": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "enable_source_maps": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to enable source map support. This will set the NODE_OPTIONS environment variable to \"--enable-source-maps\" in your MRT environment."
+          },
+          "log_level": {
+            "nullable": true,
+            "description": "The minimum log level emitted for this target.n\n* `TRACE`\n* `DEBUG`\n* `INFO`\n* `WARN`\n* `ERROR`\n* `FATAL`",     
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LogLevelEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "APITargetV2CreateInvalidation": {
+        "type": "object",
+        "description": "This is the serializer for cache invalidation API endpoint.",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Path pattern to invalidate on the CDN. This must start with a forward slash (`/`)."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "default": [],
+            "description": "[Deprecated] Items to invalidate in the application cache.",
+            "maxItems": 50000,
+            "deprecated": true
+          },
+          "namespace": {
+            "type": "string",
+            "description": "[Deprecated] Namespace of items to invalidate in the application cache.",
+            "deprecated": true
+          }
+        },
+        "required": [
+          "pattern"
+        ]
+      },
+      "APITargetV2Update": {
+        "type": "object",
+        "description": "This is the base Target serializer.",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "readOnly": true,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "description": "User-friendly name for this target",
+            "maxLength": 64
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StateEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "Target State\n\n* `CREATE_IN_PROGRESS` - Create in Progress\n* `PUBLISH_IN_PROGRESS` - Publish in Progress\n* `ACTIVE` - Active\n* `CREATE_FAILED` - Create Failed\n* `PUBLISH_FAILED` - Publish Failed"
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "hostname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hostname (literal or JavaScript regular expression between / characters) on which this target should be loaded by the V8 Tag",
+            "maxLength": 128
+          },
+          "current_deploy": {
+            "type": "object",
+            "additionalProperties": {},
+            "readOnly": true
+          },
+          "ssr_external_hostname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Full hostname to used by the environment eg. www.customer.com.",
+            "maxLength": 128
+          },
+          "ssr_external_domain": {
+            "type": "string",
+            "nullable": true,
+            "description": "The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)",
+            "maxLength": 128
+          },
+          "ssr_region": {
+            "title": "SSR AWS Region",
+            "description": "The AWS region to which a Universal PWA SSR should be deployed (e.g. us-east-1)\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrRegionEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "ssr_whitelisted_ips": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs."
+          },
+          "ssr_proxy_configs": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "host": {
+                  "type": "string"
+                },
+                "protocol": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "host"
+              ]
+            }
+          },
+          "is_production": {
+            "type": "boolean",
+            "title": "Production",
+            "description": "Treat this target as a production environment."
+          },
+          "allow_cookies": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "enable_source_maps": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to enable source map support. This will set the NODE_OPTIONS environment variable to \"--enable-source-maps\" in your MRT environment."
+          },
+          "log_level": {
+            "nullable": true,
+            "description": "The minimum log level emitted for this target.n\n* `TRACE`\n* `DEBUG`\n* `INFO`\n* `WARN`\n* `ERROR`\n* `FATAL`",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LogLevelEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "APIUserProfile": {
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "last_name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "readOnly": true,
+            "title": "Email address"
+          },
+          "is_staff": {
+            "type": "boolean",
+            "readOnly": true,
+            "title": "Staff status",
+            "description": "Designates whether the user can log into this admin site."
+          },
+          "date_joined": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "highest_account_manager_role": {
+            "type": "string",
+            "readOnly": true
+          }
+        }
+      },
+      "BlankEnum": {
+        "enum": [
+          ""
+        ]
+      },
+      "Bundle": {
+        "type": "object",
+        "description": "Serializer to validate a bundle upload payload.",
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "data": {
+            "type": "string"
+          },
+          "encoding": {
+            "$ref": "#/components/schemas/EncodingEnum"
+          },
+          "ssr_only": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ssr_shared": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ssr_parameters": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "bundle_metadata": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "data",
+          "encoding",
+          "message"
+        ]
+      },
+      "BundleDownload": {
+        "type": "object",
+        "properties": {
+          "download_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "download_url"
+        ]
+      },
+      "BundleList": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "maximum": 2147483647,
+            "minimum": 0,
+            "description": "A ID unique within a project."
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Status1d2Enum"
+              }
+            ],
+            "minimum": -2147483648,
+            "maximum": 2147483647
+          },
+          "deletion_status": {
+            "$ref": "#/components/schemas/DeletionStatusEnum"
+          },
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          }
+        },
+        "required": [
+          "id",
+          "message"
+        ]
+      },
+      "DeletionStatusEnum": {
+        "enum": [
+          "ACTIVE",
+          "CLEANUP_REQUESTED",
+          "CLEANUP_IN_PROGRESS",
+          "CLEANUP_COMPLETE",
+          "CLEANUP_FAILED"
+        ],
+        "type": "string",
+        "description": "* `ACTIVE` - Active\n* `CLEANUP_REQUESTED` - Cleanup Requested\n* `CLEANUP_IN_PROGRESS` - Cleanup in Progress\n* `CLEANUP_COMPLETE` - Cleanup Complete\n* `CLEANUP_FAILED` - Cleanup Failed"
+      },
+      "DeployCreate": {
+        "type": "object",
+        "description": "This is the serializer for create deploy API endpoint.",
+        "properties": {
+          "bundle_id": {
+            "description": "Integer ID of the bundle to deploy or the string `current`, which re-deploys the currently deployed bundle"
+          }
+        },
+        "required": [
+          "bundle_id"
+        ]
+      },
+      "DeployList": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "bundle": {
+            "$ref": "#/components/schemas/BundleList"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeployListStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "deploy_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeployTypeEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "external_publish_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Id for an external publishing operation for this Deploy"
+          },
+          "deploy_settings": {
+            "type": "integer",
+            "nullable": true
+          },
+          "duration": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bundle",
+          "duration"
+        ]
+      },
+      "DeployListStatusEnum": {
+        "enum": [
+          "Queued",
+          "In Progress",
+          "Failed",
+          "Finished"
+        ],
+        "type": "string",
+        "description": "* `Queued` - Queued\n* `In Progress` - In Progress\n* `Failed` - Failed\n* `Finished` - Finished"
+      },
+      "DeployTypeEnum": {
+        "enum": [
+          "Publish",
+          "Reset Bundle",
+          "Push",
+          "Deploy Settings",
+          "Redeploy"
+        ],
+        "type": "string",
+        "description": "* `Publish` - Publish\n* `Reset Bundle` - Reset Bundle\n* `Push` - Push\n* `Deploy Settings` - Deploy Settings\n* `Redeploy` - Redeploy"
+      },
+      "EmailNotification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "User-friendly identifier for this target."
+            }
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 254
+            }
+          },
+          "deployment_start": {
+            "type": "boolean",
+            "description": "Trigger this notification when a deployment starts for a target"
+          },
+          "deployment_success": {
+            "type": "boolean",
+            "description": "Trigger this notification when a deployment succeeds for a target"
+          },
+          "deployment_failed": {
+            "type": "boolean",
+            "description": "Trigger this notification when a deployment fails for a target"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "recipients",
+          "targets"
+        ]
+      },
+      "EmailNotificationTyped": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "resourcetype": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "resourcetype"
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/EmailNotification"
+          }
+        ]
+      },
+      "EncodingEnum": {
+        "enum": [
+          "base64"
+        ],
+        "type": "string",
+        "description": "* `base64` - base64"
+      },
+      "EnvironmentVariableList": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the Environment Variable.",
+            "maxLength": 512
+          },
+          "value": {
+            "type": "string",
+            "description": "Value to be encrypted."
+          },
+          "created_by": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "publishing_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishingStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "publishing_status_description": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "HttpStatusCodeEnum": {
+        "enum": [
+          301,
+          302
+        ],
+        "type": "integer",
+        "description": "* `301` - Permanent 301\n* `302` - Temporary 302"
+      },
+      "LogLevelEnum": {
+        "enum": [
+          "TRACE",
+          "DEBUG",
+          "INFO",
+          "WARN",
+          "ERROR",
+          "FATAL"
+        ],
+        "type": "string",
+        "description": "The minimum log level emitted for a target."
+      },
+      "NullEnum": {
+        "enum": [
+          null
+        ]
+      },
+      "OrganizationAutoDelete": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "threshold": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enabled",
+          "threshold"
+        ]
+      },
+      "OrganizationLimits": {
+        "type": "object",
+        "properties": {
+          "max_environments": {
+            "$ref": "#/components/schemas/ResourceLimit"
+          },
+          "max_production_environments": {
+            "$ref": "#/components/schemas/ResourceLimit"
+          }
+        },
+        "required": [
+          "max_environments",
+          "max_production_environments"
+        ]
+      },
+      "PaginatedAPIAccessControlHeaderV2CreateList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIAccessControlHeaderV2Create"
+            }
+          }
+        }
+      },
+      "PaginatedAPIOrganizationList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIOrganization"
+            }
+          }
+        }
+      },
+      "PaginatedAPIProjectMemberList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIProjectMember"
+            }
+          }
+        }
+      },
+      "PaginatedAPIProjectV2CreateList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIProjectV2Create"
+            }
+          }
+        }
+      },
+      "PaginatedAPIRedirectV2CreateUpdateList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+            }
+          }
+        }
+      },
+      "PaginatedAPITargetV2CreateList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APITargetV2Create"
+            }
+          }
+        }
+      },
+      "PaginatedBundleListList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundleList"
+            }
+          }
+        }
+      },
+      "PaginatedDeployListList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeployList"
+            }
+          }
+        }
+      },
+      "PaginatedEnvironmentVariableListList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentVariableList"
+            }
+          }
+        }
+      },
+      "PaginatedPolymorphicNotificationList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PolymorphicNotification"
+            }
+          }
+        }
+      },
+      "PatchedAPIProjectMember": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address"
+          },
+          "role": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "PatchedAPIProjectV2Update": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "User-friendly name for this project",
+            "maxLength": 64
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2000
+          },
+          "slug": {
+            "type": "string",
+            "readOnly": true,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "organization": {
+            "type": "string",
+            "description": "User-friendly identifier for this instance."
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "project_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectTypeEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "browse": {
+                "type": "boolean"
+              },
+              "deploy": {
+                "type": "boolean"
+              },
+              "delete_bundle": {
+                "type": "boolean"
+              },
+              "delete_project": {
+                "type": "boolean"
+              },
+              "edit_redirect": {
+                "type": "boolean"
+              },
+              "edit_roles": {
+                "type": "boolean"
+              },
+              "edit_settings": {
+                "type": "boolean"
+              },
+              "validate_tag": {
+                "type": "boolean"
+              },
+              "edit_environment": {
+                "type": "boolean"
+              },
+              "create_environment": {
+                "type": "boolean"
+              },
+              "delete_environment": {
+                "type": "boolean"
+              },
+              "create_notification": {
+                "type": "boolean"
+              },
+              "list_notifications": {
+                "type": "boolean"
+              },
+              "retrieve_notification": {
+                "type": "boolean"
+              },
+              "edit_notification": {
+                "type": "boolean"
+              },
+              "delete_notification": {
+                "type": "boolean"
+              },
+              "create_jwt": {
+                "type": "boolean"
+              },
+              "upload_bundle": {
+                "type": "boolean"
+              },
+              "edit_environment_variable": {
+                "type": "boolean"
+              },
+              "edit_access_control_header": {
+                "type": "boolean"
+              }
+            },
+            "readOnly": true
+          },
+          "ssr_region": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SsrRegionEnum"
+              }
+            ],
+            "title": "SSR AWS Region",
+            "description": "The default AWS region for newly created targets\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          }
+        }
+      },
+      "PatchedAPIRedirectV2CreateUpdate": {
+        "type": "object",
+        "properties": {
+          "from_path": {
+            "type": "string",
+            "description": "A relative URL. For example, the `from_path` value `/spring` redirects shoppers from the URL `www.example.com/spring`. An asterisk (`*`) at the end of the `from_path` indicates a wildcard. For example, a redirect from `/a/*` matches `/a/`, `/a/b`, and `/a/b/c`.",
+            "maxLength": 2000
+          },
+          "to_url": {
+            "type": "string",
+            "description": "A relative or absolute URL. For example, the `to_url` value `/summer` redirects shoppers to the URL `www.example.com/summer`.",
+            "maxLength": 2000
+          },
+          "forward_querystring": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Some requests contain query string parameters to include in the redirected request. For example, the relative path `/spring-landing-page` can be appended with a query string for analytics tracking, such as `/spring-landing-page?gclid=123`. The `true` value includes query string parameters in the redirect. The `false` value excludes query string parameters from the redirect. The default value is `false`."
+          },
+          "forward_wildcard": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "The `true` value automatically includes any path that comes after the wildcard portion of the `from_path` in the `to_url`. For example: if `/a/*` matches `/a/b/c` in the `from_path` and the `to_url` is `/z/`, the redirect URL is `/z/b/c`. The `false` value excludes the wildcard portion. The default value is `false`. "
+          },
+          "http_status_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HttpStatusCodeEnum"
+              }
+            ],
+            "description": "The HTTP status code to be returned in the response. 301 (Moved Permanently) is the recommended and default value. 302 (Found or Moved Temporarily) is another allowable value. For more information about HTTP status codes, see this [status code explainer](https://moz.com/learn/seo/redirection).\n\n* `301` - Permanent 301\n* `302` - Temporary 302"
+          },
+          "publishing_status": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The status of the redeployment that happens after you call this API. Allowable values: Pending, Completed, Failed. If the request failed, you can [redeploy the environment](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pushing-and-deploying-bundles.html) specified in your request."
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true,
+            "description": "Email of the user who created the redirect."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true,
+            "description": "Email of the user who last updated the redirect."
+          }
+        }
+      },
+      "PatchedAPITargetV2Update": {
+        "type": "object",
+        "description": "This is the base Target serializer.",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "readOnly": true,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "description": "User-friendly name for this target",
+            "maxLength": 64
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StateEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "Target State\n\n* `CREATE_IN_PROGRESS` - Create in Progress\n* `PUBLISH_IN_PROGRESS` - Publish in Progress\n* `ACTIVE` - Active\n* `CREATE_FAILED` - Create Failed\n* `PUBLISH_FAILED` - Publish Failed"
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "hostname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hostname (literal or JavaScript regular expression between / characters) on which this target should be loaded by the V8 Tag",
+            "maxLength": 128
+          },
+          "current_deploy": {
+            "type": "object",
+            "additionalProperties": {},
+            "readOnly": true
+          },
+          "ssr_external_hostname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Full hostname to used by the environment eg. www.customer.com.",
+            "maxLength": 128
+          },
+          "ssr_external_domain": {
+            "type": "string",
+            "nullable": true,
+            "description": "The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)",
+            "maxLength": 128
+          },
+          "ssr_region": {
+            "title": "SSR AWS Region",
+            "description": "The AWS region to which a Universal PWA SSR should be deployed (e.g. us-east-1)\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrRegionEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "ssr_whitelisted_ips": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs."
+          },
+          "ssr_proxy_configs": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "host": {
+                  "type": "string"
+                },
+                "protocol": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "host"
+              ]
+            }
+          },
+          "is_production": {
+            "type": "boolean",
+            "title": "Production",
+            "description": "Treat this target as a production environment."
+          },
+          "allow_cookies": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "enable_source_maps": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to enable source map support. This will set the NODE_OPTIONS environment variable to \"--enable-source-maps\" in your MRT environment."
+          },
+          "log_level": {
+            "nullable": true,
+            "description": "The minimum log level emitted for this target.\n\n* `TRACE`\n* `DEBUG`\n* `INFO`\n* `WARN`\n* `ERROR`\n* `FATAL`",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LogLevelEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          }
+        }
+      },
+      "PatchedEmailNotification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "User-friendly identifier for this target."
+            }
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 254
+            }
+          },
+          "deployment_start": {
+            "type": "boolean",
+            "description": "Trigger this notification when a deployment starts for a target"
+          },
+          "deployment_success": {
+            "type": "boolean",
+            "description": "Trigger this notification when a deployment succeeds for a target"
+          },
+          "deployment_failed": {
+            "type": "boolean",
+            "description": "Trigger this notification when a deployment fails for a target"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          }
+        }
+      },
+      "PatchedEmailNotificationTyped": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "resourcetype": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/PatchedEmailNotification"
+          }
+        ]
+      },
+      "PatchedPolymorphicNotification": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PatchedEmailNotificationTyped"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "resourcetype",
+          "mapping": {
+            "EmailNotification": "#/components/schemas/PatchedEmailNotificationTyped"
+          }
+        }
+      },
+      "PatchedUserEmailPreferences": {
+        "type": "object",
+        "properties": {
+          "node_deprecation_notifications": {
+            "type": "boolean",
+            "description": "The user's email notification preferences for Node.js runtime's deprecation and retirement."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          }
+        }
+      },
+      "PolymorphicNotification": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailNotificationTyped"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "resourcetype",
+          "mapping": {
+            "EmailNotification": "#/components/schemas/EmailNotificationTyped"
+          }
+        }
+      },
+      "ProjectTypeEnum": {
+        "enum": [
+          "MOBIFY_STUDIO",
+          "MOBIFYJS_CLIENT",
+          "MOBIFY_ADAPTIVEJS",
+          "MOBIFY_TAG_BASED_PWA",
+          "SSR"
+        ],
+        "type": "string",
+        "description": "* `MOBIFY_STUDIO` - MOBIFY_STUDIO\n* `MOBIFYJS_CLIENT` - MOBIFYJS_CLIENT\n* `MOBIFY_ADAPTIVEJS` - MOBIFY_ADAPTIVEJS\n* `MOBIFY_TAG_BASED_PWA` - MOBIFY_TAG_BASED_PWA\n* `SSR` - SSR"
+      },
+      "PublishingStatusEnum": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "* `0` - Pending\n* `1` - Completed\n* `2` - Failed"
+      },
+      "ResourceLimit": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          },
+          "used": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit",
+          "used"
+        ]
+      },
+      "SsrRegionEnum": {
+        "enum": [
+          "us-east-1",
+          "us-east-2",
+          "us-west-1",
+          "us-west-2",
+          "ap-south-1",
+          "ap-south-2",
+          "ap-northeast-2",
+          "ap-southeast-1",
+          "ap-southeast-2",
+          "ap-southeast-3",
+          "ap-northeast-1",
+          "ap-northeast-3",
+          "ca-central-1",
+          "eu-central-1",
+          "eu-central-2",
+          "eu-west-1",
+          "eu-west-2",
+          "eu-west-3",
+          "eu-north-1",
+          "eu-south-1",
+          "il-central-1",
+          "me-central-1",
+          "sa-east-1"
+        ],
+        "type": "string",
+        "description": "* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)"
+      },
+      "StateEnum": {
+        "enum": [
+          "CREATE_IN_PROGRESS",
+          "PUBLISH_IN_PROGRESS",
+          "ACTIVE",
+          "CREATE_FAILED",
+          "PUBLISH_FAILED"
+        ],
+        "type": "string",
+        "description": "* `CREATE_IN_PROGRESS` - Create in Progress\n* `PUBLISH_IN_PROGRESS` - Publish in Progress\n* `ACTIVE` - Active\n* `CREATE_FAILED` - Create Failed\n* `PUBLISH_FAILED` - Publish Failed"
+      },
+      "Status1d2Enum": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "* `0` - ok\n* `1` - broken\n* `2` - preparing"
+      },
+      "UserEmailPreferences": {
+        "type": "object",
+        "properties": {
+          "node_deprecation_notifications": {
+            "type": "boolean",
+            "description": "The user's email notification preferences for Node.js runtime's deprecation and retirement."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Basic": {
+        "type": "http",
+        "description": "A basic authentication scheme for Managed Runtime API endpoints. To make an API request, concatenate your email address and API key separated by a colon (`:`). Base64 encode the concatenated string and include it in the HTTP request Authorization header.<br><br>Example:<br><br>`Authorization: Basic $B64_ENCODED_VALUE`",
+        "scheme": "basic"
+      },
+      "BearerToken": {
+        "type": "http",
+        "description": "A bearer token authentication scheme for Managed Runtime API endpoints. To make an API request, include your API key in the HTTP request Authorization header.<br><br>Example:<br><br>`Authorization: Bearer $API_KEY`",
+        "scheme": "bearer",
+        "bearerFormat": "Bearer .*"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://cloud.mobify.com"
+    }
+  ]
+}
