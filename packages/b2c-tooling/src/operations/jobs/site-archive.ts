@@ -10,7 +10,6 @@ import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {
-  executeJob,
   waitForJob,
   JobExecutionError,
   getJobLog,
@@ -138,54 +137,34 @@ export async function siteArchiveImport(
     logger.debug(`Archive uploaded: ${uploadPath}`);
   }
 
-  // Execute the import job
-  logger.debug(`Executing ${IMPORT_JOB_ID} job`);
+  // Execute the import job with file_name parameter
+  logger.debug(`Executing ${IMPORT_JOB_ID} job with file_name: ${zipFilename}`);
 
   let execution: JobExecution;
-  try {
-    // Try the standard form first (external users)
-    execution = await executeJob(instance, IMPORT_JOB_ID, {
-      parameters: [],
-      waitForRunning: true,
-    });
 
-    // The job needs the file_name - try with parameters form
-    // Different SFCC versions accept different formats
-  } catch (error) {
-    // If we get UnknownPropertyException, try the parameters format
-    if (error instanceof Error && error.message.includes('UnknownPropertyException')) {
-      logger.warn('Using parameters format for import job');
-    }
-    throw error;
-  }
+  // Try file_name format first (standard OCAPI format)
+  const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
+    params: {path: {job_id: IMPORT_JOB_ID}},
+    body: {file_name: zipFilename} as unknown as string,
+  });
 
-  // Execute with the correct format - try file_name first, then parameters
-  try {
-    const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: IMPORT_JOB_ID}},
-      body: {file_name: zipFilename} as unknown as string,
-    });
-
-    if (error || !data) {
-      throw new Error(error?.fault?.message ?? 'Failed to execute import job');
-    }
-
-    execution = data;
-  } catch {
-    // Try with parameters format for internal users
+  if (error || !data) {
+    // Try with parameters format as fallback
     logger.warn('Retrying with parameters format for internal users');
 
-    const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
+    const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
       params: {path: {job_id: IMPORT_JOB_ID}},
       body: {
         parameters: [{name: 'ImportFile', value: zipFilename}],
       } as unknown as string,
     });
 
-    if (error || !data) {
-      throw new Error(error?.fault?.message ?? 'Failed to execute import job');
+    if (retryError || !retryData) {
+      throw new Error(retryError?.fault?.message ?? error?.fault?.message ?? 'Failed to execute import job');
     }
 
+    execution = retryData;
+  } else {
     execution = data;
   }
 
