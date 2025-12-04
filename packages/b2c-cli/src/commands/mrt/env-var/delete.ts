@@ -51,6 +51,7 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
         projectSlug: project,
         environment,
         key,
+        origin: this.getMrtOrigin(),
       },
       this.getMrtAuth(),
     );

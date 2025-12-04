@@ -112,6 +112,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
           ssrOnly,
           ssrShared,
           ssrParameters,
+          origin: this.getMrtOrigin(),
         },
         this.getMrtAuth(),
       );

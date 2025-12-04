@@ -20,6 +20,8 @@ export interface ResolvedConfig {
   scopes?: string[];
   shortCode?: string;
   mrtApiKey?: string;
+  /** MRT cloud API origin URL */
+  mrtOrigin?: string;
   instanceName?: string;
   /** Allowed authentication methods (in priority order). If not set, all methods are allowed. */
   authMethods?: AuthMethod[];
@@ -173,6 +175,7 @@ function mergeConfigs(
     scopes: flags.scopes || dwJson.scopes,
     shortCode: flags.shortCode || dwJson.shortCode,
     mrtApiKey: flags.mrtApiKey,
+    mrtOrigin: flags.mrtOrigin,
     instanceName: dwJson.instanceName || options.instance,
     authMethods: flags.authMethods || dwJson.authMethods,
   };
@@ -216,16 +219,17 @@ export interface MobifyConfigResult {
  * }
  * ```
  *
+ * @param customPath - Optional custom path to the mobify config file. If not provided, defaults to ~/.mobify
  * @returns The API key and username if found, undefined otherwise
  */
-export function loadMobifyConfig(): MobifyConfigResult {
+export function loadMobifyConfig(customPath?: string): MobifyConfigResult {
   const logger = getLogger();
-  const mobifyPath = path.join(os.homedir(), '.mobify');
+  const mobifyPath = customPath || path.join(os.homedir(), '.mobify');
 
-  logger.trace({path: mobifyPath}, '[Config] Checking for ~/.mobify');
+  logger.trace({path: mobifyPath}, '[Config] Checking for mobify config');
 
   if (!fs.existsSync(mobifyPath)) {
-    logger.trace('[Config] No ~/.mobify found');
+    logger.trace({path: mobifyPath}, '[Config] No mobify config found');
     return {};
   }
 
@@ -234,14 +238,14 @@ export function loadMobifyConfig(): MobifyConfigResult {
     const config = JSON.parse(content) as MobifyConfig;
 
     const hasApiKey = Boolean(config.api_key);
-    logger.trace({path: mobifyPath, hasApiKey, username: config.username}, '[Config] Loaded ~/.mobify');
+    logger.trace({path: mobifyPath, hasApiKey, username: config.username}, '[Config] Loaded mobify config');
 
     return {
       apiKey: config.api_key,
       username: config.username,
     };
   } catch (error) {
-    logger.trace({path: mobifyPath, error}, '[Config] Failed to parse ~/.mobify');
+    logger.trace({path: mobifyPath, error}, '[Config] Failed to parse mobify config');
     return {};
   }
 }
