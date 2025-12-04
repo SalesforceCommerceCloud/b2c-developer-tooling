@@ -1,6 +1,5 @@
-import {Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
-import {OdsCommand} from '@salesforce/b2c-tooling/cli';
+import {Flags} from '@oclif/core';
+import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling/cli';
 import type {OdsComponents} from '@salesforce/b2c-tooling';
 import {t} from '../../i18n/index.js';
 
@@ -14,24 +13,7 @@ interface OdsListResponse {
   data: SandboxModel[];
 }
 
-/**
- * Column definition for table output.
- */
-interface ColumnDef {
-  /** Column header label */
-  header: string;
-  /** Minimum width in characters */
-  minWidth?: number;
-  /** Function to extract value from sandbox */
-  get: (s: SandboxModel) => string;
-  /** Whether this column is only shown with --extended */
-  extended?: boolean;
-}
-
-/**
- * Available columns for sandbox list output.
- */
-const COLUMNS: Record<string, ColumnDef> = {
+const COLUMNS: Record<string, ColumnDef<SandboxModel>> = {
   realm: {
     header: 'Realm',
     get: (s) => s.realm || '-',
@@ -79,6 +61,8 @@ const COLUMNS: Record<string, ColumnDef> = {
 
 /** Default columns shown without --extended */
 const DEFAULT_COLUMNS = ['realm', 'instance', 'state', 'profile', 'created', 'eol', 'id'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * Command to list all on-demand sandboxes.
@@ -176,36 +160,9 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
       return response;
     }
 
-    this.printSandboxesTable(sandboxes, this.getSelectedColumns());
+    tableRenderer.render(sandboxes, this.getSelectedColumns());
 
     return response;
-  }
-
-  /**
-   * Calculate dynamic column widths based on content.
-   * Each column width = max(header length, max data length) + padding
-   */
-  private calculateColumnWidths(sandboxes: SandboxModel[], columnKeys: string[]): Map<string, number> {
-    const widths = new Map<string, number>();
-    const padding = 2; // Space between columns
-
-    for (const key of columnKeys) {
-      const col = COLUMNS[key];
-      // Start with header length
-      let maxWidth = col.header.length;
-
-      // Check all data values
-      for (const sandbox of sandboxes) {
-        const value = col.get(sandbox);
-        maxWidth = Math.max(maxWidth, value.length);
-      }
-
-      // Apply minimum width if specified, add padding
-      const minWidth = col.minWidth || 0;
-      widths.set(key, Math.max(maxWidth, minWidth) + padding);
-    }
-
-    return widths;
   }
 
   /**
@@ -218,9 +175,9 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
     if (columnsFlag) {
       // User specified explicit columns
       const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = requested.filter((c) => c in COLUMNS);
+      const valid = tableRenderer.validateColumnKeys(requested);
       if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${Object.keys(COLUMNS).join(', ')}`);
+        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
         return DEFAULT_COLUMNS;
       }
       return valid;
@@ -228,48 +185,10 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
 
     if (extended) {
       // Show all columns
-      return Object.keys(COLUMNS);
+      return tableRenderer.getColumnKeys();
     }
 
     // Default columns (non-extended)
     return DEFAULT_COLUMNS;
-  }
-
-  private printSandboxesTable(sandboxes: SandboxModel[], columnKeys: string[]): void {
-    const termWidth = process.stdout.columns || 120;
-    const ui = cliui({width: termWidth});
-
-    // Calculate dynamic widths based on content
-    const widths = this.calculateColumnWidths(sandboxes, columnKeys);
-
-    // Build header row
-    const headerCols = columnKeys.map((key) => {
-      const col = COLUMNS[key];
-      return {
-        text: col.header,
-        width: widths.get(key),
-        padding: [0, 1, 0, 0] as [number, number, number, number],
-      };
-    });
-    ui.div(...headerCols);
-
-    // Separator
-    const totalWidth = [...widths.values()].reduce((sum, w) => sum + w, 0);
-    ui.div({text: '─'.repeat(Math.min(totalWidth, termWidth)), padding: [0, 0, 0, 0]});
-
-    // Rows
-    for (const sandbox of sandboxes) {
-      const rowCols = columnKeys.map((key) => {
-        const col = COLUMNS[key];
-        return {
-          text: col.get(sandbox),
-          width: widths.get(key),
-          padding: [0, 1, 0, 0] as [number, number, number, number],
-        };
-      });
-      ui.div(...rowCols);
-    }
-
-    ux.stdout(ui.toString());
   }
 }

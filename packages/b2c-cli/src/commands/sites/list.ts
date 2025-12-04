@@ -1,11 +1,27 @@
 import {ux} from '@oclif/core';
-import cliui from 'cliui';
-import {InstanceCommand} from '@salesforce/b2c-tooling/cli';
+import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
 import type {OcapiComponents} from '@salesforce/b2c-tooling';
 import {t} from '../../i18n/index.js';
 
 type Sites = OcapiComponents['schemas']['sites'];
 type Site = OcapiComponents['schemas']['site'];
+
+const COLUMNS: Record<string, ColumnDef<Site>> = {
+  id: {
+    header: 'ID',
+    get: (s) => s.id || '-',
+  },
+  displayName: {
+    header: 'Display Name',
+    get: (s) => s.display_name?.default || s.id || '-',
+  },
+  status: {
+    header: 'Status',
+    get: (s) => s.storefront_status || 'unknown',
+  },
+};
+
+const DEFAULT_COLUMNS = ['id', 'displayName', 'status'];
 
 export default class SitesList extends InstanceCommand<typeof SitesList> {
   static description = t('commands.sites.list.description', 'List sites on a B2C Commerce instance');
@@ -46,36 +62,8 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
       return sites;
     }
 
-    this.printSitesTable(sites.data ?? []);
+    createTable(COLUMNS).render(sites.data ?? [], DEFAULT_COLUMNS);
 
     return sites;
-  }
-
-  private printSitesTable(sites: Site[]): void {
-    const ui = cliui({width: process.stdout.columns || 80});
-
-    // Header
-    ui.div(
-      {text: 'ID', width: 30, padding: [0, 2, 0, 0]},
-      {text: 'Display Name', width: 30, padding: [0, 2, 0, 0]},
-      {text: 'Status', padding: [0, 0, 0, 0]},
-    );
-
-    // Separator
-    ui.div({text: '─'.repeat(70), padding: [0, 0, 0, 0]});
-
-    // Rows
-    for (const site of sites) {
-      const displayName = site.display_name?.default || site.id || '';
-      const status = site.storefront_status || 'unknown';
-
-      ui.div(
-        {text: site.id || '', width: 30, padding: [0, 2, 0, 0]},
-        {text: displayName, width: 30, padding: [0, 2, 0, 0]},
-        {text: status, padding: [0, 0, 0, 0]},
-      );
-    }
-
-    ux.stdout(ui.toString());
   }
 }

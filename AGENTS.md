@@ -23,3 +23,26 @@
 - when logging use the logger instance from `@salesforce/b2c-tooling/logger` package
 - CLI commands have access to this logger via `this.log` method from oclif Command class
 - CLI commands can write directly to stdout/stderr if their primary purpose is to output or stream data
+
+## Table Output
+
+When rendering tabular data in CLI commands, use the shared `TableRenderer` utility from `@salesforce/b2c-tooling/cli`:
+
+```typescript
+import { createTable, type ColumnDef } from '@salesforce/b2c-tooling/cli';
+
+// Define columns with header and getter function
+const COLUMNS: Record<string, ColumnDef<MyDataType>> = {
+  id: { header: 'ID', get: (item) => item.id },
+  name: { header: 'Name', get: (item) => item.name },
+  status: { header: 'Status', get: (item) => item.status },
+};
+
+// Render the table
+createTable(COLUMNS).render(data, ['id', 'name', 'status']);
+```
+
+Features:
+- Dynamic column widths based on content
+- Supports `extended` flag on columns for optional fields
+- Use `TableRenderer` class directly for column validation helpers (e.g., `--columns` flag support)

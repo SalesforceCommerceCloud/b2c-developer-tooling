@@ -11,3 +11,7 @@ export {OdsCommand} from './ods-command.js';
 // Config utilities
 export {loadConfig, findDwJson} from './config.js';
 export type {ResolvedConfig, LoadConfigOptions} from './config.js';
+
+// Table rendering utilities
+export {TableRenderer, createTable} from './table.js';
+export type {ColumnDef, TableRenderOptions} from './table.js';

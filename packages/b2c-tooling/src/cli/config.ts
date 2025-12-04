@@ -1,7 +1,9 @@
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
+import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
 export type {AuthMethod};
@@ -62,17 +64,22 @@ export interface LoadConfigOptions {
  * Finds dw.json by walking up from current directory.
  */
 export function findDwJson(startDir: string = process.cwd()): string | null {
+  const logger = getLogger();
   let dir = startDir;
   const root = path.parse(dir).root;
+
+  logger.trace({startDir}, '[Config] Searching for dw.json');
 
   while (dir !== root) {
     const dwJsonPath = path.join(dir, 'dw.json');
     if (fs.existsSync(dwJsonPath)) {
+      logger.trace({path: dwJsonPath}, '[Config] Found dw.json');
       return dwJsonPath;
     }
     dir = path.dirname(dir);
   }
 
+  logger.trace('[Config] No dw.json found');
   return null;
 }
 
@@ -100,8 +107,11 @@ function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
  * Supports multi-config format with 'configs' array.
  */
 function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig {
+  const logger = getLogger();
   const dwJsonPath = configPath || findDwJson();
+
   if (!dwJsonPath || !fs.existsSync(dwJsonPath)) {
+    logger.trace('[Config] No dw.json to load');
     return {};
   }
 
@@ -110,6 +120,7 @@ function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig 
     const json = JSON.parse(content) as DwJsonMultiConfig;
 
     let selectedConfig: DwJsonConfig = json;
+    let selectedName = json.name || 'root';
 
     // Handle multi-config format
     if (Array.isArray(json.configs)) {
@@ -118,20 +129,23 @@ function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig 
         const found = json.name === instanceName ? json : json.configs.find((c) => c.name === instanceName);
         if (found) {
           selectedConfig = found;
+          selectedName = found.name || instanceName;
         }
       } else if (json.active === false) {
         // Root config is inactive, find active one in configs
         const activeConfig = json.configs.find((c) => c.active === true);
         if (activeConfig) {
           selectedConfig = activeConfig;
+          selectedName = activeConfig.name || 'active';
         }
       }
       // Otherwise use root config
     }
 
+    logger.trace({path: dwJsonPath, instance: selectedName}, '[Config] Loaded dw.json');
     return mapDwJsonToConfig(selectedConfig);
-  } catch {
-    // Silently ignore parse errors
+  } catch (error) {
+    logger.trace({path: dwJsonPath, error}, '[Config] Failed to parse dw.json');
     return {};
   }
 }
@@ -173,4 +187,61 @@ function mergeConfigs(
 export function loadConfig(flags: Partial<ResolvedConfig> = {}, options: LoadConfigOptions = {}): ResolvedConfig {
   const dwJsonConfig = loadDwJson(options.instance, options.configPath);
   return mergeConfigs(flags, dwJsonConfig, options);
+}
+
+/**
+ * Mobify config file structure (~/.mobify)
+ */
+interface MobifyConfig {
+  username?: string;
+  api_key?: string;
+}
+
+/**
+ * Result from loading mobify config
+ */
+export interface MobifyConfigResult {
+  apiKey?: string;
+  username?: string;
+}
+
+/**
+ * Loads MRT API key from ~/.mobify config file.
+ *
+ * The mobify config file is a JSON file located at ~/.mobify containing:
+ * ```json
+ * {
+ *   "username": "user@example.com",
+ *   "api_key": "your-api-key"
+ * }
+ * ```
+ *
+ * @returns The API key and username if found, undefined otherwise
+ */
+export function loadMobifyConfig(): MobifyConfigResult {
+  const logger = getLogger();
+  const mobifyPath = path.join(os.homedir(), '.mobify');
+
+  logger.trace({path: mobifyPath}, '[Config] Checking for ~/.mobify');
+
+  if (!fs.existsSync(mobifyPath)) {
+    logger.trace('[Config] No ~/.mobify found');
+    return {};
+  }
+
+  try {
+    const content = fs.readFileSync(mobifyPath, 'utf8');
+    const config = JSON.parse(content) as MobifyConfig;
+
+    const hasApiKey = Boolean(config.api_key);
+    logger.trace({path: mobifyPath, hasApiKey, username: config.username}, '[Config] Loaded ~/.mobify');
+
+    return {
+      apiKey: config.api_key,
+      username: config.username,
+    };
+  } catch (error) {
+    logger.trace({path: mobifyPath, error}, '[Config] Failed to parse ~/.mobify');
+    return {};
+  }
 }

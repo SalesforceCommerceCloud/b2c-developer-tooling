@@ -63,11 +63,11 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
     }),
     'ssr-only': Flags.string({
       description: 'Glob patterns for server-only files (comma-separated)',
-      default: 'ssr.js',
+      default: 'ssr.js,server/**/*',
     }),
     'ssr-shared': Flags.string({
       description: 'Glob patterns for shared files (comma-separated)',
-      default: '**/*.js,**/*.json,static/**/*',
+      default: 'static/**/*,client/**/*',
     }),
     'node-version': Flags.string({
       char: 'n',

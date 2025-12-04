@@ -1,6 +1,6 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
-import {loadConfig} from './config.js';
+import {loadConfig, loadMobifyConfig} from './config.js';
 import type {ResolvedConfig, LoadConfigOptions} from './config.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {ApiKeyStrategy} from '../auth/api-key.js';
@@ -11,6 +11,11 @@ import {t} from '../i18n/index.js';
 /**
  * Base command for Managed Runtime (MRT) operations.
  * Uses API key authentication.
+ *
+ * API key resolution order:
+ * 1. --api-key flag
+ * 2. SFCC_MRT_API_KEY environment variable
+ * 3. ~/.mobify config file (api_key field)
  */
 export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
@@ -28,8 +33,12 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       configPath: this.flags.config,
     };
 
+    // Load from ~/.mobify as fallback
+    const mobifyConfig = loadMobifyConfig();
+
     const flagConfig: Partial<ResolvedConfig> = {
-      mrtApiKey: this.flags['api-key'],
+      // Flag/env takes precedence, then ~/.mobify
+      mrtApiKey: this.flags['api-key'] || mobifyConfig.apiKey,
     };
 
     return loadConfig(flagConfig, options);
@@ -45,7 +54,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       return new ApiKeyStrategy(config.mrtApiKey, 'Authorization');
     }
 
-    throw new Error(t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key or set SFCC_MRT_API_KEY.'));
+    throw new Error(t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY, or configure ~/.mobify'));
   }
 
   /**
@@ -60,7 +69,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
    */
   protected requireMrtCredentials(): void {
     if (!this.hasMrtCredentials()) {
-      this.error(t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key or set SFCC_MRT_API_KEY.'));
+      this.error(t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY, or configure ~/.mobify'));
     }
   }
 

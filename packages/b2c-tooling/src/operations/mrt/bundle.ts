@@ -228,17 +228,22 @@ export async function createBundle(options: CreateBundleOptions): Promise<Bundle
     });
 
     logger.debug({fileCount: filesInArchive.length}, '[MRT] Archive created');
+    logger.trace({files: filesInArchive.slice(0, 20)}, '[MRT] First 20 files in archive');
 
     // Read and encode the tar file
     const tarData = await readFile(tarPath);
     const base64Data = tarData.toString('base64');
 
     // Filter files for ssr_only and ssr_shared
+    logger.trace({ssrOnly, ssrShared}, '[MRT] SSR patterns');
     const ssrOnlyFilter = createGlobFilter(ssrOnly);
     const ssrSharedFilter = createGlobFilter(ssrShared);
 
     const ssrOnlyFiles = filesInArchive.filter(ssrOnlyFilter);
     const ssrSharedFiles = filesInArchive.filter(ssrSharedFilter);
+
+    logger.trace({ssrOnlyFiles: ssrOnlyFiles.slice(0, 20)}, '[MRT] First 20 ssr_only files');
+    logger.trace({ssrSharedFiles: ssrSharedFiles.slice(0, 20)}, '[MRT] First 20 ssr_shared files');
 
     logger.debug(
       {

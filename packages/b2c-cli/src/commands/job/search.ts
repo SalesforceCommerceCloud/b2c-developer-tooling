@@ -1,6 +1,5 @@
 import {Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
-import {InstanceCommand} from '@salesforce/b2c-tooling/cli';
+import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
 import {
   searchJobExecutions,
   type JobExecutionSearchResult,
@@ -8,18 +7,7 @@ import {
 } from '@salesforce/b2c-tooling/operations/jobs';
 import {t} from '../../i18n/index.js';
 
-/**
- * Column definition for table output.
- */
-interface ColumnDef {
-  header: string;
-  get: (e: JobExecution) => string;
-}
-
-/**
- * Available columns for job execution list output.
- */
-const COLUMNS: Record<string, ColumnDef> = {
+const COLUMNS: Record<string, ColumnDef<JobExecution>> = {
   id: {
     header: 'Execution ID',
     get: (e) => e.id ?? '-',
@@ -124,62 +112,8 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       }),
     );
 
-    this.printExecutionsTable(results.hits);
+    createTable(COLUMNS).render(results.hits, DEFAULT_COLUMNS);
 
     return results;
-  }
-
-  /**
-   * Calculate dynamic column widths based on content.
-   */
-  private calculateColumnWidths(executions: JobExecution[], columnKeys: string[]): Map<string, number> {
-    const widths = new Map<string, number>();
-    const padding = 2;
-
-    for (const key of columnKeys) {
-      const col = COLUMNS[key];
-      let maxWidth = col.header.length;
-
-      for (const exec of executions) {
-        const value = col.get(exec);
-        maxWidth = Math.max(maxWidth, value.length);
-      }
-
-      widths.set(key, maxWidth + padding);
-    }
-
-    return widths;
-  }
-
-  private printExecutionsTable(executions: JobExecution[]): void {
-    const termWidth = process.stdout.columns || 120;
-    const ui = cliui({width: termWidth});
-    const columnKeys = DEFAULT_COLUMNS;
-
-    const widths = this.calculateColumnWidths(executions, columnKeys);
-
-    // Header
-    const headerCols = columnKeys.map((key) => ({
-      text: COLUMNS[key].header,
-      width: widths.get(key),
-      padding: [0, 1, 0, 0] as [number, number, number, number],
-    }));
-    ui.div(...headerCols);
-
-    // Separator
-    const totalWidth = [...widths.values()].reduce((sum, w) => sum + w, 0);
-    ui.div({text: '─'.repeat(Math.min(totalWidth, termWidth)), padding: [0, 0, 0, 0]});
-
-    // Rows
-    for (const exec of executions) {
-      const rowCols = columnKeys.map((key) => ({
-        text: COLUMNS[key].get(exec),
-        width: widths.get(key),
-        padding: [0, 1, 0, 0] as [number, number, number, number],
-      }));
-      ui.div(...rowCols);
-    }
-
-    ux.stdout(ui.toString());
   }
 }

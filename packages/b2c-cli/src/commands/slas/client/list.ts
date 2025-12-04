@@ -1,5 +1,4 @@
-import {ux} from '@oclif/core';
-import cliui from 'cliui';
+import {createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
 import {
   SlasClientCommand,
   type Client,
@@ -12,6 +11,23 @@ import {t} from '../../../i18n/index.js';
 interface ClientListOutput {
   clients: ClientOutput[];
 }
+
+const COLUMNS: Record<string, ColumnDef<ClientOutput>> = {
+  clientId: {
+    header: 'Client ID',
+    get: (c) => c.clientId,
+  },
+  name: {
+    header: 'Name',
+    get: (c) => c.name,
+  },
+  isPrivate: {
+    header: 'Private',
+    get: (c) => String(c.isPrivateClient),
+  },
+};
+
+const DEFAULT_COLUMNS = ['clientId', 'name', 'isPrivate'];
 
 export default class SlasClientList extends SlasClientCommand<typeof SlasClientList> {
   static description = t('commands.slas.client.list.description', 'List SLAS clients for a tenant');
@@ -64,33 +80,8 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
       return output;
     }
 
-    this.printClientsTable(clients);
+    createTable(COLUMNS).render(clients, DEFAULT_COLUMNS);
 
     return output;
-  }
-
-  private printClientsTable(clients: ClientOutput[]): void {
-    const ui = cliui({width: process.stdout.columns || 80});
-
-    // Header
-    ui.div(
-      {text: 'Client ID', width: 40, padding: [0, 2, 0, 0]},
-      {text: 'Name', width: 30, padding: [0, 2, 0, 0]},
-      {text: 'Private', padding: [0, 0, 0, 0]},
-    );
-
-    // Separator
-    ui.div({text: '─'.repeat(80), padding: [0, 0, 0, 0]});
-
-    // Rows
-    for (const client of clients) {
-      ui.div(
-        {text: client.clientId, width: 40, padding: [0, 2, 0, 0]},
-        {text: client.name, width: 30, padding: [0, 2, 0, 0]},
-        {text: String(client.isPrivateClient), padding: [0, 0, 0, 0]},
-      );
-    }
-
-    ux.stdout(ui.toString());
   }
 }
