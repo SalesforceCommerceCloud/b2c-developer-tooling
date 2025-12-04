@@ -9,13 +9,7 @@ import * as path from 'node:path';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
-import {
-  waitForJob,
-  JobExecutionError,
-  getJobLog,
-  type JobExecution,
-  type WaitForJobOptions,
-} from './run.js';
+import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from './run.js';
 
 const IMPORT_JOB_ID = 'sfcc-site-archive-import';
 const EXPORT_JOB_ID = 'sfcc-site-archive-export';

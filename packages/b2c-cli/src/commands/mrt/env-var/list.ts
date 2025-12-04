@@ -60,10 +60,12 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
 
     const {project, environment} = this.flags;
 
-    this.log(t('commands.mrt.envVar.list.fetching', 'Listing env vars for {{project}}/{{environment}}...', {
-      project,
-      environment,
-    }));
+    this.log(
+      t('commands.mrt.envVar.list.fetching', 'Listing env vars for {{project}}/{{environment}}...', {
+        project,
+        environment,
+      }),
+    );
 
     const result = await listEnvVars(
       {

@@ -85,17 +85,21 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
     );
 
     if (keys.length === 1) {
-      this.log(t('commands.mrt.envVar.set.successSingle', 'Set {{key}} on {{project}}/{{environment}}', {
-        key: keys[0],
-        project,
-        environment,
-      }));
+      this.log(
+        t('commands.mrt.envVar.set.successSingle', 'Set {{key}} on {{project}}/{{environment}}', {
+          key: keys[0],
+          project,
+          environment,
+        }),
+      );
     } else {
-      this.log(t('commands.mrt.envVar.set.successMultiple', 'Set {{count}} variables on {{project}}/{{environment}}', {
-        count: keys.length,
-        project,
-        environment,
-      }));
+      this.log(
+        t('commands.mrt.envVar.set.successMultiple', 'Set {{count}} variables on {{project}}/{{environment}}', {
+          count: keys.length,
+          project,
+          environment,
+        }),
+      );
     }
 
     return {variables, project, environment};

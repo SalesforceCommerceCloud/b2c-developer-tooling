@@ -54,7 +54,12 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       return new ApiKeyStrategy(config.mrtApiKey, 'Authorization');
     }
 
-    throw new Error(t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY, or configure ~/.mobify'));
+    throw new Error(
+      t(
+        'error.mrtApiKeyRequired',
+        'MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY, or configure ~/.mobify',
+      ),
+    );
   }
 
   /**
@@ -69,7 +74,12 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
    */
   protected requireMrtCredentials(): void {
     if (!this.hasMrtCredentials()) {
-      this.error(t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY, or configure ~/.mobify'));
+      this.error(
+        t(
+          'error.mrtApiKeyRequired',
+          'MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY, or configure ~/.mobify',
+        ),
+      );
     }
   }
 

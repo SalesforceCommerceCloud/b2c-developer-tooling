@@ -119,16 +119,12 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
       // Consolidated success output
       const deployedMsg = result.deployed && result.target ? ` and deployed to ${result.target}` : '';
       this.log(
-        t(
-          'commands.mrt.push.success',
-          'Bundle #{{bundleId}} pushed to {{project}}{{deployed}} ({{message}})',
-          {
-            bundleId: String(result.bundleId),
-            project: result.projectSlug,
-            deployed: deployedMsg,
-            message: result.message,
-          },
-        ),
+        t('commands.mrt.push.success', 'Bundle #{{bundleId}} pushed to {{project}}{{deployed}} ({{message}})', {
+          bundleId: String(result.bundleId),
+          project: result.projectSlug,
+          deployed: deployedMsg,
+          message: result.message,
+        }),
       );
 
       return result;

@@ -55,11 +55,13 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
       this.getMrtAuth(),
     );
 
-    this.log(t('commands.mrt.envVar.delete.success', 'Deleted {{key}} from {{project}}/{{environment}}', {
-      key,
-      project,
-      environment,
-    }));
+    this.log(
+      t('commands.mrt.envVar.delete.success', 'Deleted {{key}} from {{project}}/{{environment}}', {
+        key,
+        project,
+        environment,
+      }),
+    );
 
     return {key, project, environment};
   }
