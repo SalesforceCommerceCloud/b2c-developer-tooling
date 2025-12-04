@@ -5,18 +5,18 @@ import {getLogger} from '../logging/logger.js';
  * API Key authentication strategy.
  *
  * Supports two modes:
- * - Bearer token: When headerName is 'Authorization', formats as 'Bearer <key>'
+ * - Bearer token: When headerName is 'Authorization', formats as 'Bearer {key}'
  * - Direct key: For other headers (e.g., 'x-api-key'), sets the key directly
  *
  * @example
  * // For MRT API (Bearer token)
  * const auth = new ApiKeyStrategy(apiKey, 'Authorization');
- * // Sets: Authorization: Bearer <apiKey>
+ * // Sets: Authorization: Bearer {apiKey}
  *
  * @example
  * // For custom API key header
  * const auth = new ApiKeyStrategy(apiKey, 'x-api-key');
- * // Sets: x-api-key: <apiKey>
+ * // Sets: x-api-key: {apiKey}
  */
 export class ApiKeyStrategy implements AuthStrategy {
   private readonly headerValue: string;
