@@ -140,7 +140,7 @@ export async function watchCartridges(
 
   logger.debug({count: cartridges.length}, `Watching ${cartridges.length} cartridge(s)`);
   for (const c of cartridges) {
-    logger.debug({cartridge: c.name, path: c.src}, `  ${c.name}`);
+    logger.info({cartridge: c.name, path: c.src}, `  ${c.name}`);
   }
 
   const webdav = instance.webdav;
@@ -196,7 +196,7 @@ export async function watchCartridges(
             const content = await fs.promises.readFile(f.src);
             zip.file(f.dest, content);
           } catch (error) {
-            logger.debug({file: f.src, error}, 'Failed to add file to archive');
+            logger.warn({file: f.src, error}, 'Failed to add file to archive');
           }
         }
 
@@ -248,7 +248,7 @@ export async function watchCartridges(
         const deletePath = `${webdavLocation}/${f.dest}`;
         try {
           await webdav.delete(deletePath);
-          logger.debug({file: deletePath}, `Deleted: ${deletePath}`);
+          logger.info({file: deletePath}, `Deleted: ${deletePath}`);
         } catch (error) {
           logger.debug({file: deletePath, error}, `Failed to delete ${deletePath}`);
         }
@@ -269,7 +269,7 @@ export async function watchCartridges(
 
   watcher.on('all', (event, p) => {
     const fullPath = path.resolve(cwd, p);
-    logger.debug({event, path: fullPath}, `File event: ${event} ${fullPath}`);
+    logger.info({event, path: fullPath}, `File event: ${event} ${fullPath}`);
 
     if (event === 'change' || event === 'add') {
       filesToUpload.add(fullPath);
