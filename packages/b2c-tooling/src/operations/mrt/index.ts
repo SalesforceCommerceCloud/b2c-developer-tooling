@@ -58,3 +58,7 @@ export type {
   ListEnvVarsResult,
   EnvironmentVariable,
 } from './env-var.js';
+
+// Environment (target) operations
+export {createEnv, deleteEnv} from './env.js';
+export type {CreateEnvOptions, DeleteEnvOptions, MrtEnvironment} from './env.js';

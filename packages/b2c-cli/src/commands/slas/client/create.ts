@@ -10,6 +10,27 @@ import {
 } from '../../../utils/slas/client.js';
 import {t} from '../../../i18n/index.js';
 
+const DEFAULT_SCOPES = [
+  'sfcc.shopper-baskets-orders.rw',
+  'sfcc.shopper-categories',
+  'sfcc.shopper-customers.login',
+  'sfcc.shopper-customers.register',
+  'sfcc.shopper-discovery-search',
+  'sfcc.shopper-gift-certificates',
+  'sfcc.shopper-myaccount.addresses.rw',
+  'sfcc.shopper-myaccount.baskets',
+  'sfcc.shopper-myaccount.orders',
+  'sfcc.shopper-myaccount.paymentinstruments.rw',
+  'sfcc.shopper-myaccount.productlists.rw',
+  'sfcc.shopper-myaccount.rw',
+  'sfcc.shopper-configurations',
+  'sfcc.shopper-product-search',
+  'sfcc.shopper-productlists',
+  'sfcc.shopper-products',
+  'sfcc.shopper-promotions',
+  'sfcc.shopper-stores',
+];
+
 export default class SlasClientCreate extends SlasClientCommand<typeof SlasClientCreate> {
   static args = {
     clientId: Args.string({
@@ -26,6 +47,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     '<%= config.bin %> <%= command.id %> --tenant-id abcd_123 --channels RefArch --scopes sfcc.shopper-products,sfcc.shopper-search --redirect-uri http://localhost:3000/callback',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --name "My Client" --channels RefArch --scopes sfcc.shopper-products --redirect-uri http://localhost:3000/callback --public',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --name "My Client" --channels RefArch --scopes sfcc.shopper-products --redirect-uri http://localhost:3000/callback --json',
+    '<%= config.bin %> <%= command.id %> --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback',
   ];
 
   static flags = {
@@ -42,10 +64,14 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     }),
     scopes: Flags.string({
       description: 'OAuth scopes for the client (comma-separated)',
-      required: true,
+      required: false,
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
+    }),
+    'default-scopes': Flags.boolean({
+      description: 'Use default shopper scopes (alternative to --scopes)',
+      default: false,
     }),
     'redirect-uri': Flags.string({
       description: 'Redirect URIs (comma-separated)',
@@ -77,11 +103,19 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       name,
       channels,
       scopes,
+      'default-scopes': useDefaultScopes,
       'redirect-uri': redirectUri,
       'callback-uri': callbackUri,
       secret,
       public: isPublic,
     } = this.flags;
+
+    // Validate that either --scopes or --default-scopes is provided
+    if (!scopes && !useDefaultScopes) {
+      this.error(
+        t('commands.slas.client.create.scopesRequired', 'Either --scopes or --default-scopes must be provided'),
+      );
+    }
 
     // Use provided client ID or generate a UUID
     const clientId = this.args.clientId ?? randomUUID().toLowerCase();
@@ -91,7 +125,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
 
     // oclif handles comma-separation via delimiter option
     const parsedChannels = channels;
-    const parsedScopes = scopes;
+    const parsedScopes = useDefaultScopes ? DEFAULT_SCOPES : scopes!;
     const parsedRedirectUri = redirectUri;
     const parsedCallbackUri = callbackUri;
 
@@ -101,22 +135,28 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
 
     const slasClient = this.getSlasClient();
 
+    // Build body - secret should only be included for private clients
+    const body: Record<string, unknown> = {
+      clientId,
+      name: clientName,
+      channels: parsedChannels,
+      scopes: parsedScopes,
+      redirectUri: parsedRedirectUri,
+      callbackUri: parsedCallbackUri,
+      isPrivateClient: !isPublic,
+    };
+
+    // Only include secret for private clients
+    if (!isPublic) {
+      body.secret = secret ?? `sk_${randomUUID().replaceAll('-', '')}`;
+    }
+
     const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},
       },
-      body: {
-        clientId,
-        name: clientName,
-        channels: parsedChannels,
-        scopes: parsedScopes,
-        redirectUri: parsedRedirectUri,
-        callbackUri: parsedCallbackUri,
-        // For private clients, use provided secret or generate one with sk_ prefix
-        // For public clients, secret is ignored but still required by the schema
-        secret: secret ?? (isPublic ? '' : `sk_${randomUUID().replaceAll('-', '')}`),
-        isPrivateClient: !isPublic,
-      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      body: body as any,
     });
 
     if (error) {

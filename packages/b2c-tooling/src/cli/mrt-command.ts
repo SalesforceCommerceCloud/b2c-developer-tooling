@@ -16,6 +16,11 @@ import {t} from '../i18n/index.js';
  * 1. --api-key flag
  * 2. SFCC_MRT_API_KEY environment variable
  * 3. ~/.mobify config file (api_key field)
+ *
+ * Project/environment resolution order:
+ * 1. --project / --environment flags
+ * 2. SFCC_MRT_PROJECT / SFCC_MRT_ENVIRONMENT environment variables
+ * 3. dw.json (mrtProject / mrtEnvironment fields)
  */
 export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
@@ -24,6 +29,16 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       description: 'MRT API key',
       env: 'SFCC_MRT_API_KEY',
       helpGroup: 'AUTH',
+    }),
+    project: Flags.string({
+      char: 'p',
+      description: 'MRT project slug (or set mrtProject in dw.json)',
+      env: 'SFCC_MRT_PROJECT',
+    }),
+    environment: Flags.string({
+      char: 'e',
+      description: 'MRT environment (e.g., staging, production; or set mrtEnvironment in dw.json)',
+      env: 'SFCC_MRT_ENVIRONMENT',
     }),
   };
 
@@ -39,6 +54,9 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     const flagConfig: Partial<ResolvedConfig> = {
       // Flag/env takes precedence, then ~/.mobify
       mrtApiKey: this.flags['api-key'] || mobifyConfig.apiKey,
+      // Project/environment from flags (if present - subclasses define these)
+      mrtProject: this.flags.project as string | undefined,
+      mrtEnvironment: this.flags.environment as string | undefined,
     };
 
     return loadConfig(flagConfig, options);

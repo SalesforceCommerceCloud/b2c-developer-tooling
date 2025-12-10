@@ -20,6 +20,10 @@ export interface ResolvedConfig {
   scopes?: string[];
   shortCode?: string;
   mrtApiKey?: string;
+  /** MRT project slug */
+  mrtProject?: string;
+  /** MRT environment name (e.g., staging, production) */
+  mrtEnvironment?: string;
   instanceName?: string;
   /** Allowed authentication methods (in priority order). If not set, all methods are allowed. */
   authMethods?: AuthMethod[];
@@ -46,6 +50,10 @@ interface DwJsonConfig {
   'secure-server'?: string;
   /** Allowed authentication methods (in priority order) */
   'auth-methods'?: AuthMethod[];
+  /** MRT project slug */
+  mrtProject?: string;
+  /** MRT environment name (e.g., staging, production) */
+  mrtEnvironment?: string;
 }
 
 /**
@@ -99,6 +107,8 @@ function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
     shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
     instanceName: json.name,
     authMethods: json['auth-methods'],
+    mrtProject: json.mrtProject,
+    mrtEnvironment: json.mrtEnvironment,
   };
 }
 
@@ -173,6 +183,8 @@ function mergeConfigs(
     scopes: flags.scopes || dwJson.scopes,
     shortCode: flags.shortCode || dwJson.shortCode,
     mrtApiKey: flags.mrtApiKey,
+    mrtProject: flags.mrtProject || dwJson.mrtProject,
+    mrtEnvironment: flags.mrtEnvironment || dwJson.mrtEnvironment,
     instanceName: dwJson.instanceName || options.instance,
     authMethods: flags.authMethods || dwJson.authMethods,
   };

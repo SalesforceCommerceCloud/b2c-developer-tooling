@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 # simple wrapper to the ./packages/b2c-cli/bin/dev.js script
-(cd ./packages/b2c-cli && ./bin/dev.js "$@")
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+(cd "$SCRIPT_DIR/packages/b2c-cli" && ./bin/dev.js "$@")

@@ -43,15 +43,6 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
 
   static flags = {
     ...MrtCommand.baseFlags,
-    project: Flags.string({
-      char: 'p',
-      description: 'MRT project slug',
-      required: true,
-    }),
-    environment: Flags.string({
-      char: 'e',
-      description: 'Environment to deploy to after push (e.g., staging, production)',
-    }),
     message: Flags.string({
       char: 'm',
       description: 'Bundle message/description',
@@ -83,7 +74,15 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
   async run(): Promise<PushResult> {
     this.requireMrtCredentials();
 
-    const {project, environment: target, message} = this.flags;
+    const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig;
+    const {message} = this.flags;
+
+    if (!project) {
+      this.error(
+        'MRT project is required. Provide --project flag, set SFCC_MRT_PROJECT, or set mrtProject in dw.json.',
+      );
+    }
+
     const buildDir = this.flags['build-dir'];
     const ssrOnly = this.flags['ssr-only'].split(',').map((s) => s.trim());
     const ssrShared = this.flags['ssr-shared'].split(',').map((s) => s.trim());
