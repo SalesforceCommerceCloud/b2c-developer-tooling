@@ -54,7 +54,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
     }),
     'ssr-only': Flags.string({
       description: 'Glob patterns for server-only files (comma-separated)',
-      default: 'ssr.js,server/**/*',
+      default: 'ssr.js,ssr.mjs,server/**/*',
     }),
     'ssr-shared': Flags.string({
       description: 'Glob patterns for shared files (comma-separated)',
@@ -111,6 +111,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
           ssrOnly,
           ssrShared,
           ssrParameters,
+          origin: this.resolvedConfig.mrtOrigin,
         },
         this.getMrtAuth(),
       );

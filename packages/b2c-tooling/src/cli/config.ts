@@ -24,6 +24,8 @@ export interface ResolvedConfig {
   mrtProject?: string;
   /** MRT environment name (e.g., staging, production) */
   mrtEnvironment?: string;
+  /** MRT API origin URL override */
+  mrtOrigin?: string;
   instanceName?: string;
   /** Allowed authentication methods (in priority order). If not set, all methods are allowed. */
   authMethods?: AuthMethod[];
@@ -185,6 +187,7 @@ function mergeConfigs(
     mrtApiKey: flags.mrtApiKey,
     mrtProject: flags.mrtProject || dwJson.mrtProject,
     mrtEnvironment: flags.mrtEnvironment || dwJson.mrtEnvironment,
+    mrtOrigin: flags.mrtOrigin,
     instanceName: dwJson.instanceName || options.instance,
     authMethods: flags.authMethods || dwJson.authMethods,
   };
@@ -228,16 +231,34 @@ export interface MobifyConfigResult {
  * }
  * ```
  *
+ * When a cloudOrigin is provided, looks for ~/.mobify--[cloudOrigin] instead.
+ * For example, if cloudOrigin is "https://cloud-staging.mobify.com", the file
+ * would be ~/.mobify--cloud-staging.mobify.com
+ *
+ * @param cloudOrigin - Optional cloud origin URL to determine which config file to read
  * @returns The API key and username if found, undefined otherwise
  */
-export function loadMobifyConfig(): MobifyConfigResult {
+export function loadMobifyConfig(cloudOrigin?: string): MobifyConfigResult {
   const logger = getLogger();
-  const mobifyPath = path.join(os.homedir(), '.mobify');
 
-  logger.trace({path: mobifyPath}, '[Config] Checking for ~/.mobify');
+  let mobifyPath: string;
+  if (cloudOrigin) {
+    // Extract hostname from origin URL for the config file suffix
+    try {
+      const url = new URL(cloudOrigin);
+      mobifyPath = path.join(os.homedir(), `.mobify--${url.hostname}`);
+    } catch {
+      // If URL parsing fails, use the origin as-is
+      mobifyPath = path.join(os.homedir(), `.mobify--${cloudOrigin}`);
+    }
+  } else {
+    mobifyPath = path.join(os.homedir(), '.mobify');
+  }
+
+  logger.trace({path: mobifyPath}, '[Config] Checking for mobify config');
 
   if (!fs.existsSync(mobifyPath)) {
-    logger.trace('[Config] No ~/.mobify found');
+    logger.trace({path: mobifyPath}, '[Config] No mobify config found');
     return {};
   }
 
@@ -246,14 +267,14 @@ export function loadMobifyConfig(): MobifyConfigResult {
     const config = JSON.parse(content) as MobifyConfig;
 
     const hasApiKey = Boolean(config.api_key);
-    logger.trace({path: mobifyPath, hasApiKey, username: config.username}, '[Config] Loaded ~/.mobify');
+    logger.trace({path: mobifyPath, hasApiKey, username: config.username}, '[Config] Loaded mobify config');
 
     return {
       apiKey: config.api_key,
       username: config.username,
     };
   } catch (error) {
-    logger.trace({path: mobifyPath, error}, '[Config] Failed to parse ~/.mobify');
+    logger.trace({path: mobifyPath, error}, '[Config] Failed to parse mobify config');
     return {};
   }
 }

@@ -7,6 +7,7 @@ import {ApiKeyStrategy} from '../auth/api-key.js';
 import {MrtClient} from '../platform/mrt.js';
 import type {MrtProject} from '../platform/mrt.js';
 import {t} from '../i18n/index.js';
+import {DEFAULT_MRT_ORIGIN} from '../clients/mrt.js';
 
 /**
  * Base command for Managed Runtime (MRT) operations.
@@ -15,12 +16,17 @@ import {t} from '../i18n/index.js';
  * API key resolution order:
  * 1. --api-key flag
  * 2. SFCC_MRT_API_KEY environment variable
- * 3. ~/.mobify config file (api_key field)
+ * 3. ~/.mobify config file (api_key field), or ~/.mobify--[hostname] if --cloud-origin is set
  *
  * Project/environment resolution order:
  * 1. --project / --environment flags
  * 2. SFCC_MRT_PROJECT / SFCC_MRT_ENVIRONMENT environment variables
  * 3. dw.json (mrtProject / mrtEnvironment fields)
+ *
+ * Cloud origin resolution:
+ * 1. --cloud-origin flag
+ * 2. SFCC_MRT_CLOUD_ORIGIN environment variable
+ * 3. Default: https://cloud.mobify.com
  */
 export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
@@ -40,6 +46,10 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       description: 'MRT environment (e.g., staging, production; or set mrtEnvironment in dw.json)',
       env: 'SFCC_MRT_ENVIRONMENT',
     }),
+    'cloud-origin': Flags.string({
+      description: `MRT cloud origin URL (default: ${DEFAULT_MRT_ORIGIN})`,
+      env: 'SFCC_MRT_CLOUD_ORIGIN',
+    }),
   };
 
   protected override loadConfiguration(): ResolvedConfig {
@@ -48,8 +58,10 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       configPath: this.flags.config,
     };
 
-    // Load from ~/.mobify as fallback
-    const mobifyConfig = loadMobifyConfig();
+    const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
+
+    // Load from ~/.mobify (or ~/.mobify--[hostname] if cloud-origin specified) as fallback
+    const mobifyConfig = loadMobifyConfig(cloudOrigin);
 
     const flagConfig: Partial<ResolvedConfig> = {
       // Flag/env takes precedence, then ~/.mobify
@@ -57,6 +69,8 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       // Project/environment from flags (if present - subclasses define these)
       mrtProject: this.flags.project as string | undefined,
       mrtEnvironment: this.flags.environment as string | undefined,
+      // Cloud origin override
+      mrtOrigin: cloudOrigin,
     };
 
     return loadConfig(flagConfig, options);

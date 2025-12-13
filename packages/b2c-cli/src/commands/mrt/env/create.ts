@@ -178,6 +178,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
           externalDomain,
           allowCookies: allowCookies || undefined,
           enableSourceMaps: enableSourceMaps || undefined,
+          origin: this.resolvedConfig.mrtOrigin,
         },
         this.getMrtAuth(),
       );
