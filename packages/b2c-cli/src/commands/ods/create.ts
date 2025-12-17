@@ -7,9 +7,34 @@ import {t} from '../../i18n/index.js';
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 type SandboxResourceProfile = OdsComponents['schemas']['SandboxResourceProfile'];
 type SandboxState = OdsComponents['schemas']['SandboxState'];
+type OcapiSettings = OdsComponents['schemas']['OcapiSettings'];
+type WebDavSettings = OdsComponents['schemas']['WebDavSettings'];
+type SandboxSettings = OdsComponents['schemas']['SandboxSettings'];
 
 /** States that indicate sandbox creation has completed (success or failure) */
 const TERMINAL_STATES = new Set<SandboxState>(['deleted', 'failed', 'started']);
+
+/**
+ * Default OCAPI resources to grant the client ID access to.
+ * These enable common CI/CD operations like code deployment and job execution.
+ */
+const DEFAULT_OCAPI_RESOURCES: NonNullable<OcapiSettings[number]['resources']> = [
+  {resource_id: '/code_versions', methods: ['get'], read_attributes: '(**)', write_attributes: '(**)'},
+  {resource_id: '/code_versions/*', methods: ['patch', 'delete'], read_attributes: '(**)', write_attributes: '(**)'},
+  {resource_id: '/jobs/*/executions', methods: ['post'], read_attributes: '(**)', write_attributes: '(**)'},
+  {resource_id: '/jobs/*/executions/*', methods: ['get'], read_attributes: '(**)', write_attributes: '(**)'},
+  {resource_id: '/sites/*/cartridges', methods: ['post'], read_attributes: '(**)', write_attributes: '(**)'},
+];
+
+/**
+ * Default WebDAV permissions to grant the client ID.
+ * These enable common operations like code upload and data import/export.
+ */
+const DEFAULT_WEBDAV_PERMISSIONS: WebDavSettings[number]['permissions'] = [
+  {path: '/impex', operations: ['read_write']},
+  {path: '/cartridges', operations: ['read_write']},
+  {path: '/static', operations: ['read_write']},
+];
 
 /**
  * Command to create a new on-demand sandbox.
@@ -63,6 +88,11 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       default: 600,
       dependsOn: ['wait'],
     }),
+    'set-permissions': Flags.boolean({
+      description: 'Automatically set OCAPI and WebDAV permissions for the client ID used to create the sandbox',
+      default: true,
+      allowNo: true,
+    }),
   };
 
   async run(): Promise<SandboxModel> {
@@ -73,10 +103,21 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     const wait = this.flags.wait;
     const pollInterval = this.flags['poll-interval'];
     const timeout = this.flags.timeout;
+    const setPermissions = this.flags['set-permissions'];
 
     this.log(t('commands.ods.create.creating', 'Creating sandbox in realm {{realm}}...', {realm}));
     this.log(t('commands.ods.create.profile', 'Profile: {{profile}}', {profile}));
     this.log(t('commands.ods.create.ttl', 'TTL: {{ttl}} hours', {ttl: ttl === 0 ? 'infinite' : String(ttl)}));
+
+    // Build settings with OCAPI and WebDAV permissions if enabled
+    const settings = this.buildSettings(setPermissions);
+    if (settings) {
+      this.log(
+        t('commands.ods.create.settingPermissions', 'Setting OCAPI and WebDAV permissions for client ID: {{clientId}}', {
+          clientId: this.resolvedConfig.clientId!,
+        }),
+      );
+    }
 
     const result = await this.odsClient.POST('/sandboxes', {
       body: {
@@ -85,6 +126,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
         resourceProfile: profile,
         autoScheduled,
         analyticsEnabled: false,
+        settings,
       },
     });
 
@@ -115,6 +157,37 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     this.printSandboxSummary(sandbox);
 
     return sandbox;
+  }
+
+  /**
+   * Builds the sandbox settings object with OCAPI and WebDAV permissions.
+   * @param setPermissions - Whether to set permissions for the client ID
+   * @returns Settings object or undefined if permissions should not be set
+   */
+  private buildSettings(setPermissions: boolean): SandboxSettings | undefined {
+    if (!setPermissions) {
+      return undefined;
+    }
+
+    const clientId = this.resolvedConfig.clientId;
+    if (!clientId) {
+      return undefined;
+    }
+
+    return {
+      ocapi: [
+        {
+          client_id: clientId,
+          resources: DEFAULT_OCAPI_RESOURCES,
+        },
+      ],
+      webdav: [
+        {
+          client_id: clientId,
+          permissions: DEFAULT_WEBDAV_PERMISSIONS,
+        },
+      ],
+    };
   }
 
   private printSandboxSummary(sandbox: SandboxModel): void {
