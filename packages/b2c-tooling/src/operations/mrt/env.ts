@@ -83,6 +83,17 @@ export interface CreateEnvOptions {
   whitelistedIps?: string;
 
   /**
+   * Proxy configurations for SSR.
+   * Each proxy maps a path prefix to a backend host.
+   */
+  proxyConfigs?: Array<{
+    /** The path prefix to proxy (e.g., 'api', 'ocapi', 'einstein'). */
+    path: string;
+    /** The backend host to proxy to (e.g., 'api.example.com'). */
+    host: string;
+  }>;
+
+  /**
    * MRT API origin URL.
    * @default "https://cloud.mobify.com"
    */
@@ -160,6 +171,12 @@ export async function createEnv(options: CreateEnvOptions, auth: AuthStrategy): 
 
   if (options.whitelistedIps) {
     body.ssr_whitelisted_ips = options.whitelistedIps;
+  }
+
+  if (options.proxyConfigs && options.proxyConfigs.length > 0) {
+    // The API accepts ssr_proxy_configs - cast to handle the path field
+    // which may not be in the generated types but is accepted by the API
+    body.ssr_proxy_configs = options.proxyConfigs as typeof body.ssr_proxy_configs;
   }
 
   const {data, error} = await client.POST('/api/projects/{project_slug}/target/', {
