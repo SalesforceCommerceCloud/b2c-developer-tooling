@@ -83,6 +83,7 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
         projectSlug: project,
         environment,
         variables,
+        origin: this.resolvedConfig.mrtOrigin,
       },
       this.getMrtAuth(),
     );

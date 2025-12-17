@@ -46,7 +46,46 @@ function printEnvDetails(env: MrtEnvironment, project: string): void {
     ui.div({text: 'Log Level:', width: labelWidth}, {text: env.log_level});
   }
 
+  if (env.ssr_proxy_configs && env.ssr_proxy_configs.length > 0) {
+    ui.div({text: 'Proxies:', width: labelWidth}, {text: ''});
+    for (const proxy of env.ssr_proxy_configs) {
+      const proxyPath = (proxy as {path?: string}).path ?? '';
+      ui.div({text: '', width: labelWidth}, {text: `  ${proxyPath} → ${proxy.host}`});
+    }
+  }
+
   ux.stdout(ui.toString());
+}
+
+/**
+ * Proxy configuration for SSR.
+ */
+interface SsrProxyConfig {
+  host: string;
+  path: string;
+}
+
+/**
+ * Parse a proxy string in format "path=host" into a proxy config object.
+ */
+function parseProxyString(proxyStr: string): SsrProxyConfig {
+  const eqIndex = proxyStr.indexOf('=');
+  if (eqIndex === -1) {
+    throw new Error(`Invalid proxy format: "${proxyStr}". Expected format: path=host.example.com`);
+  }
+
+  const path = proxyStr.slice(0, eqIndex);
+  const host = proxyStr.slice(eqIndex + 1);
+
+  if (!path) {
+    throw new Error(`Invalid proxy format: "${proxyStr}". Path cannot be empty.`);
+  }
+
+  if (!host) {
+    throw new Error(`Invalid proxy format: "${proxyStr}". Host cannot be empty.`);
+  }
+
+  return {path, host};
 }
 
 /**
@@ -99,6 +138,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     '<%= config.bin %> <%= command.id %> staging --project my-storefront --name "Staging Environment"',
     '<%= config.bin %> <%= command.id %> production --project my-storefront --name "Production" --production',
     '<%= config.bin %> <%= command.id %> feature-test -p my-storefront -n "Feature Test" --region eu-west-1',
+    '<%= config.bin %> <%= command.id %> staging -p my-storefront -n "Staging" --proxy api=api.example.com --proxy ocapi=ocapi.example.com',
   ];
 
   static flags = {
@@ -136,6 +176,10 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       default: false,
       allowNo: true,
     }),
+    proxy: Flags.string({
+      description: 'Proxy configuration in format path=host (can be specified multiple times)',
+      multiple: true,
+    }),
   };
 
   async run(): Promise<MrtEnvironment> {
@@ -159,7 +203,11 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       'external-domain': externalDomain,
       'allow-cookies': allowCookies,
       'enable-source-maps': enableSourceMaps,
+      proxy: proxyStrings,
     } = this.flags;
+
+    // Parse proxy configurations
+    const proxyConfigs = proxyStrings?.map((p) => parseProxyString(p));
 
     this.log(
       t('commands.mrt.env.create.creating', 'Creating environment "{{slug}}" in {{project}}...', {slug, project}),
@@ -178,6 +226,8 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
           externalDomain,
           allowCookies: allowCookies || undefined,
           enableSourceMaps: enableSourceMaps || undefined,
+          proxyConfigs,
+          origin: this.resolvedConfig.mrtOrigin,
         },
         this.getMrtAuth(),
       );

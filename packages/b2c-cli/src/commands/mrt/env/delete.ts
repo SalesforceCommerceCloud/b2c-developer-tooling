@@ -94,6 +94,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
         {
           projectSlug: project,
           slug,
+          origin: this.resolvedConfig.mrtOrigin,
         },
         this.getMrtAuth(),
       );

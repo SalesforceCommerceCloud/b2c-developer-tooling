@@ -117,7 +117,12 @@ export const DEFAULT_MRT_ORIGIN = 'https://cloud.mobify.com';
  * });
  */
 export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): MrtClient {
-  const origin = config.origin || DEFAULT_MRT_ORIGIN;
+  let origin = config.origin || DEFAULT_MRT_ORIGIN;
+
+  // Normalize origin: add https:// if no protocol specified
+  if (origin && !origin.startsWith('http://') && !origin.startsWith('https://')) {
+    origin = `https://${origin}`;
+  }
 
   const client = createClient<paths>({
     baseUrl: origin,
