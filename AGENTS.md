@@ -1,7 +1,38 @@
+# B2C CLI
 
-- this is a monorepo project; packages:
-  - ./packages/b2c-cli - the command line interface built with oclif
-  - ./packages/b2c-tooling-sdk - the SDK/library for B2C Commerce operations; support the CLI and can be used standalone
+This is a monorepo project with the following packages:
+- `./packages/b2c-cli` - the command line interface built with oclif
+- `./packages/b2c-tooling-sdk` - the SDK/library for B2C Commerce operations; supports the CLI and can be used standalone
+
+## Common Commands
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm run build
+
+# Build specific package
+pnpm --filter @salesforce/b2c-cli run build
+pnpm --filter @salesforce/b2c-tooling-sdk run build
+
+# Run tests (includes linting)
+pnpm run test
+
+# Run tests for specific package
+pnpm --filter @salesforce/b2c-cli run test
+pnpm --filter @salesforce/b2c-tooling-sdk run test
+
+# Format code with prettier
+pnpm run -r format
+
+# Lint only (without tests)
+pnpm run -r lint
+
+# Run CLI in development mode
+./packages/b2c-cli/bin/dev.js <command>
+```
 
 ## Setup/Packaging
 

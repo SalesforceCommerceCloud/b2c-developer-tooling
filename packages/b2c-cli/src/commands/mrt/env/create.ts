@@ -6,7 +6,7 @@
 import {Args, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {createEnv, waitForEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t} from '../../../i18n/index.js';
 
 /**
@@ -140,18 +140,19 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
   static enableJsonFlag = true;
 
   static examples = [
+    '<%= config.bin %> <%= command.id %> staging --project my-storefront',
     '<%= config.bin %> <%= command.id %> staging --project my-storefront --name "Staging Environment"',
-    '<%= config.bin %> <%= command.id %> production --project my-storefront --name "Production" --production',
-    '<%= config.bin %> <%= command.id %> feature-test -p my-storefront -n "Feature Test" --region eu-west-1',
-    '<%= config.bin %> <%= command.id %> staging -p my-storefront -n "Staging" --proxy api=api.example.com --proxy ocapi=ocapi.example.com',
+    '<%= config.bin %> <%= command.id %> production --project my-storefront --production',
+    '<%= config.bin %> <%= command.id %> feature-test -p my-storefront --region eu-west-1',
+    '<%= config.bin %> <%= command.id %> staging -p my-storefront --proxy api=api.example.com --proxy ocapi=ocapi.example.com',
+    '<%= config.bin %> <%= command.id %> staging -p my-storefront --wait',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
     name: Flags.string({
       char: 'n',
-      description: 'Display name for the environment',
-      required: true,
+      description: 'Display name for the environment (defaults to slug)',
     }),
     region: Flags.string({
       char: 'r',
@@ -185,6 +186,11 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       description: 'Proxy configuration in format path=host (can be specified multiple times)',
       multiple: true,
     }),
+    wait: Flags.boolean({
+      char: 'w',
+      description: 'Wait for the environment to be ready before returning',
+      default: false,
+    }),
   };
 
   async run(): Promise<MrtEnvironment> {
@@ -200,7 +206,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     }
 
     const {
-      name,
+      name: nameFlag,
       region,
       production: isProduction,
       hostname,
@@ -209,7 +215,11 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       'allow-cookies': allowCookies,
       'enable-source-maps': enableSourceMaps,
       proxy: proxyStrings,
+      wait,
     } = this.flags;
+
+    // Default name to slug if not provided
+    const name = nameFlag ?? slug;
 
     // Parse proxy configurations
     const proxyConfigs = proxyStrings?.map((p) => parseProxyString(p));
@@ -219,7 +229,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     );
 
     try {
-      const result = await createEnv(
+      let result = await createEnv(
         {
           projectSlug: project,
           slug,
@@ -236,6 +246,32 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
         },
         this.getMrtAuth(),
       );
+
+      // Wait for environment to be ready if requested
+      if (wait) {
+        this.log(t('commands.mrt.env.create.waiting', 'Waiting for environment "{{slug}}" to be ready...', {slug}));
+
+        const waitStartTime = Date.now();
+        result = await waitForEnv(
+          {
+            projectSlug: project,
+            slug,
+            origin: this.resolvedConfig.mrtOrigin,
+            onPoll: (env) => {
+              if (!this.jsonEnabled()) {
+                const elapsed = Math.round((Date.now() - waitStartTime) / 1000);
+                this.log(
+                  t('commands.mrt.env.create.state', '[{{elapsed}}s] State: {{state}}', {
+                    elapsed: String(elapsed),
+                    state: env.state ?? 'unknown',
+                  }),
+                );
+              }
+            },
+          },
+          this.getMrtAuth(),
+        );
+      }
 
       if (this.jsonEnabled()) {
         return result;
