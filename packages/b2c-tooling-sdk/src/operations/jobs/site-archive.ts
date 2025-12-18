@@ -1,8 +1,7 @@
-/**
- * Site archive import/export operations for B2C Commerce.
- *
- * Provides functions for importing and exporting site archives using
- * the sfcc-site-archive-import and sfcc-site-archive-export system jobs.
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';

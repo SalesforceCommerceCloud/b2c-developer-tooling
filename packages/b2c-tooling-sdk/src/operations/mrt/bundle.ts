@@ -1,10 +1,7 @@
-/**
- * Bundle creation utilities for Managed Runtime.
- *
- * Creates tar archives for deployment to Managed Runtime.
- * Based on the bundle format expected by the MRT API.
- *
- * @module operations/mrt/bundle
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {createWriteStream} from 'node:fs';
 import {readFile, stat, mkdtemp, rm} from 'node:fs/promises';

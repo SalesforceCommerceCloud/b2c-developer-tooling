@@ -1,57 +1,7 @@
-/**
- * Internationalization (i18n) support for B2C CLI tools.
- *
- * This module provides translation utilities using i18next, with support for
- * multiple languages and environment-based language detection.
- *
- * ## Key Features
- *
- * - Default strings are stored inline at point of use (no separate en.ts needed)
- * - TypeScript locale files for type safety and bundling
- * - Namespace separation: 'b2c' for tooling, 'cli' for CLI-specific messages
- *
- * ## Language Detection
- *
- * Language is detected in this order:
- * 1. Explicit {@link setLanguage} call (from --lang flag)
- * 2. `LANGUAGE` environment variable (GNU gettext standard)
- * 3. `LANG` system environment variable (Unix standard)
- * 4. Default: 'en'
- *
- * ## Supported Locale Formats
- *
- * - `de` - simple language code
- * - `de_DE` - language with country
- * - `de-DE` - language with country (hyphen)
- * - `de_DE.UTF-8` - with encoding
- * - `de:en:fr` - colon-separated preference list (LANGUAGE only)
- *
- * ## Usage
- *
- * ```typescript
- * import { t } from '@salesforce/b2c-tooling-sdk';
- *
- * // Simple translation with inline default
- * const message = t('error.serverRequired', 'Server is required.');
- *
- * // With interpolation
- * const fileError = t('error.fileNotFound', 'File {{path}} not found.', {
- *   path: '/foo/bar'
- * });
- * ```
- *
- * ## Adding Translations
- *
- * ```typescript
- * import { registerTranslations } from '@salesforce/b2c-tooling-sdk';
- *
- * // Register translations for a new namespace
- * registerTranslations('my-package', 'de', {
- *   greeting: 'Hallo Welt'
- * });
- * ```
- *
- * @module i18n
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import i18next, {type TOptions, type Resource} from 'i18next';
 

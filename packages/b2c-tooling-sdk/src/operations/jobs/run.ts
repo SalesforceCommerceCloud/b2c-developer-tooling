@@ -1,7 +1,7 @@
-/**
- * Job execution operations for B2C Commerce.
- *
- * Provides functions for executing and monitoring jobs on B2C Commerce instances.
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';

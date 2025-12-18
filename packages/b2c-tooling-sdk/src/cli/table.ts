@@ -1,30 +1,7 @@
-/**
- * Table rendering utilities for CLI output.
- *
- * Provides a consistent, flexible way to render tabular data in CLI commands
- * with dynamic column widths based on content.
- *
- * @module cli/table
- *
- * @example
- * ```typescript
- * import { TableRenderer, type ColumnDef } from '@salesforce/b2c-tooling-sdk/cli';
- *
- * interface User {
- *   name: string;
- *   email: string;
- *   role: string;
- * }
- *
- * const columns: Record<string, ColumnDef<User>> = {
- *   name: { header: 'Name', get: (u) => u.name },
- *   email: { header: 'Email', get: (u) => u.email },
- *   role: { header: 'Role', get: (u) => u.role },
- * };
- *
- * const table = new TableRenderer(columns);
- * table.render(users, ['name', 'email', 'role']);
- * ```
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {ux} from '@oclif/core';
 import cliui from 'cliui';

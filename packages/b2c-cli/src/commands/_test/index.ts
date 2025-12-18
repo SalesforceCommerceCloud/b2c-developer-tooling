@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 
 export default class Test extends BaseCommand<typeof Test> {

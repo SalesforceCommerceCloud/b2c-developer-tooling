@@ -1,11 +1,7 @@
-/**
- * Managed Runtime (MRT) API client for B2C Commerce.
- *
- * Provides a fully typed client for Managed Runtime API operations using
- * openapi-fetch with API key authentication middleware. Used for
- * managing deployments, bundles, projects, and environments.
- *
- * @module clients/mrt
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';

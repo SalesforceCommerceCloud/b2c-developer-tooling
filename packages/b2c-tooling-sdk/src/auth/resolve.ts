@@ -1,25 +1,7 @@
-/**
- * Auth strategy resolution utilities.
- *
- * This module provides functions to automatically select and create the appropriate
- * authentication strategy based on available credentials and allowed methods.
- *
- * ## Usage
- *
- * ```typescript
- * import { resolveAuthStrategy, checkAvailableAuthMethods } from '@salesforce/b2c-tooling-sdk';
- *
- * // Auto-select best strategy based on credentials
- * const strategy = resolveAuthStrategy({
- *   clientId: 'my-client-id',
- *   clientSecret: process.env.CLIENT_SECRET,
- * });
- *
- * // Check which methods are available
- * const { available, unavailable } = checkAvailableAuthMethods(credentials);
- * ```
- *
- * @module auth/resolve
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
 import type {AuthStrategy, AuthMethod, AuthCredentials} from './types.js';

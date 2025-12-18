@@ -1,12 +1,7 @@
-/**
- * i18n setup for b2c-cli.
- *
- * This module registers CLI-specific translations with the 'cli' namespace.
- * The core i18n infrastructure comes from @salesforce/b2c-tooling-sdk.
- *
- * Usage in commands:
- *   import { t } from '../i18n/index.js'
- *   this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', { hostname }))
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
 import {registerTranslations, t as toolingT, type TOptions} from '@salesforce/b2c-tooling-sdk';

@@ -1,10 +1,7 @@
-/**
- * Centralized default values for B2C Commerce APIs.
- *
- * These defaults are used across auth strategies, clients, and CLI commands.
- * Override via environment variables or CLI flags.
- *
- * @module defaults
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
 /**

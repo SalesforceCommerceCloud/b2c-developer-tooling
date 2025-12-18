@@ -9,10 +9,10 @@
   "bugs": "https://github.com/SalesforceCommerceCloud/b2c-cli/issues",
   "dependencies": {
     "@oclif/core": "^4",
-    "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5",
-    "@oclif/plugin-not-found": "^3",
     "@oclif/plugin-autocomplete": "^3",
+    "@oclif/plugin-help": "^6",
+    "@oclif/plugin-not-found": "^3",
+    "@oclif/plugin-plugins": "^5",
     "@oclif/plugin-version": "^2",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "^9.0.1"
@@ -22,6 +22,7 @@
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^4",
     "@salesforce/dev-config": "^4.3.2",
+    "@tony.ganchev/eslint-plugin-header": "^3.1.11",
     "@types/chai": "^4",
     "@types/mocha": "^10",
     "@types/node": "^18",

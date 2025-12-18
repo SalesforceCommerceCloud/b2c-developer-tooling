@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
 import {Args, Command, Flags} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
 import type {FindCartridgesOptions} from '../operations/code/cartridges.js';

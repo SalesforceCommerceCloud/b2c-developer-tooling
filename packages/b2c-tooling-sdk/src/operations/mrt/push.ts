@@ -1,9 +1,7 @@
-/**
- * Push operations for Managed Runtime.
- *
- * Handles uploading bundles to MRT projects and optionally deploying them.
- *
- * @module operations/mrt/push
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {AuthStrategy} from '../../auth/types.js';
 import {createMrtClient, DEFAULT_MRT_ORIGIN} from '../../clients/mrt.js';
