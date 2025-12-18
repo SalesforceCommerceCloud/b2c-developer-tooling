@@ -20,6 +20,11 @@ import {getLogger} from '../../logging/logger.js';
  */
 export type MrtEnvironment = components['schemas']['APITargetV2Create'];
 
+/**
+ * Environment state from the MRT API.
+ */
+export type MrtEnvironmentState = components['schemas']['StateEnum'];
+
 type SsrRegion = components['schemas']['SsrRegionEnum'];
 type LogLevel = components['schemas']['LogLevelEnum'];
 
@@ -270,4 +275,174 @@ export async function deleteEnv(options: DeleteEnvOptions, auth: AuthStrategy): 
   }
 
   logger.debug({slug}, '[MRT] Environment deleted successfully');
+}
+
+/**
+ * Options for getting an MRT environment.
+ */
+export interface GetEnvOptions {
+  /**
+   * The project slug containing the environment.
+   */
+  projectSlug: string;
+
+  /**
+   * Environment slug/identifier to retrieve.
+   */
+  slug: string;
+
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Gets an environment (target) from an MRT project.
+ *
+ * @param options - Environment retrieval options
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns The environment object from the API
+ * @throws Error if retrieval fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { getEnv } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const env = await getEnv({
+ *   projectSlug: 'my-storefront',
+ *   slug: 'staging'
+ * }, auth);
+ *
+ * console.log(`Environment state: ${env.state}`);
+ * ```
+ */
+export async function getEnv(options: GetEnvOptions, auth: AuthStrategy): Promise<MrtEnvironment> {
+  const logger = getLogger();
+  const {projectSlug, slug, origin} = options;
+
+  logger.debug({projectSlug, slug}, '[MRT] Getting environment');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+
+  const {data, error} = await client.GET('/api/projects/{project_slug}/target/{target_slug}/', {
+    params: {
+      path: {project_slug: projectSlug, target_slug: slug},
+    },
+  });
+
+  if (error) {
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to get environment: ${errorMessage}`);
+  }
+
+  logger.debug({slug: data.slug, state: data.state}, '[MRT] Environment retrieved');
+
+  return data;
+}
+
+/**
+ * Terminal states for MRT environments (no longer changing).
+ */
+const TERMINAL_STATES: MrtEnvironmentState[] = ['ACTIVE', 'CREATE_FAILED', 'PUBLISH_FAILED'];
+
+/**
+ * Options for waiting for an MRT environment to be ready.
+ */
+export interface WaitForEnvOptions extends GetEnvOptions {
+  /**
+   * Polling interval in milliseconds.
+   * @default 10000
+   */
+  pollInterval?: number;
+
+  /**
+   * Maximum time to wait in milliseconds.
+   * @default 2700000 (45 minutes)
+   */
+  timeout?: number;
+
+  /**
+   * Optional callback called on each poll with the current environment state.
+   */
+  onPoll?: (env: MrtEnvironment) => void;
+}
+
+/**
+ * Waits for an environment to reach a terminal state (ACTIVE or failed).
+ *
+ * Polls the environment status until it reaches ACTIVE, CREATE_FAILED,
+ * or PUBLISH_FAILED state, or until the timeout is reached.
+ *
+ * @param options - Wait options including polling interval and timeout
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns The environment in its terminal state
+ * @throws Error if timeout is reached or environment fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { createEnv, waitForEnv } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * // Create environment
+ * const env = await createEnv({
+ *   projectSlug: 'my-storefront',
+ *   slug: 'staging',
+ *   name: 'Staging'
+ * }, auth);
+ *
+ * // Wait for it to be ready
+ * const readyEnv = await waitForEnv({
+ *   projectSlug: 'my-storefront',
+ *   slug: 'staging',
+ *   timeout: 60000, // 1 minute
+ *   onPoll: (e) => console.log(`State: ${e.state}`)
+ * }, auth);
+ *
+ * if (readyEnv.state === 'ACTIVE') {
+ *   console.log('Environment is ready!');
+ * }
+ * ```
+ */
+export async function waitForEnv(options: WaitForEnvOptions, auth: AuthStrategy): Promise<MrtEnvironment> {
+  const logger = getLogger();
+  const {projectSlug, slug, pollInterval = 10000, timeout = 2700000, onPoll, origin} = options;
+
+  logger.debug({projectSlug, slug, pollInterval, timeout}, '[MRT] Waiting for environment');
+
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    const env = await getEnv({projectSlug, slug, origin}, auth);
+
+    if (onPoll) {
+      onPoll(env);
+    }
+
+    if (env.state && TERMINAL_STATES.includes(env.state as MrtEnvironmentState)) {
+      if (env.state === 'CREATE_FAILED') {
+        throw new Error(`Environment creation failed`);
+      }
+      if (env.state === 'PUBLISH_FAILED') {
+        throw new Error(`Environment publish failed`);
+      }
+      logger.debug({slug, state: env.state}, '[MRT] Environment reached terminal state');
+      return env;
+    }
+
+    logger.debug({slug, state: env.state, elapsed: Date.now() - startTime}, '[MRT] Environment still in progress');
+
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+  }
+
+  throw new Error(`Timeout waiting for environment "${slug}" to be ready after ${timeout}ms`);
 }

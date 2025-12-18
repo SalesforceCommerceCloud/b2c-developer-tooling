@@ -253,7 +253,6 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     const startTime = Date.now();
     const pollIntervalMs = pollIntervalSeconds * 1000;
     const timeoutMs = timeoutSeconds * 1000;
-    let lastState: SandboxState | undefined;
 
     this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to be ready...'));
 
@@ -285,17 +284,14 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       const sandbox = result.data.data;
       const currentState = sandbox.state as SandboxState;
 
-      // Log state changes
-      if (currentState !== lastState) {
-        const elapsed = Math.round((Date.now() - startTime) / 1000);
-        this.log(
-          t('commands.ods.create.stateChange', '[{{elapsed}}s] State: {{state}}', {
-            elapsed: String(elapsed),
-            state: currentState || 'unknown',
-          }),
-        );
-        lastState = currentState;
-      }
+      // Log current state on each poll
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      this.log(
+        t('commands.ods.create.stateChange', '[{{elapsed}}s] State: {{state}}', {
+          elapsed: String(elapsed),
+          state: currentState || 'unknown',
+        }),
+      );
 
       // Check for terminal states
       if (currentState && TERMINAL_STATES.has(currentState)) {
