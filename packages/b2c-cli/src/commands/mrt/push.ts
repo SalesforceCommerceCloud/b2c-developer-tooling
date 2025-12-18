@@ -1,6 +1,6 @@
 import {Flags} from '@oclif/core';
-import {MrtCommand} from '@salesforce/b2c-tooling/cli';
-import {pushBundle, DEFAULT_SSR_PARAMETERS, type PushResult} from '@salesforce/b2c-tooling/operations/mrt';
+import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {pushBundle, DEFAULT_SSR_PARAMETERS, type PushResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t} from '../../i18n/index.js';
 
 /**

@@ -1,4 +1,4 @@
-import {BaseCommand} from '@salesforce/b2c-tooling/cli';
+import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 
 export default class Test extends BaseCommand<typeof Test> {
   static description = 'Test logging output';

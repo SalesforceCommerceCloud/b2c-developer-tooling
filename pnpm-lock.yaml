@@ -41,9 +41,9 @@ importers:
       '@oclif/plugin-version':
         specifier: ^2
         version: 2.2.36
-      '@salesforce/b2c-tooling':
+      '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
-        version: link:../b2c-tooling
+        version: link:../b2c-tooling-sdk
       cliui:
         specifier: ^9.0.1
         version: 9.0.1
@@ -103,7 +103,7 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  packages/b2c-tooling:
+  packages/b2c-tooling-sdk:
     dependencies:
       archiver:
         specifier: ^7.0.1

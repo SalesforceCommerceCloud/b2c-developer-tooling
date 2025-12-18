@@ -1,6 +1,6 @@
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling/cli';
-import {activateCodeVersion, reloadCodeVersion} from '@salesforce/b2c-tooling/operations/code';
+import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {activateCodeVersion, reloadCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {t} from '../../i18n/index.js';
 
 export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {

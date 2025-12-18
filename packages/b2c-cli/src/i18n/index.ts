@@ -2,14 +2,14 @@
  * i18n setup for b2c-cli.
  *
  * This module registers CLI-specific translations with the 'cli' namespace.
- * The core i18n infrastructure comes from @salesforce/b2c-tooling.
+ * The core i18n infrastructure comes from @salesforce/b2c-tooling-sdk.
  *
  * Usage in commands:
  *   import { t } from '../i18n/index.js'
  *   this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', { hostname }))
  */
 
-import {registerTranslations, t as toolingT, type TOptions} from '@salesforce/b2c-tooling';
+import {registerTranslations, t as toolingT, type TOptions} from '@salesforce/b2c-tooling-sdk';
 import {locales} from './locales/index.js';
 
 /** The namespace used by b2c-cli messages */
@@ -24,7 +24,7 @@ for (const [lang, translations] of Object.entries(locales)) {
  * Translate a CLI message key with an inline default.
  *
  * This is a convenience wrapper that uses the 'cli' namespace.
- * For b2c-tooling messages, import t directly from @salesforce/b2c-tooling.
+ * For b2c-tooling messages, import t directly from @salesforce/b2c-tooling-sdk.
  *
  * @param key - Dot-notation key (e.g., 'commands.sites.list.fetching')
  * @param defaultValue - The default English string
@@ -39,4 +39,4 @@ export function t(key: string, defaultValue: string, options?: TOptions): string
 }
 
 // Re-export for convenience
-export {setLanguage, getLanguage, getI18nInstance} from '@salesforce/b2c-tooling';
+export {setLanguage, getLanguage, getI18nInstance} from '@salesforce/b2c-tooling-sdk';

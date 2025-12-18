@@ -1,7 +1,7 @@
 import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {OdsCommand} from '@salesforce/b2c-tooling/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling';
+import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];

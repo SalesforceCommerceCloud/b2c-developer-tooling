@@ -24,5 +24,5 @@ features:
   - title: Managed Runtime
     details: Configure and manage MRT environments and environment variables.
   - title: SDK Library
-    details: Use the @salesforce/b2c-tooling package to build your own integrations.
+    details: Use the @salesforce/b2c-tooling-sdk package to build your own integrations.
 ---

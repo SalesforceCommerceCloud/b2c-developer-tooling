@@ -40,15 +40,15 @@ If you want to use the SDK library in your own projects:
 ::: code-group
 
 ```bash [npm]
-npm install @salesforce/b2c-tooling
+npm install @salesforce/b2c-tooling-sdk
 ```
 
 ```bash [pnpm]
-pnpm add @salesforce/b2c-tooling
+pnpm add @salesforce/b2c-tooling-sdk
 ```
 
 ```bash [yarn]
-yarn add @salesforce/b2c-tooling
+yarn add @salesforce/b2c-tooling-sdk
 ```
 
 :::

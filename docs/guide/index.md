@@ -20,12 +20,12 @@ The command-line interface that you interact with directly. It provides a set of
 b2c code deploy --server your-instance.demandware.net
 ```
 
-### @salesforce/b2c-tooling
+### @salesforce/b2c-tooling-sdk
 
 The underlying SDK library that powers the CLI. You can use this package directly in your own Node.js applications to automate B2C Commerce operations.
 
 ```typescript
-import { uploadCartridges, B2CInstance } from '@salesforce/b2c-tooling';
+import { uploadCartridges, B2CInstance } from '@salesforce/b2c-tooling-sdk';
 
 const instance = new B2CInstance({
   server: 'your-instance.demandware.net',

@@ -14,7 +14,7 @@
     "@oclif/plugin-not-found": "^3",
     "@oclif/plugin-autocomplete": "^3",
     "@oclif/plugin-version": "^2",
-    "@salesforce/b2c-tooling": "workspace:*",
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "^9.0.1"
   },
   "devDependencies": {

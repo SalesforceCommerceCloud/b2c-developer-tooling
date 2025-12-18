@@ -21,7 +21,7 @@ This is a pnpm monorepo with the following packages:
 | Package | Description |
 |---------|-------------|
 | [`@salesforce/b2c-cli`](./packages/b2c-cli/README.md) | Command line interface built with oclif |
-| [`@salesforce/b2c-tooling`](./packages/b2c-tooling/README.md) | SDK/library for B2C Commerce operations; supports the CLI and can be used standalone |
+| [`@salesforce/b2c-tooling-sdk`](./packages/b2c-tooling-sdk/README.md) | SDK/library for B2C Commerce operations; supports the CLI and can be used standalone |
 
 ## Development
 
@@ -46,7 +46,7 @@ pnpm --filter @salesforce/b2c-cli run dev
 ./cli
 ```
 
-The dev mode uses Node.js `--conditions=development` to resolve TypeScript source files directly from `@salesforce/b2c-tooling` without needing to build first.
+The dev mode uses Node.js `--conditions=development` to resolve TypeScript source files directly from `@salesforce/b2c-tooling-sdk` without needing to build first.
 
 ### Building
 
@@ -56,7 +56,7 @@ pnpm -r run build
 
 # Build individual packages
 pnpm --filter @salesforce/b2c-cli run build
-pnpm --filter @salesforce/b2c-tooling run build
+pnpm --filter @salesforce/b2c-tooling-sdk run build
 ```
 
 ### Testing and Linting
@@ -67,7 +67,7 @@ pnpm test
 
 # Run linter only
 pnpm --filter @salesforce/b2c-cli run lint
-pnpm --filter @salesforce/b2c-tooling run lint
+pnpm --filter @salesforce/b2c-tooling-sdk run lint
 ```
 
 ### Code Formatting
@@ -116,7 +116,7 @@ pnpm run docs:preview
 
 ### API Documentation
 
-API documentation is auto-generated from JSDoc comments in the `@salesforce/b2c-tooling` package. The entry points are defined in `typedoc.json`:
+API documentation is auto-generated from JSDoc comments in the `@salesforce/b2c-tooling-sdk` package. The entry points are defined in `typedoc.json`:
 
 See the [documentation site](https://verbose-adventure-1eqmr1r.pages.github.io/) for the generated API reference.
 
@@ -133,12 +133,12 @@ When adding new public APIs, ensure they have comprehensive JSDoc comments as th
 
 ## Package Exports
 
-The `@salesforce/b2c-tooling` package uses the `exports` field in package.json to define its public API surface. Each module is available as a subpath export:
+The `@salesforce/b2c-tooling-sdk` package uses the `exports` field in package.json to define its public API surface. Each module is available as a subpath export:
 
 ```typescript
-import { OAuthStrategy } from '@salesforce/b2c-tooling/auth';
-import { B2CInstance } from '@salesforce/b2c-tooling/instance';
-import { getLogger } from '@salesforce/b2c-tooling/logging';
+import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+import { B2CInstance } from '@salesforce/b2c-tooling-sdk/instance';
+import { getLogger } from '@salesforce/b2c-tooling-sdk/logging';
 ```
 
 The `development` condition in exports enables direct TypeScript source resolution when using `--conditions=development`, which is how `bin/dev.js` works for local development.

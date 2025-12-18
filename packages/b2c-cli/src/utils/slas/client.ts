@@ -1,7 +1,7 @@
 import {Command, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {OAuthCommand} from '@salesforce/b2c-tooling/cli';
-import {createSlasClient, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling';
+import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {createSlasClient, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 export type Client = SlasComponents['schemas']['Client'];
