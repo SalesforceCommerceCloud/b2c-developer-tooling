@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * Logger using pino with pretty printing by default.
+ */
 
 import pino from 'pino';
 import pretty from 'pino-pretty';

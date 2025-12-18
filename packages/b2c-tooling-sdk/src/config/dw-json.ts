@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * dw.json configuration file loading.
+ *
+ * This module provides utilities for loading B2C Commerce configuration from
+ * dw.json files, the standard configuration format used by B2C development tools.
+ *
+ * @module config
+ */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';

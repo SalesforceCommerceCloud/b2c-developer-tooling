@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * EN - English translations for b2c-cli commands.
+ *
+ * Note: These serve as documentation of translatable strings.
+ * English defaults are also defined inline at point of use via t().
+ */
 export const en = {
   commands: {
     sites: {

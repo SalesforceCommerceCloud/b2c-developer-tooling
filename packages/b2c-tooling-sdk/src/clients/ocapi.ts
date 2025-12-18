@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * OCAPI client for B2C Commerce Data API operations.
+ *
+ * Provides a fully typed client for OCAPI Data API operations using
+ * openapi-fetch with authentication middleware.
+ *
+ * @module clients/ocapi
+ */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ocapi.generated.js';

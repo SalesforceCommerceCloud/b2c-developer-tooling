@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * DE
+ */
 export const de = {
   error: {
     serverRequired: 'Server ist erforderlich. Setzen Sie --server, SFCC_SERVER Umgebungsvariable, oder dw.json.',

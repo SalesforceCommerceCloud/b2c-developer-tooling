@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * WebDAV client for B2C Commerce file operations.
+ *
+ * Provides typed methods for common WebDAV operations like file upload,
+ * download, directory creation, and listing.
+ *
+ * @module clients/webdav
+ */
 import type {AuthStrategy} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
 

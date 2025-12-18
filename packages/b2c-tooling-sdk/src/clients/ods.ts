@@ -3,6 +3,16 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * ODS (On-Demand Sandbox) API client for B2C Commerce.
+ *
+ * Provides a fully typed client for the Developer Sandbox REST API using
+ * openapi-fetch with OAuth authentication middleware. Used for managing
+ * developer sandboxes including creation, deletion, start/stop operations,
+ * and retrieving realm and system information.
+ *
+ * @module clients/ods
+ */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ods.generated.js';

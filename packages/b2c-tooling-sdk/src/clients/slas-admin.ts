@@ -3,6 +3,15 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * SLAS Admin API client for B2C Commerce.
+ *
+ * Provides a fully typed client for SLAS Admin API operations using
+ * openapi-fetch with OAuth authentication middleware. Used for
+ * administration tasks like managing tenants and SLAS clients.
+ *
+ * @module clients/slas-admin
+ */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './slas-admin.generated.js';

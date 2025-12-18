@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * Environment variable operations for Managed Runtime.
+ *
+ * Handles listing, setting, and deleting environment variables
+ * on MRT project environments.
+ *
+ * @module operations/mrt/env-var
+ */
 import type {AuthStrategy} from '../../auth/types.js';
 import {createMrtClient, DEFAULT_MRT_ORIGIN} from '../../clients/mrt.js';
 import {getLogger} from '../../logging/logger.js';

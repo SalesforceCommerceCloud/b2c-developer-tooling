@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * Shared middleware for openapi-fetch clients.
+ *
+ * Provides reusable authentication and logging middleware that can be
+ * used across all API clients (OCAPI, SLAS, SCAPI, etc.).
+ *
+ * @module clients/middleware
+ */
 import type {Middleware} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
