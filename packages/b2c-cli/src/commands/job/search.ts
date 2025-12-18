@@ -1,10 +1,10 @@
 import {Flags, ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
+import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   searchJobExecutions,
   type JobExecutionSearchResult,
   type JobExecution,
-} from '@salesforce/b2c-tooling/operations/jobs';
+} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t} from '../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<JobExecution>> = {

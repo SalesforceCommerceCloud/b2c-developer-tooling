@@ -1,6 +1,6 @@
 import {ux} from '@oclif/core';
-import {OAuthCommand} from '@salesforce/b2c-tooling/cli';
-import type {AccessTokenResponse} from '@salesforce/b2c-tooling/auth';
+import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import type {AccessTokenResponse} from '@salesforce/b2c-tooling-sdk/auth';
 import {t} from '../../i18n/index.js';
 
 /**

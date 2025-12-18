@@ -1,11 +1,11 @@
 # API Reference
 
-The `@salesforce/b2c-tooling` package provides a programmatic API for interacting with Salesforce B2C Commerce instances.
+The `@salesforce/b2c-tooling-sdk` package provides a programmatic API for interacting with Salesforce B2C Commerce instances.
 
 ## Installation
 
 ```bash
-npm install @salesforce/b2c-tooling
+npm install @salesforce/b2c-tooling-sdk
 ```
 
 ## Quick Start
@@ -15,7 +15,7 @@ npm install @salesforce/b2c-tooling
 The easiest way to create an instance is from a `dw.json` file:
 
 ```typescript
-import { B2CInstance } from '@salesforce/b2c-tooling';
+import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
 
 // Load configuration from dw.json, override secrets from environment
 const instance = B2CInstance.fromDwJson({
@@ -38,7 +38,7 @@ const { data, error } = await instance.ocapi.GET('/sites', {
 You can also construct an instance directly with configuration:
 
 ```typescript
-import { B2CInstance } from '@salesforce/b2c-tooling';
+import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
 
 const instance = new B2CInstance(
   { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
@@ -145,7 +145,7 @@ const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version
 Configure logging for debugging HTTP requests:
 
 ```typescript
-import { configureLogger } from '@salesforce/b2c-tooling/logging';
+import { configureLogger } from '@salesforce/b2c-tooling-sdk/logging';
 
 // Enable debug logging (shows HTTP request summaries)
 configureLogger({ level: 'debug' });

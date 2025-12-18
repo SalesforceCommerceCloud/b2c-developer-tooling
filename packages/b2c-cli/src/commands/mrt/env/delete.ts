@@ -1,7 +1,7 @@
 import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
-import {MrtCommand} from '@salesforce/b2c-tooling/cli';
-import {deleteEnv} from '@salesforce/b2c-tooling/operations/mrt';
+import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {deleteEnv} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t} from '../../../i18n/index.js';
 
 /**

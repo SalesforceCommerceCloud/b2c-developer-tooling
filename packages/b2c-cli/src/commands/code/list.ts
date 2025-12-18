@@ -1,6 +1,6 @@
 import {ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
-import {listCodeVersions, type CodeVersion, type CodeVersionResult} from '@salesforce/b2c-tooling/operations/code';
+import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {listCodeVersions, type CodeVersion, type CodeVersionResult} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {t} from '../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {

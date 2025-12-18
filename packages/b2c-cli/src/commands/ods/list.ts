@@ -1,6 +1,6 @@
 import {Flags} from '@oclif/core';
-import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling';
+import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];

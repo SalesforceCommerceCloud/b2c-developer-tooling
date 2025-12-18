@@ -3,8 +3,8 @@ import {
   findAndDeployCartridges,
   getActiveCodeVersion,
   type DeployResult,
-} from '@salesforce/b2c-tooling/operations/code';
-import {CartridgeCommand} from '@salesforce/b2c-tooling/cli';
+} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t} from '../../i18n/index.js';
 
 export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {

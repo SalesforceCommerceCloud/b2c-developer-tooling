@@ -1,4 +1,4 @@
-import {createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
+import {createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   SlasClientCommand,
   type Client,

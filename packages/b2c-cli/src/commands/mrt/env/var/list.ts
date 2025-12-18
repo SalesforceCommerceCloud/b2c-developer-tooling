@@ -1,5 +1,9 @@
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
-import {listEnvVars, type ListEnvVarsResult, type EnvironmentVariable} from '@salesforce/b2c-tooling/operations/mrt';
+import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  listEnvVars,
+  type ListEnvVarsResult,
+  type EnvironmentVariable,
+} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t} from '../../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<EnvironmentVariable>> = {

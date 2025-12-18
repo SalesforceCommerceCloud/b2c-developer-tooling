@@ -1,6 +1,11 @@
 import {Args, Flags} from '@oclif/core';
-import {JobCommand} from '@salesforce/b2c-tooling/cli';
-import {executeJob, waitForJob, JobExecutionError, type JobExecution} from '@salesforce/b2c-tooling/operations/jobs';
+import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  executeJob,
+  waitForJob,
+  JobExecutionError,
+  type JobExecution,
+} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {

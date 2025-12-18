@@ -1,6 +1,6 @@
 import {ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling/cli';
-import type {OcapiComponents} from '@salesforce/b2c-tooling';
+import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type Sites = OcapiComponents['schemas']['sites'];
