@@ -3,6 +3,46 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * Logging utilities for B2C CLI tools.
+ *
+ * This module provides a pluggable logging interface that allows consumers
+ * to integrate their own logging implementation.
+ *
+ * ## Built-in Loggers
+ *
+ * - {@link noopLogger} - Silent logger (default) - does nothing
+ * - {@link consoleLogger} - Logs to console
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * import { setLogger, getLogger, consoleLogger } from '@salesforce/b2c-tooling-sdk';
+ *
+ * // Enable console logging
+ * setLogger(consoleLogger);
+ *
+ * // Or use a custom logger
+ * setLogger({
+ *   debug: (msg, ...args) => myLogger.debug(msg, ...args),
+ *   info: (msg, ...args) => myLogger.info(msg, ...args),
+ *   warn: (msg, ...args) => myLogger.warn(msg, ...args),
+ *   error: (msg, ...args) => myLogger.error(msg, ...args),
+ * });
+ *
+ * // Get the current logger
+ * const logger = getLogger();
+ * logger.info('Operation completed');
+ * ```
+ *
+ * ## Default Behavior
+ *
+ * By default, the {@link noopLogger} is used, which silently discards all
+ * log messages. This ensures the library doesn't produce unexpected output
+ * unless logging is explicitly enabled.
+ *
+ * @module logger
+ */
 
 /**
  * Logger interface for b2c-tooling.

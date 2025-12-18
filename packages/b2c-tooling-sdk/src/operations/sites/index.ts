@@ -3,6 +3,48 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * Site management operations for B2C Commerce.
+ *
+ * This module provides functions for listing and retrieving site information
+ * from B2C Commerce instances via OCAPI.
+ *
+ * ## Functions
+ *
+ * - {@link listSites} - List all sites on an instance
+ * - {@link getSite} - Get details for a specific site
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * import { listSites, getSite } from '@salesforce/b2c-tooling-sdk/operations/sites';
+ * import { B2CInstance, OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ * });
+ * const instance = new B2CInstance(
+ *   { hostname: 'your-sandbox.demandware.net' },
+ *   auth
+ * );
+ *
+ * // List all sites
+ * const sites = await listSites(instance);
+ * for (const site of sites) {
+ *   console.log(`${site.id}: ${site.displayName} (${site.status})`);
+ * }
+ *
+ * // Get a specific site
+ * const site = await getSite(instance, 'RefArch');
+ * ```
+ *
+ * ## Authentication
+ *
+ * Site operations require OAuth authentication with appropriate OCAPI permissions.
+ *
+ * @module operations/sites
+ */
 import {B2CInstance} from '../../instance/index.js';
 
 export interface Site {

@@ -3,6 +3,42 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * B2C Instance management.
+ *
+ * This module provides the {@link B2CInstance} class which represents a connection
+ * to a specific B2C Commerce instance. It combines instance configuration with
+ * authentication to provide typed API clients.
+ *
+ * ## Usage
+ *
+ * ### From dw.json (recommended)
+ *
+ * ```typescript
+ * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+ *
+ * // Load from dw.json, override secrets from environment
+ * const instance = B2CInstance.fromDwJson({
+ *   clientId: process.env.SFCC_CLIENT_ID,
+ *   clientSecret: process.env.SFCC_CLIENT_SECRET,
+ * });
+ *
+ * // Use typed clients
+ * await instance.webdav.put('Cartridges/v1/app.zip', content);
+ * const { data } = await instance.ocapi.GET('/sites', {});
+ * ```
+ *
+ * ### Direct construction
+ *
+ * ```typescript
+ * const instance = new B2CInstance(
+ *   { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
+ *   { oauth: { clientId: '...', clientSecret: '...' } }
+ * );
+ * ```
+ *
+ * @module instance
+ */
 import type {AuthConfig, AuthStrategy, AuthMethod, AuthCredentials} from '../auth/types.js';
 import {BasicAuthStrategy} from '../auth/basic.js';
 import {resolveAuthStrategy} from '../auth/resolve.js';
