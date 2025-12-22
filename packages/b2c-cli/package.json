@@ -26,6 +26,7 @@
     "@types/chai": "^4",
     "@types/mocha": "^10",
     "@types/node": "^18",
+    "c8": "^10.1.3",
     "chai": "^4",
     "eslint": "^9",
     "eslint-config-oclif": "^6",
@@ -116,7 +117,9 @@
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && oclif readme",
     "pretest": "tsc --noEmit -p test",
-    "test": "OCLIF_TEST_ROOT=. mocha --forbid-only \"test/**/*.test.ts\"",
+    "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/**/*.test.ts\"",
+    "coverage": "c8 report",
     "version": "oclif readme && git add README.md",
     "dev": "node ./bin/dev.js"
   },
