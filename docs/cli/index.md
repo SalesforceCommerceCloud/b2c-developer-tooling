@@ -8,20 +8,20 @@ These flags are available on all commands that interact with B2C instances:
 
 ### Instance Flags
 
-| Flag | Short | Environment Variable | Description |
-|------|-------|---------------------|-------------|
-| `--server` | `-s` | `SFCC_SERVER` | B2C instance hostname |
-| `--webdav-server` | | `SFCC_WEBDAV_SERVER` | Secure WebDAV hostname |
-| `--code-version` | `-v` | `SFCC_CODE_VERSION` | Code version |
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--server`, `-s` | `SFCC_SERVER` | B2C instance hostname |
+| `--webdav-server` | `SFCC_WEBDAV_SERVER` | Secure WebDAV hostname |
+| `--code-version`, `-v` | `SFCC_CODE_VERSION` | Code version |
 
 ### Authentication Flags
 
-| Flag | Short | Environment Variable | Description |
-|------|-------|---------------------|-------------|
-| `--client-id` | | `SFCC_CLIENT_ID` | OAuth client ID |
-| `--client-secret` | | `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `--username` | `-u` | `SFCC_USERNAME` | Username for Basic Auth |
-| `--password` | `-p` | `SFCC_PASSWORD` | Password/access key for Basic Auth |
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
+| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
+| `--username`, `-u` | `SFCC_USERNAME` | Username for Basic Auth |
+| `--password`, `-p` | `SFCC_PASSWORD` | Password/access key for Basic Auth |
 
 ## Command Topics
 

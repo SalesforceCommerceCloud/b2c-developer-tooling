@@ -8,9 +8,9 @@ These flags are available on all WebDAV commands:
 
 ### Root Directory
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--root` | `-r` | WebDAV root directory | `impex` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--root`, `-r` | WebDAV root directory | `impex` |
 
 Available roots:
 
@@ -239,9 +239,9 @@ b2c webdav rm <PATH>
 
 ### Flags
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--force` | `-f` | Skip confirmation prompt | `false` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--force`, `-f` | Skip confirmation prompt | `false` |
 
 ### Examples
 

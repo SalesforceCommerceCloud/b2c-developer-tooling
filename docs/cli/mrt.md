@@ -6,11 +6,11 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles.
 
 These flags are available on all MRT commands:
 
-| Flag | Short | Environment Variable | Description |
-|------|-------|---------------------|-------------|
-| `--api-key` | | `SFCC_MRT_API_KEY` | MRT API key |
-| `--project` | `-p` | `SFCC_MRT_PROJECT` | MRT project slug |
-| `--environment` | `-e` | `SFCC_MRT_ENVIRONMENT` | Target environment (e.g., staging, production) |
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--api-key` | `SFCC_MRT_API_KEY` | MRT API key |
+| `--project`, `-p` | `SFCC_MRT_PROJECT` | MRT project slug |
+| `--environment`, `-e` | `SFCC_MRT_ENVIRONMENT` | Target environment (e.g., staging, production) |
 
 ### Configuration Sources
 
@@ -73,15 +73,15 @@ b2c mrt push [FLAGS]
 
 In addition to [global MRT flags](#global-mrt-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--message` | `-m` | Bundle message/description | |
-| `--build-dir` | `-b` | Path to the build directory | `build` |
-| `--ssr-only` | | Glob patterns for server-only files (comma-separated) | `ssr.js,server/**/*` |
-| `--ssr-shared` | | Glob patterns for shared files (comma-separated) | `static/**/*,client/**/*` |
-| `--node-version` | `-n` | Node.js version for SSR runtime | `20.x` |
-| `--ssr-param` | | SSR parameter in key=value format (can be specified multiple times) | |
-| `--json` | | Output result as JSON | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--message`, `-m` | Bundle message/description | |
+| `--build-dir`, `-b` | Path to the build directory | `build` |
+| `--ssr-only` | Glob patterns for server-only files (comma-separated) | `ssr.js,server/**/*` |
+| `--ssr-shared` | Glob patterns for shared files (comma-separated) | `static/**/*,client/**/*` |
+| `--node-version`, `-n` | Node.js version for SSR runtime | `20.x` |
+| `--ssr-param` | SSR parameter in key=value format (can be specified multiple times) | |
+| `--json` | Output result as JSON | |
 
 ### Examples
 
@@ -143,19 +143,19 @@ b2c mrt env create SLUG [FLAGS]
 
 In addition to [global MRT flags](#global-mrt-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--name` | `-n` | Display name for the environment | **Required** |
-| `--region` | `-r` | AWS region for SSR deployment | |
-| `--production` | | Mark as a production environment | `false` |
-| `--hostname` | | Hostname pattern for V8 Tag loading | |
-| `--external-hostname` | | Full external hostname (e.g., www.example.com) | |
-| `--external-domain` | | External domain for Universal PWA SSR (e.g., example.com) | |
-| `--allow-cookies` | | Forward HTTP cookies to origin | `false` |
-| `--no-allow-cookies` | | Disable cookie forwarding | |
-| `--enable-source-maps` | | Enable source map support in the environment | `false` |
-| `--no-enable-source-maps` | | Disable source map support | |
-| `--json` | | Output result as JSON | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--name`, `-n` | Display name for the environment | **Required** |
+| `--region`, `-r` | AWS region for SSR deployment | |
+| `--production` | Mark as a production environment | `false` |
+| `--hostname` | Hostname pattern for V8 Tag loading | |
+| `--external-hostname` | Full external hostname (e.g., www.example.com) | |
+| `--external-domain` | External domain for Universal PWA SSR (e.g., example.com) | |
+| `--allow-cookies` | Forward HTTP cookies to origin | `false` |
+| `--no-allow-cookies` | Disable cookie forwarding | |
+| `--enable-source-maps` | Enable source map support in the environment | `false` |
+| `--no-enable-source-maps` | Disable source map support | |
+| `--json` | Output result as JSON | |
 
 ### Supported Regions
 
@@ -221,10 +221,10 @@ b2c mrt env delete SLUG [FLAGS]
 
 In addition to [global MRT flags](#global-mrt-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--force` | `-f` | Skip confirmation prompt | `false` |
-| `--json` | | Output result as JSON | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--force`, `-f` | Skip confirmation prompt | `false` |
+| `--json` | Output result as JSON | |
 
 ### Examples
 

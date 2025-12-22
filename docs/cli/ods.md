@@ -53,13 +53,13 @@ b2c ods list
 
 ### Flags
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--realm` | `-r` | Filter by realm ID (four-letter ID) | |
-| `--filter-params` | | Raw filter parameters (e.g., "realm=abcd&state=started") | |
-| `--show-deleted` | | Include deleted sandboxes in the list | `false` |
-| `--columns` | `-c` | Columns to display (comma-separated) | |
-| `--extended` | `-x` | Show all columns including extended fields | `false` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--realm`, `-r` | Filter by realm ID (four-letter ID) | |
+| `--filter-params` | Raw filter parameters (e.g., "realm=abcd&state=started") | |
+| `--show-deleted` | Include deleted sandboxes in the list | `false` |
+| `--columns`, `-c` | Columns to display (comma-separated) | |
+| `--extended`, `-x` | Show all columns including extended fields | `false` |
 
 ### Available Columns
 
@@ -110,16 +110,16 @@ b2c ods create --realm <REALM>
 
 ### Flags
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--realm` | `-r` | (Required) Realm ID (four-letter ID) | |
-| `--ttl` | | Time to live in hours (0 for infinite) | `24` |
-| `--profile` | | Resource profile (medium, large, xlarge, xxlarge) | `medium` |
-| `--auto-scheduled` | | Enable automatic start/stop scheduling | `false` |
-| `--wait` | `-w` | Wait for sandbox to reach started or failed state | `false` |
-| `--poll-interval` | | Polling interval in seconds when using --wait | `10` |
-| `--timeout` | | Maximum wait time in seconds (0 for no timeout) | `600` |
-| `--set-permissions` | | Automatically set OCAPI and WebDAV permissions | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--realm`, `-r` | (Required) Realm ID (four-letter ID) | |
+| `--ttl` | Time to live in hours (0 for infinite) | `24` |
+| `--profile` | Resource profile (medium, large, xlarge, xxlarge) | `medium` |
+| `--auto-scheduled` | Enable automatic start/stop scheduling | `false` |
+| `--wait`, `-w` | Wait for sandbox to reach started or failed state | `false` |
+| `--poll-interval` | Polling interval in seconds when using --wait | `10` |
+| `--timeout` | Maximum wait time in seconds (0 for no timeout) | `600` |
+| `--set-permissions` | Automatically set OCAPI and WebDAV permissions | |
 
 ### Examples
 
@@ -324,9 +324,9 @@ b2c ods delete <SANDBOXID>
 
 ### Flags
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--force` | `-f` | Skip confirmation prompt | `false` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--force`, `-f` | Skip confirmation prompt | `false` |
 
 ### Examples
 

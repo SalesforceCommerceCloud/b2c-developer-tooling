@@ -80,12 +80,12 @@ b2c code deploy [CARTRIDGEPATH]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--reload` | `-r` | Reload (re-activate) code version after deploy | `false` |
-| `--delete` | | Delete existing cartridges before upload | `false` |
-| `--cartridge` | `-c` | Include specific cartridge(s) (can be repeated) | |
-| `--exclude-cartridge` | `-x` | Exclude specific cartridge(s) (can be repeated) | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--reload`, `-r` | Reload (re-activate) code version after deploy | `false` |
+| `--delete` | Delete existing cartridges before upload | `false` |
+| `--cartridge`, `-c` | Include specific cartridge(s) (can be repeated) | |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (can be repeated) | |
 
 ### Examples
 
@@ -154,9 +154,9 @@ b2c code activate [CODEVERSION]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--reload` | `-r` | Reload the code version (toggle activation to force reload) | `false` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--reload`, `-r` | Reload the code version (toggle activation to force reload) | `false` |
 
 ### Examples
 
@@ -207,9 +207,9 @@ b2c code delete CODEVERSION
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--force` | `-f` | Skip confirmation prompt | `false` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--force`, `-f` | Skip confirmation prompt | `false` |
 
 ### Examples
 
@@ -254,10 +254,10 @@ b2c code watch [CARTRIDGEPATH]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--cartridge` | `-c` | Include specific cartridge(s) (can be repeated) |
-| `--exclude-cartridge` | `-x` | Exclude specific cartridge(s) (can be repeated) |
+| Flag | Description |
+|------|-------------|
+| `--cartridge`, `-c` | Include specific cartridge(s) (can be repeated) |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (can be repeated) |
 
 ### Examples
 
