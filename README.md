@@ -59,12 +59,42 @@ pnpm --filter @salesforce/b2c-cli run build
 pnpm --filter @salesforce/b2c-tooling-sdk run build
 ```
 
-### Testing and Linting
+### Testing
+
+Tests use [Mocha](https://mochajs.org/) + [Chai](https://www.chaijs.com/) with [c8](https://github.com/bcoe/c8) for coverage. HTTP mocking uses [MSW](https://mswjs.io/).
 
 ```bash
-# Run all tests (also runs linter after tests)
+# Run all tests with coverage (also runs linter after tests)
 pnpm test
 
+# Run tests for a specific package
+pnpm --filter @salesforce/b2c-tooling-sdk run test
+
+# Run tests without coverage (faster)
+pnpm --filter @salesforce/b2c-tooling-sdk run test:unit
+
+# Watch mode for TDD
+pnpm --filter @salesforce/b2c-tooling-sdk run test:watch
+
+# Run a specific test file
+cd packages/b2c-tooling-sdk
+pnpm mocha "test/clients/webdav.test.ts"
+
+# Run tests matching a pattern
+pnpm mocha --grep "uploads a file" "test/**/*.test.ts"
+```
+
+#### Coverage
+
+Coverage reports are generated in each package's `coverage/` directory:
+- `coverage/index.html` - HTML report
+- `coverage/lcov.info` - LCOV format for CI integration
+
+The SDK package has a 5% coverage threshold that will fail the build if not met.
+
+### Linting
+
+```bash
 # Run linter only
 pnpm --filter @salesforce/b2c-cli run lint
 pnpm --filter @salesforce/b2c-tooling-sdk run lint

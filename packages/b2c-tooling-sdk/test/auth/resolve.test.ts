@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {checkAvailableAuthMethods} from '../../src/auth/resolve.js';
+import {checkAvailableAuthMethods} from '@salesforce/b2c-tooling-sdk/auth';
 
 describe('auth/resolve', () => {
   describe('checkAvailableAuthMethods', () => {

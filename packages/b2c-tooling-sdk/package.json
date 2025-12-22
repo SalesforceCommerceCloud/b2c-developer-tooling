@@ -166,6 +166,7 @@
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:watch": "mocha --watch \"test/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint"
   },
@@ -186,6 +187,7 @@
     "eslint-config-prettier": "^10",
     "eslint-plugin-prettier": "^5.5.4",
     "mocha": "^10.8.2",
+    "msw": "^2.12.4",
     "openapi-typescript": "^7.10.1",
     "prettier": "^3.6.2",
     "shx": "^0.3.3",
