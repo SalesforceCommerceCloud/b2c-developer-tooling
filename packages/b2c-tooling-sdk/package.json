@@ -164,6 +164,7 @@
     "format:check": "prettier --check src",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "mocha --forbid-only \"test/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint"
