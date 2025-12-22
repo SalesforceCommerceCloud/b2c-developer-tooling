@@ -38,6 +38,7 @@ await uploadCartridges(instance, './cartridges');
 ## Next Steps
 
 - [Installation](./installation) - Install the CLI
-- [Configuration](./configuration) - Configure authentication and instances
+- [Authentication Setup](./authentication) - Set up Account Manager, OCAPI, and WebDAV
+- [Configuration](./configuration) - Configure CLI options and instances
 - [CLI Reference](/cli/) - Browse available commands
 - [API Reference](/api/) - Explore the SDK API

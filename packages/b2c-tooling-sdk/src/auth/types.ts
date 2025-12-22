@@ -5,7 +5,7 @@
  */
 export interface AuthStrategy {
   /**
-   * Performs a fetch request.
+   * Performs a fetch request with authentication.
    * Implementations MUST handle header injection and 401 retries (token refresh) internally.
    */
   fetch(url: string, init?: RequestInit): Promise<Response>;

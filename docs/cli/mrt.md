@@ -6,11 +6,11 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles.
 
 These flags are available on all MRT commands:
 
-| Flag | Short | Environment Variable | Description |
-|------|-------|---------------------|-------------|
-| `--api-key` | | `SFCC_MRT_API_KEY` | MRT API key |
-| `--project` | `-p` | `SFCC_MRT_PROJECT` | MRT project slug |
-| `--environment` | `-e` | `SFCC_MRT_ENVIRONMENT` | Target environment (e.g., staging, production) |
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--api-key` | `SFCC_MRT_API_KEY` | MRT API key |
+| `--project`, `-p` | `SFCC_MRT_PROJECT` | MRT project slug |
+| `--environment`, `-e` | `SFCC_MRT_ENVIRONMENT` | Target environment (e.g., staging, production) |
 
 ### Configuration Sources
 
@@ -20,6 +20,40 @@ MRT commands resolve configuration in the following order of precedence:
 2. Environment variables
 3. `dw.json` file (`mrtProject`, `mrtEnvironment` fields)
 4. `~/.mobify` config file (for `api_key`)
+
+## Authentication
+
+MRT commands use API key authentication. The API key is configured in the Managed Runtime dashboard and grants access to specific projects.
+
+### Getting an API Key
+
+1. Log in to the [Managed Runtime dashboard](https://runtime.commercecloud.com/)
+2. Navigate to **Account Settings** > **API Keys**
+3. Create a new API key or use an existing one
+4. The API key grants access to all projects in your organization
+
+### Configuration
+
+Provide the API key via one of these methods (in order of precedence):
+
+1. **Command-line flag**: `--api-key your-api-key`
+2. **Environment variable**: `export SFCC_MRT_API_KEY=your-api-key`
+3. **Mobify config file**: `~/.mobify` with `api_key` field
+
+### Example ~/.mobify File
+
+```json
+{
+  "api_key": "your-mrt-api-key"
+}
+```
+
+### Project Access
+
+Your API key provides access to all projects in your MRT organization. Specify the project using:
+
+- `--project` flag or `SFCC_MRT_PROJECT` environment variable
+- `mrtProject` field in `dw.json`
 
 ---
 
@@ -39,15 +73,15 @@ b2c mrt push [FLAGS]
 
 In addition to [global MRT flags](#global-mrt-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--message` | `-m` | Bundle message/description | |
-| `--build-dir` | `-b` | Path to the build directory | `build` |
-| `--ssr-only` | | Glob patterns for server-only files (comma-separated) | `ssr.js,server/**/*` |
-| `--ssr-shared` | | Glob patterns for shared files (comma-separated) | `static/**/*,client/**/*` |
-| `--node-version` | `-n` | Node.js version for SSR runtime | `20.x` |
-| `--ssr-param` | | SSR parameter in key=value format (can be specified multiple times) | |
-| `--json` | | Output result as JSON | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--message`, `-m` | Bundle message/description | |
+| `--build-dir`, `-b` | Path to the build directory | `build` |
+| `--ssr-only` | Glob patterns for server-only files (comma-separated) | `ssr.js,server/**/*` |
+| `--ssr-shared` | Glob patterns for shared files (comma-separated) | `static/**/*,client/**/*` |
+| `--node-version`, `-n` | Node.js version for SSR runtime | `20.x` |
+| `--ssr-param` | SSR parameter in key=value format (can be specified multiple times) | |
+| `--json` | Output result as JSON | |
 
 ### Examples
 
@@ -109,19 +143,19 @@ b2c mrt env create SLUG [FLAGS]
 
 In addition to [global MRT flags](#global-mrt-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--name` | `-n` | Display name for the environment | **Required** |
-| `--region` | `-r` | AWS region for SSR deployment | |
-| `--production` | | Mark as a production environment | `false` |
-| `--hostname` | | Hostname pattern for V8 Tag loading | |
-| `--external-hostname` | | Full external hostname (e.g., www.example.com) | |
-| `--external-domain` | | External domain for Universal PWA SSR (e.g., example.com) | |
-| `--allow-cookies` | | Forward HTTP cookies to origin | `false` |
-| `--no-allow-cookies` | | Disable cookie forwarding | |
-| `--enable-source-maps` | | Enable source map support in the environment | `false` |
-| `--no-enable-source-maps` | | Disable source map support | |
-| `--json` | | Output result as JSON | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--name`, `-n` | Display name for the environment | **Required** |
+| `--region`, `-r` | AWS region for SSR deployment | |
+| `--production` | Mark as a production environment | `false` |
+| `--hostname` | Hostname pattern for V8 Tag loading | |
+| `--external-hostname` | Full external hostname (e.g., www.example.com) | |
+| `--external-domain` | External domain for Universal PWA SSR (e.g., example.com) | |
+| `--allow-cookies` | Forward HTTP cookies to origin | `false` |
+| `--no-allow-cookies` | Disable cookie forwarding | |
+| `--enable-source-maps` | Enable source map support in the environment | `false` |
+| `--no-enable-source-maps` | Disable source map support | |
+| `--json` | Output result as JSON | |
 
 ### Supported Regions
 
@@ -187,10 +221,10 @@ b2c mrt env delete SLUG [FLAGS]
 
 In addition to [global MRT flags](#global-mrt-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--force` | `-f` | Skip confirmation prompt | `false` |
-| `--json` | | Output result as JSON | |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--force`, `-f` | Skip confirmation prompt | `false` |
+| `--json` | Output result as JSON | |
 
 ### Examples
 
@@ -338,26 +372,4 @@ b2c mrt env var delete MY_VAR --project acme-storefront --environment production
 
 # Short form
 b2c mrt env var delete OLD_API_KEY -p my-project -e staging
-```
-
----
-
-## Authentication
-
-All MRT commands use API key authentication. You can provide credentials in several ways:
-
-1. **Command-line flag**: `--api-key your-api-key`
-2. **Environment variable**: `export SFCC_MRT_API_KEY=your-api-key`
-3. **Mobify config file**: `~/.mobify` with `api_key` field
-
-### Getting an API Key
-
-Obtain your MRT API key from the Managed Runtime dashboard in your Salesforce Commerce Cloud account.
-
-### Example ~/.mobify File
-
-```json
-{
-  "api_key": "your-mrt-api-key"
-}
 ```

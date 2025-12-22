@@ -25,3 +25,4 @@ docs/.vitepress/cache
 docs/api/
 
 dw.json
+dw.json*

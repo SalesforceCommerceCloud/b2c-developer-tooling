@@ -22,13 +22,13 @@ b2c job run JOBID
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--wait` | `-w` | Wait for job to complete | `false` |
-| `--timeout` | `-t` | Timeout in seconds when waiting | No timeout |
-| `--param` | `-P` | Job parameter in format "name=value" (repeatable) | |
-| `--no-wait-running` | | Do not wait for running job to finish before starting | `false` |
-| `--show-log` | | Show job log on failure | `true` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--wait`, `-w` | Wait for job to complete | `false` |
+| `--timeout`, `-t` | Timeout in seconds when waiting | No timeout |
+| `--param`, `-P` | Job parameter in format "name=value" (repeatable) | |
+| `--no-wait-running` | Do not wait for running job to finish before starting | `false` |
+| `--show-log` | Show job log on failure | `true` |
 
 ### Examples
 
@@ -76,11 +76,11 @@ b2c job wait JOBID EXECUTIONID
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--timeout` | `-t` | Timeout in seconds | No timeout |
-| `--poll-interval` | | Polling interval in seconds | `3` |
-| `--show-log` | | Show job log on failure | `true` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--timeout`, `-t` | Timeout in seconds | No timeout |
+| `--poll-interval` | Polling interval in seconds | `3` |
+| `--show-log` | Show job log on failure | `true` |
 
 ### Examples
 
@@ -115,14 +115,14 @@ b2c job search
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--job-id` | `-j` | Filter by job ID | |
-| `--status` | | Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR) | |
-| `--count` | `-n` | Maximum number of results | `25` |
-| `--start` | | Starting index for pagination | `0` |
-| `--sort-by` | | Sort by field (start_time, end_time, job_id, status) | `start_time` |
-| `--sort-order` | | Sort order (asc, desc) | `desc` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--job-id`, `-j` | Filter by job ID | |
+| `--status` | Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR) | |
+| `--count`, `-n` | Maximum number of results | `25` |
+| `--start` | Starting index for pagination | `0` |
+| `--sort-by` | Sort by field (start_time, end_time, job_id, status) | `start_time` |
+| `--sort-order` | Sort order (asc, desc) | `desc` |
 
 ### Examples
 
@@ -178,12 +178,12 @@ b2c job import TARGET
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--keep-archive` | `-k` | Keep archive on instance after import | `false` |
-| `--remote` | `-r` | Target is a filename already on the instance (in Impex/src/instance/) | `false` |
-| `--timeout` | `-t` | Timeout in seconds | No timeout |
-| `--show-log` | | Show job log on failure | `true` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--keep-archive`, `-k` | Keep archive on instance after import | `false` |
+| `--remote`, `-r` | Target is a filename already on the instance (in Impex/src/instance/) | `false` |
+| `--timeout`, `-t` | Timeout in seconds | No timeout |
+| `--show-log` | Show job log on failure | `true` |
 
 ### Examples
 
@@ -230,22 +230,22 @@ b2c job export
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--output` | `-o` | Output path for the export | `.` (current directory) |
-| `--data-units` | | Data units JSON configuration | |
-| `--site` | | Site ID(s) to export (comma-separated, repeatable) | |
-| `--site-data` | | Site data types to export (comma-separated) | |
-| `--global-data` | | Global data types to export (comma-separated) | |
-| `--catalog` | | Catalog ID(s) to export (comma-separated) | |
-| `--pricebook` | | Pricebook ID(s) to export (comma-separated) | |
-| `--library` | | Library ID(s) to export (comma-separated) | |
-| `--inventory` | | Inventory list ID(s) to export (comma-separated) | |
-| `--keep-archive` | `-k` | Keep archive on instance after download | `false` |
-| `--no-download` | | Do not download archive (implies --keep-archive) | `false` |
-| `--zip-only` | | Save as zip file without extracting | `false` |
-| `--timeout` | `-t` | Timeout in seconds | No timeout |
-| `--show-log` | | Show job log on failure | `true` |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--output`, `-o` | Output path for the export | `.` (current directory) |
+| `--data-units` | Data units JSON configuration | |
+| `--site` | Site ID(s) to export (comma-separated, repeatable) | |
+| `--site-data` | Site data types to export (comma-separated) | |
+| `--global-data` | Global data types to export (comma-separated) | |
+| `--catalog` | Catalog ID(s) to export (comma-separated) | |
+| `--pricebook` | Pricebook ID(s) to export (comma-separated) | |
+| `--library` | Library ID(s) to export (comma-separated) | |
+| `--inventory` | Inventory list ID(s) to export (comma-separated) | |
+| `--keep-archive`, `-k` | Keep archive on instance after download | `false` |
+| `--no-download` | Do not download archive (implies --keep-archive) | `false` |
+| `--zip-only` | Save as zip file without extracting | `false` |
+| `--timeout`, `-t` | Timeout in seconds | No timeout |
+| `--show-log` | Show job log on failure | `true` |
 
 ### Examples
 

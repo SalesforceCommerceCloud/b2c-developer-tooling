@@ -7,6 +7,7 @@ const guideSidebar = [
     items: [
       { text: 'Introduction', link: '/guide/' },
       { text: 'Installation', link: '/guide/installation' },
+      { text: 'Authentication Setup', link: '/guide/authentication' },
       { text: 'Configuration', link: '/guide/configuration' },
     ],
   },
@@ -15,9 +16,13 @@ const guideSidebar = [
     items: [
       { text: 'Overview', link: '/cli/' },
       { text: 'Code Commands', link: '/cli/code' },
+      { text: 'Job Commands', link: '/cli/jobs' },
       { text: 'Sites Commands', link: '/cli/sites' },
-      { text: 'Sandbox Commands', link: '/cli/sandbox' },
+      { text: 'WebDAV Commands', link: '/cli/webdav' },
+      { text: 'ODS Commands', link: '/cli/ods' },
       { text: 'MRT Commands', link: '/cli/mrt' },
+      { text: 'SLAS Commands', link: '/cli/slas' },
+      { text: 'Auth Commands', link: '/cli/auth' },
       { text: 'Logging', link: '/cli/logging' },
     ],
   },

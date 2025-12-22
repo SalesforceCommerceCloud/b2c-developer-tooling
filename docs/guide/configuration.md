@@ -2,6 +2,10 @@
 
 The B2C CLI supports multiple authentication methods and configuration options.
 
+::: tip
+For detailed setup instructions including Account Manager API client creation and OCAPI configuration, see the [Authentication Setup](./authentication) guide.
+:::
+
 ## Authentication Methods
 
 The CLI supports multiple auth methods that can be specified via the `--auth-methods` flag:

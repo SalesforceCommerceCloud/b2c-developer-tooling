@@ -112,6 +112,17 @@
         "default": "./dist/cjs/cli/index.js"
       }
     },
+    "./clients": {
+      "development": "./src/clients/index.ts",
+      "import": {
+        "types": "./dist/esm/clients/index.d.ts",
+        "default": "./dist/esm/clients/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/clients/index.d.ts",
+        "default": "./dist/cjs/clients/index.js"
+      }
+    },
     "./logging": {
       "development": "./src/logging/index.ts",
       "import": {
@@ -121,6 +132,17 @@
       "require": {
         "types": "./dist/cjs/logging/index.d.ts",
         "default": "./dist/cjs/logging/index.js"
+      }
+    },
+    "./errors": {
+      "development": "./src/errors/index.ts",
+      "import": {
+        "types": "./dist/esm/errors/index.d.ts",
+        "default": "./dist/esm/errors/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/errors/index.d.ts",
+        "default": "./dist/cjs/errors/index.js"
       }
     }
   },
@@ -151,6 +173,7 @@
     "@tony.ganchev/eslint-plugin-header": "^3.1.11",
     "@types/archiver": "^7.0.0",
     "@types/node": "^18.19.130",
+    "@types/xml2js": "^0.4.14",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
     "eslint-plugin-prettier": "^5.5.4",
@@ -182,6 +205,7 @@
     "open": "^11.0.0",
     "openapi-fetch": "^0.15.0",
     "pino": "^10.1.0",
-    "pino-pretty": "^13.1.2"
+    "pino-pretty": "^13.1.2",
+    "xml2js": "^0.6.2"
   }
 }

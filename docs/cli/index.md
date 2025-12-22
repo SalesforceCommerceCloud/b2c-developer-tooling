@@ -8,31 +8,39 @@ These flags are available on all commands that interact with B2C instances:
 
 ### Instance Flags
 
-| Flag | Short | Environment Variable | Description |
-|------|-------|---------------------|-------------|
-| `--server` | `-s` | `SFCC_SERVER` | B2C instance hostname |
-| `--webdav-server` | | `SFCC_WEBDAV_SERVER` | Separate WebDAV hostname (if different) |
-| `--code-version` | `-v` | `SFCC_CODE_VERSION` | Code version |
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--server`, `-s` | `SFCC_SERVER` | B2C instance hostname |
+| `--webdav-server` | `SFCC_WEBDAV_SERVER` | Secure WebDAV hostname |
+| `--code-version`, `-v` | `SFCC_CODE_VERSION` | Code version |
 
 ### Authentication Flags
 
-| Flag | Short | Environment Variable | Description |
-|------|-------|---------------------|-------------|
-| `--client-id` | | `SFCC_CLIENT_ID` | OAuth client ID |
-| `--client-secret` | | `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `--username` | `-u` | `SFCC_USERNAME` | Username for Basic Auth |
-| `--password` | `-p` | `SFCC_PASSWORD` | Password/access key for Basic Auth |
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
+| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
+| `--username`, `-u` | `SFCC_USERNAME` | Username for Basic Auth |
+| `--password`, `-p` | `SFCC_PASSWORD` | Password/access key for Basic Auth |
 
 ## Command Topics
+
+### Instance Operations
 
 - [Code Commands](./code) - Deploy cartridges and manage code versions
 - [Job Commands](./jobs) - Execute and monitor jobs, import/export site archives
 - [Sites Commands](./sites) - List and manage sites
-- [Sandbox Commands](./sandbox) - Create and manage sandboxes
-- [MRT Commands](./mrt) - Manage Managed Runtime environments
+- [WebDAV Commands](./webdav) - File operations on instance WebDAV
 
-## Configuration
+### Services
 
+- [ODS Commands](./ods) - Create and manage On-Demand Sandboxes (ODS)
+- [MRT Commands](./mrt) - Manage Managed Runtime (MRT) projects and deployments
+- [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
+
+### Utilities
+
+- [Auth Commands](./auth) - Authentication and token management
 - [Logging](./logging) - Log levels, output formats, and environment variables
 
 ## Getting Help

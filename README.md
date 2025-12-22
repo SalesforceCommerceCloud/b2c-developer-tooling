@@ -3,7 +3,7 @@
 [![CI](https://github.com/SalesforceCommerceCloud/b2c-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SalesforceCommerceCloud/b2c-cli/actions/workflows/ci.yml)
 
 > [!NOTE]
-> This project is currently in **Developer Preview** and will be open sourced in the future.
+> This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues and Unofficial Slack.
 
 Salesforce Commerce Cloud B2C Command Line Tools.
 
