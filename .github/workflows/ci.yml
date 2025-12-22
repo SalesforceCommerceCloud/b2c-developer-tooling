@@ -51,3 +51,30 @@ jobs:
 
       - name: Run tests and lint
         run: pnpm -r run test
+
+      - name: Generate coverage summary
+        if: always()
+        run: |
+          echo "## Code Coverage Report (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # SDK Coverage
+          if [ -f "packages/b2c-tooling-sdk/coverage/lcov.info" ]; then
+            echo "### @salesforce/b2c-tooling-sdk" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cd packages/b2c-tooling-sdk && pnpm c8 report --reporter=text-summary 2>/dev/null | tail -n 6 >> $GITHUB_STEP_SUMMARY
+            cd ../..
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # CLI Coverage
+          if [ -f "packages/b2c-cli/coverage/lcov.info" ]; then
+            echo "### @salesforce/b2c-cli" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cd packages/b2c-cli && pnpm c8 report --reporter=text-summary 2>/dev/null | tail -n 6 >> $GITHUB_STEP_SUMMARY
+            cd ../..
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi

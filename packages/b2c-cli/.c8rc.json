@@ -5,6 +5,6 @@
     "test/**",
     "**/*.d.ts"
   ],
-  "reporter": ["text", "html", "lcov"],
+  "reporter": ["text", "text-summary", "html", "lcov"],
   "report-dir": "coverage"
 }
