@@ -1,0 +1,106 @@
+{
+  "name": "@salesforce/b2c-dx-mcp",
+  "version": "0.0.0",
+  "description": "MCP server for B2C Commerce Cloud developer experience tools",
+  "author": "Salesforce",
+  "license": "MIT",
+  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
+  "keywords": [
+    "mcp",
+    "server",
+    "SFCC",
+    "B2C",
+    "Commerce Cloud",
+    "tooling"
+  ],
+  "type": "module",
+  "main": "dist/commands/mcp.js",
+  "types": "dist/commands/mcp.d.ts",
+  "bin": {
+    "b2c-dx-mcp": "bin/run.js"
+  },
+  "oclif": {
+    "bin": "b2c-dx-mcp",
+    "dirname": "b2c-dx-mcp",
+    "commands": {
+      "strategy": "single",
+      "target": "./dist/commands/mcp.js"
+    },
+    "topicSeparator": " "
+  },
+  "files": [
+    "bin",
+    "dist",
+    "oclif.manifest.json",
+    "!dist/**/*.map",
+    "!dist/**/*.test.*"
+  ],
+  "exports": {
+    ".": {
+      "development": "./src/commands/mcp.ts",
+      "import": {
+        "types": "./dist/commands/mcp.d.ts",
+        "default": "./dist/commands/mcp.js"
+      }
+    },
+    "./tools": {
+      "development": "./src/tools/index.ts",
+      "import": {
+        "types": "./dist/tools/index.d.ts",
+        "default": "./dist/tools/index.js"
+      }
+    },
+    "./utils": {
+      "development": "./src/utils/index.ts",
+      "import": {
+        "types": "./dist/utils/index.d.ts",
+        "default": "./dist/utils/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "shx rm -rf dist",
+    "lint": "eslint",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "preinspect": "pnpm run build",
+    "inspect": "mcp-inspector node bin/run.js -s all --allow-non-ga-tools",
+    "pretest": "tsc --noEmit -p test",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "posttest": "pnpm run lint",
+    "prepack": "oclif manifest",
+    "postpack": "shx rm -f oclif.manifest.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "@oclif/core": "^4",
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1",
+    "@eslint/js": "^9",
+    "@modelcontextprotocol/inspector": "^0.18.0",
+    "@oclif/prettier-config": "^0.2.1",
+    "@salesforce/dev-config": "^4.3.2",
+    "@types/chai": "^4",
+    "@types/mocha": "^10",
+    "@types/node": "^22.16.5",
+    "chai": "^4",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-prettier": "^5.5.4",
+    "mocha": "^10",
+    "oclif": "^4",
+    "prettier": "^3.6.2",
+    "shx": "^0.3.3",
+    "ts-node": "^10",
+    "tsx": "^4",
+    "typescript": "^5",
+    "typescript-eslint": "^8"
+  },
+  "engines": {
+    "node": ">=22.16.0"
+  }
+}

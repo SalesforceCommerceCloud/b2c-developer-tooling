@@ -2,10 +2,11 @@
 *-error.log
 **/.DS_Store
 /.idea
-/dist
+dist
 /tmp
-/node_modules
+node_modules
 oclif.manifest.json
+*.tsbuildinfo
 
 
 yarn.lock
