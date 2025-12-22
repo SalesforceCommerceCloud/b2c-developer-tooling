@@ -1,397 +1,200 @@
-@salesforce/b2c-cli
-=================
+# Salesforce Commerce Cloud B2C CLI
 
-A Salesforce Commerce Cloud B2C CLI
+> [!NOTE]
+> This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues.
 
+A command-line interface for Salesforce Commerce Cloud B2C.
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/@salesforce/b2c-cli.svg)](https://npmjs.org/package/@salesforce/b2c-cli)
 [![Downloads/week](https://img.shields.io/npm/dw/@salesforce/b2c-cli.svg)](https://npmjs.org/package/@salesforce/b2c-cli)
 
+## Installation
 
-<!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g @salesforce/b2c-cli
-$ b2c COMMAND
-running command...
-$ b2c (--version)
-@salesforce/b2c-cli/0.0.0 darwin-arm64 node-v22.20.0
-$ b2c --help [COMMAND]
-USAGE
-  $ b2c COMMAND
-...
-```
-<!-- usagestop -->
-# Commands
-<!-- commands -->
-* [`b2c hello PERSON`](#b2c-hello-person)
-* [`b2c hello world`](#b2c-hello-world)
-* [`b2c help [COMMAND]`](#b2c-help-command)
-* [`b2c plugins`](#b2c-plugins)
-* [`b2c plugins add PLUGIN`](#b2c-plugins-add-plugin)
-* [`b2c plugins:inspect PLUGIN...`](#b2c-pluginsinspect-plugin)
-* [`b2c plugins install PLUGIN`](#b2c-plugins-install-plugin)
-* [`b2c plugins link PATH`](#b2c-plugins-link-path)
-* [`b2c plugins remove [PLUGIN]`](#b2c-plugins-remove-plugin)
-* [`b2c plugins reset`](#b2c-plugins-reset)
-* [`b2c plugins uninstall [PLUGIN]`](#b2c-plugins-uninstall-plugin)
-* [`b2c plugins unlink [PLUGIN]`](#b2c-plugins-unlink-plugin)
-* [`b2c plugins update`](#b2c-plugins-update)
-
-## `b2c hello PERSON`
-
-Say hello
-
-```
-USAGE
-  $ b2c hello PERSON -f <value>
-
-ARGUMENTS
-  PERSON  Person to say hello to
-
-FLAGS
-  -f, --from=<value>  (required) Who is saying hello
-
-DESCRIPTION
-  Say hello
-
-EXAMPLES
-  $ b2c hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+```sh
+npm install -g @salesforce/b2c-cli
 ```
 
-_See code: [src/commands/hello/index.ts](https://github.com/SalesforceCommerceCloud/b2c-cli/blob/v0.0.0/src/commands/hello/index.ts)_
+## Usage
 
-## `b2c hello world`
-
-Say hello world
-
-```
-USAGE
-  $ b2c hello world
-
-DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ b2c hello world
-  hello world! (./src/commands/hello/world.ts)
+```sh
+b2c COMMAND
+b2c --help [COMMAND]
 ```
 
-_See code: [src/commands/hello/world.ts](https://github.com/SalesforceCommerceCloud/b2c-cli/blob/v0.0.0/src/commands/hello/world.ts)_
+## Configuration
 
-## `b2c help [COMMAND]`
+The CLI can be configured via command-line flags or environment variables:
 
-Display help for b2c.
+| Environment Variable | Description |
+|---------------------|-------------|
+| `SFCC_SERVER` | B2C instance hostname |
+| `SFCC_CODE_VERSION` | Code version |
+| `SFCC_CLIENT_ID` | OAuth client ID |
+| `SFCC_CLIENT_SECRET` | OAuth client secret |
+| `SFCC_USERNAME` | Username for WebDAV |
+| `SFCC_PASSWORD` | Password/access key for WebDAV |
 
-```
-USAGE
-  $ b2c help [COMMAND...] [-n]
+## Commands
 
-ARGUMENTS
-  [COMMAND...]  Command to show help for.
+### Code Management
 
-FLAGS
-  -n, --nested-commands  Include all nested commands in the output.
+Deploy and manage code versions on B2C Commerce instances.
 
-DESCRIPTION
-  Display help for b2c.
-```
+```sh
+# List code versions
+b2c code list
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.35/src/commands/help.ts)_
+# Deploy cartridges
+b2c code deploy --server my-sandbox.demandware.net --code-version v1
 
-## `b2c plugins`
+# Watch and sync changes during development
+b2c code watch
 
-List installed plugins.
+# Activate a code version
+b2c code activate v1
 
-```
-USAGE
-  $ b2c plugins [--json] [--core]
-
-FLAGS
-  --core  Show core plugins.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  List installed plugins.
-
-EXAMPLES
-  $ b2c plugins
+# Delete a code version
+b2c code delete old-version
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.53/src/commands/plugins/index.ts)_
+### Jobs and Site Import/Export
 
-## `b2c plugins add PLUGIN`
+Execute jobs and manage site archives.
 
-Installs a plugin into b2c.
+```sh
+# Run a job
+b2c job run my-job --wait
 
-```
-USAGE
-  $ b2c plugins add PLUGIN... [--json] [-f] [-h] [-s | -v]
+# Import a site archive
+b2c job import ./site-data.zip
 
-ARGUMENTS
-  PLUGIN...  Plugin to install.
+# Export site data
+b2c job export --global-data meta_data
 
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into b2c.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the B2C_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the B2C_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ b2c plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ b2c plugins add myplugin
-
-  Install a plugin from a github url.
-
-    $ b2c plugins add https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ b2c plugins add someuser/someplugin
+# Search job executions
+b2c job search --status RUNNING
 ```
 
-## `b2c plugins:inspect PLUGIN...`
+### On-Demand Sandboxes (ODS)
 
-Displays installation properties of a plugin.
+Create and manage on-demand sandboxes.
 
-```
-USAGE
-  $ b2c plugins inspect PLUGIN...
+```sh
+# List sandboxes
+b2c ods list
 
-ARGUMENTS
-  PLUGIN...  [default: .] Plugin to inspect.
+# Create a new sandbox
+b2c ods create
 
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
+# Get sandbox details
+b2c ods get <sandbox-id>
 
-GLOBAL FLAGS
-  --json  Format output as json.
+# Start/stop/restart a sandbox
+b2c ods start <sandbox-id>
+b2c ods stop <sandbox-id>
+b2c ods restart <sandbox-id>
 
-DESCRIPTION
-  Displays installation properties of a plugin.
-
-EXAMPLES
-  $ b2c plugins inspect myplugin
+# Delete a sandbox
+b2c ods delete <sandbox-id>
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.53/src/commands/plugins/inspect.ts)_
+### Managed Runtime (MRT)
 
-## `b2c plugins install PLUGIN`
+Manage MRT projects, environments, and deployments.
 
-Installs a plugin into b2c.
+```sh
+# Push a bundle
+b2c mrt push --project my-storefront --environment staging
 
-```
-USAGE
-  $ b2c plugins install PLUGIN... [--json] [-f] [-h] [-s | -v]
+# Create an environment
+b2c mrt env create staging --project my-storefront --name "Staging"
 
-ARGUMENTS
-  PLUGIN...  Plugin to install.
-
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into b2c.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the B2C_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the B2C_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ b2c plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ b2c plugins install myplugin
-
-  Install a plugin from a github url.
-
-    $ b2c plugins install https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ b2c plugins install someuser/someplugin
+# Manage environment variables
+b2c mrt env var list -p my-project -e staging
+b2c mrt env var set API_KEY=secret -p my-project -e staging
+b2c mrt env var delete OLD_KEY -p my-project -e staging
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.53/src/commands/plugins/install.ts)_
+### SLAS Client Management
 
-## `b2c plugins link PATH`
+Manage Shopper Login and API Security (SLAS) clients.
 
-Links a plugin into the CLI for development.
+```sh
+# List SLAS clients
+b2c slas client list
 
-```
-USAGE
-  $ b2c plugins link PATH [-h] [--install] [-v]
+# Create a client
+b2c slas client create --name "My App"
 
-ARGUMENTS
-  PATH  [default: .] path to plugin
+# Get client details
+b2c slas client get <client-id>
 
-FLAGS
-  -h, --help          Show CLI help.
-  -v, --verbose
-      --[no-]install  Install dependencies after linking the plugin.
+# Update a client
+b2c slas client update <client-id>
 
-DESCRIPTION
-  Links a plugin into the CLI for development.
-
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
-
-EXAMPLES
-  $ b2c plugins link myplugin
+# Delete a client
+b2c slas client delete <client-id>
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.53/src/commands/plugins/link.ts)_
+### WebDAV Operations
 
-## `b2c plugins remove [PLUGIN]`
+File operations on instance WebDAV.
 
-Removes a plugin from the CLI.
+```sh
+# List files
+b2c webdav ls /cartridges
 
-```
-USAGE
-  $ b2c plugins remove [PLUGIN...] [-h] [-v]
+# Upload/download files
+b2c webdav put local-file.txt /remote/path/
+b2c webdav get /remote/path/file.txt
 
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
+# Create directory
+b2c webdav mkdir /remote/new-dir
 
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
+# Delete files
+b2c webdav rm /remote/path/file.txt
 
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ b2c plugins unlink
-  $ b2c plugins remove
-
-EXAMPLES
-  $ b2c plugins remove myplugin
+# Archive operations
+b2c webdav zip /remote/dir archive.zip
+b2c webdav unzip /remote/archive.zip
 ```
 
-## `b2c plugins reset`
+### Sites
 
-Remove all user-installed and linked plugins.
+List and inspect storefront sites.
 
-```
-USAGE
-  $ b2c plugins reset [--hard] [--reinstall]
-
-FLAGS
-  --hard       Delete node_modules and package manager related files in addition to uninstalling plugins.
-  --reinstall  Reinstall all plugins after uninstalling.
+```sh
+b2c sites list
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.53/src/commands/plugins/reset.ts)_
+### Authentication
 
-## `b2c plugins uninstall [PLUGIN]`
+Get OAuth tokens for scripting.
 
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ b2c plugins uninstall [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ b2c plugins unlink
-  $ b2c plugins remove
-
-EXAMPLES
-  $ b2c plugins uninstall myplugin
+```sh
+b2c auth token
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.53/src/commands/plugins/uninstall.ts)_
+## Logging
 
-## `b2c plugins unlink [PLUGIN]`
+Control log output with flags or environment variables:
 
-Removes a plugin from the CLI.
+```sh
+# Debug logging
+b2c code deploy --log-level debug
+b2c code deploy -D  # shorthand
 
-```
-USAGE
-  $ b2c plugins unlink [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ b2c plugins unlink
-  $ b2c plugins remove
-
-EXAMPLES
-  $ b2c plugins unlink myplugin
+# JSON output for scripting
+b2c code deploy --json
 ```
 
-## `b2c plugins update`
+See the [documentation](https://verbose-adventure-1eqmr1r.pages.github.io/cli/logging) for more logging options.
 
-Update installed plugins.
+## Documentation
 
-```
-USAGE
-  $ b2c plugins update [-h] [-v]
+Full documentation is available at: https://verbose-adventure-1eqmr1r.pages.github.io/
 
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
+## License
 
-DESCRIPTION
-  Update installed plugins.
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.53/src/commands/plugins/update.ts)_
-<!-- commandsstop -->
+MIT

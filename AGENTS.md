@@ -20,6 +20,11 @@ pnpm --filter @salesforce/b2c-tooling-sdk run build
 # Run tests (includes linting)
 pnpm run test
 
+# Dev mode for CLI (uses source files directly)
+pnpm --filter @salesforce/b2c-cli run dev
+# or using convenience script
+./cli
+
 # Run tests for specific package
 pnpm --filter @salesforce/b2c-cli run test
 pnpm --filter @salesforce/b2c-tooling-sdk run test
@@ -29,9 +34,6 @@ pnpm run -r format
 
 # Lint only (without tests)
 pnpm run -r lint
-
-# Run CLI in development mode
-./packages/b2c-cli/bin/dev.js <command>
 ```
 
 ## Setup/Packaging
