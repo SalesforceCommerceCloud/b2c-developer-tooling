@@ -172,3 +172,15 @@ import { getLogger } from '@salesforce/b2c-tooling-sdk/logging';
 ```
 
 The `development` condition in exports enables direct TypeScript source resolution when using `--conditions=development`, which is how `bin/dev.js` works for local development.
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details on how to get started, submit pull requests, and our code of conduct.
+
+## Security
+
+For security concerns, please review our [Security Policy](./SECURITY.md). Report any security issues to [security@salesforce.com](mailto:security@salesforce.com).
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE.txt](./LICENSE.txt) for full details.
