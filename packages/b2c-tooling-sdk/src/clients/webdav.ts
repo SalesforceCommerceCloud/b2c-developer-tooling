@@ -11,6 +11,7 @@
  *
  * @module clients/webdav
  */
+import {parseStringPromise} from 'xml2js';
 import type {AuthStrategy} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
 
@@ -274,7 +275,7 @@ export class WebDavClient {
     }
 
     const xml = await response.text();
-    return this.parsePropfindResponse(xml);
+    return await this.parsePropfindResponse(xml);
   }
 
   /**
@@ -289,25 +290,40 @@ export class WebDavClient {
   }
 
   /**
-   * Parses PROPFIND XML response into structured entries.
+   * Parses PROPFIND XML response into structured entries using xml2js.
    */
-  private parsePropfindResponse(xml: string): PropfindEntry[] {
+  private async parsePropfindResponse(xml: string): Promise<PropfindEntry[]> {
     const entries: PropfindEntry[] = [];
 
-    // Simple regex-based parsing for WebDAV response
-    // Note: For production, consider using a proper XML parser
-    const responsePattern = /<D:response>([\s\S]*?)<\/D:response>/gi;
-    let match;
+    // Parse with xml2js, stripping namespace prefixes for easier access
+    const result = await parseStringPromise(xml, {
+      tagNameProcessors: [(name: string) => name.replace(/^[^:]+:/, '')], // Strip namespace prefix
+      explicitArray: false,
+    });
 
-    while ((match = responsePattern.exec(xml)) !== null) {
-      const responseXml = match[1];
+    // Get the multistatus root - may be 'multistatus' or 'D:multistatus' after processing
+    const multistatus = result.multistatus;
+    if (!multistatus) {
+      return entries;
+    }
 
-      const href = this.extractXmlValue(responseXml, 'D:href') || '';
-      const displayName = this.extractXmlValue(responseXml, 'D:displayname');
-      const isCollection = responseXml.includes('<D:collection');
-      const contentLength = this.extractXmlValue(responseXml, 'D:getcontentlength');
-      const lastModified = this.extractXmlValue(responseXml, 'D:getlastmodified');
-      const contentType = this.extractXmlValue(responseXml, 'D:getcontenttype');
+    // Get response array - may be single object or array
+    const responses = Array.isArray(multistatus.response) ? multistatus.response : [multistatus.response];
+
+    for (const response of responses) {
+      if (!response) continue;
+
+      const href = this.getXmlText(response.href) || '';
+      const propstat = response.propstat;
+      const prop = propstat?.prop;
+
+      if (!prop) continue;
+
+      const displayName = this.getXmlText(prop.displayname);
+      const isCollection = prop.resourcetype?.collection !== undefined;
+      const contentLength = this.getXmlText(prop.getcontentlength);
+      const lastModified = this.getXmlText(prop.getlastmodified);
+      const contentType = this.getXmlText(prop.getcontenttype);
 
       entries.push({
         href,
@@ -315,7 +331,7 @@ export class WebDavClient {
         isCollection,
         contentLength: contentLength ? parseInt(contentLength, 10) : undefined,
         lastModified: lastModified ? new Date(lastModified) : undefined,
-        contentType,
+        contentType: contentType && contentType !== 'null' ? contentType : undefined,
       });
     }
 
@@ -323,11 +339,15 @@ export class WebDavClient {
   }
 
   /**
-   * Extracts a value from XML by tag name.
+   * Extracts text content from an xml2js parsed value.
+   * Handles both string values and objects with '_' text content.
    */
-  private extractXmlValue(xml: string, tagName: string): string | undefined {
-    const pattern = new RegExp(`<${tagName}[^>]*>([^<]*)</${tagName}>`, 'i');
-    const match = pattern.exec(xml);
-    return match ? match[1] : undefined;
+  private getXmlText(value: unknown): string | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'string') return value || undefined;
+    if (typeof value === 'object' && '_' in (value as Record<string, unknown>)) {
+      return (value as Record<string, string>)._ || undefined;
+    }
+    return undefined;
   }
 }

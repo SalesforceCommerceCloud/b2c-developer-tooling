@@ -79,6 +79,9 @@
       "job": {
         "description": "Run jobs and import/export site archives"
       },
+      "webdav": {
+        "description": "WebDAV file operations (ls, get, put, rm, zip, unzip)"
+      },
       "mrt": {
         "description": "Manage Managed Runtime projects and deployments",
         "subtopics": {

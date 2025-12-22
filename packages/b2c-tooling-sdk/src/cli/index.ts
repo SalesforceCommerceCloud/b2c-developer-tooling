@@ -18,6 +18,7 @@
  * - {@link InstanceCommand} - Adds B2C Commerce instance configuration
  * - {@link CartridgeCommand} - Adds cartridge path configuration for code operations
  * - {@link JobCommand} - Adds job execution configuration
+ * - {@link WebDavCommand} - Adds WebDAV root directory configuration for file operations
  * - {@link MrtCommand} - Adds Managed Runtime API authentication
  * - {@link OdsCommand} - Adds On-Demand Sandbox configuration
  *
@@ -30,7 +31,8 @@
  *   └─ OAuthCommand (adds OAuth)
  *        └─ InstanceCommand (adds instance config)
  *             ├─ CartridgeCommand (adds cartridge paths)
- *             └─ JobCommand (adds job config)
+ *             ├─ JobCommand (adds job config)
+ *             └─ WebDavCommand (adds WebDAV root config)
  *        └─ MrtCommand (adds MRT API auth)
  *        └─ OdsCommand (adds ODS config)
  * ```
@@ -97,6 +99,8 @@ export {CartridgeCommand} from './cartridge-command.js';
 export {JobCommand} from './job-command.js';
 export {MrtCommand} from './mrt-command.js';
 export {OdsCommand} from './ods-command.js';
+export {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS} from './webdav-command.js';
+export type {WebDavRootKey} from './webdav-command.js';
 
 // Config utilities
 export {loadConfig, findDwJson} from './config.js';
