@@ -35,8 +35,6 @@ export default class WebDavMkdir extends WebDavCommand<typeof WebDavMkdir> {
 
     const fullPath = this.buildPath(this.args.path);
 
-    this.log(t('commands.webdav.mkdir.creating', 'Creating directory {{path}}...', {path: fullPath}));
-
     // Create all parent directories and the target directory
     await this.createDirectoryPath(fullPath);
 
@@ -45,9 +43,7 @@ export default class WebDavMkdir extends WebDavCommand<typeof WebDavMkdir> {
       created: true,
     };
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.webdav.mkdir.success', 'Created directory: {{path}}', {path: fullPath}));
-    }
+    this.log(t('commands.webdav.mkdir.success', 'Created: {{path}}', {path: fullPath}));
 
     return result;
   }

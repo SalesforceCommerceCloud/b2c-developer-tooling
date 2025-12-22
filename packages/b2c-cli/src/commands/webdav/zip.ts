@@ -37,7 +37,7 @@ export default class WebDavZip extends WebDavCommand<typeof WebDavZip> {
     const fullPath = this.buildPath(this.args.path);
     const archivePath = `${fullPath}.zip`;
 
-    this.log(t('commands.webdav.zip.zipping', 'Creating zip archive of {{path}}...', {path: fullPath}));
+    this.log(t('commands.webdav.zip.zipping', 'Zipping {{path}}...', {path: fullPath}));
 
     const response = await this.instance.webdav.request(fullPath, {
       method: 'POST',
@@ -57,9 +57,7 @@ export default class WebDavZip extends WebDavCommand<typeof WebDavZip> {
       archivePath,
     };
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.webdav.zip.success', 'Created archive: {{path}}', {path: archivePath}));
-    }
+    this.log(t('commands.webdav.zip.success', 'Created archive: {{path}}', {path: archivePath}));
 
     return result;
   }

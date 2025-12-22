@@ -58,14 +58,12 @@ export default class WebDavGet extends WebDavCommand<typeof WebDavGet> {
       size: buffer.length,
     };
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.webdav.get.success', 'Downloaded {{size}} bytes to {{path}}', {
-          size: result.size,
-          path: result.localPath,
-        }),
-      );
-    }
+    this.log(
+      t('commands.webdav.get.success', 'Downloaded {{size}} bytes to {{path}}', {
+        size: result.size,
+        path: result.localPath,
+      }),
+    );
 
     return result;
   }

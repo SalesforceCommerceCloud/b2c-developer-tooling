@@ -107,14 +107,12 @@ export default class WebDavPut extends WebDavCommand<typeof WebDavPut> {
       contentType,
     };
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.webdav.put.success', 'Uploaded {{size}} bytes to {{path}}', {
-          size: result.size,
-          path: result.remotePath,
-        }),
-      );
-    }
+    this.log(
+      t('commands.webdav.put.success', 'Uploaded {{size}} bytes to {{path}}', {
+        size: result.size,
+        path: result.remotePath,
+      }),
+    );
 
     return result;
   }

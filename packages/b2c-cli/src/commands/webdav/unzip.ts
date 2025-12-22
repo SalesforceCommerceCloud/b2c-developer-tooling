@@ -61,9 +61,7 @@ export default class WebDavUnzip extends WebDavCommand<typeof WebDavUnzip> {
       extractPath,
     };
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.webdav.unzip.success', 'Extracted to: {{path}}', {path: extractPath}));
-    }
+    this.log(t('commands.webdav.unzip.success', 'Extracted to: {{path}}', {path: extractPath}));
 
     return result;
   }

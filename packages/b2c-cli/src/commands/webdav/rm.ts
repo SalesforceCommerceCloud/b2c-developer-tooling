@@ -74,8 +74,6 @@ export default class WebDavRm extends WebDavCommand<typeof WebDavRm> {
       }
     }
 
-    this.log(t('commands.webdav.rm.deleting', 'Deleting {{path}}...', {path: fullPath}));
-
     await this.instance.webdav.delete(fullPath);
 
     const result: RmResult = {
@@ -83,9 +81,7 @@ export default class WebDavRm extends WebDavCommand<typeof WebDavRm> {
       deleted: true,
     };
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.webdav.rm.success', 'Deleted {{path}}', {path: fullPath}));
-    }
+    this.log(t('commands.webdav.rm.success', 'Deleted: {{path}}', {path: fullPath}));
 
     return result;
   }

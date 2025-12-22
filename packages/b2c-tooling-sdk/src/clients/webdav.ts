@@ -13,6 +13,7 @@
  */
 import {parseStringPromise} from 'xml2js';
 import type {AuthStrategy} from '../auth/types.js';
+import {HTTPError} from '../errors/http-error.js';
 import {getLogger} from '../logging/logger.js';
 
 /**
@@ -66,8 +67,11 @@ export class WebDavClient {
 
   /**
    * Builds the full URL for a WebDAV path.
+   *
+   * @param path - Path relative to /webdav/Sites/
+   * @returns Full URL
    */
-  private buildUrl(path: string): string {
+  buildUrl(path: string): string {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     return `${this.baseUrl}/${cleanPath}`;
   }
@@ -167,8 +171,7 @@ export class WebDavClient {
 
     // 201 = created, 405 = already exists (acceptable)
     if (!response.ok && response.status !== 405) {
-      const text = await response.text();
-      throw new Error(`MKCOL failed: ${response.status} ${response.statusText} - ${text}`);
+      throw new HTTPError(`MKCOL failed: ${response.status} ${response.statusText}`, response, 'MKCOL');
     }
   }
 
@@ -188,15 +191,10 @@ export class WebDavClient {
       headers['Content-Type'] = contentType;
     }
 
-    const response = await this.request(path, {
-      method: 'PUT',
-      headers,
-      body: content,
-    });
+    const response = await this.request(path, {method: 'PUT', headers, body: content});
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`PUT failed: ${response.status} ${response.statusText} - ${text}`);
+      throw new HTTPError(`PUT failed: ${response.status} ${response.statusText}`, response, 'PUT');
     }
   }
 
@@ -213,7 +211,7 @@ export class WebDavClient {
     const response = await this.request(path, {method: 'GET'});
 
     if (!response.ok) {
-      throw new Error(`GET failed: ${response.status} ${response.statusText}`);
+      throw new HTTPError(`GET failed: ${response.status} ${response.statusText}`, response, 'GET');
     }
 
     return response.arrayBuffer();
@@ -223,6 +221,7 @@ export class WebDavClient {
    * Deletes a file or directory.
    *
    * @param path - Path to delete
+   * @throws Error if the path doesn't exist (404) or deletion fails
    *
    * @example
    * await client.delete('Cartridges/v1/old-cartridge');
@@ -230,10 +229,8 @@ export class WebDavClient {
   async delete(path: string): Promise<void> {
     const response = await this.request(path, {method: 'DELETE'});
 
-    // 404 is acceptable (already deleted)
-    if (!response.ok && response.status !== 404) {
-      const text = await response.text();
-      throw new Error(`DELETE failed: ${response.status} ${response.statusText} - ${text}`);
+    if (!response.ok) {
+      throw new HTTPError(`DELETE failed: ${response.status} ${response.statusText}`, response, 'DELETE');
     }
   }
 
@@ -270,8 +267,7 @@ export class WebDavClient {
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`PROPFIND failed: ${response.status} ${response.statusText} - ${text}`);
+      throw new HTTPError(`PROPFIND failed: ${response.status} ${response.statusText}`, response, 'PROPFIND');
     }
 
     const xml = await response.text();

@@ -133,6 +133,17 @@
         "types": "./dist/cjs/logging/index.d.ts",
         "default": "./dist/cjs/logging/index.js"
       }
+    },
+    "./errors": {
+      "development": "./src/errors/index.ts",
+      "import": {
+        "types": "./dist/esm/errors/index.d.ts",
+        "default": "./dist/esm/errors/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/errors/index.d.ts",
+        "default": "./dist/cjs/errors/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
