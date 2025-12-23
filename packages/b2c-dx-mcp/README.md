@@ -14,22 +14,29 @@ npm install -g @salesforce/b2c-dx-mcp
 
 ## Configuration
 
-The server needs B2C Commerce credentials, provided via **environment variables** or a **`dw.json` file**.
+Tools that interact with B2C Commerce instances (e.g., MRT, SCAPI, cartridge deployment) require credentials, which can be provided via **environment variables**, a **`.env` file**, a **`dw.json` file**, or the **`--config`** flag. Local tools (e.g., scaffolding, development guidelines) work without configuration.
+
+**Priority order** (highest to lowest):
+1. Environment variables (`SFCC_*`) — includes `.env` file if present (shell env vars override `.env`)
+2. `dw.json` file (auto-discovered or via `--config`)
 
 ### Option 1: Environment Variables
 
+Set environment variables directly or create a `.env` file in your project root:
+
 ```bash
-export SFCC_HOSTNAME="your-sandbox.demandware.net"
-export SFCC_USERNAME="your.username"
-export SFCC_PASSWORD="your-access-key"
-export SFCC_CLIENT_ID="your-client-id"
-export SFCC_CLIENT_SECRET="your-client-secret"
-export SFCC_CODE_VERSION="version1"
+# .env file or shell exports
+SFCC_HOSTNAME="your-sandbox.demandware.net"
+SFCC_USERNAME="your.username"
+SFCC_PASSWORD="your-access-key"
+SFCC_CLIENT_ID="your-client-id"
+SFCC_CLIENT_SECRET="your-client-secret"
+SFCC_CODE_VERSION="version1"
 ```
 
 ### Option 2: dw.json File
 
-Create a `dw.json` file (auto-discovered from current directory):
+Create a `dw.json` file in your project root (auto-discovered by searching upward from current working directory):
 
 ```json
 {
@@ -205,7 +212,7 @@ Or use pnpm's filter flag from the monorepo root:
 pnpm --filter @salesforce/b2c-dx-mcp run <script>
 ```
 
-### Testing the MCP Server
+### Testing the MCP Server Locally
 
 #### 1. MCP Inspector
 
