@@ -4,7 +4,7 @@ MCP (Model Context Protocol) server for Salesforce B2C Commerce Cloud developer 
 
 ## Overview
 
-This package provides an MCP server that exposes B2C Commerce operations as tools for AI assistants. It wraps functionality from `@salesforce/b2c-tooling-sdk` and is built with [oclif](https://oclif.io/) for robust CLI handling with auto-generated help and environment variable support.
+This package provides an MCP server that exposes B2C Commerce developer tools for AI assistants. Built with [oclif](https://oclif.io/) for robust CLI handling with auto-generated help and environment variable support.
 
 ## Installation
 
