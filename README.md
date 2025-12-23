@@ -183,4 +183,4 @@ For security concerns, please review our [Security Policy](./SECURITY.md). Repor
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE.txt](./LICENSE.txt) for full details.
+This project is licensed under the Apache License 2.0. See [LICENSE.txt](./LICENSE.txt) for full details.
