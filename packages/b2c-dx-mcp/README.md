@@ -2,6 +2,8 @@
 
 MCP (Model Context Protocol) server for Salesforce B2C Commerce Cloud developer experience tools.
 
+> ⚠️ **Active Development**: This package is under active development. All tools are currently **placeholder implementations** that return mock responses. Tool implementations will be added incrementally.
+
 ## Overview
 
 This package provides an MCP server that exposes B2C Commerce developer tools for AI assistants. Built with [oclif](https://oclif.io/) for robust CLI handling with auto-generated help and environment variable support.
@@ -87,22 +89,27 @@ Add to `claude_desktop_config.json`:
 
 Use `--toolsets all` to enable all toolsets, or select specific ones with `--toolsets CARTRIDGES,MRT`.
 
+> **Note:** All tools are currently placeholder implementations. Use `--allow-non-ga-tools` flag to enable them.
+
 #### CARTRIDGES
 Code deployment and version management.
+- **Status:** 🚧 Placeholder
 
 | Tool | Description |
 |------|-------------|
 | `cartridge_deploy` | Deploy cartridges to a B2C Commerce instance |
 
 #### MRT
-Managed Runtime operations.
+Managed Runtime operations for PWA Kit and Storefront Next deployments.
+- **Status:** 🚧 Placeholder
 
 | Tool | Description |
 |------|-------------|
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 #### PWAV3
-PWA Kit v3 development tools.
+PWA Kit v3 development tools for building headless storefronts.
+- **Status:** 🚧 Placeholder
 
 | Tool | Description |
 |------|-------------|
@@ -120,6 +127,7 @@ PWA Kit v3 development tools.
 
 #### SCAPI
 Salesforce Commerce API discovery and exploration.
+- **Status:** 🚧 Placeholder
 
 | Tool | Description |
 |------|-------------|
@@ -128,7 +136,8 @@ Salesforce Commerce API discovery and exploration.
 | `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
 
 #### STOREFRONTNEXT
-Storefront Next development tools.
+Storefront Next development tools for building modern storefronts.
+- **Status:** 🚧 Placeholder
 
 | Tool | Description |
 |------|-------------|
