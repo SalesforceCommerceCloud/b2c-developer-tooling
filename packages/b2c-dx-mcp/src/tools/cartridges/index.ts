@@ -96,4 +96,3 @@ export function createCartridgesTools(services: Services): McpTool[] {
     ),
   ];
 }
-

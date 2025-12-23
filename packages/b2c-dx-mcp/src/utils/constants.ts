@@ -22,7 +22,13 @@ export const ALL_TOOLSETS = "ALL";
 /**
  * Available toolsets that can be enabled.
  */
-export const TOOLSETS = ["CARTRIDGES", "MRT", "PWAV3", "SCAPI", "STOREFRONTNEXT"] as const;
+export const TOOLSETS = [
+  "CARTRIDGES",
+  "MRT",
+  "PWAV3",
+  "SCAPI",
+  "STOREFRONTNEXT",
+] as const;
 
 /**
  * Valid toolset names including the special "ALL" value.

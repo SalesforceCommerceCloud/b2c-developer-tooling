@@ -62,4 +62,3 @@ export interface StartupFlags {
   /** Path to dw.json configuration */
   dwJsonPath?: string;
 }
-

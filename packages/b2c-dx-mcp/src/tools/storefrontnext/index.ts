@@ -120,4 +120,3 @@ export function createStorefrontNextTools(services: Services): McpTool[] {
     ),
   ];
 }
-

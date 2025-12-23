@@ -209,5 +209,4 @@ export default class McpServerCommand extends Command {
       `   Enabled: ${(startupFlags.toolsets ?? []).join(", ") || "(none specified)"}`,
     );
   }
-
 }

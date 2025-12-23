@@ -64,10 +64,10 @@ export class B2CDxMcpServer extends McpServer {
    * Connect to a transport.
    */
   public override async connect(transport: Transport): Promise<void> {
-      await super.connect(transport);
-      if (!this.isConnected()) {
-        // TODO: Telemetry - Send SERVER_START_ERROR event with "Server not connected"
-      }
+    await super.connect(transport);
+    if (!this.isConnected()) {
+      // TODO: Telemetry - Send SERVER_START_ERROR event with "Server not connected"
+    }
     // TODO: Telemetry - wrap with try/catch to send SERVER_START_ERROR event with error details
   }
 

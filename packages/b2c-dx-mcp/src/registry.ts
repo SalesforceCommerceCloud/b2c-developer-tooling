@@ -115,7 +115,8 @@ export async function registerToolsets(
 
   // Validate --toolsets names
   const invalidToolsets = toolsets.filter(
-    (t) => !VALID_TOOLSET_NAMES.includes(t as (typeof VALID_TOOLSET_NAMES)[number]),
+    (t) =>
+      !VALID_TOOLSET_NAMES.includes(t as (typeof VALID_TOOLSET_NAMES)[number]),
   );
   if (invalidToolsets.length > 0) {
     console.error(

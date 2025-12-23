@@ -82,4 +82,3 @@ function createMrtBundlePushTool(_services: Services): McpTool {
 export function createMrtTools(services: Services): McpTool[] {
   return [createMrtBundlePushTool(services)];
 }
-

@@ -108,12 +108,43 @@ Add to `claude_desktop_config.json`:
 
 ### Available Toolsets
 
-- **CARTRIDGES** - Code deployment and version management
-- **MRT** - Managed Runtime operations
-- **PWAV3** - PWA Kit v3 development tools
-- **STOREFRONTNEXT** - Storefront Next development tools
+| Toolset | Description |
+|---------|-------------|
+| `CARTRIDGES` | Code deployment and version management |
+| `MRT` | Managed Runtime operations |
+| `PWAV3` | PWA Kit v3 development tools |
+| `SCAPI` | Salesforce Commerce API discovery and exploration |
+| `STOREFRONTNEXT` | Storefront Next development tools |
 
 Use `--toolsets all` to enable all available toolsets.
+
+### Available Tools
+
+| Tool | Description | Toolsets |
+|------|-------------|----------|
+| `code_upload` | Upload cartridges to a B2C Commerce instance | CARTRIDGES |
+| `code_list` | List all code versions on a B2C Commerce instance | CARTRIDGES |
+| `code_activate` | Activate a code version on a B2C Commerce instance | CARTRIDGES |
+| `mrt_bundle_push` | Deploy a bundle to Managed Runtime | MRT, PWAV3, STOREFRONTNEXT |
+| `pwakit_create_storefront` | Create a new PWA Kit storefront project | PWAV3 |
+| `pwakit_create_page` | Create a new page component in PWA Kit project | PWAV3 |
+| `pwakit_create_component` | Create a new React component in PWA Kit project | PWAV3 |
+| `pwakit_get_dev_guidelines` | Get PWA Kit development guidelines and best practices | PWAV3 |
+| `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases | PWAV3 |
+| `pwakit_run_site_test` | Run site tests for PWA Kit project | PWAV3 |
+| `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development | PWAV3 |
+| `pwakit_explore_scapi_shop_api` | Explore SCAPI Shop API endpoints and capabilities | PWAV3 |
+| `scapi_discovery` | Discover available SCAPI endpoints and capabilities | PWAV3, SCAPI, STOREFRONTNEXT |
+| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API | SCAPI |
+| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints | PWAV3, SCAPI, STOREFRONTNEXT |
+| `sfnext_development_guidelines` | Get Storefront Next development guidelines and best practices | STOREFRONTNEXT |
+| `sfnext_site_theming` | Configure and manage site theming for Storefront Next | STOREFRONTNEXT |
+| `sfnext_figma_to_component_workflow` | Convert Figma designs to Storefront Next components | STOREFRONTNEXT |
+| `sfnext_generate_component` | Generate a new Storefront Next component | STOREFRONTNEXT |
+| `sfnext_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration | STOREFRONTNEXT |
+| `sfnext_design_decorator` | Apply design decorators to Storefront Next components | STOREFRONTNEXT |
+| `sfnext_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components | STOREFRONTNEXT |
+
 
 ## Development
 
@@ -123,19 +154,22 @@ Use `--toolsets all` to enable all available toolsets.
 # Install dependencies (from monorepo root)
 pnpm install
 
-# Build
+# Navigate to the package directory
+cd packages/b2c-dx-mcp
+
+# Build the package
 pnpm run build
 
 # Run tests (includes linting)
 pnpm run test
 
+# Launch MCP Inspector (builds first, then opens web UI)
+pnpm run inspect
+
 # Format code
 pnpm run format
 
-# Check formatting (CI)
-pnpm run format:check
-
-# Run linter
+# Run linter only
 pnpm run lint
 
 # Clean build artifacts
@@ -158,7 +192,7 @@ pnpm --filter @salesforce/b2c-dx-mcp run <script>
 
 ### Testing the MCP Server
 
-#### 1. MCP Inspector (Recommended)
+#### 1. MCP Inspector
 
 Use MCP Inspector to browse tools and test them in a web UI:
 
@@ -177,7 +211,7 @@ npx mcp-inspector --cli node bin/run.js -s all --allow-non-ga-tools --method too
 # Call a specific tool
 npx mcp-inspector --cli node bin/run.js -s all --allow-non-ga-tools \
   --method tools/call \
-  --tool-name code_list
+  --tool-name sfnext_design_decorator
 ```
 
 #### 2. IDE Integration
@@ -225,16 +259,6 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/run.js -s all
 # Call a specific tool
 echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"code_list","arguments":{}}}' | node bin/run.js -s all
 ```
-
-### Useful Commands
-
-| Command | Description |
-|---------|-------------|
-| `pnpm run build` | Compile TypeScript to JavaScript |
-| `pnpm run inspect` | Start MCP Inspector web UI |
-| `pnpm run lint` | Run ESLint |
-| `pnpm run format` | Format code with Prettier |
-| `pnpm run clean` | Remove compiled files |
 
 ## License
 
