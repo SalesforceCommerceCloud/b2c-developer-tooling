@@ -10,59 +10,7 @@ This package provides an MCP server that exposes B2C Commerce developer tools fo
 
 ## Usage
 
-Configure your AI assistant to use this MCP server. Since the package is not yet published to npm, use the local development setup below. See the [Development](#development) section for setup instructions.
-
-### Cursor
-
-Add to `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "all"]
-    }
-  }
-}
-```
-
-### Claude Desktop
-
-Add to `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "all"]
-    }
-  }
-}
-```
-
-### Configuration Examples
-
-```json
-// Enable specific toolsets
-"args": ["--toolsets", "CARTRIDGES,JOBS"]
-
-// Enable specific tools
-"args": ["--tools", "cartridge_deploy,mrt_bundle_push"]
-
-// Combine toolsets and tools
-"args": ["--toolsets", "CARTRIDGES", "--tools", "job_run"]
-
-// Explicit config file path
-"args": ["--toolsets", "all", "--config", "/path/to/dw.json"]
-
-// Enable experimental tools
-"args": ["--toolsets", "all", "--allow-non-ga-tools"]
-
-// Enable debug logging
-"args": ["--toolsets", "all", "--debug"]
-```
+Since the package is not yet published to npm, see the [Development](#development) section for local setup instructions.
 
 ### Supported Flags
 
@@ -84,6 +32,28 @@ Add to `claude_desktop_config.json`:
 | `--debug` | Enable debug logging |
 | `--json` | Output logs as JSON lines |
 | `--lang` | Language for messages |
+
+### Configuration Examples
+
+```json
+// Enable specific toolsets
+"args": ["--toolsets", "CARTRIDGES,MRT"]
+
+// Enable specific tools
+"args": ["--tools", "cartridge_deploy,mrt_bundle_push"]
+
+// Combine toolsets and tools
+"args": ["--toolsets", "CARTRIDGES", "--tools", "mrt_bundle_push"]
+
+// Explicit config file path
+"args": ["--toolsets", "all", "--config", "/path/to/dw.json"]
+
+// Enable experimental tools (required for placeholder tools)
+"args": ["--toolsets", "all", "--allow-non-ga-tools"]
+
+// Enable debug logging
+"args": ["--toolsets", "all", "--debug"]
+```
 
 ### Available Toolsets and Tools
 
