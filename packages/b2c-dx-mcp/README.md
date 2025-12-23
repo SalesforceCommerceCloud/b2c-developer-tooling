@@ -90,21 +90,36 @@ Add to `claude_desktop_config.json`:
 // Combine toolsets and tools
 "args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "CARTRIDGES", "--tools", "job_run"]
 
-// Explicit dw.json path
-"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all", "--dw-json", "/path/to/dw.json"]
+// Explicit config file path
+"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all", "--config", "/path/to/dw.json"]
 
 // Enable experimental tools
 "args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all", "--allow-non-ga-tools"]
+
+// Enable debug logging
+"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all", "--debug"]
 ```
 
 ### Supported Flags
+
+#### MCP-Specific Flags
 
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--toolsets` | `-s` | Comma-separated toolsets to enable (case-insensitive) |
 | `--tools` | `-t` | Comma-separated individual tools to enable (case-insensitive) |
 | `--allow-non-ga-tools` | | Enable experimental (non-GA) tools |
-| `--dw-json` | | Path to dw.json (optional, auto-discovered) |
+
+#### Global Flags (inherited from SDK)
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--config` | | Path to dw.json config file (auto-discovered if not provided) |
+| `--instance` | `-i` | Instance name from configuration file |
+| `--log-level` | | Set logging verbosity (trace, debug, info, warn, error, silent) |
+| `--debug` | `-D` | Enable debug logging |
+| `--json` | | Output logs as JSON lines |
+| `--lang` | `-L` | Language for messages |
 
 ### Available Toolsets
 
@@ -216,37 +231,35 @@ npx mcp-inspector --cli node bin/run.js -s all --allow-non-ga-tools \
 
 #### 2. IDE Integration
 
-Configure your IDE to use the local build. First, build the package:
+Configure your IDE to use the local server. Choose development mode (no build required) or production mode (requires build).
 
-```bash
-pnpm run build
-```
+**Development Mode** (recommended for active development - uses TypeScript source directly):
 
-**Cursor** (`.cursor/mcp.json`):
 ```json
 {
   "mcpServers": {
     "b2c-dx-local": {
-      "command": "node",
-      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/run.js", "-s", "all"]
+      "command": "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["-s", "all"]
     }
   }
 }
 ```
 
-**Claude Desktop** (`claude_desktop_config.json`):
+**Production Mode** (uses compiled JavaScript - run `pnpm run build` first):
+
 ```json
 {
   "mcpServers": {
     "b2c-dx-local": {
-      "command": "node",
-      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/run.js", "-s", "all"]
+      "command": "/full/path/to/packages/b2c-dx-mcp/bin/run.js",
+      "args": ["-s", "all"]
     }
   }
 }
 ```
 
-> **Note:** After making code changes, run `pnpm run build` and restart your IDE to pick up the changes.
+> **Note:** For production mode, run `pnpm run build` after code changes and restart your IDE. Development mode picks up changes automatically.
 
 #### 3. JSON-RPC via stdin
 

@@ -22,18 +22,18 @@ import * as os from "node:os";
  * Services class that provides utilities for MCP tools.
  *
  * Tools should use `@salesforce/b2c-tooling-sdk` for auth and config:
- * - `loadDwJson({ path: services.dwJsonPath })` for configuration
+ * - `loadDwJson({ path: services.configPath })` for configuration
  * - `resolveAuthStrategy()` for authentication
  */
 export class Services {
   /**
-   * Optional explicit path to dw.json.
+   * Optional explicit path to config file (dw.json format).
    * If undefined, SDK's `loadDwJson()` will auto-discover it.
    */
-  public readonly dwJsonPath?: string;
+  public readonly configPath?: string;
 
-  public constructor(opts: { dwJsonPath?: string } = {}) {
-    this.dwJsonPath = opts.dwJsonPath;
+  public constructor(opts: { configPath?: string } = {}) {
+    this.configPath = opts.configPath;
   }
 
   // ============================================

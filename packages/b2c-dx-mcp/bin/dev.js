@@ -1,32 +1,31 @@
-#!/usr/bin/env -S node --loader ts-node/esm --disable-warning=ExperimentalWarning
+#!/usr/bin/env -S node --conditions development --import tsx
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/* global process */
 
 /**
  * Development entry point for MCP server using oclif.
  *
  * This uses oclif's development mode which:
- * - Uses TypeScript source directly (via ts-node/esm loader in shebang)
+ * - Uses TypeScript source directly (via tsx loader in shebang)
  * - Supports the 'development' condition for exports
+ * - Loads .env file if present for local configuration
  * - Provides better error messages and stack traces
  *
- * Run directly: ./bin/dev.js -s all
- * Or with node: node bin/dev.js -s all (uses compiled dist/ files)
+ * Run directly: ./bin/dev.js mcp -s all
+ * Or with node: node --conditions development --import tsx bin/dev.js mcp -s all
  */
 
-import { execute } from "@oclif/core";
+// Load .env file if present (Node.js native support)
+try {
+  process.loadEnvFile();
+} catch {
+  // .env file not found or not readable, continue without it
+}
 
-await execute({ development: true, dir: import.meta.url });
+import {execute} from '@oclif/core';
+
+await execute({development: true, dir: import.meta.url});

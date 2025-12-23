@@ -47,8 +47,20 @@ describe("McpServerCommand", () => {
       expect(flag.default).to.equal(false);
     });
 
-    it("should define dw-json flag", () => {
-      const flag = McpServerCommand.flags["dw-json"];
+    it("should inherit config flag from BaseCommand", () => {
+      // config flag is inherited from BaseCommand.baseFlags
+      const flag = McpServerCommand.baseFlags.config;
+      expect(flag).to.not.be.undefined;
+    });
+
+    it("should inherit debug flag from BaseCommand", () => {
+      const flag = McpServerCommand.baseFlags.debug;
+      expect(flag).to.not.be.undefined;
+      expect(flag.char).to.equal("D");
+    });
+
+    it("should inherit log-level flag from BaseCommand", () => {
+      const flag = McpServerCommand.baseFlags["log-level"];
       expect(flag).to.not.be.undefined;
     });
 
@@ -58,7 +70,8 @@ describe("McpServerCommand", () => {
       expect(McpServerCommand.flags["allow-non-ga-tools"].env).to.equal(
         "SFCC_ALLOW_NON_GA_TOOLS",
       );
-      expect(McpServerCommand.flags["dw-json"].env).to.equal("SFCC_DW_JSON");
+      // config flag env is inherited from BaseCommand
+      expect(McpServerCommand.baseFlags.config.env).to.equal("SFCC_CONFIG");
     });
   });
 

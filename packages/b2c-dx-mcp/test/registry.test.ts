@@ -22,8 +22,8 @@ import type { StartupFlags } from "../src/utils/types.js";
 
 describe("registry", () => {
   // Create a mock services instance for testing
-  const createMockServices = (dwJsonPath?: string): Services => {
-    return new Services({ dwJsonPath });
+  const createMockServices = (configPath?: string): Services => {
+    return new Services({ configPath });
   };
 
   // Create a mock server that tracks registered tools

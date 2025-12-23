@@ -59,6 +59,6 @@ export interface StartupFlags {
   tools?: string[];
   /** Allow non-GA (experimental) tools */
   allowNonGaTools?: boolean;
-  /** Path to dw.json configuration */
-  dwJsonPath?: string;
+  /** Path to config file (dw.json format) */
+  configPath?: string;
 }

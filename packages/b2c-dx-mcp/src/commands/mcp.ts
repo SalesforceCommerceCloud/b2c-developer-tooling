@@ -23,17 +23,27 @@
  *
  * ## Flags
  *
+ * ### MCP-Specific Flags
  * | Flag | Short | Description |
  * |------|-------|-------------|
  * | `--toolsets` | `-s` | Comma-separated toolsets to enable (case-insensitive) |
  * | `--tools` | `-t` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | | Enable experimental/non-GA tools |
- * | `--dw-json` | | Path to dw.json (optional, auto-discovered if not provided) |
+ *
+ * ### Global Flags (inherited from BaseCommand)
+ * | Flag | Short | Description |
+ * |------|-------|-------------|
+ * | `--config` | | Path to dw.json config file (auto-discovered if not provided) |
+ * | `--instance` | `-i` | Instance name from configuration file |
+ * | `--log-level` | | Set logging verbosity (trace, debug, info, warn, error, silent) |
+ * | `--debug` | `-D` | Enable debug logging |
+ * | `--json` | | Output logs as JSON lines |
+ * | `--lang` | `-L` | Language for messages |
  *
  * ## Configuration Priority
  *
  * 1. Environment variables (SFCC_*) - highest priority, override dw.json
- * 2. dw.json file (explicit path via --dw-json, or auto-discovered)
+ * 2. dw.json file (explicit path via --config, or auto-discovered)
  * 3. Auto-discovery (searches upward from cwd)
  *
  * ## Toolset Validation
@@ -61,13 +71,19 @@
  * b2c-dx-mcp -s SCAPI -t cartridge_deploy
  * ```
  *
- * @example Specify dw.json location
+ * @example Specify config file location
  * ```bash
- * b2c-dx-mcp -s all --dw-json /path/to/dw.json
+ * b2c-dx-mcp -s all --config /path/to/dw.json
+ * ```
+ *
+ * @example Enable debug logging
+ * ```bash
+ * b2c-dx-mcp -s all -D
  * ```
  */
 
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
+import { BaseCommand } from "@salesforce/b2c-tooling-sdk/cli";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { B2CDxMcpServer } from "../server.js";
 import { Services } from "../services.js";
@@ -78,12 +94,15 @@ import { TOOLSETS, type StartupFlags } from "../utils/index.js";
  * oclif Command that starts the B2C DX MCP server.
  *
  * Uses oclif's single-command strategy - this IS the CLI, not a subcommand.
- * Inherits from oclif's Command class which provides:
+ * Extends BaseCommand from @salesforce/b2c-tooling-sdk which provides:
+ * - Global flags for config, logging, and debugging
+ * - Structured pino logging via `this.logger`
+ * - Automatic dw.json loading via `this.resolvedConfig`
  * - `this.config` - package.json metadata and standard config paths
- * - `this.parse()` - type-safe flag parsing
- * - `this.error()` - formatted error output
  */
-export default class McpServerCommand extends Command {
+export default class McpServerCommand extends BaseCommand<
+  typeof McpServerCommand
+> {
   static description =
     "Salesforce B2C Commerce Cloud Developer Experience MCP Server - Expose B2C Commerce Developer Experience tools to AI assistants";
 
@@ -92,7 +111,8 @@ export default class McpServerCommand extends Command {
     "<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT,MRT",
     "<%= config.bin %> <%= command.id %> --tools sfnext_deploy,mrt_bundle_push",
     "<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT --tools sfnext_deploy",
-    "<%= config.bin %> <%= command.id %> --toolsets MRT --dw-json /path/to/dw.json",
+    "<%= config.bin %> <%= command.id %> --toolsets MRT --config /path/to/dw.json",
+    "<%= config.bin %> <%= command.id %> --toolsets all --debug",
   ];
 
   static flags = {
@@ -116,20 +136,13 @@ export default class McpServerCommand extends Command {
       env: "SFCC_ALLOW_NON_GA_TOOLS",
       default: false,
     }),
-
-    // Configuration
-    "dw-json": Flags.string({
-      description:
-        "Path to dw.json (optional, auto-discovered if not provided)",
-      env: "SFCC_DW_JSON",
-    }),
   };
 
   /**
    * Main entry point - starts the MCP server.
    *
    * Execution flow:
-   * 1. Parse flags using oclif (with case normalization)
+   * 1. BaseCommand.init() parses flags and loads config
    * 2. Filter and validate toolsets (invalid ones are skipped with warning)
    * 3. Create B2CDxMcpServer instance
    * 4. Create Services for dependency injection (config, file system access)
@@ -140,6 +153,11 @@ export default class McpServerCommand extends Command {
    * @throws Never throws - invalid toolsets are filtered, not rejected
    *
    * @remarks
+   * BaseCommand provides:
+   * - `this.flags` - Parsed flags including global flags (config, debug, log-level, etc.)
+   * - `this.resolvedConfig` - Loaded dw.json configuration
+   * - `this.logger` - Structured pino logger
+   *
    * oclif provides standard config paths via `this.config`:
    * - `this.config.configDir` - User config (~/.config/b2c-dx-mcp)
    * - `this.config.dataDir` - User data (~/.local/share/b2c-dx-mcp)
@@ -147,19 +165,18 @@ export default class McpServerCommand extends Command {
    * These can be exposed to Services if needed for features like telemetry or caching.
    */
   async run(): Promise<void> {
-    const { flags } = await this.parse(McpServerCommand);
-
+    // Flags are already parsed by BaseCommand.init()
     // Parse toolsets and tools from comma-separated strings
     // Note: toolsets are uppercased, tools are lowercased by their parse functions
     const startupFlags: StartupFlags = {
-      toolsets: flags.toolsets
-        ? flags.toolsets.split(",").map((s) => s.trim())
+      toolsets: this.flags.toolsets
+        ? this.flags.toolsets.split(",").map((s) => s.trim())
         : undefined,
-      tools: flags.tools
-        ? flags.tools.split(",").map((s) => s.trim())
+      tools: this.flags.tools
+        ? this.flags.tools.split(",").map((s) => s.trim())
         : undefined,
-      allowNonGaTools: flags["allow-non-ga-tools"],
-      dwJsonPath: flags["dw-json"],
+      allowNonGaTools: this.flags["allow-non-ga-tools"],
+      configPath: this.flags.config,
     };
 
     // TODO: Telemetry - Initialize telemetry unless disabled
@@ -191,8 +208,9 @@ export default class McpServerCommand extends Command {
     );
 
     // Create services for dependency injection
+    // Pass the config path for tools that need to load configuration
     const services = new Services({
-      dwJsonPath: startupFlags.dwJsonPath,
+      configPath: this.flags.config,
     });
 
     // Register toolsets
@@ -202,11 +220,14 @@ export default class McpServerCommand extends Command {
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    // Log startup message to stderr (not stdout, which is for MCP protocol)
-    console.error(`✅ MCP Server v${this.config.version} running on stdio`);
-    console.error(`   Available toolsets: ${TOOLSETS.join(", ")}`);
-    console.error(
-      `   Enabled: ${(startupFlags.toolsets ?? []).join(", ") || "(none specified)"}`,
+    // Log startup message using the structured logger
+    this.logger.info(
+      { version: this.config.version, toolsets: TOOLSETS },
+      "MCP Server running on stdio",
+    );
+    this.logger.info(
+      { enabled: startupFlags.toolsets ?? [] },
+      "Enabled toolsets",
     );
   }
 }
