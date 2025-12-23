@@ -49,4 +49,11 @@ export default [
       'new-cap': 'off',
     },
   },
+  {
+    // Allow Chai property-based assertions in test files (e.g., expect(x).to.be.true)
+    files: ['test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-expressions': 'off',
+    },
+  },
 ];

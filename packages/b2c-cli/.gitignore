@@ -6,6 +6,8 @@
 /build
 /tmp
 /node_modules
+/coverage
+test-results.json
 oclif.manifest.json
 
 

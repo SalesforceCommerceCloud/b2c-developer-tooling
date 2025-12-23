@@ -8,6 +8,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -49,5 +54,56 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
-      - name: Run tests and lint
-        run: pnpm -r run test
+      - name: Run SDK tests
+        id: sdk-test
+        working-directory: packages/b2c-tooling-sdk
+        run: pnpm run test:ci && pnpm run lint
+
+      - name: Run CLI tests
+        id: cli-test
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-cli
+        run: pnpm run test:ci && pnpm run lint
+
+      - name: Test Report
+        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        with:
+          name: Test Results (Node ${{ matrix.node-version }})
+          path: 'packages/*/test-results.json'
+          reporter: mocha-json
+
+      - name: Generate coverage summary
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        run: |
+          echo "## Coverage (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # SDK Coverage
+          if [ -f "packages/b2c-tooling-sdk/coverage/lcov.info" ]; then
+            echo "### @salesforce/b2c-tooling-sdk" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cd packages/b2c-tooling-sdk && pnpm c8 report --reporter=text-summary 2>/dev/null | tail -n 6 >> $GITHUB_STEP_SUMMARY
+            cd ../..
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # CLI Coverage
+          if [ -f "packages/b2c-cli/coverage/lcov.info" ]; then
+            echo "### @salesforce/b2c-cli" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cd packages/b2c-cli && pnpm c8 report --reporter=text-summary 2>/dev/null | tail -n 6 >> $GITHUB_STEP_SUMMARY
+            cd ../..
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage reports
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports-node-${{ matrix.node-version }}
+          path: |
+            packages/b2c-tooling-sdk/coverage/
+            packages/b2c-cli/coverage/
+          retention-days: 30

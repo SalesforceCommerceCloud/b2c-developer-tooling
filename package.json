@@ -6,6 +6,8 @@
   "scripts": {
     "start": "pnpm --filter @salesforce/b2c-cli run dev",
     "test": "pnpm -r test",
+    "test:unit": "pnpm -r run test:unit",
+    "coverage": "pnpm -r run coverage",
     "format": "pnpm -r run format",
     "lint": "pnpm -r run lint",
     "build": "pnpm -r run build",
@@ -16,7 +18,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "packageManager": "pnpm@10.17.1",
   "devDependencies": {
     "typedoc": "^0.28.14",

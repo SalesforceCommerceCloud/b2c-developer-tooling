@@ -79,3 +79,75 @@ Features:
 - Dynamic column widths based on content
 - Supports `extended` flag on columns for optional fields
 - Use `TableRenderer` class directly for column validation helpers (e.g., `--columns` flag support)
+
+## Testing
+
+Tests use Mocha + Chai with c8 for coverage. HTTP mocking uses MSW (Mock Service Worker).
+
+### Running Tests
+
+```bash
+# Run all tests with coverage
+pnpm run test
+
+# Run tests for specific package
+pnpm --filter @salesforce/b2c-tooling-sdk run test
+
+# Run single test file (no coverage, faster)
+cd packages/b2c-tooling-sdk
+pnpm mocha "test/clients/webdav.test.ts"
+
+# Run tests matching pattern
+pnpm mocha --grep "mkcol" "test/**/*.test.ts"
+
+# Watch mode for TDD
+pnpm --filter @salesforce/b2c-tooling-sdk run test:watch
+```
+
+### Writing Tests
+
+- Place tests in `packages/<package>/test/` mirroring the src structure
+- Use `.test.ts` suffix for test files
+- Import from package names, not relative paths:
+  ```typescript
+  // Good - uses package exports
+  import { WebDavClient } from '@salesforce/b2c-tooling-sdk/clients';
+
+  // Avoid - relative paths
+  import { WebDavClient } from '../../src/clients/webdav.js';
+  ```
+
+### HTTP Mocking with MSW
+
+For testing HTTP clients, use MSW to mock at the network level:
+
+```typescript
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
+
+const server = setupServer();
+
+before(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+after(() => server.close());
+
+it('makes HTTP request', async () => {
+  server.use(
+    http.get('https://example.com/api/*', () => {
+      return HttpResponse.json({ data: 'test' });
+    }),
+  );
+
+  // Test code that makes HTTP requests...
+});
+```
+
+### Test Helpers
+
+- `test/helpers/mock-auth.ts` - Mock AuthStrategy for testing HTTP clients
+
+### Coverage
+
+- Coverage reports generated in `coverage/` directory
+- SDK package has 5% minimum threshold (will increase as tests are added)
+- CI publishes coverage summary to GitHub Actions job summary

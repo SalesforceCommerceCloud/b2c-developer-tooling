@@ -5,6 +5,8 @@
 /dist
 /tmp
 /node_modules
+/coverage
+test-results.json
 
 
 yarn.lock

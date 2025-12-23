@@ -1,0 +1,16 @@
+{
+  "all": true,
+  "src": ["src"],
+  "exclude": [
+    "src/clients/*.generated.ts",
+    "test/**",
+    "**/*.d.ts"
+  ],
+  "reporter": ["text", "text-summary", "html", "lcov"],
+  "report-dir": "coverage",
+  "check-coverage": true,
+  "lines": 5,
+  "functions": 5,
+  "branches": 5,
+  "statements": 5
+}

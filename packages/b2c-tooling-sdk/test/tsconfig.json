@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "mocha", "chai"],
+    "paths": {
+      "@salesforce/b2c-tooling-sdk": ["../src/index.ts"],
+      "@salesforce/b2c-tooling-sdk/*": ["../src/*/index.ts", "../src/*"]
+    }
+  },
+  "include": ["./**/*", "../src/**/*"]
+}
