@@ -244,6 +244,7 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_
 Tools that interact with B2C Commerce instances (e.g., MRT, SCAPI, cartridge deployment) require credentials, which can be provided via **environment variables**, a **`.env` file**, a **`dw.json` file**, or the **`--config`** flag. Local tools (e.g., scaffolding, development guidelines) work without configuration.
 
 **Priority order** (highest to lowest):
+
 1. Environment variables (`SFCC_*`) — includes `.env` file if present (shell env vars override `.env`)
 2. `dw.json` file (auto-discovered or via `--config`)
 
