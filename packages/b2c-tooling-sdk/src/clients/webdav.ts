@@ -39,7 +39,7 @@ export interface PropfindEntry {
  *
  * @example
  * // Via B2CInstance (recommended)
- * const instance = B2CInstance.fromDwJson();
+ * const instance = B2CInstance.fromEnvironment();
  * await instance.webdav.mkcol('Cartridges/v1');
  * await instance.webdav.put('Cartridges/v1/app.zip', zipBuffer);
  *

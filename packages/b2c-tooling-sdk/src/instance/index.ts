@@ -12,13 +12,13 @@
  *
  * ## Usage
  *
- * ### From dw.json (recommended)
+ * ### From environment configuration (recommended)
  *
  * ```typescript
  * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
  *
- * // Load from dw.json, override secrets from environment
- * const instance = B2CInstance.fromDwJson({
+ * // Load from environment files (dw.json, etc.), override secrets from environment
+ * const instance = B2CInstance.fromEnvironment({
  *   clientId: process.env.SFCC_CLIENT_ID,
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
@@ -59,9 +59,9 @@ export interface InstanceConfig {
 }
 
 /**
- * Options for creating a B2CInstance from dw.json.
+ * Options for creating a B2CInstance from environment configuration.
  */
-export interface FromDwJsonOptions {
+export interface FromEnvironmentOptions {
   /** Named instance from dw.json "configs" array */
   instance?: string;
   /** Path to dw.json (defaults to searching up from cwd) */
@@ -95,8 +95,8 @@ export interface FromDwJsonOptions {
  * Authentication is handled automatically based on the configured credentials.
  *
  * @example
- * // From dw.json
- * const instance = B2CInstance.fromDwJson({
+ * // From environment configuration
+ * const instance = B2CInstance.fromEnvironment({
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
  *
@@ -111,28 +111,28 @@ export class B2CInstance {
   private _ocapi?: OcapiClient;
 
   /**
-   * Creates a B2CInstance from a dw.json file with optional overrides.
+   * Creates a B2CInstance from environment configuration files with optional overrides.
    *
-   * Searches upward from the current directory for a dw.json file,
+   * Searches upward from the current directory for configuration files (dw.json, etc.),
    * then applies any provided overrides.
    *
    * @param options - Loading options and overrides
    * @returns Configured B2CInstance
-   * @throws Error if no dw.json found or required configuration missing
+   * @throws Error if no configuration found or required configuration missing
    *
    * @example
-   * // Auto-find dw.json, override secrets
-   * const instance = B2CInstance.fromDwJson({
+   * // Auto-find configuration, override secrets
+   * const instance = B2CInstance.fromEnvironment({
    *   clientId: process.env.SFCC_CLIENT_ID,
    *   clientSecret: process.env.SFCC_CLIENT_SECRET,
    * });
    *
    * // Use named instance
-   * const instance = B2CInstance.fromDwJson({
+   * const instance = B2CInstance.fromEnvironment({
    *   instance: 'staging',
    * });
    */
-  static fromDwJson(options: FromDwJsonOptions = {}): B2CInstance {
+  static fromEnvironment(options: FromEnvironmentOptions = {}): B2CInstance {
     const dwConfig = loadDwJson({
       instance: options.instance,
       path: options.configPath,
@@ -287,4 +287,4 @@ export class B2CInstance {
 }
 
 // Re-export types for convenience
-export type {AuthConfig, FromDwJsonOptions as B2CInstanceOptions};
+export type {AuthConfig, FromEnvironmentOptions as B2CInstanceOptions};

@@ -25,7 +25,7 @@
  * ```typescript
  * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
  *
- * const instance = B2CInstance.fromDwJson({
+ * const instance = B2CInstance.fromEnvironment({
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
  *

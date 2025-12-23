@@ -36,7 +36,7 @@
  * } from '@salesforce/b2c-tooling-sdk/operations/jobs';
  * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
  *
- * const instance = B2CInstance.fromDwJson();
+ * const instance = B2CInstance.fromEnvironment();
  *
  * // Run a custom job and wait for completion
  * const execution = await executeJob(instance, 'my-job-id');

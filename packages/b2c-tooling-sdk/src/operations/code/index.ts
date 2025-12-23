@@ -41,7 +41,7 @@
  * } from '@salesforce/b2c-tooling-sdk/operations/code';
  * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
  *
- * const instance = B2CInstance.fromDwJson();
+ * const instance = B2CInstance.fromEnvironment();
  *
  * // Deploy cartridges (requires instance.config.codeVersion to be set)
  * await findAndDeployCartridges(instance, './cartridges', { reload: true });

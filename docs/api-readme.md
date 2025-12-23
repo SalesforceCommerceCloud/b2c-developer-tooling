@@ -10,15 +10,15 @@ npm install @salesforce/b2c-tooling-sdk
 
 ## Quick Start
 
-### From dw.json (Recommended)
+### From Environment Configuration (Recommended)
 
-The easiest way to create an instance is from a `dw.json` file:
+The easiest way to create an instance is from environment configuration files:
 
 ```typescript
 import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
 
-// Load configuration from dw.json, override secrets from environment
-const instance = B2CInstance.fromDwJson({
+// Load configuration from environment files (dw.json, etc.), override secrets from environment
+const instance = B2CInstance.fromEnvironment({
   clientId: process.env.SFCC_CLIENT_ID,
   clientSecret: process.env.SFCC_CLIENT_SECRET,
 });

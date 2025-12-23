@@ -75,7 +75,7 @@ export {createAuthMiddleware, createLoggingMiddleware};
  *
  * @example
  * // Via B2CInstance (recommended)
- * const instance = B2CInstance.fromDwJson();
+ * const instance = B2CInstance.fromEnvironment();
  * const { data, error } = await instance.ocapi.GET('/sites', {});
  *
  * @example
