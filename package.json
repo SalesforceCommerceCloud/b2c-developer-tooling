@@ -18,7 +18,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "packageManager": "pnpm@10.17.1",
   "devDependencies": {
     "typedoc": "^0.28.14",
