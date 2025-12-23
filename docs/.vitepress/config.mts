@@ -31,7 +31,7 @@ const guideSidebar = [
 export default defineConfig({
   title: 'B2C CLI',
   description: 'Salesforce Commerce Cloud B2C Command Line Tools',
-  base: '',
+  base: '/b2c-developer-tooling/',
 
   // Show deeper heading levels in the outline
   markdown: {

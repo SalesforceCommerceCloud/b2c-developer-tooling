@@ -148,7 +148,7 @@ pnpm run docs:preview
 
 API documentation is auto-generated from JSDoc comments in the `@salesforce/b2c-tooling-sdk` package. The entry points are defined in `typedoc.json`:
 
-See the [documentation site](https://verbose-adventure-1eqmr1r.pages.github.io/) for the generated API reference.
+See the [documentation site](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the generated API reference.
 
 - `auth` - Authentication strategies (OAuth, API Key, Basic)
 - `instance` - B2C instance configuration
@@ -184,3 +184,7 @@ For security concerns, please review our [Security Policy](./SECURITY.md). Repor
 ## License
 
 This project is licensed under the Apache License 2.0. See [LICENSE.txt](./LICENSE.txt) for full details.
+
+## Disclaimer
+
+This project is currently in **Developer Preview** and is provided "as-is" without warranty of any kind. It is not yet generally available (GA) and should not be used in production environments. Features, APIs, and functionality may change without notice in future releases.

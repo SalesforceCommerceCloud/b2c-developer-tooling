@@ -189,12 +189,16 @@ b2c code deploy -D  # shorthand
 b2c code deploy --json
 ```
 
-See the [documentation](https://verbose-adventure-1eqmr1r.pages.github.io/cli/logging) for more logging options.
+See the [documentation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logging) for more logging options.
 
 ## Documentation
 
-Full documentation is available at: https://verbose-adventure-1eqmr1r.pages.github.io/
+Full documentation is available at: https://salesforcecommercecloud.github.io/b2c-developer-tooling/
 
 ## License
 
-MIT
+This project is licensed under the Apache License 2.0. See [LICENSE.txt](../../LICENSE.txt) for full details.
+
+## Disclaimer
+
+This project is currently in **Developer Preview** and is provided "as-is" without warranty of any kind. It is not yet generally available (GA) and should not be used in production environments. Features, APIs, and functionality may change without notice in future releases.
