@@ -6,54 +6,9 @@ MCP (Model Context Protocol) server for Salesforce B2C Commerce Cloud developer 
 
 This package provides an MCP server that exposes B2C Commerce developer tools for AI assistants. Built with [oclif](https://oclif.io/) for robust CLI handling with auto-generated help and environment variable support.
 
-## Installation
-
-```bash
-npm install -g @salesforce/b2c-dx-mcp
-```
-
-## Configuration
-
-Tools that interact with B2C Commerce instances (e.g., MRT, SCAPI, cartridge deployment) require credentials, which can be provided via **environment variables**, a **`.env` file**, a **`dw.json` file**, or the **`--config`** flag. Local tools (e.g., scaffolding, development guidelines) work without configuration.
-
-**Priority order** (highest to lowest):
-1. Environment variables (`SFCC_*`) — includes `.env` file if present (shell env vars override `.env`)
-2. `dw.json` file (auto-discovered or via `--config`)
-
-### Option 1: Environment Variables
-
-Set environment variables directly or create a `.env` file in your project root:
-
-```bash
-# .env file or shell exports
-SFCC_HOSTNAME="your-sandbox.demandware.net"
-SFCC_USERNAME="your.username"
-SFCC_PASSWORD="your-access-key"
-SFCC_CLIENT_ID="your-client-id"
-SFCC_CLIENT_SECRET="your-client-secret"
-SFCC_CODE_VERSION="version1"
-```
-
-### Option 2: dw.json File
-
-Create a `dw.json` file in your project root (auto-discovered by searching upward from current working directory):
-
-```json
-{
-  "hostname": "your-sandbox.demandware.net",
-  "username": "your.username",
-  "password": "your-access-key",
-  "client-id": "your-client-id",
-  "client-secret": "your-client-secret",
-  "code-version": "version1"
-}
-```
-
-> **Note:** Environment variables take precedence over `dw.json` values.
-
 ## Usage
 
-Configure your AI assistant to use this MCP server.
+Configure your AI assistant to use this MCP server. Since the package is not yet published to npm, use the local development setup below. See the [Development](#development) section for setup instructions.
 
 ### Cursor
 
@@ -63,8 +18,8 @@ Add to `.cursor/mcp.json`:
 {
   "mcpServers": {
     "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all"]
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--toolsets", "all"]
     }
   }
 }
@@ -78,8 +33,8 @@ Add to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all"]
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--toolsets", "all"]
     }
   }
 }
@@ -89,83 +44,106 @@ Add to `claude_desktop_config.json`:
 
 ```json
 // Enable specific toolsets
-"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "CARTRIDGES,JOBS"]
+"args": ["--toolsets", "CARTRIDGES,JOBS"]
 
 // Enable specific tools
-"args": ["-y", "@salesforce/b2c-dx-mcp", "--tools", "code_upload,code_list"]
+"args": ["--tools", "cartridge_deploy,mrt_bundle_push"]
 
 // Combine toolsets and tools
-"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "CARTRIDGES", "--tools", "job_run"]
+"args": ["--toolsets", "CARTRIDGES", "--tools", "job_run"]
 
 // Explicit config file path
-"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all", "--config", "/path/to/dw.json"]
+"args": ["--toolsets", "all", "--config", "/path/to/dw.json"]
 
 // Enable experimental tools
-"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all", "--allow-non-ga-tools"]
+"args": ["--toolsets", "all", "--allow-non-ga-tools"]
 
 // Enable debug logging
-"args": ["-y", "@salesforce/b2c-dx-mcp", "--toolsets", "all", "--debug"]
+"args": ["--toolsets", "all", "--debug"]
 ```
 
 ### Supported Flags
 
 #### MCP-Specific Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--toolsets` | `-s` | Comma-separated toolsets to enable (case-insensitive) |
-| `--tools` | `-t` | Comma-separated individual tools to enable (case-insensitive) |
-| `--allow-non-ga-tools` | | Enable experimental (non-GA) tools |
+| Flag | Description |
+|------|-------------|
+| `--toolsets` | Comma-separated toolsets to enable (case-insensitive) |
+| `--tools` | Comma-separated individual tools to enable (case-insensitive) |
+| `--allow-non-ga-tools` | Enable experimental (non-GA) tools |
 
 #### Global Flags (inherited from SDK)
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--config` | | Path to dw.json config file (auto-discovered if not provided) |
-| `--instance` | `-i` | Instance name from configuration file |
-| `--log-level` | | Set logging verbosity (trace, debug, info, warn, error, silent) |
-| `--debug` | `-D` | Enable debug logging |
-| `--json` | | Output logs as JSON lines |
-| `--lang` | `-L` | Language for messages |
+| Flag | Description |
+|------|-------------|
+| `--config` | Path to dw.json config file (auto-discovered if not provided) |
+| `--instance` | Instance name from configuration file |
+| `--log-level` | Set logging verbosity (trace, debug, info, warn, error, silent) |
+| `--debug` | Enable debug logging |
+| `--json` | Output logs as JSON lines |
+| `--lang` | Language for messages |
 
-### Available Toolsets
+### Available Toolsets and Tools
 
-| Toolset | Description |
-|---------|-------------|
-| `CARTRIDGES` | Code deployment and version management |
-| `MRT` | Managed Runtime operations |
-| `PWAV3` | PWA Kit v3 development tools |
-| `SCAPI` | Salesforce Commerce API discovery and exploration |
-| `STOREFRONTNEXT` | Storefront Next development tools |
+Use `--toolsets all` to enable all toolsets, or select specific ones with `--toolsets CARTRIDGES,MRT`.
 
-Use `--toolsets all` to enable all available toolsets.
+#### CARTRIDGES
+Code deployment and version management.
 
-### Available Tools
+| Tool | Description |
+|------|-------------|
+| `cartridge_deploy` | Deploy cartridges to a B2C Commerce instance |
 
-| Tool | Description | Toolsets |
-|------|-------------|----------|
-| `code_upload` | Upload cartridges to a B2C Commerce instance | CARTRIDGES |
-| `code_list` | List all code versions on a B2C Commerce instance | CARTRIDGES |
-| `code_activate` | Activate a code version on a B2C Commerce instance | CARTRIDGES |
-| `mrt_bundle_push` | Deploy a bundle to Managed Runtime | MRT, PWAV3, STOREFRONTNEXT |
-| `pwakit_create_storefront` | Create a new PWA Kit storefront project | PWAV3 |
-| `pwakit_create_page` | Create a new page component in PWA Kit project | PWAV3 |
-| `pwakit_create_component` | Create a new React component in PWA Kit project | PWAV3 |
-| `pwakit_get_dev_guidelines` | Get PWA Kit development guidelines and best practices | PWAV3 |
-| `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases | PWAV3 |
-| `pwakit_run_site_test` | Run site tests for PWA Kit project | PWAV3 |
-| `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development | PWAV3 |
-| `pwakit_explore_scapi_shop_api` | Explore SCAPI Shop API endpoints and capabilities | PWAV3 |
-| `scapi_discovery` | Discover available SCAPI endpoints and capabilities | PWAV3, SCAPI, STOREFRONTNEXT |
-| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API | SCAPI |
-| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints | PWAV3, SCAPI, STOREFRONTNEXT |
-| `sfnext_development_guidelines` | Get Storefront Next development guidelines and best practices | STOREFRONTNEXT |
-| `sfnext_site_theming` | Configure and manage site theming for Storefront Next | STOREFRONTNEXT |
-| `sfnext_figma_to_component_workflow` | Convert Figma designs to Storefront Next components | STOREFRONTNEXT |
-| `sfnext_generate_component` | Generate a new Storefront Next component | STOREFRONTNEXT |
-| `sfnext_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration | STOREFRONTNEXT |
-| `sfnext_design_decorator` | Apply design decorators to Storefront Next components | STOREFRONTNEXT |
-| `sfnext_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components | STOREFRONTNEXT |
+#### MRT
+Managed Runtime operations.
+
+| Tool | Description |
+|------|-------------|
+| `mrt_bundle_push` | Build, push bundle (optionally deploy) |
+
+#### PWAV3
+PWA Kit v3 development tools.
+
+| Tool | Description |
+|------|-------------|
+| `pwakit_create_storefront` | Create a new PWA Kit storefront project |
+| `pwakit_create_page` | Create a new page component in PWA Kit project |
+| `pwakit_create_component` | Create a new React component in PWA Kit project |
+| `pwakit_get_dev_guidelines` | Get PWA Kit development guidelines and best practices |
+| `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases |
+| `pwakit_run_site_test` | Run site tests for PWA Kit project |
+| `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development |
+| `pwakit_explore_scapi_shop_api` | Explore SCAPI Shop API endpoints and capabilities |
+| `scapi_discovery` | Discover available SCAPI endpoints and capabilities |
+| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
+| `mrt_bundle_push` | Build, push bundle (optionally deploy) |
+
+#### SCAPI
+Salesforce Commerce API discovery and exploration.
+
+| Tool | Description |
+|------|-------------|
+| `scapi_discovery` | Discover available SCAPI endpoints and capabilities |
+| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API |
+| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
+
+#### STOREFRONTNEXT
+Storefront Next development tools.
+
+| Tool | Description |
+|------|-------------|
+| `sfnext_development_guidelines` | Get Storefront Next development guidelines and best practices |
+| `sfnext_site_theming` | Configure and manage site theming for Storefront Next |
+| `sfnext_figma_to_component_workflow` | Convert Figma designs to Storefront Next components |
+| `sfnext_generate_component` | Generate a new Storefront Next component |
+| `sfnext_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
+| `sfnext_design_decorator` | Apply design decorators to Storefront Next components |
+| `sfnext_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
+| `scapi_discovery` | Discover available SCAPI endpoints and capabilities |
+| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
+| `mrt_bundle_push` | Build, push bundle (optionally deploy) |
+
+> **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_discovery`). When using multiple toolsets, tools are automatically deduplicated.
 
 
 ## Development
@@ -228,10 +206,10 @@ For CLI-based testing:
 
 ```bash
 # List all tools
-npx mcp-inspector --cli node bin/run.js -s all --allow-non-ga-tools --method tools/list
+npx mcp-inspector --cli node bin/run.js --toolsets all --allow-non-ga-tools --method tools/list
 
 # Call a specific tool
-npx mcp-inspector --cli node bin/run.js -s all --allow-non-ga-tools \
+npx mcp-inspector --cli node bin/run.js --toolsets all --allow-non-ga-tools \
   --method tools/call \
   --tool-name sfnext_design_decorator
 ```
@@ -247,7 +225,7 @@ Configure your IDE to use the local server. Choose development mode (no build re
   "mcpServers": {
     "b2c-dx-local": {
       "command": "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["-s", "all"]
+      "args": ["--toolsets", "all"]
     }
   }
 }
@@ -260,7 +238,7 @@ Configure your IDE to use the local server. Choose development mode (no build re
   "mcpServers": {
     "b2c-dx-local": {
       "command": "/full/path/to/packages/b2c-dx-mcp/bin/run.js",
-      "args": ["-s", "all"]
+      "args": ["--toolsets", "all"]
     }
   }
 }
@@ -274,11 +252,52 @@ Send raw MCP protocol messages:
 
 ```bash
 # List all tools
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/run.js -s all
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/run.js --toolsets all
 
 # Call a specific tool
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"code_list","arguments":{}}}' | node bin/run.js -s all
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/run.js --toolsets all
 ```
+
+### Configuration
+
+> **Note:** Configuration is not currently required as all tools are placeholder implementations. This section will be relevant once tools are fully implemented.
+
+Tools that interact with B2C Commerce instances (e.g., MRT, SCAPI, cartridge deployment) require credentials, which can be provided via **environment variables**, a **`.env` file**, a **`dw.json` file**, or the **`--config`** flag. Local tools (e.g., scaffolding, development guidelines) work without configuration.
+
+**Priority order** (highest to lowest):
+1. Environment variables (`SFCC_*`) — includes `.env` file if present (shell env vars override `.env`)
+2. `dw.json` file (auto-discovered or via `--config`)
+
+#### Option 1: Environment Variables
+
+Set environment variables directly or create a `.env` file in your project root:
+
+```bash
+# .env file or shell exports
+SFCC_HOSTNAME="your-sandbox.demandware.net"
+SFCC_USERNAME="your.username"
+SFCC_PASSWORD="your-access-key"
+SFCC_CLIENT_ID="your-client-id"
+SFCC_CLIENT_SECRET="your-client-secret"
+SFCC_CODE_VERSION="version1"
+```
+
+#### Option 2: dw.json File
+
+Create a `dw.json` file in your project root (auto-discovered by searching upward from current working directory):
+
+```json
+{
+  "hostname": "your-sandbox.demandware.net",
+  "username": "your.username",
+  "password": "your-access-key",
+  "client-id": "your-client-id",
+  "client-secret": "your-client-secret",
+  "code-version": "version1"
+}
+```
+
+> **Note:** Environment variables take precedence over `dw.json` values.
 
 ## License
 

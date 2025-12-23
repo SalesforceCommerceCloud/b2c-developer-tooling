@@ -80,18 +80,8 @@ function createPlaceholderTool(
 export function createCartridgesTools(services: Services): McpTool[] {
   return [
     createPlaceholderTool(
-      "code_upload",
-      "Upload cartridges to a B2C Commerce instance",
-      services,
-    ),
-    createPlaceholderTool(
-      "code_list",
-      "List all code versions on a B2C Commerce instance",
-      services,
-    ),
-    createPlaceholderTool(
-      "code_activate",
-      "Activate a code version on a B2C Commerce instance",
+      "cartridge_deploy",
+      "Deploy cartridges to a B2C Commerce instance",
       services,
     ),
   ];

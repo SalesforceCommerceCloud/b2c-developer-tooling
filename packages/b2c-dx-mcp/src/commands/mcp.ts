@@ -24,21 +24,21 @@
  * ## Flags
  *
  * ### MCP-Specific Flags
- * | Flag | Short | Description |
- * |------|-------|-------------|
- * | `--toolsets` | `-s` | Comma-separated toolsets to enable (case-insensitive) |
- * | `--tools` | `-t` | Comma-separated individual tools to enable (case-insensitive) |
- * | `--allow-non-ga-tools` | | Enable experimental/non-GA tools |
+ * | Flag | Description |
+ * |------|-------------|
+ * | `--toolsets` | Comma-separated toolsets to enable (case-insensitive) |
+ * | `--tools` | Comma-separated individual tools to enable (case-insensitive) |
+ * | `--allow-non-ga-tools` | Enable experimental/non-GA tools |
  *
  * ### Global Flags (inherited from BaseCommand)
- * | Flag | Short | Description |
- * |------|-------|-------------|
- * | `--config` | | Path to dw.json config file (auto-discovered if not provided) |
- * | `--instance` | `-i` | Instance name from configuration file |
- * | `--log-level` | | Set logging verbosity (trace, debug, info, warn, error, silent) |
- * | `--debug` | `-D` | Enable debug logging |
- * | `--json` | | Output logs as JSON lines |
- * | `--lang` | `-L` | Language for messages |
+ * | Flag | Description |
+ * |------|-------------|
+ * | `--config` | Path to dw.json config file (auto-discovered if not provided) |
+ * | `--instance` | Instance name from configuration file |
+ * | `--log-level` | Set logging verbosity (trace, debug, info, warn, error, silent) |
+ * | `--debug` | Enable debug logging |
+ * | `--json` | Output logs as JSON lines |
+ * | `--lang` | Language for messages |
  *
  * ## Configuration Priority
  *
@@ -53,32 +53,32 @@
  *
  * @example Start with all toolsets
  * ```bash
- * b2c-dx-mcp -s all
+ * b2c-dx-mcp --toolsets all
  * ```
  *
  * @example Start with specific toolsets
  * ```bash
- * b2c-dx-mcp -s CARTRIDGES,JOBS
+ * b2c-dx-mcp --toolsets CARTRIDGES,JOBS
  * ```
  *
  * @example Start with specific individual tools
  * ```bash
- * b2c-dx-mcp -t cartridge_deploy,cartridge_activate
+ * b2c-dx-mcp --tools cartridge_deploy,cartridge_activate
  * ```
  *
  * @example Combine toolsets and specific tools
  * ```bash
- * b2c-dx-mcp -s SCAPI -t cartridge_deploy
+ * b2c-dx-mcp --toolsets SCAPI --tools cartridge_deploy
  * ```
  *
  * @example Specify config file location
  * ```bash
- * b2c-dx-mcp -s all --config /path/to/dw.json
+ * b2c-dx-mcp --toolsets all --config /path/to/dw.json
  * ```
  *
  * @example Enable debug logging
  * ```bash
- * b2c-dx-mcp -s all -D
+ * b2c-dx-mcp --toolsets all --debug
  * ```
  */
 
@@ -118,13 +118,11 @@ export default class McpServerCommand extends BaseCommand<
   static flags = {
     // Toolset selection flags
     toolsets: Flags.string({
-      char: "s",
       description: `Toolsets to enable (comma-separated). Options: all, ${TOOLSETS.join(", ")}`,
       env: "SFCC_TOOLSETS",
       parse: async (input) => input.toUpperCase(),
     }),
     tools: Flags.string({
-      char: "t",
       description: "Individual tools to enable (comma-separated)",
       env: "SFCC_TOOLS",
       parse: async (input) => input.toLowerCase(),

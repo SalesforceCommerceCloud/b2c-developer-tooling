@@ -13,8 +13,8 @@
  * - Uses compiled JavaScript from dist/
  * - Loads .env file if present for local configuration
  *
- * Run directly: ./bin/run.js mcp -s all
- * Or with node: node bin/run.js mcp -s all
+ * Run directly: ./bin/run.js mcp --toolsets all
+ * Or with node: node bin/run.js mcp --toolsets all
  */
 
 // Load .env file if present (Node.js native support)

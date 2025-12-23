@@ -29,16 +29,14 @@ describe("McpServerCommand", () => {
       expect(McpServerCommand.examples.length).to.be.greaterThan(0);
     });
 
-    it("should define toolsets flag with short option -s", () => {
+    it("should define toolsets flag", () => {
       const toolsetsFlag = McpServerCommand.flags.toolsets;
       expect(toolsetsFlag).to.not.be.undefined;
-      expect(toolsetsFlag.char).to.equal("s");
     });
 
-    it("should define tools flag with short option -t", () => {
+    it("should define tools flag", () => {
       const toolsFlag = McpServerCommand.flags.tools;
       expect(toolsFlag).to.not.be.undefined;
-      expect(toolsFlag.char).to.equal("t");
     });
 
     it("should define allow-non-ga-tools flag with default false", () => {
@@ -56,7 +54,6 @@ describe("McpServerCommand", () => {
     it("should inherit debug flag from BaseCommand", () => {
       const flag = McpServerCommand.baseFlags.debug;
       expect(flag).to.not.be.undefined;
-      expect(flag.char).to.equal("D");
     });
 
     it("should inherit log-level flag from BaseCommand", () => {
@@ -92,11 +89,11 @@ describe("McpServerCommand", () => {
       const parse = McpServerCommand.flags.tools.parse;
       if (parse) {
         const result = await parse(
-          "CODE_UPLOAD,MRT_PROJECT_LIST",
+          "CARTRIDGE_DEPLOY,MRT_BUNDLE_PUSH",
           {} as never,
           {} as never,
         );
-        expect(result).to.equal("code_upload,mrt_project_list");
+        expect(result).to.equal("cartridge_deploy,mrt_bundle_push");
       }
     });
   });

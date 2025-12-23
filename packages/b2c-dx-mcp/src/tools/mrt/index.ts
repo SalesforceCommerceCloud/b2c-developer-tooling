@@ -38,7 +38,7 @@ import type { Services } from "../../services.js";
 function createMrtBundlePushTool(_services: Services): McpTool {
   return {
     name: "mrt_bundle_push",
-    description: "[PLACEHOLDER] Deploy a bundle to Managed Runtime",
+    description: "[PLACEHOLDER] Build, push bundle (optionally deploy)",
     inputSchema: {
       projectId: z.string().optional().describe("MRT project ID"),
       environmentId: z.string().optional().describe("Target environment ID"),

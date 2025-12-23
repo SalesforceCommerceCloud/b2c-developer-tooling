@@ -15,8 +15,8 @@
  * - Loads .env file if present for local configuration
  * - Provides better error messages and stack traces
  *
- * Run directly: ./bin/dev.js mcp -s all
- * Or with node: node --conditions development --import tsx bin/dev.js mcp -s all
+ * Run directly: ./bin/dev.js mcp --toolsets all
+ * Or with node: node --conditions development --import tsx bin/dev.js mcp --toolsets all
  */
 
 // Load .env file if present (Node.js native support)
