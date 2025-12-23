@@ -204,7 +204,7 @@ Configure your IDE to use the local server. Choose development mode (no build re
   "mcpServers": {
     "b2c-dx-local": {
       "command": "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "all"]
+      "args": ["--toolsets", "all", "--allow-non-ga-tools"]
     }
   }
 }
@@ -217,7 +217,7 @@ Configure your IDE to use the local server. Choose development mode (no build re
   "mcpServers": {
     "b2c-dx-local": {
       "command": "/full/path/to/packages/b2c-dx-mcp/bin/run.js",
-      "args": ["--toolsets", "all"]
+      "args": ["--toolsets", "all", "--allow-non-ga-tools"]
     }
   }
 }
@@ -230,11 +230,11 @@ Configure your IDE to use the local server. Choose development mode (no build re
 Send raw MCP protocol messages:
 
 ```bash
-# List all tools
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/run.js --toolsets all
+# List all tools (--allow-non-ga-tools required for placeholder tools)
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/run.js --toolsets all --allow-non-ga-tools
 
 # Call a specific tool
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/run.js --toolsets all
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/run.js --toolsets all --allow-non-ga-tools
 ```
 
 ### Configuration
