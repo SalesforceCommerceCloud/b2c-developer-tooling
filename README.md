@@ -20,8 +20,9 @@ This is a pnpm monorepo with the following packages:
 
 | Package | Description |
 |---------|-------------|
-| [`@salesforce/b2c-cli`](./packages/b2c-cli/README.md) | Command line interface built with oclif |
-| [`@salesforce/b2c-tooling-sdk`](./packages/b2c-tooling-sdk/README.md) | SDK/library for B2C Commerce operations; supports the CLI and can be used standalone |
+| [`b2c-cli`](./packages/b2c-cli/README.md) | Command line interface built with oclif |
+| [`b2c-tooling-sdk`](./packages/b2c-tooling-sdk/README.md) | SDK/library for B2C Commerce operations; supports the CLI and can be used standalone |
+| [`b2c-dx-mcp`](./packages/b2c-dx-mcp/README.md) | MCP server for B2C Commerce developer experience tools |
 
 ## Development
 
