@@ -60,6 +60,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "dev:watch": "tsc --watch",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
     "format": "prettier --write src",

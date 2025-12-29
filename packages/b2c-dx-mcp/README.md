@@ -193,37 +193,40 @@ npx mcp-inspector --cli node bin/run.js --toolsets all --allow-non-ga-tools \
   --tool-name sfnext_design_decorator
 ```
 
-#### 2. IDE Integration
+#### 2. IDE Integration (Recommended)
 
-Configure your IDE to use the local server. Choose development mode (no build required) or production mode (requires build).
+For local development with IDE integration (e.g., Cursor, VS Code), use the **watch mode workflow**. This provides fast iteration without requiring global dependencies.
 
-**Development Mode** (recommended for active development - uses TypeScript source directly):
+**Step 1: Start TypeScript in watch mode**
+
+In a terminal, run:
+
+```bash
+cd packages/b2c-dx-mcp
+pnpm run dev:watch
+```
+
+This watches for file changes and recompiles automatically (~1-2 seconds per change).
+
+**Step 2: Configure your IDE to use the production build**
+
+Add this to your IDE's MCP configuration:
 
 ```json
 {
   "mcpServers": {
     "b2c-dx-local": {
-      "command": "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "all", "--allow-non-ga-tools"]
+      "command": "node",
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/run.js", "--toolsets", "all", "--allow-non-ga-tools"]
     }
   }
 }
 ```
 
-**Production Mode** (uses compiled JavaScript - run `pnpm run build` first):
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx-local": {
-      "command": "/full/path/to/packages/b2c-dx-mcp/bin/run.js",
-      "args": ["--toolsets", "all", "--allow-non-ga-tools"]
-    }
-  }
-}
-```
-
-> **Note:** For production mode, run `pnpm run build` after code changes and restart your IDE. Development mode picks up changes automatically.
+**Development workflow:**
+1. Edit source code
+2. TypeScript auto-compiles (watch the terminal for confirmation)
+3. Restart the MCP server in your IDE to pick up changes
 
 #### 3. JSON-RPC via stdin
 
