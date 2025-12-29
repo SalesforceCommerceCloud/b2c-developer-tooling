@@ -181,6 +181,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     this.error(err.message, {exit: err.exitCode ?? 1});
   }
 
+  public baseCommandTest(): void {
+    this.logger.info('BaseCommand initialized');
+  }
+
   /**
    * Parse extra params from --extra-query and --extra-body flags.
    * Returns undefined if no extra params are specified.

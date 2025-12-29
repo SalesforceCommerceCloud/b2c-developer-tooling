@@ -163,6 +163,7 @@ export default class McpServerCommand extends BaseCommand<
    * These can be exposed to Services if needed for features like telemetry or caching.
    */
   async run(): Promise<void> {
+    this.baseCommandTest();
     // Flags are already parsed by BaseCommand.init()
     // Parse toolsets and tools from comma-separated strings
     // Note: toolsets are uppercased, tools are lowercased by their parse functions
