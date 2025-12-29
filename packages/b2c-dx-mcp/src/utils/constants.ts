@@ -1,34 +1,18 @@
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
 /**
  * Special toolset value that enables all toolsets.
  */
-export const ALL_TOOLSETS = "ALL";
+export const ALL_TOOLSETS = 'ALL';
 
 /**
  * Available toolsets that can be enabled.
  */
-export const TOOLSETS = [
-  "CARTRIDGES",
-  "MRT",
-  "PWAV3",
-  "SCAPI",
-  "STOREFRONTNEXT",
-] as const;
+export const TOOLSETS = ['CARTRIDGES', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'] as const;
 
 /**
  * Valid toolset names including the special "ALL" value.

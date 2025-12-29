@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --conditions development --import tsx
+#!/usr/bin/env -S node --conditions development
 /*
  * Copyright (c) 2025, Salesforce, Inc.
  * SPDX-License-Identifier: Apache-2

@@ -9,8 +9,6 @@ export default class Test extends BaseCommand<typeof Test> {
   static description = 'Test logging output';
   static hidden = true;
 
-
-
   async run(): Promise<void> {
     // Test this.log() which now uses pino
     this.baseCommandTest();

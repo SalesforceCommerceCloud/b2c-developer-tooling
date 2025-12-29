@@ -1,17 +1,7 @@
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
 /**
@@ -22,41 +12,34 @@
  * @module tools/cartridges
  */
 
-import { z } from "zod";
-import type { McpTool } from "../../utils/index.js";
-import type { Services } from "../../services.js";
+import {z} from 'zod';
+import type {McpTool} from '../../utils/index.js';
+import type {Services} from '../../services.js';
 
 /**
  * Creates a placeholder tool that logs and returns a mock response.
  */
-function createPlaceholderTool(
-  name: string,
-  description: string,
-  _services: Services,
-): McpTool {
+function createPlaceholderTool(name: string, description: string, _services: Services): McpTool {
   return {
     name,
     description: `[PLACEHOLDER] ${description}`,
     inputSchema: {
-      message: z.string().optional().describe("Optional message to echo"),
+      message: z.string().optional().describe('Optional message to echo'),
     },
-    toolsets: ["CARTRIDGES"],
+    toolsets: ['CARTRIDGES'],
     isGA: false,
-    handler: async (args) => {
+    async handler(args) {
       const timestamp = new Date().toISOString();
-      console.error(
-        `[${timestamp}] CARTRIDGES tool '${name}' called with:`,
-        args,
-      );
+      console.error(`[${timestamp}] CARTRIDGES tool '${name}' called with:`, args);
 
       return {
         content: [
           {
-            type: "text" as const,
+            type: 'text' as const,
             text: JSON.stringify(
               {
                 tool: name,
-                status: "placeholder",
+                status: 'placeholder',
                 message: `This is a placeholder implementation for '${name}'. The actual implementation is coming soon.`,
                 input: args,
                 timestamp,
@@ -78,11 +61,5 @@ function createPlaceholderTool(
  * @returns Array of MCP tools
  */
 export function createCartridgesTools(services: Services): McpTool[] {
-  return [
-    createPlaceholderTool(
-      "cartridge_deploy",
-      "Deploy cartridges to a B2C Commerce instance",
-      services,
-    ),
-  ];
+  return [createPlaceholderTool('cartridge_deploy', 'Deploy cartridges to a B2C Commerce instance', services)];
 }

@@ -1,29 +1,19 @@
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { EOL } from "node:os";
-import type { McpTool, Toolset, StartupFlags } from "./utils/index.js";
-import { ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES } from "./utils/index.js";
-import type { B2CDxMcpServer } from "./server.js";
-import type { Services } from "./services.js";
-import { createCartridgesTools } from "./tools/cartridges/index.js";
-import { createMrtTools } from "./tools/mrt/index.js";
-import { createPwav3Tools } from "./tools/pwav3/index.js";
-import { createScapiTools } from "./tools/scapi/index.js";
-import { createStorefrontNextTools } from "./tools/storefrontnext/index.js";
+import {EOL} from 'node:os';
+import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
+import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
+import type {B2CDxMcpServer} from './server.js';
+import type {Services} from './services.js';
+import {createCartridgesTools} from './tools/cartridges/index.js';
+import {createMrtTools} from './tools/mrt/index.js';
+import {createPwav3Tools} from './tools/pwav3/index.js';
+import {createScapiTools} from './tools/scapi/index.js';
+import {createStorefrontNextTools} from './tools/storefrontnext/index.js';
 
 /**
  * Registry of tools organized by toolset.
@@ -82,11 +72,7 @@ export function createToolRegistry(services: Services): ToolRegistry {
  * @param server - B2CDxMcpServer instance
  * @param services - Services instance
  */
-export async function registerToolsets(
-  flags: StartupFlags,
-  server: B2CDxMcpServer,
-  services: Services,
-): Promise<void> {
+export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServer, services: Services): Promise<void> {
   const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];
   const allowNonGaTools = flags.allowNonGaTools ?? false;
@@ -103,35 +89,28 @@ export async function registerToolsets(
   const existingToolNames = new Set(allToolsByName.keys());
 
   // Warn about invalid --tools names (but continue with valid ones)
-  const invalidTools = individualTools.filter(
-    (name) => !existingToolNames.has(name),
-  );
+  const invalidTools = individualTools.filter((name) => !existingToolNames.has(name));
   if (invalidTools.length > 0) {
     console.error(
       `⚠️  Ignoring invalid tool name(s): "${invalidTools.join('", "')}"${EOL}` +
-        `   Valid tools: ${Array.from(existingToolNames).join(", ")}`,
+        `   Valid tools: ${[...existingToolNames].join(', ')}`,
     );
   }
 
   // Validate --toolsets names
   const invalidToolsets = toolsets.filter(
-    (t) =>
-      !VALID_TOOLSET_NAMES.includes(t as (typeof VALID_TOOLSET_NAMES)[number]),
+    (t) => !VALID_TOOLSET_NAMES.includes(t as (typeof VALID_TOOLSET_NAMES)[number]),
   );
   if (invalidToolsets.length > 0) {
     console.error(
       `⚠️  Ignoring invalid toolset(s): "${invalidToolsets.join('", "')}"\n` +
-        `   Valid toolsets: ${VALID_TOOLSET_NAMES.join(", ")}`,
+        `   Valid toolsets: ${VALID_TOOLSET_NAMES.join(', ')}`,
     );
   }
 
   // Determine which toolsets to enable
-  const validToolsets = toolsets.filter((t): t is Toolset =>
-    TOOLSETS.includes(t as Toolset),
-  );
-  const toolsetsToEnable = new Set<Toolset>(
-    toolsets.includes(ALL_TOOLSETS) ? TOOLSETS : validToolsets,
-  );
+  const validToolsets = toolsets.filter((t): t is Toolset => TOOLSETS.includes(t as Toolset));
+  const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? TOOLSETS : validToolsets);
 
   // Build the set of tools to register:
   // 1. Start with tools from enabled toolsets
@@ -165,11 +144,7 @@ export async function registerToolsets(
 /**
  * Register a list of tools with the server.
  */
-async function registerTools(
-  tools: McpTool[],
-  server: B2CDxMcpServer,
-  allowNonGaTools: boolean,
-): Promise<void> {
+async function registerTools(tools: McpTool[], server: B2CDxMcpServer, allowNonGaTools: boolean): Promise<void> {
   for (const tool of tools) {
     // Skip non-GA tools if not allowed
     if (tool.isGA === false && !allowNonGaTools) {
@@ -178,11 +153,6 @@ async function registerTools(
 
     // Register the tool
     // TODO: Telemetry - Tool registration includes timing/error tracking
-    server.addTool(
-      tool.name,
-      tool.description,
-      tool.inputSchema,
-      async (args) => tool.handler(args),
-    );
+    server.addTool(tool.name, tool.description, tool.inputSchema, async (args) => tool.handler(args));
   }
 }

@@ -21,6 +21,8 @@
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.17.1",
   "devDependencies": {
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
     "typedoc": "^0.28.14",
     "typedoc-plugin-markdown": "^4.9.0",
     "typedoc-vitepress-theme": "^1.1.2",

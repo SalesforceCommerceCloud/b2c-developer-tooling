@@ -1,22 +1,12 @@
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import type { z, ZodRawShape } from "zod";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import type { Toolset } from "./constants.js";
+import type {z, ZodRawShape} from 'zod';
+import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+import type {Toolset} from './constants.js';
 
 /**
  * Result returned from MCP tool execution.
@@ -43,8 +33,7 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> {
 /**
  * MCP Tool definition with handler.
  */
-export interface McpTool<T extends ZodRawShape = ZodRawShape>
-  extends McpToolConfig<T> {
+export interface McpTool<T extends ZodRawShape = ZodRawShape> extends McpToolConfig<T> {
   /** Handler function that executes the tool */
   handler: (args: z.infer<z.ZodObject<T>>) => Promise<ToolResult>;
 }

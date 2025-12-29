@@ -1,17 +1,7 @@
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
 /**
@@ -82,13 +72,13 @@
  * ```
  */
 
-import { Flags } from "@oclif/core";
-import { BaseCommand } from "@salesforce/b2c-tooling-sdk/cli";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { B2CDxMcpServer } from "../server.js";
-import { Services } from "../services.js";
-import { registerToolsets } from "../registry.js";
-import { TOOLSETS, type StartupFlags } from "../utils/index.js";
+import {Flags} from '@oclif/core';
+import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
+import {B2CDxMcpServer} from '../server.js';
+import {Services} from '../services.js';
+import {registerToolsets} from '../registry.js';
+import {TOOLSETS, type StartupFlags} from '../utils/index.js';
 
 /**
  * oclif Command that starts the B2C DX MCP server.
@@ -100,38 +90,36 @@ import { TOOLSETS, type StartupFlags } from "../utils/index.js";
  * - Automatic dw.json loading via `this.resolvedConfig`
  * - `this.config` - package.json metadata and standard config paths
  */
-export default class McpServerCommand extends BaseCommand<
-  typeof McpServerCommand
-> {
+export default class McpServerCommand extends BaseCommand<typeof McpServerCommand> {
   static description =
-    "Salesforce B2C Commerce Cloud Developer Experience MCP Server - Expose B2C Commerce Developer Experience tools to AI assistants";
+    'Salesforce B2C Commerce Cloud Developer Experience MCP Server - Expose B2C Commerce Developer Experience tools to AI assistants';
 
   static examples = [
-    "<%= config.bin %> <%= command.id %> --toolsets all",
-    "<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT,MRT",
-    "<%= config.bin %> <%= command.id %> --tools sfnext_deploy,mrt_bundle_push",
-    "<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT --tools sfnext_deploy",
-    "<%= config.bin %> <%= command.id %> --toolsets MRT --config /path/to/dw.json",
-    "<%= config.bin %> <%= command.id %> --toolsets all --debug",
+    '<%= config.bin %> <%= command.id %> --toolsets all',
+    '<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT,MRT',
+    '<%= config.bin %> <%= command.id %> --tools sfnext_deploy,mrt_bundle_push',
+    '<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT --tools sfnext_deploy',
+    '<%= config.bin %> <%= command.id %> --toolsets MRT --config /path/to/dw.json',
+    '<%= config.bin %> <%= command.id %> --toolsets all --debug',
   ];
 
   static flags = {
     // Toolset selection flags
     toolsets: Flags.string({
-      description: `Toolsets to enable (comma-separated). Options: all, ${TOOLSETS.join(", ")}`,
-      env: "SFCC_TOOLSETS",
+      description: `Toolsets to enable (comma-separated). Options: all, ${TOOLSETS.join(', ')}`,
+      env: 'SFCC_TOOLSETS',
       parse: async (input) => input.toUpperCase(),
     }),
     tools: Flags.string({
-      description: "Individual tools to enable (comma-separated)",
-      env: "SFCC_TOOLS",
+      description: 'Individual tools to enable (comma-separated)',
+      env: 'SFCC_TOOLS',
       parse: async (input) => input.toLowerCase(),
     }),
 
     // Feature flags
-    "allow-non-ga-tools": Flags.boolean({
-      description: "Enable non-GA (experimental) tools",
-      env: "SFCC_ALLOW_NON_GA_TOOLS",
+    'allow-non-ga-tools': Flags.boolean({
+      description: 'Enable non-GA (experimental) tools',
+      env: 'SFCC_ALLOW_NON_GA_TOOLS',
       default: false,
     }),
   };
@@ -150,7 +138,6 @@ export default class McpServerCommand extends BaseCommand<
    *
    * @throws Never throws - invalid toolsets are filtered, not rejected
    *
-   * @remarks
    * BaseCommand provides:
    * - `this.flags` - Parsed flags including global flags (config, debug, log-level, etc.)
    * - `this.resolvedConfig` - Loaded dw.json configuration
@@ -168,13 +155,9 @@ export default class McpServerCommand extends BaseCommand<
     // Parse toolsets and tools from comma-separated strings
     // Note: toolsets are uppercased, tools are lowercased by their parse functions
     const startupFlags: StartupFlags = {
-      toolsets: this.flags.toolsets
-        ? this.flags.toolsets.split(",").map((s) => s.trim())
-        : undefined,
-      tools: this.flags.tools
-        ? this.flags.tools.split(",").map((s) => s.trim())
-        : undefined,
-      allowNonGaTools: this.flags["allow-non-ga-tools"],
+      toolsets: this.flags.toolsets ? this.flags.toolsets.split(',').map((s) => s.trim()) : undefined,
+      tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
+      allowNonGaTools: this.flags['allow-non-ga-tools'],
       configPath: this.flags.config,
     };
 
@@ -220,13 +203,7 @@ export default class McpServerCommand extends BaseCommand<
     await server.connect(transport);
 
     // Log startup message using the structured logger
-    this.logger.info(
-      { version: this.config.version, toolsets: TOOLSETS },
-      "MCP Server running on stdio",
-    );
-    this.logger.info(
-      { enabled: startupFlags.toolsets ?? [] },
-      "Enabled toolsets",
-    );
+    this.logger.info({version: this.config.version, toolsets: TOOLSETS}, 'MCP Server running on stdio');
+    this.logger.info({enabled: startupFlags.toolsets ?? []}, 'Enabled toolsets');
   }
 }

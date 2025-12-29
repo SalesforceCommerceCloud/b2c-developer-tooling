@@ -1,17 +1,7 @@
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
 /**
@@ -22,9 +12,9 @@
  * @module tools/mrt
  */
 
-import { z } from "zod";
-import type { McpTool } from "../../utils/index.js";
-import type { Services } from "../../services.js";
+import {z} from 'zod';
+import type {McpTool} from '../../utils/index.js';
+import type {Services} from '../../services.js';
 
 /**
  * Creates the mrt_bundle_push tool.
@@ -37,27 +27,27 @@ import type { Services } from "../../services.js";
  */
 function createMrtBundlePushTool(_services: Services): McpTool {
   return {
-    name: "mrt_bundle_push",
-    description: "[PLACEHOLDER] Build, push bundle (optionally deploy)",
+    name: 'mrt_bundle_push',
+    description: '[PLACEHOLDER] Build, push bundle (optionally deploy)',
     inputSchema: {
-      projectId: z.string().optional().describe("MRT project ID"),
-      environmentId: z.string().optional().describe("Target environment ID"),
-      message: z.string().optional().describe("Deployment message"),
+      projectId: z.string().optional().describe('MRT project ID'),
+      environmentId: z.string().optional().describe('Target environment ID'),
+      message: z.string().optional().describe('Deployment message'),
     },
-    toolsets: ["MRT", "PWAV3", "STOREFRONTNEXT"],
+    toolsets: ['MRT', 'PWAV3', 'STOREFRONTNEXT'],
     isGA: false,
-    handler: async (args) => {
+    async handler(args) {
       const timestamp = new Date().toISOString();
       console.error(`[${timestamp}] mrt_bundle_push called with:`, args);
 
       return {
         content: [
           {
-            type: "text" as const,
+            type: 'text' as const,
             text: JSON.stringify(
               {
-                tool: "mrt_bundle_push",
-                status: "placeholder",
+                tool: 'mrt_bundle_push',
+                status: 'placeholder',
                 message:
                   "This is a placeholder implementation for 'mrt_bundle_push'. The actual implementation is coming soon.",
                 input: args,

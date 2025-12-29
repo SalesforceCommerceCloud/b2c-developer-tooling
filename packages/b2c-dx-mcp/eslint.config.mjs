@@ -1,42 +1,31 @@
 /*
- * Copyright 2025, Salesforce, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {includeIgnoreFile} from '@eslint/compat';
+import oclif from 'eslint-config-oclif';
+import headerPlugin from 'eslint-plugin-header';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import prettierConfig from 'eslint-config-prettier';
+import {copyrightHeader, sharedRules, oclifRules, prettierPlugin} from '../../eslint.config.mjs';
 
-export default tseslint.config(
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  prettierConfig,
+const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.gitignore');
+headerPlugin.rules.header.meta.schema = false;
+
+export default [
+  includeIgnoreFile(gitignorePath),
+  ...oclif,
+  prettierPlugin,
   {
-    ignores: ['dist/**', 'node_modules/**'],
-  },
-  {
+    plugins: {
+      header: headerPlugin,
+    },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', {argsIgnorePattern: '^_'}],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      'header/header': ['error', 'block', copyrightHeader],
+      ...sharedRules,
+      ...oclifRules,
     },
   },
-  // Allow chai assertion expressions in test files
-  {
-    files: ['test/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-unused-expressions': 'off',
-    },
-  },
-);
-
+];
