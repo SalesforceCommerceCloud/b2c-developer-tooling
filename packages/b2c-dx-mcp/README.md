@@ -202,7 +202,7 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
   "mcpServers": {
     "b2c-dx-local": {
       "command": "node",
-      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"]
+      "args": ["--conditions", "development", "/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"]
     }
   }
 }
