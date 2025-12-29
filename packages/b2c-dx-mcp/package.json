@@ -66,6 +66,7 @@
     "format:check": "prettier --check src",
     "preinspect": "pnpm run build",
     "inspect": "mcp-inspector node bin/run.js --toolsets all --allow-non-ga-tools",
+    "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all --allow-non-ga-tools",
     "pretest": "tsc --noEmit -p test",
     "test": "mocha --forbid-only \"test/**/*.test.ts\"",
     "posttest": "pnpm run lint",

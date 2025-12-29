@@ -185,45 +185,30 @@ For CLI-based testing:
 
 ```bash
 # List all tools
-npx mcp-inspector --cli node bin/run.js --toolsets all --allow-non-ga-tools --method tools/list
+npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools --method tools/list
 
 # Call a specific tool
-npx mcp-inspector --cli node bin/run.js --toolsets all --allow-non-ga-tools \
+npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools \
   --method tools/call \
   --tool-name sfnext_design_decorator
 ```
 
 #### 2. IDE Integration
 
-Configure your IDE to use the local server. Choose development mode (no build required) or production mode (requires build).
-
-**Development Mode** (recommended for active development - uses TypeScript source directly):
+Configure your IDE to use the local MCP server. Add this to your IDE's MCP configuration:
 
 ```json
 {
   "mcpServers": {
     "b2c-dx-local": {
-      "command": "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "all", "--allow-non-ga-tools"]
+      "command": "node",
+      "args": ["--conditions", "development", "/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"]
     }
   }
 }
 ```
 
-**Production Mode** (uses compiled JavaScript - run `pnpm run build` first):
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx-local": {
-      "command": "/full/path/to/packages/b2c-dx-mcp/bin/run.js",
-      "args": ["--toolsets", "all", "--allow-non-ga-tools"]
-    }
-  }
-}
-```
-
-> **Note:** For production mode, run `pnpm run build` after code changes and restart your IDE. Development mode picks up changes automatically.
+> **Note:** Restart the MCP server in your IDE to pick up code changes.
 
 #### 3. JSON-RPC via stdin
 
@@ -231,10 +216,10 @@ Send raw MCP protocol messages:
 
 ```bash
 # List all tools (--allow-non-ga-tools required for placeholder tools)
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/run.js --toolsets all --allow-non-ga-tools
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/dev.js --toolsets all --allow-non-ga-tools
 
 # Call a specific tool
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/run.js --toolsets all --allow-non-ga-tools
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/dev.js --toolsets all --allow-non-ga-tools
 ```
 
 ### Configuration
