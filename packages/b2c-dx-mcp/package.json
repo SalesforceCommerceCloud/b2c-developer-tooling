@@ -59,7 +59,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
     "format": "prettier --write src",
