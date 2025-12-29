@@ -136,14 +136,17 @@ pnpm install
 # Navigate to the package directory
 cd packages/b2c-dx-mcp
 
+# Launch MCP Inspector for development (no build needed, uses TypeScript directly)
+pnpm run inspect:dev
+
+# Launch MCP Inspector with production build (runs build first)
+pnpm run inspect
+
 # Build the package
 pnpm run build
 
 # Run tests (includes linting)
 pnpm run test
-
-# Launch MCP Inspector (builds first, then opens web UI)
-pnpm run inspect
 
 # Format code
 pnpm run format
@@ -176,7 +179,7 @@ pnpm --filter @salesforce/b2c-dx-mcp run <script>
 Use MCP Inspector to browse tools and test them in a web UI:
 
 ```bash
-pnpm run inspect
+pnpm run inspect:dev
 ```
 
 This automatically builds before starting the inspector. Open the localhost URL shown in the terminal, click **Connect**, then **List Tools** to see available tools.
