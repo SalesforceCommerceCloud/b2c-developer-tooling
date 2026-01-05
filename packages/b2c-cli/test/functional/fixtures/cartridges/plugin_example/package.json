@@ -1,0 +1,7 @@
+{
+  "name": "plugin_example",
+  "version": "1.0.0",
+  "description": "Example test cartridge for E2E testing",
+  "main": "cartridge/scripts/test.js"
+}
+
