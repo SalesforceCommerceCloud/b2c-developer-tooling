@@ -13,41 +13,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Helper function to parse JSON response from CLI
- */
-function extractJsonFromText(text: string): null | string {
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    return text.slice(firstBrace, lastBrace + 1);
-  }
-
-  const firstBracket = text.indexOf('[');
-  const lastBracket = text.lastIndexOf(']');
-  if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-    return text.slice(firstBracket, lastBracket + 1);
-  }
-
-  return null;
-}
-
-function parseJson(output: string): Record<string, unknown> {
-  try {
-    return JSON.parse(output);
-  } catch {
-    const jsonString = extractJsonFromText(output);
-    if (jsonString) {
-      try {
-        return JSON.parse(jsonString);
-      } catch {
-        // fallthrough to throw below
-      }
-    }
-    throw new Error(`No valid JSON found in output: ${output}`);
-  }
-}
-
-/**
  * E2E Tests for ODS (On-Demand Sandbox) Lifecycle
  *
  * This test suite covers the complete lifecycle of an ODS sandbox:
@@ -101,7 +66,7 @@ describe('ODS Lifecycle E2E Tests', function () {
   async function getSandboxState(sandboxId: string): Promise<null | string> {
     const result = await runCLI(['ods', 'get', sandboxId, '--json']);
     if (result.exitCode === 0) {
-      const sandbox = parseJson(result.stdout);
+      const sandbox = JSON.parse(result.stdout);
       return sandbox.state as null | string;
     }
     return null;
@@ -127,7 +92,7 @@ describe('ODS Lifecycle E2E Tests', function () {
       expect(result.exitCode).to.equal(0, `Create command failed: ${result.stderr}`);
       expect(result.stdout, 'Create command should return JSON output').to.not.be.empty;
 
-      const response = parseJson(result.stdout);
+      const response = JSON.parse(result.stdout);
       expect(response, 'Create response should be a valid object').to.be.an('object');
       expect(response.id, 'Create response should contain a sandbox ID').to.be.a('string').and.not.be.empty;
       expect(response.hostName, 'Create response should contain a hostname').to.be.a('string').and.not.be.empty;
@@ -156,7 +121,7 @@ describe('ODS Lifecycle E2E Tests', function () {
       expect(result.exitCode).to.equal(0, `List command failed: ${result.stderr}`);
       expect(result.stdout, 'List command should return JSON output').to.not.be.empty;
 
-      const response = parseJson(result.stdout);
+      const response = JSON.parse(result.stdout);
       expect(response, 'List response should be a valid object').to.be.an('object');
       expect(response.data, 'List response should contain data array').to.be.an('array');
 
@@ -192,7 +157,7 @@ describe('ODS Lifecycle E2E Tests', function () {
       expect(result.exitCode).to.equal(0, `Deploy command failed: ${result.stderr}`);
       expect(result.stdout, 'Deploy command should return JSON output').to.not.be.empty;
 
-      const response = parseJson(result.stdout);
+      const response = JSON.parse(result.stdout);
       expect(response, 'Deploy response should be a valid object').to.be.an('object');
       expect(response.cartridges, 'Deploy response should contain cartridges array')
         .to.be.an('array')
@@ -272,7 +237,7 @@ describe('ODS Lifecycle E2E Tests', function () {
       expect(result.exitCode).to.equal(0, `Get command failed: ${result.stderr}`);
       expect(result.stdout, 'Get command should return JSON output').to.not.be.empty;
 
-      const response = parseJson(result.stdout);
+      const response = JSON.parse(result.stdout);
       expect(response, 'Get response should be a valid object').to.be.an('object');
       expect(response.id, `Get response ID '${response.id}' should match requested sandbox '${sandboxId}'`).to.equal(
         sandboxId,
