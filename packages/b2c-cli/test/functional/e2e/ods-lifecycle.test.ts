@@ -102,7 +102,7 @@ describe('ODS Lifecycle E2E Tests', function () {
     const result = await runCLI(['ods', 'get', sandboxId, '--json']);
     if (result.exitCode === 0) {
       const sandbox = parseJson(result.stdout);
-      return sandbox.state;
+      return sandbox.state as null | string;
     }
     return null;
   }
@@ -136,8 +136,8 @@ describe('ODS Lifecycle E2E Tests', function () {
       );
 
       // Store for subsequent tests
-      sandboxId = response.id;
-      serverHostname = response.hostName;
+      sandboxId = response.id as string;
+      serverHostname = response.hostName as string;
 
       // Debug output to verify values are set
       console.log(`Created sandbox: ${sandboxId} on ${serverHostname}`);
@@ -161,9 +161,11 @@ describe('ODS Lifecycle E2E Tests', function () {
       expect(response.data, 'List response should contain data array').to.be.an('array');
 
       // Find our sandbox in the list
-      const foundSandbox = response.data.find((sandbox: Record<string, unknown>) => sandbox.id === sandboxId);
+      const foundSandbox = (response.data as Record<string, unknown>[]).find(
+        (sandbox: Record<string, unknown>) => sandbox.id === sandboxId,
+      );
       expect(foundSandbox, `Sandbox '${sandboxId}' not found in list.`).to.exist;
-      expect(foundSandbox.id).to.equal(sandboxId);
+      expect(foundSandbox!.id).to.equal(sandboxId);
     });
   });
 
