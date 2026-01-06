@@ -20,6 +20,11 @@
  * | `--tools` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | Enable experimental/non-GA tools |
  *
+ * ### Auth Flags
+ * | Flag | Description |
+ * |------|-------------|
+ * | `--mrt-api-key` | MRT API key for Managed Runtime operations |
+ *
  * ### Global Flags (inherited from BaseCommand)
  * | Flag | Description |
  * |------|-------------|
@@ -32,9 +37,15 @@
  *
  * ## Configuration Priority
  *
+ * ### B2C Instance Configuration (dw.json)
  * 1. Environment variables (SFCC_*) - highest priority, override dw.json
  * 2. dw.json file (explicit path via --config, or auto-discovered)
  * 3. Auto-discovery (searches upward from cwd)
+ *
+ * ### MRT API Key
+ * 1. `--mrt-api-key` flag (highest priority)
+ * 2. `SFCC_MRT_API_KEY` environment variable
+ * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--mrt-cloud-origin` is set)
  *
  * ## Toolset Validation
  *
@@ -66,6 +77,11 @@
  * b2c-dx-mcp --toolsets all --config /path/to/dw.json
  * ```
  *
+ * @example Start MRT tools with API key
+ * ```bash
+ * b2c-dx-mcp --toolsets MRT --mrt-api-key your-api-key
+ * ```
+ *
  * @example Enable debug logging
  * ```bash
  * b2c-dx-mcp --toolsets all --debug
@@ -74,6 +90,7 @@
 
 import {Flags} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
@@ -116,6 +133,18 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       parse: async (input) => input.toLowerCase(),
     }),
 
+    // Auth flags
+    'mrt-api-key': Flags.string({
+      description: 'MRT API key for Managed Runtime operations',
+      env: 'SFCC_MRT_API_KEY',
+      helpGroup: 'AUTH',
+    }),
+    'mrt-cloud-origin': Flags.string({
+      description: `MRT cloud origin URL (default: ${DEFAULT_MRT_ORIGIN})`,
+      env: 'SFCC_MRT_CLOUD_ORIGIN',
+      helpGroup: 'AUTH',
+    }),
+
     // Feature flags
     'allow-non-ga-tools': Flags.boolean({
       description: 'Enable non-GA (experimental) tools',
@@ -131,7 +160,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 1. BaseCommand.init() parses flags and loads config
    * 2. Filter and validate toolsets (invalid ones are skipped with warning)
    * 3. Create B2CDxMcpServer instance
-   * 4. Create Services for dependency injection (config, file system access)
+   * 4. Create Services via Services.create() which resolves MRT auth from flags/env/config
    * 5. Register tools based on --toolsets and --tools flags
    * 6. Connect to stdio transport (JSON-RPC over stdin/stdout)
    * 7. Log startup message to stderr
@@ -188,10 +217,11 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       },
     );
 
-    // Create services for dependency injection
-    // Pass the config path for tools that need to load configuration
-    const services = new Services({
+    // Create services with MRT auth resolved from flags/env/config
+    const services = Services.create({
       configPath: this.flags.config,
+      mrtApiKey: this.flags['mrt-api-key'],
+      mrtCloudOrigin: this.flags['mrt-cloud-origin'],
     });
 
     // Register toolsets
@@ -202,7 +232,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     await server.connect(transport);
 
     // Log startup message using the structured logger
-    this.logger.info({version: this.config.version, toolsets: TOOLSETS}, 'MCP Server running on stdio');
-    this.logger.info({enabled: startupFlags.toolsets ?? []}, 'Enabled toolsets');
+    this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
   }
 }

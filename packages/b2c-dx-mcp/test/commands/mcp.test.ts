@@ -58,6 +58,12 @@ describe('McpServerCommand', () => {
       // config flag env is inherited from BaseCommand
       expect(McpServerCommand.baseFlags.config.env).to.equal('SFCC_CONFIG');
     });
+
+    it('should define mrt-api-key flag with env var support', () => {
+      const flag = McpServerCommand.flags['mrt-api-key'];
+      expect(flag).to.not.be.undefined;
+      expect(flag.env).to.equal('SFCC_MRT_API_KEY');
+    });
   });
 
   describe('flag parse functions', () => {

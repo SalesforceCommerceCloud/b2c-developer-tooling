@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {EOL} from 'node:os';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
 import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
@@ -83,28 +83,30 @@ export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServ
   // Create the tool registry (all available tools)
   const toolRegistry = createToolRegistry(services);
 
-  // Build flat list of all tools for validation and lookup
+  // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();
   const allToolsByName = new Map(allTools.map((tool) => [tool.name, tool]));
   const existingToolNames = new Set(allToolsByName.keys());
 
+  const logger = getLogger();
+
   // Warn about invalid --tools names (but continue with valid ones)
   const invalidTools = individualTools.filter((name) => !existingToolNames.has(name));
   if (invalidTools.length > 0) {
-    console.error(
-      `⚠️  Ignoring invalid tool name(s): "${invalidTools.join('", "')}"${EOL}` +
-        `   Valid tools: ${[...existingToolNames].join(', ')}`,
+    logger.warn(
+      {invalidTools, validTools: [...existingToolNames]},
+      `Ignoring invalid tool name(s): "${invalidTools.join('", "')}"`,
     );
   }
 
-  // Validate --toolsets names
+  // Warn about invalid --toolsets names (but continue with valid ones)
   const invalidToolsets = toolsets.filter(
     (t) => !VALID_TOOLSET_NAMES.includes(t as (typeof VALID_TOOLSET_NAMES)[number]),
   );
   if (invalidToolsets.length > 0) {
-    console.error(
-      `⚠️  Ignoring invalid toolset(s): "${invalidToolsets.join('", "')}"\n` +
-        `   Valid toolsets: ${VALID_TOOLSET_NAMES.join(', ')}`,
+    logger.warn(
+      {invalidToolsets, validToolsets: VALID_TOOLSET_NAMES},
+      `Ignoring invalid toolset(s): "${invalidToolsets.join('", "')}"`,
     );
   }
 

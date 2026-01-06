@@ -7,6 +7,14 @@
 import {expect} from 'chai';
 import {B2CDxMcpServer} from '../src/server.js';
 
+// Handlers extracted to module scope to reduce callback nesting depth
+const simpleHandler = async () => ({content: [{type: 'text' as const, text: 'ok'}]});
+const toolOneHandler = async () => ({content: [{type: 'text' as const, text: 'one'}]});
+const toolTwoHandler = async () => ({content: [{type: 'text' as const, text: 'two'}]});
+const paramHandler = async (args: Record<string, unknown>) => ({
+  content: [{type: 'text' as const, text: `Hello ${args.name}`}],
+});
+
 describe('B2CDxMcpServer', () => {
   describe('constructor', () => {
     it('should create server with name and version', () => {
@@ -37,41 +45,28 @@ describe('B2CDxMcpServer', () => {
 
     it('should register a tool without throwing', () => {
       expect(() => {
-        server.addTool('test_tool', 'A test tool', {type: 'object', properties: {}}, async () => ({
-          content: [{type: 'text', text: 'ok'}],
-        }));
+        server.addTool('test_tool', 'A test tool', {type: 'object', properties: {}}, simpleHandler);
       }).to.not.throw();
     });
 
     it('should register multiple tools', () => {
       expect(() => {
-        server.addTool('tool_one', 'First tool', {type: 'object', properties: {}}, async () => ({
-          content: [{type: 'text', text: 'one'}],
-        }));
-
-        server.addTool('tool_two', 'Second tool', {type: 'object', properties: {}}, async () => ({
-          content: [{type: 'text', text: 'two'}],
-        }));
+        server.addTool('tool_one', 'First tool', {type: 'object', properties: {}}, toolOneHandler);
+        server.addTool('tool_two', 'Second tool', {type: 'object', properties: {}}, toolTwoHandler);
       }).to.not.throw();
     });
 
     it('should accept tools with input schema', () => {
+      const inputSchema = {
+        type: 'object',
+        properties: {
+          name: {type: 'string', description: 'Name parameter'},
+          count: {type: 'number', description: 'Count parameter'},
+        },
+        required: ['name'],
+      };
       expect(() => {
-        server.addTool(
-          'parameterized_tool',
-          'A tool with parameters',
-          {
-            type: 'object',
-            properties: {
-              name: {type: 'string', description: 'Name parameter'},
-              count: {type: 'number', description: 'Count parameter'},
-            },
-            required: ['name'],
-          },
-          async (args) => ({
-            content: [{type: 'text', text: `Hello ${args.name}`}],
-          }),
-        );
+        server.addTool('parameterized_tool', 'A tool with parameters', inputSchema, paramHandler);
       }).to.not.throw();
     });
   });

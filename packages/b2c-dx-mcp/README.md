@@ -22,6 +22,13 @@ Since the package is not yet published to npm, see the [Development](#developmen
 | `--tools` | Comma-separated individual tools to enable (case-insensitive) |
 | `--allow-non-ga-tools` | Enable experimental (non-GA) tools |
 
+#### Auth Flags
+
+| Flag | Env Variable | Description |
+|------|--------------|-------------|
+| `--mrt-api-key` | `SFCC_MRT_API_KEY` | MRT API key for Managed Runtime operations |
+| `--mrt-cloud-origin` | `SFCC_MRT_CLOUD_ORIGIN` | MRT cloud origin URL (default: https://cloud.mobify.com). See [Environment-Specific Config Files](#environment-specific-config-files) |
+
 #### Global Flags (inherited from SDK)
 
 | Flag | Description |
@@ -47,6 +54,13 @@ Since the package is not yet published to npm, see the [Development](#developmen
 
 // Explicit config file path
 "args": ["--toolsets", "all", "--config", "/path/to/dw.json"]
+
+// MRT tools with API key
+"args": ["--toolsets", "MRT", "--mrt-api-key", "your-api-key"]
+
+// Or use environment variable in mcp.json
+"args": ["--toolsets", "MRT"],
+"env": { "SFCC_MRT_API_KEY": "your-api-key" }
 
 // Enable experimental tools (required for placeholder tools)
 "args": ["--toolsets", "all", "--allow-non-ga-tools"]
@@ -211,7 +225,20 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 }
 ```
 
-> **Note:** Restart the MCP server in your IDE to pick up code changes.
+**Production Mode** (uses compiled JavaScript - run `pnpm run build` first):
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx-local": {
+      "command": "node",
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/run.js", "--toolsets", "all", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+> **Note:** For production mode, run `pnpm run build` after code changes and restart your IDE. Development mode picks up changes automatically.
 
 #### 3. JSON-RPC via stdin
 
@@ -266,6 +293,76 @@ Create a `dw.json` file in your project root (auto-discovered by searching upwar
 ```
 
 > **Note:** Environment variables take precedence over `dw.json` values.
+
+#### MRT API Key
+
+MRT (Managed Runtime) operations require an API key from the [Runtime Admin](https://runtime.commercecloud.com/) dashboard.
+
+**Priority order** (highest to lowest):
+
+1. `--mrt-api-key` flag
+2. `SFCC_MRT_API_KEY` environment variable
+3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--mrt-cloud-origin` is set)
+
+**Option A: Flag or environment variable**
+
+```json
+// mcp.json - using flag
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "b2c-dx-mcp",
+      "args": ["--toolsets", "MRT", "--mrt-api-key", "your-api-key"]
+    }
+  }
+}
+
+// mcp.json - using env var
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "b2c-dx-mcp",
+      "args": ["--toolsets", "MRT"],
+      "env": {
+        "SFCC_MRT_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+**Option B: ~/.mobify file (legacy)**
+
+If you already use the `b2c` CLI for MRT operations, you may have a `~/.mobify` file configured:
+
+```json
+{
+  "username": "your.email@example.com",
+  "api_key": "your-api-key"
+}
+```
+
+The MCP server will automatically use this file as a fallback if no flag or environment variable is set.
+
+##### Environment-Specific Config Files
+
+When using `~/.mobify` config files (i.e., no `--mrt-api-key` flag or `SFCC_MRT_API_KEY` env var), you can use `--mrt-cloud-origin` to select an environment-specific config file:
+
+```bash
+# Uses ~/.mobify--cloud-staging.mobify.com for API key
+b2c-dx-mcp --toolsets MRT --mrt-cloud-origin https://cloud-staging.mobify.com
+
+# Or via environment variable
+SFCC_MRT_CLOUD_ORIGIN=https://cloud-staging.mobify.com b2c-dx-mcp --toolsets MRT
+```
+
+| Cloud Origin | Config File |
+|--------------|-------------|
+| (default) | `~/.mobify` |
+| `https://cloud-staging.mobify.com` | `~/.mobify--cloud-staging.mobify.com` |
+| `https://cloud-dev.mobify.com` | `~/.mobify--cloud-dev.mobify.com` |
+
+> **Note:** `--mrt-cloud-origin` is only relevant when the API key is resolved from a config file. If `--mrt-api-key` or `SFCC_MRT_API_KEY` is provided, this flag is ignored.
 
 ## License
 

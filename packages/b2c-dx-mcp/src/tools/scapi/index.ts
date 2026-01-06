@@ -15,43 +15,65 @@
 import {z} from 'zod';
 import type {McpTool, Toolset} from '../../utils/index.js';
 import type {Services} from '../../services.js';
+import {createToolAdapter, jsonResult} from '../adapter.js';
 
 /**
- * Creates a placeholder tool that logs and returns a mock response.
+ * Common input type for placeholder tools.
  */
-function createPlaceholderTool(name: string, description: string, toolsets: Toolset[], _services: Services): McpTool {
-  return {
-    name,
-    description: `[PLACEHOLDER] ${description}`,
-    inputSchema: {
-      message: z.string().optional().describe('Optional message to echo'),
-    },
-    toolsets,
-    isGA: false,
-    async handler(args) {
-      const timestamp = new Date().toISOString();
-      console.error(`[${timestamp}] SCAPI tool '${name}' called with:`, args);
+interface PlaceholderInput {
+  message?: string;
+}
 
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify(
-              {
-                tool: name,
-                status: 'placeholder',
-                message: `This is a placeholder implementation for '${name}'. The actual implementation is coming soon.`,
-                input: args,
-                timestamp,
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      };
+/**
+ * Common output type for placeholder tools.
+ */
+interface PlaceholderOutput {
+  tool: string;
+  status: string;
+  message: string;
+  input: PlaceholderInput;
+  timestamp: string;
+}
+
+/**
+ * Creates a placeholder tool for SCAPI operations.
+ *
+ * Placeholder tools log invocations and return mock responses until
+ * the actual implementation is available.
+ *
+ * @param name - Tool name
+ * @param description - Tool description
+ * @param toolsets - Toolsets this tool belongs to
+ * @param services - MCP services
+ * @returns The configured MCP tool
+ */
+function createPlaceholderTool(name: string, description: string, toolsets: Toolset[], services: Services): McpTool {
+  return createToolAdapter<PlaceholderInput, PlaceholderOutput>(
+    {
+      name,
+      description: `[PLACEHOLDER] ${description}`,
+      toolsets,
+      isGA: false,
+      requiresInstance: true,
+      inputSchema: {
+        message: z.string().optional().describe('Optional message to echo'),
+      },
+      async execute(args) {
+        // Placeholder implementation
+        const timestamp = new Date().toISOString();
+
+        return {
+          tool: name,
+          status: 'placeholder',
+          message: `This is a placeholder implementation for '${name}'. The actual implementation is coming soon.`,
+          input: args,
+          timestamp,
+        };
+      },
+      formatOutput: (output) => jsonResult(output),
     },
-  };
+    services,
+  );
 }
 
 /**

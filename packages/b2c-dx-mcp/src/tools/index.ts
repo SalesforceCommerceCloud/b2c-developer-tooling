@@ -13,6 +13,9 @@
  * @module tools
  */
 
+// Tool adapter utilities
+export * from './adapter.js';
+
 // Toolset exports
 export * from './cartridges/index.js';
 export * from './mrt/index.js';
