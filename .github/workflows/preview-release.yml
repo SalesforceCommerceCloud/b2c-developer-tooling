@@ -58,10 +58,7 @@ jobs:
       - name: Run tests
         run: pnpm -r run test:unit
 
-      - name: Deploy and pack CLI with bundled SDK
-        env:
-          # Force pnpm to copy files instead of hard-linking from store
-          npm_config_package_import_method: copy
+      - name: Deploy and pack CLI with bundled dependencies
         run: |
           mkdir -p dist
           pnpm --filter @salesforce/b2c-cli deploy --legacy ./dist-deploy
