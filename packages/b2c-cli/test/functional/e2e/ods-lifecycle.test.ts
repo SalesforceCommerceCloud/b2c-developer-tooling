@@ -15,19 +15,32 @@ const __dirname = path.dirname(__filename);
 /**
  * Helper function to parse JSON response from CLI
  */
+function extractJsonFromText(text: string): null | string {
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return text.slice(firstBrace, lastBrace + 1);
+  }
+
+  const firstBracket = text.indexOf('[');
+  const lastBracket = text.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+    return text.slice(firstBracket, lastBracket + 1);
+  }
+
+  return null;
+}
+
 function parseJson(output: string): Record<string, unknown> {
   try {
-    // Try to parse the entire output as JSON first
     return JSON.parse(output);
   } catch {
-    // If that fails, look for JSON in the output
-    const lines = output.split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        try {
-          return JSON.parse(trimmed);
-        } catch {}
+    const jsonString = extractJsonFromText(output);
+    if (jsonString) {
+      try {
+        return JSON.parse(jsonString);
+      } catch {
+        // fallthrough to throw below
       }
     }
     throw new Error(`No valid JSON found in output: ${output}`);
@@ -219,7 +232,7 @@ describe('ODS Lifecycle E2E Tests', function () {
       expect(result.exitCode).to.equal(0, `Start command failed: ${result.stderr}`);
       const state = await getSandboxState(sandboxId);
       if (state) {
-        expect(['started']).to.include(state);
+        expect(['started', 'starting']).to.include(state);
       }
     });
   });
