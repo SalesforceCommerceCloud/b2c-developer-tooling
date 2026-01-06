@@ -62,9 +62,12 @@ jobs:
         run: |
           mkdir -p dist
           pnpm --filter @salesforce/b2c-cli deploy --legacy ./dist-deploy
+          # Generate oclif manifest while symlinks are intact
+          cd ./dist-deploy && npx oclif manifest && cd ..
           # Copy to break hard links from pnpm's content-addressable store
           cp -rL ./dist-deploy ./dist-pack
-          cd ./dist-pack && npm pack --pack-destination ../dist
+          # Pack without running prepack script (manifest already generated)
+          cd ./dist-pack && npm pack --ignore-scripts --pack-destination ../dist
 
       - name: List packed files
         run: ls -la dist/
