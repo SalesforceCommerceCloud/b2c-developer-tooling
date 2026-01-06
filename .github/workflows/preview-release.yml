@@ -62,7 +62,9 @@ jobs:
         run: |
           mkdir -p dist
           pnpm --filter @salesforce/b2c-cli deploy --legacy ./dist-deploy
-          cd ./dist-deploy && npm pack --pack-destination ../dist
+          # Copy to break hard links from pnpm's content-addressable store
+          cp -rL ./dist-deploy ./dist-pack
+          cd ./dist-pack && npm pack --pack-destination ../dist
 
       - name: List packed files
         run: ls -la dist/
