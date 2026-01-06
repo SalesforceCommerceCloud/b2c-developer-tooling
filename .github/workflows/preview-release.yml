@@ -59,15 +59,13 @@ jobs:
         run: pnpm -r run test:unit
 
       - name: Deploy and pack CLI with bundled SDK
+        env:
+          # Force pnpm to copy files instead of hard-linking from store
+          npm_config_package_import_method: copy
         run: |
           mkdir -p dist
           pnpm --filter @salesforce/b2c-cli deploy --legacy ./dist-deploy
-          # Generate oclif manifest while symlinks are intact
-          cd ./dist-deploy && npx oclif manifest && cd ..
-          # Copy to break hard links from pnpm's content-addressable store
-          cp -rL ./dist-deploy ./dist-pack
-          # Pack without running prepack script (manifest already generated)
-          cd ./dist-pack && npm pack --ignore-scripts --pack-destination ../dist
+          cd ./dist-deploy && npm pack --pack-destination ../dist
 
       - name: List packed files
         run: ls -la dist/
