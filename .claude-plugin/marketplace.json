@@ -1,0 +1,22 @@
+{
+  "name": "b2c-developer-tooling",
+  "description": "B2C Developer Tooling plugins for enhanced development workflows.",
+  "version": "0.0.1",
+  "owner": {
+    "name": "Salesforce Agentforce Commerce",
+    "email": "clavery@salesforce.com"
+  },
+  "plugins": [
+    {
+      "name": "b2c-cli",
+      "description": "B2C CLI Skills for Salesforce Commerce Cloud development.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./plugins/b2c-cli",
+      "category": "productivity",
+      "strict": false
+    }
+  ]
+}
