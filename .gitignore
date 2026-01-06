@@ -29,3 +29,4 @@ docs/api/
 dw.json
 dw.json*
 .env
+.config/wt.toml
