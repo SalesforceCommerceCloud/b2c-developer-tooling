@@ -80,6 +80,35 @@ Features:
 - Supports `extended` flag on columns for optional fields
 - Use `TableRenderer` class directly for column validation helpers (e.g., `--columns` flag support)
 
+## Claude Code Skills Plugin
+
+The `./plugins/b2c-cli/skills/` directory contains Claude Code skills that teach Claude about the CLI commands. Each skill has a `SKILL.md` file with examples and documentation.
+
+**When modifying CLI commands:**
+- Update the corresponding skill in `plugins/b2c-cli/skills/b2c-<topic>/SKILL.md` if it exists
+- For breaking changes (renamed flags, removed arguments, changed behavior), update all affected examples
+
+**Skill format:**
+```markdown
+---
+name: b2c-<topic>
+description: Brief description of what the skill teaches
+---
+
+# B2C <Topic> Skill
+
+Overview of the command topic.
+
+## Examples
+
+### <Use Case>
+
+\`\`\`bash
+# comment explaining the command
+b2c <topic> <command> [args] [flags]
+\`\`\`
+```
+
 ## Testing
 
 Tests use Mocha + Chai with c8 for coverage. HTTP mocking uses MSW (Mock Service Worker).
