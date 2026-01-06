@@ -137,6 +137,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
           clientId: config.clientId,
           clientSecret: config.clientSecret,
           scopes: config.scopes,
+          accountManagerHost: this.accountManagerHost,
         };
       }
 
