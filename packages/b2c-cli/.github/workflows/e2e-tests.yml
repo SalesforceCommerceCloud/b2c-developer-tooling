@@ -1,19 +1,12 @@
 name: e2e tests
 
 on:
-  # Nightly workflow - Run E2E tests on a schedule (nightly)
+  # Nightly workflow - Run E2E tests on a schedule
   schedule:
     - cron: '0 2 * * *'  # Run at 2 AM UTC daily
-  
   # Post-merge - Run after changes are merged to main
   push:
     branches: [main]
-  # To be removed post testing
-  pull_request:
-    branches:
-      - main
-
-  
   # Manual trigger - Support workflow_dispatch for on-demand runs
   workflow_dispatch:
     inputs:
@@ -23,6 +16,10 @@ on:
         type: string
       sfcc_client_id:
         description: 'SFCC Client ID (optional, defaults to var)'
+        required: false
+        type: string
+      sfcc_client_secret:
+        description: 'SFCC Client Secret (optional, defaults to secret)'
         required: false
         type: string
       sfcc_account_manager_host:
@@ -50,29 +47,19 @@ on:
         options:
           - 'ubuntu-latest'
           - 'windows-latest'
-
 jobs:
   e2e-tests:
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'windows-latest']
-        node_version: ['lts/*']
-      fail-fast: false
-    runs-on: ${{ inputs.os || matrix.os }}
+        node_version: [22.x, 24.x]
+    runs-on: ubuntu-latest
     environment: e2e-dev
     timeout-minutes: 10  # E2E tests can take longer
-    
-    # Only run if we have the required secrets
-    if: >
-      (github.event_name == 'schedule' || 
-       github.event_name == 'workflow_dispatch' || 
-       (github.event_name == 'push'))
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ inputs.node_version || matrix.node_version }}
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
       - name: Check for required secrets and vars
         id: check-secrets
@@ -83,13 +70,12 @@ jobs:
           SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
           SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
         run: |
-          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ]; then
+          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "SFCC_SANDBOX_API_HOST" ]; then
             echo "has-secrets=true" >> $GITHUB_OUTPUT
           else
             echo "has-secrets=false" >> $GITHUB_OUTPUT
-            echo "⚠️ E2E tests skipped - missing required variables:" >> $GITHUB_STEP_SUMMARY
+            echo "E2E tests skipped - missing required variables:" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_CLIENT_ID (var): ${SFCC_CLIENT_ID:+✓}" >> $GITHUB_STEP_SUMMARY
-            echo "  - SFCC_CLIENT_SECRET (secret): ${SFCC_CLIENT_SECRET:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - TEST_REALM (var): ${TEST_REALM:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_ACCOUNT_MANAGER_HOST (var): ${SFCC_ACCOUNT_MANAGER_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_SANDBOX_API_HOST (var): ${SFCC_SANDBOX_API_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
@@ -106,7 +92,7 @@ jobs:
         env:
           # Required environment variables for Commerce Cloud integration
           SFCC_CLIENT_ID: ${{ inputs.sfcc_client_id || vars.SFCC_CLIENT_ID }}
-          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          SFCC_CLIENT_SECRET: ${{ inputs.sfcc_client_secret || secrets.SFCC_CLIENT_SECRET }}
           SFCC_ACCOUNT_MANAGER_HOST: ${{ inputs.sfcc_account_manager_host || vars.SFCC_ACCOUNT_MANAGER_HOST }}
           SFCC_SANDBOX_API_HOST: ${{ inputs.sfcc_sandbox_api_host || vars.SFCC_SANDBOX_API_HOST }}
           TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
@@ -143,7 +129,7 @@ jobs:
             if [ "$FAILURES" -gt "0" ]; then
               echo "### Failed Tests" >> $GITHUB_STEP_SUMMARY
               echo '```' >> $GITHUB_STEP_SUMMARY
-              cat e2e-results.json | jq -r '.failures[]? | "❌ " + .fullTitle + "\n   " + .err.message' >> $GITHUB_STEP_SUMMARY
+              cat e2e-results.json | jq -r '.failures[]? | "[X] " + .fullTitle + "\n   " + .err.message' >> $GITHUB_STEP_SUMMARY
               echo '```' >> $GITHUB_STEP_SUMMARY
             fi
           fi
