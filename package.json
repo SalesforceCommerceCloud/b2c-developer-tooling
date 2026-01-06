@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-cli-root",
-  "version": "0.0.1",
+  "version": "0.0.1-preview",
   "description": "Salesforce Commerce Cloud B2C Command Line Tools",
   "main": "index.js",
   "scripts": {

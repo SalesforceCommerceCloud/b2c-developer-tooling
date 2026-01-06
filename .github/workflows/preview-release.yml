@@ -58,10 +58,11 @@ jobs:
       - name: Run tests
         run: pnpm -r run test:unit
 
-      - name: Pack all packages
+      - name: Deploy and pack CLI with bundled SDK
         run: |
           mkdir -p dist
-          pnpm pack -r --pack-destination ./dist
+          pnpm --filter @salesforce/b2c-cli deploy --legacy ./dist-deploy
+          cd ./dist-deploy && npm pack --pack-destination ../dist
 
       - name: List packed files
         run: ls -la dist/

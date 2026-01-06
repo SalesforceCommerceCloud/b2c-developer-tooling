@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.0.0",
+  "version": "0.0.1-preview",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -17,12 +17,14 @@
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "^9.0.1"
   },
+  "bundleDependencies": [
+    "@salesforce/b2c-tooling-sdk"
+  ],
   "devDependencies": {
     "@eslint/compat": "^1",
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^4",
     "@salesforce/dev-config": "^4.3.2",
-    "eslint-plugin-header": "^3.1.1",
     "@types/chai": "^4",
     "@types/mocha": "^10",
     "@types/node": "^18",
@@ -31,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-oclif": "^6",
     "eslint-config-prettier": "^10",
+    "eslint-plugin-header": "^3.1.1",
     "eslint-plugin-prettier": "^5.5.4",
     "mocha": "^10",
     "oclif": "^4",

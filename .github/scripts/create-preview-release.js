@@ -19,21 +19,19 @@ export async function createPreviewRelease({ github, context, version, distDir }
 
 ### Installation
 
-Download both tgz files and install them together:
+Download the tgz file and install:
 
 \`\`\`bash
-npm install ./salesforce-b2c-tooling-sdk-${version}.tgz \\
-            ./salesforce-b2c-cli-${version}.tgz
+npm install ./salesforce-b2c-cli-${version}.tgz
 \`\`\`
 
 Or install globally:
 
 \`\`\`bash
-npm install -g ./salesforce-b2c-tooling-sdk-${version}.tgz \\
-               ./salesforce-b2c-cli-${version}.tgz
+npm install -g ./salesforce-b2c-cli-${version}.tgz
 \`\`\`
 
-> **Note:** Both packages must be installed together since the CLI depends on the SDK.
+> **Note:** The SDK is bundled in the CLI package.
 `;
 
   // Create the release
