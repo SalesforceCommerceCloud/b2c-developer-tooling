@@ -79,12 +79,30 @@ jobs:
             echo "  - SFCC_ACCOUNT_MANAGER_HOST (var): ${SFCC_ACCOUNT_MANAGER_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_SANDBOX_API_HOST (var): ${SFCC_SANDBOX_API_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
           fi
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
       - name: Install dependencies
         if: steps.check-secrets.outputs.has-secrets == 'true'
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Build package
         if: steps.check-secrets.outputs.has-secrets == 'true'
-        run: pnpm run build
+        run: pnpm -r run build
       - name: Run E2E Tests
         if: steps.check-secrets.outputs.has-secrets == 'true'
         id: e2e-test
@@ -102,11 +120,11 @@ jobs:
           echo "Running E2E tests with realm: ${TEST_REALM}"
           
           # Run E2E tests with JSON output for parsing
-          pnpm mocha "test/functional/e2e/**/*.test.ts" --reporter json > e2e-results.json || true
+          pnpm mocha "packages/b2c-cli/test/functional/e2e/**/*.test.ts" --reporter json > e2e-results.json || true
           
           # Also run with spec reporter for readable output
           echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
-          pnpm mocha "test/functional/e2e/**/*.test.ts" --reporter spec
+          pnpm mocha "packages/b2c-cli/test/functional/e2e/**/*.test.ts" --reporter spec
       - name: Parse E2E Results
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         run: |
