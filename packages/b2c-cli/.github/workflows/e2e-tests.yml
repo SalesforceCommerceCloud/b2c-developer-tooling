@@ -7,8 +7,12 @@ on:
   
   # Post-merge - Run after changes are merged to main
   push:
-    #branches: [main]
-    branches-ignore: [main]
+    branches: [main]
+  # To be removed post testing
+  pull_request:
+    branches:
+      - main
+
   
   # Manual trigger - Support workflow_dispatch for on-demand runs
   workflow_dispatch:
@@ -56,7 +60,7 @@ jobs:
       fail-fast: false
     runs-on: ${{ inputs.os || matrix.os }}
     environment: e2e-dev
-    timeout-minutes: 45  # E2E tests can take longer
+    timeout-minutes: 10  # E2E tests can take longer
     
     # Only run if we have the required secrets
     if: >
@@ -66,12 +70,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version || matrix.node_version }}
           cache: pnpm
-
       - name: Check for required secrets and vars
         id: check-secrets
         env:
@@ -92,15 +94,12 @@ jobs:
             echo "  - SFCC_ACCOUNT_MANAGER_HOST (var): ${SFCC_ACCOUNT_MANAGER_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_SANDBOX_API_HOST (var): ${SFCC_SANDBOX_API_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
           fi
-
       - name: Install dependencies
         if: steps.check-secrets.outputs.has-secrets == 'true'
         run: pnpm install
-
       - name: Build package
         if: steps.check-secrets.outputs.has-secrets == 'true'
         run: pnpm run build
-
       - name: Run E2E Tests
         if: steps.check-secrets.outputs.has-secrets == 'true'
         id: e2e-test
@@ -123,7 +122,6 @@ jobs:
           # Also run with spec reporter for readable output
           echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
           pnpm mocha "test/functional/e2e/**/*.test.ts" --reporter spec
-
       - name: Parse E2E Results
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         run: |
@@ -149,7 +147,6 @@ jobs:
               echo '```' >> $GITHUB_STEP_SUMMARY
             fi
           fi
-
       - name: Upload E2E Test Results
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         uses: actions/upload-artifact@v4
@@ -157,7 +154,6 @@ jobs:
           name: e2e-test-results-${{ matrix.os }}-node${{ matrix.node_version }}-${{ github.run_number }}
           path: e2e-results.json
           retention-days: 30
-
       - name: Notify on Failure
         if: failure() && (github.event_name == 'schedule' || github.event_name == 'push') && steps.check-secrets.outputs.has-secrets == 'true'
         uses: actions/github-script@v7
