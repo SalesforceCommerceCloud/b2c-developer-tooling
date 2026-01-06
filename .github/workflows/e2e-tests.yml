@@ -120,11 +120,8 @@ jobs:
           echo "Running E2E tests with realm: ${TEST_REALM}"
           
           # Run E2E tests with JSON output for parsing
-          pnpm mocha "packages/b2c-cli/test/functional/e2e/**/*.test.ts" --reporter json > e2e-results.json || true
+          pnpm --filter @salesforce/b2c-cli run test:e2e --reporter json --reporter-option output=e2e-results.json
           
-          # Also run with spec reporter for readable output
-          echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
-          pnpm mocha "packages/b2c-cli/test/functional/e2e/**/*.test.ts" --reporter spec
       - name: Parse E2E Results
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         run: |
