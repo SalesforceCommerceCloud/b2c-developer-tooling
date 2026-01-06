@@ -1,0 +1,187 @@
+name: e2e tests
+
+on:
+  # Nightly workflow - Run E2E tests on a schedule (nightly)
+  schedule:
+    - cron: '0 2 * * *'  # Run at 2 AM UTC daily
+  
+  # Post-merge - Run after changes are merged to main
+  push:
+    #branches: [main]
+    branches-ignore: [main]
+  
+  # Manual trigger - Support workflow_dispatch for on-demand runs
+  workflow_dispatch:
+    inputs:
+      test_realm:
+        description: 'Test realm to use (optional, defaults to var)'
+        required: false
+        type: string
+      sfcc_client_id:
+        description: 'SFCC Client ID (optional, defaults to var)'
+        required: false
+        type: string
+      sfcc_account_manager_host:
+        description: 'SFCC Account Manager Host (optional, defaults to var)'
+        required: false
+        type: string
+      sfcc_sandbox_api_host:
+        description: 'SFCC Sandbox API Host (optional, defaults to var)'
+        required: false
+        type: string
+      node_version:
+        description: 'Node.js version to test with'
+        required: false
+        default: 'lts/*'
+        type: choice
+        options:
+          - 'lts/-1'
+          - 'lts/*'
+          - 'latest'
+      os:
+        description: 'Operating system to test on'
+        required: false
+        default: 'ubuntu-latest'
+        type: choice
+        options:
+          - 'ubuntu-latest'
+          - 'windows-latest'
+
+jobs:
+  e2e-tests:
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest']
+        node_version: ['lts/*']
+      fail-fast: false
+    runs-on: ${{ inputs.os || matrix.os }}
+    environment: e2e-dev
+    timeout-minutes: 45  # E2E tests can take longer
+    
+    # Only run if we have the required secrets
+    if: >
+      (github.event_name == 'schedule' || 
+       github.event_name == 'workflow_dispatch' || 
+       (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version || matrix.node_version }}
+          cache: pnpm
+
+      - name: Check for required secrets and vars
+        id: check-secrets
+        env:
+          SFCC_CLIENT_ID: ${{ vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          TEST_REALM: ${{ vars.TEST_REALM }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+        run: |
+          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ]; then
+            echo "has-secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-secrets=false" >> $GITHUB_OUTPUT
+            echo "⚠️ E2E tests skipped - missing required variables:" >> $GITHUB_STEP_SUMMARY
+            echo "  - SFCC_CLIENT_ID (var): ${SFCC_CLIENT_ID:+✓}" >> $GITHUB_STEP_SUMMARY
+            echo "  - SFCC_CLIENT_SECRET (secret): ${SFCC_CLIENT_SECRET:+✓}" >> $GITHUB_STEP_SUMMARY
+            echo "  - TEST_REALM (var): ${TEST_REALM:+✓}" >> $GITHUB_STEP_SUMMARY
+            echo "  - SFCC_ACCOUNT_MANAGER_HOST (var): ${SFCC_ACCOUNT_MANAGER_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
+            echo "  - SFCC_SANDBOX_API_HOST (var): ${SFCC_SANDBOX_API_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Install dependencies
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        run: pnpm install
+
+      - name: Build package
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        run: pnpm run build
+
+      - name: Run E2E Tests
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        id: e2e-test
+        env:
+          # Required environment variables for Commerce Cloud integration
+          SFCC_CLIENT_ID: ${{ inputs.sfcc_client_id || vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ inputs.sfcc_account_manager_host || vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ inputs.sfcc_sandbox_api_host || vars.SFCC_SANDBOX_API_HOST }}
+          TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
+          # Test configuration
+          NODE_ENV: test
+          SFCC_LOG_LEVEL: silent
+        run: |
+          echo "Running E2E tests with realm: ${TEST_REALM}"
+          
+          # Run E2E tests with JSON output for parsing
+          pnpm mocha "test/functional/e2e/**/*.test.ts" --reporter json > e2e-results.json || true
+          
+          # Also run with spec reporter for readable output
+          echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          pnpm mocha "test/functional/e2e/**/*.test.ts" --reporter spec
+
+      - name: Parse E2E Results
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
+        run: |
+          if [ -f "e2e-results.json" ]; then
+            # Extract test summary from JSON results
+            TESTS=$(cat e2e-results.json | jq -r '.stats.tests // 0')
+            PASSES=$(cat e2e-results.json | jq -r '.stats.passes // 0')
+            FAILURES=$(cat e2e-results.json | jq -r '.stats.failures // 0')
+            DURATION=$(cat e2e-results.json | jq -r '.stats.duration // 0')
+            
+            echo "## E2E Test Summary" >> $GITHUB_STEP_SUMMARY
+            echo "- **Total Tests:** $TESTS" >> $GITHUB_STEP_SUMMARY
+            echo "- **Passed:** $PASSES" >> $GITHUB_STEP_SUMMARY
+            echo "- **Failed:** $FAILURES" >> $GITHUB_STEP_SUMMARY
+            echo "- **Duration:** ${DURATION}ms" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Add failure details if any
+            if [ "$FAILURES" -gt "0" ]; then
+              echo "### Failed Tests" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              cat e2e-results.json | jq -r '.failures[]? | "❌ " + .fullTitle + "\n   " + .err.message' >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+      - name: Upload E2E Test Results
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results-${{ matrix.os }}-node${{ matrix.node_version }}-${{ github.run_number }}
+          path: e2e-results.json
+          retention-days: 30
+
+      - name: Notify on Failure
+        if: failure() && (github.event_name == 'schedule' || github.event_name == 'push') && steps.check-secrets.outputs.has-secrets == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `CLI E2E Tests Failed - ${new Date().toISOString().split('T')[0]}`,
+              body: `## CLI E2E Test Failure
+              
+              The CLI E2E tests have failed. Please investigate.
+              
+              **Workflow:** ${context.workflow}
+              **Run:** ${context.runNumber}
+              **Commit:** ${context.sha}
+              **Event:** ${context.eventName}
+              
+              [View workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
+              `,
+              labels: ['bug', 'e2e-failure', 'cli', 'needs-investigation']
+            };
+            
+            // Only create issue for scheduled runs to avoid spam
+            if (context.eventName === 'schedule') {
+              github.rest.issues.create(issue);
+            }
