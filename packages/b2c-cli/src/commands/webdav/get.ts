@@ -5,7 +5,7 @@
  */
 import * as fs from 'node:fs';
 import {basename, resolve} from 'node:path';
-import {Args} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t} from '../../i18n/index.js';
 
@@ -21,9 +21,6 @@ export default class WebDavGet extends WebDavCommand<typeof WebDavGet> {
       description: 'Remote file path relative to root',
       required: true,
     }),
-    local: Args.string({
-      description: 'Local destination path (defaults to filename in current directory)',
-    }),
   };
 
   static description = t('commands.webdav.get.description', 'Download a file from WebDAV');
@@ -32,39 +29,51 @@ export default class WebDavGet extends WebDavCommand<typeof WebDavGet> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> src/instance/export.zip',
-    '<%= config.bin %> <%= command.id %> src/instance/export.zip ./downloads/export.zip',
+    '<%= config.bin %> <%= command.id %> src/instance/export.zip -o ./downloads/export.zip',
     '<%= config.bin %> <%= command.id %> --root=logs customerror.log',
+    '<%= config.bin %> <%= command.id %> --root=logs customerror.log -o -',
   ];
+
+  static flags = {
+    ...WebDavCommand.baseFlags,
+    output: Flags.string({
+      char: 'o',
+      description: 'Output file path (use - for stdout, defaults to filename in current directory)',
+    }),
+  };
 
   async run(): Promise<GetResult> {
     this.ensureWebDavAuth();
 
     const fullPath = this.buildPath(this.args.remote);
 
-    // Determine local path - default to filename in current directory
-    const localPath = this.args.local || basename(this.args.remote);
+    // Determine output path - default to filename in current directory
+    const outputPath = this.flags.output ?? basename(this.args.remote);
+    const isStdout = outputPath === '-';
 
-    this.log(t('commands.webdav.get.downloading', 'Downloading {{path}}...', {path: fullPath}));
+    if (!isStdout) {
+      this.log(t('commands.webdav.get.downloading', 'Downloading {{path}}...', {path: fullPath}));
+    }
 
     const content = await this.instance.webdav.get(fullPath);
-
-    // Write to local file
     const buffer = Buffer.from(content);
-    fs.writeFileSync(localPath, buffer);
 
-    const result: GetResult = {
+    if (isStdout) {
+      process.stdout.write(buffer);
+    } else {
+      fs.writeFileSync(outputPath, buffer);
+      this.log(
+        t('commands.webdav.get.success', 'Downloaded {{size}} bytes to {{path}}', {
+          size: buffer.length,
+          path: resolve(outputPath),
+        }),
+      );
+    }
+
+    return {
       remotePath: fullPath,
-      localPath: resolve(localPath),
+      localPath: isStdout ? '-' : resolve(outputPath),
       size: buffer.length,
     };
-
-    this.log(
-      t('commands.webdav.get.success', 'Downloaded {{size}} bytes to {{path}}', {
-        size: result.size,
-        path: result.localPath,
-      }),
-    );
-
-    return result;
   }
 }
