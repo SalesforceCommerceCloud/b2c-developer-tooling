@@ -1,0 +1,79 @@
+name: Preview Release
+
+on:
+  push:
+    tags:
+      - 'v*-preview*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Extract version from tag
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Releasing version: $VERSION"
+
+      - name: Update package versions
+        run: |
+          pnpm -r exec -- npm pkg set version=${{ env.VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r run build
+
+      - name: Run tests
+        run: pnpm -r run test:unit
+
+      - name: Pack all packages
+        run: |
+          mkdir -p dist
+          pnpm pack -r --pack-destination ./dist
+
+      - name: List packed files
+        run: ls -la dist/
+
+      - name: Create Release and Upload Assets
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { createPreviewRelease } = await import('${{ github.workspace }}/.github/scripts/create-preview-release.js');
+            await createPreviewRelease({
+              github,
+              context,
+              version: process.env.VERSION,
+              distDir: './dist'
+            });
