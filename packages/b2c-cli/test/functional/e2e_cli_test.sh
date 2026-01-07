@@ -69,9 +69,13 @@ ODS_CREATE_RESULT=$($CLI ods create \
     --wait \
     --json)
 
-ODS_ID=$(echo "$ODS_CREATE_RESULT" | jq -r '.[0].id')
-SERVER=$(echo "$ODS_CREATE_RESULT" | jq -r '.[0].server')
-INSTANCE_NUM=$(echo "$ODS_CREATE_RESULT" | jq -r '.[0].instance')
+echo "DEBUG: ODS create result:"
+echo "$ODS_CREATE_RESULT" | jq .
+
+# The JSON output is the sandbox object directly (not an array)
+ODS_ID=$(echo "$ODS_CREATE_RESULT" | jq -r '.id')
+SERVER=$(echo "$ODS_CREATE_RESULT" | jq -r '.hostName')
+INSTANCE_NUM=$(echo "$ODS_CREATE_RESULT" | jq -r '.instance')
 
 if [ -z "$ODS_ID" ] || [ "$ODS_ID" == "null" ]; then
     echo "FAILED: Could not create on-demand sandbox"
@@ -90,7 +94,12 @@ echo ""
 echo "Step 2: Verifying sandbox in list..."
 
 ODS_LIST_RESULT=$($CLI ods list --realm "$TEST_REALM" --json)
-ODS_PRESENT=$(echo "$ODS_LIST_RESULT" | jq -r --arg ODS_ID "$ODS_ID" '.[] | select(.id == $ODS_ID) | .id')
+
+echo "DEBUG: ODS list result:"
+echo "$ODS_LIST_RESULT" | jq .
+
+# The JSON output is { count: number, data: SandboxModel[] }
+ODS_PRESENT=$(echo "$ODS_LIST_RESULT" | jq -r --arg ODS_ID "$ODS_ID" '.data[] | select(.id == $ODS_ID) | .id')
 
 if [ "$ODS_PRESENT" != "$ODS_ID" ]; then
     echo "FAILED: Created sandbox not found in list"
@@ -156,6 +165,10 @@ SLAS_CREATE_RESULT=$($CLI slas client create "$SLAS_CLIENT_ID" \
     --redirect-uri "http://localhost:3000/callback" \
     --json)
 
+echo "DEBUG: SLAS create result:"
+echo "$SLAS_CREATE_RESULT" | jq .
+
+# The JSON output is a ClientOutput object with secret field
 SLAS_SECRET=$(echo "$SLAS_CREATE_RESULT" | jq -r '.secret')
 
 if [ -z "$SLAS_SECRET" ] || [ "$SLAS_SECRET" == "null" ]; then
