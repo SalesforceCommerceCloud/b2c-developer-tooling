@@ -21,9 +21,10 @@
  * | `--allow-non-ga-tools` | Enable experimental/non-GA tools |
  *
  * ### Auth Flags
- * | Flag | Description |
- * |------|-------------|
- * | `--mrt-api-key` | MRT API key for Managed Runtime operations |
+ * | Flag | Env Variable | Description |
+ * |------|--------------|-------------|
+ * | `--mrt-api-key` | `SFCC_MRT_API_KEY` | MRT API key for Managed Runtime operations |
+ * | `--mrt-cloud-origin` | `SFCC_MRT_CLOUD_ORIGIN` | MRT cloud origin URL for environment-specific ~/.mobify config |
  *
  * ### Global Flags (inherited from BaseCommand)
  * | Flag | Description |
@@ -35,15 +36,21 @@
  * | `--json` | Output logs as JSON lines |
  * | `--lang` | Language for messages |
  *
- * ## Configuration Priority
+ * ## Configuration
  *
- * ### B2C Instance Configuration (dw.json)
- * 1. Environment variables (SFCC_*) - highest priority, override dw.json
- * 2. dw.json file (explicit path via --config, or auto-discovered)
- * 3. Auto-discovery (searches upward from cwd)
+ * Different tools require different configuration:
+ * - **MRT tools** (e.g., `mrt_bundle_push`) → MRT API key
+ * - **B2C instance tools** (e.g., `cartridge_deploy`, SCAPI) → dw.json config
+ * - **Local tools** (e.g., scaffolding) → None
+ *
+ * ### B2C Instance Configuration
+ * Priority (highest to lowest):
+ * 1. Environment variables (`SFCC_HOSTNAME`, `SFCC_USERNAME`, `SFCC_PASSWORD`, `SFCC_CLIENT_ID`, `SFCC_CLIENT_SECRET`, `SFCC_CODE_VERSION`)
+ * 2. dw.json file (via `--config` flag or auto-discovered by searching upward from cwd)
  *
  * ### MRT API Key
- * 1. `--mrt-api-key` flag (highest priority)
+ * Priority (highest to lowest):
+ * 1. `--mrt-api-key` flag
  * 2. `SFCC_MRT_API_KEY` environment variable
  * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--mrt-cloud-origin` is set)
  *
@@ -52,39 +59,54 @@
  * - Invalid toolsets are ignored with a warning (server still starts)
  * - If all toolsets are invalid, auto-discovery kicks in
  *
- * @example Start with all toolsets
- * ```bash
- * b2c-dx-mcp --toolsets all
+ * @example mcp.json - All toolsets
+ * ```json
+ * { "args": ["--toolsets", "all", "--allow-non-ga-tools"] }
  * ```
  *
- * @example Start with specific toolsets
- * ```bash
- * b2c-dx-mcp --toolsets CARTRIDGES,JOBS
+ * @example mcp.json - Specific toolsets
+ * ```json
+ * { "args": ["--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"] }
  * ```
  *
- * @example Start with specific individual tools
- * ```bash
- * b2c-dx-mcp --tools cartridge_deploy,cartridge_activate
+ * @example mcp.json - MRT tools with API key via env var
+ * ```json
+ * {
+ *   "args": ["--toolsets", "MRT", "--allow-non-ga-tools"],
+ *   "env": { "SFCC_MRT_API_KEY": "your-api-key" }
+ * }
  * ```
  *
- * @example Combine toolsets and specific tools
- * ```bash
- * b2c-dx-mcp --toolsets SCAPI --tools cartridge_deploy
+ * @example mcp.json - MRT tools with API key via flag
+ * ```json
+ * { "args": ["--toolsets", "MRT", "--mrt-api-key", "your-api-key", "--allow-non-ga-tools"] }
  * ```
  *
- * @example Specify config file location
- * ```bash
- * b2c-dx-mcp --toolsets all --config /path/to/dw.json
+ * @example mcp.json - MRT tools with staging cloud origin (uses ~/.mobify--cloud-staging.mobify.com)
+ * ```json
+ * { "args": ["--toolsets", "MRT", "--mrt-cloud-origin", "https://cloud-staging.mobify.com", "--allow-non-ga-tools"] }
  * ```
  *
- * @example Start MRT tools with API key
- * ```bash
- * b2c-dx-mcp --toolsets MRT --mrt-api-key your-api-key
+ * @example mcp.json - Cartridge tools with dw.json config
+ * ```json
+ * { "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json", "--allow-non-ga-tools"] }
  * ```
  *
- * @example Enable debug logging
- * ```bash
- * b2c-dx-mcp --toolsets all --debug
+ * @example mcp.json - Cartridge tools with env vars
+ * ```json
+ * {
+ *   "args": ["--toolsets", "CARTRIDGES", "--allow-non-ga-tools"],
+ *   "env": {
+ *     "SFCC_HOSTNAME": "your-sandbox.demandware.net",
+ *     "SFCC_CLIENT_ID": "your-client-id",
+ *     "SFCC_CLIENT_SECRET": "your-client-secret"
+ *   }
+ * }
+ * ```
+ *
+ * @example mcp.json - Enable debug logging
+ * ```json
+ * { "args": ["--toolsets", "all", "--allow-non-ga-tools", "--debug"] }
  * ```
  */
 
@@ -112,12 +134,26 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     'Salesforce B2C Commerce Cloud Developer Experience MCP Server - Expose B2C Commerce Developer Experience tools to AI assistants';
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> --toolsets all',
-    '<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT,MRT',
-    '<%= config.bin %> <%= command.id %> --tools sfnext_deploy,mrt_bundle_push',
-    '<%= config.bin %> <%= command.id %> --toolsets STOREFRONTNEXT --tools sfnext_deploy',
-    '<%= config.bin %> <%= command.id %> --toolsets MRT --config /path/to/dw.json',
-    '<%= config.bin %> <%= command.id %> --toolsets all --debug',
+    {
+      description: 'All toolsets',
+      command: '<%= config.bin %> --toolsets all --allow-non-ga-tools',
+    },
+    {
+      description: 'Specific toolsets',
+      command: '<%= config.bin %> --toolsets CARTRIDGES,MRT --allow-non-ga-tools',
+    },
+    {
+      description: 'MRT tools with API key',
+      command: '<%= config.bin %> --toolsets MRT --mrt-api-key your-api-key --allow-non-ga-tools',
+    },
+    {
+      description: 'Cartridge tools with explicit config',
+      command: '<%= config.bin %> --toolsets CARTRIDGES --config /path/to/dw.json --allow-non-ga-tools',
+    },
+    {
+      description: 'Debug logging',
+      command: '<%= config.bin %> --toolsets all --allow-non-ga-tools --debug',
+    },
   ];
 
   static flags = {
@@ -140,7 +176,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       helpGroup: 'AUTH',
     }),
     'mrt-cloud-origin': Flags.string({
-      description: `MRT cloud origin URL (default: ${DEFAULT_MRT_ORIGIN})`,
+      description: `MRT cloud origin URL for environment-specific ~/.mobify--[hostname] config (default: ${DEFAULT_MRT_ORIGIN})`,
       env: 'SFCC_MRT_CLOUD_ORIGIN',
       helpGroup: 'AUTH',
     }),
