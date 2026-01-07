@@ -9,6 +9,10 @@
  *
  * This toolset provides MCP tools for Storefront Next development.
  *
+ * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
+ * > Tools in this module are placeholder implementations that return mock responses.
+ * > Actual implementations are coming soon. Use `--allow-non-ga-tools` flag to enable.
+ *
  * @module tools/storefrontnext
  */
 

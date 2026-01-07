@@ -9,6 +9,10 @@
  *
  * This toolset provides MCP tools for cartridge and code version management.
  *
+ * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
+ * > This tool is a placeholder implementation that returns mock responses.
+ * > Actual implementation is coming soon. Use `--allow-non-ga-tools` flag to enable.
+ *
  * @module tools/cartridges
  */
 
