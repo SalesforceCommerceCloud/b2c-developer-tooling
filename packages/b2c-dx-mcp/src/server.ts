@@ -69,8 +69,9 @@ export class B2CDxMcpServer extends McpServer {
     ): Promise<CallToolResult> => {
       const startTime = Date.now();
       const result = await handler(args);
-      // TODO: Telemetry - Send TOOL_CALLED event with { name, _runtimeMs, isError: result.isError }
-      const _runtimeMs = Date.now() - startTime;
+      // TODO: Telemetry - Send TOOL_CALLED event with { name, runtimeMs, isError: result.isError }
+      const runtimeMs = Date.now() - startTime;
+      void runtimeMs; // Silence unused variable until telemetry is implemented
 
       return result;
     };
