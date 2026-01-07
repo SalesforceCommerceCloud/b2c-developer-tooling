@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.0.0",
+  "version": "0.0.1-preview",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -17,12 +17,21 @@
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "^9.0.1"
   },
+  "bundleDependencies": [
+    "@oclif/core",
+    "@oclif/plugin-autocomplete",
+    "@oclif/plugin-help",
+    "@oclif/plugin-not-found",
+    "@oclif/plugin-plugins",
+    "@oclif/plugin-version",
+    "@salesforce/b2c-tooling-sdk",
+    "cliui"
+  ],
   "devDependencies": {
     "@eslint/compat": "^1",
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^4",
     "@salesforce/dev-config": "^4.3.2",
-    "eslint-plugin-header": "^3.1.1",
     "@types/chai": "^4",
     "@types/mocha": "^10",
     "@types/node": "^18",
@@ -31,7 +40,9 @@
     "eslint": "^9",
     "eslint-config-oclif": "^6",
     "eslint-config-prettier": "^10",
+    "eslint-plugin-header": "^3.1.1",
     "eslint-plugin-prettier": "^5.5.4",
+    "execa": "^9.6.1",
     "mocha": "^10",
     "oclif": "^4",
     "prettier": "^3.6.2",
@@ -117,9 +128,10 @@
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && oclif readme",
     "pretest": "tsc --noEmit -p test",
-    "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/**/*.test.ts\"",
-    "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
-    "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/**/*.test.ts\"",
+    "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
+    "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
+    "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
+    "test:e2e": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "version": "oclif readme && git add README.md",
     "dev": "node ./bin/dev.js"

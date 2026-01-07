@@ -1,6 +1,9 @@
 packages:
   - packages/*
 
+# Use hoisted node_modules for npm-compatible bundleDependencies
+nodeLinker: hoisted
+
 minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude: []

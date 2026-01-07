@@ -3,6 +3,7 @@
 **/.DS_Store
 /.idea
 dist
+dist-deploy
 /tmp
 node_modules
 /coverage
@@ -28,3 +29,4 @@ docs/api/
 dw.json
 dw.json*
 .env
+.config/wt.toml

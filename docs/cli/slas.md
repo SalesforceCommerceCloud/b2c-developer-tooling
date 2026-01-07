@@ -102,17 +102,18 @@ b2c slas client create [CLIENTID] --tenant-id <TENANT_ID> --channels <CHANNELS> 
 
 ### Flags
 
-| Flag | Description | Required |
-|------|-------------|----------|
-| `--tenant-id` | SLAS tenant ID (organization ID) | Yes |
-| `--channels` | Site IDs/channels (comma-separated) | Yes |
-| `--redirect-uri` | Redirect URIs (comma-separated) | Yes |
-| `--name` | Display name for the client | No |
-| `--scopes` | OAuth scopes for the client (comma-separated) | No |
-| `--default-scopes` | Use default shopper scopes | No |
-| `--callback-uri` | Callback URIs for passwordless login | No |
-| `--secret` | Client secret (generated if omitted) | No |
-| `--public` | Create a public client (default is private) | No |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--tenant-id` | SLAS tenant ID (organization ID) | Required |
+| `--channels` | Site IDs/channels (comma-separated) | Required |
+| `--redirect-uri` | Redirect URIs (comma-separated) | Required |
+| `--name` | Display name for the client | Auto-generated |
+| `--scopes` | OAuth scopes for the client (comma-separated) | |
+| `--default-scopes` | Use default shopper scopes | `false` |
+| `--callback-uri` | Callback URIs for passwordless login | |
+| `--secret` | Client secret (generated if omitted) | Auto-generated |
+| `--public` | Create a public client (default is private) | `false` |
+| `--[no-]create-tenant` | Automatically create tenant if it doesn't exist | `true` |
 
 ### Examples
 
@@ -150,6 +151,7 @@ b2c slas client create --tenant-id abcd_123 \
 - If `--secret` is not provided for a private client, one will be generated
 - The generated secret is only shown once during creation
 - Use `--default-scopes` for common shopper API access scopes
+- By default, the tenant is automatically created if it doesn't exist. Use `--no-create-tenant` to disable this behavior if you prefer to manage tenants separately
 
 ---
 

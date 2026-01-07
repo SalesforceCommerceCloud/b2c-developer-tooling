@@ -98,6 +98,11 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       description: 'Create a public client (default is private)',
       default: false,
     }),
+    'create-tenant': Flags.boolean({
+      description: 'Automatically create tenant if it does not exist',
+      default: true,
+      allowNo: true,
+    }),
   };
 
   async run(): Promise<ClientOutput> {
@@ -113,6 +118,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       'callback-uri': callbackUri,
       secret,
       public: isPublic,
+      'create-tenant': createTenant,
     } = this.flags;
 
     // Validate that either --scopes or --default-scopes is provided
@@ -139,6 +145,11 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     }
 
     const slasClient = this.getSlasClient();
+
+    // Ensure tenant exists before creating client (if enabled)
+    if (createTenant) {
+      await this.ensureTenantExists(slasClient, tenantId);
+    }
 
     // Build body - secret should only be included for private clients
     const body: Record<string, unknown> = {

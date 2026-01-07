@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="http://www.demandware.com/xml/impex/catalog/2006-10-31" catalog-id="TestCatalog">
+    <header>
+        <image-settings>
+            <internal-location base-path="/"/>
+            <view-types>
+                <view-type>large</view-type>
+                <view-type>medium</view-type>
+                <view-type>small</view-type>
+            </view-types>
+        </image-settings>
+    </header>
+
+    <category category-id="root">
+        <display-name xml:lang="x-default">Root Category</display-name>
+        <online-flag>true</online-flag>
+        <template/>
+    </category>
+
+    <category category-id="test-products">
+        <display-name xml:lang="x-default">Test Products</display-name>
+        <online-flag>true</online-flag>
+        <parent>root</parent>
+        <template/>
+    </category>
+
+    <product product-id="test-product-001">
+        <ean/>
+        <upc/>
+        <unit/>
+        <min-order-quantity>1</min-order-quantity>
+        <step-quantity>1</step-quantity>
+        <display-name xml:lang="x-default">Sample Test Product</display-name>
+        <short-description xml:lang="x-default">A sample product for E2E testing</short-description>
+        <long-description xml:lang="x-default">This is a sample product created for end-to-end testing of the B2C CLI.</long-description>
+        <online-flag>true</online-flag>
+        <searchable-flag>true</searchable-flag>
+        <tax-class-id>standard</tax-class-id>
+        <brand>TestBrand</brand>
+        <page-attributes/>
+        <custom-attributes/>
+        <classification-category catalog-id="TestCatalog">test-products</classification-category>
+    </product>
+
+    <category-assignment category-id="root" product-id="test-product-001"/>
+    <category-assignment category-id="test-products" product-id="test-product-001"/>
+</catalog>

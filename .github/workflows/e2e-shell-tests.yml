@@ -1,0 +1,86 @@
+name: E2E Shell Tests
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Run at 3 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  e2e-shell-tests:
+    runs-on: ubuntu-latest
+    environment: e2e-dev
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Check for required secrets and vars
+        id: check-secrets
+        env:
+          SFCC_CLIENT_ID: ${{ vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          TEST_REALM: ${{ vars.TEST_REALM }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+        run: |
+          missing=""
+          [ -z "$SFCC_CLIENT_ID" ] && missing="$missing SFCC_CLIENT_ID"
+          [ -z "$SFCC_CLIENT_SECRET" ] && missing="$missing SFCC_CLIENT_SECRET"
+          [ -z "$TEST_REALM" ] && missing="$missing TEST_REALM"
+          [ -z "$SFCC_ACCOUNT_MANAGER_HOST" ] && missing="$missing SFCC_ACCOUNT_MANAGER_HOST"
+          [ -z "$SFCC_SANDBOX_API_HOST" ] && missing="$missing SFCC_SANDBOX_API_HOST"
+          [ -z "$SFCC_SHORTCODE" ] && missing="$missing SFCC_SHORTCODE"
+
+          if [ -z "$missing" ]; then
+            echo "has-secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-secrets=false" >> $GITHUB_OUTPUT
+            echo "E2E shell tests skipped - missing required variables:$missing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Setup pnpm
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Get pnpm store directory
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        run: pnpm -r run build
+
+      - name: Run E2E Shell Tests
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        env:
+          SFCC_CLIENT_ID: ${{ vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          TEST_REALM: ${{ vars.TEST_REALM }}
+        run: |
+          echo "Running E2E shell tests with realm: ${TEST_REALM}"
+          cd packages/b2c-cli
+          ./test/functional/e2e_cli_test.sh

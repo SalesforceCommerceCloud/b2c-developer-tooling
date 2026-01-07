@@ -27,8 +27,11 @@ In addition to [global flags](./index#global-flags):
 | `--wait`, `-w` | Wait for job to complete | `false` |
 | `--timeout`, `-t` | Timeout in seconds when waiting | No timeout |
 | `--param`, `-P` | Job parameter in format "name=value" (repeatable) | |
+| `--body`, `-B` | Raw JSON request body (for system jobs with non-standard schemas) | |
 | `--no-wait-running` | Do not wait for running job to finish before starting | `false` |
 | `--show-log` | Show job log on failure | `true` |
+
+Note: `--param` and `--body` are mutually exclusive.
 
 ### Examples
 
@@ -42,11 +45,23 @@ b2c job run my-custom-job --wait
 # Execute with timeout
 b2c job run my-custom-job --wait --timeout 600
 
-# Execute with parameters
+# Execute with parameters (standard jobs)
 b2c job run my-custom-job -P "SiteScope={\"all_storefront_sites\":true}" -P OtherParam=value
 
 # Output as JSON
 b2c job run my-custom-job --wait --json
+```
+
+### System Jobs with Custom Request Bodies
+
+Some system jobs (like search indexing) use non-standard request schemas that don't follow the `parameters` array format. Use `--body` to provide a raw JSON request body:
+
+```bash
+# Run search index job for specific sites
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch","SiteGenesis"]}'
+
+# Run search index job for a single site
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'
 ```
 
 ### Authentication

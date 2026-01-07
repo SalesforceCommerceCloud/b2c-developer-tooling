@@ -110,6 +110,73 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
   };
 
   /**
+   * Ensure tenant exists, creating it if necessary.
+   * This is required before creating SLAS clients.
+   */
+  protected async ensureTenantExists(slasClient: SlasClient, tenantId: string): Promise<void> {
+    // Try to get the tenant first
+    const {error, response} = await slasClient.GET('/tenants/{tenantId}', {
+      params: {
+        path: {tenantId},
+      },
+    });
+
+    // If tenant exists, we're done
+    if (!error) {
+      return;
+    }
+
+    // Check if this is a "tenant not found" error (SLAS returns 400 with TenantNotFoundException)
+    const isTenantNotFound =
+      response.status === 404 ||
+      (response.status === 400 &&
+        typeof error === 'object' &&
+        error !== null &&
+        'exception_name' in error &&
+        (error as {exception_name?: string}).exception_name === 'TenantNotFoundException');
+
+    // If it's not a tenant-not-found error, something else went wrong
+    if (!isTenantNotFound) {
+      this.error(
+        t('commands.slas.client.create.tenantError', 'Failed to check tenant: {{message}}', {
+          message: formatApiError(error),
+        }),
+      );
+    }
+
+    // Tenant doesn't exist, create it with placeholder values
+    if (!this.jsonEnabled()) {
+      this.log(t('commands.slas.client.create.creatingTenant', 'Creating SLAS tenant {{tenantId}}...', {tenantId}));
+    }
+
+    const {error: createError} = await slasClient.PUT('/tenants/{tenantId}', {
+      params: {
+        path: {tenantId},
+      },
+      body: {
+        tenantId,
+        merchantName: 'B2C CLI Tenant',
+        description: 'Auto-created by b2c-cli',
+        contact: 'B2C CLI',
+        emailAddress: 'noreply@example.com',
+        phoneNo: '+1 000-000-0000',
+      },
+    });
+
+    if (createError) {
+      this.error(
+        t('commands.slas.client.create.tenantCreateError', 'Failed to create tenant: {{message}}', {
+          message: formatApiError(createError),
+        }),
+      );
+    }
+
+    if (!this.jsonEnabled()) {
+      this.log(t('commands.slas.client.create.tenantCreated', 'SLAS tenant created successfully.'));
+    }
+  }
+
+  /**
    * Get the SLAS client, ensuring short code is configured.
    */
   protected getSlasClient(): SlasClient {

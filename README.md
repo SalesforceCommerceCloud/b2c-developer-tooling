@@ -162,6 +162,40 @@ See the [documentation site](https://salesforcecommercecloud.github.io/b2c-devel
 
 When adding new public APIs, ensure they have comprehensive JSDoc comments as these will appear in the generated documentation.
 
+## Preview Releases
+
+This project is not yet published to npm. Preview releases are available as tgz files on [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases).
+
+### Installing a Preview Release
+
+1. Download the `salesforce-b2c-cli-<version>.tgz` file from the release
+2. Install with npm:
+
+```bash
+# Install globally
+npm install -g ./salesforce-b2c-cli-0.0.1-preview.1.tgz
+
+# Or install locally in a project
+npm install ./salesforce-b2c-cli-0.0.1-preview.1.tgz
+```
+
+The SDK is bundled in the CLI package, so only one file is needed.
+
+### Creating a Preview Release
+
+Preview releases are created automatically when a tag matching `v*-preview*` is pushed:
+
+```bash
+git tag v0.0.1-preview.1
+git push origin v0.0.1-preview.1
+```
+
+The [preview-release workflow](.github/workflows/preview-release.yml) will:
+1. Update package versions from the tag
+2. Build and test all packages
+3. Create a bundled tarball using `pnpm deploy`
+4. Create a GitHub release with the tarball attached
+
 ## Package Exports
 
 The `@salesforce/b2c-tooling-sdk` package uses the `exports` field in package.json to define its public API surface. Each module is available as a subpath export:
