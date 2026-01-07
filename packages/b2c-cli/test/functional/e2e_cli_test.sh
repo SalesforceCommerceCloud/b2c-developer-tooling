@@ -41,8 +41,8 @@ cleanup() {
 
     # Delete sandbox if it was created
     if [ -n "$ODS_ID" ]; then
-        echo "Deleting sandbox: $ODS_ID"
-        $CLI ods delete "$ODS_ID" --force || true
+        echo "skipping Deleting sandbox: $ODS_ID"
+        #$CLI ods delete "$ODS_ID" --force || true
     fi
 
     exit $exit_code
@@ -116,7 +116,7 @@ echo "Step 3: Deploying code to sandbox..."
 
 $CLI code deploy "$CARTRIDGE_PATH" \
     --server "$SERVER" \
-    --code-version "e2e-test-version"
+    --code-version "e2e-test-version" --log-level debug --json
 
 echo "SUCCESS: Code deployed"
 echo ""
@@ -142,7 +142,7 @@ $CLI job run sfcc-search-index-product-full-update \
     --server "$SERVER" \
     --wait \
     --timeout 300 \
-    -P "SiteScope={\"named_sites\":[\"$SITE_ID\"]}"
+    --body "{\"site_scope\":[\"$SITE_ID\"]}"
 
 echo "SUCCESS: Search index job completed"
 echo ""
