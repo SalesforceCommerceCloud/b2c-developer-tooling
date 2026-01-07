@@ -19,7 +19,7 @@ CLI="$SCRIPT_DIR/../../bin/run.js"
 
 # Fixtures paths
 CARTRIDGE_PATH="$SCRIPT_DIR/fixtures/cartridges"
-SITE_ARCHIVE_PATH="$SCRIPT_DIR/fixtures/site_archive/TestSite"
+SITE_ARCHIVE_PATH="$SCRIPT_DIR/fixtures/site_archive"
 
 # Test configuration
 SITE_ID="TestSite"
@@ -136,6 +136,7 @@ echo ""
 ################################################################################
 # 5. Run Search Index Job
 ################################################################################
+sleep 4
 echo "Step 5: Running search index job..."
 
 $CLI job run sfcc-search-index-product-full-update \
@@ -155,10 +156,8 @@ echo "Step 6: Creating SLAS client..."
 # Construct tenant ID from realm and instance number
 TENANT_ID="${TEST_REALM}_${INSTANCE_NUM}"
 
-# Generate a unique SLAS client ID
-SLAS_CLIENT_ID="e2e-test-$(date +%s)-$(openssl rand -hex 4)"
-
-SLAS_CREATE_RESULT=$($CLI slas client create "$SLAS_CLIENT_ID" \
+# Let the CLI auto-generate a UUID4 client ID
+SLAS_CREATE_RESULT=$($CLI slas client create \
     --tenant-id "$TENANT_ID" \
     --channels "$SITE_ID" \
     --default-scopes \
@@ -168,7 +167,8 @@ SLAS_CREATE_RESULT=$($CLI slas client create "$SLAS_CLIENT_ID" \
 echo "DEBUG: SLAS create result:"
 echo "$SLAS_CREATE_RESULT" | jq .
 
-# The JSON output is a ClientOutput object with secret field
+# Extract client ID and secret from response
+SLAS_CLIENT_ID=$(echo "$SLAS_CREATE_RESULT" | jq -r '.clientId')
 SLAS_SECRET=$(echo "$SLAS_CREATE_RESULT" | jq -r '.secret')
 
 if [ -z "$SLAS_SECRET" ] || [ "$SLAS_SECRET" == "null" ]; then
