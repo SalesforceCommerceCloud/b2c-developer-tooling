@@ -27,7 +27,10 @@ const __dirname = path.dirname(__filename);
  */
 describe('ODS Lifecycle E2E Tests', function () {
   // Timeout for entire test suite
-  this.timeout(360_000); // 6 minutes
+  this.timeout(900_000); // 15 minutes
+
+  // Retry transient failures up to 2 times
+  this.retries(2);
 
   // Test configuration (paths)
   const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
@@ -74,8 +77,10 @@ describe('ODS Lifecycle E2E Tests', function () {
 
   describe('Step 1: Create Sandbox', function () {
     it('should create a new sandbox with permissions and wait for readiness', async function () {
-      // --wait can take 5-10 minutes, so increase timeout for this test
-      this.timeout(600_000); // 6 minutes
+      this.timeout(720_000); // 12 minutes
+
+      // Retry up to 3 times for transient failures (API timing issues, rate limits, etc.)
+      this.retries(3);
 
       const result = await runCLI([
         'ods',
@@ -136,6 +141,9 @@ describe('ODS Lifecycle E2E Tests', function () {
 
   describe('Step 3: Deploy Code', function () {
     it('should deploy test cartridge to the sandbox', async function () {
+      // Retry for transient network/deployment issues
+      this.retries(2);
+
       // Skip deploy if we don't have a valid sandbox
       if (!sandboxId || !serverHostname) {
         this.skip();

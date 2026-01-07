@@ -131,7 +131,7 @@
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
-    "test:e2e": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/**/*.test.ts\"",
+    "test:e2e": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "version": "oclif readme && git add README.md",
     "dev": "node ./bin/dev.js"
