@@ -21,12 +21,26 @@ b2c job run my-custom-job --wait
 # run a job with a timeout (in seconds)
 b2c job run my-custom-job --wait --timeout 600
 
-# run a job with parameters
+# run a job with parameters (standard jobs)
 b2c job run my-custom-job -P "SiteScope={\"all_storefront_sites\":true}" -P OtherParam=value
 
 # show job log if the job fails
 b2c job run my-custom-job --wait --show-log
 ```
+
+### Run System Jobs with Custom Request Bodies
+
+Some system jobs (like search indexing) use non-standard request schemas. Use `--body` to provide a raw JSON request body:
+
+```bash
+# run search index job for specific sites
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch","SiteGenesis"]}'
+
+# run search index job for a single site
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'
+```
+
+Note: `--body` and `-P` are mutually exclusive.
 
 ### Import Site Archives
 

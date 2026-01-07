@@ -29,9 +29,23 @@ b2c slas client get --tenant-id abcd_123 --client-id my-client-id
 ### Create SLAS Client
 
 ```bash
-# create a new SLAS client
-b2c slas client create --tenant-id abcd_123
+# create a new SLAS client with default scopes (auto-generates UUID client ID)
+b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback
+
+# create with a specific client ID and custom scopes
+b2c slas client create my-client-id --tenant-id abcd_123 --channels RefArch --scopes sfcc.shopper-products,sfcc.shopper-search --redirect-uri http://localhost:3000/callback
+
+# create a public client
+b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --public
+
+# create client without auto-creating tenant (if you manage tenants separately)
+b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --no-create-tenant
+
+# output as JSON (useful for capturing the generated secret)
+b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --json
 ```
+
+Note: By default, the tenant is automatically created if it doesn't exist.
 
 ### Update SLAS Client
 

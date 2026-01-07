@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inventory xmlns="http://www.demandware.com/xml/impex/inventory/2007-05-31">
+    <inventory-list>
+        <header list-id="test-inventory">
+            <default-instock>true</default-instock>
+            <description>Test Inventory List</description>
+        </header>
+        <records>
+            <record product-id="test-product-001">
+                <allocation>100</allocation>
+                <perpetual>false</perpetual>
+            </record>
+        </records>
+    </inventory-list>
+</inventory>

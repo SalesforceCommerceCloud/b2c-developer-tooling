@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site xmlns="http://www.demandware.com/xml/impex/site/2007-04-30" site-id="TestSite">
+    <name>Test Site</name>
+    <currency>USD</currency>
+    <taxation>net</taxation>
+    <custom-cartridges>plugin_example</custom-cartridges>
+    <storefront-status>online</storefront-status>
+</site>
