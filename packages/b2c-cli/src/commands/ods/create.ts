@@ -152,9 +152,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     let sandbox = result.data.data;
 
     this.log('');
-    this.log(
-      t('commands.ods.create.success', 'Sandbox created successfully: {{sandboxId}}', {sandboxId: sandbox.id}),
-    );
+    this.logger.info({sandboxId: sandbox.id}, t('commands.ods.create.success', 'Sandbox created successfully'));
 
     if (wait && sandbox.id) {
       this.log('');
@@ -291,12 +289,8 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
 
       // Log current state on each poll
       const elapsed = Math.round((Date.now() - startTime) / 1000);
-      this.log(
-        t('commands.ods.create.stateChange', '[{{elapsed}}s] State: {{state}}', {
-          elapsed: String(elapsed),
-          state: currentState || 'unknown',
-        }),
-      );
+      const state = currentState || 'unknown';
+      this.logger.info({sandboxId, elapsed, state}, `[${elapsed}s] State: ${state}`);
 
       // Check for terminal states
       if (currentState && TERMINAL_STATES.has(currentState)) {
@@ -311,7 +305,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
           }
           case 'started': {
             this.log('');
-            this.log(t('commands.ods.create.ready', 'Sandbox is now ready!'));
+            this.logger.info({sandboxId}, t('commands.ods.create.ready', 'Sandbox is now ready'));
             break;
           }
         }
