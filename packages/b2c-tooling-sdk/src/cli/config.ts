@@ -173,12 +173,47 @@ function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig 
  * Note: Environment variables are handled by OCLIF's flag parsing with the `env`
  * property on each flag definition. By the time flags reach this function, they
  * already contain env var values where applicable.
+ *
+ * IMPORTANT: If the hostname is explicitly provided (via flags/env) and differs
+ * from the dw.json hostname, we do NOT use ANY configuration from dw.json since
+ * the dw.json is configured for a different server.
  */
 function mergeConfigs(
   flags: Partial<ResolvedConfig>,
   dwJson: ResolvedConfig,
   options: LoadConfigOptions,
 ): ResolvedConfig {
+  const logger = getLogger();
+
+  // Check if hostname was explicitly provided and differs from dw.json
+  const hostnameExplicitlyProvided = Boolean(flags.hostname);
+  const hostnameMismatch = hostnameExplicitlyProvided && dwJson.hostname && flags.hostname !== dwJson.hostname;
+
+  // If hostname mismatch, ignore dw.json entirely
+  if (hostnameMismatch) {
+    logger.trace(
+      {providedHostname: flags.hostname, dwJsonHostname: dwJson.hostname, ignoredConfig: dwJson},
+      '[Config] Hostname mismatch - ignoring dw.json configuration',
+    );
+    return {
+      hostname: flags.hostname,
+      webdavHostname: flags.webdavHostname,
+      codeVersion: flags.codeVersion,
+      username: flags.username,
+      password: flags.password,
+      clientId: flags.clientId,
+      clientSecret: flags.clientSecret,
+      scopes: flags.scopes,
+      shortCode: flags.shortCode,
+      mrtApiKey: flags.mrtApiKey,
+      mrtProject: flags.mrtProject,
+      mrtEnvironment: flags.mrtEnvironment,
+      mrtOrigin: flags.mrtOrigin,
+      instanceName: undefined,
+      authMethods: flags.authMethods,
+    };
+  }
+
   return {
     hostname: flags.hostname || dwJson.hostname,
     webdavHostname: flags.webdavHostname || dwJson.webdavHostname,

@@ -30,6 +30,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     '<%= config.bin %> <%= command.id %> my-custom-job --wait',
     String.raw`<%= config.bin %> <%= command.id %> my-custom-job -P "SiteScope={\"all_storefront_sites\":true}" -P OtherParam=value`,
     '<%= config.bin %> <%= command.id %> my-custom-job --wait --timeout 600',
+    String.raw`<%= config.bin %> <%= command.id %> sfcc-search-index-product-full-update --body '{"site_scope":{"named_sites":["RefArch"]}}'`,
   ];
 
   static flags = {
@@ -48,6 +49,12 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       description: 'Job parameter in format "name=value" (use -P multiple times for multiple params)',
       multiple: true,
       multipleNonGreedy: true,
+      exclusive: ['body'],
+    }),
+    body: Flags.string({
+      char: 'B',
+      description: 'Raw JSON request body (for system jobs with non-standard schemas)',
+      exclusive: ['param'],
     }),
     'no-wait-running': Flags.boolean({
       description: 'Do not wait for running job to finish before starting',
@@ -63,10 +70,11 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     this.requireOAuthCredentials();
 
     const {jobId} = this.args;
-    const {wait, timeout, param, 'no-wait-running': noWaitRunning, 'show-log': showLog} = this.flags;
+    const {wait, timeout, param, body, 'no-wait-running': noWaitRunning, 'show-log': showLog} = this.flags;
 
-    // Parse parameters
+    // Parse parameters or body
     const parameters = this.parseParameters(param || []);
+    const rawBody = body ? this.parseBody(body) : undefined;
 
     this.log(
       t('commands.job.run.executing', 'Executing job {{jobId}} on {{hostname}}...', {
@@ -78,7 +86,8 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     let execution: JobExecution;
     try {
       execution = await executeJob(this.instance, jobId, {
-        parameters,
+        parameters: rawBody ? undefined : parameters,
+        body: rawBody,
         waitForRunning: !noWaitRunning,
       });
     } catch (error) {
@@ -160,5 +169,13 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         value: p.slice(eqIndex + 1),
       };
     });
+  }
+
+  private parseBody(body: string): Record<string, unknown> {
+    try {
+      return JSON.parse(body) as Record<string, unknown>;
+    } catch {
+      this.error(t('commands.job.run.invalidBody', 'Invalid JSON body: {{body}}', {body}));
+    }
   }
 }

@@ -40,8 +40,10 @@ export type JobExecutionParameter = components['schemas']['job_execution_paramet
  * Options for executing a job.
  */
 export interface ExecuteJobOptions {
-  /** Job parameters to pass */
+  /** Job parameters to pass (standard jobs) */
   parameters?: JobExecutionParameter[];
+  /** Raw request body (for system jobs with non-standard schemas like sfcc-search-index-*) */
+  body?: Record<string, unknown>;
   /** Wait for running jobs to finish before starting (default: true) */
   waitForRunning?: boolean;
 }
@@ -90,12 +92,19 @@ export async function executeJob(
   options: ExecuteJobOptions = {},
 ): Promise<JobExecution> {
   const logger = getLogger();
-  const {parameters = [], waitForRunning = true} = options;
+  const {parameters = [], body: rawBody, waitForRunning = true} = options;
 
-  logger.debug({jobId, parameters}, `Executing job ${jobId}`);
-
-  // Build request body - OCAPI accepts either parameters array or job-specific fields
-  const body = parameters.length > 0 ? {parameters} : undefined;
+  // Build request body - use raw body if provided, otherwise use parameters array
+  let body: Record<string, unknown> | undefined;
+  if (rawBody) {
+    body = rawBody;
+    logger.debug({jobId, body}, `Executing job ${jobId} with raw body`);
+  } else if (parameters.length > 0) {
+    body = {parameters};
+    logger.debug({jobId, parameters}, `Executing job ${jobId} with parameters`);
+  } else {
+    logger.debug({jobId}, `Executing job ${jobId}`);
+  }
 
   const {data, error, response} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
     params: {path: {job_id: jobId}},
