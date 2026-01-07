@@ -152,7 +152,9 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     let sandbox = result.data.data;
 
     this.log('');
-    this.log(t('commands.ods.create.success', 'Sandbox created successfully!'));
+    this.log(
+      t('commands.ods.create.success', 'Sandbox created successfully: {{sandboxId}}', {sandboxId: sandbox.id}),
+    );
 
     if (wait && sandbox.id) {
       this.log('');
@@ -255,6 +257,9 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     const timeoutMs = timeoutSeconds * 1000;
 
     this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to be ready...'));
+
+    // Initial delay before first poll to allow the sandbox to be registered in the API
+    await this.sleep(2000);
 
     while (true) {
       // Check for timeout

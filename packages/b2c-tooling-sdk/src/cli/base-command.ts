@@ -168,17 +168,32 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   /**
    * Handle errors thrown during command execution.
    *
-   * Logs the error using the structured logger (including cause if available),
-   * then uses oclif's error() to exit with proper code.
+   * Logs the error using the structured logger (including cause if available).
+   * In JSON mode, outputs a JSON error object to stdout instead of oclif's default format.
    */
   protected async catch(err: Error & {exitCode?: number}): Promise<never> {
+    const exitCode = err.exitCode ?? 1;
+
     // Log if logger is available (may not be if error during init)
     if (this.logger) {
       this.logger.error({cause: err?.cause}, err.message);
     }
 
+    // In JSON mode, output structured error to stderr and exit
+    if (this.jsonEnabled()) {
+      const errorOutput = {
+        error: {
+          message: err.message,
+          code: exitCode,
+          ...(err.cause ? {cause: String(err.cause)} : {}),
+        },
+      };
+      process.stderr.write(JSON.stringify(errorOutput) + '\n');
+      process.exit(exitCode);
+    }
+
     // Use oclif's error() for proper exit code and display
-    this.error(err.message, {exit: err.exitCode ?? 1});
+    this.error(err.message, {exit: exitCode});
   }
 
   public baseCommandTest(): void {
