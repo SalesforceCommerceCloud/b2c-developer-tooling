@@ -41,8 +41,8 @@ cleanup() {
 
     # Delete sandbox if it was created
     if [ -n "$ODS_ID" ]; then
-        echo "skipping Deleting sandbox: $ODS_ID"
-        #$CLI ods delete "$ODS_ID" --force || true
+        echo "Deleting sandbox: $ODS_ID"
+        $CLI ods delete "$ODS_ID" --force || true
     fi
 
     exit $exit_code

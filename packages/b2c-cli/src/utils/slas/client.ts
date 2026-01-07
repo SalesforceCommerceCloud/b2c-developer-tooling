@@ -110,24 +110,6 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
   };
 
   /**
-   * Get the SLAS client, ensuring short code is configured.
-   */
-  protected getSlasClient(): SlasClient {
-    const {shortCode} = this.resolvedConfig;
-    if (!shortCode) {
-      this.error(
-        t(
-          'error.shortCodeRequired',
-          'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ),
-      );
-    }
-
-    const oauthStrategy = this.getOAuthStrategy();
-    return createSlasClient({shortCode}, oauthStrategy);
-  }
-
-  /**
    * Ensure tenant exists, creating it if necessary.
    * This is required before creating SLAS clients.
    */
@@ -192,5 +174,23 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.create.tenantCreated', 'SLAS tenant created successfully.'));
     }
+  }
+
+  /**
+   * Get the SLAS client, ensuring short code is configured.
+   */
+  protected getSlasClient(): SlasClient {
+    const {shortCode} = this.resolvedConfig;
+    if (!shortCode) {
+      this.error(
+        t(
+          'error.shortCodeRequired',
+          'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        ),
+      );
+    }
+
+    const oauthStrategy = this.getOAuthStrategy();
+    return createSlasClient({shortCode}, oauthStrategy);
   }
 }

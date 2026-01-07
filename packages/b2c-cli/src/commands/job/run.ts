@@ -156,6 +156,14 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     return execution;
   }
 
+  private parseBody(body: string): Record<string, unknown> {
+    try {
+      return JSON.parse(body) as Record<string, unknown>;
+    } catch {
+      this.error(t('commands.job.run.invalidBody', 'Invalid JSON body: {{body}}', {body}));
+    }
+  }
+
   private parseParameters(params: string[]): Array<{name: string; value: string}> {
     return params.map((p) => {
       const eqIndex = p.indexOf('=');
@@ -169,13 +177,5 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         value: p.slice(eqIndex + 1),
       };
     });
-  }
-
-  private parseBody(body: string): Record<string, unknown> {
-    try {
-      return JSON.parse(body) as Record<string, unknown>;
-    } catch {
-      this.error(t('commands.job.run.invalidBody', 'Invalid JSON body: {{body}}', {body}));
-    }
   }
 }
