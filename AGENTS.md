@@ -3,6 +3,7 @@
 This is a monorepo project with the following packages:
 - `./packages/b2c-cli` - the command line interface built with oclif
 - `./packages/b2c-tooling-sdk` - the SDK/library for B2C Commerce operations; supports the CLI and can be used standalone
+- `./packages/b2c-dx-mcp` - Model Context Protocol server; also built with oclif
 
 ## Common Commands
 
@@ -45,11 +46,7 @@ pnpm run -r lint
 
 ## Documentation
 
-- prefer verbose jsdoc comments for all public methods and classes
-- TypeDoc and vitepress will generate documentation from these comments in the `./docs/api` folder
-- module level jsdocs will be used for organization; for example packages/b2c-tooling-sdk/src/auth/index.ts barrel file has the module level docs for the `auth` module
-- see the typedoc.json file for configuration options including the entry points for documentation generation
-- update the docs/ markdown files (non-generated) for user guides and CLI reference when updating major CLI functionalty or adding new commands
+See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
 ## Logging
 
@@ -59,124 +56,21 @@ pnpm run -r lint
 
 ## Table Output
 
-When rendering tabular data in CLI commands, use the shared `TableRenderer` utility from `@salesforce/b2c-tooling-sdk/cli`:
+Use `createTable` from `@salesforce/b2c-tooling-sdk/cli` for tabular output. See [CLI command development skill](./.claude/skills/cli-command-development/SKILL.md) for patterns.
 
-```typescript
-import { createTable, type ColumnDef } from '@salesforce/b2c-tooling-sdk/cli';
+## Claude Code Skills
 
-// Define columns with header and getter function
-const COLUMNS: Record<string, ColumnDef<MyDataType>> = {
-  id: { header: 'ID', get: (item) => item.id },
-  name: { header: 'Name', get: (item) => item.name },
-  status: { header: 'Status', get: (item) => item.status },
-};
+**User-facing skills** (for CLI users): `./plugins/b2c-cli/skills/` - update when modifying CLI commands.
 
-// Render the table
-createTable(COLUMNS).render(data, ['id', 'name', 'status']);
-```
-
-Features:
-- Dynamic column widths based on content
-- Supports `extended` flag on columns for optional fields
-- Use `TableRenderer` class directly for column validation helpers (e.g., `--columns` flag support)
-
-## Claude Code Skills Plugin
-
-The `./plugins/b2c-cli/skills/` directory contains Claude Code skills that teach Claude about the CLI commands. Each skill has a `SKILL.md` file with examples and documentation.
-
-**When modifying CLI commands:**
-- Update the corresponding skill in `plugins/b2c-cli/skills/b2c-<topic>/SKILL.md` if it exists
-- For breaking changes (renamed flags, removed arguments, changed behavior), update all affected examples
-
-**Skill format:**
-```markdown
----
-name: b2c-<topic>
-description: Brief description of what the skill teaches
----
-
-# B2C <Topic> Skill
-
-Overview of the command topic.
-
-## Examples
-
-### <Use Case>
-
-\`\`\`bash
-# comment explaining the command
-b2c <topic> <command> [args] [flags]
-\`\`\`
-```
+**Developer skills** (for contributors): `./.claude/skills/` - covers CLI development, SDK modules, testing, and documentation.
 
 ## Testing
 
-Tests use Mocha + Chai with c8 for coverage. HTTP mocking uses MSW (Mock Service Worker).
+See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
 
-### Running Tests
-
+Quick commands:
 ```bash
-# Run all tests with coverage
-pnpm run test
-
-# Run tests for specific package
-pnpm --filter @salesforce/b2c-tooling-sdk run test
-
-# Run single test file (no coverage, faster)
-cd packages/b2c-tooling-sdk
-pnpm mocha "test/clients/webdav.test.ts"
-
-# Run tests matching pattern
-pnpm mocha --grep "mkcol" "test/**/*.test.ts"
-
-# Watch mode for TDD
-pnpm --filter @salesforce/b2c-tooling-sdk run test:watch
+pnpm run test                                    # Run all tests
+pnpm --filter @salesforce/b2c-tooling-sdk run test  # Test specific package
+pnpm mocha "test/clients/webdav.test.ts"         # Single file (no coverage)
 ```
-
-### Writing Tests
-
-- Place tests in `packages/<package>/test/` mirroring the src structure
-- Use `.test.ts` suffix for test files
-- Import from package names, not relative paths:
-  ```typescript
-  // Good - uses package exports
-  import { WebDavClient } from '@salesforce/b2c-tooling-sdk/clients';
-
-  // Avoid - relative paths
-  import { WebDavClient } from '../../src/clients/webdav.js';
-  ```
-
-### HTTP Mocking with MSW
-
-For testing HTTP clients, use MSW to mock at the network level:
-
-```typescript
-import { http, HttpResponse } from 'msw';
-import { setupServer } from 'msw/node';
-
-const server = setupServer();
-
-before(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
-after(() => server.close());
-
-it('makes HTTP request', async () => {
-  server.use(
-    http.get('https://example.com/api/*', () => {
-      return HttpResponse.json({ data: 'test' });
-    }),
-  );
-
-  // Test code that makes HTTP requests...
-});
-```
-
-### Test Helpers
-
-- `test/helpers/mock-auth.ts` - Mock AuthStrategy for testing HTTP clients
-
-### Coverage
-
-- Coverage reports generated in `coverage/` directory
-- SDK package has 5% minimum threshold (will increase as tests are added)
-- CI publishes coverage summary to GitHub Actions job summary
