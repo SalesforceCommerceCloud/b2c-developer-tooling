@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pricebooks xmlns="http://www.demandware.com/xml/impex/pricebook/2006-10-31">
+    <pricebook>
+        <header pricebook-id="test-usd-pricebook">
+            <currency>USD</currency>
+            <display-name xml:lang="x-default">Test USD Pricebook</display-name>
+            <online-flag>true</online-flag>
+        </header>
+        <price-tables>
+            <price-table product-id="test-product-001">
+                <amount quantity="1">19.99</amount>
+            </price-table>
+        </price-tables>
+    </pricebook>
+</pricebooks>

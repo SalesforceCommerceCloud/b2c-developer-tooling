@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<preferences xmlns="http://www.demandware.com/xml/impex/preferences/2019-01-08">
+    <all-instances>
+        <custom-preference preference-id="SiteGenesis_storefront_catalog_id">TestCatalog</custom-preference>
+    </all-instances>
+    <organization-preferences>
+        <custom-preference preference-id="SiteGenesis_storefront_catalog_id">TestCatalog</custom-preference>
+    </organization-preferences>
+</preferences>
