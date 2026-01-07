@@ -225,20 +225,7 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 }
 ```
 
-**Production Mode** (uses compiled JavaScript - run `pnpm run build` first):
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx-local": {
-      "command": "node",
-      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/run.js", "--toolsets", "all", "--allow-non-ga-tools"]
-    }
-  }
-}
-```
-
-> **Note:** For production mode, run `pnpm run build` after code changes and restart your IDE. Development mode picks up changes automatically.
+> **Note:** Restart the MCP server in your IDE to pick up code changes.
 
 #### 3. JSON-RPC via stdin
 
@@ -256,43 +243,13 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_
 
 > **Note:** Configuration is not currently required as all tools are placeholder implementations. This section will be relevant once tools are fully implemented.
 
-Tools that interact with B2C Commerce instances (e.g., MRT, SCAPI, cartridge deployment) require credentials, which can be provided via **environment variables**, a **`.env` file**, a **`dw.json` file**, or the **`--config`** flag. Local tools (e.g., scaffolding, development guidelines) work without configuration.
+Different tools require different types of configuration:
 
-**Priority order** (highest to lowest):
-
-1. Environment variables (`SFCC_*`) — includes `.env` file if present (shell env vars override `.env`)
-2. `dw.json` file (auto-discovered or via `--config`)
-
-#### Option 1: Environment Variables
-
-Set environment variables directly or create a `.env` file in your project root:
-
-```bash
-# .env file or shell exports
-SFCC_HOSTNAME="your-sandbox.demandware.net"
-SFCC_USERNAME="your.username"
-SFCC_PASSWORD="your-access-key"
-SFCC_CLIENT_ID="your-client-id"
-SFCC_CLIENT_SECRET="your-client-secret"
-SFCC_CODE_VERSION="version1"
-```
-
-#### Option 2: dw.json File
-
-Create a `dw.json` file in your project root (auto-discovered by searching upward from current working directory):
-
-```json
-{
-  "hostname": "your-sandbox.demandware.net",
-  "username": "your.username",
-  "password": "your-access-key",
-  "client-id": "your-client-id",
-  "client-secret": "your-client-secret",
-  "code-version": "version1"
-}
-```
-
-> **Note:** Environment variables take precedence over `dw.json` values.
+| Tool Type | Configuration Required |
+|-----------|----------------------|
+| **MRT tools** (e.g., `mrt_bundle_push`) | MRT API key |
+| **B2C instance tools** (e.g., `cartridge_deploy`, SCAPI) | dw.json config |
+| **Local tools** (e.g., scaffolding) | None |
 
 #### MRT API Key
 
@@ -348,12 +305,16 @@ The MCP server will automatically use this file as a fallback if no flag or envi
 
 When using `~/.mobify` config files (i.e., no `--mrt-api-key` flag or `SFCC_MRT_API_KEY` env var), you can use `--mrt-cloud-origin` to select an environment-specific config file:
 
-```bash
-# Uses ~/.mobify--cloud-staging.mobify.com for API key
-b2c-dx-mcp --toolsets MRT --mrt-cloud-origin https://cloud-staging.mobify.com
-
-# Or via environment variable
-SFCC_MRT_CLOUD_ORIGIN=https://cloud-staging.mobify.com b2c-dx-mcp --toolsets MRT
+```json
+// mcp.json - uses ~/.mobify--cloud-staging.mobify.com for API key
+{
+  "mcpServers": {
+    "b2c-dx-staging": {
+      "command": "b2c-dx-mcp",
+      "args": ["--toolsets", "MRT", "--mrt-cloud-origin", "https://cloud-staging.mobify.com"]
+    }
+  }
+}
 ```
 
 | Cloud Origin | Config File |
@@ -363,6 +324,66 @@ SFCC_MRT_CLOUD_ORIGIN=https://cloud-staging.mobify.com b2c-dx-mcp --toolsets MRT
 | `https://cloud-dev.mobify.com` | `~/.mobify--cloud-dev.mobify.com` |
 
 > **Note:** `--mrt-cloud-origin` is only relevant when the API key is resolved from a config file. If `--mrt-api-key` or `SFCC_MRT_API_KEY` is provided, this flag is ignored.
+
+#### B2C Instance Config (dw.json)
+
+Tools that interact with B2C Commerce instances (e.g., `cartridge_deploy`, SCAPI tools) require instance credentials.
+
+**Priority order** (highest to lowest):
+
+1. Environment variables (`SFCC_*`)
+2. `dw.json` file (via `--config` flag or auto-discovery)
+
+**Option A: Environment variables**
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "b2c-dx-mcp",
+      "args": ["--toolsets", "CARTRIDGES"],
+      "env": {
+        "SFCC_HOSTNAME": "your-sandbox.demandware.net",
+        "SFCC_USERNAME": "your.username",
+        "SFCC_PASSWORD": "your-access-key",
+        "SFCC_CLIENT_ID": "your-client-id",
+        "SFCC_CLIENT_SECRET": "your-client-secret",
+        "SFCC_CODE_VERSION": "version1"
+      }
+    }
+  }
+}
+```
+
+**Option B: dw.json with explicit path**
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "b2c-dx-mcp",
+      "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json"]
+    }
+  }
+}
+```
+
+**Option C: dw.json with auto-discovery**
+
+Create a `dw.json` file in your project root. The MCP server will auto-discover it by searching upward from the current working directory:
+
+```json
+{
+  "hostname": "your-sandbox.demandware.net",
+  "username": "your.username",
+  "password": "your-access-key",
+  "client-id": "your-client-id",
+  "client-secret": "your-client-secret",
+  "code-version": "version1"
+}
+```
+
+> **Note:** Environment variables override values from `dw.json`. You can use env vars to override specific fields (e.g., secrets) while using dw.json for other settings.
 
 ## License
 
