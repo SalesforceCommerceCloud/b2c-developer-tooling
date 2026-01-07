@@ -67,7 +67,6 @@ export class B2CDxMcpServer extends McpServer {
       args: Record<string, unknown>,
       _extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
     ): Promise<CallToolResult> => {
-      // TODO: Telemetry - Track timing and send TOOL_CALLED event
       const startTime = Date.now();
       const result = await handler(args);
       // TODO: Telemetry - Send TOOL_CALLED event with { name, runtimeMs, isError: result.isError }
