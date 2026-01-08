@@ -9,49 +9,74 @@
  *
  * This toolset provides MCP tools for Storefront Next development.
  *
+ * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
+ * > Tools in this module are placeholder implementations that return mock responses.
+ * > Actual implementations are coming soon. Use `--allow-non-ga-tools` flag to enable.
+ *
  * @module tools/storefrontnext
  */
 
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
+import {createToolAdapter, jsonResult} from '../adapter.js';
 
 /**
- * Creates a placeholder tool that logs and returns a mock response.
+ * Common input type for placeholder tools.
  */
-function createPlaceholderTool(name: string, description: string, _services: Services): McpTool {
-  return {
-    name,
-    description: `[PLACEHOLDER] ${description}`,
-    inputSchema: {
-      message: z.string().optional().describe('Optional message to echo'),
-    },
-    toolsets: ['STOREFRONTNEXT'],
-    isGA: false,
-    async handler(args) {
-      const timestamp = new Date().toISOString();
-      console.error(`[${timestamp}] STOREFRONTNEXT tool '${name}' called with:`, args);
+interface PlaceholderInput {
+  message?: string;
+}
 
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify(
-              {
-                tool: name,
-                status: 'placeholder',
-                message: `This is a placeholder implementation for '${name}'. The actual implementation is coming soon.`,
-                input: args,
-                timestamp,
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      };
+/**
+ * Common output type for placeholder tools.
+ */
+interface PlaceholderOutput {
+  tool: string;
+  status: string;
+  message: string;
+  input: PlaceholderInput;
+  timestamp: string;
+}
+
+/**
+ * Creates a placeholder tool for Storefront Next development.
+ *
+ * Placeholder tools log invocations and return mock responses until
+ * the actual implementation is available.
+ *
+ * @param name - Tool name
+ * @param description - Tool description
+ * @param services - MCP services
+ * @returns The configured MCP tool
+ */
+function createPlaceholderTool(name: string, description: string, services: Services): McpTool {
+  return createToolAdapter<PlaceholderInput, PlaceholderOutput>(
+    {
+      name,
+      description: `[PLACEHOLDER] ${description}`,
+      toolsets: ['STOREFRONTNEXT'],
+      isGA: false,
+      requiresInstance: false,
+      inputSchema: {
+        message: z.string().optional().describe('Optional message to echo'),
+      },
+      async execute(args) {
+        // Placeholder implementation
+        const timestamp = new Date().toISOString();
+
+        return {
+          tool: name,
+          status: 'placeholder',
+          message: `This is a placeholder implementation for '${name}'. The actual implementation is coming soon.`,
+          input: args,
+          timestamp,
+        };
+      },
+      formatOutput: (output) => jsonResult(output),
     },
-  };
+    services,
+  );
 }
 
 /**

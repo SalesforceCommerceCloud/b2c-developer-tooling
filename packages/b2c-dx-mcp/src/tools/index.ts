@@ -10,8 +10,15 @@
  * This module exports all available tools and utilities.
  * Tools use the @salesforce/b2c-tooling-sdk operations layer directly.
  *
+ * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
+ * > Tools are currently placeholder implementations that return mock responses.
+ * > Actual implementations are coming soon. Use `--allow-non-ga-tools` flag to enable.
+ *
  * @module tools
  */
+
+// Tool adapter utilities
+export * from './adapter.js';
 
 // Toolset exports
 export * from './cartridges/index.js';

@@ -22,6 +22,26 @@ Since the package is not yet published to npm, see the [Development](#developmen
 | `--tools` | Comma-separated individual tools to enable (case-insensitive) |
 | `--allow-non-ga-tools` | Enable experimental (non-GA) tools |
 
+#### MRT Flags (inherited from MrtCommand)
+
+| Flag | Env Variable | Description |
+|------|--------------|-------------|
+| `--api-key` | `SFCC_MRT_API_KEY` | MRT API key for Managed Runtime operations |
+| `--project` | `SFCC_MRT_PROJECT` | MRT project slug (required for MRT tools) |
+| `--environment` | `SFCC_MRT_ENVIRONMENT` | MRT environment (e.g., staging, production) |
+| `--cloud-origin` | `SFCC_MRT_CLOUD_ORIGIN` | MRT cloud origin URL (default: https://cloud.mobify.com). See [Environment-Specific Config](#environment-specific-config) |
+
+#### B2C Instance Flags (inherited from InstanceCommand)
+
+| Flag | Env Variable | Description |
+|------|--------------|-------------|
+| `--server` | `SFCC_SERVER` | B2C instance hostname |
+| `--code-version` | `SFCC_CODE_VERSION` | Code version for deployments |
+| `--username` | `SFCC_USERNAME` | Username for Basic auth (WebDAV) |
+| `--password` | `SFCC_PASSWORD` | Password/access key for Basic auth |
+| `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
+| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
+
 #### Global Flags (inherited from SDK)
 
 | Flag | Description |
@@ -47,6 +67,23 @@ Since the package is not yet published to npm, see the [Development](#developmen
 
 // Explicit config file path
 "args": ["--toolsets", "all", "--config", "/path/to/dw.json"]
+
+// B2C instance tools with Basic auth (preferred for WebDAV tools like cartridge_deploy)
+"args": ["--toolsets", "CARTRIDGES", "--server", "your-sandbox.demandware.net", "--username", "your.username", "--password", "your-access-key"]
+
+// B2C instance tools with OAuth (for OCAPI/SCAPI tools, or WebDAV fallback)
+"args": ["--toolsets", "SCAPI", "--server", "your-sandbox.demandware.net", "--client-id", "your-client-id", "--client-secret", "your-client-secret"]
+
+// B2C instance tools with env vars (Basic auth)
+"args": ["--toolsets", "CARTRIDGES"],
+"env": { "SFCC_SERVER": "your-sandbox.demandware.net", "SFCC_USERNAME": "your.username", "SFCC_PASSWORD": "your-access-key" }
+
+// MRT tools with project, environment, and API key
+"args": ["--toolsets", "MRT", "--project", "my-project", "--environment", "staging", "--api-key", "your-api-key"]
+
+// Or use environment variables in mcp.json
+"args": ["--toolsets", "MRT"],
+"env": { "SFCC_MRT_API_KEY": "your-api-key", "SFCC_MRT_PROJECT": "my-project", "SFCC_MRT_ENVIRONMENT": "staging" }
 
 // Enable experimental tools (required for placeholder tools)
 "args": ["--toolsets", "all", "--allow-non-ga-tools"]
@@ -204,12 +241,19 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 {
   "mcpServers": {
     "b2c-dx-local": {
-      "command": "node",
-      "args": ["--conditions", "development", "/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"]
+      "command": "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": [
+        "--toolsets", "all",
+        "--allow-non-ga-tools"
+      ]
     }
   }
 }
 ```
+
+> **Note:** Make sure the script is executable: `chmod +x /full/path/to/packages/b2c-dx-mcp/bin/dev.js`
+>
+> The script's shebang (`#!/usr/bin/env -S node --conditions development`) handles Node.js setup automatically.
 
 > **Note:** Restart the MCP server in your IDE to pick up code changes.
 
@@ -229,30 +273,176 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_
 
 > **Note:** Configuration is not currently required as all tools are placeholder implementations. This section will be relevant once tools are fully implemented.
 
-Tools that interact with B2C Commerce instances (e.g., MRT, SCAPI, cartridge deployment) require credentials, which can be provided via **environment variables**, a **`.env` file**, a **`dw.json` file**, or the **`--config`** flag. Local tools (e.g., scaffolding, development guidelines) work without configuration.
+Different tools require different types of configuration:
+
+| Tool Type | Configuration Required |
+|-----------|----------------------|
+| **MRT tools** (e.g., `mrt_bundle_push`) | API key + project |
+| **B2C instance tools** (e.g., `cartridge_deploy`) | dw.json or instance flags |
+| **Local tools** (e.g., scaffolding) | None |
+
+#### MRT Configuration
+
+MRT tools require an **API key** and **project**. The **environment** is optional (for deployments).
+
+| Setting | Flag | Env Variable | Fallback |
+|---------|------|--------------|----------|
+| API key | `--api-key` | `SFCC_MRT_API_KEY` | `~/.mobify` |
+| Project | `--project` | `SFCC_MRT_PROJECT` | — |
+| Environment | `--environment` | `SFCC_MRT_ENVIRONMENT` | — |
+
+> Priority: Flag > Env variable > `~/.mobify` file
+
+**Example:**
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": [
+        "--toolsets", "MRT",
+        "--project", "my-project",
+        "--environment", "staging",
+        "--api-key", "your-api-key"
+      ]
+    }
+  }
+}
+```
+
+Or use environment variables instead of flags:
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--toolsets", "MRT"],
+      "env": {
+        "SFCC_MRT_API_KEY": "your-api-key",
+        "SFCC_MRT_PROJECT": "my-project",
+        "SFCC_MRT_ENVIRONMENT": "staging"
+      }
+    }
+  }
+}
+```
+
+> **Note:** Make sure the script is executable: `chmod +x /path/to/packages/b2c-dx-mcp/bin/dev.js`
+
+#### Environment-Specific Config
+
+If you have a `~/.mobify` file from the `b2c` CLI, the MCP server will use it as a fallback for API key:
+
+```json
+{
+  "api_key": "your-api-key"
+}
+```
+
+For non-production environments, use `--cloud-origin` to select an environment-specific config file:
+
+| `--cloud-origin` | Config File |
+|------------------|-------------|
+| (not set) | `~/.mobify` |
+| `https://cloud-staging.mobify.com` | `~/.mobify--cloud-staging.mobify.com` |
+| `https://cloud-dev.mobify.com` | `~/.mobify--cloud-dev.mobify.com` |
+
+#### B2C Instance Config (dw.json)
+
+Tools that interact with B2C Commerce instances (e.g., `cartridge_deploy`, SCAPI tools) require instance credentials.
+
+**Authentication Methods:**
+
+| Method | Credentials | Used By |
+|--------|-------------|---------|
+| **Basic auth** | `--username` + `--password` | WebDAV tools (`cartridge_deploy`) |
+| **OAuth** | `--client-id` + `--client-secret` | OCAPI tools, SCAPI tools |
+
+> **Recommendation:** Use Basic auth (username/password) for WebDAV tools like `cartridge_deploy`. OAuth credentials (client-id/client-secret) are required for OCAPI/SCAPI tools. If you need both WebDAV and OCAPI tools, configure all four credentials.
 
 **Priority order** (highest to lowest):
 
-1. Environment variables (`SFCC_*`) — includes `.env` file if present (shell env vars override `.env`)
-2. `dw.json` file (auto-discovered or via `--config`)
+1. Flags (`--server`, `--username`, `--password`, `--client-id`, `--client-secret`)
+2. Environment variables (`SFCC_*`)
+3. `dw.json` file (via `--config` flag or auto-discovery)
 
-#### Option 1: Environment Variables
+**Option A: Flags with Basic auth (for WebDAV tools like cartridge_deploy)**
 
-Set environment variables directly or create a `.env` file in your project root:
-
-```bash
-# .env file or shell exports
-SFCC_HOSTNAME="your-sandbox.demandware.net"
-SFCC_USERNAME="your.username"
-SFCC_PASSWORD="your-access-key"
-SFCC_CLIENT_ID="your-client-id"
-SFCC_CLIENT_SECRET="your-client-secret"
-SFCC_CODE_VERSION="version1"
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": [
+        "--toolsets", "CARTRIDGES",
+        "--server", "your-sandbox.demandware.net",
+        "--username", "your.username",
+        "--password", "your-access-key"
+      ]
+    }
+  }
+}
 ```
 
-#### Option 2: dw.json File
+**Option B: Flags with OAuth (for OCAPI/SCAPI tools, or WebDAV fallback)**
 
-Create a `dw.json` file in your project root (auto-discovered by searching upward from current working directory):
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": [
+        "--toolsets", "SCAPI",
+        "--server", "your-sandbox.demandware.net",
+        "--client-id", "your-client-id",
+        "--client-secret", "your-client-secret"
+      ]
+    }
+  }
+}
+```
+
+**Option C: Environment variables (all credentials)**
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--toolsets", "CARTRIDGES"],
+      "env": {
+        "SFCC_SERVER": "your-sandbox.demandware.net",
+        "SFCC_USERNAME": "your.username",
+        "SFCC_PASSWORD": "your-access-key",
+        "SFCC_CLIENT_ID": "your-client-id",
+        "SFCC_CLIENT_SECRET": "your-client-secret",
+        "SFCC_CODE_VERSION": "version1"
+      }
+    }
+  }
+}
+```
+
+**Option D: dw.json with explicit path**
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json"]
+    }
+  }
+}
+```
+
+**Option E: dw.json with auto-discovery**
+
+When `--config` is not provided, the MCP server searches upward from `~/` for a `dw.json` file.
+
+> **Note:** Auto-discovery starts from the home directory, so it won't find project-level `dw.json` files. Use `--config` with an explicit path instead.
 
 ```json
 {
@@ -265,7 +455,7 @@ Create a `dw.json` file in your project root (auto-discovered by searching upwar
 }
 ```
 
-> **Note:** Environment variables take precedence over `dw.json` values.
+> **Note:** Flags override environment variables, and environment variables override `dw.json`. You can mix sources (e.g., secrets via env vars, other settings via dw.json).
 
 ## License
 

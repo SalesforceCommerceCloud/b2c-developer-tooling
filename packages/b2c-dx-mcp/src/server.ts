@@ -14,6 +14,7 @@ import type {
 import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
 import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
+import type {ZodRawShape} from 'zod';
 
 /**
  * Extended server options.
@@ -60,24 +61,24 @@ export class B2CDxMcpServer extends McpServer {
   public addTool(
     name: string,
     description: string,
-    inputSchema: Record<string, unknown>,
+    inputSchema: ZodRawShape,
     handler: (args: Record<string, unknown>) => Promise<CallToolResult>,
   ): void {
     const wrappedHandler = async (
       args: Record<string, unknown>,
       _extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
     ): Promise<CallToolResult> => {
-      const startTime = Date.now();
+      // TODO: Telemetry - Track timing and send TOOL_CALLED event
+      // const startTime = Date.now();
       const result = await handler(args);
-      // TODO: Telemetry - Send TOOL_CALLED event with { name, runtimeMs, isError: result.isError }
-      const runtimeMs = Date.now() - startTime;
-      void runtimeMs; // Silence unused variable until telemetry is implemented
+      // const runtimeMs = Date.now() - startTime;
+      // telemetry.sendEvent('TOOL_CALLED', { name, runtimeMs, isError: result.isError });
 
       return result;
     };
 
-    // Use the base server.tool method which handles the registration
-    this.tool(name, description, inputSchema, wrappedHandler);
+    // Use the new registerTool API (tool() is deprecated)
+    this.registerTool(name, {description, inputSchema}, wrappedHandler);
   }
 
   /**
