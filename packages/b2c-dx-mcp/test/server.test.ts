@@ -5,6 +5,7 @@
  */
 
 import {expect} from 'chai';
+import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';
 
 // Handlers extracted to module scope to reduce callback nesting depth
@@ -45,25 +46,22 @@ describe('B2CDxMcpServer', () => {
 
     it('should register a tool without throwing', () => {
       expect(() => {
-        server.addTool('test_tool', 'A test tool', {type: 'object', properties: {}}, simpleHandler);
+        server.addTool('test_tool', 'A test tool', {}, simpleHandler);
       }).to.not.throw();
     });
 
     it('should register multiple tools', () => {
       expect(() => {
-        server.addTool('tool_one', 'First tool', {type: 'object', properties: {}}, toolOneHandler);
-        server.addTool('tool_two', 'Second tool', {type: 'object', properties: {}}, toolTwoHandler);
+        server.addTool('tool_one', 'First tool', {}, toolOneHandler);
+        server.addTool('tool_two', 'Second tool', {}, toolTwoHandler);
       }).to.not.throw();
     });
 
     it('should accept tools with input schema', () => {
+      // Use Zod schema (ZodRawShape format)
       const inputSchema = {
-        type: 'object',
-        properties: {
-          name: {type: 'string', description: 'Name parameter'},
-          count: {type: 'number', description: 'Count parameter'},
-        },
-        required: ['name'],
+        name: z.string().describe('Name parameter'),
+        count: z.number().optional().describe('Count parameter'),
       };
       expect(() => {
         server.addTool('parameterized_tool', 'A tool with parameters', inputSchema, paramHandler);

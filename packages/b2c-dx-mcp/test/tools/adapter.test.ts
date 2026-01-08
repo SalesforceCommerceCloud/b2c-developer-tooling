@@ -13,8 +13,10 @@ import type {ToolResult} from '../../src/utils/types.js';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
 // Create a mock services instance for testing
-function createMockServices(options?: {configPath?: string; mrtAuth?: AuthStrategy}): Services {
-  return new Services(options);
+function createMockServices(options?: {mrtAuth?: AuthStrategy}): Services {
+  return new Services({
+    mrtConfig: options?.mrtAuth ? {auth: options.mrtAuth} : undefined,
+  });
 }
 
 /**
@@ -264,7 +266,7 @@ describe('tools/adapter', () => {
     });
 
     it('should pass services to execute function', async () => {
-      const services = createMockServices({configPath: '/path/to/config.json'});
+      const services = createMockServices();
       let receivedServices: Services | undefined;
 
       const tool = createToolAdapter(
@@ -286,7 +288,6 @@ describe('tools/adapter', () => {
       await tool.handler({});
 
       expect(receivedServices).to.equal(services);
-      expect(receivedServices?.configPath).to.equal('/path/to/config.json');
     });
 
     it('should support tools that do not require instance', async () => {
@@ -473,8 +474,9 @@ describe('tools/adapter', () => {
         expect(contextReceived?.b2cInstance).to.be.undefined;
       });
 
-      it('should return configuration error when instance creation fails', async () => {
-        const services = createMockServices({configPath: '/nonexistent/path/dw.json'});
+      it('should return error when B2C instance is not configured', async () => {
+        // Services with no b2cInstance (resolution failed or not configured)
+        const services = createMockServices();
 
         const tool = createToolAdapter(
           {
@@ -492,7 +494,7 @@ describe('tools/adapter', () => {
         const result = await tool.handler({});
 
         expect(result.isError).to.be.true;
-        expect(getResultText(result)).to.include('Configuration error');
+        expect(getResultText(result)).to.include('B2C instance error');
       });
     });
 
@@ -526,12 +528,12 @@ describe('tools/adapter', () => {
         const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
-        expect(contextReceived?.mrtAuth).to.be.undefined;
+        expect(contextReceived?.mrtConfig?.auth).to.be.undefined;
       });
 
-      it('should provide auth in context when mrtAuth is configured', async () => {
+      it('should provide mrtConfig in context when auth is configured', async () => {
         // Use Services.create() to resolve auth (simulating what mcp.ts does at startup)
-        const services = Services.create({mrtApiKey: 'test-api-key-12345'});
+        const services = Services.create({mrt: {apiKey: 'test-api-key-12345'}});
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -553,9 +555,9 @@ describe('tools/adapter', () => {
         const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
-        expect(contextReceived?.mrtAuth).to.not.be.undefined;
+        expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
         // Verify auth has fetch method (AuthStrategy interface)
-        expect(contextReceived?.mrtAuth).to.have.property('fetch');
+        expect(contextReceived?.mrtConfig?.auth).to.have.property('fetch');
       });
 
       it('should resolve auth from SFCC_MRT_API_KEY env var via Services.create()', async () => {
@@ -583,14 +585,14 @@ describe('tools/adapter', () => {
         const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
-        expect(contextReceived?.mrtAuth).to.not.be.undefined;
+        expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
       });
 
       it('should support mrtCloudOrigin option in Services.create()', async () => {
         // Use env var to provide API key (so test doesn't depend on ~/.mobify--hostname existing)
         process.env.SFCC_MRT_API_KEY = 'staging-api-key';
-        // Services.create() accepts mrtCloudOrigin for environment-specific config
-        const services = Services.create({mrtCloudOrigin: 'https://cloud-staging.mobify.com'});
+        // Services.create() accepts cloudOrigin for environment-specific config
+        const services = Services.create({mrt: {cloudOrigin: 'https://cloud-staging.mobify.com'}});
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -612,13 +614,13 @@ describe('tools/adapter', () => {
         const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
-        expect(contextReceived?.mrtAuth).to.not.be.undefined;
+        expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
       });
 
       it('should prefer mrtApiKey option over env var in Services.create()', async () => {
-        // mrtApiKey option takes precedence over env var
+        // mrt.apiKey option takes precedence over env var
         process.env.SFCC_MRT_API_KEY = 'env-var-key';
-        const services = Services.create({mrtApiKey: 'flag-api-key'});
+        const services = Services.create({mrt: {apiKey: 'flag-api-key'}});
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -640,7 +642,7 @@ describe('tools/adapter', () => {
         const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
-        expect(contextReceived?.mrtAuth).to.not.be.undefined;
+        expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
       });
 
       it('should support both requiresInstance and requiresMrtAuth being false', async () => {
@@ -668,12 +670,12 @@ describe('tools/adapter', () => {
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.b2cInstance).to.be.undefined;
-        expect(contextReceived?.mrtAuth).to.be.undefined;
+        expect(contextReceived?.mrtConfig?.auth).to.be.undefined;
         expect(contextReceived?.services).to.equal(services);
       });
 
       it('should return error when requiresMrtAuth is true but no auth configured', async () => {
-        // No mrtAuth provided to Services
+        // No mrtConfig.auth provided to Services
         const services = createMockServices({});
         const tool = createToolAdapter(
           {

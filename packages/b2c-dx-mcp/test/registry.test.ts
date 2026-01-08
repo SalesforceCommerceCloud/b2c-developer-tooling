@@ -11,8 +11,8 @@ import {B2CDxMcpServer} from '../src/server.js';
 import type {StartupFlags} from '../src/utils/types.js';
 
 // Create a mock services instance for testing
-function createMockServices(configPath?: string): Services {
-  return new Services({configPath});
+function createMockServices(): Services {
+  return new Services({});
 }
 
 // Create a mock server that tracks registered tools

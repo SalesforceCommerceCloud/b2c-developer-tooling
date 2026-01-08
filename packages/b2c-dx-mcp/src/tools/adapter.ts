@@ -9,15 +9,22 @@
  *
  * This module provides utilities for creating standardized MCP tools that:
  * - Validate input using Zod schemas
- * - Inject B2CInstance for WebDAV/OCAPI operations (requiresInstance)
+ * - Inject pre-resolved B2CInstance for WebDAV/OCAPI operations (requiresInstance)
  * - Inject pre-resolved MRT auth for MRT API operations (requiresMrtAuth)
  * - Format output consistently (textResult, jsonResult, errorResult)
  *
- * ## Auth Resolution
+ * ## Configuration Resolution
  *
- * MRT authentication is resolved once at server startup via {@link Services.create}
- * and reused for all tool calls. Tools receive the pre-resolved auth in their
- * execution context when `requiresMrtAuth: true`.
+ * Both B2C instance and MRT auth are resolved once at server startup via
+ * {@link Services.create} and reused for all tool calls:
+ *
+ * - **B2CInstance**: Resolved from flags + dw.json. Available when `requiresInstance: true`.
+ * - **MRT Auth**: Resolved from --api-key → SFCC_MRT_API_KEY → ~/.mobify. Available when `requiresMrtAuth: true`.
+ *
+ * This "resolve eagerly at startup" pattern provides:
+ * - Fail-fast behavior (configuration errors surface at startup)
+ * - Consistent mental model (both resolved the same way)
+ * - Better performance (no resolution on each tool call)
  *
  * @module tools/adapter
  *
@@ -43,8 +50,8 @@
  * ```typescript
  * // Services created with auth resolved at startup
  * const services = Services.create({
- *   mrtApiKey: flags['mrt-api-key'],
- *   mrtCloudOrigin: flags['mrt-cloud-origin'],
+ *   mrtApiKey: flags['api-key'],
+ *   mrtCloudOrigin: flags['cloud-origin'],
  * });
  *
  * const mrtTool = createToolAdapter({
@@ -65,30 +72,36 @@
  */
 
 import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
-import {B2CInstance} from '@salesforce/b2c-tooling-sdk';
+import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
 import type {Services} from '../services.js';
 
 /**
  * Context provided to tool execute functions.
- * Contains the B2CInstance and/or auth strategy based on tool requirements.
+ * Contains the B2CInstance and/or MRT config based on tool requirements.
  */
 export interface ToolExecutionContext {
   /**
-   * B2CInstance configured with authentication from dw.json and environment variables.
+   * B2CInstance configured with authentication from dw.json and flags.
    * Provides access to typed API clients (webdav, ocapi).
    * Only available when requiresInstance is true.
    */
   b2cInstance?: B2CInstance;
 
   /**
-   * Auth strategy for MRT API operations.
-   * Pre-resolved at server startup from --mrt-api-key, SFCC_MRT_API_KEY,
-   * or ~/.mobify config file.
-   * Only available when requiresMrtAuth is true.
+   * MRT configuration (auth, project, environment).
+   * Pre-resolved at server startup.
+   * Only populated when requiresMrtAuth is true.
    */
-  mrtAuth?: AuthStrategy;
+  mrtConfig?: {
+    /** Auth strategy for MRT API operations */
+    auth: AuthStrategy;
+    /** MRT project slug */
+    project?: string;
+    /** MRT environment */
+    environment?: string;
+  };
 
   /**
    * Services instance for file system access and other utilities.
@@ -199,51 +212,6 @@ export function jsonResult(data: unknown, indent = 2): ToolResult {
 }
 
 /**
- * Gets a non-empty environment variable value, or undefined if empty/missing.
- */
-function getEnv(name: string): string | undefined {
-  const value = process.env[name];
-  return value && value.trim() !== '' ? value : undefined;
-}
-
-/**
- * Resolves environment variable overrides for B2CInstance configuration.
- * Environment variables take precedence over dw.json values.
- * Empty strings are treated as undefined (fall back to dw.json).
- */
-function getEnvironmentOverrides(): Record<string, string | undefined> {
-  return {
-    hostname: getEnv('SFCC_HOSTNAME'),
-    username: getEnv('SFCC_USERNAME'),
-    password: getEnv('SFCC_PASSWORD'),
-    clientId: getEnv('SFCC_CLIENT_ID'),
-    clientSecret: getEnv('SFCC_CLIENT_SECRET'),
-    codeVersion: getEnv('SFCC_CODE_VERSION'),
-  };
-}
-
-/**
- * Creates a B2CInstance from configuration with environment variable overrides.
- *
- * @param services - Services instance containing optional configPath
- * @returns Configured B2CInstance
- * @throws Error if configuration is missing or invalid
- */
-function createInstance(services: Services): B2CInstance {
-  const envOverrides = getEnvironmentOverrides();
-
-  return B2CInstance.fromEnvironment({
-    configPath: services.configPath,
-    hostname: envOverrides.hostname,
-    username: envOverrides.username,
-    password: envOverrides.password,
-    clientId: envOverrides.clientId,
-    clientSecret: envOverrides.clientSecret,
-    codeVersion: envOverrides.codeVersion,
-  });
-}
-
-/**
  * Formats Zod validation errors into a human-readable string.
  *
  * @param error - The Zod error object
@@ -322,32 +290,36 @@ export function createToolAdapter<TInput, TOutput>(
       const args = parseResult.data as TInput;
 
       try {
-        // 2. Create B2CInstance if required (for WebDAV/OCAPI operations)
+        // 2. Get B2CInstance if required (pre-resolved at startup)
         let b2cInstance: B2CInstance | undefined;
         if (requiresInstance) {
-          try {
-            b2cInstance = createInstance(services);
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return errorResult(`Configuration error: ${message}`);
-          }
-        }
-
-        // 3. Get MRT auth if required (pre-resolved at startup)
-        let mrtAuth: AuthStrategy | undefined;
-        if (requiresMrtAuth) {
-          if (!services.mrtAuth) {
+          if (!services.b2cInstance) {
             return errorResult(
-              'MRT auth error: MRT API key required. Provide --mrt-api-key, set SFCC_MRT_API_KEY environment variable, or configure ~/.mobify',
+              'B2C instance error: Instance configuration required. Provide --server flag, set SFCC_SERVER environment variable, or configure dw.json',
             );
           }
-          mrtAuth = services.mrtAuth;
+          b2cInstance = services.b2cInstance;
+        }
+
+        // 3. Get MRT config if required (pre-resolved at startup)
+        let mrtConfig: ToolExecutionContext['mrtConfig'];
+        if (requiresMrtAuth) {
+          if (!services.mrtConfig.auth) {
+            return errorResult(
+              'MRT auth error: MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY environment variable, or configure ~/.mobify',
+            );
+          }
+          mrtConfig = {
+            auth: services.mrtConfig.auth,
+            project: services.mrtConfig.project,
+            environment: services.mrtConfig.environment,
+          };
         }
 
         // 4. Execute the operation
         const context: ToolExecutionContext = {
           b2cInstance,
-          mrtAuth,
+          mrtConfig,
           services,
         };
         const output = await execute(args, context);

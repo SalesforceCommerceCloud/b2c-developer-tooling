@@ -26,14 +26,10 @@ import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
  * Input type for mrt_bundle_push tool.
  */
 interface MrtBundlePushInput {
-  /** MRT project slug/ID (required) */
-  projectSlug: string;
   /** Path to build directory (default: ./build) */
   buildDirectory?: string;
   /** Deployment message */
   message?: string;
-  /** Target environment to deploy to after push (optional) */
-  target?: string;
   /** Glob patterns for server-only files (default: ssr.js,ssr.mjs,server/**\/*) */
   ssrOnly?: string;
   /** Glob patterns for shared files (default: static/**\/*,client/**\/*) */
@@ -73,10 +69,8 @@ function createMrtBundlePushTool(services: Services): McpTool {
       // MRT operations use ApiKeyStrategy from SFCC_MRT_API_KEY or ~/.mobify
       requiresMrtAuth: true,
       inputSchema: {
-        projectSlug: z.string().min(1, 'Project slug is required').describe('MRT project slug/ID'),
         buildDirectory: z.string().optional().describe('Path to build directory (default: ./build)'),
         message: z.string().optional().describe('Deployment message'),
-        target: z.string().optional().describe('Target environment to deploy to after push'),
         ssrOnly: z
           .string()
           .optional()
@@ -87,14 +81,25 @@ function createMrtBundlePushTool(services: Services): McpTool {
           .describe('Glob patterns for shared files, comma-separated (default: static/**/*,client/**/*)'),
       },
       async execute(args, context) {
+        // Get project from --project flag (required)
+        const project = context.mrtConfig?.project;
+        if (!project) {
+          throw new Error(
+            'MRT project error: Project is required. Provide --project flag or set SFCC_MRT_PROJECT environment variable.',
+          );
+        }
+
+        // Get environment from --environment flag (optional)
+        const environment = context.mrtConfig?.environment;
+
         // Placeholder implementation
         const timestamp = new Date().toISOString();
 
         // TODO: Remove this log when implementing
         const logger = getLogger();
-        logger.debug({context}, 'mrt_bundle_push context');
+        logger.debug({mrtConfig: context.mrtConfig, project, environment}, 'mrt_bundle_push context');
 
-        // TODO: When implementing, use context.mrtAuth:
+        // TODO: When implementing, use context.mrtConfig.auth:
         //
         // import { pushBundle } from '@salesforce/b2c-tooling-sdk/operations/mrt';
         //
@@ -103,13 +108,13 @@ function createMrtBundlePushTool(services: Services): McpTool {
         // const ssrShared = (args.ssrShared || 'static/**/*,client/**/*').split(',').map(s => s.trim());
         //
         // const result = await pushBundle({
-        //   projectSlug: args.projectSlug,
+        //   project,
         //   buildDirectory: args.buildDirectory || './build',
         //   ssrOnly,    // files that run only on SSR server (never sent to browser)
         //   ssrShared,  // files served from CDN and also available to SSR
         //   message: args.message,
-        //   target: args.target,
-        // }, context.mrtAuth!);
+        //   environment,
+        // }, context.mrtConfig!.auth);
         // return result;
 
         return {
@@ -117,7 +122,7 @@ function createMrtBundlePushTool(services: Services): McpTool {
           status: 'placeholder',
           message:
             "This is a placeholder implementation for 'mrt_bundle_push'. The actual implementation is coming soon.",
-          input: args,
+          input: {...args, project, environment},
           timestamp,
         };
       },

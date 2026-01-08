@@ -9,30 +9,41 @@
  *
  * The {@link Services} class is the central dependency container for tools,
  * providing:
- * - Configuration paths (dw.json location)
- * - Pre-resolved MRT authentication
+ * - Pre-resolved B2CInstance for WebDAV/OCAPI operations
+ * - Pre-resolved MRT authentication for Managed Runtime operations
+ * - MRT project/environment configuration
  * - File system utilities for local operations
  *
  * ## Creating Services
  *
- * Use {@link Services.create} to create an instance with MRT auth automatically
- * resolved from command flags, environment variables, or config files:
+ * Use {@link Services.create} to create an instance with all configuration
+ * resolved eagerly at startup:
  *
  * ```typescript
  * const services = Services.create({
- *   configPath: flags.config,
- *   mrtApiKey: flags['mrt-api-key'],
- *   mrtCloudOrigin: flags['mrt-cloud-origin'],
+ *   b2cInstance: {
+ *     configPath: flags.config,
+ *     hostname: flags.server,
+ *   },
+ *   mrt: {
+ *     apiKey: flags['api-key'],
+ *     project: flags.project,
+ *   },
  * });
  * ```
  *
- * ## MRT Auth Resolution
+ * ## Resolution Pattern
  *
- * MRT authentication is resolved once at server startup (not on each tool call):
+ * Both B2CInstance and MRT auth are resolved once at server startup (not on each tool call).
+ * This provides fail-fast behavior and consistent performance.
  *
- * 1. `mrtApiKey` option (from `--mrt-api-key` flag)
+ * **B2C Instance** (for WebDAV/OCAPI tools):
+ * - Flags (highest priority) merged with dw.json (auto-discovered or via --config)
+ *
+ * **MRT Auth** (for Managed Runtime tools):
+ * 1. `--api-key` flag
  * 2. `SFCC_MRT_API_KEY` environment variable
- * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `mrtCloudOrigin` is set)
+ * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
  *
  * @module services
  */
@@ -40,108 +51,168 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import {B2CInstance, type B2CInstanceOptions} from '@salesforce/b2c-tooling-sdk';
 import {ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {loadMobifyConfig} from '@salesforce/b2c-tooling-sdk/cli';
 
 /**
+ * MRT (Managed Runtime) configuration.
+ * Groups auth, project, and environment settings.
+ */
+export interface MrtConfig {
+  /** Pre-resolved auth strategy for MRT API operations */
+  auth?: AuthStrategy;
+  /** MRT project slug from --project flag or SFCC_MRT_PROJECT env var */
+  project?: string;
+  /** MRT environment from --environment flag or SFCC_MRT_ENVIRONMENT env var */
+  environment?: string;
+}
+
+/**
+ * MRT input options for Services.create().
+ */
+export interface MrtCreateOptions {
+  /** MRT API key from --api-key flag */
+  apiKey?: string;
+  /** MRT cloud origin URL for environment-specific config files */
+  cloudOrigin?: string;
+  /** MRT project slug from --project flag */
+  project?: string;
+  /** MRT environment from --environment flag */
+  environment?: string;
+}
+
+/**
  * Options for Services.create() factory method.
  */
 export interface ServicesCreateOptions {
-  /** Optional explicit path to config file (dw.json format) */
-  configPath?: string;
-  /** MRT API key from --mrt-api-key flag */
-  mrtApiKey?: string;
-  /** MRT cloud origin URL for environment-specific config files */
-  mrtCloudOrigin?: string;
+  /** B2C instance configuration (from InstanceCommand.baseFlags) */
+  b2cInstance?: B2CInstanceOptions;
+  /** MRT configuration (from MrtCommand.baseFlags) */
+  mrt?: MrtCreateOptions;
 }
 
 /**
  * Options for Services constructor (internal).
  */
 export interface ServicesOptions {
-  /** Optional explicit path to config file (dw.json format) */
-  configPath?: string;
-  /** Pre-resolved MRT auth strategy (if configured) */
-  mrtAuth?: AuthStrategy;
+  /** Pre-resolved B2C instance (if configured) */
+  b2cInstance?: B2CInstance;
+  /** Pre-resolved MRT configuration (auth, project, environment) */
+  mrtConfig?: MrtConfig;
 }
 
 /**
  * Services class that provides utilities for MCP tools.
  *
  * Use the static `Services.create()` factory method to create an instance
- * with MRT auth automatically resolved from flags, environment, or config files.
+ * with all configuration resolved eagerly at startup.
  *
  * @example
  * ```typescript
  * const services = Services.create({
- *   configPath: flags.config,
- *   mrtApiKey: flags['mrt-api-key'],
- *   mrtCloudOrigin: flags['mrt-cloud-origin'],
+ *   b2cInstance: { hostname: flags.server },
+ *   mrt: { apiKey: flags['api-key'], project: flags.project },
  * });
+ *
+ * // Access resolved config
+ * services.b2cInstance;        // B2CInstance | undefined
+ * services.mrtConfig.auth;     // AuthStrategy | undefined
+ * services.mrtConfig.project;  // string | undefined
  * ```
  */
 export class Services {
   /**
-   * Optional explicit path to config file (dw.json format).
-   * If undefined, SDK's `loadDwJson()` will auto-discover it.
+   * Pre-resolved B2C instance for WebDAV/OCAPI operations.
+   * Resolved once at server startup from InstanceCommand flags and dw.json.
+   * Undefined if no B2C instance configuration was available.
    */
-  public readonly configPath?: string;
+  public readonly b2cInstance?: B2CInstance;
 
   /**
-   * Pre-resolved MRT auth strategy for Managed Runtime operations.
-   * Resolved once at server startup from --mrt-api-key flag,
-   * SFCC_MRT_API_KEY env var, or ~/.mobify config file.
-   * Undefined if no MRT API key was configured.
+   * Pre-resolved MRT configuration (auth, project, environment).
+   * Resolved once at server startup from MrtCommand flags and ~/.mobify.
    */
-  public readonly mrtAuth?: AuthStrategy;
+  public readonly mrtConfig: MrtConfig;
 
   public constructor(opts: ServicesOptions = {}) {
-    this.configPath = opts.configPath;
-    this.mrtAuth = opts.mrtAuth;
+    this.b2cInstance = opts.b2cInstance;
+    this.mrtConfig = opts.mrtConfig ?? {};
   }
 
   /**
-   * Creates a Services instance with MRT auth resolved from available sources.
+   * Creates a Services instance with all configuration resolved eagerly.
    *
-   * Resolution order for MRT auth (matches CLI behavior):
-   * 1. mrtApiKey option (from --mrt-api-key flag)
-   * 2. SFCC_MRT_API_KEY environment variable
-   * 3. ~/.mobify config file (or ~/.mobify--[hostname] if mrtCloudOrigin is set)
+   * **MRT auth resolution** (matches CLI behavior):
+   * 1. `mrt.apiKey` option (from --api-key flag)
+   * 2. `SFCC_MRT_API_KEY` environment variable
+   * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `mrt.cloudOrigin` is set)
+   *
+   * **B2C instance resolution**:
+   * - `b2cInstance` options merged with dw.json (auto-discovered or via configPath)
    *
    * @param options - Configuration options
-   * @returns Services instance with resolved auth
+   * @returns Services instance with resolved config
    *
    * @example
    * ```typescript
    * const services = Services.create({
-   *   configPath: flags.config,
-   *   mrtApiKey: flags['mrt-api-key'],
-   *   mrtCloudOrigin: flags['mrt-cloud-origin'],
+   *   b2cInstance: { configPath: flags.config, hostname: flags.server },
+   *   mrt: { apiKey: flags['api-key'], project: flags.project },
    * });
    * ```
    */
   public static create(options: ServicesCreateOptions = {}): Services {
-    const mrtAuth = Services.resolveMrtAuth({
-      apiKey: options.mrtApiKey,
-      cloudOrigin: options.mrtCloudOrigin,
-    });
+    // Resolve MRT config (auth from flag → env var → ~/.mobify, plus project/environment)
+    const mrtConfig: MrtConfig = {
+      auth: Services.resolveMrtAuth({
+        apiKey: options.mrt?.apiKey,
+        cloudOrigin: options.mrt?.cloudOrigin,
+      }),
+      project: options.mrt?.project,
+      environment: options.mrt?.environment,
+    };
+
+    // Resolve B2C instance from options (B2CInstanceOptions passed directly)
+    const b2cInstance = Services.resolveB2CInstance(options.b2cInstance);
+
     return new Services({
-      configPath: options.configPath,
-      mrtAuth,
+      b2cInstance,
+      mrtConfig,
     });
+  }
+
+  /**
+   * Resolves B2C instance from available sources.
+   *
+   * Resolution merges:
+   * 1. Explicit flag values (highest priority)
+   * 2. dw.json file (via configPath or auto-discovery)
+   *
+   * @param options - Resolution options (same as B2CInstance.fromEnvironment)
+   * @returns B2CInstance if configured, undefined if resolution fails
+   */
+  public static resolveB2CInstance(options: B2CInstanceOptions = {}): B2CInstance | undefined {
+    try {
+      return B2CInstance.fromEnvironment(options);
+    } catch {
+      // B2C instance resolution failed (no config available)
+      // This is not an error - tools that don't need B2C instance will work fine
+      return undefined;
+    }
   }
 
   /**
    * Resolves MRT auth strategy from available sources.
    *
    * Resolution order (matches CLI behavior):
-   * 1. apiKey option (from --mrt-api-key flag)
+   * 1. apiKey option (from --api-key flag)
    * 2. SFCC_MRT_API_KEY environment variable
    * 3. ~/.mobify config file (or ~/.mobify--[hostname] if cloudOrigin is set)
    *
    * @param options - Resolution options
-   * @param options.apiKey - MRT API key from --mrt-api-key flag
+   * @param options.apiKey - MRT API key from --api-key flag
    * @param options.cloudOrigin - MRT cloud origin URL for environment-specific config
    * @returns AuthStrategy if configured, undefined otherwise
    */

@@ -20,11 +20,23 @@
  * | `--tools` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | Enable experimental/non-GA tools |
  *
- * ### Auth Flags
+ * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
  * |------|--------------|-------------|
- * | `--mrt-api-key` | `SFCC_MRT_API_KEY` | MRT API key for Managed Runtime operations |
- * | `--mrt-cloud-origin` | `SFCC_MRT_CLOUD_ORIGIN` | MRT cloud origin URL for environment-specific ~/.mobify config |
+ * | `--api-key` | `SFCC_MRT_API_KEY` | MRT API key for Managed Runtime operations |
+ * | `--project` | `SFCC_MRT_PROJECT` | MRT project slug (required for MRT tools) |
+ * | `--environment` | `SFCC_MRT_ENVIRONMENT` | MRT environment (e.g., staging, production) |
+ * | `--cloud-origin` | `SFCC_MRT_CLOUD_ORIGIN` | MRT cloud origin URL for environment-specific ~/.mobify config |
+ *
+ * ### B2C Instance Flags (from InstanceCommand.baseFlags)
+ * | Flag | Env Variable | Description |
+ * |------|--------------|-------------|
+ * | `--server` | `SFCC_SERVER` | B2C instance hostname |
+ * | `--code-version` | `SFCC_CODE_VERSION` | Code version for deployments |
+ * | `--username` | `SFCC_USERNAME` | Username for Basic auth (WebDAV) |
+ * | `--password` | `SFCC_PASSWORD` | Password/access key for Basic auth |
+ * | `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
+ * | `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
  *
  * ### Global Flags (inherited from BaseCommand)
  * | Flag | Description |
@@ -39,20 +51,21 @@
  * ## Configuration
  *
  * Different tools require different configuration:
- * - **MRT tools** (e.g., `mrt_bundle_push`) → MRT API key
- * - **B2C instance tools** (e.g., `cartridge_deploy`, SCAPI) → dw.json config
+ * - **MRT tools** (e.g., `mrt_bundle_push`) → MRT flags (--project, --api-key)
+ * - **B2C instance tools** (e.g., `cartridge_deploy`, SCAPI) → Instance flags or dw.json
  * - **Local tools** (e.g., scaffolding) → None
  *
  * ### B2C Instance Configuration
  * Priority (highest to lowest):
- * 1. Environment variables (`SFCC_HOSTNAME`, `SFCC_USERNAME`, `SFCC_PASSWORD`, `SFCC_CLIENT_ID`, `SFCC_CLIENT_SECRET`, `SFCC_CODE_VERSION`)
- * 2. dw.json file (via `--config` flag or auto-discovered by searching upward from cwd)
+ * 1. Flags (`--server`, `--username`, `--password`, `--client-id`, `--client-secret`, `--code-version`)
+ * 2. Environment variables (via oclif flag env support)
+ * 3. dw.json file (via `--config` flag or auto-discovered)
  *
  * ### MRT API Key
  * Priority (highest to lowest):
- * 1. `--mrt-api-key` flag
+ * 1. `--api-key` flag
  * 2. `SFCC_MRT_API_KEY` environment variable
- * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--mrt-cloud-origin` is set)
+ * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
  *
  * ## Toolset Validation
  *
@@ -69,22 +82,17 @@
  * { "args": ["--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"] }
  * ```
  *
- * @example mcp.json - MRT tools with API key via env var
+ * @example mcp.json - MRT tools with project, environment, and API key
  * ```json
  * {
- *   "args": ["--toolsets", "MRT", "--allow-non-ga-tools"],
+ *   "args": ["--toolsets", "MRT", "--project", "my-project", "--environment", "staging", "--allow-non-ga-tools"],
  *   "env": { "SFCC_MRT_API_KEY": "your-api-key" }
  * }
  * ```
  *
- * @example mcp.json - MRT tools with API key via flag
- * ```json
- * { "args": ["--toolsets", "MRT", "--mrt-api-key", "your-api-key", "--allow-non-ga-tools"] }
- * ```
- *
  * @example mcp.json - MRT tools with staging cloud origin (uses ~/.mobify--cloud-staging.mobify.com)
  * ```json
- * { "args": ["--toolsets", "MRT", "--mrt-cloud-origin", "https://cloud-staging.mobify.com", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "MRT", "--project", "my-project", "--cloud-origin", "https://cloud-staging.mobify.com", "--allow-non-ga-tools"] }
  * ```
  *
  * @example mcp.json - Cartridge tools with dw.json config
@@ -111,8 +119,7 @@
  */
 
 import {Flags} from '@oclif/core';
-import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
+import {BaseCommand, MrtCommand, InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
@@ -139,12 +146,13 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       command: '<%= config.bin %> --toolsets all --allow-non-ga-tools',
     },
     {
-      description: 'Specific toolsets',
-      command: '<%= config.bin %> --toolsets CARTRIDGES,MRT --allow-non-ga-tools',
+      description: 'MRT tools with project and API key',
+      command: '<%= config.bin %> --toolsets MRT --project my-project --api-key your-api-key --allow-non-ga-tools',
     },
     {
-      description: 'MRT tools with API key',
-      command: '<%= config.bin %> --toolsets MRT --mrt-api-key your-api-key --allow-non-ga-tools',
+      description: 'MRT tools with project, environment, and API key',
+      command:
+        '<%= config.bin %> --toolsets MRT --project my-project --environment staging --api-key your-api-key --allow-non-ga-tools',
     },
     {
       description: 'Cartridge tools with explicit config',
@@ -157,7 +165,15 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
   ];
 
   static flags = {
-    // Toolset selection flags
+    // Inherit MRT flags (api-key, cloud-origin, project, environment)
+    // Also includes BaseCommand flags (config, debug, log-level, etc.) - safe to re-spread
+    ...MrtCommand.baseFlags,
+
+    // Inherit Instance flags (server, code-version, username, password, client-id, client-secret)
+    // These provide B2C instance configuration for tools like cartridge_deploy
+    ...InstanceCommand.baseFlags,
+
+    // MCP-specific toolset selection flags
     toolsets: Flags.string({
       description: `Toolsets to enable (comma-separated). Options: all, ${TOOLSETS.join(', ')}`,
       env: 'SFCC_TOOLSETS',
@@ -167,18 +183,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       description: 'Individual tools to enable (comma-separated)',
       env: 'SFCC_TOOLS',
       parse: async (input) => input.toLowerCase(),
-    }),
-
-    // Auth flags
-    'mrt-api-key': Flags.string({
-      description: 'MRT API key for Managed Runtime operations',
-      env: 'SFCC_MRT_API_KEY',
-      helpGroup: 'AUTH',
-    }),
-    'mrt-cloud-origin': Flags.string({
-      description: `MRT cloud origin URL for environment-specific ~/.mobify--[hostname] config (default: ${DEFAULT_MRT_ORIGIN})`,
-      env: 'SFCC_MRT_CLOUD_ORIGIN',
-      helpGroup: 'AUTH',
     }),
 
     // Feature flags
@@ -196,7 +200,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 1. BaseCommand.init() parses flags and loads config
    * 2. Filter and validate toolsets (invalid ones are skipped with warning)
    * 3. Create B2CDxMcpServer instance
-   * 4. Create Services via Services.create() which resolves MRT auth from flags/env/config
+   * 4. Create Services via Services.create() which resolves B2C instance and MRT config
    * 5. Register tools based on --toolsets and --tools flags
    * 6. Connect to stdio transport (JSON-RPC over stdin/stdout)
    * 7. Log startup message to stderr
@@ -253,11 +257,23 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       },
     );
 
-    // Create services with MRT auth resolved from flags/env/config
+    // Create services with config resolved from flags (which have env var fallbacks via oclif)
     const services = Services.create({
-      configPath: this.flags.config,
-      mrtApiKey: this.flags['mrt-api-key'],
-      mrtCloudOrigin: this.flags['mrt-cloud-origin'],
+      b2cInstance: {
+        configPath: this.flags.config,
+        hostname: this.flags.server,
+        codeVersion: this.flags['code-version'],
+        username: this.flags.username,
+        password: this.flags.password,
+        clientId: this.flags['client-id'],
+        clientSecret: this.flags['client-secret'],
+      },
+      mrt: {
+        apiKey: this.flags['api-key'],
+        cloudOrigin: this.flags['cloud-origin'],
+        project: this.flags.project,
+        environment: this.flags.environment,
+      },
     });
 
     // Register toolsets

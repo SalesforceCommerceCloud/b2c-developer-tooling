@@ -14,6 +14,7 @@ import type {
 import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
 import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
+import type {ZodRawShape} from 'zod';
 
 /**
  * Extended server options.
@@ -60,7 +61,7 @@ export class B2CDxMcpServer extends McpServer {
   public addTool(
     name: string,
     description: string,
-    inputSchema: Record<string, unknown>,
+    inputSchema: ZodRawShape,
     handler: (args: Record<string, unknown>) => Promise<CallToolResult>,
   ): void {
     const wrappedHandler = async (
@@ -76,8 +77,8 @@ export class B2CDxMcpServer extends McpServer {
       return result;
     };
 
-    // Use the base server.tool method which handles the registration
-    this.tool(name, description, inputSchema, wrappedHandler);
+    // Use the new registerTool API (tool() is deprecated)
+    this.registerTool(name, {description, inputSchema}, wrappedHandler);
   }
 
   /**
