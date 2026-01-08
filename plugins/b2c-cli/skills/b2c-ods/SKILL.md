@@ -15,7 +15,7 @@ Use the `b2c` CLI plugin to manage Salesforce B2C Commerce On-demand sandboxes (
 b2c ods list
 
 # for realm zzpq with JSON output
-b2c ods list --realm zzpq --output json
+b2c ods list --realm zzpq --json
 
 # filter by status and those created by a specific user, only print the columns id,state,hostname
 b2c ods list --filter-params 'state=started,creating&createdBy=clavery@salesforce.com' --realm zzpq --columns id,state,hostname
