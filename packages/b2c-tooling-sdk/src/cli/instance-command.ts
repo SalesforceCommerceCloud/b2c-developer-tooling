@@ -7,8 +7,8 @@ import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {loadConfig} from './config.js';
 import type {ResolvedConfig, LoadConfigOptions} from './config.js';
-import {B2CInstance} from '../instance/index.js';
-import type {AuthConfig} from '../auth/types.js';
+import {createInstanceFromConfig} from '../config/index.js';
+import type {B2CInstance} from '../instance/index.js';
 import {t} from '../i18n/index.js';
 
 /**
@@ -89,6 +89,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
       authMethods: this.parseAuthMethods(),
+      accountManagerHost: this.flags['account-manager-host'],
     };
 
     const config = loadConfig(flagConfig, options);
@@ -117,38 +118,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   protected get instance(): B2CInstance {
     if (!this._instance) {
       this.requireServer();
-
-      const config = this.resolvedConfig;
-
-      const authConfig: AuthConfig = {
-        authMethods: config.authMethods,
-      };
-
-      if (config.username && config.password) {
-        authConfig.basic = {
-          username: config.username,
-          password: config.password,
-        };
-      }
-
-      // Only require clientId for OAuth - clientSecret is optional for implicit flow
-      if (config.clientId) {
-        authConfig.oauth = {
-          clientId: config.clientId,
-          clientSecret: config.clientSecret,
-          scopes: config.scopes,
-          accountManagerHost: this.accountManagerHost,
-        };
-      }
-
-      this._instance = new B2CInstance(
-        {
-          hostname: config.hostname!,
-          codeVersion: config.codeVersion,
-          webdavHostname: config.webdavHostname,
-        },
-        authConfig,
-      );
+      this._instance = createInstanceFromConfig(this.resolvedConfig);
     }
     return this._instance;
   }

@@ -3,234 +3,46 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * CLI configuration utilities.
+ *
+ * This module provides configuration loading for CLI commands.
+ * It uses the ConfigResolver internally for consistent behavior.
+ *
+ * @module cli/config
+ */
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
+import {createConfigResolver, type NormalizedConfig} from '../config/index.js';
+import {findDwJson} from '../config/dw-json.js';
 import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
 export type {AuthMethod};
 export {ALL_AUTH_METHODS};
-
-export interface ResolvedConfig {
-  hostname?: string;
-  webdavHostname?: string;
-  codeVersion?: string;
-  username?: string;
-  password?: string;
-  clientId?: string;
-  clientSecret?: string;
-  scopes?: string[];
-  shortCode?: string;
-  mrtApiKey?: string;
-  /** MRT project slug */
-  mrtProject?: string;
-  /** MRT environment name (e.g., staging, production) */
-  mrtEnvironment?: string;
-  /** MRT API origin URL override */
-  mrtOrigin?: string;
-  instanceName?: string;
-  /** Allowed authentication methods (in priority order). If not set, all methods are allowed. */
-  authMethods?: AuthMethod[];
-}
+export {findDwJson};
 
 /**
- * dw.json single config structure
+ * Resolved configuration for CLI commands.
+ *
+ * This type is an alias for NormalizedConfig to maintain backward compatibility
+ * with existing CLI code. It may be extended with CLI-specific fields in the future.
  */
-interface DwJsonConfig {
-  name?: string;
-  active?: boolean;
-  hostname?: string;
-  'code-version'?: string;
-  username?: string;
-  password?: string;
-  'client-id'?: string;
-  'client-secret'?: string;
-  'oauth-scopes'?: string[];
-  /** SCAPI short code (multiple key formats supported) */
-  shortCode?: string;
-  'short-code'?: string;
-  'scapi-shortcode'?: string;
-  secureHostname?: string;
-  'secure-server'?: string;
-  /** Allowed authentication methods (in priority order) */
-  'auth-methods'?: AuthMethod[];
-  /** MRT project slug */
-  mrtProject?: string;
-  /** MRT environment name (e.g., staging, production) */
-  mrtEnvironment?: string;
-}
+export type ResolvedConfig = NormalizedConfig;
 
 /**
- * dw.json with multi-config support
+ * Options for loading configuration.
  */
-interface DwJsonMultiConfig extends DwJsonConfig {
-  configs?: DwJsonConfig[];
-}
-
 export interface LoadConfigOptions {
+  /** Named instance from dw.json "configs" array */
   instance?: string;
+  /** Explicit path to config file (skips searching if provided) */
   configPath?: string;
-}
-
-/**
- * Finds dw.json by walking up from current directory.
- */
-export function findDwJson(startDir: string = process.cwd()): string | null {
-  const logger = getLogger();
-  let dir = startDir;
-  const root = path.parse(dir).root;
-
-  logger.trace({startDir}, '[Config] Searching for dw.json');
-
-  while (dir !== root) {
-    const dwJsonPath = path.join(dir, 'dw.json');
-    if (fs.existsSync(dwJsonPath)) {
-      logger.trace({path: dwJsonPath}, '[Config] Found dw.json');
-      return dwJsonPath;
-    }
-    dir = path.dirname(dir);
-  }
-
-  logger.trace('[Config] No dw.json found');
-  return null;
-}
-
-/**
- * Maps dw.json fields to ResolvedConfig
- */
-function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
-  return {
-    hostname: json.hostname,
-    webdavHostname: json.secureHostname || json['secure-server'],
-    codeVersion: json['code-version'],
-    username: json.username,
-    password: json.password,
-    clientId: json['client-id'],
-    clientSecret: json['client-secret'],
-    scopes: json['oauth-scopes'],
-    shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
-    instanceName: json.name,
-    authMethods: json['auth-methods'],
-    mrtProject: json.mrtProject,
-    mrtEnvironment: json.mrtEnvironment,
-  };
-}
-
-/**
- * Loads configuration from dw.json file.
- * Supports multi-config format with 'configs' array.
- */
-function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig {
-  const logger = getLogger();
-  const dwJsonPath = configPath || findDwJson();
-
-  if (!dwJsonPath || !fs.existsSync(dwJsonPath)) {
-    logger.trace('[Config] No dw.json to load');
-    return {};
-  }
-
-  try {
-    const content = fs.readFileSync(dwJsonPath, 'utf8');
-    const json = JSON.parse(content) as DwJsonMultiConfig;
-
-    let selectedConfig: DwJsonConfig = json;
-    let selectedName = json.name || 'root';
-
-    // Handle multi-config format
-    if (Array.isArray(json.configs)) {
-      if (instanceName) {
-        // Find by instance name
-        const found = json.name === instanceName ? json : json.configs.find((c) => c.name === instanceName);
-        if (found) {
-          selectedConfig = found;
-          selectedName = found.name || instanceName;
-        }
-      } else if (json.active === false) {
-        // Root config is inactive, find active one in configs
-        const activeConfig = json.configs.find((c) => c.active === true);
-        if (activeConfig) {
-          selectedConfig = activeConfig;
-          selectedName = activeConfig.name || 'active';
-        }
-      }
-      // Otherwise use root config
-    }
-
-    logger.trace({path: dwJsonPath, instance: selectedName}, '[Config] Loaded dw.json');
-    return mapDwJsonToConfig(selectedConfig);
-  } catch (error) {
-    logger.trace({path: dwJsonPath, error}, '[Config] Failed to parse dw.json');
-    return {};
-  }
-}
-
-/**
- * Merges config sources with precedence: flags (includes env via OCLIF) > dw.json
- *
- * Note: Environment variables are handled by OCLIF's flag parsing with the `env`
- * property on each flag definition. By the time flags reach this function, they
- * already contain env var values where applicable.
- *
- * IMPORTANT: If the hostname is explicitly provided (via flags/env) and differs
- * from the dw.json hostname, we do NOT use ANY configuration from dw.json since
- * the dw.json is configured for a different server.
- */
-function mergeConfigs(
-  flags: Partial<ResolvedConfig>,
-  dwJson: ResolvedConfig,
-  options: LoadConfigOptions,
-): ResolvedConfig {
-  const logger = getLogger();
-
-  // Check if hostname was explicitly provided and differs from dw.json
-  const hostnameExplicitlyProvided = Boolean(flags.hostname);
-  const hostnameMismatch = hostnameExplicitlyProvided && dwJson.hostname && flags.hostname !== dwJson.hostname;
-
-  // If hostname mismatch, ignore dw.json entirely
-  if (hostnameMismatch) {
-    logger.trace(
-      {providedHostname: flags.hostname, dwJsonHostname: dwJson.hostname, ignoredConfig: dwJson},
-      '[Config] Hostname mismatch - ignoring dw.json configuration',
-    );
-    return {
-      hostname: flags.hostname,
-      webdavHostname: flags.webdavHostname,
-      codeVersion: flags.codeVersion,
-      username: flags.username,
-      password: flags.password,
-      clientId: flags.clientId,
-      clientSecret: flags.clientSecret,
-      scopes: flags.scopes,
-      shortCode: flags.shortCode,
-      mrtApiKey: flags.mrtApiKey,
-      mrtProject: flags.mrtProject,
-      mrtEnvironment: flags.mrtEnvironment,
-      mrtOrigin: flags.mrtOrigin,
-      instanceName: undefined,
-      authMethods: flags.authMethods,
-    };
-  }
-
-  return {
-    hostname: flags.hostname || dwJson.hostname,
-    webdavHostname: flags.webdavHostname || dwJson.webdavHostname,
-    codeVersion: flags.codeVersion || dwJson.codeVersion,
-    username: flags.username || dwJson.username,
-    password: flags.password || dwJson.password,
-    clientId: flags.clientId || dwJson.clientId,
-    clientSecret: flags.clientSecret || dwJson.clientSecret,
-    scopes: flags.scopes || dwJson.scopes,
-    shortCode: flags.shortCode || dwJson.shortCode,
-    mrtApiKey: flags.mrtApiKey,
-    mrtProject: flags.mrtProject || dwJson.mrtProject,
-    mrtEnvironment: flags.mrtEnvironment || dwJson.mrtEnvironment,
-    mrtOrigin: flags.mrtOrigin,
-    instanceName: dwJson.instanceName || options.instance,
-    authMethods: flags.authMethods || dwJson.authMethods,
-  };
+  /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
+  cloudOrigin?: string;
 }
 
 /**
@@ -238,10 +50,45 @@ function mergeConfigs(
  *
  * OCLIF handles environment variables automatically via flag `env` properties.
  * The flags parameter already contains resolved env var values.
+ *
+ * Uses ConfigResolver internally for consistent behavior across CLI and SDK.
+ *
+ * @param flags - Configuration values from CLI flags/env vars
+ * @param options - Loading options
+ * @returns Resolved configuration
+ *
+ * @example
+ * ```typescript
+ * // In a CLI command
+ * const config = loadConfig(
+ *   { hostname: this.flags.server, clientId: this.flags['client-id'] },
+ *   { instance: this.flags.instance }
+ * );
+ * ```
  */
 export function loadConfig(flags: Partial<ResolvedConfig> = {}, options: LoadConfigOptions = {}): ResolvedConfig {
-  const dwJsonConfig = loadDwJson(options.instance, options.configPath);
-  return mergeConfigs(flags, dwJsonConfig, options);
+  const logger = getLogger();
+  const resolver = createConfigResolver();
+
+  const {config, warnings} = resolver.resolve(flags, {
+    instance: options.instance,
+    configPath: options.configPath,
+    hostnameProtection: true,
+    cloudOrigin: options.cloudOrigin,
+  });
+
+  // Log warnings
+  for (const warning of warnings) {
+    logger.trace({warning}, `[Config] ${warning.message}`);
+  }
+
+  // Handle instanceName from options if not in resolved config
+  // This preserves backward compatibility with the old behavior
+  if (!config.instanceName && options.instance) {
+    config.instanceName = options.instance;
+  }
+
+  return config as ResolvedConfig;
 }
 
 /**

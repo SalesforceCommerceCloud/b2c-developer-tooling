@@ -5,7 +5,7 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
-import {loadConfig, loadMobifyConfig} from './config.js';
+import {loadConfig} from './config.js';
 import type {ResolvedConfig, LoadConfigOptions} from './config.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {ApiKeyStrategy} from '../auth/api-key.js';
@@ -58,20 +58,18 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
   };
 
   protected override loadConfiguration(): ResolvedConfig {
+    const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
+
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
+      cloudOrigin, // MobifySource uses this to load ~/.mobify--[hostname] if set
     };
 
-    const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
-
-    // Load from ~/.mobify (or ~/.mobify--[hostname] if cloud-origin specified) as fallback
-    const mobifyConfig = loadMobifyConfig(cloudOrigin);
-
     const flagConfig: Partial<ResolvedConfig> = {
-      // Flag/env takes precedence, then ~/.mobify
-      mrtApiKey: this.flags['api-key'] || mobifyConfig.apiKey,
-      // Project/environment from flags (if present - subclasses define these)
+      // Flag/env takes precedence, ConfigResolver handles ~/.mobify fallback
+      mrtApiKey: this.flags['api-key'],
+      // Project/environment from flags
       mrtProject: this.flags.project as string | undefined,
       mrtEnvironment: this.flags.environment as string | undefined,
       // Cloud origin override

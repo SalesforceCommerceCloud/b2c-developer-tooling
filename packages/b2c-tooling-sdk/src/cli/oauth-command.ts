@@ -94,6 +94,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       clientSecret: this.flags['client-secret'],
       shortCode: this.flags['short-code'],
       authMethods: this.parseAuthMethods(),
+      accountManagerHost: this.flags['account-manager-host'],
     };
 
     const config = loadConfig(flagConfig, options);
@@ -110,7 +111,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * Gets the configured Account Manager host.
    */
   protected get accountManagerHost(): string {
-    return this.flags['account-manager-host'] ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+    return this.resolvedConfig.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
   }
 
   /**
