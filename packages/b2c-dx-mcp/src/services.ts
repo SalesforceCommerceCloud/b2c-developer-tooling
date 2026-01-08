@@ -41,9 +41,8 @@
  * - Flags (highest priority) merged with dw.json (auto-discovered or via --config)
  *
  * **MRT Auth** (for Managed Runtime tools):
- * 1. `--api-key` flag
- * 2. `SFCC_MRT_API_KEY` environment variable
- * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
+ * 1. `--api-key` flag (oclif also checks `SFCC_MRT_API_KEY` env var)
+ * 2. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
  *
  * @module services
  */
@@ -145,9 +144,8 @@ export class Services {
    * Creates a Services instance with all configuration resolved eagerly.
    *
    * **MRT auth resolution** (matches CLI behavior):
-   * 1. `mrt.apiKey` option (from --api-key flag)
-   * 2. `SFCC_MRT_API_KEY` environment variable
-   * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `mrt.cloudOrigin` is set)
+   * 1. `mrt.apiKey` option (from --api-key flag, which includes SFCC_MRT_API_KEY env var via oclif)
+   * 2. `~/.mobify` config file (or `~/.mobify--[hostname]` if `mrt.cloudOrigin` is set)
    *
    * **B2C instance resolution**:
    * - `b2cInstance` options merged with dw.json (auto-discovered or via configPath)
@@ -164,7 +162,7 @@ export class Services {
    * ```
    */
   public static create(options: ServicesCreateOptions = {}): Services {
-    // Resolve MRT config (auth from flag → env var → ~/.mobify, plus project/environment)
+    // Resolve MRT config (auth from flag/env via oclif → ~/.mobify, plus project/environment)
     const mrtConfig: MrtConfig = {
       auth: Services.resolveMrtAuth({
         apiKey: options.mrt?.apiKey,
@@ -206,29 +204,25 @@ export class Services {
   /**
    * Resolves MRT auth strategy from available sources.
    *
-   * Resolution order (matches CLI behavior):
-   * 1. apiKey option (from --api-key flag)
-   * 2. SFCC_MRT_API_KEY environment variable
-   * 3. ~/.mobify config file (or ~/.mobify--[hostname] if cloudOrigin is set)
+   * Resolution order:
+   * 1. apiKey option (from --api-key flag, which includes SFCC_MRT_API_KEY env var via oclif)
+   * 2. ~/.mobify config file (or ~/.mobify--[hostname] if cloudOrigin is set)
+   *
+   * Note: The --api-key flag in MrtCommand.baseFlags has `env: 'SFCC_MRT_API_KEY'`,
+   * so oclif automatically falls back to the env var during flag parsing.
    *
    * @param options - Resolution options
-   * @param options.apiKey - MRT API key from --api-key flag
+   * @param options.apiKey - MRT API key from --api-key flag (includes env var via oclif)
    * @param options.cloudOrigin - MRT cloud origin URL for environment-specific config
    * @returns AuthStrategy if configured, undefined otherwise
    */
   public static resolveMrtAuth(options: {apiKey?: string; cloudOrigin?: string} = {}): AuthStrategy | undefined {
-    // 1. Check flag value first (highest priority)
+    // 1. Check apiKey option (oclif handles --api-key flag → SFCC_MRT_API_KEY env var fallback)
     if (options.apiKey?.trim()) {
       return new ApiKeyStrategy(options.apiKey, 'Authorization');
     }
 
-    // 2. Check environment variable
-    const envApiKey = process.env.SFCC_MRT_API_KEY?.trim();
-    if (envApiKey) {
-      return new ApiKeyStrategy(envApiKey, 'Authorization');
-    }
-
-    // 3. Check ~/.mobify config file (or ~/.mobify--[hostname] if cloud origin specified)
+    // 2. Check ~/.mobify config file (or ~/.mobify--[hostname] if cloud origin specified)
     const mobifyConfig = loadMobifyConfig(options.cloudOrigin);
     if (mobifyConfig.apiKey) {
       return new ApiKeyStrategy(mobifyConfig.apiKey, 'Authorization');

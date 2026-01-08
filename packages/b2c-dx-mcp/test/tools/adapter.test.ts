@@ -560,73 +560,18 @@ describe('tools/adapter', () => {
         expect(contextReceived?.mrtConfig?.auth).to.have.property('fetch');
       });
 
-      it('should resolve auth from SFCC_MRT_API_KEY env var via Services.create()', async () => {
-        // Services.create() reads from env vars when no apiKey provided
-        process.env.SFCC_MRT_API_KEY = 'env-var-api-key';
-        const services = Services.create({});
-        let contextReceived: ToolExecutionContext | undefined;
-
-        const tool = createToolAdapter(
-          {
-            name: 'mrt_auth_env_priority_tool',
-            description: 'Tests env var resolution',
-            toolsets: ['MRT'],
-            requiresMrtAuth: true,
-            inputSchema: {},
-            async execute(_args, context) {
-              contextReceived = context;
-              return 'success';
-            },
-            formatOutput: (output) => textResult(output),
-          },
-          services,
-        );
-
-        const result = await tool.handler({});
-
-        expect(result.isError).to.be.undefined;
-        expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
-      });
-
       it('should support mrtCloudOrigin option in Services.create()', async () => {
-        // Use env var to provide API key (so test doesn't depend on ~/.mobify--hostname existing)
-        process.env.SFCC_MRT_API_KEY = 'staging-api-key';
         // Services.create() accepts cloudOrigin for environment-specific config
-        const services = Services.create({mrt: {cloudOrigin: 'https://cloud-staging.mobify.com'}});
+        // Note: oclif handles env var fallback for --api-key flag, so we pass apiKey explicitly here
+        const services = Services.create({
+          mrt: {apiKey: 'staging-api-key', cloudOrigin: 'https://cloud-staging.mobify.com'},
+        });
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
           {
             name: 'mrt_cloud_origin_tool',
             description: 'Tests cloud origin support',
-            toolsets: ['MRT'],
-            requiresMrtAuth: true,
-            inputSchema: {},
-            async execute(_args, context) {
-              contextReceived = context;
-              return 'success';
-            },
-            formatOutput: (output) => textResult(output),
-          },
-          services,
-        );
-
-        const result = await tool.handler({});
-
-        expect(result.isError).to.be.undefined;
-        expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
-      });
-
-      it('should prefer mrtApiKey option over env var in Services.create()', async () => {
-        // mrt.apiKey option takes precedence over env var
-        process.env.SFCC_MRT_API_KEY = 'env-var-key';
-        const services = Services.create({mrt: {apiKey: 'flag-api-key'}});
-        let contextReceived: ToolExecutionContext | undefined;
-
-        const tool = createToolAdapter(
-          {
-            name: 'mrt_flag_priority_tool',
-            description: 'Tests mrtApiKey option priority',
             toolsets: ['MRT'],
             requiresMrtAuth: true,
             inputSchema: {},
