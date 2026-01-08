@@ -26,3 +26,7 @@ features:
   - title: SDK Library
     details: Use the @salesforce/b2c-tooling-sdk package to build your own integrations.
 ---
+
+::: info Developer Preview
+This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues.
+:::
