@@ -5,6 +5,9 @@ hero:
   name: B2C CLI
   text: Salesforce Commerce Cloud B2C Command Line Tools
   tagline: A powerful CLI and SDK for managing B2C Commerce Cloud instances
+  image:
+    src: /cli-screenshot.png
+    alt: B2C CLI help output
   actions:
     - theme: brand
       text: Get Started

@@ -11,3 +11,19 @@
   --vp-c-brand-3: #66c7ec;
   --vp-c-brand-soft: rgba(0, 161, 224, 0.16);
 }
+
+/* Hero image sizing */
+.VPHero .image-container {
+  max-width: 550px !important;
+}
+
+.VPHero .image-container .image-bg {
+  display: none;
+}
+
+.VPHero .image-container img {
+  max-width: 550px !important;
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
