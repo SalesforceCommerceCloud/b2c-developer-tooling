@@ -2,10 +2,44 @@
 
 ## Prerequisites
 
-- Node.js 18.0.0 or higher
-- npm, yarn, or pnpm
+- macOS, Linux, or Windows
+- Node.js 22.0.0 or higher (for npm installation or SDK usage)
 
-## Install the CLI
+## Install via Homebrew (Recommended)
+
+The easiest way to install the B2C CLI on macOS or Linux is via Homebrew:
+
+```bash
+brew install salesforcecommercecloud/tools/b2c-cli
+```
+
+Or tap the repository first:
+
+```bash
+brew tap salesforcecommercecloud/tools
+brew install b2c-cli
+```
+
+### Using a Brewfile
+
+Add to your `Brewfile`:
+
+```ruby
+tap "salesforcecommercecloud/tools"
+brew "b2c-cli"
+```
+
+Then run:
+
+```bash
+brew bundle
+```
+
+## Install via npm
+
+::: warning Not Yet Available
+The B2C CLI is not yet published to npm. This installation method will be available in a future release. For now, please use Homebrew or download from GitHub Releases.
+:::
 
 Install the CLI globally using your preferred package manager:
 
@@ -25,6 +59,14 @@ yarn global add @salesforce/b2c-cli
 
 :::
 
+## Install from GitHub Releases
+
+Download the latest release tarball from [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) and install manually:
+
+```bash
+npm install -g ./salesforce-b2c-cli-<version>.tgz
+```
+
 ## Verify Installation
 
 After installation, verify the CLI is available:
@@ -34,6 +76,10 @@ b2c --version
 ```
 
 ## Install the SDK (Optional)
+
+::: warning Not Yet Available
+The SDK is not yet published to npm. This installation method will be available in a future release.
+:::
 
 If you want to use the SDK library in your own projects:
 
