@@ -6,7 +6,14 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {createCustomApisClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  createCustomApisClient,
+  toOrganizationId,
+  toTenantId,
+  buildTenantScope,
+  ORGANIZATION_ID_PREFIX,
+  SCAPI_TENANT_SCOPE_PREFIX,
+} from '@salesforce/b2c-tooling-sdk/clients';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const SHORT_CODE = 'kv7kzm78';
@@ -164,6 +171,59 @@ describe('clients/custom-apis', () => {
       expect(data).to.be.undefined;
       expect(error).to.have.property('title', 'Bad Request');
       expect(error).to.have.property('detail');
+    });
+  });
+
+  describe('toOrganizationId', () => {
+    it('adds f_ecom_ prefix to tenant ID', () => {
+      expect(toOrganizationId('zzxy_prd')).to.equal('f_ecom_zzxy_prd');
+    });
+
+    it('returns unchanged if already has f_ecom_ prefix', () => {
+      expect(toOrganizationId('f_ecom_zzxy_prd')).to.equal('f_ecom_zzxy_prd');
+    });
+
+    it('handles various tenant ID formats', () => {
+      expect(toOrganizationId('abcd_001')).to.equal('f_ecom_abcd_001');
+      expect(toOrganizationId('test')).to.equal('f_ecom_test');
+    });
+
+    it('uses ORGANIZATION_ID_PREFIX constant', () => {
+      expect(ORGANIZATION_ID_PREFIX).to.equal('f_ecom_');
+    });
+  });
+
+  describe('toTenantId', () => {
+    it('strips f_ecom_ prefix from organization ID', () => {
+      expect(toTenantId('f_ecom_zzxy_prd')).to.equal('zzxy_prd');
+    });
+
+    it('returns unchanged if no f_ecom_ prefix', () => {
+      expect(toTenantId('zzxy_prd')).to.equal('zzxy_prd');
+    });
+
+    it('handles various formats', () => {
+      expect(toTenantId('f_ecom_abcd_001')).to.equal('abcd_001');
+      expect(toTenantId('f_ecom_test')).to.equal('test');
+    });
+  });
+
+  describe('buildTenantScope', () => {
+    it('builds scope from tenant ID', () => {
+      expect(buildTenantScope('zzxy_prd')).to.equal('SALESFORCE_COMMERCE_API:zzxy_prd');
+    });
+
+    it('strips f_ecom_ prefix before building scope', () => {
+      expect(buildTenantScope('f_ecom_zzxy_prd')).to.equal('SALESFORCE_COMMERCE_API:zzxy_prd');
+    });
+
+    it('uses SCAPI_TENANT_SCOPE_PREFIX constant', () => {
+      expect(SCAPI_TENANT_SCOPE_PREFIX).to.equal('SALESFORCE_COMMERCE_API:');
+    });
+
+    it('handles various tenant ID formats', () => {
+      expect(buildTenantScope('abcd_001')).to.equal('SALESFORCE_COMMERCE_API:abcd_001');
+      expect(buildTenantScope('f_ecom_test')).to.equal('SALESFORCE_COMMERCE_API:test');
     });
   });
 });
