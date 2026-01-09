@@ -7,6 +7,12 @@
 import {expect} from 'chai';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OdsDelete from '../../../src/commands/ods/delete.js';
+import {
+  makeCommandThrowOnError,
+  stubCommandConfigAndLogger,
+  stubJsonEnabled,
+  stubOdsClient,
+} from '../../helpers/ods.js';
 
 /**
  * Unit tests for ODS delete command CLI logic.
@@ -52,14 +58,9 @@ describe('ods delete', () => {
         configurable: true,
       });
 
-      // Mock logger
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
       (command as any).flags = {force: true};
-      command.jsonEnabled = () => true;
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
 
       const logs: string[] = [];
       command.log = (msg?: string) => {
@@ -73,18 +74,15 @@ describe('ods delete', () => {
         operationState: 'running' as const,
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: {id: 'sandbox-123', realm: 'zzzv', instance: 'zzzv-001'}},
-            response: new Response(),
-          }),
-          DELETE: async () => ({
-            data: {data: mockOperation},
-            response: new Response(null, {status: 202}),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: {id: 'sandbox-123', realm: 'zzzv', instance: 'zzzv-001'}},
+          response: new Response(),
+        }),
+        DELETE: async () => ({
+          data: {data: mockOperation},
+          response: new Response(null, {status: 202}),
+        }),
       });
 
       await command.run();
@@ -102,31 +100,24 @@ describe('ods delete', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
       (command as any).flags = {force: true};
-      command.jsonEnabled = () => false;
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, false);
 
       const logs: string[] = [];
       command.log = (msg?: string) => {
         if (msg !== undefined) logs.push(msg);
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: {id: 'sandbox-123', realm: 'zzzv'}},
-            response: new Response(),
-          }),
-          DELETE: async () => ({
-            data: {data: {}},
-            response: new Response(null, {status: 202}),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: {id: 'sandbox-123', realm: 'zzzv'}},
+          response: new Response(),
+        }),
+        DELETE: async () => ({
+          data: {data: {}},
+          response: new Response(null, {status: 202}),
+        }),
       });
 
       await command.run();
@@ -143,25 +134,14 @@ describe('ods delete', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
       (command as any).flags = {force: true};
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: undefined},
-            response: new Response(null, {status: 404}),
-          }),
-        },
-        configurable: true,
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: undefined},
+          response: new Response(null, {status: 404}),
+        }),
       });
 
       try {
@@ -180,31 +160,20 @@ describe('ods delete', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
       (command as any).flags = {force: true};
-
+      stubCommandConfigAndLogger(command);
       command.log = () => {};
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: {id: 'sandbox-123', realm: 'zzzv'}},
-            response: new Response(),
-          }),
-          DELETE: async () => ({
-            data: undefined,
-            error: {error: {message: 'Operation failed'}},
-            response: new Response(null, {status: 500}),
-          }),
-        },
-        configurable: true,
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: {id: 'sandbox-123', realm: 'zzzv'}},
+          response: new Response(),
+        }),
+        DELETE: async () => ({
+          data: undefined,
+          error: {error: {message: 'Operation failed'}},
+          response: new Response(null, {status: 500}),
+        }),
       });
 
       try {
@@ -224,25 +193,14 @@ describe('ods delete', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
       (command as any).flags = {force: true};
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: null as any,
-            response: new Response(null, {status: 500}),
-          }),
-        },
-        configurable: true,
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: null as any,
+          response: new Response(null, {status: 500}),
+        }),
       });
 
       try {
@@ -261,30 +219,19 @@ describe('ods delete', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
       (command as any).flags = {force: true};
-
+      stubCommandConfigAndLogger(command);
       command.log = () => {};
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: {id: 'sandbox-123', realm: 'zzzv'}},
-            response: new Response(),
-          }),
-          DELETE: async () => ({
-            data: {data: {}},
-            response: new Response(null, {status: 400, statusText: 'Bad Request'}),
-          }),
-        },
-        configurable: true,
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: {id: 'sandbox-123', realm: 'zzzv'}},
+          response: new Response(),
+        }),
+        DELETE: async () => ({
+          data: {data: {}},
+          response: new Response(null, {status: 400, statusText: 'Bad Request'}),
+        }),
       });
 
       try {

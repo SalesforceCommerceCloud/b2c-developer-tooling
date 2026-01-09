@@ -11,6 +11,12 @@ import OdsStart from '../../../src/commands/ods/start.js';
 import OdsStop from '../../../src/commands/ods/stop.js';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OdsRestart from '../../../src/commands/ods/restart.js';
+import {
+  makeCommandThrowOnError,
+  stubCommandConfigAndLogger,
+  stubJsonEnabled,
+  stubOdsClient,
+} from '../../helpers/ods.js';
 
 /**
  * Unit tests for ODS operation commands CLI logic.
@@ -42,13 +48,8 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      // Mock logger
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.jsonEnabled = () => true;
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
 
       const mockOperation = {
         id: 'op-123',
@@ -57,14 +58,11 @@ describe('ods operations', () => {
         operationState: 'running' as const,
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: {data: mockOperation},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: mockOperation},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -81,10 +79,7 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
 
       const logs: string[] = [];
       command.log = (msg?: string) => {
@@ -101,14 +96,11 @@ describe('ods operations', () => {
         sandboxState: 'starting' as const,
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: {data: mockOperation},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: mockOperation},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -126,25 +118,15 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
+      stubCommandConfigAndLogger(command);
       command.log = () => {};
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: undefined,
-            error: {error: {message: 'Bad request'}},
-            response: {statusText: 'Bad Request'},
-          }),
-        },
-        configurable: true,
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: undefined,
+          error: {error: {message: 'Bad request'}},
+          response: {statusText: 'Bad Request'},
+        }),
       });
 
       try {
@@ -181,13 +163,8 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      // Mock logger
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.jsonEnabled = () => true;
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
 
       const mockOperation = {
         id: 'op-123',
@@ -196,14 +173,11 @@ describe('ods operations', () => {
         operationState: 'running' as const,
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: {data: mockOperation},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: mockOperation},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -220,10 +194,7 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
 
       const logs: string[] = [];
       command.log = (msg?: string) => {
@@ -240,14 +211,11 @@ describe('ods operations', () => {
         sandboxState: 'stopping' as const,
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: {data: mockOperation},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: mockOperation},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -265,25 +233,15 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
+      stubCommandConfigAndLogger(command);
       command.log = () => {};
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: undefined,
-            error: {error: {message: 'Bad request'}},
-            response: {statusText: 'Bad Request'},
-          }),
-        },
-        configurable: true,
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: undefined,
+          error: {error: {message: 'Bad request'}},
+          response: {statusText: 'Bad Request'},
+        }),
       });
 
       try {
@@ -320,13 +278,8 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      // Mock logger
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.jsonEnabled = () => true;
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
 
       const mockOperation = {
         id: 'op-123',
@@ -335,14 +288,11 @@ describe('ods operations', () => {
         operationState: 'running' as const,
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: {data: mockOperation},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: mockOperation},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -359,10 +309,7 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
 
       const logs: string[] = [];
       command.log = (msg?: string) => {
@@ -379,14 +326,11 @@ describe('ods operations', () => {
         sandboxState: 'restarting' as const,
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: {data: mockOperation},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: mockOperation},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -404,25 +348,15 @@ describe('ods operations', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
+      stubCommandConfigAndLogger(command);
       command.log = () => {};
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          POST: async () => ({
-            data: undefined,
-            error: {error: {message: 'Bad request'}},
-            response: {statusText: 'Bad Request'},
-          }),
-        },
-        configurable: true,
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: undefined,
+          error: {error: {message: 'Bad request'}},
+          response: {statusText: 'Bad Request'},
+        }),
       });
 
       try {

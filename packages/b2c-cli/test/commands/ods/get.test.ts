@@ -7,6 +7,12 @@
 import {expect} from 'chai';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OdsGet from '../../../src/commands/ods/get.js';
+import {
+  makeCommandThrowOnError,
+  stubJsonEnabled,
+  stubOdsClient,
+  stubCommandConfigAndLogger,
+} from '../../helpers/ods.js';
 
 /**
  * Unit tests for ODS get command CLI logic.
@@ -40,13 +46,8 @@ describe('ods get', () => {
         configurable: true,
       });
 
-      // Mock logger
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.jsonEnabled = () => true;
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
 
       const mockSandbox = {
         id: 'sandbox-123',
@@ -55,14 +56,11 @@ describe('ods get', () => {
         hostName: 'zzzv-001.dx.commercecloud.salesforce.com',
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: mockSandbox},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: mockSandbox},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -80,12 +78,8 @@ describe('ods get', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.jsonEnabled = () => false;
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, false);
 
       const mockSandbox = {
         id: 'sandbox-123',
@@ -95,14 +89,11 @@ describe('ods get', () => {
         createdAt: '2025-01-01T00:00:00Z',
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: mockSandbox},
-            response: new Response(),
-          }),
-        },
-        configurable: true,
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: mockSandbox},
+          response: new Response(),
+        }),
       });
 
       const result = await command.run();
@@ -121,24 +112,13 @@ describe('ods get', () => {
         configurable: true,
       });
 
-      // Mock logger
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: {data: undefined},
-            response: new Response(null, {status: 404}),
-          }),
-        },
-        configurable: true,
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: {data: undefined},
+          response: new Response(null, {status: 404}),
+        }),
       });
 
       try {
@@ -157,23 +137,13 @@ describe('ods get', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: null as any,
-            response: new Response(null, {status: 500}),
-          }),
-        },
-        configurable: true,
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: null as any,
+          response: new Response(null, {status: 500}),
+        }),
       });
 
       try {
@@ -192,24 +162,14 @@ describe('ods get', () => {
         configurable: true,
       });
 
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          GET: async () => ({
-            data: undefined,
-            error: {error: {message: 'Sandbox not found'}},
-            response: new Response(null, {status: 404, statusText: 'Not Found'}),
-          }),
-        },
-        configurable: true,
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubOdsClient(command, {
+        GET: async () => ({
+          data: undefined,
+          error: {error: {message: 'Sandbox not found'}},
+          response: new Response(null, {status: 404, statusText: 'Not Found'}),
+        }),
       });
 
       try {

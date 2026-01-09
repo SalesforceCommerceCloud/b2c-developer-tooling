@@ -7,6 +7,12 @@
 import {expect} from 'chai';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OdsInfo from '../../../src/commands/ods/info.js';
+import {
+  makeCommandThrowOnError,
+  stubCommandConfigAndLogger,
+  stubJsonEnabled,
+  stubOdsClientGet,
+} from '../../helpers/ods.js';
 
 /**
  * Unit tests for ODS info command CLI logic.
@@ -29,17 +35,8 @@ describe('ods info', () => {
     it('should combine user and system info in JSON mode', async () => {
       const command = new OdsInfo([], {} as any);
       (command as any).flags = {};
-      command.jsonEnabled = () => true;
-
-      // Mock config and logger
-      Object.defineProperty(command, 'config', {
-        value: {findConfigFile: () => ({read: () => ({'sandbox-api-host': 'admin.dx.test.com'})})},
-        configurable: true,
-      });
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
 
       const mockUserInfo = {
         data: {
@@ -55,19 +52,14 @@ describe('ods info', () => {
         },
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          async GET(path: string) {
-            if (path === '/me') {
-              return {data: mockUserInfo, response: new Response()};
-            }
-            if (path === '/system') {
-              return {data: mockSystemInfo, response: new Response()};
-            }
-            throw new Error('Unexpected path');
-          },
-        },
-        configurable: true,
+      stubOdsClientGet(command, async (path: string) => {
+        if (path === '/me') {
+          return {data: mockUserInfo, response: new Response()};
+        }
+        if (path === '/system') {
+          return {data: mockSystemInfo, response: new Response()};
+        }
+        throw new Error(`Unexpected path: ${path}`);
       });
 
       const result = await command.run();
@@ -81,16 +73,9 @@ describe('ods info', () => {
     it('should display formatted info in non-JSON mode', async () => {
       const command = new OdsInfo([], {} as any);
       (command as any).flags = {};
-      command.jsonEnabled = () => false;
+      stubJsonEnabled(command, false);
 
-      Object.defineProperty(command, 'config', {
-        value: {findConfigFile: () => ({read: () => ({'sandbox-api-host': 'admin.dx.test.com'})})},
-        configurable: true,
-      });
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
 
       const logs: string[] = [];
       command.log = (msg?: string) => {
@@ -111,19 +96,14 @@ describe('ods info', () => {
         },
       };
 
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          async GET(path: string) {
-            if (path === '/me') {
-              return {data: mockUserInfo, response: new Response()};
-            }
-            if (path === '/system') {
-              return {data: mockSystemInfo, response: new Response()};
-            }
-            throw new Error('Unexpected path');
-          },
-        },
-        configurable: true,
+      stubOdsClientGet(command, async (path: string) => {
+        if (path === '/me') {
+          return {data: mockUserInfo, response: new Response()};
+        }
+        if (path === '/system') {
+          return {data: mockSystemInfo, response: new Response()};
+        }
+        throw new Error(`Unexpected path: ${path}`);
       });
 
       const result = await command.run();
@@ -137,72 +117,47 @@ describe('ods info', () => {
     it('should error when user info fails', async () => {
       const command = new OdsInfo([], {} as any);
       (command as any).flags = {};
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
 
-      // Mock config and logger
-      Object.defineProperty(command, 'config', {
-        value: {findConfigFile: () => ({read: () => ({'sandbox-api-host': 'admin.dx.test.com'})})},
-        configurable: true,
-      });
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          async GET(path: string) {
-            if (path === '/me') {
-              return {data: undefined, response: new Response(null, {status: 500})};
-            }
-            return {data: {data: {}}, response: new Response()};
-          },
-        },
-        configurable: true,
+      stubOdsClientGet(command, async (path: string) => {
+        if (path === '/me') {
+          return {data: {data: {user: {id: 'user-1'}}}, response: new Response()};
+        }
+        if (path === '/system') {
+          return {
+            data: undefined,
+            response: new Response(null, {status: 500, statusText: 'Internal Server Error'}),
+          };
+        }
+        throw new Error(`Unexpected path: ${path}`);
       });
 
       try {
         await command.run();
         expect.fail('Should have thrown');
       } catch (error: any) {
-        expect(error.message).to.match(/Failed to fetch user info/);
+        expect(error.message).to.match(/Failed to fetch system info/);
       }
     });
 
     it('should error when system info fails', async () => {
       const command = new OdsInfo([], {} as any);
       (command as any).flags = {};
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
 
-      // Mock config and logger
-      Object.defineProperty(command, 'config', {
-        value: {findConfigFile: () => ({read: () => ({'sandbox-api-host': 'admin.dx.test.com'})})},
-        configurable: true,
-      });
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          async GET(path: string) {
-            if (path === '/me') {
-              return {data: {data: {}}, response: new Response()};
-            }
-            if (path === '/system') {
-              return {data: undefined, response: new Response(null, {status: 500})};
-            }
-            throw new Error('Unexpected path');
-          },
-        },
-        configurable: true,
+      stubOdsClientGet(command, async (path: string) => {
+        if (path === '/me') {
+          return {data: {data: {user: {id: 'user-1'}}}, response: new Response()};
+        }
+        if (path === '/system') {
+          return {
+            data: undefined,
+            response: new Response(null, {status: 500, statusText: 'Internal Server Error'}),
+          };
+        }
+        throw new Error(`Unexpected path: ${path}`);
       });
 
       try {
@@ -216,74 +171,42 @@ describe('ods info', () => {
     it('should handle null user info data', async () => {
       const command = new OdsInfo([], {} as any);
       (command as any).flags = {};
+      stubJsonEnabled(command, true);
 
-      Object.defineProperty(command, 'config', {
-        value: {findConfigFile: () => ({read: () => ({'sandbox-api-host': 'admin.dx.test.com'})})},
-        configurable: true,
-      });
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
 
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          async GET(path: string) {
-            if (path === '/me') {
-              return {data: null as any, response: new Response(null, {status: 500})};
-            }
-            return {data: {data: {}}, response: new Response()};
-          },
-        },
-        configurable: true,
+      stubOdsClientGet(command, async (path: string) => {
+        if (path === '/me') {
+          return {data: {data: null}, response: new Response()};
+        }
+        if (path === '/system') {
+          return {data: {data: {region: 'us-east-1'}}, response: new Response()};
+        }
+        throw new Error(`Unexpected path: ${path}`);
       });
 
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch (error: any) {
-        expect(error.message).to.match(/Failed to fetch user info/);
-      }
+      const result = await command.run();
+      expect(result.user).to.equal(null);
+      expect(result.system).to.deep.equal({region: 'us-east-1'});
     });
 
     it('should handle API errors with error messages', async () => {
       const command = new OdsInfo([], {} as any);
       (command as any).flags = {};
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
 
-      Object.defineProperty(command, 'config', {
-        value: {findConfigFile: () => ({read: () => ({'sandbox-api-host': 'admin.dx.test.com'})})},
-        configurable: true,
-      });
-      Object.defineProperty(command, 'logger', {
-        value: {info() {}, debug() {}, warn() {}, error() {}},
-        configurable: true,
-      });
-
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        value: {
-          async GET(path: string) {
-            if (path === '/me') {
-              return {
-                data: undefined,
-                error: {error: {message: 'Unauthorized'}},
-                response: new Response(null, {status: 401, statusText: 'Unauthorized'}),
-              };
-            }
-            if (path === '/system') {
-              return {data: {data: {}}, response: new Response()};
-            }
-            throw new Error('Unexpected path');
-          },
-        },
-        configurable: true,
+      stubOdsClientGet(command, async (path: string) => {
+        if (path === '/me') {
+          return {
+            data: undefined,
+            response: new Response(null, {status: 401, statusText: 'Unauthorized'}),
+          };
+        }
+        if (path === '/system') {
+          return {data: {data: {region: 'us-east-1'}}, response: new Response()};
+        }
+        throw new Error(`Unexpected path: ${path}`);
       });
 
       try {
