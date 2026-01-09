@@ -161,6 +161,7 @@ SLAS_CREATE_RESULT=$($CLI slas client create \
     --tenant-id "$TENANT_ID" \
     --channels "$SITE_ID" \
     --default-scopes \
+    --log-level trace \
     --redirect-uri "http://localhost:3000/callback" \
     --json)
 
