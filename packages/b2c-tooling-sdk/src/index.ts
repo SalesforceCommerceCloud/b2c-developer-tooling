@@ -57,6 +57,13 @@ export {
   createExtraParamsMiddleware,
   createSlasClient,
   createOdsClient,
+  createCustomApisClient,
+  toOrganizationId,
+  toTenantId,
+  buildTenantScope,
+  ORGANIZATION_ID_PREFIX,
+  SCAPI_TENANT_SCOPE_PREFIX,
+  CUSTOM_APIS_DEFAULT_SCOPES,
 } from './clients/index.js';
 export type {
   PropfindEntry,
@@ -78,6 +85,12 @@ export type {
   OdsResponse,
   OdsPaths,
   OdsComponents,
+  CustomApisClient,
+  CustomApisClientConfig,
+  CustomApisError,
+  CustomApisResponse,
+  CustomApisPaths,
+  CustomApisComponents,
 } from './clients/index.js';
 
 // Context Layer - Platform

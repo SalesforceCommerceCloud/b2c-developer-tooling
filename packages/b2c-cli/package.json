@@ -115,6 +115,14 @@
             "description": "Manage SLAS client configurations"
           }
         }
+      },
+      "scapi": {
+        "description": "Manage Salesforce Commerce APIs (SCAPI)",
+        "subtopics": {
+          "custom": {
+            "description": "Manage Custom API endpoints"
+          }
+        }
       }
     }
   },

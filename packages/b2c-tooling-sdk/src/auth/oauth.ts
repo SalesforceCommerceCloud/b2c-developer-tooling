@@ -104,6 +104,21 @@ export class OAuthStrategy implements AuthStrategy {
   }
 
   /**
+   * Creates a new OAuthStrategy with additional scopes merged in.
+   * Used by clients that have specific scope requirements.
+   *
+   * @param additionalScopes - Scopes to add to this strategy's existing scopes
+   * @returns A new OAuthStrategy instance with merged scopes
+   */
+  withAdditionalScopes(additionalScopes: string[]): OAuthStrategy {
+    const mergedScopes = [...new Set([...(this.config.scopes || []), ...additionalScopes])];
+    return new OAuthStrategy({
+      ...this.config,
+      scopes: mergedScopes,
+    });
+  }
+
+  /**
    * Gets an access token, using cache if valid
    */
   private async getAccessToken(): Promise<string> {

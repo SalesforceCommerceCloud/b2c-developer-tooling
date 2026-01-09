@@ -15,6 +15,7 @@
  * - {@link OcapiClient} - Data API operations via OCAPI (openapi-fetch Client)
  * - {@link SlasClient} - SLAS Admin API for managing tenants and clients
  * - {@link OdsClient} - On-Demand Sandbox API for managing developer sandboxes
+ * - {@link CustomApisClient} - Custom APIs DX API for retrieving endpoint status
  *
  * ## Usage
  *
@@ -156,3 +157,21 @@ export type {
   paths as MrtPaths,
   components as MrtComponents,
 } from './mrt.js';
+
+export {
+  createCustomApisClient,
+  toOrganizationId,
+  toTenantId,
+  buildTenantScope,
+  ORGANIZATION_ID_PREFIX,
+  SCAPI_TENANT_SCOPE_PREFIX,
+  CUSTOM_APIS_DEFAULT_SCOPES,
+} from './custom-apis.js';
+export type {
+  CustomApisClient,
+  CustomApisClientConfig,
+  CustomApisError,
+  CustomApisResponse,
+  paths as CustomApisPaths,
+  components as CustomApisComponents,
+} from './custom-apis.js';
