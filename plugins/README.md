@@ -9,6 +9,7 @@ These skills follow the [Agent Skills](https://agentskills.io/home) format and c
 | Plugin | Description |
 |--------|-------------|
 | `b2c-cli` | Skills for Salesforce Commerce Cloud B2C CLI operations |
+| `b2c` | B2C Commerce development skills including Custom API development guides |
 
 ## Installation
 
@@ -66,6 +67,21 @@ plugins/b2c-cli/skills/
 ├── b2c-sites/SKILL.md     # Sites commands
 ├── b2c-slas/SKILL.md      # SLAS commands
 └── b2c-webdav/SKILL.md    # WebDAV commands
+```
+
+## Plugin: b2c
+
+The `b2c` plugin provides skills for B2C Commerce development practices and patterns. When installed, Claude can help you with:
+
+- **Custom API Development** (`b2c-custom-api-development`) - Build SCAPI Custom APIs with contracts, implementations, and mappings
+
+### Skills
+
+Each skill is defined in the `b2c/skills/` directory:
+
+```
+plugins/b2c/skills/
+└── b2c-custom-api-development/SKILL.md    # Custom API development guide
 ```
 
 ## For Contributors

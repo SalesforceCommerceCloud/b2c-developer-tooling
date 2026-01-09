@@ -17,6 +17,17 @@
       "source": "./plugins/b2c-cli",
       "category": "productivity",
       "strict": false
+    },
+    {
+      "name": "b2c",
+      "description": "B2C Commerce development skills including Custom API development guides.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./plugins/b2c",
+      "category": "productivity",
+      "strict": false
     }
   ]
 }
