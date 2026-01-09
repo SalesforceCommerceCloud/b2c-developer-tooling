@@ -23,6 +23,7 @@ const guideSidebar = [
       { text: 'ODS Commands', link: '/cli/ods' },
       { text: 'MRT Commands', link: '/cli/mrt' },
       { text: 'SLAS Commands', link: '/cli/slas' },
+      { text: 'Custom APIs', link: '/cli/custom-apis' },
       { text: 'Auth Commands', link: '/cli/auth' },
       { text: 'Logging', link: '/cli/logging' },
     ],
