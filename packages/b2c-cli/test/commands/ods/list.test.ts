@@ -205,6 +205,7 @@ describe('ods list', () => {
         value: {
           GET: async () => ({
             data: null as any, // Simulating malformed API response
+            error: {error: {}},
             response: new Response(null, {status: 500, statusText: 'Internal Server Error'}),
           }),
         },
@@ -321,7 +322,7 @@ describe('ods list', () => {
         expect.fail('Should have thrown');
       } catch (error: any) {
         expect(error.message).to.match(/Failed to fetch sandboxes/);
-        expect(error.message).to.include('Internal Server Error');
+        expect(error.message).to.include('Internal error');
       }
     });
 
