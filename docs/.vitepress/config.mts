@@ -9,7 +9,7 @@ const guideSidebar = [
       { text: 'Installation', link: '/guide/installation' },
       { text: 'Authentication Setup', link: '/guide/authentication' },
       { text: 'Configuration', link: '/guide/configuration' },
-      { text: 'Agent Skills & Plugins', link: '/guide/claude-code-plugin' },
+      { text: 'Agent Skills & Plugins', link: '/guide/agent-skills' },
     ],
   },
   {
