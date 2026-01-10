@@ -48,6 +48,14 @@ pnpm run -r lint
 
 See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
+```bash
+# Run docs dev server (from project root)
+pnpm run docs:dev
+
+# Build docs for production
+pnpm run docs:build
+```
+
 ## Logging
 
 - when logging use the logger instance from `@salesforce/b2c-tooling-sdk/logger` package

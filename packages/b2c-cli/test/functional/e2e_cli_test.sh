@@ -116,7 +116,7 @@ echo "Step 3: Deploying code to sandbox..."
 
 $CLI code deploy "$CARTRIDGE_PATH" \
     --server "$SERVER" \
-    --code-version "e2e-test-version" --log-level debug --json
+    --code-version "e2e-test-version" --log-level trace --json
 
 echo "SUCCESS: Code deployed"
 echo ""

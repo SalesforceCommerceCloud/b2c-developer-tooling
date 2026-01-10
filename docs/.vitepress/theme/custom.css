@@ -3,6 +3,74 @@
   --vp-c-brand-2: #0090c8;
   --vp-c-brand-3: #007eb0;
   --vp-c-brand-soft: rgba(0, 161, 224, 0.14);
+  --vp-banner-height: 38px;
+}
+
+/* Developer Preview Banner */
+.preview-banner {
+  background: linear-gradient(90deg, #0070d2 0%, #00a1e0 100%);
+  color: white;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 14px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  min-height: var(--vp-banner-height);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.preview-banner a {
+  color: white;
+  text-decoration: underline;
+  margin-left: 8px;
+}
+
+.preview-banner a:hover {
+  opacity: 0.9;
+}
+
+/* Adjust VitePress layout for banner */
+.VPNav {
+  top: var(--vp-banner-height) !important;
+}
+
+.VPSidebar {
+  top: calc(var(--vp-nav-height) + var(--vp-banner-height)) !important;
+  height: calc(100vh - var(--vp-nav-height) - var(--vp-banner-height)) !important;
+}
+
+.VPContent {
+  padding-top: var(--vp-banner-height) !important;
+}
+
+.VPLocalNav {
+  top: calc(var(--vp-nav-height) + var(--vp-banner-height)) !important;
+}
+
+/* Mobile/tablet: banner scrolls with page when sidebar is hidden */
+@media (max-width: 959px) {
+  .preview-banner {
+    position: relative;
+  }
+
+  .VPNav {
+    top: 0 !important;
+  }
+
+  .VPContent {
+    padding-top: 0 !important;
+  }
+
+  .VPLocalNav {
+    top: 0 !important;
+  }
 }
 
 .dark {
