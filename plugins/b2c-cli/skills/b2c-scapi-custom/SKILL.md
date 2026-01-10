@@ -12,8 +12,8 @@ Use the `b2c` CLI plugin to manage SCAPI Custom API endpoints and check their re
 The `--tenant-id` flag is **required** for all commands. The tenant ID identifies your B2C Commerce instance.
 
 **Important:** The tenant ID is NOT the same as the organization ID:
-- **Tenant ID**: `zzxy_prd` (used with this command)
-- **Organization ID**: `zzxy_prd` (used in SCAPI URLs, has `f_ecom_` prefix)
+- **Tenant ID**: `zzxy_prd` (used with commands that require `--tenant-id`)
+- **Organization ID**: `f_ecom_zzxy_prd` (used in SCAPI URLs, has `f_ecom_` prefix)
 
 ### Deriving Tenant ID from Hostname
 

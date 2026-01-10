@@ -79,29 +79,29 @@ The `type` column shows a human-readable API type based on the security scheme:
 
 ```bash
 # List all Custom API endpoints
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd
+b2c scapi custom status --tenant-id zzxy_prd
 
 # Filter by status
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --status active
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --status not_registered
+b2c scapi custom status --tenant-id zzxy_prd --status active
+b2c scapi custom status --tenant-id zzxy_prd --status not_registered
 
 # Group by API type (Admin/Shopper)
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --group-by type
+b2c scapi custom status --tenant-id zzxy_prd --group-by type
 
 # Group by site
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --group-by site
+b2c scapi custom status --tenant-id zzxy_prd --group-by site
 
 # Show extended columns
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --extended
+b2c scapi custom status --tenant-id zzxy_prd --extended
 
 # Custom columns
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --columns type,apiName,status,sites
+b2c scapi custom status --tenant-id zzxy_prd --columns type,apiName,status,sites
 
 # Debug failed registrations
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --status not_registered --columns type,apiName,endpointPath,errorReason
+b2c scapi custom status --tenant-id zzxy_prd --status not_registered --columns type,apiName,endpointPath,errorReason
 
 # Output as JSON
-b2c scapi custom status --tenant-id f_ecom_zzxy_prd --json
+b2c scapi custom status --tenant-id zzxy_prd --json
 ```
 
 ### Output
@@ -136,6 +136,23 @@ API Name      Path        Method  Status
 loyalty-info  /customers  GET     active
 loyalty-info  /points     GET     active
 wishlist      /items      POST    not_registered
+```
+
+Grouped by site:
+
+```
+Site: RefArch
+Type     API Name      Path        Method  Status
+───────────────────────────────────────────────────────────
+Shopper  loyalty-info  /customers  GET     active
+Shopper  loyalty-info  /points     GET     active
+Admin    inventory     /stock      GET     active
+
+Site: SiteGenesis
+Type     API Name   Path    Method  Status
+─────────────────────────────────────────────────
+Admin    inventory  /stock  GET     active
+Admin    inventory  /stock  PUT     active
 ```
 
 ### Notes
