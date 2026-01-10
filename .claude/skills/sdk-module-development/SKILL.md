@@ -144,6 +144,8 @@ export { createNewApiClient } from './newapi.js';
 export type { NewApiClient, paths as NewApiPaths, components as NewApiComponents } from './newapi.js';
 ```
 
+For SCAPI clients with OAuth scope requirements, see [API Client Development](../api-client-development/SKILL.md) for advanced patterns including scope injection and tenant ID handling.
+
 ## OpenAPI Type Generation
 
 For APIs with OpenAPI specs, generate TypeScript types:

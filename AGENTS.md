@@ -70,7 +70,12 @@ Use `createTable` from `@salesforce/b2c-tooling-sdk/cli` for tabular output. See
 
 **User-facing skills** (for CLI users): `./plugins/b2c-cli/skills/` - update when modifying CLI commands.
 
-**Developer skills** (for contributors): `./.claude/skills/` - covers CLI development, SDK modules, testing, and documentation.
+**Developer skills** (for contributors): `./.claude/skills/` - covers:
+- [CLI command development](./.claude/skills/cli-command-development/SKILL.md) - oclif commands, flags, table output
+- [SDK module development](./.claude/skills/sdk-module-development/SKILL.md) - modules, exports, barrel files
+- [API client development](./.claude/skills/api-client-development/SKILL.md) - OpenAPI clients, OAuth scopes, SCAPI patterns
+- [Testing](./.claude/skills/testing/SKILL.md) - Mocha, Chai, MSW patterns
+- [Documentation](./.claude/skills/documentation/SKILL.md) - user guides, CLI reference, API docs
 
 ## Testing
 

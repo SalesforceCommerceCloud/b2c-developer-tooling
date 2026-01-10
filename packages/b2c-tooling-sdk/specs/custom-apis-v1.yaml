@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  x-api-type: Admin
+  x-api-family: DX
+  title: Custom APIs
+  version: 1.0.1
+  description: |-
+    [Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/custom-apis/custom-apis-oas-v1-public.yaml)
+
+    # API Overview
+
+    The Custom APIs DX API provides enhanced transparency and manageability of Custom API endpoints within the platform. This API offers a user-friendly and secure approach by providing real-time feedback on endpoint registration status, including successful registrations and failed attempts with error reasons.
+
+    ## Authentication & Authorization
+
+    The Custom APIs DX endpoint requires valid authentication and authorization to be accessed. It uses an Account Manager OAuth 2.0 bearer token for authentication. The necessary scopes for accessing the API are:
+
+    * `sfcc.custom-apis`: Provides read-only access.
+    * `sfcc.custom-apis.rw`: Provides read-write access.
+
+    Access is intended for admin users only.
+
+    ## Use Cases
+
+    ### Endpoint Status Transparency
+
+    During a new code version activation, developers and administrators often struggle to verify the status of all their Custom API endpoints. This can lead to confusion and time-consuming manual log checks to diagnose why an endpoint might not be active. By using the Custom APIs DX endpoint, a user can programmatically fetch a list of all endpoints and their current status (`active` or `not_registered`). This allows for quick identification of any registration issues, including specific error reasons for endpoints that failed to register, thereby streamlining the validation process after a deployment.
+
+    ### Debugging Failed Registrations
+
+    When a Custom API endpoint fails to register, it can be difficult to understand the root cause without accessible error details. This API directly addresses this by providing an `errorReason` property for any endpoint with a `not_registered` status. For example, if an endpoint registration is skipped because its schema file cannot be read, the API response will explicitly state this, allowing developers to quickly pinpoint and resolve the issue without needing to contact support or search through extensive log files.
+servers:
+  - url: https://{shortCode}.api.commercecloud.salesforce.com/dx/custom-apis/v1
+    variables:
+      shortCode:
+        default: shortCode
+paths:
+  /organizations/{organizationId}/endpoints:
+    get:
+      summary: Get a list of resolved Custom API endpoints.
+      description: List resolved Custom API endpoints, including not registered endpoints.
+      operationId: getEndpoints
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomApiEndpointResult'
+              examples:
+                SuccessWithFilter:
+                  $ref: '#/components/examples/SuccessWithFilter'
+                SuccessWithoutFilter:
+                  $ref: '#/components/examples/SuccessWithoutFilter'
+        '400':
+          description: Invalid or malformed filter parameter
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidFilterParameter:
+                  $ref: '#/components/examples/InvalidFilterParameter'
+      security:
+        - AmOAuth2:
+            - sfcc.custom-apis
+components:
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      description: AccountManager OAuth 2.0 bearer token Authentication.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.custom-apis: Custom APIs READONLY scope
+            sfcc.custom-apis.rw: Custom APIs scope
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.custom-apis: Custom APIs READONLY scope
+            sfcc.custom-apis.rw: Custom APIs scope
+  schemas:
+    OrganizationId:
+      description: An identifier for the organization the request is being made by
+      example: f_ecom_zzxy_prd
+      type: string
+      minLength: 1
+      maxLength: 32
+    EndpointStatus:
+      type: string
+      enum:
+        - active
+        - not_registered
+      example: active
+    Limit:
+      default: 10
+      minimum: 1
+      format: int32
+      description: Maximum records to retrieve per request, not to exceed the maximum defined. A limit must be at least 1 so at least one record is returned (if any match the criteria).
+      type: integer
+      example: 10
+    Total:
+      default: 0
+      minimum: 0
+      format: int32
+      description: The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.
+      type: integer
+      example: 10
+    ResultBase:
+      description: "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned."
+      type: object
+      required:
+        - limit
+        - total
+      properties:
+        limit:
+          maximum: 200
+          allOf:
+            - $ref: '#/components/schemas/Limit'
+        total:
+          $ref: '#/components/schemas/Total'
+    CustomApiEndpointFilter:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - active
+            - not_registered
+          example: not_registered
+    SiteId:
+      minLength: 1
+      maxLength: 32
+      description: The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites
+      example: RefArch
+      type: string
+    CustomApiEndpoint:
+      type: object
+      properties:
+        apiName:
+          type: string
+          pattern: ^[a-z0-9-]+$
+          example: loyalty-info
+        apiVersion:
+          type: string
+          maxLength: 100
+          example: v1
+        cartridgeName:
+          type: string
+          pattern: ^[a-zA-Z][a-zA-Z0-9_]*$
+          example: test_bc_wapi
+        endpointPath:
+          type: string
+          maxLength: 4000
+          example: /customers
+        errorReason:
+          type: string
+          maxLength: 4000
+          example: API schema not found.
+        httpMethod:
+          type: string
+          enum:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - PATCH
+            - OPTIONS
+            - HEAD
+          example: GET
+        id:
+          type: string
+          minLength: 36
+          maxLength: 36
+          example: 10bd7f2dc40ab7aede7f0d60e5c3a783
+        implementationScript:
+          type: string
+          maxLength: 100
+          example: script.js
+        operationId:
+          type: string
+          maxLength: 100
+          example: getLoyaltyInfo
+        securityScheme:
+          type: string
+          enum:
+            - ShopperToken
+            - AmOAuth2
+          example: ShopperToken
+        schemaFile:
+          type: string
+          maxLength: 100
+          example: schema.yaml
+        siteId:
+          $ref: '#/components/schemas/SiteId'
+        status:
+          $ref: '#/components/schemas/EndpointStatus'
+    CustomApiEndpointResult:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ResultBase'
+      properties:
+        filter:
+          $ref: '#/components/schemas/CustomApiEndpointFilter'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomApiEndpoint'
+        activeCodeVersion:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: version1
+    ErrorResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        title:
+          description: "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n"
+          type: string
+          maxLength: 256
+          example: You do not have enough credit
+        type:
+          description: |
+            A URI reference [RFC3986] that identifies the
+            problem type.  This specification encourages that, when
+            dereferenced, it provide human-readable documentation for the
+            problem type (e.g., using HTML [W3C.REC-html5-20141028]).  When
+            this member is not present, its value is assumed to be
+            "about:blank". It accepts relative URIs; this means
+            that they must be resolved relative to the document's base URI, as
+            per [RFC3986], Section 5.
+          type: string
+          maxLength: 2048
+          example: NotEnoughMoney
+        detail:
+          description: A human-readable explanation specific to this occurrence of the problem.
+          type: string
+          example: Your current balance is 30, but that costs 50
+        instance:
+          description: |
+            A URI reference that identifies the specific
+            occurrence of the problem.  It may or may not yield further
+            information if dereferenced.  It accepts relative URIs; this means
+            that they must be resolved relative to the document's base URI, as
+            per [RFC3986], Section 5.
+          type: string
+          maxLength: 2048
+          example: /account/12345/msgs/abc
+      required:
+        - title
+        - type
+        - detail
+  parameters:
+    organizationId:
+      description: An identifier for the organization the request is being made by
+      name: organizationId
+      in: path
+      required: true
+      example: f_ecom_zzxy_prd
+      schema:
+        $ref: '#/components/schemas/OrganizationId'
+    status:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/EndpointStatus'
+  examples:
+    SuccessWithFilter:
+      value:
+        limit: 1
+        total: 2
+        filter:
+          status: active
+        data:
+          - apiName: loyalty-info
+            apiVersion: v1
+            cartridgeName: my_cartridge
+            endpointPath: /customers
+            status: active
+        activeCodeVersion: version1
+    SuccessWithoutFilter:
+      value:
+        limit: 2
+        total: 2
+        data:
+          - apiName: loyalty-info
+            apiVersion: v1
+            cartridgeName: my_cartridge
+            endpointPath: /customers
+            status: active
+          - apiName: loyalty-info
+            apiVersion: v1
+            cartridgeName: 'null'
+            endpointPath: /customers
+            errorReason: Cartridge 'my_cartridge_2' not found.
+            status: not_registered
+        activeCodeVersion: version1
+    InvalidFilterParameter:
+      value:
+        title: Bad Request
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request
+        detail: Invalid value 'foo' for filter parameter 'status'.
