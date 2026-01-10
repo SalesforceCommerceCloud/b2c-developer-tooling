@@ -47,7 +47,7 @@
 }
 
 .VPContent {
-  padding-top: var(--vp-banner-height) !important;
+  padding-top: calc(var(--vp-nav-height) + var(--vp-banner-height)) !important;
 }
 
 .VPLocalNav {
