@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns           = "http://www.demandware.com/xml/impex/customergroup/2007-06-30"
+    xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+    targetNamespace = "http://www.demandware.com/xml/impex/customergroup/2007-06-30"
+    elementFormDefault = "qualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- top-level element -->
+    <xsd:element name="customer-groups">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="customer-group" type="CustomerGroup" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="group-assignment" type="CustomerGroupAssignment" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake element for mass data support -->
+    <xsd:element name="customer-group" type="CustomerGroup" />
+    <xsd:element name="group-assignment" type="CustomerGroupAssignment" />
+    
+    <xsd:complexType name="CustomerGroup" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="membership-rule" type="MembershipRule" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="group-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="MembershipRule" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="included-customers" type="ConditionGroups" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="excluded-customers" type="ConditionGroups" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ConditionGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="condition-group" type="ConditionGroup" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ConditionGroup" mixed="false">
+        <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+            <xsd:element name="condition" type="Condition" />
+        </xsd:sequence>
+        <xsd:attribute name="match-mode" type="MatchMode" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="Condition">
+        <xsd:sequence>
+            <xsd:element name="attribute-path" type="AttributePath" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="operator" type="Operator" minOccurs="1" maxOccurs="1" />
+            <xsd:choice minOccurs="0" maxOccurs="1">
+                <xsd:element name="string" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="int" type="xsd:int" minOccurs="1" maxOccurs="unbounded"/>
+                <xsd:element name="int-range" type="IntRange" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="number" type="xsd:decimal" minOccurs="1" maxOccurs="unbounded"/>
+                <xsd:element name="number-range" type="NumberRange" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="date" type="xsd:date" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="date-range" type="DateRange" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="number-of-days" type="NumberOfDays" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="time-period" type="TimePeriod" minOccurs="1" maxOccurs="1"/>
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomerGroupAssignment" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                            Represents the assignment of a customer to a customer group.
+
+                            When a &lt;group-assignment&gt; element is imported, the customer with the specified 
+                            customer-no is assigned to the customer group with the specified group-id.  If an assignment
+                            already exists, no change is made.
+
+                            When an element is imported with attribute mode="delete", the assignment of the customer
+                            with the specified customer-no to the customer group with the specified group-id is removed.
+                            If the customer is not assigned to the group, no change is made.
+
+                            When mode="delete", either the customer-no or group-id attribute can be omitted to remove
+                            multiple assignments of customers to customer groups.  If only customer-no is present, any
+                            existing assignments of the specified customer to groups are removed.  If only group-id is
+                            present, any existing assignments of customers to the specified group are removed.
+
+                            Assignments can only be created or removed for static customer groups.  A warning message
+                            is logged if a specified customer group is dynamic.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="group-id" type="Generic.NonEmptyString.256" />
+        <xsd:attribute name="customer-no" type="Generic.NonEmptyString.100" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="MatchMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="all" />
+            <xsd:enumeration value="any" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="DateRange" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="from" type="xsd:date" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="to" type="xsd:date" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="TimePeriod">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="week" />
+            <xsd:enumeration value="month" />
+            <xsd:enumeration value="year" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- TODO annotation about min / max inclusive (assumption inclusive) -->
+    <xsd:complexType name="IntRange" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="min" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="max" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="NumberRange" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="min" type="xsd:decimal" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="max" type="xsd:decimal" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!--Supported attribute paths:
+        - customer.activeData.<system-attribute-id>
+        - customer.activeData.custom.<custom-attribute-id>
+        - customer.profile.<system-attribute-id>
+        - customer.profile.custom.<custom-attribute-id>
+        - customer.addressBook.preferredAddress.<system-attribute-id>
+        - customer.addressBook.preferredAddress.custom.<custom-attribute-id>
+        - customer.registered
+        - customer.customerGroups
+        - session.referrerURL
+        - session.referrerHost
+        - session.referrerKeywords
+        - session.sourceCodeGroup
+        - session.store
+        - session.authenticated
+        - session.agentUserAuthenticated
+        - session.currency
+        - session.custom.<custom-attribute-id>
+        - request.geolocation.<attribute-id>
+        - request.locale
+
+        Supported system profile attributes: creationDate, birthday, nextBirthday, gender, salutation, preferredLocale, lastLoginTime, lastVisitTime, email, login
+        Supported system address attributes: city, postalCode, stateCode, countryCode
+        Supported geolocation attributes:    countryCode, regionCode, city, postalCode, longitude, latitude
+    -->
+    <xsd:simpleType name="AttributePath">
+        <xsd:restriction base="Generic.NonEmptyString.256" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Operator">
+        <xsd:restriction base="xsd:string">
+
+            <!-- common operators -->
+            <xsd:enumeration value="is-equal" />
+            <xsd:enumeration value="is-not-equal" />
+            <xsd:enumeration value="exists" />
+            <xsd:enumeration value="does-not-exist" />
+
+            <!-- additional date operators -->
+            <xsd:enumeration value="is-on" /> 
+            <xsd:enumeration value="is-after" />
+            <xsd:enumeration value="is-before" />
+            <xsd:enumeration value="is-today" />
+            <xsd:enumeration value="is-tomorrow" />
+            <xsd:enumeration value="is-yesterday" />
+            <xsd:enumeration value="is-in-the-last" />
+            <xsd:enumeration value="is-in-the-next" />
+            <xsd:enumeration value="is-in-the-current" />
+            <xsd:enumeration value="is-in-the-last-x-days" />
+            <xsd:enumeration value="is-not-in-the-last-x-days" />
+            <xsd:enumeration value="is-in-the-next-x-days" />
+            <xsd:enumeration value="is-not-in-the-next-x-days" />
+
+            <!-- additional numeric operators -->
+            <xsd:enumeration value="is-greater-than" />
+            <xsd:enumeration value="is-less-than" />
+            <xsd:enumeration value="is-greater-than-or-equal" />
+            <xsd:enumeration value="is-less-than-or-equal" />
+
+            <!-- additional operators for date and numeric ranges-->
+            <xsd:enumeration value="is-in-range" />
+            <xsd:enumeration value="is-not-in-range" />
+
+            <!-- additional string operators -->
+            <xsd:enumeration value="starts-with" />
+            <xsd:enumeration value="ends-with" />
+            <xsd:enumeration value="contains" />
+            <xsd:enumeration value="does-not-contain" />
+
+            <!-- additional boolean operators -->
+            <xsd:enumeration value="is-true" />
+            <xsd:enumeration value="is-false" />
+
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="NumberOfDays">
+        <xsd:restriction base="xsd:int">
+            <xsd:minExclusive value="0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.100">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

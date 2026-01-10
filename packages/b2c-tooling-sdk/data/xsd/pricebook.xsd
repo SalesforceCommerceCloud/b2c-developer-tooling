@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/pricebook/2006-10-31" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    targetNamespace="http://www.demandware.com/xml/impex/pricebook/2006-10-31"
+    attributeFormDefault="unqualified" 
+    elementFormDefault="qualified" >
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="pricebooks">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element maxOccurs="unbounded" minOccurs="0" name="pricebook" type="complexType.PriceBook" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake top level elements to allow JAXB subsection parsing -->
+    <xsd:element name="header" type="complexType.Header" />
+    <xsd:element name="price-table" type="complexType.PriceTable" />
+
+    <xsd:complexType name="complexType.PriceBook">
+        <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="header" type="complexType.Header" />
+            <xsd:element maxOccurs="1" minOccurs="0" name="price-tables" type="complexType.PriceTables" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Header">
+        <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="currency" type="simpleType.Currency" />
+            <xsd:element maxOccurs="unbounded" minOccurs="0" name="display-name" type="complexType.LocalizedString" />
+            <xsd:element maxOccurs="unbounded" minOccurs="0" name="description" type="complexType.LocalizedString" />
+            <xsd:element maxOccurs="1" minOccurs="0" name="online-flag" type="xsd:boolean" />
+            <xsd:element maxOccurs="1" minOccurs="0" name="online-from" type="xsd:dateTime" />
+            <xsd:element maxOccurs="1" minOccurs="0" name="online-to" type="xsd:dateTime" />
+            <xsd:element maxOccurs="1" minOccurs="0" name="parent" type="simpleType.Generic.NonEmptyString.256" />
+            <xsd:element maxOccurs="1" minOccurs="0" name="feed-based" type="xsd:boolean">
+                <xsd:annotation>
+                    <xsd:documentation>If this flag is set to true the pricebook is imported as feed based otherwise it is imported as web based</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="pricebook-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceTables">
+        <xsd:sequence>
+            <xsd:element maxOccurs="unbounded" minOccurs="0" name="price-table" type="complexType.PriceTable" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceTable">
+        <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="0" name="online-from" type="xsd:dateTime" />
+            <xsd:element maxOccurs="1" minOccurs="0" name="online-to" type="xsd:dateTime" />
+            <xsd:choice maxOccurs="unbounded" minOccurs="0">
+                <xsd:element name="amount" type="complexType.AmountEntry" />
+                <xsd:element name="percentage" type="complexType.PercentageEntry" />
+            </xsd:choice>
+            <xsd:element maxOccurs="1" minOccurs="0" name="price-info" type="simpleType.Generic.String.256" />
+        </xsd:sequence>
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+        <xsd:attribute name="mode" type="simpleType.PriceTableImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AmountEntry">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal">
+                <xsd:attribute name="quantity" type="xsd:decimal" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PercentageEntry">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal">
+                <xsd:attribute name="quantity" type="xsd:decimal" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType mixed="false" name="complexType.LocalizedString">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.PriceTableImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+            <!--  Specialized import mode meaning remove all the price tables for the given product ID -->
+            <xsd:enumeration value="delete-all" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Currency">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="256"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Shared Complex Types -->
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+</xsd:schema>
+

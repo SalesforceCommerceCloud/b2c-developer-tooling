@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/sort/2009-05-15"
+    xmlns="http://www.demandware.com/xml/impex/sort/2009-05-15"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="sort">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="dynamic-attribute" type="DynamicAttribute" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="sorting-rule" type="SortingRule" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="sorting-rule-assignment" type="SortingRuleAssignment" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="sorting-rule-campaign-assignment" type="SortingRuleCampaignAssignment" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="sorting-options" type="SortingOptions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="keyword-search-sorting-rule-assignment" type="KeywordSearchSortingRuleAssignment" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="keyword-search-sorting-rule-campaign-assignment" type="KeywordSearchSortingRuleCampaignAssignment" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="boost-bury-rule" type="BoostBuryRule" minOccurs="0" maxOccurs="1000" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake element for mass data support -->
+    <xsd:element name="dynamic-attribute" type="DynamicAttribute" />
+    <xsd:element name="sorting-rule" type="SortingRule" />
+    <xsd:element name="sorting-rule-assignment" type="SortingRuleAssignment" />
+    <xsd:element name="sorting-rule-campaign-assignment" type="SortingRuleCampaignAssignment" />
+    <xsd:element name="sorting-options" type="SortingOptions" />
+    <xsd:element name="keyword-search-sorting-rule-assignment" type="KeywordSearchSortingRuleAssignment" />
+    <xsd:element name="keyword-search-sorting-rule-campaign-assignment" type="KeywordSearchSortingRuleCampaignAssignment" />
+    <xsd:element name="boost-bury-rule" type="BoostBuryRule" />
+
+    <xsd:complexType name="DynamicAttribute">
+        <xsd:sequence>
+            <xsd:element name="weighted-attribute" type="WeightedAttribute" minOccurs="0" maxOccurs="10" />
+        </xsd:sequence>
+        <xsd:attribute name="dynamic-attribute-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="WeightedAttribute">
+        <xsd:sequence>
+            <xsd:element name="attribute-path" type="AttributePath" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="weight" type="WeightedAttributeWeight" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="default-value" type="WeightedAttributeDefault" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="direction" type="SortingDirection" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!--Supported attribute paths:
+        - product.<system-attribute-id>
+        - product.custom.<custom-attribute-id>
+        - product.activeData.<system-attribute-id>
+        - product.activeData.custom.<custom-attribute-id>
+        - product.availabilityModel.<system-attribute-id>
+        - sorting.predictive-sort
+        - sorting.text-relevance
+    -->
+    <xsd:simpleType name="AttributePath">
+        <xsd:restriction base="Generic.NonEmptyString.256">
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="SortingRule">
+        <xsd:sequence>
+            <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sorting-attributes" type="SortingAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="rule-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="SortingAttributes">
+        <xsd:choice minOccurs="1" maxOccurs="10">
+            <xsd:element name="category-position" type="SortByCategoryPosition" />
+            <xsd:element name="text-relevance" type="SortByTextRelevance" />
+            <xsd:element name="price" type="SortByPrice" />
+            <xsd:element name="unit-price" type="SortByUnitPrice" />
+            <xsd:element name="availability-status" type="SortByAvailabilityStatus" />
+            <xsd:element name="explicit-sortings" type="SortByExplicitSortings" />
+            <xsd:element name="predictive-sort" type="SortByPredictiveSort" />
+            <xsd:element name="attribute" type="SortByAttribute" />
+            <xsd:element name="dynamic-attribute" type="SortByDynamicAttribute" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByCategoryPosition">
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByTextRelevance">
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByPrice">
+        <xsd:sequence>
+            <xsd:element name="direction" type="SortingDirection" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByUnitPrice">
+        <xsd:sequence>
+            <xsd:element name="direction" type="SortingDirection" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByAvailabilityStatus">
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByExplicitSortings">
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByPredictiveSort">
+        <xsd:sequence>
+            <xsd:element name="include-text-relevance" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByAttribute">
+        <xsd:sequence>
+            <xsd:element name="attribute-path" type="AttributePath" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="direction" type="SortingDirection" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="include-text-relevance" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortByDynamicAttribute">
+        <xsd:sequence>
+            <xsd:element name="include-text-relevance" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="dynamic-attribute-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="attribute-context" type="Context" use="optional" default="site" />
+    </xsd:complexType>
+
+    <xsd:complexType name="AbstractSortingRuleAssignment" abstract="true">
+        <xsd:attribute name="rule-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="rule-context" type="Context" use="optional" default="site" />
+        <xsd:attribute name="mode" type="ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="SortingRuleAssignment">
+        <xsd:complexContent>
+            <xsd:extension base="AbstractSortingRuleAssignment">
+                <xsd:attribute name="category-id" type="Generic.NonEmptyString.256" use="required" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="KeywordSearchSortingRuleAssignment">
+        <xsd:complexContent>
+            <xsd:extension base="AbstractSortingRuleAssignment">
+                <xsd:attribute name="keyword-group-id" type="Generic.String.40" use="optional" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortingRuleCampaignAssignment">
+        <xsd:complexContent>
+            <xsd:extension base="AbstractSortingRuleAssignment">
+                <xsd:attribute name="category-id" type="Generic.NonEmptyString.256" use="required" />
+                <xsd:attribute name="campaign-id" type="Generic.NonEmptyString.256" use="required" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="KeywordSearchSortingRuleCampaignAssignment">
+        <xsd:complexContent>
+            <xsd:extension base="AbstractSortingRuleAssignment">
+                <xsd:attribute name="keywords" type="Generic.String.4000" use="optional" />
+                <xsd:attribute name="campaign-id" type="Generic.NonEmptyString.256" use="required" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortingOptions">
+        <xsd:sequence>
+            <xsd:element name="sorting-option" type="SortingOption" minOccurs="1" maxOccurs="100" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SortingOption">
+        <xsd:sequence>
+            <xsd:element name="rule-id" type="Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="rule-context" type="Context" minOccurs="0" maxOccurs="1" default="site"/>
+            <xsd:element name="display-name" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="option-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="SortingDirection">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="ascending" />
+            <xsd:enumeration value="descending" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="WeightedAttributeWeight">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="1" />
+            <xsd:maxInclusive value="100" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="WeightedAttributeDefault">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="minimum" />
+            <xsd:enumeration value="maximum" />
+            <xsd:enumeration value="average" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <!-- Simple Generic types -->
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.40">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="40" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="EmptyElement" />
+
+    <xsd:simpleType name="Context">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="site" />
+            <xsd:enumeration value="global" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="BoostBuryRule">
+        <xsd:sequence>
+            <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="boost-bury-qualifier" type="BoostBuryQualifier" minOccurs="0" maxOccurs="5" />
+            <xsd:element name="boost-bury-target" type="BoostBuryTarget" minOccurs="0" maxOccurs="10" />
+        </xsd:sequence>
+        <xsd:attribute name="rule-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="active-flag" type="xsd:boolean" use="required" />
+        <xsd:attribute name="factor" type="xsd:int" use="required" />
+        <xsd:attribute name="mode" type="ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="BoostBuryQualifier">
+        <xsd:attribute name="type" type="BoostBuryQualifierType" use="required" />
+        <xsd:attribute name="value" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="BoostBuryTarget">
+        <xsd:attribute name="attribute-name" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="attribute-value" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="BoostBuryQualifierType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Category Scope" />
+            <xsd:enumeration value="Search Term Scope" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

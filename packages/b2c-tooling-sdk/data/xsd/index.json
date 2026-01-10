@@ -1,0 +1,222 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-01-10T22:14:13.492Z",
+  "entries": [
+    {
+      "id": "abtest",
+      "filePath": "abtest.xsd"
+    },
+    {
+      "id": "abtestparticipants",
+      "filePath": "abtestparticipants.xsd"
+    },
+    {
+      "id": "assignment",
+      "filePath": "assignment.xsd"
+    },
+    {
+      "id": "bmext",
+      "filePath": "bmext.xsd"
+    },
+    {
+      "id": "cachesettings",
+      "filePath": "cachesettings.xsd"
+    },
+    {
+      "id": "catalog",
+      "filePath": "catalog.xsd"
+    },
+    {
+      "id": "coupon",
+      "filePath": "coupon.xsd"
+    },
+    {
+      "id": "couponredemption",
+      "filePath": "couponredemption.xsd"
+    },
+    {
+      "id": "csrfwhitelists",
+      "filePath": "csrfwhitelists.xsd"
+    },
+    {
+      "id": "customer",
+      "filePath": "customer.xsd"
+    },
+    {
+      "id": "customeractivedata",
+      "filePath": "customeractivedata.xsd"
+    },
+    {
+      "id": "customercdnsettings",
+      "filePath": "customercdnsettings.xsd"
+    },
+    {
+      "id": "customergroup",
+      "filePath": "customergroup.xsd"
+    },
+    {
+      "id": "customerlist",
+      "filePath": "customerlist.xsd"
+    },
+    {
+      "id": "customerlist2",
+      "filePath": "customerlist2.xsd"
+    },
+    {
+      "id": "customerpaymentinstrument",
+      "filePath": "customerpaymentinstrument.xsd"
+    },
+    {
+      "id": "customobject",
+      "filePath": "customobject.xsd"
+    },
+    {
+      "id": "dcext",
+      "filePath": "dcext.xsd"
+    },
+    {
+      "id": "feed",
+      "filePath": "feed.xsd"
+    },
+    {
+      "id": "form",
+      "filePath": "form.xsd"
+    },
+    {
+      "id": "geolocation",
+      "filePath": "geolocation.xsd"
+    },
+    {
+      "id": "giftcertificate",
+      "filePath": "giftcertificate.xsd"
+    },
+    {
+      "id": "inventory",
+      "filePath": "inventory.xsd"
+    },
+    {
+      "id": "jobs",
+      "filePath": "jobs.xsd"
+    },
+    {
+      "id": "library",
+      "filePath": "library.xsd"
+    },
+    {
+      "id": "locales",
+      "filePath": "locales.xsd"
+    },
+    {
+      "id": "metadata",
+      "filePath": "metadata.xsd"
+    },
+    {
+      "id": "oauth",
+      "filePath": "oauth.xsd"
+    },
+    {
+      "id": "order",
+      "filePath": "order.xsd"
+    },
+    {
+      "id": "pagemetatag",
+      "filePath": "pagemetatag.xsd"
+    },
+    {
+      "id": "paymentmethod",
+      "filePath": "paymentmethod.xsd"
+    },
+    {
+      "id": "paymentprocessor",
+      "filePath": "paymentprocessor.xsd"
+    },
+    {
+      "id": "preferences",
+      "filePath": "preferences.xsd"
+    },
+    {
+      "id": "priceadjustmentlimits",
+      "filePath": "priceadjustmentlimits.xsd"
+    },
+    {
+      "id": "pricebook",
+      "filePath": "pricebook.xsd"
+    },
+    {
+      "id": "productlist",
+      "filePath": "productlist.xsd"
+    },
+    {
+      "id": "promotion",
+      "filePath": "promotion.xsd"
+    },
+    {
+      "id": "redirecturl",
+      "filePath": "redirecturl.xsd"
+    },
+    {
+      "id": "returnimportfeed",
+      "filePath": "returnimportfeed.xsd"
+    },
+    {
+      "id": "schedules",
+      "filePath": "schedules.xsd"
+    },
+    {
+      "id": "search",
+      "filePath": "search.xsd"
+    },
+    {
+      "id": "search2",
+      "filePath": "search2.xsd"
+    },
+    {
+      "id": "services",
+      "filePath": "services.xsd"
+    },
+    {
+      "id": "shipping",
+      "filePath": "shipping.xsd"
+    },
+    {
+      "id": "shippingorderupdatefeed",
+      "filePath": "shippingorderupdatefeed.xsd"
+    },
+    {
+      "id": "site",
+      "filePath": "site.xsd"
+    },
+    {
+      "id": "sitemapconfiguration",
+      "filePath": "sitemapconfiguration.xsd"
+    },
+    {
+      "id": "slot",
+      "filePath": "slot.xsd"
+    },
+    {
+      "id": "sort",
+      "filePath": "sort.xsd"
+    },
+    {
+      "id": "sourcecode",
+      "filePath": "sourcecode.xsd"
+    },
+    {
+      "id": "store",
+      "filePath": "store.xsd"
+    },
+    {
+      "id": "tax",
+      "filePath": "tax.xsd"
+    },
+    {
+      "id": "urlrules",
+      "filePath": "urlrules.xsd"
+    },
+    {
+      "id": "xml",
+      "filePath": "xml.xsd"
+    }
+  ]
+}

@@ -37,6 +37,20 @@ pnpm run -r format
 pnpm run -r lint
 ```
 
+## Copyright Header
+
+All TypeScript source files must include this exact copyright header block:
+
+```typescript
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+```
+
+The header is enforced by eslint via `eslint-plugin-header`. The canonical definition is in `eslint.config.mjs` (root) as `copyrightHeader`.
+
 ## Setup/Packaging
 
 - use `pnpm` over `npm` for package management

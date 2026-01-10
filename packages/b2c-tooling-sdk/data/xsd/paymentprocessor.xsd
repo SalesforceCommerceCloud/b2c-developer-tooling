@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema 
+    xmlns           = "http://www.demandware.com/xml/impex/paymentprocessor/2007-03-31"
+    xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+    xmlns:xml       = "http://www.w3.org/XML/1998/namespace"
+    targetNamespace = "http://www.demandware.com/xml/impex/paymentprocessor/2007-03-31"
+    elementFormDefault   = "qualified" 
+    attributeFormDefault = "unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+
+    <xsd:element name="payment-processors">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="payment-processor" type="complexType.PaymentProcessor" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="payment-processor" type="complexType.PaymentProcessor" />
+
+    <!-- complex types: -->
+
+    <xsd:complexType name="complexType.PaymentProcessor">
+        <xsd:sequence>
+            <xsd:element name="description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="preferences" type="complexType.PaymentPreferences" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="processor-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PaymentPreferences">
+        <xsd:sequence>
+            <xsd:element name="all-instances" type="complexType.Preferences" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="development" type="complexType.Preferences" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="staging" type="complexType.Preferences" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="production" type="complexType.Preferences" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Preferences">
+        <xsd:sequence>
+            <xsd:element name="preference" type="complexType.Preference" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Preference" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="preference-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- simple types: -->
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

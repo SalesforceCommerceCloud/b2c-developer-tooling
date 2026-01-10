@@ -3,5 +3,7 @@
   "compilerOptions": {
     "outDir": "dist/esm",
     "rootDir": "src"
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["scripts/**/*"]
 }

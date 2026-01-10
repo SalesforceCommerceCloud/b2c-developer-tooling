@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/oauthprovider/2013-07-16" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    xmlns:xml="http://www.w3.org/XML/1998/namespace" 
+    targetNamespace="http://www.demandware.com/xml/impex/oauthprovider/2013-07-16"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- top-level element -->
+    <xsd:element name="oauth-providers">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="oauth-provider" type="OAuthProvider" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake element for mass data support -->
+    <xsd:element name="oauth-provider" type="OAuthProvider" />
+
+    <!-- provider -->
+    <xsd:complexType name="OAuthProvider">
+        <xsd:sequence>
+            <xsd:element name="description" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="client-id" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="client-secret" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="scopes" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="authorization-url" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="token-url" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="user-info-url" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="access-token-name" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="redirect-pipeline-node" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="provider-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

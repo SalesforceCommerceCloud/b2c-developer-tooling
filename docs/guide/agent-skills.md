@@ -2,54 +2,35 @@
 
 The B2C Developer Tooling project provides agent skills that enhance the AI-assisted development experience when working with Salesforce B2C Commerce projects.
 
-These skills follow the [Agent Skills](https://agentskills.io/home) standard and can be used with multiple agentic IDEs including [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot, and OpenAI Codex.
+These skills follow the [Agent Skills](https://agentskills.io/home) standard and can be used with multiple agentic IDEs including [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot, and VS Code.
 
 ## Overview
 
 When installed, the skills teach AI assistants about B2C Commerce development, CLI commands, and best practices, enabling them to help you with:
 
 - **CLI Operations** - Deploying cartridges, running jobs, managing sandboxes, WebDAV operations
-- **Custom API Development** - Building SCAPI Custom APIs with contracts, implementations, and mappings
-- **Best Practices** - Authentication patterns, troubleshooting workflows, and development practices
+- **B2C Development** - Controllers, ISML templates, forms, localization, logging, metadata
+- **Web Services** - HTTP/SOAP/FTP integrations using the Service Framework
+- **Custom APIs** - Building SCAPI Custom APIs with contracts, implementations, and mappings
 
 ## Available Plugins
 
 | Plugin | Description |
 |--------|-------------|
 | `b2c-cli` | Skills for B2C CLI commands and operations |
-| `b2c` | Skills for B2C Commerce development practices |
+| `b2c` | Skills for B2C Commerce development patterns |
 
 ### Plugin: b2c-cli
 
-Skills for using the B2C CLI to manage your Commerce Cloud instances:
+Skills for using the B2C CLI to manage your Commerce Cloud instances. Covers code deployment, job execution, site archive import/export, WebDAV file operations, On-Demand Sandbox management, and more.
 
-| Skill | Description |
-|-------|-------------|
-| `b2c-code` | Code version deployment and management |
-| `b2c-job` | Job execution and site archive import/export (IMPEX) |
-| `b2c-sites` | Storefront sites listing and inspection |
-| `b2c-webdav` | WebDAV file operations (ls, get, put, rm, zip, unzip) |
-| `b2c-ods` | On-Demand Sandbox management |
-| `b2c-mrt` | Managed Runtime project and deployment management |
-| `b2c-slas` | SLAS client management |
-| `b2c-scapi-custom` | Custom API endpoint status and management |
+Browse skills: [plugins/b2c-cli/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c-cli/skills)
 
 ### Plugin: b2c
 
-Skills for B2C Commerce development practices and patterns:
+Skills for B2C Commerce development patterns and practices. Covers controllers, ISML templates, forms, localization, logging, metadata, web services, custom job steps, Page Designer, Business Manager extensions, and Custom API development.
 
-| Skill | Description |
-|-------|-------------|
-| `b2c-custom-api-development` | Comprehensive guide for building SCAPI Custom APIs |
-
-The Custom API development skill covers:
-- The three required components (contract, implementation, mapping)
-- OAS 3.0 schema authoring with security schemes
-- Implementation patterns with RESTResponseMgr
-- Shopper vs Admin API differences
-- Caching and remote includes
-- Circuit breaker protection
-- Troubleshooting workflows
+Browse skills: [plugins/b2c/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c/skills)
 
 ## Installation with Claude Code
 
@@ -122,36 +103,24 @@ claude plugin marketplace remove b2c-developer-tooling
 
 The B2C skills follow the [Agent Skills](https://agentskills.io/home) standard and can be used with other AI-powered development tools.
 
-### CLI Setup Command
+### Cursor
 
-::: warning Coming Soon
-The `b2c setup skills` command is not yet available. Use the manual method below for now.
-:::
+See the [Cursor Skills documentation](https://cursor.com/docs/context/skills) for configuration instructions.
 
-```bash
-# Configure skills for your IDE (coming soon)
-b2c setup skills --ide cursor
-b2c setup skills --ide copilot
-```
+Copy skill files from the plugin directories to your Cursor skills location:
 
-### Manual Setup
+- [b2c-cli skills](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c-cli/skills)
+- [b2c skills](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c/skills)
 
-You can manually copy skill files from the GitHub repository to your IDE's configuration:
+### VS Code with GitHub Copilot
 
-- **b2c-cli skills**: [plugins/b2c-cli/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c-cli/skills)
-- **b2c skills**: [plugins/b2c/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c/skills)
+See the [VS Code Agent Skills documentation](https://code.visualstudio.com/docs/copilot/customization/agent-skills) for configuration instructions.
 
-#### Cursor
+You can also append skill content to `.github/copilot-instructions.md` in your repository.
 
-Copy the `SKILL.md` files to `.cursor/rules/` in your project or configure globally in Cursor settings.
+### Other IDEs
 
-#### GitHub Copilot
-
-Append the skill content to `.github/copilot-instructions.md` in your repository.
-
-#### OpenAI Codex
-
-Configure per the OpenAI Codex documentation for custom instructions.
+For other AI-powered IDEs, copy the `SKILL.md` files and any `references/` directories to your IDE's custom instructions location.
 
 ## Usage Examples
 
@@ -172,10 +141,13 @@ Once installed, you can ask your AI assistant to help with B2C Commerce tasks:
 **Create a sandbox:**
 > "Create a new On-Demand Sandbox with TTL of 48 hours"
 
-**Check Custom API status:**
-> "Show me the status of my Custom API endpoints"
-
 **Build a Custom API:**
 > "Help me create a Custom API for loyalty information"
+
+**Add logging:**
+> "Add logging to my checkout controller"
+
+**Create a web service:**
+> "Create an HTTP service to call the payment gateway API"
 
 The AI will use the appropriate skills and CLI commands based on your request.

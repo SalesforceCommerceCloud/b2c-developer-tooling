@@ -15,7 +15,9 @@
     "@oclif/plugin-plugins": "^5",
     "@oclif/plugin-version": "^2",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "cliui": "^9.0.1"
+    "cliui": "^9.0.1",
+    "marked": "^15.0.0",
+    "marked-terminal": "^7.3.0"
   },
   "bundleDependencies": [
     "@oclif/core",
@@ -25,7 +27,9 @@
     "@oclif/plugin-plugins",
     "@oclif/plugin-version",
     "@salesforce/b2c-tooling-sdk",
-    "cliui"
+    "cliui",
+    "marked",
+    "marked-terminal"
   ],
   "devDependencies": {
     "@eslint/compat": "^1",
@@ -87,6 +91,9 @@
       },
       "code": {
         "description": "Deploy and manage code versions on instances"
+      },
+      "docs": {
+        "description": "Search and read Script API documentation"
       },
       "job": {
         "description": "Run jobs and import/export site archives"

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/customerpaymentinstrument/2014-03-31"
+    xmlns="http://www.demandware.com/xml/impex/customerpaymentinstrument/2014-03-31"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="customers">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="customer" type="complexType.Customer" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="customer" type="complexType.Customer" />
+
+    <xsd:complexType name="complexType.Customer" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="payment-instruments" type="complexType.PaymentInstruments" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="customer-no" type="simpleType.Generic.String.100" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PaymentInstruments">
+        <xsd:sequence>
+            <xsd:element name="payment-instrument" type="complexType.PaymentInstrument" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PaymentInstrument">
+        <xsd:sequence maxOccurs="1" minOccurs="0">
+        
+            <!--  payment instrument details -->
+            <xsd:choice maxOccurs="1" minOccurs="0">
+                <xsd:element name="credit-card" type="complexType.CreditCard" />
+                <xsd:element name="bank-transfer" type="complexType.BankTransfer" />
+                <xsd:element name="bml" type="complexType.BillMeLater" />
+                <xsd:element name="gift-certificate" type="complexType.GiftCertificate" />
+                <xsd:element name="custom-method" type="complexType.CustomPaymentMethod" />
+            </xsd:choice>
+            
+            <xsd:element name="ek-id" type="xsd:int" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>A positive value identifies a known encryption serial number, a value of -1 indicates no encryption</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.BankTransfer">
+        <xsd:sequence>
+            <xsd:element name="account-number" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="account-holder" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="routing-number" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="drivers-license" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="drivers-license-state-code" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.BillMeLater">
+        <xsd:sequence>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CreditCard">
+        <xsd:sequence>
+            <xsd:element name="card-type" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The type of the card. Some recognized card types are exported in different formats than they are stored internally: Visa, Master, Amex, Discover are exported in all capital letters: VISA, MASTER, AMEX, DISCOVER. All other card types are exported precisely as they are stored.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="card-number" type="simpleType.Generic.String.4000" minOccurs="0"></xsd:element>
+            <xsd:element name="card-token" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Creditcard tokenization - card-token is used to store the token provided by a creditcard tokenization service. When used, a masked creditcard number can be stored in the card-number and the ek-id is set to -1 to indicate the card-number is permenantly masked</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="card-holder" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="from-month" type="xsd:int" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Some card types maintain a start date in addition to an expiration date (Amex, Solo, Switch, etc). Other card types may ignore these elements.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="from-year" type="xsd:int" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="expiration-month" type="xsd:int" minOccurs="0"></xsd:element>
+            <xsd:element name="expiration-year" type="xsd:int" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="issue-number" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Issue number is a concept supported by Solo/Switch cards in the UK, and is either a 1 or 2 digit number.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the CustomerPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomPaymentMethod">
+        <xsd:sequence>
+            <xsd:element name="method-name" type="simpleType.Generic.String.256" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.GiftCertificate">
+        <xsd:sequence>
+            <xsd:element name="giftcertificate-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="100" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+        
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

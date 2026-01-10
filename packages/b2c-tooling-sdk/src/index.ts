@@ -158,5 +158,29 @@ export type {
 export {listSites, getSite} from './operations/sites/index.js';
 export type {Site} from './operations/sites/index.js';
 
+// Operations - Docs
+export {
+  searchDocs,
+  readDoc,
+  readDocByQuery,
+  listDocs,
+  loadSearchIndex,
+  listSchemas,
+  readSchema,
+  readSchemaByQuery,
+  searchSchemas,
+  downloadDocs,
+} from './operations/docs/index.js';
+export type {
+  DocEntry,
+  SearchIndex,
+  SearchResult,
+  SchemaEntry,
+  SchemaIndex,
+  SchemaSearchResult,
+  DownloadDocsOptions,
+  DownloadDocsResult,
+} from './operations/docs/index.js';
+
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';

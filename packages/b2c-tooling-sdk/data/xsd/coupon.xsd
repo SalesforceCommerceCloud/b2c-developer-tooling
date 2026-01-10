@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema
+        xmlns="http://www.demandware.com/xml/impex/coupon/2008-06-17"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        xmlns:xml="http://www.w3.org/XML/1998/namespace"
+        targetNamespace="http://www.demandware.com/xml/impex/coupon/2008-06-17"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- top-level element -->
+    <xsd:element name="coupons">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="coupon" type="Coupon" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="coupon-codes" type="CouponCodes" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake element for mass data support -->
+    <xsd:element name="coupon" type="Coupon" />
+    <xsd:element name="code" type="Generic.NonEmptyString.256" />
+
+    <!-- coupon -->
+    <xsd:complexType name="Coupon" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="case-insensitive" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="redemption-limits" type="RedemptionLimits" minOccurs="0" maxOccurs="1" />
+            <xsd:choice minOccurs="0" maxOccurs="1">
+                <xsd:element name="single-code" type="Generic.NonEmptyString.256" />
+                <xsd:element name="multiple-codes" type="CodeList" />
+                <xsd:element name="system-codes" type="SystemCodes" />
+            </xsd:choice>
+            <xsd:element name="sharing" type="CouponSharing" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="coupon-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="RedemptionLimits" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="limit-per-code" type="Generic.NonNegativeInt" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="limit-per-customer" type="Generic.NonNegativeInt" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="limit-per-time-frame" type="RedemptionLimitPerTimeFrame" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="allow-multiple-codes-per-order" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="RedemptionLimitPerTimeFrame" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="limit" type="Generic.NonNegativeInt" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="time-frame" type="simpleType.CouponRedemptionTimeFrame" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CouponSharing" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="shared-with-site" type="SharedWithSite" minOccurs="0" maxOccurs="100" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SharedWithSite" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="redemption-limits" type="RedemptionLimits" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="CodeList" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="code" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="999" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SystemCodes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="max-number-of-codes" type="Generic.NonNegativeInt" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="code-prefix" type="simpleType.CodePrefix" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="code-length" type="simpleType.CouponCodeLength" minOccurs="0" maxOccurs="1" />   
+            <xsd:element name="include-vowels" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="include-dashes" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="algorithm" type="simpleType.CouponCodeAlgorithm" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="issue-index" type="Generic.NonNegativeInt" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="seed-info" type="SeedInfo" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SeedInfo" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="seed-number" type="Generic.NonNegativeInt" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="key" type="Generic.NonEmptyString.28" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="slate" type="Generic.NonEmptyString.28" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- coupon codes -->
+
+    <xsd:complexType name="CouponCodes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="code" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="coupon-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="Generic.NonEmptyString.28">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="28"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="Generic.NonNegativeInt">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.CouponCodeLength">
+        <xsd:restriction base="xsd:int">
+            <xsd:enumeration value="10" />
+            <xsd:enumeration value="11" />
+            <xsd:enumeration value="12" />
+            <xsd:enumeration value="13" />
+            <xsd:enumeration value="14" />
+            <xsd:enumeration value="15" />
+            <xsd:enumeration value="16" />
+            <xsd:enumeration value="17" />
+            <xsd:enumeration value="18" />
+            <xsd:enumeration value="19" />
+            <xsd:enumeration value="20" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.CouponCodeAlgorithm">
+        <xsd:restriction base="Generic.String">
+            <xsd:pattern value="F1" />
+            <xsd:pattern value="F2" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+    <xsd:simpleType name="simpleType.CouponRedemptionTimeFrame">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="0" />
+            <xsd:maxInclusive value="999" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.32">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="32" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.CodePrefix">
+    <xsd:restriction base="Generic.String">
+          <xsd:minLength value="0" />
+          <xsd:maxLength value="256" />
+          <xsd:pattern value="[a-zA-Z0-9$%/()\[\]{}=?!._*|+~#&amp;@ ]*" />
+    </xsd:restriction>
+</xsd:simpleType>
+    
+</xsd:schema>
+

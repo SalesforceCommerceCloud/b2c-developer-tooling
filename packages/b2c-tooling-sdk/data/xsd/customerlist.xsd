@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema
+    xmlns="http://www.demandware.com/xml/impex/customerlist/2010-06-30"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.demandware.com/xml/impex/customerlist/2010-06-30"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="customer-lists">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="customer-list" type="complexType.CustomerList" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake top level elements to allow JAXB subsection parsing -->
+    <xsd:element name="customer-list" type="complexType.CustomerList" />
+
+    <xsd:complexType name="complexType.CustomerList">
+       <xsd:sequence>
+            <xsd:element name="description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="data-retention-days" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customerno-sequence-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="customer-lockout-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-failed-logins" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="lockout-effective-period" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-login-attempt-reset-time" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-password-length" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-password-special-chars" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="force-password-contains-alpha" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="force-password-contains-numeric" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="force-password-mixed-case" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-password-age" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-password-reset-token-age" type="xsd:integer" minOccurs="0" maxOccurs="1" />
+       </xsd:sequence>
+       <xsd:attribute name="list-id" type="simpleType.Generic.NonEmptyString.32" use="required" />
+       <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+    
+    <!-- Shared Complex Types -->
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="32" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

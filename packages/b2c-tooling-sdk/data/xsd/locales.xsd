@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://www.demandware.com/xml/impex/locales/2015-04-30"
+        xmlns:loc="http://www.demandware.com/xml/impex/locales/2015-04-30"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <xsd:element name="locales" type="loc:complexType.LocaleList">
+        <xsd:unique name="localeId">
+            <xsd:selector xpath="loc:locale"/>
+            <xsd:field xpath="@locale-id"/>
+        </xsd:unique>
+    </xsd:element>
+
+    <xsd:complexType name="complexType.LocaleList" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="locale" type="loc:complexType.Locale" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+ 
+    <xsd:complexType name="complexType.Locale" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="fallback-locale" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="regional-settings" type="loc:complexType.RegionalSettingList" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="locale-id" type="loc:simpleType.Generic.LocaleID" use="optional" />
+        <xsd:attribute name="mode" type="loc:simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.RegionalSettingList" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="decimal-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="decimal-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="decimal-grouping-character" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="decimal-decimal-separator" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="short-currency-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="short-currency-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="long-currency-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="long-currency-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="currency-grouping-character" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="currency-decimal-separator" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="long-date-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="short-date-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="time-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="date-time-am-string" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="date-time-pm-string" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="integer-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="integer-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="integer-grouping-character" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="integer-decimal-character" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="short-quantity-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="short-quantity-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="long-quantity-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="long-quantity-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="quantity-grouping-character" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="quantity-decimal-character" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-decimal-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-decimal-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-currency-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-currency-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-date-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-time-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-date-time-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-integer-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-integer-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-quantity-negative-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="input-quantity-positive-pattern" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="date-symbol-am-string" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-pm-string" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-first-day-of-week" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-calendar-type" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-eras-bce" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-eras-ce" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-jan" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-feb" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-mar" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-apr" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-may" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-jun" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-jul" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-aug" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-sep" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-oct" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-nov" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-month-dec" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-jan" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-feb" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-mar" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-apr" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-may" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-jun" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-jul" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-aug" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-sep" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-oct" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-nov" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-month-dec" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-weekday-sun" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-weekday-mon" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-weekday-tue" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-weekday-wed" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-weekday-thu" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-weekday-fri" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-weekday-sat" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-weekday-sun" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-weekday-mon" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-weekday-tue" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-weekday-wed" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-weekday-thu" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-weekday-fri" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="date-symbol-short-weekday-sat" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-decimal-separator" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-grouping-character" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-zero-digit" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-exponent-separator" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-infinity" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-minus-sign" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-not-a-number" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-percent-sign" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="number-symbol-per-mill" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+
+            <xsd:element name="message-format-pattern-decimal-negative" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-decimal-positive" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-integer-negative" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-integer-positive" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-currency-negative" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-currency-positive" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-percentage-negative" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-percentage-positive" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-date-time-short" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-date-short" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-time-short" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-date-medium" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-time-medium" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-date-long" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-time-long" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-date-full" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="message-format-pattern-time-full" type="loc:simpleType.Generic.RegionalSettingPattern" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+ 
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+ 
+    <!-- Notation is languagecode_countrycode or "default" -->
+    <!-- ISO 3166 alpha-2 country code, see IANA Language Subtag Registry (search for "Type: region"). We enforce canonic upper case notation.-->
+    <!-- ISO 639 alpha-2 language code, see IANA Language Subtag Registry (search for "Type: language"). We enforce canonic lower case notation. -->
+    <xsd:simpleType name="simpleType.Generic.LocaleID">
+        <xsd:restriction base="loc:simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="10" />
+            <xsd:pattern value="[a-z]{2}(_[A-Z]{2})?|default" />
+        </xsd:restriction>
+    </xsd:simpleType>
+ 
+    <xsd:simpleType name="simpleType.Generic.RegionalSettingPattern">
+        <xsd:restriction base="loc:simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+     
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+        xmlns           = "http://www.demandware.com/xml/impex/pagemetatag/2016-08-22"
+        xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+        xmlns:xml       = "http://www.w3.org/XML/1998/namespace"
+        targetNamespace = "http://www.demandware.com/xml/impex/pagemetatag/2016-08-22"
+        elementFormDefault   = "qualified"
+        attributeFormDefault = "unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+    
+    <xsd:element name="page-meta-tags" type="complexType.PageMetaTags" />
+     
+    <xsd:complexType name="complexType.PageMetaTags" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-meta-tag-definitions" type="complexType.PageMetaTagDefinitions" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.PageMetaTagDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-meta-tag-definition" type="complexType.PageMetaTagDefinition" minOccurs="0" maxOccurs="50" />
+        </xsd:sequence>
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.PageMetaTagDefinition" mixed="false">
+        <xsd:attribute name="meta-tag-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+        <xsd:attribute name="type" type="simpleType.MetaTagType" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.PageMetaTagRules" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="home-page-meta-tag-rules" type="complexType.PageMetaTagRulesContainer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-detail-page-meta-tag-rules" type="complexType.PageMetaTagRulesContainer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-listing-page-meta-tag-rules" type="complexType.PageMetaTagRulesContainer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="content-detail-page-meta-tag-rules" type="complexType.PageMetaTagRulesContainer" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="content-listing-page-meta-tag-rules" type="complexType.PageMetaTagRulesContainer" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.PageMetaTagRulesContainer" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-meta-tag-rule" type="complexType.PageMetaTagRule" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.PageMetaTagRule" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="description" type="simpleType.Generic.NonEmptyString.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="rule" type="complexType.Rule" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="rule-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+        <xsd:attribute name="meta-tag-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.Rule" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.NonEmptyString.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+     
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="4000" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+         
+    <xsd:simpleType name="simpleType.MetaTagType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="name" />
+            <xsd:enumeration value="property" />
+            <xsd:enumeration value="title" />
+        </xsd:restriction>
+    </xsd:simpleType>
+ 
+   <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+     
+    <!-- simple Generic types -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+     
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

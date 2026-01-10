@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.demandware.com/xml/impex/metadata/2006-10-31"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="metadata">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="type-extension" type="complexType.ObjectTypeExtension" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="custom-type" type="complexType.CustomObjectType" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="custom-preference-group" type="complexType.CustomPreferenceGroup" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="type-extension" type="complexType.ObjectTypeExtension" />
+    <xsd:element name="custom-type" type="complexType.CustomObjectType" />
+    <xsd:element name="custom-preference-group" type="complexType.CustomPreferenceGroup" />
+
+    <xsd:complexType name="complexType.ObjectTypeExtension" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="system-attribute-definitions" type="complexType.SystemAttributeDefinitions" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attribute-definitions" type="complexType.CustomAttributeDefinitions" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="group-definitions" type="complexType.GroupDefinitions" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="type-id" type="simpleType.Definition.ID" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomObjectType" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="staging-mode" type="simpleType.StagingMode" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="storage-scope" type="simpleType.StorageScope" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="retention-days" type="xsd:positiveInteger" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="key-definition" type="complexType.KeyAttributeDefinition" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="attribute-definitions" type="complexType.CustomAttributeDefinitions" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="group-definitions" type="complexType.GroupDefinitions" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="type-id" type="simpleType.Definition.ID" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.GroupDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-group" type="complexType.GroupDefinition" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.GroupDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="attribute" type="complexType.AttributeReference" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="group-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeReference" mixed="false">
+        <xsd:attribute name="attribute-id" type="simpleType.Definition.ID" use="required" />
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SystemAttributeDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-definition" type="complexType.SystemAttributeDefinition" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SystemAttributeDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="mandatory-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element attribute 'mandatory' is immutable and will be ignored during import and export.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="searchable-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'searchable-flag' is not longer supported and will be ignored during import
+                        and export. Please use the element 'searchable-attributes' (SearchableAttributes) of search2.xsd to define searachable attributes.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="visible-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="order-required-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-height" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="unit" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="scale" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="regex" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="select-multiple-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="value-definitions" type="complexType.ValueDefinitions" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Definition.ID" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomAttributeDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-definition" type="complexType.CustomAttributeDefinition" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomAttributeDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="type" type="simpleType.AttributeType" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="localizable-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="site-specific-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="mandatory-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="searchable-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'searchable-flag' is not longer supported and will be ignored during import
+                        and export. Please use the element 'searchable-attributes' (SearchableAttributes) of search2.xsd to define searchable attributes.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="visible-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="externally-managed-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="order-required-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="externally-defined-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-height" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="unit" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="scale" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="regex" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="select-multiple-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="value-definitions" type="complexType.ValueDefinitions" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="default-value" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Definition.ID" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.KeyAttributeDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="type" type="simpleType.KeyAttributeType" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="searchable-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'searchable-flag' is not longer supported and will be ignored during import
+                        and export. Please use the element 'searchable-attributes' (SearchableAttributes) of search2.xsd to define searchable attributes.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="min-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-height" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="regex" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Definition.ID" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ValueDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="value-definition" type="complexType.ValueDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="immutable" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ValueDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="value" type="simpleType.Generic.NonEmptyString.4000" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomPreferenceGroup" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="preference-definitions" type="complexType.CustomPreferenceDefinitions" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="group-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomPreferenceDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="preference-definition" type="complexType.CustomPreferenceDefinition" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomPreferenceDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="type" type="simpleType.PreferenceType" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="visible-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="default-value" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="preference-id" type="simpleType.Definition.ID" use="required" />
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+    <xsd:complexType name="sharedType.LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <!-- Simple helper types -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="4000" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>    
+    
+    <!--  Nonempty string with no leading or trailing whitespace and no '|' -->
+    <xsd:simpleType name="simpleType.Definition.ID">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="[^\s|]|([^\s|][^|]*[^\s|])" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.AttributeType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="string" />
+            <xsd:enumeration value="int" />
+            <xsd:enumeration value="double" />
+            <xsd:enumeration value="text" />
+            <xsd:enumeration value="html" />
+            <xsd:enumeration value="image" />
+            <xsd:enumeration value="boolean" />
+            <xsd:enumeration value="date" />
+            <xsd:enumeration value="datetime" />
+            <xsd:enumeration value="email" />
+            <xsd:enumeration value="password" />
+            <xsd:enumeration value="set-of-string" />
+            <xsd:enumeration value="set-of-int" />
+            <xsd:enumeration value="set-of-double" />
+            <xsd:enumeration value="enum-of-string" />
+            <xsd:enumeration value="enum-of-int" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PreferenceType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="string" />
+            <xsd:enumeration value="int" />
+            <xsd:enumeration value="double" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.KeyAttributeType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="string" />
+            <xsd:enumeration value="int" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.StagingMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="no-staging" />
+            <xsd:enumeration value="source-to-target" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.StorageScope">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="site" />
+            <xsd:enumeration value="organization" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

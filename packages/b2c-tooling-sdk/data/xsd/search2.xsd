@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        xmlns:xml="http://www.w3.org/XML/1998/namespace"
+        targetNamespace="http://www.demandware.com/xml/impex/search2/2010-02-19"
+        xmlns="http://www.demandware.com/xml/impex/search2/2010-02-19"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <!-- demandware main tag -->
+    <xsd:element name="search">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="searchable-attributes" type="SearchableAttributes" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="stopword-list" type="StopwordList" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="synonym-list" type="SynonymList" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="hypernym-list" type="HypernymList" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="redirect-list" type="RedirectList" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="suggestion-list" type="SuggestionList" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="compound-word-list" type="CompoundWordList" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="common-phrase-list" type="CommonPhraseList" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="category-exclusion-list" type="CategoryExclusionList" minOccurs="0"
+                            maxOccurs="unbounded"/>
+                <xsd:element name="stemming-exception-list" type="StemmingExceptionList" minOccurs="0"
+                            maxOccurs="unbounded"/>
+                <xsd:element name="index-settings" type="IndexingSettings" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="keyword-group-list" type="KeywordGroupList" minOccurs="0" maxOccurs="1"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake element definition for top level elements -->
+    <xsd:element name="searchable-attributes" type="SearchableAttributes"/>
+    <xsd:element name="stopword-list" type="StopwordList"/>
+    <xsd:element name="synonym-list" type="SynonymList"/>
+    <xsd:element name="hypernym-list" type="HypernymList"/>
+    <xsd:element name="redirect-list" type="RedirectList"/>
+    <xsd:element name="suggestion-list" type="SuggestionList"/>
+    <xsd:element name="compound-word-list" type="CompoundWordList"/>
+    <xsd:element name="common-phrase-list" type="CommonPhraseList"/>
+    <xsd:element name="category-exclusion-list" type="CategoryExclusionList"/>
+    <xsd:element name="stemming-exception-list" type="StemmingExceptionList"/>
+    <xsd:element name="index-settings" type="IndexingSettings"/>
+    <xsd:element name="keyword-group-list" type="KeywordGroupList"/>
+
+    <xsd:complexType name="IndexingSettings">
+        <xsd:sequence>
+            <xsd:element name="full-reindexing-schedule" type="FullReindexingSchedule" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="full-reindexing-enabled" type="EnabledIndexTypes" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="incremental-reindexing-enabled" type="EnabledIndexTypes" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="indexed-locales" type="IndexedLocales" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="stemming" type="Stemming" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="EnabledIndexTypes">
+        <xsd:sequence>
+            <xsd:element name="index-type" type="simpleType.IndexType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.IndexType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="product"/>
+            <xsd:enumeration value="content"/>
+            <xsd:enumeration value="redirect"/>
+            <xsd:enumeration value="synonym"/>
+            <xsd:enumeration value="suggest"/>
+            <xsd:enumeration value="availability"/>
+            <xsd:enumeration value="activedata"/>
+            <xsd:enumeration value="catalog"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="FullReindexingSchedule">
+        <xsd:sequence>
+            <xsd:element name="date-from" type="xsd:date" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="start-time" type="xsd:time" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="factor" type="xsd:integer" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="unit" type="simpleType.Unit" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Unit">
+        <xsd:restriction base="xsd:string">
+            <!-- minutes and hours are pseudo deprecated -->
+            <xsd:enumeration value="minutes"/>
+            <xsd:enumeration value="hours"/>
+            <xsd:enumeration value="days"/>
+            <xsd:enumeration value="weeks"/>
+            <xsd:enumeration value="months"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="IndexedLocales">
+        <xsd:sequence>
+            <xsd:element name="locale" type="xsd:language" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Stemming">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.256">
+                <xsd:attribute ref="xml:lang" use="required"/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SearchableAttributes">
+        <xsd:sequence>
+            <xsd:element name="searchable-attribute" type="SearchableAttribute" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SearchableAttribute">
+        <xsd:sequence>
+            <xsd:element name="attribute-path" type="AttributePath" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="boost" type="BoostFactor" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="auto-correction" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="StopwordList">
+        <xsd:sequence>
+            <xsd:element name="stopwords" type="Stopwords" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="Stopwords">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SynonymList">
+        <xsd:sequence>
+            <xsd:element name="synonyms" type="Synonyms" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="Synonyms">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="HypernymList">
+        <xsd:sequence>
+            <xsd:element name="hypernym-rule" type="HypernymRule" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="HypernymRule">
+        <xsd:sequence>
+            <xsd:element name="hyponyms" type="Hyponyms" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="hypernyms" type="Hypernyms" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Hyponyms">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="Hypernyms">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="StemmingExceptionList">
+        <xsd:sequence>
+            <xsd:element name="stemming-exception-rule" type="StemmingExceptionRule" minOccurs="0" maxOccurs="500"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="StemmingExceptionRule">
+        <xsd:sequence>
+            <xsd:element name="stemming-exceptions" type="StemmingExceptions" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="stem" type="Stem" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="KeywordGroupList">
+        <xsd:sequence>
+            <xsd:element name="keyword-group" type="KeywordGroup" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="KeywordGroup">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000">
+                <xsd:attribute name="id" type="Generic.String.40" use="required"/>
+                <xsd:attribute ref="xml:lang" use="required"/>
+                <xsd:attribute name="merge-mode" type="MergeMode" use="optional"/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+
+    <xsd:complexType name="StemmingExceptions">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="Stem">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CompoundWordList">
+        <xsd:sequence>
+            <xsd:element name="compound-words" type="CompoundWords" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="CompoundWords">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CommonPhraseList">
+        <xsd:sequence>
+            <xsd:element name="common-phrases" type="CommonPhrases" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="CommonPhrases">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000">
+                <xsd:attribute name="match-mode" type="MatchMode" use="required"/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CategoryExclusionList">
+        <xsd:sequence>
+            <xsd:element name="category-exclusions" type="CategoryExclusions" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="CategoryExclusions">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="RedirectList">
+        <xsd:sequence>
+            <xsd:element name="redirect" type="Redirect" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Redirect">
+        <xsd:sequence>
+            <xsd:element name="keywords" type="LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="online-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="secure-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:choice minOccurs="1" maxOccurs="1">
+                <xsd:element name="category-redirect" type="CategoryRedirect" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="product-redirect" type="ProductRedirect" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="page-redirect" type="PageRedirect" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="url-redirect" type="URLRedirect" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="pipeline-redirect" type="PipelineRedirect" minOccurs="0" maxOccurs="1"/>
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CategoryRedirect">
+        <xsd:attribute name="category-id" type="Generic.NonEmptyString.256" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductRedirect">
+        <xsd:attribute name="product-id" type="Generic.NonEmptyString.100" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="PageRedirect">
+        <xsd:attribute name="page-id" type="Generic.NonEmptyString.256" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="URLRedirect">
+        <xsd:attribute name="target-url" type="xsd:anyURI" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="PipelineRedirect">
+        <xsd:attribute name="pipeline-name" type="Generic.String.256" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="SuggestionList">
+        <xsd:sequence>
+            <xsd:element name="suggestions" type="Suggestions" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="exclusions" type="Exclusions" minOccurs="0" maxOccurs="500"/>
+            <xsd:element name="minimum-term-length" type="xsd:integer" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required"/>
+        <xsd:attribute name="mode" type="ImportMode" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="Suggestions">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="Exclusions">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="MatchMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="exact-match"/>
+            <xsd:enumeration value="last-word-match"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+    <!--
+        Supported attribute paths: 
+        - product.<system-attribute-id> 
+        - product.custom.<custom-attribute-id>
+        - category.<system-attribute-id> 
+        - category.custom.<custom-attribute-id>
+        - categoryassignment.<system-attribute-id> 
+        - categoryassignment.custom.<custom-attribute-id>
+        - content.<system-attribute-id> 
+        - content.custom.<custom-attribute-id>
+    -->
+    <xsd:simpleType name="AttributePath">
+        <xsd:restriction base="Generic.NonEmptyString.256">
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="BoostFactor">
+        <xsd:restriction base="xsd:double">
+            <xsd:minInclusive value="0.01"/>
+            <xsd:maxInclusive value="100.00"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="256"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="4000"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.40">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="40"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="Generic.NonEmptyString.100">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="100"/>
+            <xsd:pattern value="\S(.*\S)*"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="256"/>
+            <xsd:pattern value="\S(.*\S)*"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000">
+                <xsd:attribute ref="xml:lang"/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="MergeMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="remove"/>
+            <xsd:enumeration value="add"/>
+            <xsd:enumeration value="merge"/>
+            <xsd:enumeration value="replace"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="10"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+</xsd:schema>

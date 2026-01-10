@@ -1,0 +1,120 @@
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/redirecturl/2011-09-01" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    targetNamespace="http://www.demandware.com/xml/impex/redirecturl/2011-09-01"
+    attributeFormDefault="unqualified" 
+    elementFormDefault="qualified" >
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- top-level element -->
+    <xsd:element name="redirect-urls" type="RedirectUrls"/>
+
+    <xsd:complexType name="RedirectUrls">
+        <xsd:sequence>
+            <xsd:element name="redirect-url" type="RedirectUrl" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:element name="redirect-url" type="RedirectUrl" />
+
+    <xsd:complexType name="RedirectUrl">
+        <xsd:sequence>
+            <xsd:element name="destination-id" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="destination-type" type="UrlDestinationType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-category-id" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="status-code" type="UrlStatusCode" minOccurs="0" maxOccurs="1" default="301" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" default="true" />
+            <xsd:element name="priority" type="maxinteger" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="destination-url" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="additional-url-params" type="Generic.String.2048" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="copy-source-params" type="CopySourceParamsType" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="uri" type="Generic.NonEmptyString.2048" use="optional" />
+        <xsd:attribute name="source-id" type="Generic.NonEmptyString.256" use="optional" />
+        <xsd:attribute name="source-type" type="UrlSourceType" use="optional" />
+        <xsd:attribute name="mode" type="ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="UrlSourceType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="category"/>
+            <xsd:enumeration value="product"/>
+            <xsd:enumeration value="folder"/>
+            <xsd:enumeration value="content"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="UrlDestinationType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="category"/>
+            <xsd:enumeration value="product"/>
+            <xsd:enumeration value="folder"/>
+            <xsd:enumeration value="content"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="UrlStatusCode">
+        <xsd:restriction base="xsd:integer">
+            <xsd:enumeration value="301"/>
+            <xsd:enumeration value="302"/>
+            <xsd:enumeration value="307"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.2048">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="2048" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.2048">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="2048" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="maxinteger">
+        <xsd:restriction base="xsd:integer">
+            <xsd:minInclusive value="1"/>
+            <xsd:maxInclusive value="2147483647"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="CopySourceParamsType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="default" />
+            <xsd:enumeration value="yes" />
+            <xsd:enumeration value="no" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

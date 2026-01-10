@@ -1,0 +1,9 @@
+# Package dw.customer.oauth
+
+## Classes
+| Class | Description |
+| --- | --- |
+| [OAuthAccessTokenResponse](dw.customer.oauth.OAuthAccessTokenResponse.md) | Contains OAuth-related artifacts from the HTTP response from the third-party  OAuth server when requesting an access token |
+| [OAuthFinalizedResponse](dw.customer.oauth.OAuthFinalizedResponse.md) | Contains the combined responses from the third-party OAuth server when  finalizing the authentication.<br/><br/>  Contains both the [OAuthAccessTokenResponse](dw.customer.oauth.OAuthAccessTokenResponse.md) <br/>  and the [OAuthUserInfoResponse](dw.customer.oauth.OAuthUserInfoResponse.md) |
+| [OAuthLoginFlowMgr](dw.customer.oauth.OAuthLoginFlowMgr.md) | The OAuthLoginFlowMgr encapsulates interactions with third party  OAuth providers to support the Authorization Code Flow.<br/>  The way to use is:  <ul>  <li>call [initiateOAuthLogin(String)](dw.customer.oauth.OAuthLoginFlowMgr.md#initiateoauthloginstring)</li>  <li>redirect the user to the returned link</li>  <li>when the user authenticates there the server will call back to  a URL configured on the provider's web site</li>  <li>when processing the request made from the provider's web site  you have two choices - either call the [obtainAccessToken()](dw.customer.oauth.OAuthLoginFlowMgr.md#obtainaccesstoken)  and [obtainUserInfo(String, String)](dw.customer.oauth.OAuthLoginFlowMgr.md#obtainuserinfostring-string)  methods one after another separately (gives you more flexibility),  or call the [finalizeOAuthLogin()](dw.customer.oauth.OAuthLoginFlowMgr.md#finalizeoauthlogin) method which internally  calls the other two (simpler to use).</li>  </ul>  Sample code for using it: |
+| [OAuthUserInfoResponse](dw.customer.oauth.OAuthUserInfoResponse.md) | Contains the response from the third-party OAuth server when  requesting user info. |

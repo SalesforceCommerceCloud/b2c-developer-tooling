@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        xmlns:xml="http://www.w3.org/XML/1998/namespace"
+        targetNamespace="http://www.demandware.com/xml/impex/customeractivedata/2018-01-20"
+        xmlns="http://www.demandware.com/xml/impex/customeractivedata/2018-01-20"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <xsd:element name="customer-active-data-list">
+        <xsd:complexType>
+            <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                <xsd:element name="customer-active-data" type="CustomerActiveData"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="customer-active-data" type="CustomerActiveData"/>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="CustomerActiveData">
+        <xsd:sequence>
+            <xsd:element name="visits-week" type="xsd:int"/>
+            <xsd:element name="visits-month" type="xsd:int"/>
+            <xsd:element name="visits-year" type="xsd:int"/>
+            <xsd:element name="orders" type="xsd:int"/>
+            <xsd:element name="returns" type="xsd:int"/>
+            <xsd:element name="return-value" type="xsd:double"/>
+            <xsd:element name="order-value" type="xsd:double"/>
+            <xsd:element name="order-value-month" type="xsd:double"/>
+            <xsd:element name="avg-order-value" type="xsd:double"/>
+            <xsd:element name="discount-value-without-coupon" type="xsd:double"/>
+            <xsd:element name="discount-value-with-coupon" type="xsd:double"/>
+            <xsd:element name="source-code-orders" type="xsd:int"/>
+            <xsd:element name="gift-units" type="xsd:double"/>
+            <xsd:element name="gift-orders" type="xsd:int"/>
+            <xsd:element name="top-categories-ordered" type="CategoryList"/>
+            <xsd:element name="products-ordered" type="ProductList"/>
+            <xsd:element name="product-masters-ordered" type="ProductList"/>
+            <xsd:element name="products-viewed-month" type="ProductList"/>
+            <xsd:element name="products-abandoned-month" type="ProductList"/>
+            <xsd:element name="last-order-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="customer-no" type="Generic.NonEmptyString.256" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="CategoryList">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="category" type="Generic.String"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductList">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="product" type="Generic.String"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="256"/>
+            <xsd:pattern value="\S|(\S(.*)\S)"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

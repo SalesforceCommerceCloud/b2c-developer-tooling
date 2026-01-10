@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/customercdnsettings/2015-06-30"
+    xmlns="http://www.demandware.com/xml/impex/customercdnsettings/2015-06-30"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="customer-cdn-settings" type="complexType.CustomerCDNSettings" />
+
+    <xsd:complexType name="complexType.CustomerCDNSettings">
+        <xsd:sequence>
+            <xsd:element name="client-ip-header-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="http-static-cdn-root" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="https-static-cdn-root" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="http-dis-cdn-root" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="https-dis-cdn-root" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>
