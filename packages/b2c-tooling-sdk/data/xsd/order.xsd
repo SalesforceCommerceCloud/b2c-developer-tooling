@@ -1,0 +1,1253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/order/2006-10-31"
+    xmlns="http://www.demandware.com/xml/impex/order/2006-10-31"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="orders">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="order" type="complexType.Order" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+            </xsd:sequence>
+            <xsd:attribute name="version" use="optional" type="simpleType.Version"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:simpleType name="simpleType.Version">
+        <xsd:restriction base="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The export version which was used for the export. Since 18.5. Using version 19.2
+                    leads to a check during order import that guest element exist on customer node.
+                    Specifying the guest flag brings additional safety because it reduces the
+                    likelihood that orders are attached to another customer. Since version 20.6 the fields
+                    product-name (4000), suite (256) and price-book-id (256) support longer string values
+                    due to their implementation. Since version 20.8 the fields inventory-list-id and 
+                    custom-attributes of ProductShippingLineItem are exported. Since version 21.9 the
+                    fields account-id and account-type are exported. Since version 22.9 details to a 
+                    Salesforce Payments payment are no longer exported in a custom method element.
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:enumeration value="18.5" />
+            <xsd:enumeration value="19.2" />
+            <xsd:enumeration value="19.5" />
+            <xsd:enumeration value="20.6" />
+            <xsd:enumeration value="20.8" />
+            <xsd:enumeration value="21.9" />
+            <xsd:enumeration value="22.1" />
+            <xsd:enumeration value="22.9" />
+            <xsd:enumeration value="23.4" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.Order">
+        <xsd:sequence>
+            <xsd:element name="order-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Required except in delete mode.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="created-by" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="original-order-no" type="simpleType.Generic.NonEmptyString.50" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="currency" type="simpleType.Currency" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Required except in delete mode.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="customer-locale" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="taxation" minOccurs="0" maxOccurs="1" type="simpleType.Taxation">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    Since version 15.4.
+                    The taxation policy of the site at the time the order was placed.
+                    </xsd:documentation>
+                </xsd:annotation>            
+            </xsd:element>
+            <xsd:element name="source-code" type="complexType.SourceCode" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="affiliate-partner-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="affiliate-partner-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="invoice-no" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="customer" type="complexType.Customer" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Information about the customer that placed the order.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="customer-order-reference" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="status" type="complexType.OrderStatusSet" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Order status information.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="business-type" type="simpleType.OrderBusinessType" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="channel-type" type="simpleType.OrderChannelType" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="replace-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="replace-description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="replacement-order-no" type="simpleType.Generic.NonEmptyString.50" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="replaced-order-no" type="simpleType.Generic.NonEmptyString.50" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="current-order-no" type="simpleType.Generic.NonEmptyString.50" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="cancel-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="cancel-description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="product-lineitems" type="complexType.ProductLineItems" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Product line items of the order.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="giftcertificate-lineitems" type="complexType.GiftCertificateLineItems" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="shipping-lineitems" type="complexType.ShippingLineItems" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="shipments" type="complexType.Shipments" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Shipments of the order.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="tax-rounded-at-group" type="xsd:boolean" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Since version 23.4
+                        True if this order was calculated with grouped taxation.
+                        Not exported unless true.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="totals" type="complexType.OrderTotals" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Order totals.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="payments" minOccurs="0" maxOccurs="1" type="complexType.Payments">
+                <xsd:annotation>
+                    <xsd:documentation>Payments used for the order.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="remoteHost" type="simpleType.Generic.String.40" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="notes" type="complexType.Notes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="external-order-no" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="external-order-status" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="external-order-text" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="place-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>For internal use only. Element will not be contained in order.xml.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="global-party-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    Since version 19.5.
+                    Value is ignored when imported on a production instance.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="order-no" type="simpleType.Generic.NonEmptyString.50" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SourceCode" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="code" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="group-id" type="simpleType.Generic.NonEmptyString.256" maxOccurs="1" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Address" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="salutation" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="first-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="second-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="last-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="suffix" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="company-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="job-title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address1" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address2" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="suite" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postbox" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="city" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postal-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="state-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="country-code" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Amounts">
+        <xsd:sequence>
+            <xsd:element name="net-price" type="xsd:decimal" minOccurs="0"></xsd:element>
+            <xsd:element name="tax" type="xsd:decimal" minOccurs="0"></xsd:element>
+            <xsd:element name="gross-price" type="xsd:decimal" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="simpleType.Amount">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal"></xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Percentage">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:minInclusive value="0" />
+            <xsd:maxInclusive value="100" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.LineItemAmounts">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.Amounts">
+                <xsd:sequence>
+                    <xsd:element name="base-price" type="xsd:decimal" minOccurs="0"></xsd:element>
+                    <xsd:element name="lineitem-text" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+                    <xsd:element name="tax-basis" type="xsd:decimal" minOccurs="0" maxOccurs="1"></xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductLineItem">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.LineItemAmounts">
+                <xsd:sequence>
+                    <xsd:element name="position" type="xsd:decimal" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="product-id" type="simpleType.Generic.NonEmptyString.100" minOccurs="1"></xsd:element>
+                    <xsd:element name="product-name" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="quantity" type="complexType.Quantity" minOccurs="1"></xsd:element>
+                    <xsd:element name="tax-rate" type="xsd:double" minOccurs="1"></xsd:element>
+                    <xsd:element name="min-order-quantity" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="step-quantity" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="brand" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="shipment-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>Assigns the product line item to a particular shipment of this order. The shipment referenced by the id must be defined in this order, otherwise the product line item is not valid.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="inventory-list-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="option-lineitems" type="complexType.OptionLineItems" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="bundled-product-lineitems" type="complexType.BundledProductLineItems" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="shipping-lineitem" type="complexType.ProductShippingLineItem" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="gift" type="xsd:boolean" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="gift-message" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="external-line-item-status" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="external-line-item-text" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="price-adjustments" type="complexType.PriceAdjustments" maxOccurs="1" minOccurs="0"></xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceAdjustments">
+        <xsd:sequence>
+            <xsd:element name="price-adjustment" type="complexType.PriceAdjustment" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceAdjustment">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.LineItemAmounts">
+                <xsd:sequence>
+                    <xsd:element name="promotion-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1" />
+                    <xsd:choice minOccurs="0" maxOccurs="1">
+                        <xsd:element name="campaign-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+                        <xsd:element name="abtest" type="complexType.ABTestSegment" minOccurs="0" maxOccurs="1" />
+                    </xsd:choice>
+                    <xsd:element name="coupon-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="reason-code" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="manual" type="xsd:boolean" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>   
+                            <xsd:documentation>
+                            Since version 15.6.
+                            True if this price adjustment was applied manually to the order via a CSR application (e.g. as an appeasement).
+                            Not exported unless true.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="discount" type="complexType.AppliedDiscount" minOccurs="0" maxOccurs="1" >
+                        <xsd:annotation>   
+                            <xsd:documentation>
+                            Since version 15.6.
+                            Object representing the logical discount that was applied to the order.
+                            This element is only exported for custom PriceAdjustments created using one of the the createPriceAdjustment(String, Discount) API methods.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="created-by" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>   
+                            <xsd:documentation>
+                            Since version 15.6.
+                            The ID of the user who manually applied this PriceAdjustment to the order.
+                            This element is only only exported if the PriceAdjustment is manual.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="creation-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>   
+                            <xsd:documentation>
+                            Since version 15.6.
+                            The date this PriceAdjustment was manually applied to the order.
+                            This element is only only exported if the PriceAdjustment is manual.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AppliedDiscount">
+        <xsd:sequence>
+            <xsd:choice minOccurs="1" maxOccurs="1">
+                <xsd:element name="amount" type="xsd:decimal" />
+                <xsd:element name="bonus" type="simpleType.EmptyElement" />
+                <xsd:element name="bonus-choice" type="simpleType.EmptyElement" />
+                <xsd:element name="fixed-price" type="xsd:decimal" />
+                <xsd:element name="fixed-price-shipping" type="xsd:decimal" />
+                <xsd:element name="free" type="simpleType.EmptyElement" />
+                <xsd:element name="free-shipping" type="simpleType.EmptyElement" />
+                <xsd:element name="percentage" type="simpleType.Percentage" />
+                <xsd:element name="percent-off-options" type="simpleType.Percentage" />
+                <xsd:element name="price-book-id" type="simpleType.Generic.NonEmptyString.256" />
+                <xsd:element name="total-fixed-price" type="xsd:decimal" />
+            </xsd:choice>        
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.ABTestSegment">
+        <xsd:sequence>
+            <xsd:element name="test-id" type="simpleType.Generic.NonEmptyString.40" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="segment-id" type="simpleType.Generic.NonEmptyString.40" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Quantity">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:double">
+                <xsd:attribute name="unit" type="xsd:string" use="required"></xsd:attribute>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:element name="order" type="complexType.Order">
+        <xsd:annotation>
+            <xsd:documentation>Demandware order object.</xsd:documentation>
+        </xsd:annotation>
+    </xsd:element>
+
+    <xsd:complexType name="complexType.Customer">
+        <xsd:sequence>
+            <xsd:element name="guest" type="xsd:boolean" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Was the order placed by a guest. Required with version 19.2 </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="customer-no" type="simpleType.Generic.String.100" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="customer-name" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="customer-email" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Customer email address.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="billing-address" type="complexType.Address" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The customer billing address used with the order.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.OrderStatusSet">
+        <xsd:sequence>
+            <xsd:element name="order-status" type="simpleType.Order.OrderStatus" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The order processing status. Possible values are: CREATED NEW OPEN COMPLETED CANCELLED REPLACED FAILED</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="shipping-status" type="simpleType.Order.ShippingStatus" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The overall order shipping status. Possible values are: NOT_SHIPPED PART_SHIPPED SHIPPED</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="confirmation-status" type="simpleType.Order.ConfirmationStatus" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The order confirmation status. Possible values are: NOT_CONFIRMED CONFIRMED</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="payment-status" type="simpleType.Order.PaymentStatus" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The order payment status. Possible values are: NOT_PAID PART_PAID PAID
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="export-status" type="simpleType.Order.ExportStatus" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The order export status. Possible values are: NOT_EXPORTED EXPORTED READY FAILED</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.OrderDetails">
+        <xsd:sequence>
+
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductLineItems">
+        <xsd:sequence>
+            <xsd:element name="product-lineitem" type="complexType.ProductLineItem" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.GiftCertificateLineItems">
+        <xsd:sequence>
+            <xsd:element name="giftcertificate-lineitem" type="complexType.GiftCertificateLineItem" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.GiftCertificateLineItem">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.LineItemAmounts">
+                <xsd:sequence>
+                    <xsd:element name="gc-merchant-id" type="simpleType.Generic.NonEmptyString.256" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="giftcertificate-id" type="simpleType.Generic.NonEmptyString.256" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="recipient-email" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="sender-name" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="recipient-name" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="message" type="simpleType.Generic.String.4000" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="shipment-id" type="simpleType.Generic.NonEmptyString.256" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Shipments">
+        <xsd:sequence>
+            <xsd:element name="shipment" type="complexType.Shipment" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Shipment">
+        <xsd:sequence>
+            <xsd:element name="status" type="complexType.ShipmentStatusSet" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="shipping-method" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>ID of the shipping method selected for the group.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="tracking-number" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="shipping-address" type="complexType.Address" minOccurs="0"></xsd:element>
+            <xsd:element name="gift" type="xsd:boolean" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="gift-message" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="totals" type="complexType.ShipmentTotals" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="shipment-id" type="simpleType.Generic.NonEmptyString.256" use="required"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ShipmentStatusSet">
+        <xsd:sequence>
+            <xsd:element name="shipping-status" type="simpleType.Shipment.ShippingStatus" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The shipping status of the shipment. Possible values are: NOT_SHIPPED SHIPPED</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ShippingLineItems">
+        <xsd:sequence>
+            <xsd:element name="shipping-lineitem" type="complexType.ShippingLineItem" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ShippingLineItem">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.LineItemAmounts">
+                <xsd:sequence>
+                    <xsd:element name="price-adjustments" type="complexType.PriceAdjustments" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="item-id" type="simpleType.Generic.NonEmptyString.256" maxOccurs="1" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Item-id must be unique per shipment. If not specified the default shipping of the shipment is used.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="shipment-id" type="simpleType.Generic.NonEmptyString.256" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="tax-rate" type="xsd:double" minOccurs="1"></xsd:element>
+                    <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductShippingLineItem">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.LineItemAmounts">
+                <xsd:sequence>
+                    <xsd:element name="quantity" type="complexType.Quantity" minOccurs="1"></xsd:element>
+                    <xsd:element name="tax-rate" type="xsd:double" minOccurs="1"></xsd:element>
+                    <xsd:element name="type" type="simpleType.ProductShippingCostType" minOccurs="1"></xsd:element>
+                    <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="price-adjustments" type="complexType.PriceAdjustments" minOccurs="0" maxOccurs="1" ></xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.ProductShippingCostType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="fixed-price" />
+            <xsd:enumeration value="surcharge" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.ShipmentTotals">
+        <xsd:sequence>
+            <xsd:element name="merchandize-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="adjusted-merchandize-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="shipping-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="adjusted-shipping-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="shipment-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.OrderTotals">
+        <xsd:sequence>
+            <xsd:element name="merchandize-total" type="complexType.Total" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Order-level merchandise price-adjustments are included within these totals.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="adjusted-merchandize-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="shipping-total" type="complexType.Total" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Order-level shipping price-adjustments are included within these totals.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="adjusted-shipping-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="order-total" type="complexType.Total" maxOccurs="1" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.OptionLineItem">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.LineItemAmounts">
+                <xsd:sequence>
+                    <xsd:element name="option-id" type="simpleType.Generic.NonEmptyString.256"></xsd:element>
+                    <xsd:element name="value-id" type="simpleType.Generic.NonEmptyString.256"></xsd:element>
+                    <xsd:element name="product-id" type="simpleType.Generic.NonEmptyString.100" minOccurs="1"  maxOccurs="1" ></xsd:element>
+                    <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+                    <xsd:element name="price-adjustments" type="complexType.PriceAdjustments" minOccurs="0" maxOccurs="1" ></xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.OptionLineItems">
+        <xsd:sequence>
+            <xsd:element name="option-lineitem" type="complexType.OptionLineItem" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Payments">
+        <xsd:sequence>
+            <xsd:element name="payment" type="complexType.Payment" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Payment">
+        <xsd:sequence maxOccurs="1" minOccurs="0">
+
+            <!--  payment instrument details -->
+            <xsd:choice maxOccurs="1" minOccurs="0">
+                <xsd:element name="credit-card" type="complexType.CreditCard" />
+                <xsd:element name="bank-transfer" type="complexType.BankTransfer" />
+                <xsd:element name="bml" type="complexType.BillMeLater" />
+                <xsd:element name="gift-certificate" type="complexType.GiftCertificate" />
+                <xsd:element name="dw-apple-pay" type="complexType.DWApplePay" />
+                <xsd:element name="dw-android-pay" type="complexType.DWAndroidPay" />
+                <xsd:element name="salesforce-payments" type="complexType.SalesforcePayments" />
+                <xsd:element name="custom-method" type="complexType.CustomPaymentMethod" />
+            </xsd:choice>
+
+            <!--  payment transaction details -->
+            <xsd:element name="amount" type="xsd:decimal" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="processor-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="transaction-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="transaction-type" type="simpleType.Payment.TransactionType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="account-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    Since version 21.9.
+                    The ID of the payment account used to create the payment transaction.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="account-type" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    Since version 21.9.
+                    The type of the payment account used to create the payment transaction.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the PaymentTransaction system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            
+            <xsd:element name="ek-id" type="xsd:int" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>For internal use. A positive value identifies a known encryption serial number, a value of -1 indicates no encryption</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.BankTransfer">
+        <xsd:sequence>
+            <xsd:element name="account-number" type="simpleType.Generic.String.4000" minOccurs="0"></xsd:element>
+            <xsd:element name="account-holder" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="routing-number" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="drivers-license" type="simpleType.Generic.String.4000" minOccurs="0"></xsd:element>
+            <xsd:element name="drivers-license-state-code" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                 <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.BillMeLater">
+        <xsd:sequence>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CreditCard">
+        <xsd:sequence>
+            <xsd:element name="card-type" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The type of the card. Some recognized card types are exported in different formats than they are stored internally: Visa, Master, Amex, Discover are exported in all capital letters: VISA, MASTER, AMEX, DISCOVER. All other card types are exported precisely as they are stored.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="card-number" type="simpleType.Generic.String.4000" minOccurs="0"></xsd:element>
+            <xsd:element name="card-holder" type="simpleType.Generic.String.256" minOccurs="0"></xsd:element>
+            <xsd:element name="card-token" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Creditcard tokenization: field used to store token provided by creditcard tokenizer. The card-number is used for the permanantly masked creditcard number</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="from-month" type="xsd:int" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Some card types maintain a start date in addition to an expiration date (Amex, Solo, Switch, etc). Other card types may ignore these elements.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="from-year" type="xsd:int" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="expiration-month" type="xsd:int" minOccurs="0"></xsd:element>
+            <xsd:element name="expiration-year" type="xsd:int" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="issue-number" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Issue number is a concept supported by Solo/Switch cards in the UK, and is either a 1 or 2 digit number.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomPaymentMethod">
+        <xsd:sequence>
+            <xsd:element name="method-name" type="simpleType.Generic.String.256" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.GiftCertificate">
+        <xsd:sequence>
+            <xsd:element name="gc-merchant-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="giftcertificate-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.DWApplePay">
+        <xsd:sequence>
+            <xsd:element name="card-type" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The type of the card. Some recognized card types are exported in different formats than they are stored internally: Visa, Master, Amex, Discover are exported in all capital letters: VISA, MASTER, AMEX, DISCOVER. All other card types are exported precisely as they are stored.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="card-number" type="simpleType.Generic.String.4000" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The actual PAN of the card used for the Apple Pay transaction. The value will be in a format like XXXX-XXXX-XXXX-1234 with no more than 4 of the last digits unmasked.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.DWAndroidPay">
+        <xsd:sequence>
+            <xsd:element name="card-type" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The type of the card. Some recognized card types are exported in different formats than they are stored internally: Visa, Master, Amex, Discover are exported in all capital letters: VISA, MASTER, AMEX, DISCOVER. All other card types are exported precisely as they are stored.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="card-number" type="simpleType.Generic.String.4000" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The actual PAN of the card used for the Android Pay transaction. The value will be in a format like XXXX-XXXX-XXXX-1234 with no more than 4 of the last digits unmasked.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Notes">
+        <xsd:sequence>
+            <xsd:element name="note" type="complexType.Note" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Note">
+        <xsd:sequence>
+            <xsd:element name="created-by" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="creation-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="subject" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="text" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SalesforcePayments">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Payment instrument details for a payment made using Salesforce Payments.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence maxOccurs="1" minOccurs="0">
+            <xsd:choice maxOccurs="1" minOccurs="0">
+                <xsd:element name="bancontact" type="complexType.SalesforcePayments.Bancontact" />
+                <xsd:element name="card" type="complexType.SalesforcePayments.Card" />
+                <xsd:element name="ideal" type="complexType.SalesforcePayments.Ideal" />
+                <xsd:element name="sepa-debit" type="complexType.SalesforcePayments.SepaDebit" />
+                <xsd:element name="paypal" type="complexType.SalesforcePayments.PayPal" />
+                <xsd:element name="klarna" type="complexType.SalesforcePayments.Klarna" />
+                <xsd:element name="eps" type="complexType.SalesforcePayments.Eps" />
+                <xsd:element name="venmo" type="complexType.SalesforcePayments.Venmo" />
+                <xsd:element name="afterpay-clearpay" type="complexType.SalesforcePayments.AfterpayClearpay" />
+            </xsd:choice>
+		</xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.Bancontact">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type bancontact.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="last-4" type="simpleType.Generic.String.4" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The last 4 digits of the account number.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="bank-name" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The name of the bank used for the payment.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.Card">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type card.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="brand" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The card brand, such as (but not limited to) amex, unionpay, or visa.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="last-4" type="simpleType.Generic.String.4" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The last 4 digits of the card number.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="wallet-type" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The type of wallet used to present the card, such as (but not limited to) apple-pay or google-pay.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SalesforcePayments.Ideal">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type ideal.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="bank" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The bank used for the payment, such as (but not limited to) abn_amro or ing.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.SepaDebit">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type sepa_debit.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="last-4" type="simpleType.Generic.String.4" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The last 4 digits of the account number.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.PayPal">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type paypal.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="payer-email-address" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The payer email address of the PayPal order.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="capture-id" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>ID of the capture to the PayPal order.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.Klarna">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type klarna.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="payment-method-category" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The category of Klarna payment, such as (but not limited to) pay_later or pay_in_installments.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.Eps">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type eps.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="bank" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The bank used for the payment, such as (but not limited to) dolomitenbank or easybank_ag.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.Venmo">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type venmo.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="payer-email-address" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The payer email address of the PayPal order used to make the Venmo payment.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="capture-id" type="simpleType.Generic.String.256" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>ID of the capture to the PayPal order used to make the Venmo payment.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.SalesforcePayments.AfterpayClearpay">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 22.9.
+            Details to a Salesforce Payments payment of type afterpay_clearpay.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>These are the custom attributes of the OrderPaymentInstrument system object.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:simpleType name="simpleType.AttributeType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="int"></xsd:enumeration>
+            <xsd:enumeration value="double"></xsd:enumeration>
+            <xsd:enumeration value="string"></xsd:enumeration>
+            <xsd:enumeration value="text"></xsd:enumeration>
+            <xsd:enumeration value="html"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.BundledProductLineItem">
+        <xsd:sequence>
+            <xsd:element name="product-id" type="simpleType.Generic.NonEmptyString.100"></xsd:element>
+            <xsd:element name="product-name" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="quantity" type="complexType.Quantity"></xsd:element>
+            <xsd:element name="bundled-product-lineitems" type="complexType.BundledProductLineItems" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.BundledProductLineItems">
+        <xsd:sequence>
+            <xsd:element name="bundled-product-lineitem" type="complexType.BundledProductLineItem" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Order.OrderStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="CREATED"></xsd:enumeration>
+            <xsd:enumeration value="NEW"></xsd:enumeration>
+            <xsd:enumeration value="OPEN"></xsd:enumeration>
+            <xsd:enumeration value="CANCELLED"></xsd:enumeration>
+            <xsd:enumeration value="COMPLETED"></xsd:enumeration>
+            <xsd:enumeration value="REPLACED"></xsd:enumeration>
+            <xsd:enumeration value="FAILED"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Order.ShippingStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="NOT_SHIPPED"></xsd:enumeration>
+            <xsd:enumeration value="PART_SHIPPED"></xsd:enumeration>
+            <xsd:enumeration value="SHIPPED"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Order.ConfirmationStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="NOT_CONFIRMED"></xsd:enumeration>
+            <xsd:enumeration value="CONFIRMED"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Order.PaymentStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="NOT_PAID"></xsd:enumeration>
+            <xsd:enumeration value="PART_PAID"></xsd:enumeration>
+            <xsd:enumeration value="PAID"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Shipment.ShippingStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="NOT_SHIPPED"></xsd:enumeration>
+            <xsd:enumeration value="SHIPPED"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Order.ExportStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="NOT_EXPORTED"></xsd:enumeration>
+            <xsd:enumeration value="EXPORTED"></xsd:enumeration>
+            <xsd:enumeration value="READY"></xsd:enumeration>
+            <xsd:enumeration value="FAILED"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="simpleType.EmptyElement" mixed="false" />
+
+    <xsd:simpleType name="simpleType.Generic.String.10">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="32" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.40">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="40" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="100" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.40">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="40" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.50">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="50" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.CountryCode">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="2" />
+            <xsd:maxLength value="2" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PhoneNumber">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Payment.TransactionType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="AUTH"></xsd:enumeration>
+            <xsd:enumeration value="AUTH_REVERSAL"></xsd:enumeration>
+            <xsd:enumeration value="CAPTURE"></xsd:enumeration>
+            <xsd:enumeration value="CREDIT"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.OrderBusinessType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="B2C" />
+            <xsd:enumeration value="B2B" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.OrderChannelType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Storefront" />
+            <xsd:enumeration value="CallCenter" />
+            <xsd:enumeration value="Marketplace" />
+            <xsd:enumeration value="DSS" />
+            <xsd:enumeration value="Store" />
+            <xsd:enumeration value="Pinterest" />
+            <xsd:enumeration value="Twitter" />
+            <xsd:enumeration value="FacebookAds" />
+            <xsd:enumeration value="Subscriptions" />
+            <xsd:enumeration value="OnlineReservation" />
+            <xsd:enumeration value="CustomerServiceCenter" />
+            <xsd:enumeration value="InstagramCommerce" />
+            <xsd:enumeration value="Google" />
+            <xsd:enumeration value="TikTok" />
+            <xsd:enumeration value="Snapchat" />
+            <xsd:enumeration value="WhatsApp" />
+            <xsd:enumeration value="YouTube" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>Import mode delete can only be used on
+                    non-production systems. One possible use case is to enable automated
+                    testing by deleting the orders before or after each test run.
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Shared Complex Types -->
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Currency">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Taxation">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="net" />
+            <xsd:enumeration value="gross" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.Total">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.Amounts">
+                <xsd:sequence>
+                    <xsd:element name="price-adjustments" type="complexType.PriceAdjustments" maxOccurs="1" minOccurs="0"></xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+</xsd:schema>

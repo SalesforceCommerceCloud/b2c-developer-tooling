@@ -1,0 +1,82 @@
+<?xml version="1.0" ?>
+<xsd:schema
+    xmlns="urn:demandware.com:oms:return_import_feed:99.9"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:demandware.com:oms:return_import_feed:99.9"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+    
+    <!-- root elements -->
+    <xsd:element name="return_import_feed" type="ReturnImportFeed" />
+    
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+    
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!-- return_import_feed -->
+    <xsd:complexType name="ReturnImportFeed" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="feed_description" minOccurs="0" maxOccurs="1" nillable="true" type="FeedDescription" />
+            <xsd:element name="returns" minOccurs="1" maxOccurs="1" nillable="false" type="Returns" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- feed_description -->
+    <xsd:complexType name="FeedDescription" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="count" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:integer" />
+            <xsd:element name="created" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:dateTime" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="Returns" mixed="false">
+        <xsd:sequence>
+            <xsd:element minOccurs="1" maxOccurs="unbounded" name="return" type="Return" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- return -->
+    <xsd:complexType name="Return" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="order_no" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="return_case_number" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="return_number" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="status" minOccurs="0" maxOccurs="1" nillable="true">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:enumeration value="new" />
+                        <xsd:enumeration value="completed" />
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:element name="note" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:any namespace="urn:demandware.com:custom" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+            <xsd:element name="items" minOccurs="0" maxOccurs="1" nillable="true" type="ReturnItems" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ReturnItems" mixed="false">
+        <xsd:sequence>
+            <xsd:element minOccurs="0" maxOccurs="unbounded" name="item" type="ReturnItem" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- return_item -->
+    <xsd:complexType name="ReturnItem" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="item_id" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="product_id" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="quantity" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:decimal" />
+            <xsd:element name="reason_code" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:any namespace="urn:demandware.com:custom" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+</xsd:schema>

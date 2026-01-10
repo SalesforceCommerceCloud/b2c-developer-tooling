@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/shipping/2007-03-31"
+    xmlns="http://www.demandware.com/xml/impex/shipping/2007-03-31"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="shipping">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="shipping-method" type="ShippingMethod" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="shipping-method" type="ShippingMethod" />
+
+    <!-- complex types -->
+
+    <xsd:complexType name="ShippingMethod">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="online-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="base-method" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="external-shipping-method" type="Generic.String.28" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>ID of the external shipping method selected.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="tax-class-id" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="price-table" type="PriceTable" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-cost-groups" type="ProductCostGroups" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="excluded-products" type="ProductSpecification" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="excluded-addresses" type="AddressSpecification" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="currency" type="simpleType.Currency" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-groups" type="CustomerGroups" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="method-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="ProductCostGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="product-cost-group" type="ProductCostGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="ProductCostGroup" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="products" type="ProductSpecification" minOccurs="1" maxOccurs="1" />
+            <xsd:choice minOccurs="0" maxOccurs="1">
+                <xsd:element name="cost-per-item" type="ItemBasedShippingCost" />
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="ItemBasedShippingCost" mixed="false">
+        <xsd:sequence>
+            <xsd:choice minOccurs="1" maxOccurs="1">
+                <xsd:element name="fixed-price" type="Amount" />
+                <xsd:element name="surcharge" type="Amount" />
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <!-- product specification -->
+
+    <xsd:complexType name="ProductSpecification" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="included-products" type="ProductSpecification.ConditionGroups" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="excluded-products" type="ProductSpecification.ConditionGroups" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductSpecification.ConditionGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="condition-group" type="ProductSpecification.ConditionGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductSpecification.ConditionGroup" mixed="false">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="brand-condition" type="ProductSpecification.ProductBrandFilter" />
+            <xsd:element name="product-id-condition" type="ProductSpecification.ProductIDFilter" />
+            <xsd:element name="category-condition" type="ProductSpecification.ProductCategoryFilter" />
+            <xsd:element name="price-condition" type="ProductSpecification.ProductPriceFilter" />
+            <xsd:element name="inventory-condition" type="ProductSpecification.ProductStockFilter" />
+            <xsd:element name="attribute-condition" type="ProductSpecification.ProductAttributeFilter" />
+            <xsd:element name="pricebook-condition" type="ProductSpecification.ProductPriceBookFilter" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductSpecification.ProductBrandFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="brand" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="operator" type="BrandComparator" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductSpecification.ProductIDFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="product-id" type="Generic.NonEmptyString.100" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="operator" type="ProductIDComparator" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductSpecification.ProductCategoryFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="category-id" type="Generic.String.256" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="catalog-id" type="Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="operator" type="CategoryIDComparator" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductSpecification.ProductPriceFilter" mixed="false">
+        <xsd:choice minOccurs="1" maxOccurs="1">
+            <xsd:element name="price" type="xsd:decimal" minOccurs="1" maxOccurs="1" />
+            <xsd:sequence>
+                <xsd:element name="price-ending" type="PriceEnding.String.3"
+                    minOccurs="1" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:choice>
+        <xsd:attribute name="operator" type="PriceComparator" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductSpecification.ProductStockFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="ats" type="xsd:decimal" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="operator" type="StockComparator" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="ProductSpecification.ProductAttributeFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-value" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="operator" type="AttributeComparator" />
+        <xsd:attribute name="attribute-id" type="Generic.NonEmptyString.256" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="ProductSpecification.ProductPriceBookFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="pricebook-id" type="Generic.NonEmptyString.256" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+     	<xsd:attribute name="operator" type="PriceBookComparator" use="optional" default="storefront price in (recursive)" />
+	 </xsd:complexType>
+	 
+	 <xsd:simpleType name="PriceBookComparator">
+	     <xsd:restriction base="xsd:string">
+	         <xsd:enumeration value="storefront price in (recursive)" />
+	         <xsd:enumeration value="storefront price in" />
+	         <xsd:enumeration value="price in" />
+	     </xsd:restriction>
+	 </xsd:simpleType>
+
+    <!-- Address specification -->
+    
+    <xsd:complexType name="AddressSpecification" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="included-addresses" type="ConditionGroups" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="excluded-addresses" type="ConditionGroups" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="ConditionGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="condition-group" type="ConditionGroup" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ConditionGroup" mixed="false">
+        <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+            <xsd:element name="condition" type="Condition" />
+        </xsd:sequence>
+        <xsd:attribute name="match-mode" type="MatchMode" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="Condition">
+        <xsd:sequence>
+            <xsd:element name="attribute-path" type="AttributePath" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="operator" type="Operator" minOccurs="1" maxOccurs="1" />
+            <xsd:choice minOccurs="0" maxOccurs="1">
+                <xsd:element name="string" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="int" type="xsd:int" minOccurs="1" maxOccurs="unbounded"/>
+                <xsd:element name="int-range" type="IntRange" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="number" type="xsd:decimal" minOccurs="1" maxOccurs="unbounded"/>
+                <xsd:element name="number-range" type="NumberRange" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="date" type="xsd:date" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="date-range" type="DateRange" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="number-of-days" type="NumberOfDays" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="time-period" type="TimePeriod" minOccurs="1" maxOccurs="1"/>
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:simpleType name="MatchMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="all" />
+            <xsd:enumeration value="any" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="DateRange" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="from" type="xsd:date" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="to" type="xsd:date" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="TimePeriod">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="week" />
+            <xsd:enumeration value="month" />
+            <xsd:enumeration value="year" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!-- Customer Groups  -->
+    <xsd:complexType name="CustomerGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="customer-group" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>    
+
+    <!-- TODO annotation about min / max inclusive (assumption inclusive) -->    
+    <xsd:complexType name="IntRange" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="min" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="max" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="NumberRange" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="min" type="xsd:decimal" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="max" type="xsd:decimal" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <!--Supported attribute paths:
+        - shipment.shippingAddress.<system-attribute-id>
+        - shipment.shippingAddress.custom.<custom-attribute-id>
+
+        Support system address attributes: city, postalCode, stateCode, countryCode
+    -->
+    <xsd:simpleType name="AttributePath">
+        <xsd:restriction base="Generic.NonEmptyString.256" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Operator">
+        <xsd:restriction base="xsd:string">
+
+            <!-- common operators -->
+            <xsd:enumeration value="is-equal" />
+            <xsd:enumeration value="is-not-equal" />
+            <xsd:enumeration value="exists" />
+            <xsd:enumeration value="does-not-exist" />
+
+            <!-- additional date operators -->
+            <xsd:enumeration value="is-on" /> 
+            <xsd:enumeration value="is-after" />
+            <xsd:enumeration value="is-before" />
+            <xsd:enumeration value="is-today" />
+            <xsd:enumeration value="is-tomorrow" />         
+            <xsd:enumeration value="is-yesterday" />
+            <xsd:enumeration value="is-in-the-last" />
+            <xsd:enumeration value="is-in-the-next" />
+            <xsd:enumeration value="is-in-the-current" />
+            <xsd:enumeration value="is-in-the-last-x-days" />
+            <xsd:enumeration value="is-not-in-the-last-x-days" />
+            <xsd:enumeration value="is-in-the-next-x-days" />
+            <xsd:enumeration value="is-not-in-the-next-x-days" />
+
+            <!-- additional numeric operators -->
+            <xsd:enumeration value="is-greater-than" />
+            <xsd:enumeration value="is-less-than" />
+            <xsd:enumeration value="is-greater-than-or-equal" />
+            <xsd:enumeration value="is-less-than-or-equal" />
+            
+            <!-- additional operators for date and numeric ranges-->
+            <xsd:enumeration value="is-in-range" />
+            <xsd:enumeration value="is-not-in-range" />
+
+            <!-- additional string operators -->
+            <xsd:enumeration value="starts-with" />
+            <xsd:enumeration value="ends-with" />
+            <xsd:enumeration value="contains" />
+            <xsd:enumeration value="does-not-contain" />
+
+            <!-- additional boolean operators -->
+            <xsd:enumeration value="is-true" />
+            <xsd:enumeration value="is-false" />
+
+        </xsd:restriction>
+    </xsd:simpleType>
+  
+    <xsd:simpleType name="NumberOfDays">
+        <xsd:restriction base="xsd:int">
+            <xsd:minExclusive value="0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+  
+    <xsd:simpleType name="Generic.String.28">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="28" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="Generic.NonEmptyString.100">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="PriceEnding.String.3">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="3" />
+            <xsd:pattern value="\d+" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="Amount">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:minInclusive value="0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="PriceTable">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="amount" type="AmountEntry" />
+            <xsd:element name="percentage" type="PercentageEntry" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="AmountEntry">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal">
+                <xsd:attribute name="order-value" type="xsd:decimal" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="PercentageEntry">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal">
+                <xsd:attribute name="order-value" type="xsd:decimal" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+    
+    <xsd:simpleType name="ProductIDComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="is equal" />
+            <xsd:enumeration value="is not equal" />
+            <xsd:enumeration value="starts with" />
+            <xsd:enumeration value="ends with" />
+            <xsd:enumeration value="contains" />
+            <xsd:enumeration value="does not contain" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="CategoryIDComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="is equal" />
+            <xsd:enumeration value="is direct child of"/>
+            <xsd:enumeration value="is child of"/>
+            <xsd:enumeration value="is direct parent of"/>
+            <xsd:enumeration value="is parent of"/>
+            <xsd:enumeration value="is sibling of"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    
+    <xsd:simpleType name="BrandComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="exists" />
+            <xsd:enumeration value="does not exist" />
+            <xsd:enumeration value="is equal" />
+            <xsd:enumeration value="is not equal" />
+            <xsd:enumeration value="starts with" />
+            <xsd:enumeration value="ends with" />
+            <xsd:enumeration value="contains" />
+            <xsd:enumeration value="does not contain" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="PriceComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="less than" />
+            <xsd:enumeration value="greater than" />
+            <xsd:enumeration value="ends with" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="StockComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="less than" />
+            <xsd:enumeration value="greater than" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="AttributeComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="less than" />
+            <xsd:enumeration value="greater than" />
+            <xsd:enumeration value="equals" />
+            <xsd:enumeration value="is not equal" />
+            <xsd:enumeration value="exists" />
+            <xsd:enumeration value="does not exist" />
+            <xsd:enumeration value="starts with" />
+            <xsd:enumeration value="ends with" />
+            <xsd:enumeration value="contains" />
+            <xsd:enumeration value="does not contain" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Currency">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

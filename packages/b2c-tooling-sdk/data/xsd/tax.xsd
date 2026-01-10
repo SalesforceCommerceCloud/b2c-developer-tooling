@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/tax/2007-02-14"
+    xmlns="http://www.demandware.com/xml/impex/tax/2007-02-14"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="tax">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="tax-classes" type="complexType.TaxClasses" minOccurs="0" maxOccurs="1"></xsd:element>
+                <xsd:element name="tax-jurisdictions" type="complexType.TaxJurisdictions" minOccurs="0" maxOccurs="1"></xsd:element>
+                <xsd:element name="tax-rates" type="complexType.TaxRates" minOccurs="0" maxOccurs="1"></xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>    
+    </xsd:element>
+
+    <!-- additional (fake) top level elements for JAXB snippet processing -->
+    <xsd:element name="tax-class" type="complexType.TaxClass" />
+    <xsd:element name="tax-jurisdiction" type="complexType.TaxJurisdiction" />
+    <xsd:element name="tax-rate" type="complexType.TaxRate" />
+
+    <xsd:complexType name="complexType.TaxJurisdictions">
+        <xsd:sequence>
+            <xsd:element name="tax-jurisdiction" type="complexType.TaxJurisdiction" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.TaxJurisdiction">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="address-mappings" type="complexType.AddressMappings" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="jurisdiction-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AddressMappings" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="address-mapping" type="complexType.AddressMapping" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AddressMapping">
+        <xsd:attribute name="key1" type="simpleType.Generic.String.256" />
+        <xsd:attribute name="key2" type="simpleType.Generic.String.256" />
+    </xsd:complexType>
+
+
+    <xsd:complexType name="complexType.TaxClasses">
+        <xsd:sequence>
+            <xsd:element name="tax-class" type="complexType.TaxClass" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.TaxClass">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="class-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="default" type="xsd:boolean" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.TaxRates">
+        <xsd:sequence>
+            <xsd:element name="tax-rate" type="complexType.TaxRate" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.TaxRate" mixed="true">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal">
+                <xsd:attribute name="jurisdiction-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+                <xsd:attribute name="class-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

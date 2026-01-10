@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+        xmlns="http://www.demandware.com/xml/impex/cachesettings/2013-08-15"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://www.demandware.com/xml/impex/cachesettings/2013-08-15"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.demandware.com/xml/impex/cachesettings/2013-08-15 ">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <!-- top-level element -->
+    <xsd:element name="cache-settings" type="complexType.CacheSettings"/>
+
+    <xsd:element name="settings" type="complexType.Settings"/>
+
+    <xsd:element name="page-cache-partitions" type="complexType.CachePartitions"/>
+
+    <xsd:complexType name="complexType.CacheSettings">
+        <xsd:sequence>
+            <xsd:element name="settings" type="complexType.Settings" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="page-cache-partitions" type="complexType.CachePartitions" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Settings">
+        <xsd:sequence>
+            <xsd:element name="development" type="complexType.InstanceSettings" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="staging" type="complexType.InstanceSettings" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="production" type="complexType.InstanceSettings" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.InstanceSettings">
+        <xsd:sequence>
+            <xsd:element name="static-cache-ttl" type="xsd:int" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="page-cache-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CachePartitions">
+        <xsd:sequence>
+            <xsd:element name="page-cache-partition" type="complexType.CachePartition" minOccurs="0" maxOccurs="10"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CachePartition">
+        <xsd:sequence>
+            <xsd:element name="name" type="Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="pipelines" type="complexType.CachePartitionPipelines" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="replication-tasks" type="Generic.String" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="partition-id" type="xsd:string" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CachePartitionPipelines">
+        <xsd:sequence>
+            <xsd:element name="pipeline" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="20"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="256"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

@@ -1,0 +1,68 @@
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/geolocation/2007-05-01" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    targetNamespace="http://www.demandware.com/xml/impex/geolocation/2007-05-01"
+    attributeFormDefault="unqualified" 
+    elementFormDefault="qualified" >
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="geolocations">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="geolocation" type="Geolocation" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+            <xsd:attribute name="country-code" type="CountryCode" use="required" />
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="geolocation" type="Geolocation" />
+
+    <xsd:complexType name="Geolocation">
+        <xsd:sequence>
+            <xsd:element name="city" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="state" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="longitude" type="xsd:decimal" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="latitude" type="xsd:decimal" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="postal-code" type="Generic.NonEmptyString.10" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="CountryCode">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="2" />
+            <xsd:maxLength value="2" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="Generic.NonEmptyString.10">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="10" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

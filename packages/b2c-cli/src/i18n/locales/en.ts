@@ -23,6 +23,32 @@ export const en = {
         error: 'Failed to fetch sites: {{message}}',
       },
     },
+    docs: {
+      search: {
+        description: 'Search Script API documentation',
+        queryRequired: 'Query is required for search. Use --list to see all entries.',
+        noResults: 'No documentation found matching: {{query}}',
+        resultCount: 'Found {{count}} matches for "{{query}}"',
+        totalCount: '{{count}} documentation entries available',
+      },
+      read: {
+        description: 'Read Script API documentation for a class or module',
+        notFound: 'No documentation found matching: {{query}}',
+      },
+      download: {
+        description: 'Download Script API documentation from a B2C Commerce instance',
+        downloading: 'Downloading documentation from {{hostname}}...',
+        success: 'Downloaded {{count}} documentation files to {{path}}',
+        archiveKept: 'Archive saved to: {{path}}',
+      },
+      schema: {
+        description: 'Read an XSD schema file',
+        queryRequired: 'Schema name is required. Use --list to see all schemas.',
+        notFound: 'No schema found matching: {{query}}',
+        available: 'Available schemas:',
+        count: '{{count}} schemas available',
+      },
+    },
     code: {
       list: {
         description: 'List code versions on a B2C Commerce instance',

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/schedules/2007-03-31"
+    xmlns="http://www.demandware.com/xml/impex/schedules/2007-03-31"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="schedules">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="schedule" type="complexType.Schedule" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="schedule" type="complexType.Schedule" />
+
+    <xsd:complexType name="complexType.Schedule">
+        <xsd:sequence>
+            <xsd:element name="description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="priority" type="simpleType.Generic.NonNegativeInt" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Reserved for Beta users. Priority will not be imported and a warning will be logged if the Schedule Prioritization feature is disabled.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="execution-scope" type="simpleType.ExecutionScope" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="pipeline" type="complexType.Pipeline" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="sites" type="complexType.Sites" minOccurs="0" maxOccurs="1" />
+            <xsd:choice>
+                <xsd:element name="run-once" type="xsd:dateTime"  />
+                <xsd:element name="recurrence" type="complexType.Recurrence" />
+            </xsd:choice>
+            <xsd:element name="notification" type="complexType.Notification" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="parameters" type="complexType.Parameters" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="schedule-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.ExecutionScope">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="organization"></xsd:enumeration>
+            <xsd:enumeration value="site"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.Recurrence">
+        <xsd:sequence>
+            <xsd:element name="date-from" type="xsd:date" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="date-to" type="xsd:date" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="start-time" type="xsd:time" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="interval" type="simpleType.Generic.String.10" minOccurs="0" maxOccurs="1"/>
+            <xsd:choice>
+                <xsd:element name="day-of-week" type="complexType.DayOfWeek" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="weekdays" type="simpleType.Generic.String.10" minOccurs="0" maxOccurs="1" >
+                    <xsd:annotation>
+                        <xsd:documentation>Deprecated. Please use the element day-of-week (complexType.DayOfWeek.weekday).</xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.DayOfWeek" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="weekday" type="simpleType.Weekday" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Weekday">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Monday" />
+            <xsd:enumeration value="Tuesday" />
+            <xsd:enumeration value="Wednesday" />
+            <xsd:enumeration value="Thursday" />
+            <xsd:enumeration value="Friday" />
+            <xsd:enumeration value="Saturday" />
+            <xsd:enumeration value="Sunday" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.FailureRule">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="continue"></xsd:enumeration>
+            <xsd:enumeration value="retry"></xsd:enumeration>
+            <xsd:enumeration value="stop"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+    <xsd:simpleType name="simpleType.Retries">
+        <xsd:restriction base="xsd:int">
+            <xsd:enumeration value="1"></xsd:enumeration>
+            <xsd:enumeration value="2"></xsd:enumeration>
+            <xsd:enumeration value="3"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+    <xsd:simpleType name="simpleType.RetryInterval">
+        <xsd:restriction base="xsd:int">
+            <xsd:enumeration value="1"></xsd:enumeration>
+            <xsd:enumeration value="10"></xsd:enumeration>
+            <xsd:enumeration value="30"></xsd:enumeration>
+            <xsd:enumeration value="60"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+
+    <xsd:complexType name="complexType.Sites">
+        <xsd:sequence>
+            <xsd:element name="site" type="complexType.Site" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Site">
+        <!-- sample site-id: "SiteGenesis" -->
+        <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Pipeline">
+        <xsd:sequence>
+            <xsd:element name="name" type="simpleType.Generic.String.256" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="startnode" type="simpleType.Generic.String.256" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Notification">
+        <xsd:sequence>
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="email-from" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="email-to" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="email-to-cc" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="email-to-bcc" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="threshold" type="complexType.Threshold" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-execution-time" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="hang-detection-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="failure-rule" type="simpleType.FailureRule" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="retries" type="simpleType.Retries" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="retry-interval" type="simpleType.RetryInterval" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Parameters">
+        <xsd:sequence>
+            <xsd:element name="parameter" type="complexType.Parameter" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.Parameter" mixed="true">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.NonEmptyString.1000">
+                <xsd:attribute name="name" type="simpleType.Generic.NonEmptyString.256" use="required" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Threshold">
+        <xsd:sequence minOccurs="1">
+            <!-- only empty elements, at least one of these elements is required -->
+            <xsd:element name="success" type="complexType.EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="exception" type="complexType.EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="error" type="complexType.EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="hang" type="complexType.EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="retry" type="complexType.EmptyElement" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.EmptyElement" mixed="false"></xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.10">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.1000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="1000" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="32" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Email">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonNegativeInt">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="0"/>   
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+</xsd:schema>

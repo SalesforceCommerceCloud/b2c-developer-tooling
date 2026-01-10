@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/slot/2008-09-08" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    xmlns:xml="http://www.w3.org/XML/1998/namespace" 
+    targetNamespace="http://www.demandware.com/xml/impex/slot/2008-09-08"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- top-level element -->
+    <xsd:element name="slot-configurations">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="slot-configuration" type="SlotConfiguration" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="slot-configuration-campaign-assignment" type="SlotConfigurationCampaignAssignment" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    
+    <!-- fake element for mass data support -->
+    <xsd:element name="slot-configuration" type="SlotConfiguration" />
+    <xsd:element name="slot-configuration-campaign-assignment" type="SlotConfigurationCampaignAssignment" />
+
+    <!-- slot configuration -->
+
+    <xsd:complexType name="SlotConfiguration" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="template" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="rank" type="Rank" minOccurs="0" maxOccurs="1" />          
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="callout-msg" type="LocalizedText" minOccurs="0" maxOccurs="unbounded" />          
+            <xsd:element name="schedule" type="SlotSchedule" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="content" type="Content" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-groups" type="CustomerGroups" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="slot-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="context" type="ContextType" />
+        <xsd:attribute name="context-id" type="Generic.NonEmptyString.256" />
+        <xsd:attribute name="configuration-id" type="Generic.NonEmptyString.256" />
+        <xsd:attribute name="default" type="xsd:boolean" />
+        <xsd:attribute name="assigned-to-site" type="xsd:boolean">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Determines if the slot-configuration is implicitly assigned to the site or not.
+                    If not specified, defaults to true.
+                    The elements rank, schedule, and customer-groups can only be set on slot-configurations assigned to the site.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+    
+    <!--  slot configuration campaign assignment -->
+
+    <xsd:complexType name="SlotConfigurationCampaignAssignment" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="qualifiers" type="SlotConfigurationAssignmentQualifiers" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="rank" type="Rank" minOccurs="0" maxOccurs="1" />          
+            <xsd:element name="schedule" type="SlotSchedule" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="slot-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="context" type="ContextType" use="required" />
+        <xsd:attribute name="context-id" type="Generic.NonEmptyString.256" />
+        <xsd:attribute name="configuration-id" type="Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="campaign-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- slot schedule -->
+
+    <xsd:complexType name="SlotSchedule" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="start-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="end-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="recurrence" type="SlotSchedule.Recurrence" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SlotSchedule.Recurrence" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="day-of-week" type="SlotSchedule.DayOfWeek" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="time-of-day" type="SlotSchedule.TimeOfDay" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SlotSchedule.DayOfWeek" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="weekday" type="Weekday" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SlotSchedule.TimeOfDay" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="time-from" type="xsd:time" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="time-to" type="xsd:time" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- content -->
+
+    <xsd:complexType name="Content" mixed="false">
+        <xsd:choice minOccurs="1" maxOccurs="1">
+            <xsd:element name="products" type="Products" />
+            <xsd:element name="categories" type="Categories" />
+            <xsd:element name="content-assets" type="ContentAssets" />
+            <xsd:element name="html" type="HTML"/>
+            <xsd:element name="recommended-products" type="RecommendedProducts"/>
+        </xsd:choice>
+    </xsd:complexType>
+    
+    <!-- recommendation -->
+
+    <xsd:complexType name="RecommendedProducts" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Reserved for Dynamic Recommendations Beta users. Will not be created and a warning will be logged if the Enable Dynamic Recommendations Beta feature is not enabled by Ops.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="recommendation-rule-id" type="Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+    
+    <!-- products -->
+
+    <xsd:complexType name="Products" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="product" type="Product" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Product" mixed="false">
+        <xsd:attribute name="product-id" type="Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <!-- categories -->
+
+    <xsd:complexType name="Categories" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="category" type="Category" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Category" mixed="false">
+        <xsd:attribute name="category-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- content assets -->
+
+    <xsd:complexType name="ContentAssets" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="content-asset" type="ContentAsset" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ContentAsset" mixed="false">
+        <xsd:attribute name="content-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- static html -->
+
+    <xsd:complexType name="HTML" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                Slot configuration import in MERGE mode only updates content for locales 
+                specified in the import file instead of replacing all previous ones.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="body" type="LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!--  qualifiers -->
+
+    <xsd:complexType name="SlotConfigurationAssignmentQualifiers" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="customer-groups" type="CustomerGroups" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomerGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="customer-group" type="CustomerGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomerGroup" mixed="false">
+        <xsd:attribute name="group-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>   
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="LocalizedText" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="ContextType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="global" />
+            <xsd:enumeration value="category" />
+            <xsd:enumeration value="folder" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Rank">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="1" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Weekday">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Monday" />
+            <xsd:enumeration value="Tuesday" />
+            <xsd:enumeration value="Wednesday" />
+            <xsd:enumeration value="Thursday" />
+            <xsd:enumeration value="Friday" />
+            <xsd:enumeration value="Saturday" />
+            <xsd:enumeration value="Sunday" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty strings with no leading or trailing whitespace -->
+
+    <xsd:simpleType name="Generic.NonEmptyString">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.100">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>    
+</xsd:schema>

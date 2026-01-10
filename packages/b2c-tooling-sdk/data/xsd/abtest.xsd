@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema
+    xmlns="http://www.demandware.com/xml/impex/abtest/2010-04-01"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/abtest/2010-04-01"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- top-level element -->
+    <xsd:element name="ab-tests">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="ab-test" type="ABTest" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+     <!-- fake element for mass data support -->
+    <xsd:element name="ab-test" type="ABTest" />
+
+    <xsd:complexType name="ABTest" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="notification" type="Notification" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="tags" type="Tags" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="schedule" type="ABTestSchedule" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="key-metric" type="ABTestKeyMetric" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="participation" type="ABTestParticipation" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-groups" type="CustomerGroups" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="test-segments" type="ABTestSegments" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="test-id" type="Generic.NonEmptyString.40" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="Tags" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="tag" type="Generic.NonEmptyString.100" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSchedule" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="start-date" type="xsd:dateTime" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="end-date" type="xsd:dateTime" minOccurs="1" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>End date may not be more than 90 days after start date.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!--  AB test participation -->
+
+    <xsd:complexType name="ABTestParticipation" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="trigger" type="ABTestParticipationTrigger" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="expiration" type="ABTestParticipationExpiration" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="ABTestParticipationTrigger">
+        <xsd:choice minOccurs="1" maxOccurs="1">
+            <xsd:element name="immediately" type="EmptyElement" />
+            <xsd:element name="category-page-view" type="CategoryPage" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Synonym for pipeline call Search-Show?cgid=CATEGORYID</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="home-page-view" type="EmptyElement">
+                <xsd:annotation>
+                    <xsd:documentation>Synonym for pipeline call Home-Show</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="pipeline-call" type="PipelineCall" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Pipeline name and start-node.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element> 
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="PipelineCall">
+        <xsd:sequence>
+            <xsd:element name="pipeline-name" type="Generic.Word.40" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="start-node" type="Generic.Word.40" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CategoryPage">
+        <xsd:sequence>
+            <xsd:element name="category-id" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="ABTestParticipationExpiration">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="never" />
+            <xsd:enumeration value="session" />
+            <xsd:enumeration value="browser" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  customer groups -->
+    <xsd:complexType name="CustomerGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="customer-group" type="CustomerGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="match-mode" type="MatchMode" use="optional" default="any" >
+        	<xsd:annotation>
+                <xsd:documentation>
+                    Lack of 'MatchMode' attribute defaults to legacy 'any' behavior.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomerGroup" mixed="false">
+        <xsd:attribute name="group-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- AB test segments -->
+
+    <xsd:complexType name="ABTestSegments" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="control-segment" type="ABTestControlSegment" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="test-segment" type="ABTestNonControlSegment" minOccurs="0" maxOccurs="4" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestControlSegment" mixed="false">
+        <xsd:complexContent>
+            <xsd:extension base="ABTestSegment">
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestNonControlSegment" mixed="false">
+        <xsd:complexContent>
+            <xsd:extension base="ABTestSegment">
+                <xsd:sequence>
+                    <xsd:element name="custom" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
+                    <xsd:element name="experiences" type="ABTestSegmentExperiences"  minOccurs="0" maxOccurs="1" />
+                </xsd:sequence>
+                <xsd:attribute name="segment-id" type="Generic.NonEmptyString.40" use="required" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSegment" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="allocation-percent" type="Allocation" minOccurs="1" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Allocations must add up to 100.  If not, the imported allocations will be scaled to add up to 100.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSegmentExperiences" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="promotion" type="ABTestSegmentPromotion" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="slot-configuration" type="ABTestSegmentSlotConfiguration" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="sorting-rule" type="ABTestSegmentSortingRule" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="keyword-search-sorting-rule" type="ABTestSegmentKeywordSearchSortingRule" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSegmentPromotion" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="rank" type="Rank" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="promotion-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSegmentSlotConfiguration" mixed="false">
+        <xsd:attribute name="slot-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="slot-context" type="SlotContextType" use="required" />
+        <xsd:attribute name="slot-context-id" type="Generic.NonEmptyString.256" />
+        <xsd:attribute name="slot-configuration-id" type="Generic.NonEmptyString.256" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSegmentSortingRule" mixed="false">
+        <xsd:attribute name="rule-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="category-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="rule-context" type="Context" use="optional" default="site" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSegmentKeywordSearchSortingRule" mixed="false">
+        <xsd:attribute name="rule-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="keyword-group-id" type="Generic.String.40" use="optional" />
+        <xsd:attribute name="rule-context" type="Context" use="optional" default="site" />
+    </xsd:complexType>
+
+    <xsd:complexType name="Notification">
+        <xsd:sequence>
+            <xsd:element name="email-to" type="simpleType.Email" minOccurs="0" maxOccurs="10" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.40">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="40" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.40">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="40" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.100">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.Word.40">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="40" />
+            <xsd:pattern value="[_\w]+" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="EmptyElement" mixed="false" />
+
+    <!-- Simple types specific to AB tests.  -->
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Email">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="Rank">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="1" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Allocation">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="0" />
+            <xsd:maxInclusive value="100" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="SlotContextType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="global" />
+            <xsd:enumeration value="category" />
+            <xsd:enumeration value="folder" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="ABTestKeyMetric">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="adds-to-baskets" />
+            <xsd:enumeration value="avg-adds-per-basket" />
+            <xsd:enumeration value="avg-discount-amount" />
+            <xsd:enumeration value="avg-discount-amount-with-coupon" />
+            <xsd:enumeration value="avg-discount-amount-without-coupon" />
+            <xsd:enumeration value="avg-order-value" />
+            <xsd:enumeration value="avg-revenue-per-visit" />
+            <xsd:enumeration value="avg-units-added-per-basket" />
+            <xsd:enumeration value="avg-units-per-order" />
+            <xsd:enumeration value="avg-units-per-visit" />
+            <xsd:enumeration value="basket-rate" />
+            <xsd:enumeration value="baskets" />
+            <xsd:enumeration value="checkout-rate" />
+            <xsd:enumeration value="checkouts" />
+            <xsd:enumeration value="conversion-rate" />
+            <xsd:enumeration value="discount-amount-with-coupon" />
+            <xsd:enumeration value="discount-amount-without-coupon" />
+            <xsd:enumeration value="orders" />
+            <xsd:enumeration value="revenue" />
+            <xsd:enumeration value="sales-velocity" />
+            <xsd:enumeration value="total-discount-amount" />
+            <xsd:enumeration value="units" />
+            <xsd:enumeration value="units-added-to-baskets" />
+        </xsd:restriction>
+     </xsd:simpleType>
+     
+     <xsd:simpleType name="MatchMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="any" />
+            <xsd:enumeration value="all" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Context">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="site" />
+            <xsd:enumeration value="global" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

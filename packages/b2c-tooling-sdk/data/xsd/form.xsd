@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/form/2008-04-19"
+    xmlns="http://www.demandware.com/xml/form/2008-04-19"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- The root tag. -->
+    <xsd:element name="form" type="complexType.FormDefinition" />
+
+    <!-- The 'form' element. It is a type of container and the root element. -->
+    <xsd:complexType name="complexType.FormDefinition">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.Container">
+                <!-- Optional form element identifier. -->
+                <xsd:attribute name="formid" type="simpleType.FormId" />
+                <xsd:attribute name="secure" type="xsd:boolean" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <!-- The 'group' element. A type of container where formid is a required attribute. -->
+    <xsd:complexType name="complexType.Group">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.Container">
+                <!-- Unique form element identifier. -->
+                <xsd:attribute name="formid" type="simpleType.FormId" use="required"/> 
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <!-- The 'list' element. A type of container where formid is a required attribute
+    and other optional attributes. -->
+    <xsd:complexType name="complexType.List">
+        <xsd:complexContent>
+            <xsd:extension base="complexType.Container">
+                <!-- Unique form element identifier. -->
+                <xsd:attribute name="formid" type="simpleType.FormId" use="required"/>
+
+                <!-- When a list is represented by an HTML table and a column contains
+                checkboxes, the 'selectmany-fieldid' tells the framework, which of the
+                fields is used to represent that selection checkbox. The framework
+                then provides direct access to all selected objects. If the column is
+                a radio button, then 'selectone-fieldid' tells the framework which field
+                is used to map the boolean state of the radio buttons. 'selectmany-fieldid'
+                and 'selectone-fieldid' are mutual exclusive. -->
+                <xsd:attribute name="selectmany-fieldid" type="simpleType.Generic.NonEmptyString" />
+                <xsd:attribute name="selectone-fieldid" type="simpleType.Generic.NonEmptyString" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <!-- Represents the common elements and attributes of all container-like elements: form, group, list -->
+    <xsd:complexType name="complexType.Container">
+        <xsd:sequence>
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <!-- A group -->
+                <xsd:element name="group" type="complexType.Group" />
+                <!-- A list -->
+                <xsd:element name="list" type="complexType.List" />
+                <!-- A field -->
+                <xsd:element name="field" type="complexType.Field" />
+                <!-- An action -->
+                <xsd:element name="action" type="complexType.Action" />
+                <!-- An included form  -->
+                <xsd:element name="include" type="complexType.Include" />
+            </xsd:choice>
+        </xsd:sequence>
+
+        <!--  Reference to a meta data type definition -->
+        <xsd:attribute name="object-def" type="simpleType.Generic.NonEmptyString" />
+        <!-- The name of a method that is used to bind objects to field. The method should be a bean property. -->
+        <xsd:attribute name="binding" type="simpleType.Generic.NonEmptyString" />
+        <!-- The description of the form element. -->
+        <xsd:attribute name="description" type="simpleType.Generic.StringOrKey"/>
+        <!-- The error message to use for form container. If the container is considered 
+        invalid, this is the error message that will be set on the container. -->
+        <xsd:attribute name="form-error" type="simpleType.Generic.StringOrKey"/>
+        
+        <!-- Optional attribute -->
+        <!-- Represents a DWscript expression that you use for container validation. -->
+        <xsd:attribute name="validation" type="simpleType.Generic.NonEmptyString"/>
+    </xsd:complexType>
+
+
+    <!-- The 'field' element. Typically represents an HTML form field. -->
+    <xsd:complexType name="complexType.Field">
+        <xsd:sequence>
+            <xsd:element name="options" type="complexType.FieldOptions" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+
+        <!-- Unique form element identifier. -->
+        <xsd:attribute name="formid" type="simpleType.FormId"/>
+        <!-- A reference to an attribute definition in the meta data. -->
+        <xsd:attribute name="attribute-def" type="simpleType.Generic.NonEmptyString"/>
+        <!-- The name of a method that is used to bind an object to the field. -->
+        <xsd:attribute name="binding" type="simpleType.Generic.NonEmptyString" />
+        <!-- Identifies the type of value that field represents. -->
+        <xsd:attribute name="type" type="simpleType.Type"/>
+        <!-- Indicates that a value must be entered into the field. -->
+        <xsd:attribute name="mandatory" type="xsd:boolean" default="false"/>
+        <!-- A label to use for the field. -->
+        <xsd:attribute name="label" type="simpleType.Generic.StringOrKey"/>
+        <!-- A description to use for the field. -->
+        <xsd:attribute name="description" type="simpleType.Generic.StringOrKey"/>
+        <!-- The error message to use for a field if a value is not provided. -->
+        <xsd:attribute name="missing-error" type="simpleType.Generic.StringOrKey"/>
+        <!-- The error message to use for the field if the value cannot be parsed. -->
+        <xsd:attribute name="parse-error" type="simpleType.Generic.StringOrKey"/>
+        <!-- The error message to use for the field if the value is outside the specified minimum and maximum range. -->
+        <xsd:attribute name="range-error" type="simpleType.Generic.StringOrKey"/>
+        <!-- The error message to use for the field if the value is not valid. -->
+        <xsd:attribute name="value-error" type="simpleType.Generic.StringOrKey"/>
+        <!-- Allows you to format date and number values. -->
+        <xsd:attribute name="format" type="simpleType.Generic.StringOrKey"/>
+        <!-- Controls whitespace in the field value -->
+        <xsd:attribute name="whitespace" type="simpleType.Whitespace" default="none"/>
+        <!-- Controls the number of characters that will be masked in the HTML field value --> 
+        <xsd:attribute name="masked" type="xsd:int"/>
+        <!-- Minimum length of field value -->
+        <xsd:attribute name="min-length" type="xsd:int"/>
+        <!-- Maximum length of field value -->
+        <xsd:attribute name="max-length" type="xsd:int"/>
+        <!-- Default value for field -->
+        <xsd:attribute name="default-value" type="simpleType.Generic.String"/>
+
+        <!-- Optional attribute if type is 'string' -->
+        <!-- Represents a regular expression that you use for field value validation. -->
+        <xsd:attribute name="regexp" type="simpleType.Generic.NonEmptyString"/> 
+
+        <!-- Optional attribute -->
+        <!-- Represents a DWscript expression that you use for field value validation. -->
+        <xsd:attribute name="validation" type="simpleType.Generic.NonEmptyString"/> 
+
+        <!-- Optional attribute if type is 'date' -->
+        <!-- Indicates if the if the site's timezone value should be used or if 
+             the default GMT timezone should be used. When 'true', the site's timezone 
+             value is used. When 'false', GMT is used.
+        -->
+        <xsd:attribute name="timezoned" type="xsd:boolean"/> 
+
+        <!-- Optional attributes if type is 'integer', 'number' or 'date'. When the type is
+             an 'integer' or 'number' the value is a numeric. When the type is a 'date', the value
+             can be 'now' or any valid date represented as a string based on the current 'format'. -->
+        <!-- Minimum value of field. If min is greater than max, min value is set equal to max value. -->
+        <xsd:attribute name="min" type="simpleType.Generic.String"/> 
+        <!-- Maximum value of field. -->
+        <xsd:attribute name="max" type="simpleType.Generic.String"/>
+
+        <!-- Optional attributes if type is 'boolean' -->
+        <!-- 'checked-value' allows you to map a string value to a boolean field
+             when it is selected. For example, if you are rendering a radio button but want
+             to use a string value instead of true. -->
+        <xsd:attribute name="checked-value" type="simpleType.Generic.NonEmptyString"/>
+        <!-- 'unchecked-value' allows you to map a string value to a boolean field 
+             when it is not selected. For example, if you are rendering a radio button but want 
+             to use a string value instead of false. -->
+        <xsd:attribute name="unchecked-value" type="simpleType.Generic.NonEmptyString"/>
+
+    </xsd:complexType>
+
+    <!-- The 'options' element. Represents a set of field options. Typically rendered as a drop-down list. -->
+    <xsd:complexType name="complexType.FieldOptions">
+        <xsd:sequence>
+            <xsd:element name="option" type="complexType.FieldOption" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+
+        <!-- Identifies the binding method to use when getting and setting option values. -->
+        <xsd:attribute name="value-binding" type="simpleType.Generic.NonEmptyString" />
+        <!-- Identifies the binding method to use when getting and setting option id values. -->
+        <xsd:attribute name="optionid-binding" type="simpleType.Generic.NonEmptyString" />
+        <!-- Identifies the binding method to use when getting and setting option label values. -->
+        <xsd:attribute name="label-binding" type="simpleType.Generic.NonEmptyString" />
+    </xsd:complexType>
+
+    <!-- The 'option' element. Represents a single option inside and 'select' element. -->
+    <xsd:complexType name="complexType.FieldOption">
+        <!-- The option's value. -->
+        <xsd:attribute name="value" type="simpleType.Generic.String" />
+        <!-- The option's id value. -->
+        <xsd:attribute name="optionid" type="simpleType.Generic.String" />
+        <!-- The option's label value. -->
+        <xsd:attribute name="label" type="simpleType.Generic.StringOrKey" />
+        <!-- The option's default value. -->
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <!-- The 'action' element. Represents a user action and is typically an HTML action element, such as a button. -->
+    <xsd:complexType name="complexType.Action">
+        <!-- Unique form element identifier. -->
+        <xsd:attribute name="formid" type="simpleType.FormId" />
+        <!-- Indiciates if the form should be validated or not. -->
+        <xsd:attribute name="valid-form" type="xsd:boolean" default="true"/>
+        <!-- The label for the action. -->
+        <xsd:attribute name="label" type="simpleType.Generic.StringOrKey"/>
+        <!-- The description for the action. -->
+        <xsd:attribute name="description" type="simpleType.Generic.StringOrKey"/>
+        <!-- Used to associate an object with the action. For example in a list, each row might have a delete button.
+             'binding' helps to identify which delete was presed. -->
+        <xsd:attribute name="binding" type="simpleType.Generic.NonEmptyString" />
+    </xsd:complexType>
+
+    <!-- The 'include' element. Allows you to include another form definition inside the current form definition.-->
+    <xsd:complexType name="complexType.Include">
+        <!-- Unique form element identifier. This is how the included element is reference in the context of this form. -->
+        <xsd:attribute name="formid" type="simpleType.FormId" />
+        <!-- The name of the form to be included. -->
+        <xsd:attribute name="name" type="simpleType.Generic.NonEmptyString" use="required"/>
+        <!-- Used to associate an object to the included form. -->
+        <xsd:attribute name="binding" type="simpleType.Generic.NonEmptyString" />
+    </xsd:complexType>
+
+
+    <!-- Common definitions -->
+
+    <!-- Simple string -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <!-- Non-empty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Either a string or a string representing a locale-based key in forms.properties -->
+    <xsd:simpleType name="simpleType.Generic.StringOrKey">
+        <xsd:restriction base="simpleType.Generic.String" />
+    </xsd:simpleType>
+
+    <!-- formid -->
+    <xsd:simpleType name="simpleType.FormId">
+        <xsd:restriction base="simpleType.Generic.NonEmptyString"/>
+    </xsd:simpleType>
+
+    <!-- Field type enumeration -->
+    <xsd:simpleType name="simpleType.Type">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="boolean" />
+            <xsd:enumeration value="date" />
+            <xsd:enumeration value="integer" />
+            <xsd:enumeration value="number" />
+            <xsd:enumeration value="string" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Whitespace enumeration -->
+    <xsd:simpleType name="simpleType.Whitespace">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none" />
+            <xsd:enumeration value="remove" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+</xsd:schema>
