@@ -4,15 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {createRequire} from 'node:module';
 import {marked} from 'marked';
+// eslint-disable-next-line import/namespace
+import {markedTerminal} from 'marked-terminal';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/operations/docs';
 import {t} from '../../i18n/index.js';
-
-// Use createRequire to load CJS module that confuses eslint-plugin-import
-const require = createRequire(import.meta.url);
-const {markedTerminal} = require('marked-terminal');
 
 interface ReadDocsResult {
   entry: DocEntry;
