@@ -103,8 +103,13 @@ export {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS} from './webdav-command.js';
 export type {WebDavRootKey} from './webdav-command.js';
 
 // Config utilities
-export {loadConfig, findDwJson, loadMobifyConfig} from './config.js';
-export type {ResolvedConfig, LoadConfigOptions, MobifyConfigResult} from './config.js';
+export {loadConfig, findDwJson} from './config.js';
+export type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
+
+// Hook types for plugin extensibility
+export type {ConfigSourcesHookOptions, ConfigSourcesHookResult, ConfigSourcesHook} from './hooks.js';
+// Re-export module augmentation for @oclif/core Hooks interface
+export {} from './hooks.js';
 
 // Table rendering utilities
 export {TableRenderer, createTable} from './table.js';

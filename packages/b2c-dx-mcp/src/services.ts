@@ -50,10 +50,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {B2CInstance, type B2CInstanceOptions} from '@salesforce/b2c-tooling-sdk';
-import {ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {loadMobifyConfig} from '@salesforce/b2c-tooling-sdk/cli';
+import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 
 /**
  * MRT (Managed Runtime) configuration.
@@ -66,6 +65,26 @@ export interface MrtConfig {
   project?: string;
   /** MRT environment from --environment flag or SFCC_MRT_ENVIRONMENT env var */
   environment?: string;
+}
+
+/**
+ * B2C instance input options for Services.create().
+ */
+export interface B2CInstanceCreateOptions {
+  /** B2C instance hostname from --server flag */
+  hostname?: string;
+  /** Code version from --code-version flag */
+  codeVersion?: string;
+  /** Username for Basic auth from --username flag */
+  username?: string;
+  /** Password for Basic auth from --password flag */
+  password?: string;
+  /** OAuth client ID from --client-id flag */
+  clientId?: string;
+  /** OAuth client secret from --client-secret flag */
+  clientSecret?: string;
+  /** Explicit path to dw.json config file */
+  configPath?: string;
 }
 
 /**
@@ -87,7 +106,7 @@ export interface MrtCreateOptions {
  */
 export interface ServicesCreateOptions {
   /** B2C instance configuration (from InstanceCommand.baseFlags) */
-  b2cInstance?: B2CInstanceOptions;
+  b2cInstance?: B2CInstanceCreateOptions;
   /** MRT configuration (from MrtCommand.baseFlags) */
   mrt?: MrtCreateOptions;
 }
@@ -143,12 +162,13 @@ export class Services {
   /**
    * Creates a Services instance with all configuration resolved eagerly.
    *
-   * **MRT auth resolution** (matches CLI behavior):
-   * 1. `mrt.apiKey` option (from --api-key flag, which includes SFCC_MRT_API_KEY env var via oclif)
-   * 2. `~/.mobify` config file (or `~/.mobify--[hostname]` if `mrt.cloudOrigin` is set)
+   * Uses the unified {@link resolveConfig} API from the SDK to resolve all
+   * configuration from multiple sources (flags, dw.json, ~/.mobify).
    *
-   * **B2C instance resolution**:
-   * - `b2cInstance` options merged with dw.json (auto-discovered or via configPath)
+   * **Resolution priority** (highest to lowest):
+   * 1. Explicit flag values (hostname, clientId, apiKey, etc.)
+   * 2. dw.json file (auto-discovered or via configPath)
+   * 3. ~/.mobify config file (or ~/.mobify--[hostname] if cloudOrigin is set)
    *
    * @param options - Configuration options
    * @returns Services instance with resolved config
@@ -162,73 +182,39 @@ export class Services {
    * ```
    */
   public static create(options: ServicesCreateOptions = {}): Services {
-    // Resolve MRT config (auth from flag/env via oclif → ~/.mobify, plus project/environment)
-    const mrtConfig: MrtConfig = {
-      auth: Services.resolveMrtAuth({
-        apiKey: options.mrt?.apiKey,
+    // Use unified config resolution from SDK
+    const config = resolveConfig(
+      {
+        hostname: options.b2cInstance?.hostname,
+        codeVersion: options.b2cInstance?.codeVersion,
+        username: options.b2cInstance?.username,
+        password: options.b2cInstance?.password,
+        clientId: options.b2cInstance?.clientId,
+        clientSecret: options.b2cInstance?.clientSecret,
+        mrtApiKey: options.mrt?.apiKey,
+        mrtProject: options.mrt?.project,
+        mrtEnvironment: options.mrt?.environment,
+      },
+      {
+        configPath: options.b2cInstance?.configPath,
         cloudOrigin: options.mrt?.cloudOrigin,
-      }),
-      project: options.mrt?.project,
-      environment: options.mrt?.environment,
+      },
+    );
+
+    // Build MRT config using factory methods
+    const mrtConfig: MrtConfig = {
+      auth: config.hasMrtConfig() ? config.createMrtAuth() : undefined,
+      project: config.values.mrtProject,
+      environment: config.values.mrtEnvironment,
     };
 
-    // Resolve B2C instance from options (B2CInstanceOptions passed directly)
-    const b2cInstance = Services.resolveB2CInstance(options.b2cInstance);
+    // Build B2C instance using factory method
+    const b2cInstance = config.hasB2CInstanceConfig() ? config.createB2CInstance() : undefined;
 
     return new Services({
       b2cInstance,
       mrtConfig,
     });
-  }
-
-  /**
-   * Resolves B2C instance from available sources.
-   *
-   * Resolution merges:
-   * 1. Explicit flag values (highest priority)
-   * 2. dw.json file (via configPath or auto-discovery)
-   *
-   * @param options - Resolution options (same as B2CInstance.fromEnvironment)
-   * @returns B2CInstance if configured, undefined if resolution fails
-   */
-  public static resolveB2CInstance(options: B2CInstanceOptions = {}): B2CInstance | undefined {
-    try {
-      return B2CInstance.fromEnvironment(options);
-    } catch {
-      // B2C instance resolution failed (no config available)
-      // This is not an error - tools that don't need B2C instance will work fine
-      return undefined;
-    }
-  }
-
-  /**
-   * Resolves MRT auth strategy from available sources.
-   *
-   * Resolution order:
-   * 1. apiKey option (from --api-key flag, which includes SFCC_MRT_API_KEY env var via oclif)
-   * 2. ~/.mobify config file (or ~/.mobify--[hostname] if cloudOrigin is set)
-   *
-   * Note: The --api-key flag in MrtCommand.baseFlags has `env: 'SFCC_MRT_API_KEY'`,
-   * so oclif automatically falls back to the env var during flag parsing.
-   *
-   * @param options - Resolution options
-   * @param options.apiKey - MRT API key from --api-key flag (includes env var via oclif)
-   * @param options.cloudOrigin - MRT cloud origin URL for environment-specific config
-   * @returns AuthStrategy if configured, undefined otherwise
-   */
-  public static resolveMrtAuth(options: {apiKey?: string; cloudOrigin?: string} = {}): AuthStrategy | undefined {
-    // 1. Check apiKey option (oclif handles --api-key flag → SFCC_MRT_API_KEY env var fallback)
-    if (options.apiKey?.trim()) {
-      return new ApiKeyStrategy(options.apiKey, 'Authorization');
-    }
-
-    // 2. Check ~/.mobify config file (or ~/.mobify--[hostname] if cloud origin specified)
-    const mobifyConfig = loadMobifyConfig(options.cloudOrigin);
-    if (mobifyConfig.apiKey) {
-      return new ApiKeyStrategy(mobifyConfig.apiKey, 'Authorization');
-    }
-
-    return undefined;
   }
 
   // ============================================

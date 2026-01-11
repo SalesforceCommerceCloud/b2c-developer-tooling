@@ -144,6 +144,17 @@
         "types": "./dist/cjs/errors/index.d.ts",
         "default": "./dist/cjs/errors/index.js"
       }
+    },
+    "./config": {
+      "development": "./src/config/index.ts",
+      "import": {
+        "types": "./dist/esm/config/index.d.ts",
+        "default": "./dist/esm/config/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/config/index.d.ts",
+        "default": "./dist/cjs/config/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",

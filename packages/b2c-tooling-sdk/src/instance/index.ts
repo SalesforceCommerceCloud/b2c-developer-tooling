@@ -45,6 +45,8 @@ import {resolveAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
 import {loadDwJson} from '../config/dw-json.js';
+import {mapDwJsonToNormalizedConfig, mergeConfigsWithProtection} from '../config/mapping.js';
+import type {NormalizedConfig} from '../config/types.js';
 
 /**
  * Instance configuration (hostname, code version, etc.)
@@ -133,47 +135,61 @@ export class B2CInstance {
    * });
    */
   static fromEnvironment(options: FromEnvironmentOptions = {}): B2CInstance {
-    const dwConfig = loadDwJson({
+    // Load dw.json and map to normalized config
+    const dwJsonRaw = loadDwJson({
       instance: options.instance,
       path: options.configPath,
     });
+    const dwConfig = dwJsonRaw ? mapDwJsonToNormalizedConfig(dwJsonRaw) : {};
 
-    // Merge dw.json with overrides (overrides win)
-    const hostname = options.hostname ?? dwConfig?.hostname;
-    const codeVersion = options.codeVersion ?? dwConfig?.['code-version'];
-    const webdavHostname = options.webdavHostname ?? dwConfig?.['webdav-hostname'];
-    const username = options.username ?? dwConfig?.username;
-    const password = options.password ?? dwConfig?.password;
-    const clientId = options.clientId ?? dwConfig?.['client-id'];
-    const clientSecret = options.clientSecret ?? dwConfig?.['client-secret'];
-    const scopes = options.scopes ?? dwConfig?.['oauth-scopes'];
-    const authMethods = options.authMethods ?? (dwConfig?.['auth-methods'] as AuthMethod[] | undefined);
+    // Build overrides from options
+    const overrides: Partial<NormalizedConfig> = {
+      hostname: options.hostname,
+      codeVersion: options.codeVersion,
+      webdavHostname: options.webdavHostname,
+      username: options.username,
+      password: options.password,
+      clientId: options.clientId,
+      clientSecret: options.clientSecret,
+      scopes: options.scopes,
+      authMethods: options.authMethods,
+    };
 
-    if (!hostname) {
+    // Merge with hostname mismatch protection (consistent with CLI behavior)
+    const {config: resolved, warnings} = mergeConfigsWithProtection(overrides, dwConfig, {
+      hostnameProtection: true,
+    });
+
+    // Log warnings (optional - could integrate with SDK logger)
+    for (const warning of warnings) {
+      console.warn(`[B2CInstance] ${warning.message}`);
+    }
+
+    if (!resolved.hostname) {
       throw new Error(
-        'Hostname is required. Set in dw.json or provide via options. ' + (dwConfig ? '' : 'No dw.json file found.'),
+        'Hostname is required. Set in dw.json or provide via options. ' + (dwJsonRaw ? '' : 'No dw.json file found.'),
       );
     }
 
     const config: InstanceConfig = {
-      hostname,
-      codeVersion,
-      webdavHostname,
+      hostname: resolved.hostname,
+      codeVersion: resolved.codeVersion,
+      webdavHostname: resolved.webdavHostname,
     };
 
     const auth: AuthConfig = {
-      authMethods,
+      authMethods: resolved.authMethods,
     };
 
-    if (username && password) {
-      auth.basic = {username, password};
+    if (resolved.username && resolved.password) {
+      auth.basic = {username: resolved.username, password: resolved.password};
     }
 
-    if (clientId) {
+    if (resolved.clientId) {
       auth.oauth = {
-        clientId,
-        clientSecret,
-        scopes,
+        clientId: resolved.clientId,
+        clientSecret: resolved.clientSecret,
+        scopes: resolved.scopes,
       };
     }
 
