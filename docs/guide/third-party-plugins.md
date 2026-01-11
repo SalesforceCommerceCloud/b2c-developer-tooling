@@ -66,6 +66,62 @@ export SFCC_INTELLIJ_CREDENTIALS_KEY="your-24-byte-key"
 b2c code deploy
 ```
 
+### macOS Keychain Plugin
+
+**Repository:** [sfcc-solutions-share/b2c-plugin-macos-keychain](https://github.com/sfcc-solutions-share/b2c-plugin-macos-keychain)
+
+Loads B2C credentials from the macOS Keychain. This allows secure storage of sensitive credentials without keeping them in files like `dw.json`.
+
+::: warning macOS Only
+This plugin only works on macOS.
+:::
+
+#### Installation
+
+```bash
+b2c plugins install sfcc-solutions-share/b2c-plugin-macos-keychain
+```
+
+#### Features
+
+- Stores credentials as JSON blobs in the macOS Keychain
+- Supports global defaults via a `*` account (shared OAuth credentials)
+- Supports instance-specific credentials that override globals
+- Optional `defaultInstance` to auto-select an instance
+- Merges with other config sources (dw.json, environment variables)
+
+#### Storing Credentials
+
+```bash
+# Store global OAuth credentials (shared across all instances)
+security add-generic-password -s 'b2c-cli' -a '*' \
+  -w '{"clientId":"shared-id","clientSecret":"shared-secret","defaultInstance":"staging"}' -U
+
+# Store instance-specific credentials
+security add-generic-password -s 'b2c-cli' -a 'staging' \
+  -w '{"username":"user@example.com","password":"my-webdav-key"}' -U
+```
+
+#### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SFCC_KEYCHAIN_SERVICE` | Service name in keychain | `b2c-cli` |
+| `SFCC_KEYCHAIN_INSTANCE` | Fallback instance name | (none) |
+
+#### Usage
+
+```bash
+# Use with explicit instance
+b2c code deploy --instance staging
+
+# Uses defaultInstance from * config if set
+b2c code deploy
+
+# Global OAuth merges with dw.json for other settings
+b2c code deploy
+```
+
 ## Creating Your Own Plugin
 
 Want to create a plugin? See the [Extending the CLI](./extending) guide for documentation on:
