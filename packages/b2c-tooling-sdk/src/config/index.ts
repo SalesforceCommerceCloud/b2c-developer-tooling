@@ -27,16 +27,34 @@
  * const instance = resolver.createInstance({ hostname: '...' });
  * ```
  *
- * ## Lower-Level APIs
+ * ## Resolution Priority
  *
- * For advanced use cases, you can use the lower-level dw.json loading functions:
+ * Configuration is resolved with the following precedence (highest to lowest):
  *
- * ```typescript
- * import { loadDwJson, findDwJson } from '@salesforce/b2c-tooling-sdk/config';
+ * 1. **Explicit overrides** - Values passed to `resolve()`, `createInstance()`, etc.
+ * 2. **Configuration sources** - dw.json, ~/.mobify (in order)
  *
- * const dwJsonPath = findDwJson();
- * const config = loadDwJson({ path: dwJsonPath, instance: 'staging' });
- * ```
+ * Later sources only fill in missing values—they do not override values from
+ * higher-priority sources.
+ *
+ * ## Hostname Mismatch Protection
+ *
+ * The configuration system includes safety protection against accidentally using
+ * credentials from one instance with a different hostname. When you explicitly
+ * specify a hostname that differs from the dw.json hostname:
+ *
+ * - The entire base configuration from dw.json is ignored
+ * - Only your explicit overrides are used
+ * - A warning is included in the resolution result
+ *
+ * This prevents credential leakage between different B2C instances.
+ *
+ * ## Default Configuration Sources
+ *
+ * The default sources loaded by {@link createConfigResolver} are:
+ *
+ * - **dw.json** - Project configuration file, searched upward from cwd
+ * - **~/.mobify** - Home directory file for MRT API key
  *
  * ## Custom Configuration Sources
  *
@@ -51,6 +69,17 @@
  * }
  *
  * const resolver = new ConfigResolver([new MySource()]);
+ * ```
+ *
+ * ## Lower-Level APIs
+ *
+ * For advanced use cases, you can use the lower-level dw.json loading functions:
+ *
+ * ```typescript
+ * import { loadDwJson, findDwJson } from '@salesforce/b2c-tooling-sdk/config';
+ *
+ * const dwJsonPath = findDwJson();
+ * const config = loadDwJson({ path: dwJsonPath, instance: 'staging' });
  * ```
  *
  * @module config

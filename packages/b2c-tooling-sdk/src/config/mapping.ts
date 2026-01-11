@@ -164,7 +164,19 @@ export function mergeConfigsWithProtection(
 
 /**
  * Gets the list of fields that have values in a config.
- * Used for tracking which sources contributed which fields.
+ *
+ * Used for tracking which sources contributed which fields during
+ * configuration resolution.
+ *
+ * @param config - The configuration to inspect
+ * @returns Array of field names that have non-empty values
+ *
+ * @example
+ * ```typescript
+ * const config = { hostname: 'example.com', clientId: 'abc' };
+ * const fields = getPopulatedFields(config);
+ * // ['hostname', 'clientId']
+ * ```
  */
 export function getPopulatedFields(config: NormalizedConfig): (keyof NormalizedConfig)[] {
   const fields: (keyof NormalizedConfig)[] = [];
@@ -184,6 +196,18 @@ export function getPopulatedFields(config: NormalizedConfig): (keyof NormalizedC
  *
  * @param config - The normalized configuration
  * @returns AuthConfig for B2CInstance
+ *
+ * @example
+ * ```typescript
+ * const config = {
+ *   clientId: 'my-client-id',
+ *   clientSecret: 'my-secret',
+ *   username: 'admin',
+ *   password: 'pass',
+ * };
+ * const authConfig = buildAuthConfigFromNormalized(config);
+ * // { oauth: { clientId: '...', clientSecret: '...' }, basic: { username: '...', password: '...' } }
+ * ```
  */
 export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthConfig {
   const authConfig: AuthConfig = {
