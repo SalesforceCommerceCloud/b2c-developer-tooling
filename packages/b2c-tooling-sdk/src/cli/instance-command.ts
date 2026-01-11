@@ -6,7 +6,7 @@
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
 import {createInstanceFromConfig} from '../config/index.js';
 import type {B2CInstance} from '../instance/index.js';
 import {t} from '../i18n/index.js';
@@ -92,7 +92,12 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       accountManagerHost: this.flags['account-manager-host'],
     };
 
-    const config = loadConfig(flagConfig, options);
+    const pluginSources: PluginSources = {
+      before: this.pluginSourcesBefore,
+      after: this.pluginSourcesAfter,
+    };
+
+    const config = loadConfig(flagConfig, options, pluginSources);
 
     // Merge scopes from flags with config file scopes (flags take precedence if provided)
     if (this.flags.scope && this.flags.scope.length > 0) {

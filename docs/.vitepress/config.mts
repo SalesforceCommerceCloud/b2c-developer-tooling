@@ -13,6 +13,12 @@ const guideSidebar = [
     ],
   },
   {
+    text: 'Extending',
+    items: [
+      { text: 'Custom Plugins', link: '/guide/extending' },
+    ],
+  },
+  {
     text: 'CLI Reference',
     items: [
       { text: 'Overview', link: '/cli/' },

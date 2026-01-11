@@ -16,7 +16,7 @@
  */
 import type {AuthMethod} from '../auth/types.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
-import {resolveConfig, type NormalizedConfig} from '../config/index.js';
+import {resolveConfig, type NormalizedConfig, type ConfigSource} from '../config/index.js';
 import {findDwJson} from '../config/dw-json.js';
 import {getLogger} from '../logging/logger.js';
 
@@ -47,6 +47,25 @@ export interface LoadConfigOptions {
 }
 
 /**
+ * Plugin-provided configuration sources with priority ordering.
+ *
+ * Used by BaseCommand to pass sources collected from the `b2c:config-sources` hook
+ * to the configuration resolver.
+ */
+export interface PluginSources {
+  /**
+   * Sources with high priority (inserted BEFORE dw.json/~/.mobify).
+   * These sources can override values from default configuration files.
+   */
+  before?: ConfigSource[];
+  /**
+   * Sources with low priority (inserted AFTER dw.json/~/.mobify).
+   * These sources fill in gaps left by default configuration files.
+   */
+  after?: ConfigSource[];
+}
+
+/**
  * Loads configuration with precedence: CLI flags/env vars > dw.json > ~/.mobify
  *
  * OCLIF handles environment variables automatically via flag `env` properties.
@@ -56,6 +75,7 @@ export interface LoadConfigOptions {
  *
  * @param flags - Configuration values from CLI flags/env vars
  * @param options - Loading options
+ * @param pluginSources - Optional sources from CLI plugins (via b2c:config-sources hook)
  * @returns Resolved configuration values
  *
  * @example
@@ -78,7 +98,11 @@ export interface LoadConfigOptions {
  * }
  * ```
  */
-export function loadConfig(flags: Partial<ResolvedConfig> = {}, options: LoadConfigOptions = {}): ResolvedConfig {
+export function loadConfig(
+  flags: Partial<ResolvedConfig> = {},
+  options: LoadConfigOptions = {},
+  pluginSources: PluginSources = {},
+): ResolvedConfig {
   const logger = getLogger();
 
   const resolved = resolveConfig(flags, {
@@ -86,6 +110,8 @@ export function loadConfig(flags: Partial<ResolvedConfig> = {}, options: LoadCon
     configPath: options.configPath,
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
+    sourcesBefore: pluginSources.before,
+    sourcesAfter: pluginSources.after,
   });
 
   // Log warnings

@@ -152,8 +152,14 @@ If no instance is specified, the config with `"active": true` is used.
 Configuration is resolved with the following precedence (highest to lowest):
 
 1. **CLI flags and environment variables** - Explicit values always take priority
-2. **dw.json** - Project configuration file
-3. **~/.mobify** - Home directory file (for MRT API key only)
+2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'`
+3. **dw.json** - Project configuration file
+4. **~/.mobify** - Home directory file (for MRT API key only)
+5. **Plugin sources (low priority)** - Custom sources with `priority: 'after'`
+
+::: tip Extending Configuration
+Plugins can add custom configuration sources like secret managers or environment-specific files. See [Extending the CLI](./extending) for details.
+:::
 
 ::: warning Hostname Mismatch Protection
 When you explicitly specify a hostname that differs from the `dw.json` hostname, the CLI ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.

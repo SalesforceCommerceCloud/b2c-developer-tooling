@@ -5,10 +5,12 @@
  */
 import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
+import type {ConfigSourcesHookOptions, ConfigSourcesHookResult} from './hooks.js';
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import type {ExtraParamsConfig} from '../clients/middleware.js';
+import type {ConfigSource} from '../config/types.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
@@ -77,6 +79,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected resolvedConfig!: ResolvedConfig;
   protected logger!: Logger;
 
+  /** High-priority config sources from plugins (inserted before defaults) */
+  protected pluginSourcesBefore: ConfigSource[] = [];
+  /** Low-priority config sources from plugins (inserted after defaults) */
+  protected pluginSourcesAfter: ConfigSource[] = [];
+
   public async init(): Promise<void> {
     await super.init();
 
@@ -95,6 +102,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     this.configureLogging();
+
+    // Collect config sources from plugins before loading configuration
+    await this.collectPluginConfigSources();
+
     this.resolvedConfig = this.loadConfiguration();
   }
 
@@ -162,7 +173,54 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       configPath: this.flags.config,
     };
 
-    return loadConfig({}, options);
+    const pluginSources: PluginSources = {
+      before: this.pluginSourcesBefore,
+      after: this.pluginSourcesAfter,
+    };
+
+    return loadConfig({}, options, pluginSources);
+  }
+
+  /**
+   * Collects config sources from plugins via the `b2c:config-sources` hook.
+   *
+   * This method is called during command initialization, after flags are parsed
+   * but before configuration is resolved. It allows CLI plugins to provide
+   * custom ConfigSource implementations.
+   *
+   * Plugin sources are collected into two arrays based on their priority:
+   * - `pluginSourcesBefore`: High priority sources (override defaults)
+   * - `pluginSourcesAfter`: Low priority sources (fill gaps)
+   */
+  protected async collectPluginConfigSources(): Promise<void> {
+    const hookOptions: ConfigSourcesHookOptions = {
+      instance: this.flags.instance,
+      configPath: this.flags.config,
+      resolveOptions: {
+        instance: this.flags.instance,
+        configPath: this.flags.config,
+      },
+    };
+
+    const hookResult = await this.config.runHook('b2c:config-sources', hookOptions);
+
+    // Collect sources from all plugins that responded, respecting priority
+    for (const success of hookResult.successes) {
+      const result = success.result as ConfigSourcesHookResult | undefined;
+      if (!result?.sources?.length) continue;
+
+      if (result.priority === 'before') {
+        this.pluginSourcesBefore.push(...result.sources);
+      } else {
+        // Default priority is 'after'
+        this.pluginSourcesAfter.push(...result.sources);
+      }
+    }
+
+    // Log warnings for hook failures (don't break the CLI)
+    for (const failure of hookResult.failures) {
+      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:config-sources hook failed: ${failure.error.message}`);
+    }
   }
 
   /**

@@ -123,8 +123,25 @@ export interface ResolveConfigOptions {
   hostnameProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */
   cloudOrigin?: string;
-  /** Custom configuration sources (added after default sources) */
+
+  /**
+   * Custom sources to add BEFORE default sources (higher priority).
+   * These sources can override values from dw.json and ~/.mobify.
+   */
+  sourcesBefore?: ConfigSource[];
+
+  /**
+   * Custom sources to add AFTER default sources (lower priority).
+   * These sources fill in gaps left by dw.json and ~/.mobify.
+   */
+  sourcesAfter?: ConfigSource[];
+
+  /**
+   * Custom configuration sources (added after default sources).
+   * @deprecated Use `sourcesAfter` for clarity. This is kept for backward compatibility.
+   */
   sources?: ConfigSource[];
+
   /** Replace default sources entirely (instead of appending) */
   replaceDefaultSources?: boolean;
 }

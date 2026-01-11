@@ -6,7 +6,7 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {ApiKeyStrategy} from '../auth/api-key.js';
 import {MrtClient} from '../platform/mrt.js';
@@ -76,7 +76,12 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       mrtOrigin: cloudOrigin,
     };
 
-    return loadConfig(flagConfig, options);
+    const pluginSources: PluginSources = {
+      before: this.pluginSourcesBefore,
+      after: this.pluginSourcesAfter,
+    };
+
+    return loadConfig(flagConfig, options, pluginSources);
   }
 
   /**

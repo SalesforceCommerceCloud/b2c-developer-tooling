@@ -274,15 +274,27 @@ export function resolveConfig(
   overrides: Partial<NormalizedConfig> = {},
   options: ResolveConfigOptions = {},
 ): ResolvedB2CConfig {
-  // Build sources list
+  // Build sources list with priority ordering:
+  // 1. sourcesBefore (high priority - override defaults)
+  // 2. default sources (dw.json, ~/.mobify)
+  // 3. sourcesAfter / sources (low priority - fill gaps)
   let sources: ConfigSource[];
-  if (options.replaceDefaultSources && options.sources) {
-    sources = options.sources;
+
+  if (options.replaceDefaultSources && (options.sources || options.sourcesAfter)) {
+    // Replace mode: only use provided sources
+    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? options.sources ?? [])];
   } else {
-    sources = [new DwJsonSource(), new MobifySource()];
-    if (options.sources) {
-      sources = [...sources, ...options.sources];
-    }
+    // Normal mode: before + defaults + after
+    const defaultSources: ConfigSource[] = [new DwJsonSource(), new MobifySource()];
+
+    // Combine: sourcesBefore > defaults > sourcesAfter/sources
+    sources = [
+      ...(options.sourcesBefore ?? []),
+      ...defaultSources,
+      ...(options.sourcesAfter ?? []),
+      // Backward compat: 'sources' is treated as 'after' priority
+      ...(options.sources ?? []),
+    ];
   }
 
   const resolver = new ConfigResolver(sources);

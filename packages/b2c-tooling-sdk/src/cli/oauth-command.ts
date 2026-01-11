@@ -6,7 +6,7 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
 import {loadConfig, ALL_AUTH_METHODS} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions, AuthMethod} from './config.js';
+import type {ResolvedConfig, LoadConfigOptions, AuthMethod, PluginSources} from './config.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {t} from '../i18n/index.js';
@@ -97,7 +97,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       accountManagerHost: this.flags['account-manager-host'],
     };
 
-    const config = loadConfig(flagConfig, options);
+    const pluginSources: PluginSources = {
+      before: this.pluginSourcesBefore,
+      after: this.pluginSourcesAfter,
+    };
+
+    const config = loadConfig(flagConfig, options, pluginSources);
 
     // Merge scopes from flags with config file scopes (flags take precedence if provided)
     if (this.flags.scope && this.flags.scope.length > 0) {
