@@ -171,6 +171,109 @@ describe('config/resolver', () => {
       });
     });
 
+    describe('credential grouping', () => {
+      it('does not mix clientId and clientSecret from different sources', () => {
+        const source1 = new MockSource('first', {clientId: 'first-client'});
+        const source2 = new MockSource('second', {clientSecret: 'second-secret'});
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = resolver.resolve();
+
+        expect(config.clientId).to.equal('first-client');
+        expect(config.clientSecret).to.be.undefined; // Not mixed from source2
+      });
+
+      it('does not mix username and password from different sources', () => {
+        const source1 = new MockSource('first', {username: 'user1'});
+        const source2 = new MockSource('second', {password: 'pass2'});
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = resolver.resolve();
+
+        expect(config.username).to.equal('user1');
+        expect(config.password).to.be.undefined; // Not mixed from source2
+      });
+
+      it('allows complete credential pairs from same source', () => {
+        const source1 = new MockSource('first', {hostname: 'example.com'});
+        const source2 = new MockSource('second', {
+          clientId: 'client',
+          clientSecret: 'secret',
+        });
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = resolver.resolve();
+
+        expect(config.hostname).to.equal('example.com');
+        expect(config.clientId).to.equal('client');
+        expect(config.clientSecret).to.equal('secret');
+      });
+
+      it('allows non-grouped fields to merge normally', () => {
+        const source1 = new MockSource('first', {clientId: 'client'});
+        const source2 = new MockSource('second', {
+          hostname: 'example.com',
+          codeVersion: 'v1',
+        });
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = resolver.resolve();
+
+        expect(config.clientId).to.equal('client');
+        expect(config.hostname).to.equal('example.com');
+        expect(config.codeVersion).to.equal('v1');
+      });
+
+      it('blocks both oauth fields when clientId is claimed', () => {
+        const source1 = new MockSource('first', {clientId: 'first-client'});
+        const source2 = new MockSource('second', {
+          clientId: 'second-client',
+          clientSecret: 'second-secret',
+        });
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = resolver.resolve();
+
+        expect(config.clientId).to.equal('first-client');
+        expect(config.clientSecret).to.be.undefined; // Blocked due to group claim
+      });
+
+      it('blocks both basic auth fields when username is claimed', () => {
+        const source1 = new MockSource('first', {username: 'first-user'});
+        const source2 = new MockSource('second', {
+          username: 'second-user',
+          password: 'second-pass',
+        });
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = resolver.resolve();
+
+        expect(config.username).to.equal('first-user');
+        expect(config.password).to.be.undefined; // Blocked due to group claim
+      });
+
+      it('allows independent credential groups to come from different sources', () => {
+        const source1 = new MockSource('first', {
+          clientId: 'oauth-client',
+          clientSecret: 'oauth-secret',
+        });
+        const source2 = new MockSource('second', {
+          username: 'basic-user',
+          password: 'basic-pass',
+        });
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = resolver.resolve();
+
+        // OAuth from source1
+        expect(config.clientId).to.equal('oauth-client');
+        expect(config.clientSecret).to.equal('oauth-secret');
+        // Basic from source2
+        expect(config.username).to.equal('basic-user');
+        expect(config.password).to.equal('basic-pass');
+      });
+    });
+
     describe('createAuthCredentials', () => {
       it('creates auth credentials from resolved config', () => {
         const source = new MockSource('test', {

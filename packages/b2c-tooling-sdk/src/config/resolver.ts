@@ -26,6 +26,50 @@ import type {
 import {ResolvedConfigImpl} from './resolved-config.js';
 
 /**
+ * Credential groups that must come from the same source.
+ *
+ * When merging configuration, if any field in a group is already set by a
+ * higher-priority source, all fields in that group from lower-priority
+ * sources are skipped. This prevents mixing credentials that don't belong together.
+ */
+const CREDENTIAL_GROUPS: (keyof NormalizedConfig)[][] = [
+  ['clientId', 'clientSecret'],
+  ['username', 'password'],
+];
+
+/**
+ * Get the set of credential groups that are already claimed in the config.
+ *
+ * A group is "claimed" if any of its fields are set.
+ *
+ * @param config - The current configuration
+ * @returns Set of group indices that are claimed
+ */
+function getClaimedCredentialGroups(config: NormalizedConfig): Set<number> {
+  const claimed = new Set<number>();
+  for (let i = 0; i < CREDENTIAL_GROUPS.length; i++) {
+    const group = CREDENTIAL_GROUPS[i];
+    if (group.some((f) => config[f] !== undefined)) {
+      claimed.add(i);
+    }
+  }
+  return claimed;
+}
+
+/**
+ * Check if a field belongs to a credential group in the claimed set.
+ *
+ * @param field - The field name to check
+ * @param claimedGroups - Set of group indices that are already claimed
+ * @returns true if the field's credential group is claimed
+ */
+function isFieldInClaimedGroup(field: string, claimedGroups: Set<number>): boolean {
+  const groupIndex = CREDENTIAL_GROUPS.findIndex((g) => g.includes(field as keyof NormalizedConfig));
+  if (groupIndex === -1) return false;
+  return claimedGroups.has(groupIndex);
+}
+
+/**
  * Resolves configuration from multiple sources with consistent behavior.
  *
  * ConfigResolver is the preferred high-level API for loading B2C configuration.
@@ -123,11 +167,22 @@ export class ConfigResolver {
             fieldsContributed,
           });
 
+          // Capture which credential groups are already claimed BEFORE processing this source
+          // This allows a single source to provide complete credential pairs
+          const claimedGroups = getClaimedCredentialGroups(baseConfig);
+
           // Merge: source values fill in gaps (don't override existing values)
           for (const [key, value] of Object.entries(sourceConfig)) {
-            if (value !== undefined && baseConfig[key as keyof NormalizedConfig] === undefined) {
-              (baseConfig as Record<string, unknown>)[key] = value;
+            if (value === undefined) continue;
+            if (baseConfig[key as keyof NormalizedConfig] !== undefined) continue;
+
+            // Skip if this field's credential group was already claimed by a higher-priority source
+            // This prevents mixing credentials from different sources
+            if (isFieldInClaimedGroup(key, claimedGroups)) {
+              continue;
             }
+
+            (baseConfig as Record<string, unknown>)[key] = value;
           }
         }
       }

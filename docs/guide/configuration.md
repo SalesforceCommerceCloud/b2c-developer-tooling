@@ -161,6 +161,20 @@ Configuration is resolved with the following precedence (highest to lowest):
 Plugins can add custom configuration sources like secret managers or environment-specific files. See [Extending the CLI](./extending) for details.
 :::
 
+### Credential Grouping
+
+To prevent mixing credentials from different sources, certain fields are treated as atomic groups:
+
+- **OAuth**: `clientId` and `clientSecret`
+- **Basic Auth**: `username` and `password`
+
+If any field in a group is set by a higher-priority source, all fields in that group from lower-priority sources are ignored. This ensures credential pairs always come from the same source.
+
+**Example:**
+- dw.json provides `clientId` only
+- A plugin provides `clientSecret`
+- Result: Only `clientId` is used; the plugin's `clientSecret` is ignored to prevent mismatched credentials
+
 ::: warning Hostname Mismatch Protection
 When you explicitly specify a hostname that differs from the `dw.json` hostname, the CLI ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.
 :::

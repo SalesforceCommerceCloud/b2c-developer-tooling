@@ -56,6 +56,10 @@ Configuration is resolved with the following precedence:
 
 Each source fills in missing values - it doesn't override values from higher-priority sources.
 
+::: warning Credential Grouping
+OAuth credentials (`clientId`/`clientSecret`) and Basic auth credentials (`username`/`password`) are treated as atomic groups. If any field in a group is already set by a higher-priority source, all fields in that group from your source will be ignored. Ensure your source provides complete credential pairs, or that higher-priority sources don't partially define the same credentials.
+:::
+
 ### Example: Custom Config Source Plugin
 
 The SDK includes an example plugin that loads configuration from `.env.b2c` files:
