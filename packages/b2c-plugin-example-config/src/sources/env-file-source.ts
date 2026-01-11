@@ -16,7 +16,18 @@ import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '@salesf
 /**
  * ConfigSource implementation that loads from .env.b2c files.
  *
- * Supports the following environment variables:
+ * ## Configuration
+ *
+ * Set `B2C_ENV_FILE_PATH` to override the default file location:
+ *
+ * ```bash
+ * export B2C_ENV_FILE_PATH=/path/to/custom/.env.b2c
+ * b2c code deploy
+ * ```
+ *
+ * ## Supported Fields
+ *
+ * The .env.b2c file supports the following environment variables:
  * - HOSTNAME: B2C instance hostname
  * - WEBDAV_HOSTNAME: Separate WebDAV hostname (optional)
  * - CODE_VERSION: Code version
@@ -47,12 +58,23 @@ export class EnvFileSource implements ConfigSource {
   /**
    * Load configuration from .env.b2c file.
    *
+   * File location priority:
+   * 1. B2C_ENV_FILE_PATH environment variable (explicit override)
+   * 2. .env.b2c in startDir (from options)
+   * 3. .env.b2c in current working directory
+   *
    * @param options - Resolution options (startDir used for file lookup)
    * @returns Parsed configuration or undefined if file not found
    */
   load(options: ResolveConfigOptions): NormalizedConfig | undefined {
-    const searchDir = options.startDir ?? process.cwd();
-    this.envFilePath = join(searchDir, '.env.b2c');
+    // Check for explicit path override via environment variable
+    const envOverride = process.env.B2C_ENV_FILE_PATH;
+    if (envOverride) {
+      this.envFilePath = envOverride;
+    } else {
+      const searchDir = options.startDir ?? process.cwd();
+      this.envFilePath = join(searchDir, '.env.b2c');
+    }
 
     if (!existsSync(this.envFilePath)) {
       return undefined;

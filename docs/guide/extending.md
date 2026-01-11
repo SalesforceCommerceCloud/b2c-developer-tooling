@@ -155,6 +155,41 @@ export class MyCustomSource implements ConfigSource {
 }
 ```
 
+### Plugin Configuration
+
+Plugins cannot add flags to commands they don't own (this is an oclif limitation). Instead, plugins should accept configuration via environment variables:
+
+```bash
+# Configure the example plugin's env file location
+export B2C_ENV_FILE_PATH=/path/to/custom/.env.b2c
+b2c code deploy
+```
+
+**Plugin authors should:**
+
+1. Document supported environment variables in your plugin README
+2. Use sensible defaults when env vars are not set
+3. Access the `flags` property in hook options for future extensibility
+
+**Hook Options:**
+
+The hook receives a `flags` property containing all parsed CLI flags from the current command:
+
+```typescript
+const hook: ConfigSourcesHook = async function(options) {
+  // Access parsed flags (read-only)
+  this.debug(`Debug mode: ${options.flags?.debug}`);
+
+  // Use env vars for plugin-specific configuration
+  const customPath = process.env.MY_PLUGIN_CONFIG_PATH;
+
+  return {
+    sources: [new MySource(customPath)],
+    priority: 'after',
+  };
+};
+```
+
 ### NormalizedConfig Fields
 
 Your `ConfigSource` can return any of these configuration fields:

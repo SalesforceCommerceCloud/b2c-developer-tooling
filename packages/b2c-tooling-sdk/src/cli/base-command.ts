@@ -196,6 +196,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const hookOptions: ConfigSourcesHookOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
+      flags: this.flags as Record<string, unknown>,
       resolveOptions: {
         instance: this.flags.instance,
         configPath: this.flags.config,

@@ -48,6 +48,14 @@ export interface ConfigSourcesHookOptions {
   configPath?: string;
   /** Full ResolveConfigOptions for advanced sources that need more context */
   resolveOptions: ResolveConfigOptions;
+  /**
+   * All parsed CLI flags from the current command.
+   *
+   * Plugins can check for flags they care about. Note that plugins cannot
+   * add flags to commands - they can only read flags that the CLI defines.
+   * For plugin-specific configuration, use environment variables instead.
+   */
+  flags?: Record<string, unknown>;
   /** Index signature for oclif hook compatibility */
   [key: string]: unknown;
 }
