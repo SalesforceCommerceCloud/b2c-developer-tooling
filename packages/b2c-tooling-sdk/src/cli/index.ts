@@ -103,8 +103,8 @@ export {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS} from './webdav-command.js';
 export type {WebDavRootKey} from './webdav-command.js';
 
 // Config utilities
-export {loadConfig, findDwJson, loadMobifyConfig} from './config.js';
-export type {ResolvedConfig, LoadConfigOptions, MobifyConfigResult} from './config.js';
+export {loadConfig, findDwJson} from './config.js';
+export type {ResolvedConfig, LoadConfigOptions} from './config.js';
 
 // Table rendering utilities
 export {TableRenderer, createTable} from './table.js';

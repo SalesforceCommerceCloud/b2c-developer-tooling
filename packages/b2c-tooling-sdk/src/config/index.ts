@@ -7,24 +7,29 @@
  * Configuration loading utilities.
  *
  * This module provides utilities for loading B2C Commerce configuration.
- * The preferred high-level API is {@link ConfigResolver}, which provides
- * consistent configuration resolution from multiple sources.
+ * The preferred high-level API is {@link resolveConfig}, which returns
+ * a rich configuration object with factory methods.
  *
  * ## Quick Start
  *
  * ```typescript
- * import { createConfigResolver } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const resolver = createConfigResolver();
- *
- * // Resolve configuration with overrides
- * const { config, warnings } = resolver.resolve({
+ * const config = resolveConfig({
  *   hostname: process.env.SFCC_SERVER,
  *   clientId: process.env.SFCC_CLIENT_ID,
+ *   mrtApiKey: process.env.MRT_API_KEY,
  * });
  *
- * // Or create a B2CInstance directly
- * const instance = resolver.createInstance({ hostname: '...' });
+ * // Check what's available and create objects
+ * if (config.hasB2CInstanceConfig()) {
+ *   const instance = config.createB2CInstance();
+ *   await instance.webdav.propfind('Cartridges');
+ * }
+ *
+ * if (config.hasMrtConfig()) {
+ *   const mrtClient = config.createMrtClient({ project: 'my-project' });
+ * }
  * ```
  *
  * ## Resolution Priority
@@ -86,7 +91,7 @@
  */
 
 // High-level API (preferred)
-export {ConfigResolver, createConfigResolver} from './resolver.js';
+export {resolveConfig, ConfigResolver, createConfigResolver} from './resolver.js';
 
 // Types
 export type {
@@ -97,6 +102,9 @@ export type {
   ConfigWarning,
   ConfigWarningCode,
   ResolveConfigOptions,
+  ResolvedB2CConfig,
+  CreateOAuthOptions,
+  CreateMrtClientOptions,
 } from './types.js';
 
 // Mapping utilities

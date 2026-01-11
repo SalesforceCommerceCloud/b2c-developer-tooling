@@ -11,7 +11,9 @@
  *
  * @module config/types
  */
-import type {AuthMethod} from '../auth/types.js';
+import type {AuthMethod, AuthStrategy} from '../auth/types.js';
+import type {B2CInstance} from '../instance/index.js';
+import type {MrtClient} from '../platform/mrt.js';
 
 /**
  * Normalized B2C configuration with camelCase fields.
@@ -121,6 +123,10 @@ export interface ResolveConfigOptions {
   hostnameProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */
   cloudOrigin?: string;
+  /** Custom configuration sources (added after default sources) */
+  sources?: ConfigSource[];
+  /** Replace default sources entirely (instead of appending) */
+  replaceDefaultSources?: boolean;
 }
 
 /**
@@ -160,4 +166,128 @@ export interface ConfigSource {
    * Used for diagnostics and source info.
    */
   getPath?(): string | undefined;
+}
+
+/**
+ * Options for creating OAuth auth strategy.
+ */
+export interface CreateOAuthOptions {
+  /** Allowed OAuth methods (default: ['client-credentials', 'implicit']) */
+  allowedMethods?: AuthMethod[];
+}
+
+/**
+ * Options for creating MRT client.
+ */
+export interface CreateMrtClientOptions {
+  /** MRT organization (currently unused but required by MrtClient) */
+  org?: string;
+  /** MRT project slug (overrides config value) */
+  project?: string;
+  /** MRT environment name (overrides config value) */
+  env?: string;
+}
+
+/**
+ * Result of configuration resolution with factory methods.
+ *
+ * Provides both raw configuration values and factory methods for creating
+ * B2C SDK objects (B2CInstance, AuthStrategy, MrtClient) based on the
+ * resolved configuration.
+ *
+ * @example
+ * ```typescript
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ *
+ * const config = resolveConfig({
+ *   hostname: process.env.SFCC_SERVER,
+ *   clientId: process.env.SFCC_CLIENT_ID,
+ * });
+ *
+ * if (config.hasB2CInstanceConfig()) {
+ *   const instance = config.createB2CInstance();
+ *   await instance.webdav.propfind('Cartridges');
+ * }
+ *
+ * if (config.hasMrtConfig()) {
+ *   const mrtAuth = config.createMrtAuth();
+ * }
+ * ```
+ */
+export interface ResolvedB2CConfig {
+  /** Raw configuration values */
+  readonly values: NormalizedConfig;
+
+  /** Warnings generated during resolution */
+  readonly warnings: ConfigWarning[];
+
+  /** Information about which sources contributed to the config */
+  readonly sources: ConfigSourceInfo[];
+
+  // Validation methods
+
+  /**
+   * Check if B2C instance configuration is available.
+   * Requires: hostname
+   */
+  hasB2CInstanceConfig(): boolean;
+
+  /**
+   * Check if MRT configuration is available.
+   * Requires: mrtApiKey
+   */
+  hasMrtConfig(): boolean;
+
+  /**
+   * Check if OAuth configuration is available.
+   * Requires: clientId
+   */
+  hasOAuthConfig(): boolean;
+
+  /**
+   * Check if Basic auth configuration is available.
+   * Requires: username and password
+   */
+  hasBasicAuthConfig(): boolean;
+
+  // Factory methods
+
+  /**
+   * Creates a B2CInstance from the resolved configuration.
+   * @throws Error if hostname is not configured
+   */
+  createB2CInstance(): B2CInstance;
+
+  /**
+   * Creates a Basic auth strategy.
+   * @throws Error if username or password is not configured
+   */
+  createBasicAuth(): AuthStrategy;
+
+  /**
+   * Creates an OAuth auth strategy.
+   * @param options - OAuth options (allowed methods)
+   * @throws Error if clientId is not configured
+   */
+  createOAuth(options?: CreateOAuthOptions): AuthStrategy;
+
+  /**
+   * Creates an MRT auth strategy (API key).
+   * @throws Error if mrtApiKey is not configured
+   */
+  createMrtAuth(): AuthStrategy;
+
+  /**
+   * Creates a WebDAV auth strategy.
+   * Prefers Basic auth if available, falls back to OAuth.
+   * @throws Error if neither Basic auth nor OAuth is configured
+   */
+  createWebDavAuth(): AuthStrategy;
+
+  /**
+   * Creates an MRT client.
+   * @param options - MRT project/environment options
+   * @throws Error if mrtApiKey is not configured
+   */
+  createMrtClient(options?: CreateMrtClientOptions): MrtClient;
 }

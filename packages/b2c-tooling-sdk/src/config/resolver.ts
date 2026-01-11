@@ -21,7 +21,9 @@ import type {
   ConfigResolutionResult,
   NormalizedConfig,
   ResolveConfigOptions,
+  ResolvedB2CConfig,
 } from './types.js';
+import {ResolvedConfigImpl} from './resolved-config.js';
 
 /**
  * Resolves configuration from multiple sources with consistent behavior.
@@ -227,4 +229,64 @@ export class ConfigResolver {
  */
 export function createConfigResolver(): ConfigResolver {
   return new ConfigResolver();
+}
+
+/**
+ * Resolves configuration from multiple sources and returns a rich config object.
+ *
+ * This is the preferred high-level API for configuration resolution. It returns
+ * a {@link ResolvedB2CConfig} object with validation methods and factory methods
+ * for creating SDK objects.
+ *
+ * ## Resolution Priority
+ *
+ * 1. Explicit overrides (passed as first argument)
+ * 2. Default sources (dw.json, ~/.mobify)
+ * 3. Custom sources (via options.sources)
+ *
+ * ## Example
+ *
+ * ```typescript
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ *
+ * const config = resolveConfig({
+ *   hostname: process.env.SFCC_SERVER,
+ *   clientId: process.env.SFCC_CLIENT_ID,
+ *   mrtApiKey: process.env.MRT_API_KEY,
+ * });
+ *
+ * // Check what's available and create objects
+ * if (config.hasB2CInstanceConfig()) {
+ *   const instance = config.createB2CInstance();
+ *   await instance.webdav.propfind('Cartridges');
+ * }
+ *
+ * if (config.hasMrtConfig()) {
+ *   const mrtClient = config.createMrtClient({ project: 'my-project' });
+ * }
+ * ```
+ *
+ * @param overrides - Explicit configuration values (highest priority)
+ * @param options - Resolution options
+ * @returns Resolved configuration with factory methods
+ */
+export function resolveConfig(
+  overrides: Partial<NormalizedConfig> = {},
+  options: ResolveConfigOptions = {},
+): ResolvedB2CConfig {
+  // Build sources list
+  let sources: ConfigSource[];
+  if (options.replaceDefaultSources && options.sources) {
+    sources = options.sources;
+  } else {
+    sources = [new DwJsonSource(), new MobifySource()];
+    if (options.sources) {
+      sources = [...sources, ...options.sources];
+    }
+  }
+
+  const resolver = new ConfigResolver(sources);
+  const {config, warnings, sources: sourceInfos} = resolver.resolve(overrides, options);
+
+  return new ResolvedConfigImpl(config, warnings, sourceInfos);
 }
