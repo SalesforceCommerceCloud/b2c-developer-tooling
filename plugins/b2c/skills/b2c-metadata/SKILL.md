@@ -91,6 +91,37 @@ Add custom attributes to existing system objects.
 | `set-of-int` | Numeric multi-select | Categories |
 | `image` | Image reference | Thumbnails |
 
+### Enum Value Definitions
+
+Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) require `value-definitions` with **value/display pairs**:
+
+```xml
+<attribute-definition attribute-id="warrantyType">
+    <display-name xml:lang="x-default">Warranty Type</display-name>
+    <type>enum-of-string</type>
+    <mandatory-flag>false</mandatory-flag>
+    <value-definitions>
+        <value-definition>
+            <value>none</value>
+            <display xml:lang="x-default">No Warranty</display>
+        </value-definition>
+        <value-definition>
+            <value>limited</value>
+            <display xml:lang="x-default">Limited Warranty</display>
+        </value-definition>
+        <value-definition>
+            <value>full</value>
+            <display xml:lang="x-default">Full Warranty</display>
+        </value-definition>
+    </value-definitions>
+</attribute-definition>
+```
+
+| Element | Purpose |
+|---------|---------|
+| `<value>` | The stored/API value (use lowercase, no spaces) |
+| `<display>` | Human-readable label shown in Business Manager |
+
 ## Product Custom Attribute Example
 
 ```xml

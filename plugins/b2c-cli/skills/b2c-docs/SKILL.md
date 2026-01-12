@@ -1,6 +1,6 @@
 ---
 name: b2c-docs
-description: Search and read Salesforce B2C Commerce Script API documentation and XSD schemas
+description: Using the b2c CLI to search and read Script API documentation and XSD schemas
 ---
 
 # B2C Docs Skill

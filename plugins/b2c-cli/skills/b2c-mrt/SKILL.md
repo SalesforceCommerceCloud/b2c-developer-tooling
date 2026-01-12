@@ -1,6 +1,6 @@
 ---
 name: b2c-mrt
-description: Salesforce B2C Commerce Managed Runtime (MRT) project and deployment management Skill
+description: Using the b2c CLI for Managed Runtime (MRT) project and deployment management
 ---
 
 # B2C MRT Skill

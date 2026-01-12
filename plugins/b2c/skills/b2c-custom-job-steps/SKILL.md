@@ -343,6 +343,10 @@ exports.afterStep = function (success, parameters, stepExecution) {
 5. **Handle errors gracefully** - return proper Status objects
 6. **Don't rely on transactional=true** - use `Transaction.wrap()` for control
 
+## Related Skills
+
+- [b2c:b2c-webservices](../b2c-webservices/SKILL.md) - When job steps need to call external HTTP services or APIs, use the webservices skill for service configuration and HTTP client patterns
+
 ## Detailed Reference
 
 - [Task-Oriented Steps](references/TASK-ORIENTED.md) - Full task step patterns

@@ -1,6 +1,6 @@
 ---
 name: b2c-webdav
-description: Salesforce B2C Commerce WebDAV file operations (listing, upload, download, logs) Skill
+description: Using the b2c CLI for WebDAV file operations (listing, upload, download, logs)
 ---
 
 # B2C WebDAV Skill

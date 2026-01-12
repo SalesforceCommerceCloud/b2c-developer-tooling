@@ -1,6 +1,6 @@
 ---
 name: b2c-job
-description: Salesforce B2C Commerce job execution and site archive import/export (IMPEX) Skill
+description: Using the b2c CLI for job execution and site archive import/export (IMPEX)
 ---
 
 # B2C Job Skill
@@ -43,6 +43,8 @@ b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":[
 Note: `--body` and `-P` are mutually exclusive.
 
 ### Import Site Archives
+
+The `job import` command automatically waits for the import job to complete before returning.
 
 ```bash
 # import a local directory as a site archive

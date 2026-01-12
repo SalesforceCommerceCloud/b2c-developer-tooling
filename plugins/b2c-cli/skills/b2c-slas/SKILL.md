@@ -1,6 +1,6 @@
 ---
 name: b2c-slas
-description: Salesforce B2C Commerce SLAS (Shopper Login and API Access Service) client management Skill
+description: Using the b2c CLI for SLAS (Shopper Login and API Access Service) client management
 ---
 
 # B2C SLAS Skill

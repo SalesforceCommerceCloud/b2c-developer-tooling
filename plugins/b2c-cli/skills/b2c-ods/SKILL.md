@@ -1,6 +1,6 @@
 ---
 name: b2c-ods
-description: Salesforce B2C Commerce On-demand sandbox (ODS) management Skill
+description: Using the b2c CLI for on-demand sandbox (ODS) management
 ---
 
 # B2C ODS Skill
