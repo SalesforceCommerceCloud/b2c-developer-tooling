@@ -134,9 +134,8 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
     const result = await this.odsClient.GET('/sandboxes', {
       params: {
         query: {
-          // eslint-disable-next-line camelcase
           include_deleted: includeDeleted,
-          // eslint-disable-next-line camelcase
+
           filter_params: filterParams,
         },
       },

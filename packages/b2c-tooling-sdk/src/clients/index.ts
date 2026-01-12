@@ -113,14 +113,18 @@
  * @module clients
  */
 export {WebDavClient} from './webdav.js';
-export type {PropfindEntry} from './webdav.js';
+export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
 
 export {createAuthMiddleware, createLoggingMiddleware, createExtraParamsMiddleware} from './middleware.js';
 export type {ExtraParamsConfig, LoggingMiddlewareConfig} from './middleware.js';
 
+export {MiddlewareRegistry, globalMiddlewareRegistry} from './middleware-registry.js';
+export type {HttpClientType, HttpMiddlewareProvider, UnifiedMiddleware} from './middleware-registry.js';
+
 export {createOcapiClient} from './ocapi.js';
 export type {
   OcapiClient,
+  OcapiClientOptions,
   OcapiError,
   OcapiResponse,
   paths as OcapiPaths,

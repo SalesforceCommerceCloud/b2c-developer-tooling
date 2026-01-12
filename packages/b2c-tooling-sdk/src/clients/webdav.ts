@@ -15,6 +15,7 @@ import {parseStringPromise} from 'xml2js';
 import type {AuthStrategy} from '../auth/types.js';
 import {HTTPError} from '../errors/http-error.js';
 import {getLogger} from '../logging/logger.js';
+import {globalMiddlewareRegistry, type MiddlewareRegistry, type UnifiedMiddleware} from './middleware-registry.js';
 
 /**
  * Result of a PROPFIND operation.
@@ -49,20 +50,35 @@ export interface PropfindEntry {
  * await client.mkcol('Cartridges/v1');
  * await client.put('Cartridges/v1/app_storefront/cartridge.zip', zipBuffer);
  */
+/**
+ * Options for creating a WebDAV client.
+ */
+export interface WebDavClientOptions {
+  /**
+   * Middleware registry to use for this client.
+   * If not specified, uses the global middleware registry.
+   */
+  middlewareRegistry?: MiddlewareRegistry;
+}
+
 export class WebDavClient {
   private baseUrl: string;
+  private middlewareRegistry: MiddlewareRegistry;
 
   /**
    * Creates a new WebDAV client.
    *
    * @param hostname - WebDAV hostname (may differ from API hostname)
    * @param auth - Authentication strategy to use for requests
+   * @param options - Optional configuration including middleware registry
    */
   constructor(
     hostname: string,
     private auth: AuthStrategy,
+    options?: WebDavClientOptions,
   ) {
     this.baseUrl = `https://${hostname}/on/demandware.servlet/webdav/Sites`;
+    this.middlewareRegistry = options?.middlewareRegistry ?? globalMiddlewareRegistry;
   }
 
   /**
@@ -77,6 +93,13 @@ export class WebDavClient {
   }
 
   /**
+   * Collects middleware from the registry for WebDAV client.
+   */
+  private getMiddleware(): UnifiedMiddleware[] {
+    return this.middlewareRegistry.getMiddleware('webdav');
+  }
+
+  /**
    * Makes a raw WebDAV request.
    *
    * @param path - Path relative to /webdav/Sites/
@@ -86,25 +109,74 @@ export class WebDavClient {
   async request(path: string, init?: RequestInit): Promise<Response> {
     const logger = getLogger();
     const url = this.buildUrl(path);
-    const method = init?.method ?? 'GET';
+
+    // Build initial request object
+    let request = new Request(url, init);
+
+    // Apply onRequest middleware (in registration order)
+    // We construct a compatible params object for openapi-fetch middleware
+    const middleware = this.getMiddleware();
+    const middlewareParams = {
+      request,
+      schemaPath: path,
+      // Minimal compatibility fields for openapi-fetch middleware
+      options: {baseUrl: this.baseUrl},
+      params: {},
+      id: 'webdav',
+    };
+
+    for (const m of middleware) {
+      if (m.onRequest) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await m.onRequest(middlewareParams as any);
+        if (result instanceof Request) {
+          request = result;
+          middlewareParams.request = request;
+        }
+      }
+    }
 
     // Debug: Log request start
-    logger.debug({method, url}, `[WebDAV REQ] ${method} ${url}`);
+    logger.debug({method: request.method, url: request.url}, `[WebDAV REQ] ${request.method} ${request.url}`);
 
     // Trace: Log request details
     logger.trace(
-      {headers: this.headersToObject(init?.headers), body: this.formatBody(init?.body)},
-      `[WebDAV REQ BODY] ${method} ${url}`,
+      {headers: this.headersToObject(request.headers), body: this.formatBody(init?.body)},
+      `[WebDAV REQ BODY] ${request.method} ${request.url}`,
     );
 
     const startTime = Date.now();
-    const response = await this.auth.fetch(url, init);
+
+    // Use auth.fetch with the (potentially modified) request
+    let response = await this.auth.fetch(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: init?.body, // Use original body since Request body may have been consumed
+    });
+
     const duration = Date.now() - startTime;
+
+    // Apply onResponse middleware (in registration order)
+    const responseParams = {
+      ...middlewareParams,
+      request,
+      response,
+    };
+    for (const m of middleware) {
+      if (m.onResponse) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await m.onResponse(responseParams as any);
+        if (result instanceof Response) {
+          response = result;
+          responseParams.response = response;
+        }
+      }
+    }
 
     // Debug: Log response summary
     logger.debug(
-      {method, url, status: response.status, duration},
-      `[WebDAV RESP] ${method} ${url} ${response.status} ${duration}ms`,
+      {method: request.method, url: request.url, status: response.status, duration},
+      `[WebDAV RESP] ${request.method} ${request.url} ${response.status} ${duration}ms`,
     );
 
     // Trace: Log response details
@@ -114,7 +186,7 @@ export class WebDavClient {
       const clonedResponse = response.clone();
       responseBody = await clonedResponse.text();
     }
-    logger.trace({headers: responseHeaders, body: responseBody}, `[WebDAV RESP BODY] ${method} ${url}`);
+    logger.trace({headers: responseHeaders, body: responseBody}, `[WebDAV RESP BODY] ${request.method} ${request.url}`);
 
     return response;
   }

@@ -76,6 +76,27 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     const parameters = this.parseParameters(param || []);
     const rawBody = body ? this.parseBody(body) : undefined;
 
+    // Create lifecycle context
+    const context = this.createContext('job:run', {
+      jobId,
+      parameters: rawBody ? undefined : parameters,
+      body: rawBody,
+      wait,
+      hostname: this.resolvedConfig.hostname,
+    });
+
+    // Run beforeOperation hooks - check for skip
+    const beforeResult = await this.runBeforeHooks(context);
+    if (beforeResult.skip) {
+      this.log(
+        t('commands.job.run.skipped', 'Job execution skipped: {{reason}}', {
+          reason: beforeResult.skipReason || 'skipped by plugin',
+        }),
+      );
+      // Return a mock execution for JSON output
+      return {execution_status: 'finished', exit_status: {code: 'skipped'}} as unknown as JobExecution;
+    }
+
     this.log(
       t('commands.job.run.executing', 'Executing job {{jobId}} on {{hostname}}...', {
         jobId,
@@ -91,6 +112,13 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         waitForRunning: !noWaitRunning,
       });
     } catch (error) {
+      // Run afterOperation hooks with failure
+      await this.runAfterHooks(context, {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+        duration: Date.now() - context.startTime,
+      });
+
       if (error instanceof Error) {
         this.error(
           t('commands.job.run.executionFailed', 'Failed to execute job: {{message}}', {message: error.message}),
@@ -133,7 +161,22 @@ export default class JobRun extends JobCommand<typeof JobRun> {
             duration: durationSec,
           }),
         );
+
+        // Run afterOperation hooks with success
+        await this.runAfterHooks(context, {
+          success: true,
+          duration: Date.now() - context.startTime,
+          data: execution,
+        });
       } catch (error) {
+        // Run afterOperation hooks with failure
+        await this.runAfterHooks(context, {
+          success: false,
+          error: error instanceof Error ? error : new Error(String(error)),
+          duration: Date.now() - context.startTime,
+          data: error instanceof JobExecutionError ? error.execution : undefined,
+        });
+
         if (error instanceof JobExecutionError) {
           if (showLog) {
             await this.showJobLog(error.execution);
@@ -146,6 +189,13 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         }
         throw error;
       }
+    } else {
+      // Not waiting - run afterOperation hooks with current state
+      await this.runAfterHooks(context, {
+        success: true,
+        duration: Date.now() - context.startTime,
+        data: execution,
+      });
     }
 
     // JSON output handled by oclif

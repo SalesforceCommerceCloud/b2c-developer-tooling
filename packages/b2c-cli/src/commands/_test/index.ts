@@ -38,7 +38,7 @@ export default class Test extends BaseCommand<typeof Test> {
       {
         username: 'testuser',
         password: 'secret123',
-        client_secret: 'abc123xyz', // eslint-disable-line camelcase
+        client_secret: 'abc123xyz',
         accessToken: 'eyJhbGciOiJIUzI1NiJ9.test',
       },
       'This should have redacted fields',

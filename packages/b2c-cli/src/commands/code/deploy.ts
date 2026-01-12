@@ -5,8 +5,10 @@
  */
 import {Flags} from '@oclif/core';
 import {
-  findAndDeployCartridges,
+  uploadCartridges,
+  deleteCartridges,
   getActiveCodeVersion,
+  reloadCodeVersion,
   type DeployResult,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
@@ -68,6 +70,38 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.instance.config.codeVersion = version;
     }
 
+    // Create lifecycle context
+    const context = this.createContext('code:deploy', {
+      cartridgePath: this.cartridgePath,
+      hostname,
+      codeVersion: version,
+      reload: this.flags.reload,
+      delete: this.flags.delete,
+      ...this.cartridgeOptions,
+    });
+
+    // Run beforeOperation hooks - check for skip
+    const beforeResult = await this.runBeforeHooks(context);
+    if (beforeResult.skip) {
+      this.log(
+        t('commands.code.deploy.skipped', 'Deployment skipped: {{reason}}', {
+          reason: beforeResult.skipReason || 'skipped by plugin',
+        }),
+      );
+      return {
+        cartridges: [],
+        codeVersion: version,
+        reloaded: false,
+      };
+    }
+
+    // Find cartridges using providers (supports custom discovery plugins)
+    const cartridges = await this.findCartridgesWithProviders();
+
+    if (cartridges.length === 0) {
+      this.error(t('commands.code.deploy.noCartridges', 'No cartridges found in {{path}}', {path: this.cartridgePath}));
+    }
+
     this.log(
       t('commands.code.deploy.deploying', 'Deploying {{path}} to {{hostname}} ({{version}})', {
         path: this.cartridgePath,
@@ -76,12 +110,36 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       }),
     );
 
+    // Log found cartridges
+    for (const c of cartridges) {
+      this.logger?.debug(`  ${c.name} (${c.src})`);
+    }
+
     try {
-      const result = await findAndDeployCartridges(this.instance, this.cartridgePath, {
-        reload: this.flags.reload,
-        delete: this.flags.delete,
-        ...this.cartridgeOptions,
-      });
+      // Optionally delete existing cartridges first
+      if (this.flags.delete) {
+        await deleteCartridges(this.instance, cartridges);
+      }
+
+      // Upload cartridges
+      await uploadCartridges(this.instance, cartridges);
+
+      // Optionally reload code version
+      let reloaded = false;
+      if (this.flags.reload) {
+        try {
+          await reloadCodeVersion(this.instance, version);
+          reloaded = true;
+        } catch (error) {
+          this.logger?.debug(`Could not reload code version: ${error instanceof Error ? error.message : error}`);
+        }
+      }
+
+      const result: DeployResult = {
+        cartridges,
+        codeVersion: version,
+        reloaded,
+      };
 
       this.log(
         t('commands.code.deploy.summary', 'Deployed {{count}} cartridge(s) to {{codeVersion}}', {
@@ -94,8 +152,22 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         this.log(t('commands.code.deploy.reloaded', 'Code version reloaded'));
       }
 
+      // Run afterOperation hooks with success
+      await this.runAfterHooks(context, {
+        success: true,
+        duration: Date.now() - context.startTime,
+        data: result,
+      });
+
       return result;
     } catch (error) {
+      // Run afterOperation hooks with failure
+      await this.runAfterHooks(context, {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+        duration: Date.now() - context.startTime,
+      });
+
       if (error instanceof Error) {
         this.error(t('commands.code.deploy.failed', 'Deployment failed: {{message}}', {message: error.message}));
       }

@@ -107,7 +107,25 @@ export {loadConfig, findDwJson} from './config.js';
 export type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
 
 // Hook types for plugin extensibility
-export type {ConfigSourcesHookOptions, ConfigSourcesHookResult, ConfigSourcesHook} from './hooks.js';
+export type {
+  ConfigSourcesHookOptions,
+  ConfigSourcesHookResult,
+  ConfigSourcesHook,
+  HttpMiddlewareHookOptions,
+  HttpMiddlewareHookResult,
+  HttpMiddlewareHook,
+  // B2C lifecycle hook types
+  B2COperationType,
+  B2COperationContext,
+  BeforeB2COperationResult,
+  B2COperationResult,
+  AfterB2COperationResult,
+  B2COperationLifecycleProvider,
+  B2COperationLifecycleHookOptions,
+  B2COperationLifecycleHookResult,
+  B2COperationLifecycleHook,
+} from './hooks.js';
+export {createB2COperationContext, B2CLifecycleRunner} from './hooks.js';
 // Re-export module augmentation for @oclif/core Hooks interface
 export {} from './hooks.js';
 

@@ -140,6 +140,30 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       );
     }
 
+    // Create lifecycle context
+    const context = this.createContext('job:export', {
+      dataUnits,
+      output,
+      hostname,
+      keepArchive,
+      zipOnly,
+    });
+
+    // Run beforeOperation hooks - check for skip
+    const beforeResult = await this.runBeforeHooks(context);
+    if (beforeResult.skip) {
+      this.log(
+        t('commands.job.export.skipped', 'Export skipped: {{reason}}', {
+          reason: beforeResult.skipReason || 'skipped by plugin',
+        }),
+      );
+      return {
+        execution: {execution_status: 'finished', exit_status: {code: 'skipped'}},
+        archiveFilename: '',
+        archiveKept: false,
+      } as unknown as SiteArchiveExportResult & {localPath?: string};
+    }
+
     this.log(
       t('commands.job.export.exporting', 'Exporting data from {{hostname}}...', {
         hostname,
@@ -192,8 +216,23 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         );
       }
 
+      // Run afterOperation hooks with success
+      await this.runAfterHooks(context, {
+        success: true,
+        duration: Date.now() - context.startTime,
+        data: result,
+      });
+
       return result;
     } catch (error) {
+      // Run afterOperation hooks with failure
+      await this.runAfterHooks(context, {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+        duration: Date.now() - context.startTime,
+        data: error instanceof JobExecutionError ? error.execution : undefined,
+      });
+
       if (error instanceof JobExecutionError) {
         if (showLog) {
           await this.showJobLog(error.execution);
@@ -268,7 +307,6 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     // Inventory lists (API uses snake_case keys)
     if (params.inventoryList && params.inventoryList.length > 0) {
-      // eslint-disable-next-line camelcase
       dataUnits.inventory_lists = {};
       for (const listId of params.inventoryList) {
         dataUnits.inventory_lists[listId] = true;
@@ -277,7 +315,6 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     // Price books (API uses snake_case keys)
     if (params.priceBook && params.priceBook.length > 0) {
-      // eslint-disable-next-line camelcase
       dataUnits.price_books = {};
       for (const bookId of params.priceBook) {
         dataUnits.price_books[bookId] = true;
@@ -286,7 +323,6 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     // Global data (API uses snake_case keys)
     if (params.globalData) {
-      // eslint-disable-next-line camelcase
       dataUnits.global_data = this.parseGlobalDataUnits(params.globalData);
     }
 

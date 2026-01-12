@@ -6,11 +6,17 @@
 import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
 import type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
-import type {ConfigSourcesHookOptions, ConfigSourcesHookResult} from './hooks.js';
+import type {
+  ConfigSourcesHookOptions,
+  ConfigSourcesHookResult,
+  HttpMiddlewareHookOptions,
+  HttpMiddlewareHookResult,
+} from './hooks.js';
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import type {ExtraParamsConfig} from '../clients/middleware.js';
 import type {ConfigSource} from '../config/types.js';
+import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
@@ -102,6 +108,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     this.configureLogging();
+
+    // Collect middleware from plugins before any API clients are created
+    await this.collectPluginHttpMiddleware();
 
     // Collect config sources from plugins before loading configuration
     await this.collectPluginConfigSources();
@@ -221,6 +230,39 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Log warnings for hook failures (don't break the CLI)
     for (const failure of hookResult.failures) {
       this.logger?.warn(`Plugin ${failure.plugin.name} b2c:config-sources hook failed: ${failure.error.message}`);
+    }
+  }
+
+  /**
+   * Collects HTTP middleware from plugins via the `b2c:http-middleware` hook.
+   *
+   * This method is called during command initialization, after flags are parsed
+   * but before any API clients are created. It allows CLI plugins to provide
+   * custom middleware that will be applied to all HTTP clients.
+   *
+   * Plugin middleware is registered with the global middleware registry.
+   */
+  protected async collectPluginHttpMiddleware(): Promise<void> {
+    const hookOptions: HttpMiddlewareHookOptions = {
+      flags: this.flags as Record<string, unknown>,
+    };
+
+    const hookResult = await this.config.runHook('b2c:http-middleware', hookOptions);
+
+    // Register middleware from all plugins that responded
+    for (const success of hookResult.successes) {
+      const result = success.result as HttpMiddlewareHookResult | undefined;
+      if (!result?.providers?.length) continue;
+
+      for (const provider of result.providers) {
+        globalMiddlewareRegistry.register(provider);
+        this.logger?.debug(`Registered HTTP middleware provider: ${provider.name}`);
+      }
+    }
+
+    // Log warnings for hook failures (don't break the CLI)
+    for (const failure of hookResult.failures) {
+      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:http-middleware hook failed: ${failure.error.message}`);
     }
   }
 

@@ -16,6 +16,7 @@ import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './slas-admin.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
+import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 
 /**
  * Re-export generated types for external use.
@@ -55,6 +56,12 @@ export interface SlasClientConfig {
    * @example "kv7kzm78"
    */
   shortCode: string;
+
+  /**
+   * Middleware registry to use for this client.
+   * If not specified, uses the global middleware registry.
+   */
+  middlewareRegistry?: MiddlewareRegistry;
 }
 
 /**
@@ -104,12 +111,21 @@ export interface SlasClientConfig {
  * });
  */
 export function createSlasClient(config: SlasClientConfig, auth: AuthStrategy): SlasClient {
+  const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
+
   const client = createClient<paths>({
     baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/shopper/auth-admin/v1`,
   });
 
-  // Middleware order: auth → logging (logging sees fully modified request)
+  // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
+
+  // Plugin middleware from registry
+  for (const middleware of registry.getMiddleware('slas')) {
+    client.use(middleware);
+  }
+
+  // Logging middleware last (sees complete request with all modifications)
   client.use(createLoggingMiddleware('SLAS'));
 
   return client;

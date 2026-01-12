@@ -34,6 +34,7 @@
  */
 import type {Hook} from '@oclif/core';
 import type {ConfigSource, ResolveConfigOptions} from '../config/types.js';
+import type {HttpMiddlewareProvider} from '../clients/middleware-registry.js';
 
 /**
  * Options passed to the `b2c:config-sources` hook.
@@ -128,12 +129,141 @@ export interface ConfigSourcesHookResult {
  */
 export type ConfigSourcesHook = Hook<'b2c:config-sources'>;
 
-// Module augmentation for oclif to recognize the custom hook
+// ============================================================================
+// HTTP Middleware Hook
+// ============================================================================
+
+/**
+ * Options passed to the `b2c:http-middleware` hook.
+ */
+export interface HttpMiddlewareHookOptions {
+  /**
+   * All parsed CLI flags from the current command.
+   *
+   * Plugins can inspect flags but cannot add new flags to commands.
+   * For plugin-specific configuration, use environment variables instead.
+   */
+  flags?: Record<string, unknown>;
+  /** Index signature for oclif hook compatibility */
+  [key: string]: unknown;
+}
+
+/**
+ * Result returned by the `b2c:http-middleware` hook.
+ *
+ * Plugins return one or more HttpMiddlewareProvider instances that will be
+ * registered with the global middleware registry.
+ */
+export interface HttpMiddlewareHookResult {
+  /** Middleware providers to register */
+  providers: HttpMiddlewareProvider[];
+}
+
+/**
+ * Hook type for `b2c:http-middleware`.
+ *
+ * Implement this hook in your oclif plugin to provide custom HTTP middleware
+ * that will be applied to all API clients (OCAPI, SLAS, WebDAV, etc.).
+ *
+ * The hook is called during command initialization, after flags are parsed
+ * but before any API clients are created.
+ *
+ * ## Plugin Registration
+ *
+ * Register the hook in your plugin's package.json:
+ *
+ * ```json
+ * {
+ *   "oclif": {
+ *     "hooks": {
+ *       "b2c:http-middleware": "./dist/hooks/http-middleware.js"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * ## Hook Context
+ *
+ * Inside the hook function, you have access to:
+ * - `this.config` - oclif Config object
+ * - `this.debug()`, `this.log()`, `this.warn()`, `this.error()` - logging methods
+ *
+ * @example
+ * ```typescript
+ * import type { HttpMiddlewareHook } from '@salesforce/b2c-tooling-sdk/cli';
+ * import type { HttpMiddlewareProvider } from '@salesforce/b2c-tooling-sdk/clients';
+ *
+ * const hook: HttpMiddlewareHook = async function(options) {
+ *   this.debug('Registering custom middleware');
+ *
+ *   const metricsProvider: HttpMiddlewareProvider = {
+ *     name: 'metrics-collector',
+ *     getMiddleware(clientType) {
+ *       return {
+ *         onRequest({ request }) {
+ *           (request as any)._startTime = Date.now();
+ *           return request;
+ *         },
+ *         onResponse({ request, response }) {
+ *           const duration = Date.now() - (request as any)._startTime;
+ *           console.log(`[${clientType}] ${request.method} ${request.url} ${response.status} ${duration}ms`);
+ *           return response;
+ *         },
+ *       };
+ *     },
+ *   };
+ *
+ *   return { providers: [metricsProvider] };
+ * };
+ *
+ * export default hook;
+ * ```
+ */
+export type HttpMiddlewareHook = Hook<'b2c:http-middleware'>;
+
+// Re-export B2C lifecycle types for convenience
+export type {
+  B2COperationType,
+  B2COperationContext,
+  BeforeB2COperationResult,
+  B2COperationResult,
+  AfterB2COperationResult,
+  B2COperationLifecycleProvider,
+  B2COperationLifecycleHookOptions,
+  B2COperationLifecycleHookResult,
+  B2COperationLifecycleHook,
+} from './lifecycle.js';
+export {createB2COperationContext, B2CLifecycleRunner} from './lifecycle.js';
+
+// Re-export cartridge provider types for convenience
+export type {
+  CartridgeDiscoveryOptions,
+  CartridgeProvider,
+  CartridgeTransformer,
+  CartridgeProvidersHookOptions,
+  CartridgeProvidersHookResult,
+  CartridgeProvidersHook,
+} from './cartridge-providers.js';
+export {CartridgeProviderRunner} from './cartridge-providers.js';
+
+// Module augmentation for oclif to recognize the custom hooks
 declare module '@oclif/core' {
   interface Hooks {
     'b2c:config-sources': {
       options: ConfigSourcesHookOptions;
       return: ConfigSourcesHookResult;
+    };
+    'b2c:http-middleware': {
+      options: HttpMiddlewareHookOptions;
+      return: HttpMiddlewareHookResult;
+    };
+    'b2c:operation-lifecycle': {
+      options: import('./lifecycle.js').B2COperationLifecycleHookOptions;
+      return: import('./lifecycle.js').B2COperationLifecycleHookResult;
+    };
+    'b2c:cartridge-providers': {
+      options: import('./cartridge-providers.js').CartridgeProvidersHookOptions;
+      return: import('./cartridge-providers.js').CartridgeProvidersHookResult;
     };
   }
 }
