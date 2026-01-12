@@ -42,6 +42,13 @@ export function stubOdsClient(command: any, client: Partial<{GET: any; POST: any
   });
 }
 
+export function stubResolvedConfig(command: any, resolvedConfig: Record<string, unknown>): void {
+  Object.defineProperty(command, 'resolvedConfig', {
+    get: () => resolvedConfig,
+    configurable: true,
+  });
+}
+
 export function makeCommandThrowOnError(command: any): void {
   command.error = (msg: string) => {
     throw new Error(msg);

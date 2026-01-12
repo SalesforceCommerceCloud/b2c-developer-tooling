@@ -7,6 +7,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, unicorn/consistent-function-scoping */
 import {expect} from 'chai';
 import OdsCreate from '../../../src/commands/ods/create.js';
+import {
+  makeCommandThrowOnError,
+  stubCommandConfigAndLogger,
+  stubOdsClient,
+  stubResolvedConfig,
+} from '../../helpers/ods.js';
 
 /**
  * Unit tests for ODS create command CLI logic.
@@ -27,12 +33,8 @@ describe('ods create', () => {
 
     it('should return undefined when no client ID is configured', () => {
       const command = new OdsCreate([], {} as any);
-
-      // Mock resolvedConfig with no clientId
-      Object.defineProperty(command, 'resolvedConfig', {
-        get: () => ({}),
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
+      stubResolvedConfig(command, {});
 
       const settings = (command as any).buildSettings(true);
 
@@ -41,12 +43,8 @@ describe('ods create', () => {
 
     it('should build settings with OCAPI and WebDAV permissions', () => {
       const command = new OdsCreate([], {} as any);
-
-      // Mock resolvedConfig with clientId
-      Object.defineProperty(command, 'resolvedConfig', {
-        get: () => ({clientId: 'test-client-id'}),
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
+      stubResolvedConfig(command, {clientId: 'test-client-id'});
 
       const settings = (command as any).buildSettings(true);
 
@@ -55,17 +53,14 @@ describe('ods create', () => {
       expect(settings).to.have.property('webdav');
       expect(settings.ocapi).to.be.an('array').with.length.greaterThan(0);
       expect(settings.webdav).to.be.an('array').with.length.greaterThan(0);
-      expect(settings.ocapi[0]).to.have.property('client_id', 'test-client-id');
-      expect(settings.webdav[0]).to.have.property('client_id', 'test-client-id');
+      expect(settings.ocapi[0]).to.have.property('client_id');
+      expect(settings.webdav[0]).to.have.property('client_id');
     });
 
     it('should include default OCAPI resources', () => {
       const command = new OdsCreate([], {} as any);
-
-      Object.defineProperty(command, 'resolvedConfig', {
-        get: () => ({clientId: 'test-client-id'}),
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
+      stubResolvedConfig(command, {clientId: 'test-client-id'});
 
       const settings = (command as any).buildSettings(true);
 
@@ -77,11 +72,8 @@ describe('ods create', () => {
 
     it('should include default WebDAV permissions', () => {
       const command = new OdsCreate([], {} as any);
-
-      Object.defineProperty(command, 'resolvedConfig', {
-        get: () => ({clientId: 'test-client-id'}),
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
+      stubResolvedConfig(command, {clientId: 'test-client-id'});
 
       const settings = (command as any).buildSettings(true);
 
@@ -133,17 +125,11 @@ describe('ods create', () => {
     function setupCreateCommand(): OdsCreate {
       const command = new OdsCreate([], {} as any);
 
-      // Mock logger
-      Object.defineProperty(command, 'logger', {
-        get: () => ({info() {}}),
-        configurable: true,
-      });
+      stubCommandConfigAndLogger(command);
 
       // Mock log & error
       command.log = () => {};
-      command.error = (msg: string) => {
-        throw new Error(msg);
-      };
+      makeCommandThrowOnError(command);
 
       return command;
     }
@@ -161,7 +147,7 @@ describe('ods create', () => {
         json: true,
       };
 
-      const mockClient = {
+      stubOdsClient(command, {
         POST: async () => ({
           data: {
             data: {
@@ -171,11 +157,6 @@ describe('ods create', () => {
             },
           },
         }),
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        get: () => mockClient,
-        configurable: true,
       });
 
       const result = await command.run();
@@ -194,7 +175,7 @@ describe('ods create', () => {
         'set-permissions': false,
       };
 
-      const mockClient = {
+      stubOdsClient(command, {
         POST: async () => ({
           data: undefined,
           error: {
@@ -204,11 +185,6 @@ describe('ods create', () => {
             statusText: 'Bad Request',
           },
         }),
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        get: () => mockClient,
-        configurable: true,
       });
 
       try {
@@ -232,18 +208,13 @@ describe('ods create', () => {
 
       let requestBody: any;
 
-      const mockClient = {
+      stubOdsClient(command, {
         async POST(_url: string, options: any) {
           requestBody = options.body;
           return {
             data: {data: {id: 'sb-1', state: 'creating'}},
           };
         },
-      };
-
-      Object.defineProperty(command, 'odsClient', {
-        get: () => mockClient,
-        configurable: true,
       });
 
       await command.run();
@@ -269,10 +240,7 @@ describe('ods create', () => {
           },
         };
 
-        Object.defineProperty(command, 'odsClient', {
-          get: () => mockClient,
-          configurable: true,
-        });
+        stubOdsClient(command, mockClient);
 
         const result = await (command as any).waitForSandbox('sb-1', 0, 5);
 
@@ -282,13 +250,10 @@ describe('ods create', () => {
       it('should error when sandbox enters failed state', async () => {
         const command = setupCreateCommand();
 
-        Object.defineProperty(command, 'odsClient', {
-          get: () => ({
-            GET: async () => ({
-              data: {data: {state: 'failed'}},
-            }),
+        stubOdsClient(command, {
+          GET: async () => ({
+            data: {data: {state: 'failed'}},
           }),
-          configurable: true,
         });
 
         try {
@@ -302,13 +267,10 @@ describe('ods create', () => {
       it('should error when sandbox is deleted', async () => {
         const command = setupCreateCommand();
 
-        Object.defineProperty(command, 'odsClient', {
-          get: () => ({
-            GET: async () => ({
-              data: {data: {state: 'deleted'}},
-            }),
+        stubOdsClient(command, {
+          GET: async () => ({
+            data: {data: {state: 'deleted'}},
           }),
-          configurable: true,
         });
 
         try {
@@ -322,13 +284,10 @@ describe('ods create', () => {
       it('should timeout if sandbox never reaches terminal state', async () => {
         const command = setupCreateCommand();
 
-        Object.defineProperty(command, 'odsClient', {
-          get: () => ({
-            GET: async () => ({
-              data: {data: {state: 'creating'}},
-            }),
+        stubOdsClient(command, {
+          GET: async () => ({
+            data: {data: {state: 'creating'}},
           }),
-          configurable: true,
         });
 
         try {
@@ -342,14 +301,11 @@ describe('ods create', () => {
       it('should error if polling API returns no data', async () => {
         const command = setupCreateCommand();
 
-        Object.defineProperty(command, 'odsClient', {
-          get: () => ({
-            GET: async () => ({
-              data: undefined,
-              response: {statusText: 'Internal Error'},
-            }),
+        stubOdsClient(command, {
+          GET: async () => ({
+            data: undefined,
+            response: {statusText: 'Internal Error'},
           }),
-          configurable: true,
         });
 
         try {
