@@ -7,16 +7,6 @@ import {Command} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
 import {getJobLog, getJobErrorMessage, type JobExecution} from '../operations/jobs/index.js';
 import {t} from '../i18n/index.js';
-import {
-  B2CLifecycleRunner,
-  createB2COperationContext,
-  type B2COperationType,
-  type B2COperationContext,
-  type B2COperationResult,
-  type BeforeB2COperationResult,
-  type B2COperationLifecycleHookOptions,
-  type B2COperationLifecycleHookResult,
-} from './lifecycle.js';
 
 /**
  * Base command for job operations.
@@ -39,81 +29,6 @@ import {
  * }
  */
 export abstract class JobCommand<T extends typeof Command> extends InstanceCommand<T> {
-  /** Lifecycle runner for B2C operation hooks */
-  protected lifecycleRunner?: B2CLifecycleRunner;
-
-  /**
-   * Override init to collect lifecycle providers from plugins.
-   */
-  public async init(): Promise<void> {
-    await super.init();
-    await this.collectLifecycleProviders();
-  }
-
-  /**
-   * Collects lifecycle providers from plugins via the `b2c:operation-lifecycle` hook.
-   */
-  protected async collectLifecycleProviders(): Promise<void> {
-    this.lifecycleRunner = new B2CLifecycleRunner(this.logger);
-
-    const hookOptions: B2COperationLifecycleHookOptions = {
-      flags: this.flags as Record<string, unknown>,
-    };
-
-    const hookResult = await this.config.runHook('b2c:operation-lifecycle', hookOptions);
-
-    for (const success of hookResult.successes) {
-      const result = success.result as B2COperationLifecycleHookResult | undefined;
-      if (!result?.providers?.length) continue;
-      this.lifecycleRunner.addProviders(result.providers);
-    }
-
-    for (const failure of hookResult.failures) {
-      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:operation-lifecycle hook failed: ${failure.error.message}`);
-    }
-
-    if (this.lifecycleRunner.size > 0) {
-      this.logger?.debug(`Registered ${this.lifecycleRunner.size} lifecycle provider(s)`);
-    }
-  }
-
-  /**
-   * Creates a B2C operation context for lifecycle hooks.
-   *
-   * @param operationType - Type of B2C operation
-   * @param metadata - Operation-specific metadata
-   * @returns B2C operation context
-   */
-  protected createContext(operationType: B2COperationType, metadata: Record<string, unknown>): B2COperationContext {
-    return createB2COperationContext(operationType, metadata, this.instance);
-  }
-
-  /**
-   * Runs beforeOperation hooks for all providers.
-   *
-   * @param context - B2C operation context
-   * @returns Result indicating if operation should be skipped
-   */
-  protected async runBeforeHooks(context: B2COperationContext): Promise<BeforeB2COperationResult> {
-    if (!this.lifecycleRunner) {
-      return {};
-    }
-    return this.lifecycleRunner.runBefore(context);
-  }
-
-  /**
-   * Runs afterOperation hooks for all providers.
-   *
-   * @param context - B2C operation context
-   * @param result - Operation result
-   */
-  protected async runAfterHooks(context: B2COperationContext, result: B2COperationResult): Promise<void> {
-    if (!this.lifecycleRunner) {
-      return;
-    }
-    await this.lifecycleRunner.runAfter(context, result);
-  }
-
   /**
    * Display a job's log file content and error message if available.
    * Outputs to stderr since this is typically shown for failed jobs.
