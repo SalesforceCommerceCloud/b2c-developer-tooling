@@ -44,7 +44,7 @@ Note: `--body` and `-P` are mutually exclusive.
 
 ### Import Site Archives
 
-The `job import` command automatically waits for the import job to complete before returning.
+The `job import` command automatically waits for the import job to complete before returning. It does not use the `--wait` option.
 
 ```bash
 # import a local directory as a site archive
