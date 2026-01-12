@@ -142,15 +142,17 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
       },
     });
 
-    if (!result.data?.data) {
+    if (result.error) {
+      const errorResponse = result.error as OdsComponents['schemas']['ErrorResponse'] | undefined;
+      const errorMessage = errorResponse?.error?.message || result.response?.statusText || 'Unknown error';
       this.error(
         t('commands.ods.list.error', 'Failed to fetch sandboxes: {{message}}', {
-          message: result.response?.statusText || 'Unknown error',
+          message: errorMessage,
         }),
       );
     }
 
-    const sandboxes = result.data.data;
+    const sandboxes = result.data?.data ?? [];
     const response: OdsListResponse = {
       count: sandboxes.length,
       data: sandboxes,
