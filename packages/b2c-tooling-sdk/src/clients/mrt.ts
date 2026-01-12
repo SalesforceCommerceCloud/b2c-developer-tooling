@@ -16,6 +16,7 @@ import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './mrt.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
+import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 
 /**
  * Re-export generated types for external use.
@@ -72,6 +73,12 @@ export interface MrtClientConfig {
    * @example "https://cloud.mobify.com"
    */
   origin?: string;
+
+  /**
+   * Middleware registry to use for this client.
+   * If not specified, uses the global middleware registry.
+   */
+  middlewareRegistry?: MiddlewareRegistry;
 }
 
 /**
@@ -123,6 +130,7 @@ export const DEFAULT_MRT_ORIGIN = 'https://cloud.mobify.com';
  */
 export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): MrtClient {
   let origin = config.origin || DEFAULT_MRT_ORIGIN;
+  const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
   // Normalize origin: add https:// if no protocol specified
   if (origin && !origin.startsWith('http://') && !origin.startsWith('https://')) {
@@ -133,8 +141,15 @@ export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): Mr
     baseUrl: origin,
   });
 
-  // Middleware order: auth → logging (logging sees fully modified request)
+  // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
+
+  // Plugin middleware from registry
+  for (const middleware of registry.getMiddleware('mrt')) {
+    client.use(middleware);
+  }
+
+  // Logging middleware last (sees complete request with all modifications)
   client.use(
     createLoggingMiddleware({
       prefix: 'MRT',

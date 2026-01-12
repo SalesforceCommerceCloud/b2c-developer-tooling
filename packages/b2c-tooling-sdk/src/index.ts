@@ -15,8 +15,21 @@ export {t, setLanguage, getLanguage, getI18nInstance, registerTranslations, B2C_
 export type {TOptions} from './i18n/index.js';
 
 // Config
-export {loadDwJson, findDwJson} from './config/index.js';
-export type {DwJsonConfig, DwJsonMultiConfig, LoadDwJsonOptions} from './config/index.js';
+export {loadDwJson, findDwJson, resolveConfig, ConfigResolver, createConfigResolver} from './config/index.js';
+export type {
+  DwJsonConfig,
+  DwJsonMultiConfig,
+  LoadDwJsonOptions,
+  NormalizedConfig,
+  ResolvedB2CConfig,
+  ConfigWarning,
+  ConfigWarningCode,
+  ConfigSourceInfo,
+  ConfigSource,
+  ResolveConfigOptions,
+  CreateOAuthOptions,
+  CreateMrtClientOptions,
+} from './config/index.js';
 
 // Auth Layer - Strategies and Resolution
 export {

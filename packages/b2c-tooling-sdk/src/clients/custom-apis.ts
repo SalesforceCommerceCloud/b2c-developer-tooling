@@ -17,6 +17,7 @@ import type {AuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import type {paths, components} from './custom-apis.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
+import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 
 /**
  * Re-export generated types for external use.
@@ -66,6 +67,12 @@ export interface CustomApisClientConfig {
    * (sfcc.custom-apis) plus tenant-specific scope (SALESFORCE_COMMERCE_API:{tenant}).
    */
   scopes?: string[];
+
+  /**
+   * Middleware registry to use for this client.
+   * If not specified, uses the global middleware registry.
+   */
+  middlewareRegistry?: MiddlewareRegistry;
 }
 
 /**
@@ -103,6 +110,8 @@ export interface CustomApisClientConfig {
  * });
  */
 export function createCustomApisClient(config: CustomApisClientConfig, auth: AuthStrategy): CustomApisClient {
+  const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
+
   const client = createClient<paths>({
     baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/dx/custom-apis/v1`,
   });
@@ -113,8 +122,15 @@ export function createCustomApisClient(config: CustomApisClientConfig, auth: Aut
   // If OAuth strategy, add required scopes; otherwise use as-is
   const scopedAuth = auth instanceof OAuthStrategy ? auth.withAdditionalScopes(requiredScopes) : auth;
 
-  // Middleware order: auth → logging (logging sees fully modified request)
+  // Core middleware: auth first
   client.use(createAuthMiddleware(scopedAuth));
+
+  // Plugin middleware from registry
+  for (const middleware of registry.getMiddleware('custom-apis')) {
+    client.use(middleware);
+  }
+
+  // Logging middleware last (sees complete request with all modifications)
   client.use(createLoggingMiddleware('CUSTOM-APIS'));
 
   return client;

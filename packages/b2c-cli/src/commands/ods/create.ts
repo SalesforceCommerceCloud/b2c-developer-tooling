@@ -23,7 +23,7 @@ const TERMINAL_STATES = new Set<SandboxState>(['deleted', 'failed', 'started']);
  * Default OCAPI resources to grant the client ID access to.
  * These enable common CI/CD operations like code deployment and job execution.
  */
-/* eslint-disable camelcase */
+
 const DEFAULT_OCAPI_RESOURCES: NonNullable<OcapiSettings[number]['resources']> = [
   {resource_id: '/code_versions', methods: ['get'], read_attributes: '(**)', write_attributes: '(**)'},
   {resource_id: '/code_versions/*', methods: ['patch', 'delete'], read_attributes: '(**)', write_attributes: '(**)'},
@@ -31,7 +31,6 @@ const DEFAULT_OCAPI_RESOURCES: NonNullable<OcapiSettings[number]['resources']> =
   {resource_id: '/jobs/*/executions/*', methods: ['get'], read_attributes: '(**)', write_attributes: '(**)'},
   {resource_id: '/sites/*/cartridges', methods: ['post'], read_attributes: '(**)', write_attributes: '(**)'},
 ];
-/* eslint-enable camelcase */
 
 /**
  * Default WebDAV permissions to grant the client ID.
@@ -183,7 +182,6 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       return undefined;
     }
 
-    /* eslint-disable camelcase */
     return {
       ocapi: [
         {
@@ -198,7 +196,6 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
         },
       ],
     };
-    /* eslint-enable camelcase */
   }
 
   private printSandboxSummary(sandbox: SandboxModel): void {

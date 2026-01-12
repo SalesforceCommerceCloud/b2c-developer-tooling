@@ -3,318 +3,129 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
+/**
+ * CLI configuration utilities.
+ *
+ * This module provides configuration loading for CLI commands.
+ * It uses {@link resolveConfig} internally for consistent behavior.
+ *
+ * For most use cases, prefer using {@link resolveConfig} directly from the
+ * `config` module, which provides a richer API with factory methods.
+ *
+ * @module cli/config
+ */
 import type {AuthMethod} from '../auth/types.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
+import {resolveConfig, type NormalizedConfig, type ConfigSource} from '../config/index.js';
+import {findDwJson} from '../config/dw-json.js';
 import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
 export type {AuthMethod};
 export {ALL_AUTH_METHODS};
-
-export interface ResolvedConfig {
-  hostname?: string;
-  webdavHostname?: string;
-  codeVersion?: string;
-  username?: string;
-  password?: string;
-  clientId?: string;
-  clientSecret?: string;
-  scopes?: string[];
-  shortCode?: string;
-  mrtApiKey?: string;
-  /** MRT project slug */
-  mrtProject?: string;
-  /** MRT environment name (e.g., staging, production) */
-  mrtEnvironment?: string;
-  /** MRT API origin URL override */
-  mrtOrigin?: string;
-  instanceName?: string;
-  /** Allowed authentication methods (in priority order). If not set, all methods are allowed. */
-  authMethods?: AuthMethod[];
-}
+export {findDwJson};
 
 /**
- * dw.json single config structure
+ * Resolved configuration for CLI commands.
+ *
+ * This type is an alias for NormalizedConfig to maintain backward compatibility
+ * with existing CLI code. For new code, prefer using {@link resolveConfig}
+ * which returns a {@link ResolvedB2CConfig} with factory methods.
  */
-interface DwJsonConfig {
-  name?: string;
-  active?: boolean;
-  hostname?: string;
-  'code-version'?: string;
-  username?: string;
-  password?: string;
-  'client-id'?: string;
-  'client-secret'?: string;
-  'oauth-scopes'?: string[];
-  /** SCAPI short code (multiple key formats supported) */
-  shortCode?: string;
-  'short-code'?: string;
-  'scapi-shortcode'?: string;
-  secureHostname?: string;
-  'secure-server'?: string;
-  /** Allowed authentication methods (in priority order) */
-  'auth-methods'?: AuthMethod[];
-  /** MRT project slug */
-  mrtProject?: string;
-  /** MRT environment name (e.g., staging, production) */
-  mrtEnvironment?: string;
-}
+export type ResolvedConfig = NormalizedConfig;
 
 /**
- * dw.json with multi-config support
+ * Options for loading configuration.
  */
-interface DwJsonMultiConfig extends DwJsonConfig {
-  configs?: DwJsonConfig[];
-}
-
 export interface LoadConfigOptions {
+  /** Named instance from dw.json "configs" array */
   instance?: string;
+  /** Explicit path to config file (skips searching if provided) */
   configPath?: string;
+  /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
+  cloudOrigin?: string;
 }
 
 /**
- * Finds dw.json by walking up from current directory.
- */
-export function findDwJson(startDir: string = process.cwd()): string | null {
-  const logger = getLogger();
-  let dir = startDir;
-  const root = path.parse(dir).root;
-
-  logger.trace({startDir}, '[Config] Searching for dw.json');
-
-  while (dir !== root) {
-    const dwJsonPath = path.join(dir, 'dw.json');
-    if (fs.existsSync(dwJsonPath)) {
-      logger.trace({path: dwJsonPath}, '[Config] Found dw.json');
-      return dwJsonPath;
-    }
-    dir = path.dirname(dir);
-  }
-
-  logger.trace('[Config] No dw.json found');
-  return null;
-}
-
-/**
- * Maps dw.json fields to ResolvedConfig
- */
-function mapDwJsonToConfig(json: DwJsonConfig): ResolvedConfig {
-  return {
-    hostname: json.hostname,
-    webdavHostname: json.secureHostname || json['secure-server'],
-    codeVersion: json['code-version'],
-    username: json.username,
-    password: json.password,
-    clientId: json['client-id'],
-    clientSecret: json['client-secret'],
-    scopes: json['oauth-scopes'],
-    shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
-    instanceName: json.name,
-    authMethods: json['auth-methods'],
-    mrtProject: json.mrtProject,
-    mrtEnvironment: json.mrtEnvironment,
-  };
-}
-
-/**
- * Loads configuration from dw.json file.
- * Supports multi-config format with 'configs' array.
- */
-function loadDwJson(instanceName?: string, configPath?: string): ResolvedConfig {
-  const logger = getLogger();
-  const dwJsonPath = configPath || findDwJson();
-
-  if (!dwJsonPath || !fs.existsSync(dwJsonPath)) {
-    logger.trace('[Config] No dw.json to load');
-    return {};
-  }
-
-  try {
-    const content = fs.readFileSync(dwJsonPath, 'utf8');
-    const json = JSON.parse(content) as DwJsonMultiConfig;
-
-    let selectedConfig: DwJsonConfig = json;
-    let selectedName = json.name || 'root';
-
-    // Handle multi-config format
-    if (Array.isArray(json.configs)) {
-      if (instanceName) {
-        // Find by instance name
-        const found = json.name === instanceName ? json : json.configs.find((c) => c.name === instanceName);
-        if (found) {
-          selectedConfig = found;
-          selectedName = found.name || instanceName;
-        }
-      } else if (json.active === false) {
-        // Root config is inactive, find active one in configs
-        const activeConfig = json.configs.find((c) => c.active === true);
-        if (activeConfig) {
-          selectedConfig = activeConfig;
-          selectedName = activeConfig.name || 'active';
-        }
-      }
-      // Otherwise use root config
-    }
-
-    logger.trace({path: dwJsonPath, instance: selectedName}, '[Config] Loaded dw.json');
-    return mapDwJsonToConfig(selectedConfig);
-  } catch (error) {
-    logger.trace({path: dwJsonPath, error}, '[Config] Failed to parse dw.json');
-    return {};
-  }
-}
-
-/**
- * Merges config sources with precedence: flags (includes env via OCLIF) > dw.json
+ * Plugin-provided configuration sources with priority ordering.
  *
- * Note: Environment variables are handled by OCLIF's flag parsing with the `env`
- * property on each flag definition. By the time flags reach this function, they
- * already contain env var values where applicable.
- *
- * IMPORTANT: If the hostname is explicitly provided (via flags/env) and differs
- * from the dw.json hostname, we do NOT use ANY configuration from dw.json since
- * the dw.json is configured for a different server.
+ * Used by BaseCommand to pass sources collected from the `b2c:config-sources` hook
+ * to the configuration resolver.
  */
-function mergeConfigs(
-  flags: Partial<ResolvedConfig>,
-  dwJson: ResolvedConfig,
-  options: LoadConfigOptions,
-): ResolvedConfig {
-  const logger = getLogger();
-
-  // Check if hostname was explicitly provided and differs from dw.json
-  const hostnameExplicitlyProvided = Boolean(flags.hostname);
-  const hostnameMismatch = hostnameExplicitlyProvided && dwJson.hostname && flags.hostname !== dwJson.hostname;
-
-  // If hostname mismatch, ignore dw.json entirely
-  if (hostnameMismatch) {
-    logger.trace(
-      {providedHostname: flags.hostname, dwJsonHostname: dwJson.hostname, ignoredConfig: dwJson},
-      '[Config] Hostname mismatch - ignoring dw.json configuration',
-    );
-    return {
-      hostname: flags.hostname,
-      webdavHostname: flags.webdavHostname,
-      codeVersion: flags.codeVersion,
-      username: flags.username,
-      password: flags.password,
-      clientId: flags.clientId,
-      clientSecret: flags.clientSecret,
-      scopes: flags.scopes,
-      shortCode: flags.shortCode,
-      mrtApiKey: flags.mrtApiKey,
-      mrtProject: flags.mrtProject,
-      mrtEnvironment: flags.mrtEnvironment,
-      mrtOrigin: flags.mrtOrigin,
-      instanceName: undefined,
-      authMethods: flags.authMethods,
-    };
-  }
-
-  return {
-    hostname: flags.hostname || dwJson.hostname,
-    webdavHostname: flags.webdavHostname || dwJson.webdavHostname,
-    codeVersion: flags.codeVersion || dwJson.codeVersion,
-    username: flags.username || dwJson.username,
-    password: flags.password || dwJson.password,
-    clientId: flags.clientId || dwJson.clientId,
-    clientSecret: flags.clientSecret || dwJson.clientSecret,
-    scopes: flags.scopes || dwJson.scopes,
-    shortCode: flags.shortCode || dwJson.shortCode,
-    mrtApiKey: flags.mrtApiKey,
-    mrtProject: flags.mrtProject || dwJson.mrtProject,
-    mrtEnvironment: flags.mrtEnvironment || dwJson.mrtEnvironment,
-    mrtOrigin: flags.mrtOrigin,
-    instanceName: dwJson.instanceName || options.instance,
-    authMethods: flags.authMethods || dwJson.authMethods,
-  };
+export interface PluginSources {
+  /**
+   * Sources with high priority (inserted BEFORE dw.json/~/.mobify).
+   * These sources can override values from default configuration files.
+   */
+  before?: ConfigSource[];
+  /**
+   * Sources with low priority (inserted AFTER dw.json/~/.mobify).
+   * These sources fill in gaps left by default configuration files.
+   */
+  after?: ConfigSource[];
 }
 
 /**
- * Loads configuration with precedence: CLI flags/env vars > dw.json
+ * Loads configuration with precedence: CLI flags/env vars > dw.json > ~/.mobify
  *
  * OCLIF handles environment variables automatically via flag `env` properties.
  * The flags parameter already contains resolved env var values.
- */
-export function loadConfig(flags: Partial<ResolvedConfig> = {}, options: LoadConfigOptions = {}): ResolvedConfig {
-  const dwJsonConfig = loadDwJson(options.instance, options.configPath);
-  return mergeConfigs(flags, dwJsonConfig, options);
-}
-
-/**
- * Mobify config file structure (~/.mobify)
- */
-interface MobifyConfig {
-  username?: string;
-  api_key?: string;
-}
-
-/**
- * Result from loading mobify config
- */
-export interface MobifyConfigResult {
-  apiKey?: string;
-  username?: string;
-}
-
-/**
- * Loads MRT API key from ~/.mobify config file.
  *
- * The mobify config file is a JSON file located at ~/.mobify containing:
- * ```json
- * {
- *   "username": "user@example.com",
- *   "api_key": "your-api-key"
- * }
+ * Uses {@link resolveConfig} internally for consistent behavior across CLI and SDK.
+ *
+ * @param flags - Configuration values from CLI flags/env vars
+ * @param options - Loading options
+ * @param pluginSources - Optional sources from CLI plugins (via b2c:config-sources hook)
+ * @returns Resolved configuration values
+ *
+ * @example
+ * ```typescript
+ * // In a CLI command
+ * const config = loadConfig(
+ *   { hostname: this.flags.server, clientId: this.flags['client-id'] },
+ *   { instance: this.flags.instance }
+ * );
  * ```
  *
- * When a cloudOrigin is provided, looks for ~/.mobify--[cloudOrigin] instead.
- * For example, if cloudOrigin is "https://cloud-staging.mobify.com", the file
- * would be ~/.mobify--cloud-staging.mobify.com
+ * @example
+ * ```typescript
+ * // For richer API with factory methods, use resolveConfig directly:
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * @param cloudOrigin - Optional cloud origin URL to determine which config file to read
- * @returns The API key and username if found, undefined otherwise
+ * const config = resolveConfig(flags, options);
+ * if (config.hasB2CInstanceConfig()) {
+ *   const instance = config.createB2CInstance();
+ * }
+ * ```
  */
-export function loadMobifyConfig(cloudOrigin?: string): MobifyConfigResult {
+export function loadConfig(
+  flags: Partial<ResolvedConfig> = {},
+  options: LoadConfigOptions = {},
+  pluginSources: PluginSources = {},
+): ResolvedConfig {
   const logger = getLogger();
 
-  let mobifyPath: string;
-  if (cloudOrigin) {
-    // Extract hostname from origin URL for the config file suffix
-    try {
-      const url = new URL(cloudOrigin);
-      mobifyPath = path.join(os.homedir(), `.mobify--${url.hostname}`);
-    } catch {
-      // If URL parsing fails, use the origin as-is
-      mobifyPath = path.join(os.homedir(), `.mobify--${cloudOrigin}`);
-    }
-  } else {
-    mobifyPath = path.join(os.homedir(), '.mobify');
+  const resolved = resolveConfig(flags, {
+    instance: options.instance,
+    configPath: options.configPath,
+    hostnameProtection: true,
+    cloudOrigin: options.cloudOrigin,
+    sourcesBefore: pluginSources.before,
+    sourcesAfter: pluginSources.after,
+  });
+
+  // Log warnings
+  for (const warning of resolved.warnings) {
+    logger.trace({warning}, `[Config] ${warning.message}`);
   }
 
-  logger.trace({path: mobifyPath}, '[Config] Checking for mobify config');
+  const config = resolved.values;
 
-  if (!fs.existsSync(mobifyPath)) {
-    logger.trace({path: mobifyPath}, '[Config] No mobify config found');
-    return {};
+  // Handle instanceName from options if not in resolved config
+  // This preserves backward compatibility with the old behavior
+  if (!config.instanceName && options.instance) {
+    config.instanceName = options.instance;
   }
 
-  try {
-    const content = fs.readFileSync(mobifyPath, 'utf8');
-    const config = JSON.parse(content) as MobifyConfig;
-
-    const hasApiKey = Boolean(config.api_key);
-    logger.trace({path: mobifyPath, hasApiKey, username: config.username}, '[Config] Loaded mobify config');
-
-    return {
-      apiKey: config.api_key,
-      username: config.username,
-    };
-  } catch (error) {
-    logger.trace({path: mobifyPath, error}, '[Config] Failed to parse mobify config');
-    return {};
-  }
+  return config as ResolvedConfig;
 }

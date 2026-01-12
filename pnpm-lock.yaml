@@ -197,6 +197,46 @@ importers:
         specifier: ^8
         version: 8.46.4(eslint@9.39.1)(typescript@5.9.3)
 
+  packages/b2c-plugin-example-config:
+    dependencies:
+      '@salesforce/b2c-tooling-sdk':
+        specifier: workspace:*
+        version: link:../b2c-tooling-sdk
+    devDependencies:
+      '@eslint/compat':
+        specifier: ^1
+        version: 1.4.1(eslint@9.39.1)
+      '@oclif/core':
+        specifier: ^4
+        version: 4.8.0
+      '@salesforce/dev-config':
+        specifier: ^4.3.2
+        version: 4.3.2
+      '@types/node':
+        specifier: ^18
+        version: 18.19.130
+      eslint:
+        specifier: ^9
+        version: 9.39.1
+      eslint-config-oclif:
+        specifier: ^6
+        version: 6.0.116(eslint@9.39.1)(typescript@5.9.3)
+      eslint-config-prettier:
+        specifier: ^10
+        version: 10.1.8(eslint@9.39.1)
+      eslint-plugin-header:
+        specifier: ^3.1.1
+        version: 3.1.1(eslint@9.39.1)
+      eslint-plugin-prettier:
+        specifier: ^5.5.4
+        version: 5.5.4(eslint-config-prettier@10.1.8(eslint@9.39.1))(eslint@9.39.1)(prettier@3.6.2)
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   packages/b2c-tooling-sdk:
     dependencies:
       archiver:

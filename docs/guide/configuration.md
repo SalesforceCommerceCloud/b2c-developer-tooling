@@ -86,7 +86,98 @@ You can configure authentication using environment variables:
 
 ## Configuration File
 
-You can create a configuration file to store instance settings. See the [CLI Reference](/cli/) for more details on configuration file options.
+You can create a `dw.json` file to store instance settings. The CLI searches for this file starting from the current directory and walking up the directory tree.
+
+### Single Instance
+
+```json
+{
+  "hostname": "your-instance.demandware.net",
+  "code-version": "version1",
+  "client-id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "client-secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+```
+
+### Multiple Instances
+
+For projects that work with multiple instances, use the `configs` array:
+
+```json
+{
+  "configs": [
+    {
+      "name": "dev",
+      "active": true,
+      "hostname": "dev-instance.demandware.net",
+      "code-version": "version1",
+      "client-id": "dev-client-id"
+    },
+    {
+      "name": "staging",
+      "hostname": "staging-instance.demandware.net",
+      "code-version": "version1",
+      "client-id": "staging-client-id"
+    }
+  ]
+}
+```
+
+Use the `--instance` flag to select a specific configuration:
+
+```bash
+b2c code deploy --instance staging
+```
+
+If no instance is specified, the config with `"active": true` is used.
+
+### Supported Fields
+
+| Field | Description |
+|-------|-------------|
+| `hostname` | B2C instance hostname |
+| `webdav-hostname` | Separate hostname for WebDAV (if different) |
+| `code-version` | Code version for deployments |
+| `client-id` | OAuth client ID |
+| `client-secret` | OAuth client secret |
+| `username` | Basic auth username |
+| `password` | Basic auth password/access-key |
+| `scopes` | OAuth scopes (array or comma-separated string) |
+| `auth-methods` | Authentication methods in priority order |
+| `account-manager-host` | Custom Account Manager hostname |
+| `shortCode` | SCAPI short code |
+
+### Resolution Priority
+
+Configuration is resolved with the following precedence (highest to lowest):
+
+1. **CLI flags and environment variables** - Explicit values always take priority
+2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'`
+3. **dw.json** - Project configuration file
+4. **~/.mobify** - Home directory file (for MRT API key only)
+5. **Plugin sources (low priority)** - Custom sources with `priority: 'after'`
+
+::: tip Extending Configuration
+Plugins can add custom configuration sources like secret managers or environment-specific files. See [Extending the CLI](./extending) for details.
+:::
+
+### Credential Grouping
+
+To prevent mixing credentials from different sources, certain fields are treated as atomic groups:
+
+- **OAuth**: `clientId` and `clientSecret`
+- **Basic Auth**: `username` and `password`
+
+If any field in a group is set by a higher-priority source, all fields in that group from lower-priority sources are ignored. This ensures credential pairs always come from the same source.
+
+**Example:**
+- dw.json provides `clientId` only
+- A plugin provides `clientSecret`
+- Result: Only `clientId` is used; the plugin's `clientSecret` is ignored to prevent mismatched credentials
+
+::: warning Hostname Mismatch Protection
+When you explicitly specify a hostname that differs from the `dw.json` hostname, the CLI ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.
+:::
 
 ## Next Steps
 

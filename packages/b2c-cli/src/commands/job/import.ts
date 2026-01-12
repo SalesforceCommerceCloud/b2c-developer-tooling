@@ -65,6 +65,29 @@ export default class JobImport extends JobCommand<typeof JobImport> {
 
     const hostname = this.resolvedConfig.hostname!;
 
+    // Create lifecycle context
+    const context = this.createContext('job:import', {
+      target,
+      remote,
+      keepArchive,
+      hostname,
+    });
+
+    // Run beforeOperation hooks - check for skip
+    const beforeResult = await this.runBeforeHooks(context);
+    if (beforeResult.skip) {
+      this.log(
+        t('commands.job.import.skipped', 'Import skipped: {{reason}}', {
+          reason: beforeResult.skipReason || 'skipped by plugin',
+        }),
+      );
+      return {
+        execution: {execution_status: 'finished', exit_status: {code: 'skipped'}},
+        archiveFilename: '',
+        archiveKept: false,
+      } as unknown as SiteArchiveImportResult;
+    }
+
     if (remote) {
       this.log(
         t('commands.job.import.importingRemote', 'Importing {{target}} from {{hostname}}...', {
@@ -118,8 +141,23 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         );
       }
 
+      // Run afterOperation hooks with success
+      await this.runAfterHooks(context, {
+        success: true,
+        duration: Date.now() - context.startTime,
+        data: result,
+      });
+
       return result;
     } catch (error) {
+      // Run afterOperation hooks with failure
+      await this.runAfterHooks(context, {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+        duration: Date.now() - context.startTime,
+        data: error instanceof JobExecutionError ? error.execution : undefined,
+      });
+
       if (error instanceof JobExecutionError) {
         if (showLog) {
           await this.showJobLog(error.execution);

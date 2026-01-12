@@ -15,6 +15,7 @@ import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ocapi.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
+import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 
 const DEFAULT_API_VERSION = 'v25_6';
 
@@ -59,6 +60,21 @@ export type OcapiError = components['schemas']['fault'];
 export {createAuthMiddleware, createLoggingMiddleware};
 
 /**
+ * Options for creating an OCAPI client.
+ */
+export interface OcapiClientOptions {
+  /**
+   * API version (defaults to v25_6).
+   */
+  apiVersion?: string;
+  /**
+   * Middleware registry to use for this client.
+   * If not specified, uses the global middleware registry.
+   */
+  middlewareRegistry?: MiddlewareRegistry;
+}
+
+/**
  * Creates a typed OCAPI Data API client.
  *
  * Returns the openapi-fetch client directly, with authentication
@@ -70,7 +86,7 @@ export {createAuthMiddleware, createLoggingMiddleware};
  *
  * @param hostname - B2C instance hostname
  * @param auth - Authentication strategy (typically OAuth)
- * @param apiVersion - API version (defaults to v25_6)
+ * @param options - Optional configuration including API version and middleware registry
  * @returns Typed openapi-fetch client
  *
  * @example
@@ -101,14 +117,27 @@ export {createAuthMiddleware, createLoggingMiddleware};
 export function createOcapiClient(
   hostname: string,
   auth: AuthStrategy,
-  apiVersion: string = DEFAULT_API_VERSION,
+  options?: OcapiClientOptions | string,
 ): OcapiClient {
+  // Support legacy string parameter for apiVersion (backwards compatibility)
+  const opts: OcapiClientOptions = typeof options === 'string' ? {apiVersion: options} : (options ?? {});
+
+  const apiVersion = opts.apiVersion ?? DEFAULT_API_VERSION;
+  const registry = opts.middlewareRegistry ?? globalMiddlewareRegistry;
+
   const client = createClient<paths>({
     baseUrl: `https://${hostname}/s/-/dw/data/${apiVersion}`,
   });
 
-  // Middleware order: auth → logging (logging sees fully modified request)
+  // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
+
+  // Plugin middleware from registry
+  for (const middleware of registry.getMiddleware('ocapi')) {
+    client.use(middleware);
+  }
+
+  // Logging middleware last (sees complete request with all modifications)
   client.use(createLoggingMiddleware('OCAPI'));
 
   return client;

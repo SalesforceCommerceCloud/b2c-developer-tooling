@@ -1,0 +1,46 @@
+{
+  "name": "@salesforce/b2c-plugin-example-config",
+  "version": "0.0.1-preview",
+  "description": "Example plugin demonstrating custom config source for B2C CLI",
+  "author": "Salesforce Commerce Cloud",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "oclif": {
+    "hooks": {
+      "b2c:config-sources": "./dist/hooks/config-sources.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
+  },
+  "dependencies": {
+    "@salesforce/b2c-tooling-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "@oclif/core": "^4"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1",
+    "@oclif/core": "^4",
+    "@salesforce/dev-config": "^4.3.2",
+    "@types/node": "^18",
+    "eslint": "^9",
+    "eslint-config-oclif": "^6",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-header": "^3.1.1",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=22.16.0"
+  }
+}

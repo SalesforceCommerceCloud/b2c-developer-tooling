@@ -46,8 +46,16 @@ export interface DwJsonConfig {
   'scapi-shortcode'?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
   'webdav-hostname'?: string;
+  /** Alternate hostname for WebDAV (legacy camelCase format) */
+  secureHostname?: string;
+  /** Alternate hostname for WebDAV (legacy kebab-case format) */
+  'secure-server'?: string;
   /** Allowed authentication methods in priority order */
   'auth-methods'?: AuthMethod[];
+  /** MRT project slug */
+  mrtProject?: string;
+  /** MRT environment name (e.g., staging, production) */
+  mrtEnvironment?: string;
 }
 
 /**

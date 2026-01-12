@@ -36,6 +36,8 @@ export const sharedRules = {
   ],
   // Disable new-cap - incompatible with openapi-fetch (uses GET, POST, etc. methods)
   'new-cap': 'off',
+  // Allow snake_case in object properties - common when working with external APIs
+  camelcase: ['error', {properties: 'never'}],
 };
 
 /**

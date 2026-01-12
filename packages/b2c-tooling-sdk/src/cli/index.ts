@@ -103,8 +103,31 @@ export {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS} from './webdav-command.js';
 export type {WebDavRootKey} from './webdav-command.js';
 
 // Config utilities
-export {loadConfig, findDwJson, loadMobifyConfig} from './config.js';
-export type {ResolvedConfig, LoadConfigOptions, MobifyConfigResult} from './config.js';
+export {loadConfig, findDwJson} from './config.js';
+export type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
+
+// Hook types for plugin extensibility
+export type {
+  ConfigSourcesHookOptions,
+  ConfigSourcesHookResult,
+  ConfigSourcesHook,
+  HttpMiddlewareHookOptions,
+  HttpMiddlewareHookResult,
+  HttpMiddlewareHook,
+  // B2C lifecycle hook types
+  B2COperationType,
+  B2COperationContext,
+  BeforeB2COperationResult,
+  B2COperationResult,
+  AfterB2COperationResult,
+  B2COperationLifecycleProvider,
+  B2COperationLifecycleHookOptions,
+  B2COperationLifecycleHookResult,
+  B2COperationLifecycleHook,
+} from './hooks.js';
+export {createB2COperationContext, B2CLifecycleRunner} from './hooks.js';
+// Re-export module augmentation for @oclif/core Hooks interface
+export {} from './hooks.js';
 
 // Table rendering utilities
 export {TableRenderer, createTable} from './table.js';
