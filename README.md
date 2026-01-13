@@ -9,7 +9,7 @@ Salesforce Commerce Cloud B2C Command Line Tools.
 
 
 > [!TIP]
-> Just looking for the B2C CLI or MCP install instructions? Visit the documentation site at [https://salesforcecommercecloud.github.io/b2c-developer-tooling/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the latest install guide and CLI reference.
+> **Just looking for the B2C CLI or MCP install instructions?** Visit the documentation site at [https://salesforcecommercecloud.github.io/b2c-developer-tooling/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the latest install guide and CLI reference.
 
 ## Features
 
