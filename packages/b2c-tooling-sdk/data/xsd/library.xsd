@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns           = "http://www.demandware.com/xml/impex/library/2006-10-31"
+    xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+    xmlns:xml       = "http://www.w3.org/XML/1998/namespace"
+    targetNamespace = "http://www.demandware.com/xml/impex/library/2006-10-31"
+    elementFormDefault   = "qualified"
+    attributeFormDefault = "unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- library main tag -->
+    <xsd:element name="library">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="header" type="complexType.Header" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="folder" type="complexType.Folder" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="content" type="complexType.Content" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+            <xsd:attribute name="library-id" type="simpleType.Generic.NonEmptyString.256" use="optional" />
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="header" type="complexType.Header" />
+    <xsd:element name="folder" type="complexType.Folder" />
+    <xsd:element name="content" type="complexType.Content" />
+    
+    <!-- Header -->
+    <xsd:complexType name="complexType.Header" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+
+    <!-- Library Folder -->
+    <xsd:complexType name="complexType.Folder" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="online-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="template" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="parent" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="position" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="page-attributes" type="complexType.PageAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="attribute-groups" type="complexType.AttributeGroups" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="refinement-definitions" type="complexType.RefinementDefinitions" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="content-detail-page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="content-listing-page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sitemap-included-flag" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="sitemap-changefrequency" type="simpleType.SiteMapChangeFrequency" minOccurs="0"/>
+            <xsd:element name="sitemap-priority" type="simpleType.SiteMapPriority" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+        <xsd:attribute name="folder-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- Attribute Group Definitions -->
+    <xsd:complexType name="complexType.AttributeGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-group" type="complexType.AttributeGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeGroup" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="attribute" type="complexType.AttributeReference" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="group-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeReference" mixed="false">
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <!-- Library Asset -->
+    <xsd:complexType name="complexType.Content" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="type" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The type must either be a page ("page.*") or a component ("component.*"). Those types are defined
+                        as part of the storefront cartridges, that should be assigned to the same sites to which the
+                        given library is assigned to such that definition and data match.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="config" type="sharedType.Text" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The config can only be set for pages (see contentassetpageconfig.json) and
+                        components (contentassetcomponentconfig.json).
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="visibility-mode" type="complexType.LocalizedVisibilityMode" minOccurs="0" maxOccurs="unbounded">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The visibility-mode can only be set for pages.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="data" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The data can only be set for components (see contentassetcomponentdata.json).
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="search-words" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The search-words are used for creating a search index on the content.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="aspect-type" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The aspect-type is only viable for Page Designer pages.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+
+            <xsd:element name="online-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="searchable-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The searchable-flag cannot be set for components.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="template" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="page-attributes" type="complexType.PageAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.SiteSpecificCustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="folder-links" type="complexType.Content.FolderLinks" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Components cannot be assigned to folders.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="content-links" type="complexType.Content.ContentLinks" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The content-links can only be set for pages and components. Each can have multiple outgoing
+                        links. Incoming links are only allowed for components (at most one per component).
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="content-object-assignments" type="complexType.Content.ContentObjectAssignments" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The content-object-assignments can only be set for pages. Each page can be assigned to multiple
+                        objects and each object can be assigned to multiple pages.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="sitemap-included-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The sitemap-included-flag cannot be set for components.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="sitemap-changefrequency" type="sharedType.SiteSpecificSiteMapChangeFrequency" minOccurs="0" maxOccurs="unbounded" nillable="true">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The sitemap-changefrequency cannot be set for components.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="sitemap-priority" type="sharedType.SiteSpecificSiteMapPriority" minOccurs="0" maxOccurs="unbounded" nillable="true">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The sitemap-priority cannot be set for components.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="content-detail-page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="content-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- Content Folder Links -->
+    <xsd:complexType name="complexType.Content.FolderLinks" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="classification-link" type="complexType.Content.FolderLink" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="folder-link" type="complexType.Content.FolderLink" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Content.FolderLink" mixed="false">
+        <xsd:all>
+            <xsd:element name="position" type="xsd:double" minOccurs="0" maxOccurs="1" />
+        </xsd:all>
+        <xsd:attribute name="folder-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- ContentLink -->
+    <xsd:complexType name="complexType.Content.ContentLinks" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                These links are only allowed between content elements of type page or component.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="content-link" type="complexType.Content.ContentLink" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.Content.ContentLink" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                Each component can only have a single incoming content link (and pages cannot have incoming links).
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <xsd:element name="position" type="xsd:double" minOccurs="0" maxOccurs="1" />
+        </xsd:all>
+        <xsd:attribute name="content-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="type" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- ContentObjectAssignment -->
+    <xsd:complexType name="complexType.Content.ContentObjectAssignments" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                These links are only allowed between content elements of type page and other persistent objects. At the moment
+                only categories are supported.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="content-object-assignment" type="complexType.Content.ContentObjectAssignment" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Content.ContentObjectAssignment" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                Each object can be assigned to multiple pages (but only to one page per aspect type) and vice versa.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="object-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="lookup-mode" type="simpleType.AssignedObjectLookupMode" />
+        <xsd:attribute name="object-type" type="simpleType.AssignedObjectType" use="required" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.AssignedObjectType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="category" />
+            <xsd:enumeration value="product" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.AssignedObjectLookupMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="category-explicit" />
+            <xsd:enumeration value="category-implicit" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Search Engine Support -->
+    <xsd:complexType name="complexType.PageAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-title" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="page-description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="page-keywords" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="page-url" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Search Refinement Definitions -->
+    <xsd:complexType name="complexType.RefinementDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="refinement-definition" type="complexType.RefinementDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.RefinementDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="sort-mode" type="simpleType.Sorting.Mode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sort-direction" type="simpleType.Sorting.Direction" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="cutoff-threshold" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="bucket-definitions" type="complexType.RefinementBuckets" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="type" type="simpleType.Refinement.Type" use="required" />
+        <xsd:attribute name="bucket-type" type="simpleType.Bucket.Type" use="optional" />
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" />
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.RefinementBuckets" mixed="false">
+        <xsd:choice>
+            <xsd:element name="attribute-bucket" type="complexType.AttributeRefinementBucket" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="threshold-bucket" type="complexType.ThresholdRefinementBucket" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeRefinementBucket" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="value-list" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ThresholdRefinementBucket" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="threshold" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="sharedType.LocalizedText" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+    
+    <xsd:complexType name="sharedType.Text" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String"/>
+        </xsd:simpleContent>
+    </xsd:complexType>
+    
+        <xsd:complexType name="sharedType.SiteSpecificCustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.SiteSpecificCustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificCustomAttribute" mixed="false">
+        <xsd:complexContent>
+            <xsd:extension base="sharedType.CustomAttribute">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificBoolean" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:boolean">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificInt" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:int">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificDateTime" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:dateTime">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificSiteMapChangeFrequency" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.SiteMapChangeFrequency">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificSiteMapPriority" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.SiteMapPriority">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+        
+    <xsd:complexType name="complexType.PageMetaTagRules" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-meta-tag-rule" type="complexType.PageMetaTagRule" minOccurs="0" maxOccurs="50" />
+        </xsd:sequence>
+    </xsd:complexType>
+  
+    <xsd:complexType name="complexType.PageMetaTagRule" mixed="false">
+        <xsd:attribute name="rule-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.LocalizedVisibilityMode">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.VisibilityMode">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="4000" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.SiteMapChangeFrequency">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="always" />
+            <xsd:enumeration value="hourly" />
+            <xsd:enumeration value="daily" />
+            <xsd:enumeration value="weekly" />
+            <xsd:enumeration value="monthly" />
+            <xsd:enumeration value="yearly" />
+            <xsd:enumeration value="never" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.SiteMapPriority">
+        <xsd:restriction base="xsd:double">
+            <xsd:minInclusive value="0.0" />
+            <xsd:maxInclusive value="1.0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="32" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Sorting.Mode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="value-name" />
+            <xsd:enumeration value="value-count" />
+            <xsd:enumeration value="folder-position" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Sorting.Direction">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="ascending" />
+            <xsd:enumeration value="descending" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Refinement.Type">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="attribute" />
+            <xsd:enumeration value="folder" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Bucket.Type">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none" />
+            <xsd:enumeration value="values" />
+            <xsd:enumeration value="thresholds" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.VisibilityMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="invisible" />
+            <xsd:enumeration value="visible" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

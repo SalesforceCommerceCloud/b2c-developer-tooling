@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns="http://www.demandware.com/xml/impex/sitemapconfiguration/2016-08-30"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/sitemapconfiguration/2016-08-30"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+ 
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+     
+    <xsd:element name="sitemap-configuration" type="SitemapConfiguration" />
+ 
+    <xsd:complexType name="SitemapConfiguration">
+        <xsd:sequence>
+            <xsd:element name="settings" type="complexType.Settings" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="hostnames" type="complexType.Hostnames" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="pipelines" type="complexType.Pipelines" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="schedule" type="complexType.Schedule" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Settings">
+        <xsd:sequence>
+            <xsd:element name="product" type="complexType.Product"  minOccurs="0" maxOccurs="1" />
+            <xsd:element name="category" type="complexType.Category" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="content" type="complexType.Content" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="folder" type="complexType.Folder" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="pipeline" type="complexType.Pipeline" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-image" type="complexType.ProductImage" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="video" type="complexType.Video" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use element custom-sitemap (complexType.CustomSitemap).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-sitemap" type="complexType.CustomSitemap" minOccurs="0" maxOccurs="1" />
+ 
+            <xsd:element name="alternate-urls-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="default-locale-mapping" type="simpleType.Generic.LocaleID" minOccurs="0" maxOccurs="1" />
+            
+            <xsd:element name="links-per-sitemap" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="mobile-screen-width" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="mobile-urls-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.Product">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="change-frequency" type="simpleType.ChangeFrequency" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="priority" type="simpleType.Priority" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="separate-sitemap-file" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="included-product-status" type="complexType.IncludedProductStatus" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.Category">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="change-frequency" type="simpleType.ChangeFrequency" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="priority" type="simpleType.Priority" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="separate-sitemap-file" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.Content">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="change-frequency" type="simpleType.ChangeFrequency" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="priority" type="simpleType.Priority" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="separate-sitemap-file" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+     
+    <xsd:complexType name="complexType.Folder">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="change-frequency" type="simpleType.ChangeFrequency" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="priority" type="simpleType.Priority" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="separate-sitemap-file" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Pipeline">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="change-frequency" type="simpleType.ChangeFrequency" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="priority" type="simpleType.Priority" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="separate-sitemap-file" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductImage">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="separate-sitemap-file" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="image-view-type" type="xsd:string" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Video">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use complex type complexType.CustomSitemap.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.CustomSitemap">
+        <xsd:sequence>
+            <xsd:element name="sitemap-included" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.ChangeFrequency">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="HOURLY"/>
+            <xsd:enumeration value="DAILY" />
+            <xsd:enumeration value="WEEKLY" />
+            <xsd:enumeration value="MONTHLY" />
+            <xsd:enumeration value="YEARLY" />
+            <xsd:enumeration value="ALWAYS" />
+            <xsd:enumeration value="NEVER" />
+        </xsd:restriction>
+    </xsd:simpleType>
+     
+    <xsd:simpleType name="simpleType.Priority">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:fractionDigits value="1"/>
+            <xsd:minInclusive value="0.0"/>
+            <xsd:maxInclusive value="1.0"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.IncludedProductStatus">
+        <xsd:sequence>
+            <xsd:element name="unavailable" type="xsd:boolean" default="false" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="orderable" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="non-searchable" type="xsd:boolean" default="false" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Hostnames">
+        <xsd:sequence>
+            <xsd:element name="mobile-hostname" type="complexType.MobileHostname" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>  
+ 
+    <xsd:complexType name="complexType.MobileHostname">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+                <xsd:attribute name="hostname" type="xsd:string" use="required" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+	<xsd:complexType name="complexType.Pipelines">
+		<xsd:sequence>
+			<xsd:element name="pipeline" type="simpleType.Generic.Pipeline" minOccurs="0" maxOccurs="unbounded" />
+		</xsd:sequence>
+	</xsd:complexType>
+	
+    <xsd:complexType name="complexType.Schedule">
+        <xsd:sequence>
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:choice>
+                <xsd:element name="recurrence" type="complexType.Recurrence" />
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+ 
+    <xsd:complexType name="complexType.Recurrence">
+        <xsd:sequence>
+            <xsd:element name="date-from" type="xsd:date" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="start-time" type="xsd:time" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="interval" type="simpleType.Generic.String.10" minOccurs="1" maxOccurs="1"/>
+            <xsd:choice>
+                <xsd:element name="day-of-week" type="complexType.DayOfWeek" minOccurs="0" maxOccurs="1" />
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+ 
+    <xsd:complexType name="complexType.DayOfWeek" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="weekday" type="simpleType.Weekday" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+ 
+    <xsd:simpleType name="simpleType.Weekday">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Monday" />
+            <xsd:enumeration value="Tuesday" />
+            <xsd:enumeration value="Wednesday" />
+            <xsd:enumeration value="Thursday" />
+            <xsd:enumeration value="Friday" />
+            <xsd:enumeration value="Saturday" />
+            <xsd:enumeration value="Sunday" />
+        </xsd:restriction>
+    </xsd:simpleType>  
+     
+    <xsd:simpleType name="simpleType.Generic.LocaleID">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+            <xsd:pattern value="([a-z]{2}(-[A-Z]{2})?|default)?" />
+        </xsd:restriction>
+    </xsd:simpleType>
+     
+    <xsd:simpleType name="simpleType.Generic.String.10">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+     
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.Pipeline">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)-\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+ 
+</xsd:schema>

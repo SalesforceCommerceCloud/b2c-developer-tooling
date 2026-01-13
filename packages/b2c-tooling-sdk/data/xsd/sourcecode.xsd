@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema
+    xmlns           = "http://www.demandware.com/xml/impex/sourcecode/2007-03-31"
+    xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+    xmlns:xml       = "http://www.w3.org/XML/1998/namespace"
+    targetNamespace = "http://www.demandware.com/xml/impex/sourcecode/2007-03-31"
+    elementFormDefault   = "qualified"
+    attributeFormDefault = "unqualified">   
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="sourcecodes">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="sourcecode-group" type="complexType.SourceCodeGroup" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- 
+        <xsd:element name="sourcecodes" type="complexType.SourceCodeGroups" />
+        
+        <xsd:complexType name="complexType.SourceCodeGroups">
+        <xsd:sequence>
+        <xsd:element name="sourcecode-group"
+        type="complexType.SourceCodeGroup" minOccurs="0" maxOccurs="unbounded">
+        </xsd:element>
+        </xsd:sequence>
+        </xsd:complexType>
+    -->
+
+    <xsd:element name="sourcecode-group" type="complexType.SourceCodeGroup" />
+
+    <xsd:complexType name="complexType.SourceCodeGroup">
+        <xsd:sequence>
+            <xsd:element name="description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="cookie-max-age" type="CookieMaxAge" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="online-from" type="xsd:date" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="online-to" type="xsd:date" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="active-redirect" type="complexType.Redirect" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="inactive-redirect" type="complexType.Redirect" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="code-specs" type="complexType.CodeSpecs" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="pricebooks" type="complexType.SourceCodePriceBooks" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="campaigns" type="complexType.SourceCodeCampaigns" minOccurs="0" maxOccurs="1">
+               <xsd:annotation> 
+                   <xsd:documentation>The element 'campaigns' has been deprecated. Use promotion import to assign source code groups to campaigns.</xsd:documentation> 
+               </xsd:annotation> 
+            </xsd:element>   
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="group-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CodeSpecs">
+        <xsd:sequence>
+            <xsd:element name="code-spec" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SourceCodePriceBooks">
+        <xsd:sequence>
+            <xsd:element name="pricebook" type="complexType.SourceCodePriceBook" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SourceCodePriceBook">
+        <xsd:attribute name="pricebook-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SourceCodeCampaigns">
+        <xsd:sequence>
+            <xsd:element name="campaign" type="complexType.SourceCodeCampaign" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SourceCodeCampaign">
+        <xsd:attribute name="campaign-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Redirect">
+        <xsd:choice maxOccurs="1" minOccurs="0">
+            <xsd:element name="category-redirect" type="complexType.CategoryRedirect" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-redirect" type="complexType.ProductRedirect" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="page-redirect" type="complexType.PageRedirect" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="url-redirect" type="complexType.URLRedirect" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="home-redirect" type="complexType.HomeRedirect" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="default-redirect" type="complexType.DefaultRedirect" minOccurs="0" maxOccurs="1" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.DefaultRedirect" />
+
+    <xsd:complexType name="complexType.HomeRedirect" />
+
+    <xsd:complexType name="complexType.CategoryRedirect">
+        <xsd:attribute name="category-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductRedirect">
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PageRedirect">
+        <xsd:attribute name="page-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.URLRedirect">
+        <xsd:attribute name="target-url" type="xsd:anyURI" use="required" />
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- simple types -->
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.10">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!-- cookie max age unit is days, min value is 0, max value is 999 -->
+    <xsd:simpleType name="CookieMaxAge">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="0" />
+            <xsd:maxInclusive value="999" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

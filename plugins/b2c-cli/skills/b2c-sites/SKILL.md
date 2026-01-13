@@ -1,6 +1,6 @@
 ---
 name: b2c-sites
-description: Salesforce B2C Commerce storefront sites listing and inspection Skill
+description: Using the b2c CLI for storefront sites listing and inspection
 ---
 
 # B2C Sites Skill

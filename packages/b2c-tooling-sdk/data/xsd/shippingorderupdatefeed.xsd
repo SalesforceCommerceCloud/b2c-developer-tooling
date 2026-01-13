@@ -1,0 +1,125 @@
+<?xml version="1.0" ?>
+<xsd:schema
+    xmlns="urn:demandware.com:oms:shipping_order_status_feed:99.9"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:demandware.com:oms:shipping_order_status_feed:99.9"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- root elements -->
+    <xsd:element name="shipping_order_status_feed" type="ShippingOrderStatusFeed" />
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+    
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- shipping_order_status_feed -->
+    <xsd:complexType name="ShippingOrderStatusFeed" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="feed_description" minOccurs="0" maxOccurs="1" nillable="true" type="FeedDescription" />
+            <xsd:element name="shipping_orders" minOccurs="1" maxOccurs="1" nillable="false" type="ShippingOrders" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- feed_description -->
+    <xsd:complexType name="FeedDescription" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="count" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:integer" />
+            <xsd:element name="created" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:dateTime" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ShippingOrders" mixed="false">
+        <xsd:sequence>
+            <xsd:element minOccurs="1" maxOccurs="unbounded" name="shipping_order" type="ShippingOrder" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    
+    <!-- shipping_order -->
+    <xsd:complexType name="ShippingOrder" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="shipping_order_number" minOccurs="1" maxOccurs="1" nillable="false" type="xsd:string" />
+            <xsd:element name="ship_date" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:dateTime" />
+            <xsd:element name="status" minOccurs="0" maxOccurs="1" nillable="true">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:enumeration value="warehouse" />
+                        <xsd:enumeration value="shipped" />
+                        <xsd:enumeration value="cancelled" />
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:any namespace="urn:demandware.com:custom" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+            <xsd:element name="items" minOccurs="0" maxOccurs="1" nillable="true" type="ShippingOrderItems" />
+            <xsd:element name="tracking_infos" minOccurs="0" maxOccurs="1" nillable="true" type="TrackingInfos" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ShippingOrderItems" mixed="false">
+        <xsd:sequence>
+            <xsd:element minOccurs="0" maxOccurs="unbounded" name="item" type="ShippingOrderItem" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- shipping_order_item -->
+    <xsd:complexType name="ShippingOrderItem" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="item_id" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="product_id" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="quantity" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:decimal" />
+            <xsd:element name="status" minOccurs="0" maxOccurs="1" nillable="true">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:enumeration value="shipped" />
+                        <xsd:enumeration value="cancelled" />
+                        <xsd:enumeration value="backorder" />
+                        <xsd:enumeration value="warehouse" />
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:element name="tracking_refs" minOccurs="0" maxOccurs="1" nillable="true" type="TrackingRefs" />
+            <xsd:any namespace="urn:demandware.com:custom" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="TrackingInfos" mixed="false">
+        <xsd:sequence>
+            <xsd:element minOccurs="0" maxOccurs="unbounded" name="tracking_info" type="TrackingInfo" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- tracking_info -->
+    <xsd:complexType name="TrackingInfo" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="carrier" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="carrier_service" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="id" minOccurs="1" maxOccurs="1" type="simpleType.Generic.NonEmptyString" />
+            <xsd:element name="ship_date" minOccurs="1" maxOccurs="1" nillable="true" type="xsd:dateTime" />
+            <xsd:element name="tracking_number" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+            <xsd:element name="warehouse_id" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="TrackingRefs">
+        <xsd:sequence>
+            <xsd:element minOccurs="0" maxOccurs="unbounded" name="tracking_ref" type="TrackingRef" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- tracking_ref -->
+    <xsd:complexType name="TrackingRef" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="quantity" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:decimal" />
+            <xsd:element name="ref" minOccurs="1" maxOccurs="1" type="simpleType.Generic.NonEmptyString" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+</xsd:schema>

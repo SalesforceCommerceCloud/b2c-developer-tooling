@@ -1,6 +1,6 @@
 ---
 name: b2c-scapi-custom
-description: Salesforce B2C Commerce Custom API endpoint management Skill
+description: Using the b2c CLI for Custom SCAPI endpoint management
 ---
 
 # B2C SCAPI Custom APIs Skill

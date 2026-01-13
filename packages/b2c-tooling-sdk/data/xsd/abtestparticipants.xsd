@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/abtestparticipants/2018-01-10" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    targetNamespace="http://www.demandware.com/xml/impex/abtestparticipants/2018-01-10" 
+    elementFormDefault="qualified" >
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <xsd:element name="abtest-participants">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="participant" type="complexType.ABTestGroupParticipants" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some top level elements to allow for snippet based JAXB parsing --> 
+    <xsd:element name="participant" type="complexType.ABTestGroupParticipants" />
+
+    <xsd:complexType name="complexType.ABTestGroupParticipants">
+        <xsd:sequence>
+            <xsd:element name="customer-no" type="Generic.NonEmptyString.100" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="expiration" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="test-id" type="Generic.NonEmptyString.40" use="required" />
+        <xsd:attribute name="group-id" type="Generic.NonEmptyString.256" use="required" />        
+    </xsd:complexType>
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.40">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="40" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.100">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

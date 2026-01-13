@@ -1,6 +1,6 @@
 ---
 name: b2c-code
-description: Salesforce B2C Commerce code version deployment and management Skill
+description: Using the b2c CLI for code version deployment and management
 ---
 
 # B2C Code Skill

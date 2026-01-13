@@ -25,6 +25,11 @@ export default [
     plugins: {
       header: headerPlugin,
     },
+    linterOptions: {
+      // Downgrade to warn - import/namespace behaves inconsistently across environments
+      // when parsing CJS modules like marked-terminal
+      reportUnusedDisableDirectives: 'warn',
+    },
     rules: {
       'header/header': ['error', 'block', copyrightHeader],
       ...sharedRules,

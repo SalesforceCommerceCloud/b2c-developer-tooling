@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://www.demandware.com/xml/impex/site/2007-04-30"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.demandware.com/xml/impex/site/2007-04-30"
+    elementFormDefault="qualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="site" type="complexType.Site" />
+
+    <xsd:complexType name="complexType.Site" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="name" type="simpleType.Generic.String" />
+            <xsd:element name="description" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="currency" type="simpleType.Currency" />
+            <xsd:element name="taxation" type="simpleType.Taxation" />
+            <xsd:element name="brand" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="billing-entity" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-cartridges" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="storefront-status" type="simpleType.SiteStatus" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="storefront-password" type="simpleType.StorefrontPassword" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="home-page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+    <xsd:simpleType name="simpleType.Currency">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Taxation">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="net" />
+            <xsd:enumeration value="gross" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.SiteStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="online" />
+            <xsd:enumeration value="protected" />
+            <xsd:enumeration value="offline" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.StorefrontPassword" >
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:complexType name="complexType.PageMetaTagRules" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-meta-tag-rule" type="complexType.PageMetaTagRule" minOccurs="0" maxOccurs="50" />
+        </xsd:sequence>
+    </xsd:complexType>
+  
+    <xsd:complexType name="complexType.PageMetaTagRule" mixed="false">
+        <xsd:attribute name="rule-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+    
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="32" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

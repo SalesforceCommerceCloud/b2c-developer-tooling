@@ -13,6 +13,7 @@
   ],
   "type": "module",
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "development": "./src/index.ts",
       "import": {
@@ -101,6 +102,17 @@
         "default": "./dist/cjs/operations/mrt/index.js"
       }
     },
+    "./operations/docs": {
+      "development": "./src/operations/docs/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/docs/index.d.ts",
+        "default": "./dist/esm/operations/docs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/docs/index.d.ts",
+        "default": "./dist/cjs/operations/docs/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {
@@ -162,7 +174,8 @@
   "types": "./dist/esm/index.d.ts",
   "files": [
     "dist",
-    "specs"
+    "specs",
+    "data"
   ],
   "scripts": {
     "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts",
@@ -171,15 +184,16 @@
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src",
+    "format": "prettier --write src scripts",
+    "format:check": "prettier --check src scripts",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "mocha --forbid-only \"test/**/*.test.ts\"",
     "test:watch": "mocha --watch \"test/**/*.test.ts\"",
     "coverage": "c8 report",
-    "posttest": "pnpm run lint"
+    "posttest": "pnpm run lint",
+    "generate:docs-index": "tsx scripts/generate-docs-index.ts"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
@@ -219,6 +233,7 @@
   },
   "dependencies": {
     "archiver": "^7.0.1",
+    "fuse.js": "^7.0.0",
     "chokidar": "^5.0.0",
     "cliui": "^9.0.1",
     "glob": "^13.0.0",

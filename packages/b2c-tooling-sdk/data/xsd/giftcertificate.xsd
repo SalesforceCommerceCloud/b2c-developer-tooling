@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/giftcertificate/2007-02-28"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/giftcertificate/2007-02-28"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="gift-certificates">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="gift-certificate" type="complexType.GiftCertificate" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="gift-certificate" type="complexType.GiftCertificate" />
+
+
+    <xsd:complexType name="complexType.GiftCertificate">
+        <xsd:sequence>
+            <xsd:element name="create-date" type="xsd:dateTime" maxOccurs="1" minOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The original date and time the Gift Certificate was created.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="recipient-name" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The name of the person receiving the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="recipient-email" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The email address of the person receiving the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="sender-name" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The name of the person sending the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="message" type="simpleType.Generic.String.4000" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The message to include with the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="description" type="simpleType.Generic.String.4000" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>A description that can be used to qualify the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="order-no" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The Order number of the Order where the Gift Certificate was purchased.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="enabled-flag" type="xsd:boolean" maxOccurs="1" minOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The enabled state of the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="status" type="simpleType.GiftCertificate.Status" maxOccurs="1" minOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The current usage status of the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="currency" type="simpleType.Currency" maxOccurs="1" minOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The currency code of the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="amount" type="complexType.Amount" maxOccurs="1" minOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The original amount of the Gift Certificate.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="redemptions" type="complexType.Redemptions" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Gift Certificate redemptions.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="gc-id" type="simpleType.Generic.NonEmptyString.256" />
+        <xsd:attribute name="gc-merchant-id" type="simpleType.Generic.NonEmptyString.256" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Redemptions">
+        <xsd:sequence>
+            <xsd:element name="redemption" type="complexType.Redemption" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Redemption">
+        <xsd:sequence>
+            <xsd:element name="date" type="xsd:dateTime" maxOccurs="1" minOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The date of the Gift Certificate transaction.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="amount" type="complexType.Amount" maxOccurs="1" minOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The amount of the Gift Certificate transaction.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="order-no" type="simpleType.Generic.String.256" maxOccurs="1" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>The Order number of the Gift Certificate transaction.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Amount">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal"></xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="simpleType.GiftCertificate.Status">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="PENDING"></xsd:enumeration>
+            <xsd:enumeration value="ISSUED"></xsd:enumeration>
+            <xsd:enumeration value="PART_REDEEMED"></xsd:enumeration>
+            <xsd:enumeration value="REDEEMED"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Currency">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

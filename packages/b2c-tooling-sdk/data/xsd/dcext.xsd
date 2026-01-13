@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://www.demandware.com/xml/impex/dcext/2016-04-05"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.demandware.com/xml/impex/dcext/2016-04-05"
+    elementFormDefault="qualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="dcext" type="complexType.DCExtensions" />
+
+    <xsd:complexType name="complexType.DCExtensions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="pinterest" type="complexType.Pinterest" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="facebook" type="complexType.Facebook" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="apple-pay" type="complexType.ApplePay" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="android-pay" type="complexType.AndroidPay" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Pinterest" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="environment-configuration" type="complexType.PinterestEnvironmentConfiguration" minOccurs="2" maxOccurs="2" />
+            <xsd:element name="notification-email" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="catalog-feed" type="complexType.PinterestCatalogFeed" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="availability-feed" type="complexType.PinterestAvailabilityFeed" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PinterestCatalogFeed" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="time-from" type="xsd:time" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PinterestAvailabilityFeed" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="time-from" type="xsd:time" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="interval" type="simpleType.Generic.PositiveInt" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PinterestEnvironmentConfiguration" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="foreign-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="merchant-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="client-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="app-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="app-secret" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="access-token" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="payment-types" type="complexType.PinterestPaymentTypes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="availability-feed-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="bm-user-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="bm-user-password" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="default-product-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-image-view-type" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="color-image-view-type" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="color-variation-attribute" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="size-variation-attribute" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="environment" type="simpleType.PinterestEnvironment" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PinterestPaymentTypes">
+        <xsd:sequence>
+            <xsd:element name="apple-pay" type="complexType.PinterestPaymentType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="credit-card" type="complexType.PinterestPaymentType" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PinterestPaymentType" mixed="false"></xsd:complexType>
+
+    <xsd:complexType name="complexType.Facebook" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="environment-configuration" type="complexType.FacebookEnvironmentConfiguration" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="notification-email" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="notification-status" type="complexType.FacebookNotificationStatus" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="catalog-feed" type="complexType.FacebookCatalogFeed" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.FacebookCatalogFeed" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="time-from" type="xsd:time" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="catalog-configuration" type="complexType.FacebookCatalogConfiguration" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.FacebookCatalogConfiguration" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="country-code" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="channel-type" type="simpleType.FacebookChannelType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="redirect-action" type="simpleType.FacebookRedirectAction" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="feed-id" type="simpleType.Generic.String.256" use="required" />
+        <xsd:attribute name="product-feed-id" type="simpleType.Generic.String.256" use="required" />
+        <xsd:attribute name="catalog-id" type="simpleType.Generic.String.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.FacebookEnvironmentConfiguration" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="business-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="app-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="app-secret" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="page-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="catalog-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The element 'catalog-id' is deprecated and will be removed in a future release. Use catalog-id in catalog-configuration to set the Facebook identifier of a product feed.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="pixel-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+            	<xsd:annotation>
+                    <xsd:documentation>If the element, 'conversions-api-enabled-flag', is set to TRUE, then 'pixel-id' cannot be manually changed here as it is tied to the provided 'conversions-api-pixel-access-token'.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="product-feed-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The element 'product-feed-id' is deprecated and will be removed in a future release. Use product-feed-id in catalog-configuration to set the Facebook identifier of a product feed.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="country-code" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The element 'country-code' is deprecated and will be removed in a future release. Use country-code in catalog-configuration to set the Facebook identifier of a product feed.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="access-token" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1">
+            	<xsd:annotation>
+                    <xsd:documentation>The element, 'access-token', is encrypted by the system and cannot be manually set here.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="pixel-code-injected-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="conversions-api-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >    
+	            <xsd:annotation>
+	                    <xsd:documentation>If the element 'conversions-api-enabled-flag' is set to true, then the value of 'conversions-api-pixel-access-token' must also be set.</xsd:documentation>
+	                </xsd:annotation>  
+            </xsd:element>      	
+            <xsd:element name="conversions-api-pixel-access-token" type="simpleType.Generic.String" minOccurs="0" maxOccurs="1">
+            	<xsd:annotation>
+                    <xsd:documentation>The element, 'conversions-api-pixel-access-token', is encrypted by the system and cannot be manually set here.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="default-product-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="redirect-action" type="simpleType.FacebookRedirectAction" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The element 'redirect-action' is deprecated and will be removed in a future release. Use redirect-action in catalog-configuration to set the default redirect action for products in a Facebook product feed.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="product-image-view-type" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="color-variation-attribute" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="size-variation-attribute" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="material-variation-attribute" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="pattern-variation-attribute" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="environment" type="simpleType.FacebookEnvironment" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ApplePay">
+        <xsd:sequence>
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="merchant-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="display-name" type="simpleType.Generic.NonEmptyString.128" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="country-code" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="merchant-capabilities" type="complexType.ApplePayMerchantCapabilities" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="supported-networks" type="complexType.ApplePaySupportedNetworks" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="required-shipping-address-fields" type="complexType.ApplePayRequiredAddressFields" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="required-billing-address-fields" type="complexType.ApplePayRequiredAddressFields" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="https-redirect" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="inject-mini-cart" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="inject-mini-cart-css" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="inject-cart" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="inject-cart-css" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-api-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-api-version" type="simpleType.PspApiVersion" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-url" type="simpleType.Generic.String.2000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-basic-auth-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-username" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-password" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-merchant-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-jws-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-jws-key-alias" type="simpleType.Generic.String.250" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="instance-type" type="simpleType.InstanceType" default="all-instances" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ApplePayMerchantCapabilities">
+        <xsd:sequence>
+            <xsd:element name="capability-3ds" type="complexType.ApplePayMerchantCapability" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="capability-emv" type="complexType.ApplePayMerchantCapability" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="capability-credit" type="complexType.ApplePayMerchantCapability" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="capability-debit" type="complexType.ApplePayMerchantCapability" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ApplePaySupportedNetworks">
+        <xsd:sequence>
+            <xsd:element name="amex" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="china-union-pay" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="discover" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="interac" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="master-card" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="private-label" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="visa" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ApplePayRequiredAddressFields">
+        <xsd:sequence>
+            <xsd:element name="email" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="name" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postal-address" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ApplePayMerchantCapability" mixed="false"></xsd:complexType>
+
+    <xsd:complexType name="complexType.FacebookNotificationStatus">
+        <xsd:sequence>
+            <xsd:element name="error" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="exception" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="success" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AndroidPay">
+        <xsd:sequence>
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="merchant-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="public-key" type="simpleType.Generic.NonEmptyString" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="environment" type="simpleType.AndroidPayEnvironment" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>The element 'environment' is deprecated and will be removed in a future release. Use test-environment-flag to enable/disable Android Pay test environment.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="test-environment-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="allowed-networks" type="complexType.AndroidPayAllowedNetworks" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="request-fields" type="complexType.AndroidPayRequestFields" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="https-redirect" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-api-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-api-version" type="simpleType.PspApiVersion" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-url" type="simpleType.Generic.String.2000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-basic-auth-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-username" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-password" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-merchant-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-jws-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="psp-jws-key-alias" type="simpleType.Generic.String.250" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="instance-type" type="simpleType.InstanceType" default="all-instances" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AndroidPayAllowedNetworks">
+        <xsd:sequence>
+            <xsd:element name="amex" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="discover" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="master-card" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="visa" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AndroidPayRequestFields">
+        <xsd:sequence>
+            <xsd:element name="payer-email" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="payer-name" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="payer-phone" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="shipping" type="EmptyElement" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="EmptyElement" mixed="false" />
+
+    <!-- Simple Types -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.250">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:maxLength value="250" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.2000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:maxLength value="2000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+        <xsd:simpleType name="simpleType.CountryCode">
+            <xsd:restriction base="simpleType.Generic.String">
+                <xsd:minLength value="1" />
+                <xsd:maxLength value="2" />
+             </xsd:restriction>
+        </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.32">
+        <xsd:restriction base="simpleType.Generic.NonEmptyString">
+            <xsd:maxLength value="32" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.128">
+        <xsd:restriction base="simpleType.Generic.NonEmptyString">
+            <xsd:maxLength value="128" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.NonEmptyString">
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Email">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.PositiveInt">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="1"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PinterestEnvironment">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="production" />
+            <xsd:enumeration value="staging" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.FacebookEnvironment">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="production" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PspApiVersion">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="v1" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.InstanceType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="all-instances" />
+            <xsd:enumeration value="production" />
+            <xsd:enumeration value="staging" />
+            <xsd:enumeration value="development" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.AndroidPayEnvironment">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="test" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.FacebookRedirectAction">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="add-to-cart" />
+            <xsd:enumeration value="view-product" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.FacebookChannelType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="FacebookAds" />
+            <xsd:enumeration value="InstagramCommerce" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema
+    xmlns="http://www.demandware.com/xml/impex/assignment/2020-11-30"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/assignment/2020-11-30"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <!-- top-level element -->
+    <xsd:element name="assignments">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="assignment" type="complexType.Assignment" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake top level elements to allow JAXB subsection parsing -->
+    <xsd:element name="assignment" type="complexType.Assignment" />
+
+    <!-- Assignment -->
+    <xsd:complexType name="complexType.Assignment" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="description" type="sharedType.LocalizedString.4000" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="start-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="end-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="assigned-sites" type="complexType.AssignedSites" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="qualifiers" type="complexType.Qualifiers" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="experiences" type="complexType.Experiences" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="assignment-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <!-- Assigned Sites, limit to 20 -->
+    <xsd:complexType name="complexType.AssignedSites" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="site" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="20" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Qualifiers, limit to 20 -->
+    <xsd:complexType name="complexType.Qualifiers" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="qualifier" type="complexType.Qualifier" minOccurs="0" maxOccurs="20" />
+        </xsd:sequence>
+        <xsd:attribute name="match-mode" type="simpleType.MatchMode" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    This attribute determines if all qualifiers must be satisfied in order
+                    for the assignment to be applicable, or if only one must be satisfied.
+                    If not specified during import, then "any" is assumed.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <!-- Qualifier -->
+    <xsd:complexType name="complexType.Qualifier" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.NonEmptyString.256">
+                <xsd:attribute name="type" type="simpleType.Generic.NonEmptyString.256" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <!-- Experiences -->
+    <xsd:complexType name="complexType.Experiences" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="pricebooks" type="complexType.PricingExperience" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="promotions" type="complexType.PromotionExperience" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Pricing Experience -->
+    <xsd:complexType name="complexType.PricingExperience" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="pricebook-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Promotion Experience -->
+    <xsd:complexType name="complexType.PromotionExperience" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="promotion-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- new simple type -->
+    <xsd:simpleType name="simpleType.MatchMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="all" />
+            <xsd:enumeration value="any" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Shared Complex Types -->
+    <xsd:complexType name="sharedType.LocalizedString.4000" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+</xsd:schema>

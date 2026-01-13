@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/bmmodules/2007-12-11" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    targetNamespace="http://www.demandware.com/xml/bmmodules/2007-12-11" 
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified" >
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+    <xsd:element name="extensions">
+        <xsd:complexType mixed="false">
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element ref="menuitem"/>
+                <xsd:element ref="menuaction"/>
+                <xsd:element ref="dialogaction"/>
+                <xsd:element ref="formextension"/>
+            </xsd:choice>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="menuitem">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="name" type="complexType.LocalizedString" maxOccurs="unbounded"/>
+                <xsd:element name="short_description" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="description" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="icon" type="xsd:string" minOccurs="0"/>
+                <xsd:element name="sldsIconName" type="xsd:string" minOccurs="0">
+                    <xsd:annotation>
+                        <xsd:documentation>Refers to one of the SLDS 'utility' icons (see https://www.lightningdesignsystem.com/icons/#utility ). In the 'Modern' BM UI, it is preferred over the regular icon.</xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+                <xsd:element ref="exec" minOccurs="0"/>
+            </xsd:sequence>
+            <xsd:attribute name="id" type="xsd:string" use="required"/>
+            <xsd:attribute name="site" type="xsd:boolean" use="optional" default="true"/>
+            <xsd:attribute name="position" type="xsd:int" use="optional"/>
+            <xsd:attribute name="type" type="MenuItemType" use="optional"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="menuaction">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="name" type="complexType.LocalizedString" maxOccurs="unbounded"/>
+                <xsd:element name="short_description" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="description" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="extended_description" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element ref="exec" minOccurs="0"/>
+                <xsd:element ref="sub-pipelines" minOccurs="0"/>
+                <xsd:element ref="parameters" minOccurs="0"/>
+                <xsd:element ref="permissions" minOccurs="0">
+                    <xsd:annotation>
+                        <xsd:documentation>Deprecated please use elements sub-pipelines to register the pipelines of this menu at permission check. We encourage you to migrate it to version 2.6 or higher!</xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+                <xsd:element ref="apis" minOccurs="0">
+                    <xsd:annotation>
+                        <xsd:documentation>Please note: This element is NOT supported for custom menu actions.</xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+                <xsd:element name="required-features" type="complexType.Features" minOccurs="0" maxOccurs="1">
+                    <xsd:annotation>
+                        <xsd:documentation>Please note: This element is NOT supported for custom menu actions.</xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+                <xsd:element name="icon" type="xsd:string" minOccurs="0"/>
+            </xsd:sequence>
+            <xsd:attribute name="id" type="xsd:string" use="required"/>
+            <xsd:attribute name="site" type="xsd:boolean" use="optional" default="true"/>
+            <xsd:attribute name="position" type="xsd:int" use="optional"/>
+            <xsd:attribute name="extern" type="xsd:boolean" use="optional" default="false"/>
+            <xsd:attribute name="dwsupport" type="xsd:boolean" use="optional" default="false"/>
+            <xsd:attribute name="menupath" type="xsd:string" use="optional"/>
+            <xsd:attribute name="if" type="xsd:string" use="optional"/>
+            <xsd:attribute name="type" type="MenuActionType" use="optional"/>
+            <xsd:attribute name="readonlyEnabled" type="xsd:boolean" use="optional" default="false"/>
+            <xsd:attribute name="strongAuthenticationRequired" type="xsd:boolean" use="optional" default="false"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="dialogaction">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="name" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element ref="exec"/>
+                <xsd:element ref="parameters" minOccurs="0"/>
+                <xsd:element ref="permissions" minOccurs="0">
+                    <xsd:annotation>
+                        <xsd:documentation>Deprecated please use elements sub-pipelines to register the pipelines of this menu at permission check. We encourage you to migrate it to version 2.6 or higher!</xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+                <xsd:element ref="menuactions" minOccurs="0"/>
+            </xsd:sequence>
+            <xsd:attribute name="id" type="xsd:string" use="required"/>
+            <xsd:attribute name="xp_ref" type="xsd:string" use="required"/>
+            <xsd:attribute name="position" type="xsd:int" use="optional"/>
+            <xsd:attribute name="class" type="xsd:string" use="optional"/>
+            <xsd:attribute name="extern" type="xsd:boolean" use="optional" default="false"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="formextension">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element ref="valueinput" maxOccurs="unbounded"/>
+            </xsd:sequence>
+            <xsd:attribute name="id" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="exec">
+        <xsd:complexType mixed="false">
+            <xsd:attribute name="pipeline" type="xsd:string" use="required"/>
+            <xsd:attribute name="node" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="permissions">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use elements sub-pipelines to register the pipelines of this menu at permission check. We encourage you to migrate it to version 2.6 or higher!</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element ref="permission" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="permission">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use elements sub-pipelines to register the pipelines of this menu at permission check. We encourage you to migrate it to version 2.6 or higher!</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType mixed="true">
+            <xsd:simpleContent>
+                <xsd:extension base="xsd:string"/>
+            </xsd:simpleContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="parameters">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element ref="parameter" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="parameter">
+        <xsd:complexType mixed="false">
+            <xsd:attribute name="name" type="xsd:string" use="required"/>
+            <xsd:attribute name="value" type="xsd:string" use="optional"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="sub-pipelines">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element ref="pipeline" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="pipeline">
+        <xsd:complexType mixed="false">
+            <xsd:attribute name="name" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="apis">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element ref="api" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="api">
+        <xsd:complexType mixed="false">
+            <xsd:attribute name="path" type="xsd:string" use="required"/>
+            <xsd:attribute name="methods" type="ApiMethods" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="menuactions">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element ref="menuaction-ref" minOccurs="1" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="menuaction-ref">
+        <xsd:complexType mixed="false">
+            <xsd:attribute name="action-id" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>        
+    <xsd:element name="valueinput">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="label" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="option" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+            <xsd:attribute name="type" type="simpleType.ValueInputType" use="required"/>
+            <xsd:attribute name="name" type="xsd:string" use="required"/>
+            <xsd:attribute name="defaultvalue" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:complexType name="complexType.Features" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="feature" type="complexType.Feature" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.Feature" mixed="false">
+        <xsd:attribute name="id" type="simpleType.NonEmptyString.4000"/>
+		<xsd:attribute name="enabled" type="xsd:boolean" default="true"/>
+    </xsd:complexType>
+    
+    <xsd:simpleType name="simpleType.ValueInputType">
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="string"/>
+            <xsd:enumeration value="int"/>
+            <xsd:enumeration value="double"/>
+          </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="MenuActionType">
+        <xsd:restriction base="xsd:string">
+            <!-- Business Manager module -->
+            <xsd:enumeration value="BM" />
+            <!-- Customer Service Center -->
+            <xsd:enumeration value="CSC" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="MenuItemType">
+        <xsd:restriction base="xsd:string">
+            <!-- Business Manager module -->
+            <xsd:enumeration value="BM" />
+            <!-- Customer Service Center -->
+            <xsd:enumeration value="CSC" />           
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="ApiMethod">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="DELETE" />
+            <xsd:enumeration value="GET" />
+            <xsd:enumeration value="PATCH" />
+            <xsd:enumeration value="POST" />
+            <xsd:enumeration value="PUT" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="ApiMethods">
+        <xsd:list itemType="ApiMethod"/>
+    </xsd:simpleType>
+    
+    <!-- Shared Complex Types -->
+    <xsd:complexType name="complexType.LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+                <xsd:attribute ref="xml:lang" use="required"/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+    
+    <xsd:simpleType name="simpleType.NonEmptyString.4000">
+        <xsd:restriction base="xsd:string">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="4000" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/priceadjustmentlimits/2017-01-01"
+    xmlns="http://www.demandware.com/xml/impex/priceadjustmentlimits/2017-01-01"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="limit-specifications" type="complexType.LimitSpecifications" />
+    <xsd:element name="price-adjustment-limits" type="complexType.PriceAdjustmentLimits" />
+   
+    <xsd:complexType name="complexType.LimitSpecifications">
+        <xsd:sequence>
+            <xsd:element name="price-adjustment-limits" type="complexType.PriceAdjustmentLimits" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.PriceAdjustmentLimits">
+        <xsd:sequence>
+            <xsd:element name="price-adjustment-limit" type="complexType.PriceAdjustmentLimit" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    	<xsd:attribute name="role-id" type="simpleType.Generic.String.256"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceAdjustmentLimit">
+        <xsd:sequence>
+            <xsd:element name="type" type="simpleType.PriceAdjustmentLimitType" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="unit" type="simpleType.Generic.String.7" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="amount" type="xsd:decimal" minOccurs="1" maxOccurs="1"></xsd:element>
+           	<xsd:element name="sites" type="complexType.Sites" minOccurs="1" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.Sites">
+        <xsd:sequence>
+            <xsd:element name="site" type="complexType.Site" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Site">
+        <xsd:attribute name="site-id" type="simpleType.Generic.String.256"  />
+    </xsd:complexType>
+            
+    <xsd:simpleType name="simpleType.PriceAdjustmentLimitType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="order" />
+            <xsd:enumeration value="item" />
+            <xsd:enumeration value="shipping" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.String.7">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="7" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>
