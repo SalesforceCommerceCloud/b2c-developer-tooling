@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
@@ -171,6 +173,159 @@ describe('clients/custom-apis', () => {
       expect(data).to.be.undefined;
       expect(error).to.have.property('title', 'Bad Request');
       expect(error).to.have.property('detail');
+    });
+
+    it('handles POST requests to register endpoints', async () => {
+      server.use(
+        http.post(`${BASE_URL}/organizations/:organizationId/endpoints`, async ({request, params}) => {
+          const body = (await request.json()) as any;
+
+          expect(params.organizationId).to.equal('f_ecom_zzxy_prd');
+          expect(body.apiName).to.equal('loyalty-info');
+          expect(body.httpMethod).to.equal('GET');
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
+
+          return HttpResponse.json(
+            {
+              id: 'endpoint-123',
+              apiName: 'loyalty-info',
+              apiVersion: 'v1',
+              httpMethod: 'GET',
+              endpointPath: '/loyalty',
+              status: 'active',
+            },
+            {status: 201},
+          );
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createCustomApisClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, auth);
+
+      const {data, error} = await (client as any).POST('/organizations/{organizationId}/endpoints', {
+        params: {path: {organizationId: 'f_ecom_zzxy_prd'}},
+        body: {
+          apiName: 'loyalty-info',
+          apiVersion: 'v1',
+          httpMethod: 'GET',
+          endpointPath: '/loyalty',
+          cartridgeName: 'app_custom',
+        },
+      });
+
+      expect(error).to.be.undefined;
+      expect(data).to.have.property('id', 'endpoint-123');
+      expect(data).to.have.property('status', 'active');
+    });
+
+    it('handles DELETE requests to unregister endpoints', async () => {
+      server.use(
+        http.delete(`${BASE_URL}/organizations/:organizationId/endpoints/:endpointId`, ({params}) => {
+          expect(params.organizationId).to.equal('f_ecom_zzxy_prd');
+          expect(params.endpointId).to.equal('endpoint-123');
+          return new HttpResponse(null, {status: 204});
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createCustomApisClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, auth);
+
+      const {response, error} = await (client as any).DELETE('/organizations/{organizationId}/endpoints/{endpointId}', {
+        params: {
+          path: {organizationId: 'f_ecom_zzxy_prd', endpointId: 'endpoint-123'},
+        },
+      });
+
+      expect(error).to.be.undefined;
+      expect(response.status).to.equal(204);
+    });
+
+    it('handles pagination for large endpoint lists', async () => {
+      server.use(
+        http.get(`${BASE_URL}/organizations/:organizationId/endpoints`, ({request}) => {
+          const url = new URL(request.url);
+          const offset = Number.parseInt(url.searchParams.get('offset') || '0');
+          const limit = Number.parseInt(url.searchParams.get('limit') || '10');
+
+          return HttpResponse.json({
+            limit,
+            offset,
+            total: 100,
+            data: Array.from({length: limit}, (_, i) => ({
+              id: `endpoint-${offset + i + 1}`,
+              apiName: `api-${offset + i + 1}`,
+              status: 'active',
+            })),
+          });
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createCustomApisClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, auth);
+
+      const {data} = await client.GET('/organizations/{organizationId}/endpoints', {
+        params: {
+          path: {organizationId: 'f_ecom_zzxy_prd'},
+          query: {offset: 10, limit: 20} as any,
+        },
+      });
+
+      expect((data as any)?.total).to.equal(100);
+      expect((data as any)?.offset).to.equal(10);
+      expect((data as any)?.limit).to.equal(20);
+      expect(data?.data).to.have.length(20);
+      expect(data?.data?.[0]?.id).to.equal('endpoint-11');
+    });
+
+    it('handles 404 for non-existent endpoints', async () => {
+      server.use(
+        http.get(`${BASE_URL}/organizations/:organizationId/endpoints/:endpointId`, () => {
+          return HttpResponse.json(
+            {
+              title: 'Not Found',
+              type: 'https://api.commercecloud.salesforce.com/documentation/error/v1/errors/not-found',
+              detail: 'Endpoint not found',
+            },
+            {status: 404},
+          );
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createCustomApisClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, auth);
+
+      const {data, error} = await (client as any).GET('/organizations/{organizationId}/endpoints/{endpointId}', {
+        params: {path: {organizationId: 'f_ecom_zzxy_prd', endpointId: 'nonexistent'}},
+      });
+
+      expect(data).to.be.undefined;
+      expect(error).to.have.property('title', 'Not Found');
+    });
+
+    it('handles authorization errors (403)', async () => {
+      server.use(
+        http.post(`${BASE_URL}/organizations/:organizationId/endpoints`, () => {
+          return HttpResponse.json(
+            {
+              title: 'Forbidden',
+              type: 'https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden',
+              detail: 'Insufficient permissions to register endpoints',
+            },
+            {status: 403},
+          );
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createCustomApisClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, auth);
+
+      const {data, error} = await (client as any).POST('/organizations/{organizationId}/endpoints', {
+        params: {path: {organizationId: 'f_ecom_zzxy_prd'}},
+        body: {apiName: 'test'},
+      });
+
+      expect(data).to.be.undefined;
+      expect(error).to.have.property('title', 'Forbidden');
     });
   });
 
