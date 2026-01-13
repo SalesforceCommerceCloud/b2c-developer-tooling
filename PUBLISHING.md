@@ -11,6 +11,8 @@ The project uses:
 
 ## Published Packages
 
+Only these three packages are published to npm:
+
 | Package | npm | Description |
 |---------|-----|-------------|
 | `@salesforce/b2c-cli` | [npm](https://www.npmjs.com/package/@salesforce/b2c-cli) | Command line interface |
@@ -18,6 +20,12 @@ The project uses:
 | `@salesforce/b2c-dx-mcp` | [npm](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp) | MCP server |
 
 These packages are **linked** in changesets configuration, meaning they always version together.
+
+**Not published:**
+- `@salesforce/b2c-plugin-example-config` - Example plugin for reference only
+- `@salesforce/b2c-cli-root` - Monorepo root package
+
+The publish workflow explicitly filters to only these three packages using `--filter`.
 
 ## Architecture
 
@@ -177,8 +185,10 @@ Test what would be published without actually publishing:
 
 ```bash
 pnpm run build
-pnpm publish -r --access public --dry-run
+pnpm --filter @salesforce/b2c-tooling-sdk --filter @salesforce/b2c-cli --filter @salesforce/b2c-dx-mcp publish --access public --dry-run
 ```
+
+Note: Only the three main packages are published. The example plugin and root package are excluded.
 
 ### Test changeset version
 

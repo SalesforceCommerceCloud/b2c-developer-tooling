@@ -17,7 +17,7 @@
     "docs:preview": "vitepress preview docs",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "pnpm run build && pnpm publish -r --access public"
+    "release": "pnpm run build && pnpm --filter @salesforce/b2c-tooling-sdk --filter @salesforce/b2c-cli --filter @salesforce/b2c-dx-mcp publish --access public"
   },
   "keywords": [],
   "author": "",

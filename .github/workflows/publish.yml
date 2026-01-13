@@ -46,7 +46,10 @@ jobs:
         run: pnpm run test
 
       - name: Publish to npm
-        run: pnpm publish -r --access public --no-git-checks
+        run: |
+          pnpm --filter @salesforce/b2c-tooling-sdk publish --access public --no-git-checks
+          pnpm --filter @salesforce/b2c-cli publish --access public --no-git-checks
+          pnpm --filter @salesforce/b2c-dx-mcp publish --access public --no-git-checks
 
       - name: Create GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
