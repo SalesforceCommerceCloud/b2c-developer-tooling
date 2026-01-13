@@ -11,13 +11,6 @@ Salesforce Commerce Cloud B2C Command Line Tools.
 > [!TIP]
 > **Just looking for the B2C CLI or MCP install instructions?** Visit the documentation site at [https://salesforcecommercecloud.github.io/b2c-developer-tooling/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the latest install guide and CLI reference.
 
-## Features
-
-- Separate CLI and SDK packages
-- Structured logging with redaction
-- Localization support (i18next)
-- Supply chain security via pnpm
-
 ## Packages
 
 This is a pnpm monorepo with the following packages:

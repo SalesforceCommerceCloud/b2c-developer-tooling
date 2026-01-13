@@ -1,15 +1,20 @@
 # Salesforce Commerce Cloud B2C CLI
 
+[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
+
 > [!NOTE]
 > This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues.
 
-A command-line interface for Salesforce Commerce Cloud B2C.
-
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/@salesforce/b2c-cli.svg)](https://npmjs.org/package/@salesforce/b2c-cli)
-[![Downloads/week](https://img.shields.io/npm/dw/@salesforce/b2c-cli.svg)](https://npmjs.org/package/@salesforce/b2c-cli)
+A command-line interface for Salesforce Commerce Cloud B2C instances and platform services.
 
 ## Installation
+
+### Homebrew (macOS/Linux)
+
+```sh
+brew tap SalesforceCommerceCloud/tooling
+brew install b2c-cli
+```
 
 ### Preview Release (Pre-npm)
 
@@ -35,6 +40,9 @@ b2c --help [COMMAND]
 ## Configuration
 
 The CLI can be configured via command-line flags or environment variables:
+
+See the documentation for full configuration options: [https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html)
+
 
 | Environment Variable | Description |
 |---------------------|-------------|
