@@ -1,73 +1,51 @@
 # Configuration
 
-The B2C CLI supports multiple authentication methods and configuration options.
+The B2C CLI automatically detects and uses available credentials. You can provide credentials via CLI flags, environment variables, or configuration files.
 
 ::: tip
 For detailed setup instructions including Account Manager API client creation and OCAPI configuration, see the [Authentication Setup](./authentication) guide.
 :::
 
-## Authentication Methods
+## CLI Flags
 
-The CLI supports multiple auth methods that can be specified via the `--auth-methods` flag:
+### OAuth (SCAPI/OCAPI)
 
-- `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret)
-- `implicit` - OAuth 2.0 implicit flow (requires client ID only, opens browser for login)
-- `basic` - Basic authentication (for WebDAV operations)
-- `api-key` - API key authentication
+OAuth is required for SCAPI and OCAPI operations (jobs, sites, SLAS, etc.) and can also be used for WebDAV operations when basic auth credentials are not provided.
 
-### Specifying Auth Methods
+#### Client Credentials (Recommended)
 
-You can specify allowed auth methods in priority order using comma-separated values or multiple flags:
-
-```bash
-# Comma-separated (preferred)
-b2c code deploy --auth-methods client-credentials,implicit
-
-# Multiple flags (also supported)
-b2c code deploy --auth-methods client-credentials --auth-methods implicit
-
-# Via environment variable
-SFCC_AUTH_METHODS=client-credentials,implicit b2c code deploy
-```
-
-The CLI will try each method in order until one succeeds. If no methods are specified, the default is `client-credentials,implicit`.
-
-### OAuth Client Credentials (Recommended)
-
-OAuth authentication using client credentials is the recommended method for production and CI/CD use.
+OAuth client credentials is the recommended method for production and CI/CD use:
 
 ```bash
 b2c code deploy \
-  --server your-instance.demandware.net \
+  --server abcd-123.dx.commercecloud.salesforce.com \
   --client-id your-client-id \
   --client-secret your-client-secret
 ```
 
-### OAuth Implicit Flow
+#### Implicit Flow
 
 For development without a client secret, use implicit flow which opens a browser for authentication:
 
 ```bash
 b2c code deploy \
-  --server your-instance.demandware.net \
+  --server abcd-123.dx.commercecloud.salesforce.com \
   --client-id your-client-id \
   --auth-methods implicit
 ```
 
-### Basic Authentication
+### Basic Authentication (WebDAV)
 
-For development and testing, you can use basic authentication with Business Manager credentials:
+Basic authentication uses your B2C instance username and access key. This method is only used for WebDAV operations (code deployment, file uploads, log access).
 
 ```bash
 b2c code deploy \
-  --server your-instance.demandware.net \
+  --server abcd-123.dx.commercecloud.salesforce.com \
   --username your-username \
-  --password your-password
+  --password your-access-key
 ```
 
-### API Key
-
-For certain operations, you may use an API key.
+See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5) for instructions on setting up your access key.
 
 ## Environment Variables
 
@@ -92,10 +70,12 @@ You can create a `dw.json` file to store instance settings. The CLI searches for
 
 ```json
 {
-  "hostname": "your-instance.demandware.net",
+  "hostname": "abcd-123.dx.commercecloud.salesforce.com",
   "code-version": "version1",
   "client-id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "client-secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  "client-secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "username": "your-username",
+  "password": "your-access-key"
 }
 ```
 
@@ -109,24 +89,28 @@ For projects that work with multiple instances, use the `configs` array:
     {
       "name": "dev",
       "active": true,
-      "hostname": "dev-instance.demandware.net",
+      "hostname": "abcd-001.dx.commercecloud.salesforce.com",
       "code-version": "version1",
-      "client-id": "dev-client-id"
+      "client-id": "dev-client-id",
+      "username": "dev-username",
+      "password": "dev-access-key"
     },
     {
       "name": "staging",
-      "hostname": "staging-instance.demandware.net",
+      "hostname": "abcd-002.dx.commercecloud.salesforce.com",
       "code-version": "version1",
-      "client-id": "staging-client-id"
+      "client-id": "staging-client-id",
+      "username": "staging-username",
+      "password": "staging-access-key"
     }
   ]
 }
 ```
 
-Use the `--instance` flag to select a specific configuration:
+Use the `-i` or `--instance` flag to select a specific configuration:
 
 ```bash
-b2c code deploy --instance staging
+b2c code deploy -i staging
 ```
 
 If no instance is specified, the config with `"active": true` is used.
@@ -136,16 +120,26 @@ If no instance is specified, the config with `"active": true` is used.
 | Field | Description |
 |-------|-------------|
 | `hostname` | B2C instance hostname |
-| `webdav-hostname` | Separate hostname for WebDAV (if different) |
+| `webdav-hostname` | Separate hostname for WebDAV (if different from main hostname). Also accepts `secureHostname` or `secure-server`. |
 | `code-version` | Code version for deployments |
 | `client-id` | OAuth client ID |
 | `client-secret` | OAuth client secret |
-| `username` | Basic auth username |
-| `password` | Basic auth password/access-key |
-| `scopes` | OAuth scopes (array or comma-separated string) |
-| `auth-methods` | Authentication methods in priority order |
-| `account-manager-host` | Custom Account Manager hostname |
-| `shortCode` | SCAPI short code |
+| `username` | Basic auth username (WebDAV) |
+| `password` | Basic auth access key (WebDAV) |
+| `oauth-scopes` | OAuth scopes (array of strings) |
+| `auth-methods` | Authentication methods in priority order (array of strings) |
+| `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
+
+::: tip MRT Configuration
+Managed Runtime API key is not stored in `dw.json`. It is loaded from `~/.mobify`. You can specify `mrtProject` and `mrtEnvironment` in `dw.json` for project/environment selection.
+:::
+
+For multi-instance configurations, each config object also supports:
+
+| Field | Description |
+|-------|-------------|
+| `name` | Instance name for selection with `-i`/`--instance` |
+| `active` | Set to `true` to use this config by default |
 
 ### Resolution Priority
 
@@ -178,6 +172,52 @@ If any field in a group is set by a higher-priority source, all fields in that g
 ::: warning Hostname Mismatch Protection
 When you explicitly specify a hostname that differs from the `dw.json` hostname, the CLI ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.
 :::
+
+## MRT API Key
+
+Managed Runtime (MRT) commands use an API key for authentication. The API key is resolved in this order:
+
+1. `--api-key` flag
+2. `SFCC_MRT_API_KEY` environment variable
+3. `~/.mobify` config file
+
+The `~/.mobify` file format:
+
+```json
+{
+  "api_key": "your-mrt-api-key"
+}
+```
+
+When using the `--cloud-origin` flag to specify a different MRT endpoint, the CLI looks for `~/.mobify--{hostname}` instead. For example, `--cloud-origin https://custom.example.com` loads from `~/.mobify--custom.example.com`.
+
+## Overriding Authentication Behavior
+
+By default, the CLI automatically detects available credentials and tries authentication methods in this order: `client-credentials`, then `implicit`. You can override this behavior to control which methods are used.
+
+### Available Auth Methods
+
+- `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret). Used for SCAPI/OCAPI and WebDAV.
+- `implicit` - OAuth 2.0 implicit flow (requires client ID only, opens browser for login). Used for SCAPI/OCAPI and WebDAV.
+- `basic` - Basic authentication with username and access key. Used for WebDAV operations only.
+- `api-key` - API key authentication. Used for MRT commands only.
+
+### Specifying Auth Methods
+
+You can specify allowed auth methods in priority order using comma-separated values or multiple flags:
+
+```bash
+# Comma-separated (preferred)
+b2c code deploy --auth-methods client-credentials,implicit
+
+# Multiple flags (also supported)
+b2c code deploy --auth-methods client-credentials --auth-methods implicit
+
+# Via environment variable
+SFCC_AUTH_METHODS=client-credentials,implicit b2c code deploy
+```
+
+The CLI will try each method in order until one succeeds.
 
 ## Next Steps
 
