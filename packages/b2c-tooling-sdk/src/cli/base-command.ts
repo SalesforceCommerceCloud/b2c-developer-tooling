@@ -68,6 +68,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       env: 'SFCC_INSTANCE',
       helpGroup: 'GLOBAL',
     }),
+    'working-directory': Flags.string({
+      description: 'Project working directory',
+      env: 'SFCC_WORKING_DIRECTORY',
+      helpGroup: 'GLOBAL',
+    }),
     'extra-query': Flags.string({
       description: 'Extra query parameters as JSON (e.g., \'{"debug":"true"}\')',
       helpGroup: 'GLOBAL',

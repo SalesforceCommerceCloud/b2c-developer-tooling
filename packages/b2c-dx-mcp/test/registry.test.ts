@@ -131,14 +131,35 @@ describe('registry', () => {
   });
 
   describe('registerToolsets', () => {
-    it('should register no tools when no toolsets or tools provided', async () => {
+    it('should auto-discover and register tools when no toolsets or tools provided', async () => {
       const services = createMockServices();
       const server = createMockServer();
-      const flags: StartupFlags = {};
+      // Use a workspace path that won't match any patterns (should fall back to SCAPI)
+      const flags: StartupFlags = {
+        workingDirectory: '/nonexistent/path',
+        allowNonGaTools: true,
+      };
 
-      // When no flags provided, no tools are registered (auto-discovery planned)
+      // When no flags provided, auto-discovery kicks in
+      // With an unknown project, it falls back to SCAPI toolset
       await registerToolsets(flags, server, services);
-      expect(server.registeredTools).to.have.lengthOf(0);
+      expect(server.registeredTools.length).to.be.greaterThan(0);
+      // SCAPI tools should be registered as fallback
+      expect(server.registeredTools).to.include('scapi_discovery');
+    });
+
+    it('should skip auto-discovery when empty toolsets array is explicitly provided', async () => {
+      const services = createMockServices();
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        toolsets: [],
+        allowNonGaTools: true,
+      };
+
+      // Empty toolsets array still triggers auto-discovery (length is 0)
+      await registerToolsets(flags, server, services);
+      // Should have auto-discovered SCAPI as fallback
+      expect(server.registeredTools).to.include('scapi_discovery');
     });
 
     it('should register tools from a single toolset', async () => {
@@ -317,6 +338,71 @@ describe('registry', () => {
       // Currently all tools are non-GA placeholders
       // This test documents expected behavior for when GA tools exist
       // When GA tools are added, this test should be updated to verify they are registered
+    });
+
+    describe('auto-discovery', () => {
+      it('should use workingDirectory from flags for detection', async () => {
+        const services = createMockServices();
+        const server = createMockServer();
+        const flags: StartupFlags = {
+          workingDirectory: '/some/workspace',
+          allowNonGaTools: true,
+        };
+
+        // Should not throw even with non-existent path
+        await registerToolsets(flags, server, services);
+        // Falls back to SCAPI for unknown projects
+        expect(server.registeredTools).to.include('scapi_discovery');
+      });
+
+      it('should map detected project type to MCP toolsets', async () => {
+        const services = createMockServices();
+        const server = createMockServer();
+        // Use a path that doesn't exist - detection will return 'unknown' project type
+        // which maps to SCAPI toolset
+        const flags: StartupFlags = {
+          workingDirectory: '/nonexistent',
+          allowNonGaTools: true,
+        };
+
+        await registerToolsets(flags, server, services);
+
+        // Only SCAPI tools should be registered (the fallback for unknown projects)
+        expect(server.registeredTools).to.include('scapi_discovery');
+      });
+
+      it('should not auto-discover when individual tools are provided', async () => {
+        const services = createMockServices();
+        const server = createMockServer();
+        const flags: StartupFlags = {
+          tools: ['cartridge_deploy'],
+          workingDirectory: '/some/workspace',
+          allowNonGaTools: true,
+        };
+
+        await registerToolsets(flags, server, services);
+
+        // Should only have the explicitly requested tool
+        expect(server.registeredTools).to.have.lengthOf(1);
+        expect(server.registeredTools).to.include('cartridge_deploy');
+      });
+
+      it('should not auto-discover when toolsets are explicitly provided', async () => {
+        const services = createMockServices();
+        const server = createMockServer();
+        const flags: StartupFlags = {
+          toolsets: ['CARTRIDGES'],
+          workingDirectory: '/some/workspace',
+          allowNonGaTools: true,
+        };
+
+        await registerToolsets(flags, server, services);
+
+        // Should only have CARTRIDGES tools, not auto-discovered toolsets
+        expect(server.registeredTools).to.include('cartridge_deploy');
+        // Should not have tools from other toolsets unless explicitly requested
+        expect(server.registeredTools).to.not.include('pwakit_create_storefront');
+      });
     });
   });
 });

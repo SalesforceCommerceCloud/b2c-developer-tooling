@@ -49,10 +49,13 @@ See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=
 
 ## Environment Variables
 
-You can configure authentication using environment variables:
+You can configure the CLI using environment variables:
 
 | Variable | Description |
 |----------|-------------|
+| `SFCC_WORKING_DIRECTORY` | Project working directory |
+| `SFCC_CONFIG` | Path to config file (dw.json format) |
+| `SFCC_INSTANCE` | Instance name from config file |
 | `SFCC_SERVER` | The B2C instance hostname |
 | `SFCC_CLIENT_ID` | OAuth client ID |
 | `SFCC_CLIENT_SECRET` | OAuth client secret |

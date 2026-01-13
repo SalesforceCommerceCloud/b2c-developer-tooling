@@ -52,6 +52,62 @@ Since the package is not yet published to npm, see the [Development](#developmen
 | `--debug` | Enable debug logging |
 | `--json` | Output logs as JSON lines |
 | `--lang` | Language for messages |
+| `--working-directory` | Project working directory (env: `SFCC_WORKING_DIRECTORY`) |
+
+### Workspace Auto-Discovery
+
+When neither `--toolsets` nor `--tools` are provided, the MCP server automatically detects your project type and enables the appropriate toolsets.
+
+**How it works:**
+
+1. The server analyzes your working directory (from `--working-directory` flag, `SFCC_WORKING_DIRECTORY` env var, or current directory)
+2. It checks for project markers like `package.json` dependencies, folder structures, and config files
+3. It enables all toolsets that match any detected project type
+
+**Project Types and Toolsets:**
+
+| Project Type | Detection | Toolsets Enabled |
+|--------------|-----------|------------------|
+| **PWA Kit v3** | `@salesforce/pwa-kit-*` packages in package.json | PWAV3, MRT, SCAPI |
+| **Storefront Next** | `@salesforce/storefront-next-*` packages in package.json | STOREFRONTNEXT, MRT, SCAPI |
+| **SFRA** | `cartridges/` folder with controllers or templates | CARTRIDGES, SCAPI |
+| **Custom API** | `rest-apis/*/api.json` or `rest-apis/*/schema.yaml` files | CARTRIDGES, SCAPI |
+| **Headless** | `dw.json` file (no specific framework detected) | SCAPI |
+| **Unknown** | No B2C project markers found | SCAPI (fallback) |
+
+**Hybrid Projects:**
+
+If multiple project types are detected (e.g., SFRA + Custom API), toolsets from all matched types are combined.
+
+**Example:**
+
+**Cursor** (supports `${workspaceFolder}`):
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+**Claude Desktop** (use explicit path):
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+> **Note:** Cursor supports `${workspaceFolder}` variable expansion, but Claude Desktop does not. For Claude Desktop, use an explicit path or set the `SFCC_WORKING_DIRECTORY` environment variable.
 
 ### Configuration Examples
 

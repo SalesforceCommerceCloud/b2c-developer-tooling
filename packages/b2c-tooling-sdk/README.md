@@ -139,6 +139,8 @@ The SDK provides subpath exports for tree-shaking and organization:
 | `@salesforce/b2c-tooling-sdk/operations/code` | Code deployment operations |
 | `@salesforce/b2c-tooling-sdk/operations/jobs` | Job execution and site import/export |
 | `@salesforce/b2c-tooling-sdk/operations/sites` | Site management |
+| `@salesforce/b2c-tooling-sdk/discovery` | Workspace type detection (PWA Kit, SFRA, etc.) |
+| `@salesforce/b2c-tooling-sdk/cli` | CLI utilities (BaseCommand, table rendering) |
 | `@salesforce/b2c-tooling-sdk/logging` | Structured logging utilities |
 
 ## Logging
