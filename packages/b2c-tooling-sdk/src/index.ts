@@ -60,7 +60,7 @@ export type {
 
 // Context Layer - Instance
 export {B2CInstance} from './instance/index.js';
-export type {InstanceConfig, FromEnvironmentOptions, B2CInstanceOptions} from './instance/index.js';
+export type {InstanceConfig} from './instance/index.js';
 
 // Clients
 export {

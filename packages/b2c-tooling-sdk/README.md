@@ -15,18 +15,21 @@ npm install @salesforce/b2c-tooling-sdk
 
 ## Quick Start
 
-### From Environment Configuration (Recommended)
+### From Configuration (Recommended)
 
-The easiest way to create an instance is from environment configuration files:
+Use `resolveConfig()` to load configuration from project files (dw.json) and create a B2C instance:
 
 ```typescript
-import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
 
-// Load configuration from environment files (dw.json, etc.), override secrets from environment
-const instance = B2CInstance.fromEnvironment({
+// Load configuration, override secrets from environment
+const config = resolveConfig({
   clientId: process.env.SFCC_CLIENT_ID,
   clientSecret: process.env.SFCC_CLIENT_SECRET,
 });
+
+// Create instance from validated config
+const instance = config.createB2CInstance();
 
 // Use typed WebDAV client
 await instance.webdav.mkcol('Cartridges/v1');
@@ -40,7 +43,7 @@ const { data, error } = await instance.ocapi.GET('/sites', {
 
 ### Direct Construction
 
-You can also construct an instance directly with configuration:
+For advanced use cases, you can construct a B2CInstance directly:
 
 ```typescript
 import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
@@ -129,6 +132,7 @@ The SDK provides subpath exports for tree-shaking and organization:
 | Export | Description |
 |--------|-------------|
 | `@salesforce/b2c-tooling-sdk` | Main entry point with all exports |
+| `@salesforce/b2c-tooling-sdk/config` | Configuration resolution (resolveConfig) |
 | `@salesforce/b2c-tooling-sdk/auth` | Authentication strategies (OAuth, Basic, API Key) |
 | `@salesforce/b2c-tooling-sdk/instance` | B2CInstance class |
 | `@salesforce/b2c-tooling-sdk/clients` | Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT) |
