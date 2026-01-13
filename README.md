@@ -159,39 +159,25 @@ See the [documentation site](https://salesforcecommercecloud.github.io/b2c-devel
 
 When adding new public APIs, ensure they have comprehensive JSDoc comments as these will appear in the generated documentation.
 
-## Preview Releases
+## Releases and Publishing
 
-This project is not yet published to npm. Preview releases are available as tgz files on [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases).
+This project uses [Changesets](https://github.com/changesets/changesets) for version management and publishes to npm using [OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers).
 
-### Installing a Preview Release
+For detailed information about the release process, see [PUBLISHING.md](./PUBLISHING.md).
 
-1. Download the `salesforce-b2c-cli-<version>.tgz` file from the release
-2. Install with npm:
-
-```bash
-# Install globally
-npm install -g ./salesforce-b2c-cli-0.0.1-preview.1.tgz
-
-# Or install locally in a project
-npm install ./salesforce-b2c-cli-0.0.1-preview.1.tgz
-```
-
-The SDK is bundled in the CLI package, so only one file is needed.
-
-### Creating a Preview Release
-
-Preview releases are created automatically when a tag matching `v*-preview*` is pushed:
+### Quick Reference
 
 ```bash
-git tag v0.0.1-preview.1
-git push origin v0.0.1-preview.1
+# Create a changeset for your changes
+pnpm changeset
+
+# Check pending changesets
+pnpm changeset status
 ```
 
-The [preview-release workflow](.github/workflows/preview-release.yml) will:
-1. Update package versions from the tag
-2. Build and test all packages
-3. Create a bundled tarball using `pnpm deploy`
-4. Create a GitHub release with the tarball attached
+### Preview Releases
+
+Preview releases are available as tgz files on [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) for testing before npm publication.
 
 ## Package Exports
 
