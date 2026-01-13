@@ -7,14 +7,17 @@
 import {expect} from 'chai';
 import {listSites, getSite} from '../../../src/operations/sites/index.js';
 import {B2CInstance} from '../../../src/instance/index.js';
-import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 describe('operations/sites', () => {
   let mockInstance: B2CInstance;
 
   beforeEach(() => {
-    const auth = new MockAuthStrategy();
-    mockInstance = new B2CInstance({hostname: 'test.demandware.net'}, auth);
+    mockInstance = new B2CInstance(
+      {hostname: 'test.demandware.net'},
+      {
+        oauth: {clientId: 'test-client', clientSecret: 'test-secret'},
+      },
+    );
   });
 
   describe('listSites', () => {

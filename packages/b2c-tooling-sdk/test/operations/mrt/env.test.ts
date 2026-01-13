@@ -87,7 +87,7 @@ describe('operations/mrt/env', () => {
           externalDomain: 'example.com',
           allowCookies: true,
           enableSourceMaps: false,
-          logLevel: 'info',
+          logLevel: 'INFO',
           whitelistedIps: '192.168.1.0/24',
           proxyConfigs: [
             {

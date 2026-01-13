@@ -333,7 +333,7 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveExportToPath(mockInstance, {global_data: {meta: true}}, exportPath);
+      const result = await siteArchiveExportToPath(mockInstance, {global_data: {meta_data: true}}, exportPath);
 
       expect(result.execution.id).to.equal('export-1');
       expect(result.localPath).to.equal(exportPath);
@@ -371,7 +371,7 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveExport(mockInstance, {global_data: {meta: true}});
+      const result = await siteArchiveExport(mockInstance, {global_data: {meta_data: true}});
 
       expect(result.execution.id).to.equal('export-2');
       expect(result.data).to.be.instanceOf(Buffer);
@@ -399,7 +399,7 @@ describe('operations/jobs/site-archive', () => {
       );
 
       try {
-        await siteArchiveExport(mockInstance, exportPath);
+        await siteArchiveExportToPath(mockInstance, {}, exportPath);
         expect.fail('Should have thrown JobExecutionError');
       } catch (error: any) {
         expect(error.name).to.equal('JobExecutionError');
@@ -436,7 +436,7 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveExport(mockInstance, {global_data: {meta: true}});
+      const result = await siteArchiveExport(mockInstance, {global_data: {meta_data: true}});
 
       expect(result.archiveFilename).to.match(/\d{8}T\d{9}Z_export\.zip/);
     });
