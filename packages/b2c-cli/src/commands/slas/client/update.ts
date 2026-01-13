@@ -119,11 +119,11 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
           ? existing.scopes
           : [];
 
-    // Normalize existing redirectUri (ensure array) - API returns string or array
+    // Normalize existing redirectUri (ensure array) - API returns pipe-delimited string
     const existingRedirectUri = Array.isArray(existing.redirectUri)
-      ? existing.redirectUri
+      ? existing.redirectUri.flatMap((uri) => (typeof uri === 'string' ? uri.split('|').map((s) => s.trim()) : []))
       : typeof existing.redirectUri === 'string'
-        ? [existing.redirectUri]
+        ? existing.redirectUri.split('|').map((s) => s.trim())
         : [];
 
     // oclif handles comma-separation via delimiter option
