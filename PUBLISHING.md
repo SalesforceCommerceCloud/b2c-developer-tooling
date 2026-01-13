@@ -9,6 +9,27 @@ The project uses:
 - **[npm Trusted Publishers](https://docs.npmjs.com/trusted-publishers)** with OIDC for secure, tokenless publishing
 - **Two-workflow architecture** separating version management from publishing
 
+## Release Types
+
+| Type | npm Tag | Trigger | GitHub Release |
+|------|---------|---------|----------------|
+| **Stable** (`1.0.0`) | `@latest` | Git tag `v1.0.0` | Release |
+| **Pre-release** (`1.0.0-beta.1`) | `@next` | Git tag `v1.0.0-beta.1` | Pre-release |
+| **Nightly** (`0.0.1-nightly-20250113`) | `@nightly` | Scheduled (weekdays) or manual | None |
+
+### Installing Different Versions
+
+```bash
+# Stable release (default)
+npm install @salesforce/b2c-cli
+
+# Pre-release (beta, preview, rc)
+npm install @salesforce/b2c-cli@next
+
+# Nightly snapshot
+npm install @salesforce/b2c-cli@nightly
+```
+
 ## Published Packages
 
 Only these three packages are published to npm:
@@ -38,8 +59,11 @@ The publish workflow explicitly filters to only these three packages using `--fi
 
 ### Workflow 2: `publish.yml` - npm Publishing
 
-- **Trigger**: Push of version tags (`v1.0.0`, `v1.0.0-beta.1`, etc.)
-- **Purpose**: Publishes packages to npm and creates GitHub Release
+- **Triggers**:
+  - Push of version tags (`v1.0.0`, `v1.0.0-beta.1`, etc.) - stable/pre-releases
+  - Schedule (weekdays at 2 AM UTC) - nightly snapshots
+  - Manual `workflow_dispatch` - on-demand nightly
+- **Purpose**: Publishes packages to npm and creates GitHub Releases (for tag-based releases)
 - **Permissions**: `contents: write`, `id-token: write` (for OIDC)
 - **Security**: Uses npm OIDC trusted publishers - no npm token required
 
@@ -94,7 +118,39 @@ When ready to release:
    - Validate the tag matches package versions
    - Build and test all packages
    - Publish to npm via OIDC
-   - Create a GitHub Release with auto-generated notes
+   - Create a GitHub Release with aggregated changelogs
+
+### Pre-releases (Beta, Preview, RC)
+
+For pre-release versions, use changesets pre-release mode:
+
+```bash
+# Enter pre-release mode
+pnpm changeset pre enter beta
+
+# Continue normal workflow: create changesets, merge version PR
+# Versions will be like 1.0.0-beta.0, 1.0.0-beta.1, etc.
+
+# Exit pre-release mode when ready for stable
+pnpm changeset pre exit
+```
+
+Pre-release tags (`v1.0.0-beta.1`) publish to `@next` and create GitHub Pre-releases.
+
+### Nightly Releases
+
+Nightly releases run automatically on weekdays at 2 AM UTC. They can also be triggered manually:
+
+1. Go to **Actions** → **Publish to npm** workflow
+2. Click **Run workflow**
+3. Select `nightly` and click **Run workflow**
+
+Nightly versions use changesets snapshot format: `0.0.1-nightly-20250113`
+
+**Notes:**
+- Nightly releases do NOT create GitHub releases
+- They publish to the `@nightly` npm tag
+- Each nightly overwrites the previous `@nightly` tag
 
 ## Changeset Configuration
 
