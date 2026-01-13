@@ -234,12 +234,12 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
   }
 
   /**
-   * Normalize URI values from API response (may be string or array).
+   * Normalize URI values from API response (may be pipe-delimited string or array).
    */
   private normalizeUriArray(value: string | string[] | undefined): string[] {
     if (Array.isArray(value)) {
-      return value;
+      return value.flatMap((uri) => (typeof uri === 'string' ? uri.split('|').map((s) => s.trim()) : []));
     }
-    return typeof value === 'string' ? [value] : [];
+    return typeof value === 'string' ? value.split('|').map((s) => s.trim()) : [];
   }
 }
