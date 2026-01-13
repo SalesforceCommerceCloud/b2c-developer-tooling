@@ -58,6 +58,48 @@ Issues labelled `good first contribution`.
 - [x] Reviews
   - Changes must be approved via peer code review
 
+# Changesets
+
+This project uses [Changesets](https://github.com/changesets/changesets) to manage versions and changelogs.
+
+## When to Add a Changeset
+
+Add a changeset when your PR includes changes that users should know about:
+- Bug fixes
+- New features
+- Breaking changes
+- Significant improvements
+
+You **don't need** a changeset for:
+- Documentation-only changes
+- Internal refactoring
+- Test improvements
+- CI/build changes
+
+## How to Add a Changeset
+
+1. Run the changeset command:
+   ```bash
+   pnpm changeset
+   ```
+
+2. Select the packages affected by your change (usually all three are linked)
+
+3. Choose the change type:
+   - `patch` - Bug fixes, minor improvements
+   - `minor` - New features, non-breaking changes
+   - `major` - Breaking changes
+
+4. Write a brief summary of your change (this appears in the changelog)
+
+5. Commit the generated `.changeset/*.md` file with your PR
+
+## Notes
+
+- Changesets are optional - maintainers can add them later if needed
+- Multiple changesets can exist for separate changes
+- See [PUBLISHING.md](./PUBLISHING.md) for full release process details
+
 # Creating a Pull Request
 
 1. **Ensure the bug/feature was not already reported** by searching on GitHub under Issues.  If none exists, create a new issue so that other contributors can keep track of what you are trying to add/fix and offer suggestions (or let you know if there is already an effort in progress).
