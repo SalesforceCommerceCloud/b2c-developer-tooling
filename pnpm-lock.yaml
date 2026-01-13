@@ -59,6 +59,9 @@ importers:
       marked-terminal:
         specifier: ^7.3.0
         version: 7.3.0(marked@15.0.12)
+      open:
+        specifier: ^11.0.0
+        version: 11.0.0
     devDependencies:
       '@eslint/compat':
         specifier: ^1
