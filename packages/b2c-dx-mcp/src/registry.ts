@@ -37,7 +37,7 @@ function getToolsetsForProjectType(projectType: ProjectType): Toolset[] {
       return ['STOREFRONTNEXT', 'MRT', 'SCAPI'];
     }
     default: {
-      // Fallback: provide basic SCAPI tools for unknown projects
+      // Fallback: provide basic SCAPI tools
       return ['SCAPI'];
     }
   }

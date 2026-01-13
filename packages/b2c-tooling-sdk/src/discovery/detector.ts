@@ -8,7 +8,7 @@
  *
  * @module discovery/detector
  */
-import type {DetectionResult, DetectionPattern, DetectOptions, ProjectType, ConfigFileInfo} from './types.js';
+import type {DetectionResult, DetectionPattern, DetectOptions, ProjectType} from './types.js';
 import {DEFAULT_PATTERNS} from './patterns/index.js';
 
 /**
@@ -63,7 +63,6 @@ export class WorkspaceTypeDetector {
   async detect(): Promise<DetectionResult> {
     const matchedPatterns: string[] = [];
     const projectTypes: ProjectType[] = [];
-    const configFiles: ConfigFileInfo[] = [];
 
     for (const pattern of this.patterns) {
       try {
@@ -83,7 +82,6 @@ export class WorkspaceTypeDetector {
       projectTypes,
       matchedPatterns,
       autoDiscovered: true,
-      configFiles,
     };
   }
 

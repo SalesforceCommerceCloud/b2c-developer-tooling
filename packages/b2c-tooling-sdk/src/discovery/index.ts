@@ -25,12 +25,11 @@
  *
  * The detector recognizes the following project types:
  *
- * - `pwa-kit-v3` - PWA Kit v3 storefront (has @salesforce/pwa-kit-* dependencies)
+ * - `pwa-kit-v3` - PWA Kit v3 storefront (template copy or extensible flavor)
  * - `storefront-next` - Storefront Next/Odyssey project
  * - `sfra` - SFRA/cartridge-based storefront (has cartridges/ directory)
  * - `custom-api` - Custom SCAPI project (has api.json files)
  * - `headless` - Generic headless project (has dw.json but no specific framework)
- * - `unknown` - Could not determine project type
  *
  * ## Custom Patterns
  *
@@ -42,7 +41,6 @@
  * const myPattern: DetectionPattern = {
  *   name: 'my-framework',
  *   projectType: 'custom-api',
- *   priority: 100,
  *   detect: async (path) => {
  *     // Custom detection logic
  *     return false;
@@ -63,7 +61,7 @@
 export {WorkspaceTypeDetector, detectWorkspaceType} from './detector.js';
 
 // Types
-export type {ProjectType, DetectionPattern, DetectionResult, DetectOptions, ConfigFileInfo} from './types.js';
+export type {ProjectType, DetectionPattern, DetectionResult, DetectOptions} from './types.js';
 
 // Patterns (for customization)
 export {

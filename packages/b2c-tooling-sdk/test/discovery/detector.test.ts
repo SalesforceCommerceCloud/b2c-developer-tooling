@@ -166,7 +166,6 @@ describe('discovery/detector', () => {
       expect(result.projectTypes).to.deep.equal(['pwa-kit']);
       expect(result.matchedPatterns).to.deep.equal(['test']);
       expect(result.autoDiscovered).to.equal(true);
-      expect(result.configFiles).to.deep.equal([]);
     });
 
     it('works without options', async () => {

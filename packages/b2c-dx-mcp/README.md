@@ -68,7 +68,7 @@ When neither `--toolsets` nor `--tools` are provided, the MCP server automatical
 
 | Project Type | Detection | Toolsets Enabled |
 |--------------|-----------|------------------|
-| **PWA Kit v3** | `@salesforce/pwa-kit-*` packages in package.json | PWAV3, MRT, SCAPI |
+| **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` | PWAV3, MRT, SCAPI |
 | **Storefront Next** | `@salesforce/storefront-next-*` packages in package.json | STOREFRONTNEXT, MRT, SCAPI |
 | **SFRA** | `cartridges/` folder with controllers or templates | CARTRIDGES, SCAPI |
 | **Custom API** | `rest-apis/*/api.json` or `rest-apis/*/schema.yaml` files | CARTRIDGES, SCAPI |

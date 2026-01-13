@@ -53,6 +53,27 @@ describe('discovery/patterns/pwa-kit', () => {
       expect(result).to.be.false;
     });
 
+    it('detects @salesforce/retail-react-app dependency (extensible flavor)', async () => {
+      const pkg = {devDependencies: {'@salesforce/retail-react-app': '^8.0.0'}};
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
+
+      const result = await pwaKitV3Pattern.detect(tempDir);
+
+      expect(result).to.be.true;
+    });
+
+    it('detects ccExtensibility field (extensible flavor)', async () => {
+      const pkg = {
+        ccExtensibility: {extends: '@salesforce/retail-react-app', overridesDir: 'overrides'},
+        devDependencies: {},
+      };
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
+
+      const result = await pwaKitV3Pattern.detect(tempDir);
+
+      expect(result).to.be.true;
+    });
+
     it('returns false without PWA Kit dependencies', async () => {
       const pkg = {dependencies: {react: '^18.0.0'}};
       await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));

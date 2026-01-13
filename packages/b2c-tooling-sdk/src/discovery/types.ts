@@ -13,12 +13,11 @@
  * Identifies the type of B2C Commerce project.
  */
 export type ProjectType =
-  | 'pwa-kit-v3' // PWA Kit v3 storefront (@salesforce/pwa-kit-* packages)
+  | 'pwa-kit-v3' // PWA Kit v3 storefront (template copy or extensible flavor)
   | 'storefront-next' // Storefront Next (Odyssey)
   | 'sfra' // SFRA/cartridge-based storefront
   | 'custom-api' // Custom SCAPI project
-  | 'headless' // Generic headless (uses SCAPI/dw.json but no specific framework)
-  | 'unknown'; // Could not determine
+  | 'headless'; // Generic headless (uses SCAPI/dw.json but no specific framework)
 
 /**
  * Detection pattern definition.
@@ -33,18 +32,6 @@ export interface DetectionPattern {
 }
 
 /**
- * Information about detected config files.
- */
-export interface ConfigFileInfo {
-  /** Type of configuration file */
-  type: 'dw.json' | 'package.json' | 'mobify.json' | 'api.json';
-  /** Path to the file */
-  path: string;
-  /** Relevant extracted info */
-  metadata?: Record<string, unknown>;
-}
-
-/**
  * Result of workspace detection.
  */
 export interface DetectionResult {
@@ -54,8 +41,6 @@ export interface DetectionResult {
   matchedPatterns: string[];
   /** Whether auto-discovery was performed */
   autoDiscovered: boolean;
-  /** Detected configuration files */
-  configFiles: ConfigFileInfo[];
 }
 
 /**
