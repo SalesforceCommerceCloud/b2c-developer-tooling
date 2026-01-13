@@ -4,7 +4,8 @@
   "exclude": [
     "src/clients/*.generated.ts",
     "test/**",
-    "**/*.d.ts"
+    "**/*.d.ts",
+    "src/**/*types.ts"
   ],
   "reporter": ["text", "text-summary", "html", "lcov"],
   "report-dir": "coverage",
