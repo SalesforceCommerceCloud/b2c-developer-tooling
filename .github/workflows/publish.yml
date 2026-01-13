@@ -51,7 +51,34 @@ jobs:
           pnpm --filter @salesforce/b2c-cli publish --access public --no-git-checks
           pnpm --filter @salesforce/b2c-dx-mcp publish --access public --no-git-checks
 
+      - name: Extract changelog for release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Function to extract version section from a changelog
+          extract_version() {
+            awk -v ver="$1" '
+              /^## / { if (found) exit; if ($2 == ver) found=1; next }
+              found { print }
+            ' "$2"
+          }
+
+          # Build combined release notes
+          {
+            echo "## @salesforce/b2c-cli"
+            echo ""
+            extract_version "$VERSION" packages/b2c-cli/CHANGELOG.md
+            echo ""
+            echo "## @salesforce/b2c-dx-mcp"
+            echo ""
+            extract_version "$VERSION" packages/b2c-dx-mcp/CHANGELOG.md
+            echo ""
+            echo "## @salesforce/b2c-tooling-sdk"
+            echo ""
+            extract_version "$VERSION" packages/b2c-tooling-sdk/CHANGELOG.md
+          } > /tmp/release-notes.md
+
       - name: Create GitHub Release
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" --notes-file /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
