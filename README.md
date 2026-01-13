@@ -1,4 +1,4 @@
-# B2C CLI and Tooling SDK
+# B2C CLI, MCP and Tooling SDK
 
 [![CI](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/actions/workflows/ci.yml/badge.svg)](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/actions/workflows/ci.yml)
 
@@ -6,6 +6,10 @@
 > This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues and Unofficial Slack.
 
 Salesforce Commerce Cloud B2C Command Line Tools.
+
+
+> [!INFO]
+> Just looking for the B2C CLI or MCP install instructions? Visit the documentation site at [https://salesforcecommercecloud.github.io/b2c-developer-tooling/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the latest install guide and CLI reference.
 
 ## Features
 
