@@ -15,10 +15,13 @@ const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 headerPlugin.rules.header.meta.schema = false;
 
 export default [
-  includeIgnoreFile(gitignorePath),
+  // Global ignores must come first - these patterns apply to all subsequent configs
+  // node_modules must be explicitly ignored because the .gitignore pattern only covers
+  // packages/b2c-cli/node_modules, not the monorepo root node_modules
   {
-    ignores: ['test/functional/fixtures/**/*.js'],
+    ignores: ['**/node_modules/**', 'test/functional/fixtures/**/*.js'],
   },
+  includeIgnoreFile(gitignorePath),
   ...oclif,
   prettierPlugin,
   {

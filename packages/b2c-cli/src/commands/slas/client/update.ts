@@ -111,59 +111,21 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
 
     const existing = existingData as Client;
 
-    // Normalize existing scopes (API returns space-separated string)
-    const existingScopes =
-      typeof existing.scopes === 'string'
-        ? (existing.scopes as string).split(' ')
-        : Array.isArray(existing.scopes)
-          ? existing.scopes
-          : [];
-
-    // Normalize existing redirectUri (ensure array) - API returns string or array
-    const existingRedirectUri = Array.isArray(existing.redirectUri)
-      ? existing.redirectUri
-      : typeof existing.redirectUri === 'string'
-        ? [existing.redirectUri]
-        : [];
-
-    // oclif handles comma-separation via delimiter option
-    const newChannels = channels ?? [];
-    const newScopes = scopes ?? [];
-    const newRedirectUri = redirectUri ?? [];
-    const newCallbackUri = callbackUri ?? [];
-
-    // Merge or replace values
-    const mergedChannels = replace ? newChannels : [...new Set([...(existing.channels ?? []), ...newChannels])];
-    const mergedScopes = replace ? newScopes : [...new Set([...existingScopes, ...newScopes])];
-    const mergedRedirectUri = replace ? newRedirectUri : [...new Set([...existingRedirectUri, ...newRedirectUri])];
-    // Handle callbackUri - existing value is comma-separated string from API
-    const existingCallbackUri = existing.callbackUri?.split(',').map((s) => s.trim()) ?? [];
-    const mergedCallbackUri = callbackUri
-      ? replace
-        ? newCallbackUri
-        : [...new Set([...existingCallbackUri, ...newCallbackUri])]
-      : existingCallbackUri.length > 0
-        ? existingCallbackUri
-        : undefined;
-
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.update.updating', 'Updating SLAS client {{clientId}}...', {clientId}));
     }
 
-    // Build request body - only include secret if provided (to rotate it)
-    const body: Partial<ClientRequest> = {
+    // Build request body with merged values
+    const body = this.buildUpdateRequest(existing, {
       clientId,
-      name: name ?? existing.name ?? '',
-      channels: channels ? mergedChannels : (existing.channels ?? []),
-      scopes: scopes ? mergedScopes : existingScopes,
-      redirectUri: redirectUri ? mergedRedirectUri : existingRedirectUri,
-      callbackUri: mergedCallbackUri,
-      isPrivateClient: existing.isPrivateClient ?? true,
-    };
-
-    if (secret) {
-      body.secret = secret;
-    }
+      name,
+      secret,
+      channels: channels ?? [],
+      scopes: scopes ?? [],
+      redirectUri: redirectUri ?? [],
+      callbackUri: callbackUri ?? [],
+      replace,
+    });
 
     // Update the client
     const {data, error} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
@@ -192,5 +154,92 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     printClientDetails(output, Boolean(secret));
 
     return output;
+  }
+
+  /**
+   * Build the update request body with merged values.
+   */
+  private buildUpdateRequest(
+    existing: Client,
+    updates: {
+      clientId: string;
+      name?: string;
+      secret?: string;
+      channels: string[];
+      scopes: string[];
+      redirectUri: string[];
+      callbackUri: string[];
+      replace: boolean;
+    },
+  ): Partial<ClientRequest> {
+    const existingScopes = this.normalizeScopes(existing.scopes);
+    const existingRedirectUri = this.normalizeUriArray(existing.redirectUri);
+    const existingCallbackUri = this.normalizeCallbackUri(existing.callbackUri);
+
+    // Determine merged values
+    const mergedChannels = this.mergeArrayValues(existing.channels ?? [], updates.channels, updates.replace);
+    const mergedScopes = this.mergeArrayValues(existingScopes, updates.scopes, updates.replace);
+    const mergedRedirectUri = this.mergeArrayValues(existingRedirectUri, updates.redirectUri, updates.replace);
+    const mergedCallbackUri = this.computeCallbackUri(existingCallbackUri, updates.callbackUri, updates.replace);
+
+    const body: Partial<ClientRequest> = {
+      clientId: updates.clientId,
+      name: updates.name ?? existing.name ?? '',
+      channels: updates.channels.length > 0 ? mergedChannels : (existing.channels ?? []),
+      scopes: updates.scopes.length > 0 ? mergedScopes : existingScopes,
+      redirectUri: updates.redirectUri.length > 0 ? mergedRedirectUri : existingRedirectUri,
+      callbackUri: mergedCallbackUri,
+      isPrivateClient: existing.isPrivateClient ?? true,
+    };
+
+    if (updates.secret) {
+      body.secret = updates.secret;
+    }
+
+    return body;
+  }
+
+  /**
+   * Compute callback URI value, handling the special case where no new values means keeping existing.
+   */
+  private computeCallbackUri(existing: string[], updated: string[], replace: boolean): string[] | undefined {
+    if (updated.length > 0) {
+      return this.mergeArrayValues(existing, updated, replace);
+    }
+    return existing.length > 0 ? existing : undefined;
+  }
+
+  /**
+   * Merge array values, optionally replacing or appending with deduplication.
+   */
+  private mergeArrayValues(existing: string[], updated: string[], replace: boolean): string[] {
+    return replace ? updated : [...new Set([...existing, ...updated])];
+  }
+
+  /**
+   * Normalize callback URI from API response (comma-separated string).
+   */
+  private normalizeCallbackUri(value: string | undefined): string[] {
+    return value ? value.split(',').map((s) => s.trim()) : [];
+  }
+
+  /**
+   * Normalize scopes from API response (may be space-separated string or array).
+   */
+  private normalizeScopes(scopes: string | string[] | undefined): string[] {
+    if (typeof scopes === 'string') {
+      return scopes.split(' ');
+    }
+    return Array.isArray(scopes) ? scopes : [];
+  }
+
+  /**
+   * Normalize URI values from API response (may be string or array).
+   */
+  private normalizeUriArray(value: string | string[] | undefined): string[] {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return typeof value === 'string' ? [value] : [];
   }
 }
