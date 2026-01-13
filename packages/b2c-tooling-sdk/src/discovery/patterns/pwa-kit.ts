@@ -33,8 +33,6 @@ export const pwaKitV3Pattern: DetectionPattern = {
 
     // Template copy flavor: @salesforce/pwa-kit-* packages
     // Extensible flavor: @salesforce/retail-react-app package
-    return deps.some(
-      (dep) => dep.startsWith('@salesforce/pwa-kit') || dep === '@salesforce/retail-react-app'
-    );
+    return deps.some((dep) => dep.startsWith('@salesforce/pwa-kit') || dep === '@salesforce/retail-react-app');
   },
 };
