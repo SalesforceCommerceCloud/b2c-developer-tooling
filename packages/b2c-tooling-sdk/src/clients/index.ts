@@ -24,11 +24,13 @@
  * and provides convenient `webdav` and `ocapi` getters.
  *
  * ```typescript
- * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const instance = B2CInstance.fromEnvironment({
+ * const config = resolveConfig({
+ *   clientId: process.env.SFCC_CLIENT_ID,
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
+ * const instance = config.createB2CInstance();
  *
  * // WebDAV operations via instance.webdav
  * await instance.webdav.put('Cartridges/v1/app.zip', content);

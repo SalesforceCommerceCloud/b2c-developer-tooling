@@ -12,16 +12,19 @@
  *
  * ## Usage
  *
- * ### From environment configuration (recommended)
+ * ### From configuration (recommended)
+ *
+ * Use {@link resolveConfig} to load configuration from dw.json and create an instance:
  *
  * ```typescript
- * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * // Load from environment files (dw.json, etc.), override secrets from environment
- * const instance = B2CInstance.fromEnvironment({
+ * const config = resolveConfig({
  *   clientId: process.env.SFCC_CLIENT_ID,
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
+ *
+ * const instance = config.createB2CInstance();
  *
  * // Use typed clients
  * await instance.webdav.put('Cartridges/v1/app.zip', content);
@@ -44,9 +47,6 @@ import {BasicAuthStrategy} from '../auth/basic.js';
 import {resolveAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
-import {loadDwJson} from '../config/dw-json.js';
-import {mapDwJsonToNormalizedConfig, mergeConfigsWithProtection} from '../config/mapping.js';
-import type {NormalizedConfig} from '../config/types.js';
 
 /**
  * Instance configuration (hostname, code version, etc.)
@@ -61,46 +61,20 @@ export interface InstanceConfig {
 }
 
 /**
- * Options for creating a B2CInstance from environment configuration.
- */
-export interface FromEnvironmentOptions {
-  /** Named instance from dw.json "configs" array */
-  instance?: string;
-  /** Path to dw.json (defaults to searching up from cwd) */
-  configPath?: string;
-
-  // Overrides (take precedence over dw.json values)
-  /** B2C instance hostname */
-  hostname?: string;
-  /** Code version */
-  codeVersion?: string;
-  /** WebDAV hostname (if different) */
-  webdavHostname?: string;
-  /** Username for Basic auth */
-  username?: string;
-  /** Password for Basic auth */
-  password?: string;
-  /** OAuth client ID */
-  clientId?: string;
-  /** OAuth client secret */
-  clientSecret?: string;
-  /** OAuth scopes */
-  scopes?: string[];
-  /** Allowed auth methods in priority order */
-  authMethods?: AuthMethod[];
-}
-
-/**
  * Represents a connection to a B2C Commerce instance.
  *
  * Provides lazy-loaded, typed API clients for WebDAV and OCAPI operations.
  * Authentication is handled automatically based on the configured credentials.
  *
  * @example
- * // From environment configuration
- * const instance = B2CInstance.fromEnvironment({
+ * // From configuration (recommended)
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ *
+ * const config = resolveConfig({
+ *   clientId: process.env.SFCC_CLIENT_ID,
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
+ * const instance = config.createB2CInstance();
  *
  * // WebDAV uses Basic auth if available, falls back to OAuth
  * await instance.webdav.mkcol('Cartridges/v1');
@@ -111,90 +85,6 @@ export interface FromEnvironmentOptions {
 export class B2CInstance {
   private _webdav?: WebDavClient;
   private _ocapi?: OcapiClient;
-
-  /**
-   * Creates a B2CInstance from environment configuration files with optional overrides.
-   *
-   * Searches upward from the current directory for configuration files (dw.json, etc.),
-   * then applies any provided overrides.
-   *
-   * @param options - Loading options and overrides
-   * @returns Configured B2CInstance
-   * @throws Error if no configuration found or required configuration missing
-   *
-   * @example
-   * // Auto-find configuration, override secrets
-   * const instance = B2CInstance.fromEnvironment({
-   *   clientId: process.env.SFCC_CLIENT_ID,
-   *   clientSecret: process.env.SFCC_CLIENT_SECRET,
-   * });
-   *
-   * // Use named instance
-   * const instance = B2CInstance.fromEnvironment({
-   *   instance: 'staging',
-   * });
-   */
-  static fromEnvironment(options: FromEnvironmentOptions = {}): B2CInstance {
-    // Load dw.json and map to normalized config
-    const dwJsonRaw = loadDwJson({
-      instance: options.instance,
-      path: options.configPath,
-    });
-    const dwConfig = dwJsonRaw ? mapDwJsonToNormalizedConfig(dwJsonRaw) : {};
-
-    // Build overrides from options
-    const overrides: Partial<NormalizedConfig> = {
-      hostname: options.hostname,
-      codeVersion: options.codeVersion,
-      webdavHostname: options.webdavHostname,
-      username: options.username,
-      password: options.password,
-      clientId: options.clientId,
-      clientSecret: options.clientSecret,
-      scopes: options.scopes,
-      authMethods: options.authMethods,
-    };
-
-    // Merge with hostname mismatch protection (consistent with CLI behavior)
-    const {config: resolved, warnings} = mergeConfigsWithProtection(overrides, dwConfig, {
-      hostnameProtection: true,
-    });
-
-    // Log warnings (optional - could integrate with SDK logger)
-    for (const warning of warnings) {
-      console.warn(`[B2CInstance] ${warning.message}`);
-    }
-
-    if (!resolved.hostname) {
-      throw new Error(
-        'Hostname is required. Set in dw.json or provide via options. ' + (dwJsonRaw ? '' : 'No dw.json file found.'),
-      );
-    }
-
-    const config: InstanceConfig = {
-      hostname: resolved.hostname,
-      codeVersion: resolved.codeVersion,
-      webdavHostname: resolved.webdavHostname,
-    };
-
-    const auth: AuthConfig = {
-      authMethods: resolved.authMethods,
-    };
-
-    if (resolved.username && resolved.password) {
-      auth.basic = {username: resolved.username, password: resolved.password};
-    }
-
-    if (resolved.clientId) {
-      auth.oauth = {
-        clientId: resolved.clientId,
-        clientSecret: resolved.clientSecret,
-        scopes: resolved.scopes,
-      };
-    }
-
-    return new B2CInstance(config, auth);
-  }
 
   /**
    * Creates a new B2CInstance.
@@ -303,4 +193,4 @@ export class B2CInstance {
 }
 
 // Re-export types for convenience
-export type {AuthConfig, FromEnvironmentOptions as B2CInstanceOptions};
+export type {AuthConfig};

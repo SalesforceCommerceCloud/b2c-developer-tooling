@@ -34,9 +34,10 @@
  *   siteArchiveImport,
  *   siteArchiveExport,
  * } from '@salesforce/b2c-tooling-sdk/operations/jobs';
- * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const instance = B2CInstance.fromEnvironment();
+ * const config = resolveConfig();
+ * const instance = config.createB2CInstance();
  *
  * // Run a custom job and wait for completion
  * const execution = await executeJob(instance, 'my-job-id');

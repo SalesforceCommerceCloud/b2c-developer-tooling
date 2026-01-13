@@ -39,9 +39,10 @@
  *   activateCodeVersion,
  *   watchCartridges,
  * } from '@salesforce/b2c-tooling-sdk/operations/code';
- * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const instance = B2CInstance.fromEnvironment();
+ * const config = resolveConfig();
+ * const instance = config.createB2CInstance();
  *
  * // Deploy cartridges (requires instance.config.codeVersion to be set)
  * await findAndDeployCartridges(instance, './cartridges', { reload: true });
