@@ -46,7 +46,7 @@ describe('config/sources', () => {
       expect(config.codeVersion).to.equal('v1');
     });
 
-    it('loads config from dw.json in parent directory', () => {
+    it('does NOT load config from dw.json in parent directory (no upward search)', () => {
       const subDir = path.join(tempDir, 'subdir');
       fs.mkdirSync(subDir);
       const dwJsonPath = path.join(tempDir, 'dw.json');
@@ -57,11 +57,13 @@ describe('config/sources', () => {
         }),
       );
 
+      // Change to subdirectory - should NOT find parent's dw.json
       process.chdir(subDir);
       const resolver = new ConfigResolver();
       const {config} = resolver.resolve();
 
-      expect(config.hostname).to.equal('parent.demandware.net');
+      // Parent dw.json should NOT be found (no upward search)
+      expect(config.hostname).to.be.undefined;
     });
 
     it('handles OAuth credentials from dw.json', () => {

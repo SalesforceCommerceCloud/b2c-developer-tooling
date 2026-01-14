@@ -64,6 +64,11 @@ export function isolateConfig(): void {
     delete process.env[key];
   }
 
+  // SET isolation env vars - oclif will pick these up during flag parsing
+  // /dev/null exists but is empty (JSON.parse fails), so config sources find nothing
+  process.env.SFCC_CONFIG = '/dev/null';
+  process.env.MRT_CREDENTIALS_FILE = '/dev/null';
+
   state = {savedEnvVars};
 }
 
@@ -76,7 +81,11 @@ export function isolateConfig(): void {
 export function restoreConfig(): void {
   if (!state) return;
 
-  // Restore env vars
+  // Remove isolation env vars we set
+  delete process.env.SFCC_CONFIG;
+  delete process.env.MRT_CREDENTIALS_FILE;
+
+  // Restore original env vars
   for (const [key, value] of Object.entries(state.savedEnvVars)) {
     if (value === undefined) {
       delete process.env[key];

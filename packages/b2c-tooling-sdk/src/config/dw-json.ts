@@ -149,15 +149,20 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
 /**
  * Loads configuration from a dw.json file.
  *
- * Searches upward from the current directory (or specified startDir) for a dw.json file.
- * Supports both single-config and multi-config formats.
+ * If an explicit path is provided, uses that file. Otherwise, looks for dw.json
+ * in the startDir (or cwd). Does NOT search parent directories.
+ *
+ * Use `findDwJson()` if you need to search upward through parent directories.
  *
  * @param options - Loading options
  * @returns The parsed config, or undefined if no dw.json found
  *
  * @example
- * // Auto-find dw.json
+ * // Load from ./dw.json (current directory)
  * const config = loadDwJson();
+ *
+ * // Load from specific directory
+ * const config = loadDwJson({ startDir: '/path/to/project' });
  *
  * // Use named instance
  * const config = loadDwJson({ instance: 'staging' });
@@ -166,9 +171,10 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
  * const config = loadDwJson({ path: './config/dw.json' });
  */
 export function loadDwJson(options: LoadDwJsonOptions = {}): DwJsonConfig | undefined {
-  const dwJsonPath = options.path || findDwJson(options.startDir);
+  // If explicit path provided, use it. Otherwise default to ./dw.json (no upward search)
+  const dwJsonPath = options.path ?? path.join(options.startDir || process.cwd(), 'dw.json');
 
-  if (!dwJsonPath || !fs.existsSync(dwJsonPath)) {
+  if (!fs.existsSync(dwJsonPath)) {
     return undefined;
   }
 
