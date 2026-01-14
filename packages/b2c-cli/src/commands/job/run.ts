@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {JobCommand, type B2COperationContext} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   executeJob,
   waitForJob,
@@ -112,19 +112,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         waitForRunning: !noWaitRunning,
       });
     } catch (error) {
-      // Run afterOperation hooks with failure
-      await this.runAfterHooks(context, {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-        duration: Date.now() - context.startTime,
-      });
-
-      if (error instanceof Error) {
-        this.error(
-          t('commands.job.run.executionFailed', 'Failed to execute job: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
+      this.handleExecutionError(error, context);
     }
 
     this.log(
@@ -136,59 +124,13 @@ export default class JobRun extends JobCommand<typeof JobRun> {
 
     // Wait for completion if requested
     if (wait) {
-      this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
-
-      try {
-        execution = await waitForJob(this.instance, jobId, execution.id!, {
-          timeout: timeout ? timeout * 1000 : undefined,
-          onProgress: (exec, elapsed) => {
-            if (!this.jsonEnabled()) {
-              const elapsedSec = Math.floor(elapsed / 1000);
-              this.log(
-                t('commands.job.run.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.execution_status,
-                  elapsed: elapsedSec.toString(),
-                }),
-              );
-            }
-          },
-        });
-
-        const durationSec = execution.duration ? (execution.duration / 1000).toFixed(1) : 'N/A';
-        this.log(
-          t('commands.job.run.completed', 'Job completed: {{status}} (duration: {{duration}}s)', {
-            status: execution.exit_status?.code || execution.execution_status,
-            duration: durationSec,
-          }),
-        );
-
-        // Run afterOperation hooks with success
-        await this.runAfterHooks(context, {
-          success: true,
-          duration: Date.now() - context.startTime,
-          data: execution,
-        });
-      } catch (error) {
-        // Run afterOperation hooks with failure
-        await this.runAfterHooks(context, {
-          success: false,
-          error: error instanceof Error ? error : new Error(String(error)),
-          duration: Date.now() - context.startTime,
-          data: error instanceof JobExecutionError ? error.execution : undefined,
-        });
-
-        if (error instanceof JobExecutionError) {
-          if (showLog) {
-            await this.showJobLog(error.execution);
-          }
-          this.error(
-            t('commands.job.run.jobFailed', 'Job failed: {{status}}', {
-              status: error.execution.exit_status?.code || 'ERROR',
-            }),
-          );
-        }
-        throw error;
-      }
+      execution = await this.waitForJobCompletion({
+        jobId,
+        executionId: execution.id!,
+        timeout,
+        showLog,
+        context,
+      });
     } else {
       // Not waiting - run afterOperation hooks with current state
       await this.runAfterHooks(context, {
@@ -198,12 +140,43 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       });
     }
 
-    // JSON output handled by oclif
-    if (this.jsonEnabled()) {
-      return execution;
-    }
-
     return execution;
+  }
+
+  private handleExecutionError(error: unknown, context: B2COperationContext): never {
+    // Run afterOperation hooks with failure (fire-and-forget, errors ignored)
+    this.runAfterHooks(context, {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error)),
+      duration: Date.now() - context.startTime,
+    }).catch(() => {});
+
+    if (error instanceof Error) {
+      this.error(t('commands.job.run.executionFailed', 'Failed to execute job: {{message}}', {message: error.message}));
+    }
+    throw error;
+  }
+
+  private async handleWaitError(error: unknown, showLog: boolean, context: B2COperationContext): Promise<never> {
+    // Run afterOperation hooks with failure
+    await this.runAfterHooks(context, {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error)),
+      duration: Date.now() - context.startTime,
+      data: error instanceof JobExecutionError ? error.execution : undefined,
+    });
+
+    if (error instanceof JobExecutionError) {
+      if (showLog) {
+        await this.showJobLog(error.execution);
+      }
+      this.error(
+        t('commands.job.run.jobFailed', 'Job failed: {{status}}', {
+          status: error.execution.exit_status?.code || 'ERROR',
+        }),
+      );
+    }
+    throw error;
   }
 
   private parseBody(body: string): Record<string, unknown> {
@@ -227,5 +200,52 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         value: p.slice(eqIndex + 1),
       };
     });
+  }
+
+  private async waitForJobCompletion(options: {
+    jobId: string;
+    executionId: string;
+    timeout: number | undefined;
+    showLog: boolean;
+    context: B2COperationContext;
+  }): Promise<JobExecution> {
+    const {jobId, executionId, timeout, showLog, context} = options;
+    this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
+
+    try {
+      const execution = await waitForJob(this.instance, jobId, executionId, {
+        timeout: timeout ? timeout * 1000 : undefined,
+        onProgress: (exec, elapsed) => {
+          if (!this.jsonEnabled()) {
+            const elapsedSec = Math.floor(elapsed / 1000);
+            this.log(
+              t('commands.job.run.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
+                status: exec.execution_status,
+                elapsed: elapsedSec.toString(),
+              }),
+            );
+          }
+        },
+      });
+
+      const durationSec = execution.duration ? (execution.duration / 1000).toFixed(1) : 'N/A';
+      this.log(
+        t('commands.job.run.completed', 'Job completed: {{status}} (duration: {{duration}}s)', {
+          status: execution.exit_status?.code || execution.execution_status,
+          duration: durationSec,
+        }),
+      );
+
+      // Run afterOperation hooks with success
+      await this.runAfterHooks(context, {
+        success: true,
+        duration: Date.now() - context.startTime,
+        data: execution,
+      });
+
+      return execution;
+    } catch (error) {
+      return this.handleWaitError(error, showLog, context);
+    }
   }
 }

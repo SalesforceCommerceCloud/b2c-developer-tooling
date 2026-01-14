@@ -84,83 +84,65 @@ export default class OdsInfo extends OdsCommand<typeof OdsInfo> {
     // User Info Section
     ui.div({text: 'User Information', padding: [1, 0, 0, 0]});
     ui.div({text: '─'.repeat(40), padding: [0, 0, 0, 0]});
-
-    if (info.user?.user) {
-      ui.div(
-        {text: 'Name:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.user.user.name || '-', padding: [0, 0, 0, 0]},
-      );
-      ui.div(
-        {text: 'Email:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.user.user.email || '-', padding: [0, 0, 0, 0]},
-      );
-      ui.div(
-        {text: 'User ID:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.user.user.id || '-', padding: [0, 0, 0, 0]},
-      );
-    }
-
-    if (info.user?.client) {
-      ui.div(
-        {text: 'Client ID:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.user.client.id || '-', padding: [0, 0, 0, 0]},
-      );
-    }
-
-    if (info.user?.roles && info.user.roles.length > 0) {
-      ui.div(
-        {text: 'Roles:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.user.roles.join(', '), padding: [0, 0, 0, 0]},
-      );
-    }
-
-    if (info.user?.realms && info.user.realms.length > 0) {
-      ui.div(
-        {text: 'Realms:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.user.realms.join(', '), padding: [0, 0, 0, 0]},
-      );
-    }
-
-    if (info.user?.sandboxes && info.user.sandboxes.length > 0) {
-      ui.div(
-        {text: 'Sandboxes:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.user.sandboxes.length.toString(), padding: [0, 0, 0, 0]},
-      );
-    }
+    this.renderUserInfo(ui, info.user);
 
     // System Info Section
     ui.div({text: '', padding: [0, 0, 0, 0]});
     ui.div({text: 'System Information', padding: [1, 0, 0, 0]});
     ui.div({text: '─'.repeat(40), padding: [0, 0, 0, 0]});
-
-    if (info.system?.region) {
-      ui.div({text: 'Region:', width: 20, padding: [0, 2, 0, 0]}, {text: info.system.region, padding: [0, 0, 0, 0]});
-    }
-
-    if (info.system?.inboundIps && info.system.inboundIps.length > 0) {
-      ui.div(
-        {text: 'Inbound IPs:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.system.inboundIps.join(', '), padding: [0, 0, 0, 0]},
-      );
-    }
-
-    if (info.system?.outboundIps && info.system.outboundIps.length > 0) {
-      ui.div(
-        {text: 'Outbound IPs:', width: 20, padding: [0, 2, 0, 0]},
-        {text: info.system.outboundIps.join(', '), padding: [0, 0, 0, 0]},
-      );
-    }
-
-    if (info.system?.sandboxIps && info.system.sandboxIps.length > 0) {
-      ui.div(
-        {text: 'Sandbox IPs:', width: 20, padding: [0, 2, 0, 0]},
-        {
-          text: info.system.sandboxIps.slice(0, 5).join(', ') + (info.system.sandboxIps.length > 5 ? '...' : ''),
-          padding: [0, 0, 0, 0],
-        },
-      );
-    }
+    this.renderSystemInfo(ui, info.system);
 
     ux.stdout(ui.toString());
+  }
+
+  private renderArrayField(ui: ReturnType<typeof cliui>, label: string, values: string[] | undefined): void {
+    if (values && values.length > 0) {
+      this.renderField(ui, label, values.join(', '));
+    }
+  }
+
+  private renderField(ui: ReturnType<typeof cliui>, label: string, value: string): void {
+    ui.div({text: label, width: 20, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
+  }
+
+  private renderSystemInfo(ui: ReturnType<typeof cliui>, system: SystemInfoSpec | undefined): void {
+    if (!system) return;
+
+    if (system.region) {
+      this.renderField(ui, 'Region:', system.region);
+    }
+
+    this.renderArrayField(ui, 'Inbound IPs:', system.inboundIps);
+    this.renderArrayField(ui, 'Outbound IPs:', system.outboundIps);
+
+    // Sandbox IPs with truncation
+    if (system.sandboxIps && system.sandboxIps.length > 0) {
+      const truncated = system.sandboxIps.length > 5;
+      const displayValue = system.sandboxIps.slice(0, 5).join(', ') + (truncated ? '...' : '');
+      this.renderField(ui, 'Sandbox IPs:', displayValue);
+    }
+  }
+
+  private renderUserInfo(ui: ReturnType<typeof cliui>, user: undefined | UserInfoSpec): void {
+    if (!user) return;
+
+    // User details
+    if (user.user) {
+      this.renderField(ui, 'Name:', user.user.name || '-');
+      this.renderField(ui, 'Email:', user.user.email || '-');
+      this.renderField(ui, 'User ID:', user.user.id || '-');
+    }
+
+    // Client info
+    if (user.client) {
+      this.renderField(ui, 'Client ID:', user.client.id || '-');
+    }
+
+    // Arrays with length checks
+    this.renderArrayField(ui, 'Roles:', user.roles);
+    this.renderArrayField(ui, 'Realms:', user.realms);
+    if (user.sandboxes && user.sandboxes.length > 0) {
+      this.renderField(ui, 'Sandboxes:', user.sandboxes.length.toString());
+    }
   }
 }
