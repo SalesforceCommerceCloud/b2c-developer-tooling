@@ -61,8 +61,12 @@ When neither `--toolsets` nor `--tools` are provided, the MCP server automatical
 **How it works:**
 
 1. The server analyzes your working directory (from `--working-directory` flag, `SFCC_WORKING_DIRECTORY` env var, or current directory)
-2. It checks for project markers like `package.json` dependencies, folder structures, and config files
-3. It enables all toolsets that match any detected project type
+2. It checks for project markers like `package.json` dependencies and `.project` files
+3. It enables all toolsets that match any detected project type, plus the base SCAPI toolset
+
+**Base Toolset:**
+
+The **SCAPI** toolset is always enabled, providing API discovery and custom API scaffolding capabilities.
 
 **Project Types and Toolsets:**
 
@@ -70,14 +74,12 @@ When neither `--toolsets` nor `--tools` are provided, the MCP server automatical
 |--------------|-----------|------------------|
 | **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` | PWAV3, MRT, SCAPI |
 | **Storefront Next** | `@salesforce/storefront-next-*` packages in package.json | STOREFRONTNEXT, MRT, SCAPI |
-| **SFRA** | `cartridges/` folder with controllers or templates | CARTRIDGES, SCAPI |
-| **Custom API** | `rest-apis/*/api.json` or `rest-apis/*/schema.yaml` files | CARTRIDGES, SCAPI |
-| **Headless** | `dw.json` file (no specific framework detected) | SCAPI |
-| **Unknown** | No B2C project markers found | SCAPI (fallback) |
+| **Cartridges** | Any cartridge with `.project` file (detected via `findCartridges`) | CARTRIDGES, SCAPI |
+| **No project detected** | No B2C project markers found | SCAPI (base toolset only) |
 
 **Hybrid Projects:**
 
-If multiple project types are detected (e.g., SFRA + Custom API), toolsets from all matched types are combined.
+If multiple project types are detected (e.g., cartridges + PWA Kit v3), toolsets from all matched types are combined.
 
 **Example:**
 
@@ -108,6 +110,8 @@ If multiple project types are detected (e.g., SFRA + Custom API), toolsets from 
 ```
 
 > **Note:** Cursor supports `${workspaceFolder}` variable expansion, but Claude Desktop does not. For Claude Desktop, use an explicit path or set the `SFCC_WORKING_DIRECTORY` environment variable.
+
+> **Warning:** MCP clients like Cursor and Claude Desktop often spawn servers from the home directory (`~`) rather than the project directory. Always set `--working-directory` or `SFCC_WORKING_DIRECTORY` for reliable auto-discovery and scaffolding operations.
 
 ### Configuration Examples
 

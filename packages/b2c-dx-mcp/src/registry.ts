@@ -17,49 +17,45 @@ import {createScapiTools} from './tools/scapi/index.js';
 import {createStorefrontNextTools} from './tools/storefrontnext/index.js';
 
 /**
- * Maps a single project type to its associated MCP toolsets.
+ * Base toolset that is always enabled.
+ * Provides SCAPI discovery and custom API scaffolding tools.
+ */
+const BASE_TOOLSET: Toolset = 'SCAPI';
+
+/**
+ * Toolset mapping by project type.
+ * Each project type enables specific toolsets IN ADDITION to the base toolset.
+ */
+const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
+  cartridges: ['CARTRIDGES'],
+  'pwa-kit-v3': ['PWAV3', 'MRT'],
+  'storefront-next': ['STOREFRONTNEXT', 'MRT'],
+};
+
+/**
+ * Gets toolsets for a project type, always including the base toolset.
  */
 function getToolsetsForProjectType(projectType: ProjectType): Toolset[] {
-  switch (projectType) {
-    case 'custom-api': {
-      return ['CARTRIDGES', 'SCAPI'];
-    }
-    case 'headless': {
-      return ['SCAPI'];
-    }
-    case 'pwa-kit-v3': {
-      return ['PWAV3', 'MRT', 'SCAPI'];
-    }
-    case 'sfra': {
-      return ['CARTRIDGES', 'SCAPI'];
-    }
-    case 'storefront-next': {
-      return ['STOREFRONTNEXT', 'MRT', 'SCAPI'];
-    }
-    default: {
-      // Fallback: provide basic SCAPI tools
-      return ['SCAPI'];
-    }
-  }
+  const additionalToolsets = PROJECT_TYPE_TOOLSETS[projectType] ?? [];
+  return [...additionalToolsets, BASE_TOOLSET];
 }
 
 /**
  * Maps multiple detected project types to a union of MCP toolsets.
  *
  * Combines toolsets from all matched project types, enabling hybrid
- * project support (e.g., SFRA + Custom API gets both CARTRIDGES and SCAPI).
+ * project support (e.g., cartridges + pwa-kit-v3 gets CARTRIDGES + PWAV3 + MRT + SCAPI).
  *
  * @param projectTypes - Array of detected project types
- * @returns Union of all toolsets for the detected project types
+ * @returns Union of all toolsets for the detected project types (always includes base toolset)
  */
 function getToolsetsForProjectTypes(projectTypes: ProjectType[]): Toolset[] {
-  // Fallback to SCAPI when no project types detected
-  if (projectTypes.length === 0) {
-    return ['SCAPI'];
-  }
-
   const toolsetSet = new Set<Toolset>();
 
+  // Always include base toolset
+  toolsetSet.add(BASE_TOOLSET);
+
+  // Add toolsets for each detected project type
   for (const projectType of projectTypes) {
     for (const toolset of getToolsetsForProjectType(projectType)) {
       toolsetSet.add(toolset);

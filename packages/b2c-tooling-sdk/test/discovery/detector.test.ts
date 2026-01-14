@@ -34,7 +34,7 @@ describe('discovery/detector', () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
           patterns: [
             createMockPattern('no-match-1', 'pwa-kit-v3', false),
-            createMockPattern('no-match-2', 'sfra', false),
+            createMockPattern('no-match-2', 'cartridges', false),
           ],
         });
 
@@ -49,7 +49,7 @@ describe('discovery/detector', () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
           patterns: [
             createMockPattern('pwa-kit-v3', 'pwa-kit-v3', true),
-            createMockPattern('sfra-cartridge', 'sfra', false),
+            createMockPattern('cartridges', 'cartridges', false),
           ],
         });
 
@@ -63,24 +63,27 @@ describe('discovery/detector', () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
           patterns: [
             createMockPattern('pwa-kit-v3', 'pwa-kit-v3', true),
-            createMockPattern('dw-json', 'headless', true),
+            createMockPattern('cartridges', 'cartridges', true),
           ],
         });
 
         const result = await detector.detect();
 
-        expect(result.projectTypes).to.deep.equal(['pwa-kit-v3', 'headless']);
-        expect(result.matchedPatterns).to.deep.equal(['pwa-kit-v3', 'dw-json']);
+        expect(result.projectTypes).to.deep.equal(['pwa-kit-v3', 'cartridges']);
+        expect(result.matchedPatterns).to.deep.equal(['pwa-kit-v3', 'cartridges']);
       });
 
       it('deduplicates project types when multiple patterns match same type', async () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
-          patterns: [createMockPattern('pattern-1', 'sfra', true), createMockPattern('pattern-2', 'sfra', true)],
+          patterns: [
+            createMockPattern('pattern-1', 'cartridges', true),
+            createMockPattern('pattern-2', 'cartridges', true),
+          ],
         });
 
         const result = await detector.detect();
 
-        expect(result.projectTypes).to.deep.equal(['sfra']);
+        expect(result.projectTypes).to.deep.equal(['cartridges']);
         expect(result.matchedPatterns).to.deep.equal(['pattern-1', 'pattern-2']);
       });
 
@@ -88,13 +91,13 @@ describe('discovery/detector', () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
           patterns: [
             createMockPattern('error-pattern', 'pwa-kit-v3', new Error('Test error')),
-            createMockPattern('good-pattern', 'sfra', true),
+            createMockPattern('good-pattern', 'cartridges', true),
           ],
         });
 
         const result = await detector.detect();
 
-        expect(result.projectTypes).to.deep.equal(['sfra']);
+        expect(result.projectTypes).to.deep.equal(['cartridges']);
         expect(result.matchedPatterns).to.deep.equal(['good-pattern']);
       });
 
@@ -102,14 +105,14 @@ describe('discovery/detector', () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
           patterns: [
             createMockPattern('first', 'pwa-kit-v3', true),
-            createMockPattern('second', 'sfra', true),
-            createMockPattern('third', 'custom-api', true),
+            createMockPattern('second', 'storefront-next', true),
+            createMockPattern('third', 'cartridges', true),
           ],
         });
 
         const result = await detector.detect();
 
-        expect(result.projectTypes).to.deep.equal(['pwa-kit-v3', 'sfra', 'custom-api']);
+        expect(result.projectTypes).to.deep.equal(['pwa-kit-v3', 'storefront-next', 'cartridges']);
         expect(result.matchedPatterns).to.deep.equal(['first', 'second', 'third']);
       });
     });
@@ -127,7 +130,7 @@ describe('discovery/detector', () => {
       });
 
       it('adds additional patterns to defaults', async () => {
-        const additionalPattern = createMockPattern('additional', 'custom-api', true);
+        const additionalPattern = createMockPattern('additional', 'cartridges', true);
         const detector = new WorkspaceTypeDetector('/nonexistent/path', {
           additionalPatterns: [additionalPattern],
         });
@@ -140,7 +143,10 @@ describe('discovery/detector', () => {
 
       it('excludes patterns by name', async () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
-          patterns: [createMockPattern('keep-me', 'pwa-kit-v3', true), createMockPattern('exclude-me', 'sfra', true)],
+          patterns: [
+            createMockPattern('keep-me', 'pwa-kit-v3', true),
+            createMockPattern('exclude-me', 'cartridges', true),
+          ],
           excludePatterns: ['exclude-me'],
         });
 
@@ -152,8 +158,11 @@ describe('discovery/detector', () => {
 
       it('combines additionalPatterns and excludePatterns', async () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
-          patterns: [createMockPattern('base-1', 'pwa-kit-v3', true), createMockPattern('base-2', 'sfra', true)],
-          additionalPatterns: [createMockPattern('added', 'custom-api', true)],
+          patterns: [
+            createMockPattern('base-1', 'pwa-kit-v3', true),
+            createMockPattern('base-2', 'storefront-next', true),
+          ],
+          additionalPatterns: [createMockPattern('added', 'cartridges', true)],
           excludePatterns: ['base-2'],
         });
 

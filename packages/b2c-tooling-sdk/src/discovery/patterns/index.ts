@@ -6,35 +6,29 @@
 /**
  * Detection patterns for workspace discovery.
  *
+ * Simplified to 3 workspace types:
+ * - cartridges: Any project with cartridges
+ * - pwa-kit-v3: PWA Kit v3 storefront
+ * - storefront-next: Storefront Next (Odyssey)
+ *
  * @module discovery/patterns
  */
 import type {DetectionPattern} from '../types.js';
+import {cartridgesPattern} from './cartridges.js';
 import {pwaKitV3Pattern} from './pwa-kit.js';
 import {storefrontNextPattern} from './storefront-next.js';
-import {sfraPattern} from './sfra.js';
-import {customApiPattern} from './custom-api.js';
-import {dwJsonPattern} from './base.js';
 
 /**
- * Default detection patterns in priority order.
+ * Default detection patterns.
  *
- * Patterns are sorted by priority when detection runs, but this
- * array provides a logical grouping:
- * 1. Framework-specific patterns (PWA Kit v3, Storefront Next, SFRA)
- * 2. Project-type patterns (Custom API)
- * 3. Fallback patterns (dw.json)
+ * All patterns are checked - multiple can match for hybrid projects.
  */
-export const DEFAULT_PATTERNS: DetectionPattern[] = [
-  pwaKitV3Pattern,
-  storefrontNextPattern,
-  sfraPattern,
-  customApiPattern,
-  dwJsonPattern,
-];
+export const DEFAULT_PATTERNS: DetectionPattern[] = [pwaKitV3Pattern, storefrontNextPattern, cartridgesPattern];
 
 // Individual pattern exports for customization
+export {cartridgesPattern} from './cartridges.js';
 export {pwaKitV3Pattern} from './pwa-kit.js';
 export {storefrontNextPattern} from './storefront-next.js';
+
+// Additional patterns (not in DEFAULT_PATTERNS, available for custom use)
 export {sfraPattern} from './sfra.js';
-export {customApiPattern} from './custom-api.js';
-export {dwJsonPattern} from './base.js';

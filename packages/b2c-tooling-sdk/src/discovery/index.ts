@@ -23,13 +23,18 @@
  *
  * ## Project Types
  *
- * The detector recognizes the following project types:
+ * The detector recognizes 3 workspace types:
  *
- * - `pwa-kit-v3` - PWA Kit v3 storefront (template copy or extensible flavor)
+ * - `cartridges` - Any cartridge-based project (detected via .project files)
+ * - `pwa-kit-v3` - PWA Kit v3 storefront
  * - `storefront-next` - Storefront Next/Odyssey project
- * - `sfra` - SFRA/cartridge-based storefront (has cartridges/ directory)
- * - `custom-api` - Custom SCAPI project (has api.json files)
- * - `headless` - Generic headless project (has dw.json but no specific framework)
+ *
+ * ## Toolset Mapping
+ *
+ * - base (fallback): SCAPI
+ * - cartridges: CARTRIDGES + SCAPI
+ * - pwa-kit-v3: PWAV3 + MRT + SCAPI
+ * - storefront-next: STOREFRONTNEXT + MRT + SCAPI
  *
  * ## Custom Patterns
  *
@@ -40,7 +45,7 @@
  *
  * const myPattern: DetectionPattern = {
  *   name: 'my-framework',
- *   projectType: 'custom-api',
+ *   projectType: 'cartridges',
  *   detect: async (path) => {
  *     // Custom detection logic
  *     return false;
@@ -66,11 +71,10 @@ export type {ProjectType, DetectionPattern, DetectionResult, DetectOptions} from
 // Patterns (for customization)
 export {
   DEFAULT_PATTERNS,
+  cartridgesPattern,
   pwaKitV3Pattern,
   storefrontNextPattern,
   sfraPattern,
-  customApiPattern,
-  dwJsonPattern,
 } from './patterns/index.js';
 
 // Utilities (for building custom patterns)

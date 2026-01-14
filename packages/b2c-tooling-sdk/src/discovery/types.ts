@@ -11,13 +11,16 @@
 
 /**
  * Identifies the type of B2C Commerce project.
+ *
+ * Simplified to 3 workspace types:
+ * - cartridges: Any project with cartridges (detected via .project files)
+ * - pwa-kit-v3: PWA Kit v3 storefront
+ * - storefront-next: Storefront Next (Odyssey)
  */
 export type ProjectType =
-  | 'pwa-kit-v3' // PWA Kit v3 storefront (template copy or extensible flavor)
-  | 'storefront-next' // Storefront Next (Odyssey)
-  | 'sfra' // SFRA/cartridge-based storefront
-  | 'custom-api' // Custom SCAPI project
-  | 'headless'; // Generic headless (uses SCAPI/dw.json but no specific framework)
+  | 'cartridges' // Any cartridge-based project (SFRA, custom APIs, etc.)
+  | 'pwa-kit-v3' // PWA Kit v3 storefront
+  | 'storefront-next'; // Storefront Next (Odyssey)
 
 /**
  * Detection pattern definition.
