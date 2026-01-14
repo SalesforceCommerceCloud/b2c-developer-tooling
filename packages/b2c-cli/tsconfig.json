@@ -9,5 +9,5 @@
     "verbatimModuleSyntax": true,
     "customConditions": ["development"]
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*", "../../types/**/*"]
 }
