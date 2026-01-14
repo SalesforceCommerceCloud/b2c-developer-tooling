@@ -254,7 +254,10 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to be ready...'));
 
     // Initial delay before first poll to allow the sandbox to be registered in the API
-    await this.sleep(2000);
+    // Skip delay when pollInterval is 0 (test mode)
+    if (pollIntervalSeconds > 0) {
+      await this.sleep(2000);
+    }
 
     while (true) {
       // Check for timeout
