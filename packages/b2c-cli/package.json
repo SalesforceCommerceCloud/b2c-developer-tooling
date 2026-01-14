@@ -129,6 +129,9 @@
         "subtopics": {
           "custom": {
             "description": "Manage Custom API endpoints"
+          },
+          "schemas": {
+            "description": "Browse and retrieve SCAPI schema specifications"
           }
         }
       }
