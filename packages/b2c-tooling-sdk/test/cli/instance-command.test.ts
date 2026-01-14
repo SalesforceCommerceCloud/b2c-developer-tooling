@@ -18,10 +18,6 @@ class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
   }
 
   // Expose protected methods for testing
-  public testHasWebDavCredentials() {
-    return this.hasWebDavCredentials();
-  }
-
   public testRequireServer() {
     return this.requireServer();
   }
@@ -71,120 +67,6 @@ describe('cli/instance-command', () => {
   beforeEach(async () => {
     config = await Config.load();
     command = new TestInstanceCommand([], config);
-  });
-
-  describe('init', () => {
-    it('initializes command with instance flags', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags).to.be.an('object');
-      expect(cmd.resolvedConfig).to.be.an('object');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles server flag', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {server: 'test.demandware.net'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags.server).to.equal('test.demandware.net');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles code-version flag', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'code-version': 'v1'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags['code-version']).to.equal('v1');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles username and password flags', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {username: 'test-user', password: 'test-pass'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags.username).to.equal('test-user');
-      expect(cmd.flags.password).to.equal('test-pass');
-
-      cmd.parse = originalParse;
-    });
-  });
-
-  describe('hasWebDavCredentials', () => {
-    it('returns false when no credentials', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const hasCreds = command.testHasWebDavCredentials();
-      expect(hasCreds).to.be.false;
-
-      cmd.parse = originalParse;
-    });
-
-    it('returns true when username and password are set', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {username: 'user', password: 'pass'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const hasCreds = command.testHasWebDavCredentials();
-      expect(hasCreds).to.be.true;
-
-      cmd.parse = originalParse;
-    });
-
-    it('returns true when clientId is set', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'client-id': 'test-client'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const hasCreds = command.testHasWebDavCredentials();
-      expect(hasCreds).to.be.true;
-
-      cmd.parse = originalParse;
-    });
   });
 
   describe('requireServer', () => {

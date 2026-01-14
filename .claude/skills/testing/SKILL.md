@@ -5,7 +5,7 @@ description: Writing tests for the B2C CLI project using Mocha, Chai, and MSW
 
 # Testing
 
-This skill covers writing tests for the B2C CLI project using Mocha, Chai, and MSW.
+This skill covers project-specific testing patterns for the B2C CLI project.
 
 ## Test Framework Stack
 
@@ -38,7 +38,7 @@ pnpm --filter @salesforce/b2c-tooling-sdk run test:watch
 
 ## Test Organization
 
-Tests mirror the source directory structure:
+Tests mirror the source directory structure with `.test.ts` suffix:
 
 ```
 packages/b2c-tooling-sdk/
@@ -49,8 +49,6 @@ packages/b2c-tooling-sdk/
     └── clients/
         └── webdav.test.ts
 ```
-
-Use `.test.ts` suffix for test files.
 
 ## Import Patterns
 
@@ -66,6 +64,89 @@ import { WebDavClient } from '../../src/clients/webdav.js';
 ```
 
 This ensures tests use the same export paths as consumers.
+
+## Config Isolation
+
+Tests that check for "missing credentials" or "no config" scenarios need isolation from the developer's real configuration files (`~/.mobify`, `dw.json`) and environment variables.
+
+### Using Config Isolation Helpers
+
+```typescript
+import { isolateConfig, restoreConfig } from '../helpers/config-isolation.js';
+
+describe('config-dependent tests', () => {
+  beforeEach(() => {
+    isolateConfig();
+  });
+
+  afterEach(() => {
+    restoreConfig();
+  });
+
+  it('handles missing credentials', async () => {
+    // Test now runs without reading real ~/.mobify or SFCC_* env vars
+  });
+});
+```
+
+The helpers:
+- Clear all `SFCC_*` and `MRT_*` environment variables
+- Clear other config-affecting vars (`LANGUAGE`, `NO_COLOR`)
+- Must call `restoreConfig()` in afterEach to restore original state
+
+### For SDK Unit Tests (bypass config sources)
+
+When testing `resolveConfig` directly without file system:
+
+```typescript
+import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+
+const config = resolveConfig({}, {
+  replaceDefaultSources: true,
+  sources: []  // No file-based sources
+});
+```
+
+### For MRT Credential Isolation
+
+Use the `credentialsFile` option to override the default `~/.mobify` path:
+
+```typescript
+import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+
+// Point to non-existent file for isolation
+const config = resolveConfig({}, {
+  credentialsFile: '/dev/null'
+});
+```
+
+In CLI command tests, mock the `credentials-file` flag:
+
+```typescript
+cmd.parse = (async () => ({
+  args: {},
+  flags: {'credentials-file': '/dev/null'},  // Isolates from real ~/.mobify
+  metadata: {},
+})) as typeof cmd.parse;
+```
+
+## Polling Tests (Avoid Fake Timers)
+
+**Do not use fake timers with MSW.** MSW v2 uses microtasks internally, and fake timers prevent MSW's promises from resolving.
+
+Instead, use the `pollInterval` option for fast tests:
+
+```typescript
+// Good - use short poll interval
+const result = await siteArchiveImport(mockInstance, siteDir, {
+  archiveName: 'test-import',
+  waitOptions: { pollInterval: 10 }  // 10ms instead of default 3000ms
+});
+
+// Bad - fake timers break MSW
+import FakeTimers from '@sinonjs/fake-timers';
+const clock = FakeTimers.install();  // DON'T DO THIS with MSW
+```
 
 ## HTTP Mocking with MSW
 
@@ -115,7 +196,6 @@ describe('WebDavClient', () => {
     );
 
     await client.mkcol('Cartridges/v1');
-    // If no error thrown, test passes
   });
 });
 ```
@@ -156,37 +236,6 @@ it('sends correct headers', async () => {
   expect(requests).to.have.length(1);
   expect(requests[0].method).to.equal('PUT');
   expect(requests[0].headers.get('Authorization')).to.equal('Bearer test-token');
-  expect(requests[0].body).to.equal('content');
-});
-```
-
-### Mocking Different HTTP Methods
-
-```typescript
-// GET request
-http.get(`${BASE_URL}/api/items`, () => {
-  return HttpResponse.json({ items: [{ id: '1' }] });
-});
-
-// POST request with body inspection
-http.post(`${BASE_URL}/api/items`, async ({ request }) => {
-  const body = await request.json();
-  return HttpResponse.json({ id: '123', ...body }, { status: 201 });
-});
-
-// PUT request
-http.put(`${BASE_URL}/api/items/:id`, ({ params }) => {
-  return HttpResponse.json({ id: params.id, updated: true });
-});
-
-// DELETE request
-http.delete(`${BASE_URL}/api/items/:id`, () => {
-  return new HttpResponse(null, { status: 204 });
-});
-
-// Match any method
-http.all(`${BASE_URL}/*`, ({ request }) => {
-  // Handle based on request.method
 });
 ```
 
@@ -196,10 +245,7 @@ http.all(`${BASE_URL}/*`, ({ request }) => {
 it('handles 404 errors', async () => {
   server.use(
     http.get(`${BASE_URL}/api/items/:id`, () => {
-      return HttpResponse.json(
-        { error: 'Not found' },
-        { status: 404 }
-      );
+      return HttpResponse.json({ error: 'Not found' }, { status: 404 });
     }),
   );
 
@@ -262,91 +308,69 @@ const client = new WebDavClient(TEST_HOST, mockAuth);
 const customAuth = new MockAuthStrategy('custom-token');
 ```
 
-## Testing Operations
+## Command Test Guidelines
 
-Operations tests verify higher-level business logic:
+Command tests should focus on **command-specific logic**, not trivial flag verification.
+
+### Good Command Tests
+
+Test behavior that is specific to the command class:
 
 ```typescript
-import { expect } from 'chai';
-import { http, HttpResponse } from 'msw';
-import { setupServer } from 'msw/node';
-import { uploadBundle } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import { createMrtClient } from '@salesforce/b2c-tooling-sdk/clients';
-import { MockAuthStrategy } from '../helpers/mock-auth.js';
+describe('requireMrtCredentials', () => {
+  it('throws error when no credentials', async () => {
+    cmd.parse = (async () => ({
+      args: {},
+      flags: {'credentials-file': '/dev/null'},
+      metadata: {},
+    })) as typeof cmd.parse;
 
-const server = setupServer();
+    await cmd.init();
+    let errorCalled = false;
+    cmd.error = () => {
+      errorCalled = true;
+      throw new Error('Expected error');
+    };
 
-describe('uploadBundle', () => {
-  const testBundle = {
-    message: 'Test bundle',
-    encoding: 'base64',
-    data: 'dGVzdC1kYXRh',
-  };
+    try {
+      command.testRequireMrtCredentials();
+    } catch {
+      // Expected
+    }
 
-  before(() => server.listen({ onUnhandledRequest: 'error' }));
-  afterEach(() => server.resetHandlers());
-  after(() => server.close());
-
-  it('uploads bundle and returns result', async () => {
-    let receivedBody: unknown;
-
-    server.use(
-      http.post('https://cloud.commercecloud.com/api/projects/:slug/builds/', async ({ request, params }) => {
-        receivedBody = await request.json();
-        return HttpResponse.json({
-          bundle_id: 123,
-          message: 'Bundle created',
-        });
-      }),
-    );
-
-    const auth = new MockAuthStrategy();
-    const client = createMrtClient({}, auth);
-
-    const result = await uploadBundle(client, 'my-project', testBundle);
-
-    expect(result.bundleId).to.equal(123);
-    expect(receivedBody).to.deep.include({ message: 'Test bundle' });
+    expect(errorCalled).to.be.true;
   });
 });
 ```
 
-## Testing Pure Logic
+### Low-Value Tests to Avoid
 
-For functions without HTTP calls:
+Do not write tests that just verify flag values equal mocked values:
 
 ```typescript
-import { expect } from 'chai';
-import { checkAvailableAuthMethods } from '@salesforce/b2c-tooling-sdk/auth';
+// BAD - tests nothing (just verifies JavaScript assignment works)
+it('handles server flag', async () => {
+  cmd.parse = (async () => ({
+    flags: {server: 'test.demandware.net'},
+  })) as typeof cmd.parse;
 
-describe('checkAvailableAuthMethods', () => {
-  it('returns client-credentials when credentials provided', () => {
-    const result = checkAvailableAuthMethods({
-      clientId: 'test-client',
-      clientSecret: 'test-secret',
-    });
-
-    expect(result.available).to.include('client-credentials');
-  });
-
-  it('returns unavailable with reason when secret missing', () => {
-    const result = checkAvailableAuthMethods(
-      { clientId: 'test-client' },
-      ['client-credentials']
-    );
-
-    expect(result.available).to.have.length(0);
-    expect(result.unavailable[0]).to.deep.equal({
-      method: 'client-credentials',
-      reason: 'clientSecret is required',
-    });
-  });
+  await cmd.init();
+  expect(cmd.flags.server).to.equal('test.demandware.net');  // Trivial!
 });
 ```
 
-## Testing CLI Commands
+### What to Test in Commands
 
-Use `@oclif/test` for CLI command tests:
+| Test | Keep |
+|------|------|
+| `requireX` error handling | Yes - verifies error messages |
+| `parseAuthMethods` logic | Yes - transforms/filters input |
+| Lazy client initialization | Yes - verifies caching behavior |
+| Context creation | Yes - assembles operation metadata |
+| Flag value equals mocked value | No - tests nothing |
+| Delegation to resolvedConfig | No - tested in SDK unit tests |
+
+## Testing CLI Commands with oclif
 
 ```typescript
 import { runCommand } from '@oclif/test';
@@ -360,15 +384,11 @@ describe('ods list', () => {
 });
 ```
 
-## End-to-End Tests
+## E2E Tests
 
-E2E tests run against real infrastructure:
+E2E tests run against real infrastructure and are skipped without credentials:
 
 ```typescript
-import { expect } from 'chai';
-import { execa } from 'execa';
-import path from 'node:path';
-
 describe('ODS Lifecycle E2E', function () {
   this.timeout(360_000); // 6 minutes
 
@@ -398,123 +418,17 @@ describe('ODS Lifecycle E2E', function () {
     ]);
 
     expect(result.exitCode).to.equal(0);
-    const response = JSON.parse(result.stdout);
-    expect(response.id).to.be.a('string');
   });
 });
-```
-
-## Test Structure Patterns
-
-### Describe/It Nesting
-
-```typescript
-describe('WebDavClient', () => {
-  describe('mkcol', () => {
-    it('creates directory on success', async () => { });
-    it('throws on 403 forbidden', async () => { });
-    it('handles nested paths', async () => { });
-  });
-
-  describe('put', () => {
-    it('uploads file content', async () => { });
-    it('sets correct content-type', async () => { });
-  });
-});
-```
-
-### Setup/Teardown
-
-```typescript
-describe('Feature', () => {
-  let sharedResource: Resource;
-
-  before(() => {
-    // Once before all tests in this describe
-  });
-
-  after(() => {
-    // Once after all tests in this describe
-  });
-
-  beforeEach(() => {
-    // Before each test
-    sharedResource = new Resource();
-  });
-
-  afterEach(() => {
-    // After each test
-    sharedResource.cleanup();
-  });
-});
-```
-
-## Chai Assertions
-
-Common assertion patterns:
-
-```typescript
-// Equality
-expect(value).to.equal('expected');
-expect(obj).to.deep.equal({ key: 'value' });
-
-// Truthiness
-expect(value).to.be.true;
-expect(value).to.be.false;
-expect(value).to.be.undefined;
-expect(value).to.be.null;
-
-// Arrays
-expect(arr).to.have.length(3);
-expect(arr).to.include('item');
-expect(arr).to.deep.include({ id: '1' });
-
-// Objects
-expect(obj).to.have.property('key');
-expect(obj).to.have.property('key', 'value');
-expect(obj).to.deep.include({ subset: 'props' });
-
-// Strings
-expect(str).to.include('substring');
-expect(str).to.match(/pattern/);
-
-// Errors
-expect(() => fn()).to.throw();
-expect(() => fn()).to.throw('message');
-expect(() => fn()).to.throw(ErrorType);
-
-// Async errors
-try {
-  await asyncFn();
-  expect.fail('Should have thrown');
-} catch (error) {
-  expect(error.message).to.include('expected');
-}
 ```
 
 ## Coverage
 
-Coverage is configured in `.c8rc.json`:
-
-```json
-{
-  "all": true,
-  "src": ["src"],
-  "exclude": ["src/clients/*.generated.ts", "test/**"],
-  "reporter": ["text", "text-summary", "html", "lcov"],
-  "check-coverage": true,
-  "lines": 5,
-  "functions": 5,
-  "branches": 5,
-  "statements": 5
-}
-```
-
-View coverage report:
+Coverage is configured in `.c8rc.json`. View the HTML report after running tests:
 
 ```bash
 pnpm run test
-# Then open coverage/index.html
+open coverage/index.html
 ```
 
 ## Writing Tests Checklist
@@ -522,9 +436,10 @@ pnpm run test
 1. Create test file in `test/` mirroring source structure
 2. Use `.test.ts` suffix
 3. Import from package names, not relative paths
-4. Set up MSW server for HTTP tests
-5. Use MockAuthStrategy for authenticated clients
-6. Test both success and error paths
-7. Use request capture to verify HTTP call details
-8. Clean up handlers with `afterEach(() => server.resetHandlers())`
-9. Run tests: `pnpm --filter <package> run test`
+4. Set up MSW server for HTTP tests (avoid fake timers)
+5. Use `isolateConfig()`/`restoreConfig()` for config-dependent tests
+6. Use `pollInterval` option for polling operations
+7. Use MockAuthStrategy for authenticated clients
+8. Test both success and error paths
+9. Focus on command-specific logic, not trivial delegation
+10. Run tests: `pnpm --filter <package> run test`

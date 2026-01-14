@@ -41,7 +41,8 @@ export class MobifySource implements ConfigSource {
   private lastPath?: string;
 
   load(options: ResolveConfigOptions): NormalizedConfig | undefined {
-    const mobifyPath = this.getMobifyPath(options.cloudOrigin);
+    // Use explicit credentialsFile if provided, otherwise use default path
+    const mobifyPath = options.credentialsFile ?? this.getMobifyPath(options.cloudOrigin);
     this.lastPath = mobifyPath;
 
     if (!fs.existsSync(mobifyPath)) {

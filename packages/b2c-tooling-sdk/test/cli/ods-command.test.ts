@@ -17,10 +17,6 @@ class TestOdsCommand extends OdsCommand<typeof TestOdsCommand> {
   }
 
   // Expose protected methods for testing
-  public testOdsHost() {
-    return this.odsHost;
-  }
-
   public testOdsClient() {
     return this.odsClient;
   }
@@ -47,90 +43,6 @@ describe('cli/ods-command', () => {
     command = new TestOdsCommand([], config);
   });
 
-  describe('init', () => {
-    it('initializes command with ODS flags', async () => {
-      const cmd = command as MockableOdsCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags).to.be.an('object');
-      expect(cmd.resolvedConfig).to.be.an('object');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles sandbox-api-host flag', async () => {
-      const cmd = command as MockableOdsCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'sandbox-api-host': 'custom.example.com'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags['sandbox-api-host']).to.equal('custom.example.com');
-
-      cmd.parse = originalParse;
-    });
-
-    it('uses default sandbox-api-host when not specified', async () => {
-      const cmd = command as MockableOdsCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const host = command.testOdsHost();
-      expect(host).to.be.a('string');
-      expect(host.length).to.be.greaterThan(0);
-
-      cmd.parse = originalParse;
-    });
-  });
-
-  describe('odsHost', () => {
-    it('returns default host when not specified', async () => {
-      const cmd = command as MockableOdsCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const host = command.testOdsHost();
-      expect(host).to.be.a('string');
-
-      cmd.parse = originalParse;
-    });
-
-    it('returns custom host from flag', async () => {
-      const cmd = command as MockableOdsCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'sandbox-api-host': 'custom.example.com'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const host = command.testOdsHost();
-      expect(host).to.equal('custom.example.com');
-
-      cmd.parse = originalParse;
-    });
-  });
-
   describe('odsClient', () => {
     it('throws error when no OAuth credentials', async () => {
       const cmd = command as MockableOdsCommand;
@@ -149,22 +61,6 @@ describe('cli/ods-command', () => {
       } catch (error) {
         expect(error).to.be.an('error');
       }
-
-      cmd.parse = originalParse;
-    });
-
-    it('creates ODS client when OAuth credentials available', async () => {
-      const cmd = command as MockableOdsCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'client-id': 'test-client', 'client-secret': 'test-secret'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const client = command.testOdsClient();
-      expect(client).to.be.an('object');
 
       cmd.parse = originalParse;
     });

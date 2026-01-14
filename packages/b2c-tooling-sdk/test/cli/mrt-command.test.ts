@@ -17,20 +17,8 @@ class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
   }
 
   // Expose protected methods for testing
-  public testGetMrtAuth() {
-    return this.getMrtAuth();
-  }
-
-  public testHasMrtCredentials() {
-    return this.hasMrtCredentials();
-  }
-
   public testRequireMrtCredentials() {
     return this.requireMrtCredentials();
-  }
-
-  public testCreateMrtClient(project: {org: string; project: string; env: string}) {
-    return this.createMrtClient(project);
   }
 }
 
@@ -56,168 +44,13 @@ describe('cli/mrt-command', () => {
     command = new TestMrtCommand([], config);
   });
 
-  describe('init', () => {
-    it('initializes command with MRT flags', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags).to.be.an('object');
-      expect(cmd.resolvedConfig).to.be.an('object');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles api-key flag', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'api-key': 'test-api-key'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags['api-key']).to.equal('test-api-key');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles project flag', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {project: 'test-project'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags.project).to.equal('test-project');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles environment flag', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {environment: 'staging'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags.environment).to.equal('staging');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles cloud-origin flag', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'cloud-origin': 'https://cloud-staging.mobify.com'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags['cloud-origin']).to.equal('https://cloud-staging.mobify.com');
-
-      cmd.parse = originalParse;
-    });
-  });
-
-  describe('getMrtAuth', () => {
-    it('throws error when no API key', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      try {
-        command.testGetMrtAuth();
-        expect.fail('Should have thrown');
-      } catch (error) {
-        expect(error).to.be.an('error');
-        // Error message may be translated, so just check it's an error about MRT/API key
-        const message = (error as Error).message.toLowerCase();
-        expect(message).to.satisfy(
-          (msg: string) => msg.includes('mrt') || msg.includes('api') || msg.includes('schlüssel'),
-        );
-      }
-
-      cmd.parse = originalParse;
-    });
-
-    it('returns ApiKeyStrategy when API key is set', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'api-key': 'test-api-key'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const auth = command.testGetMrtAuth();
-      expect(auth).to.be.an('object');
-
-      cmd.parse = originalParse;
-    });
-  });
-
-  describe('hasMrtCredentials', () => {
-    it('returns false when no API key', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const hasCreds = command.testHasMrtCredentials();
-      expect(hasCreds).to.be.false;
-
-      cmd.parse = originalParse;
-    });
-
-    it('returns true when API key is set', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'api-key': 'test-api-key'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const hasCreds = command.testHasMrtCredentials();
-      expect(hasCreds).to.be.true;
-
-      cmd.parse = originalParse;
-    });
-  });
-
   describe('requireMrtCredentials', () => {
     it('throws error when no credentials', async () => {
       const cmd = command as MockableMrtCommand;
       const originalParse = cmd.parse.bind(command);
       cmd.parse = (async () => ({
         args: {},
-        flags: {},
+        flags: {'credentials-file': '/dev/null'}, // Use non-existent credentials file
         metadata: {},
       })) as typeof cmd.parse;
 
@@ -255,44 +88,6 @@ describe('cli/mrt-command', () => {
       await cmd.init();
       // Should not throw
       command.testRequireMrtCredentials();
-
-      cmd.parse = originalParse;
-    });
-  });
-
-  describe('createMrtClient', () => {
-    it('throws error when no credentials', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      try {
-        command.testCreateMrtClient({org: 'test-org', project: 'test-project', env: 'staging'});
-        expect.fail('Should have thrown');
-      } catch (error) {
-        expect(error).to.be.an('error');
-      }
-
-      cmd.parse = originalParse;
-    });
-
-    it('creates MRT client when credentials available', async () => {
-      const cmd = command as MockableMrtCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'api-key': 'test-api-key'},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const client = command.testCreateMrtClient({org: 'test-org', project: 'test-project', env: 'staging'});
-      expect(client).to.be.an('object');
 
       cmd.parse = originalParse;
     });

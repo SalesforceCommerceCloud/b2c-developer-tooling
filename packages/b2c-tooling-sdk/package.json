@@ -244,9 +244,9 @@
   },
   "dependencies": {
     "archiver": "^7.0.1",
-    "fuse.js": "^7.0.0",
     "chokidar": "^5.0.0",
     "cliui": "^9.0.1",
+    "fuse.js": "^7.0.0",
     "glob": "^13.0.0",
     "i18next": "^25.6.3",
     "jszip": "^3.10.1",
