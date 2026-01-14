@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {WebDavClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {MiddlewareRegistry, WebDavClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {HTTPError} from '@salesforce/b2c-tooling-sdk/errors';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
@@ -68,6 +68,63 @@ describe('clients/webdav', () => {
     beforeEach(() => {
       mockAuth = new MockAuthStrategy();
       client = new WebDavClient(TEST_HOST, mockAuth);
+    });
+
+    describe('request middleware adaptation', () => {
+      it('applies onRequest middleware that returns a new Request', async () => {
+        const registry = new MiddlewareRegistry();
+        registry.register({
+          name: 'set-header',
+          getMiddleware() {
+            return {
+              async onRequest({request}) {
+                const nextHeaders = new Headers(request.headers);
+                nextHeaders.set('x-from-middleware', '1');
+                return new Request(request, {headers: nextHeaders});
+              },
+            };
+          },
+        });
+
+        client = new WebDavClient(TEST_HOST, mockAuth, {middlewareRegistry: registry});
+
+        server.use(
+          http.all(`${BASE_URL}/*`, ({request}) => {
+            requests.push({method: request.method, url: request.url, headers: request.headers});
+            return new HttpResponse(null, {status: 200});
+          }),
+        );
+
+        await client.exists('Cartridges/v1');
+        expect(requests).to.have.length(1);
+        expect(requests[0].headers.get('x-from-middleware')).to.equal('1');
+      });
+
+      it('applies onResponse middleware that returns a new Response', async () => {
+        const registry = new MiddlewareRegistry();
+        registry.register({
+          name: 'override-response',
+          getMiddleware() {
+            return {
+              async onResponse() {
+                return new Response('overridden', {status: 200, headers: {'content-type': 'text/plain'}});
+              },
+            };
+          },
+        });
+
+        client = new WebDavClient(TEST_HOST, mockAuth, {middlewareRegistry: registry});
+
+        server.use(
+          http.all(`${BASE_URL}/*`, () => {
+            return new HttpResponse(null, {status: 404});
+          }),
+        );
+
+        // If onResponse replacement works, exists() should see ok response and return true
+        const exists = await client.exists('Cartridges/v1');
+        expect(exists).to.equal(true);
+      });
     });
 
     describe('buildUrl', () => {
@@ -452,6 +509,43 @@ describe('clients/webdav', () => {
         const result = await client.exists('Cartridges/nonexistent');
 
         expect(result).to.equal(false);
+      });
+    });
+
+    describe('private helpers (branch coverage)', () => {
+      it('headersToObject supports array and record headers', async () => {
+        const impl = client as unknown as {
+          headersToObject: (headers: Headers | [string, string][] | Record<string, string>) => Record<string, string>;
+        };
+
+        expect(impl.headersToObject([['a', '1']])).to.deep.equal({a: '1'});
+        expect(impl.headersToObject({b: '2'})).to.deep.equal({b: '2'});
+      });
+
+      it('formatBody describes Blob bodies', async () => {
+        const impl = client as unknown as {
+          formatBody: (body?: RequestInit['body']) => string | undefined;
+        };
+
+        const blob = new Blob(['hello'], {type: 'text/plain'});
+        expect(impl.formatBody(blob)).to.include('[Blob:');
+      });
+
+      it('parsePropfindResponse returns empty when response has no multistatus', async () => {
+        const impl = client as unknown as {
+          parsePropfindResponse: (xml: string) => Promise<unknown[]>;
+        };
+
+        const entries = await impl.parsePropfindResponse('<?xml version="1.0"?><not-multistatus/>');
+        expect(entries).to.deep.equal([]);
+      });
+
+      it('getXmlText returns undefined for objects without text content', async () => {
+        const impl = client as unknown as {
+          getXmlText: (value: unknown) => string | undefined;
+        };
+
+        expect(impl.getXmlText({})).to.equal(undefined);
       });
     });
   });
