@@ -21,7 +21,7 @@ describe('scapi schemas get', () => {
   it('requires apiFamily argument', async () => {
     const {error} = await runCommand('scapi schemas get --tenant-id f_ecom_zzxy_prd');
     expect(error).to.not.be.undefined;
-    expect(error?.message).to.include('APIFAMILY');
+    expect(error?.message).to.include('apiFamily');
   });
 
   it('shows expand flags in help', async () => {

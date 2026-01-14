@@ -30,6 +30,14 @@ export abstract class ScapiSchemasCommand<T extends typeof Command> extends OAut
   };
 
   /**
+   * Get the organization ID from the tenant-id flag.
+   */
+  protected getOrganizationId(): string {
+    const tenantId = (this.flags as Record<string, string>)['tenant-id'];
+    return toOrganizationId(tenantId);
+  }
+
+  /**
    * Get the SCAPI Schemas client, ensuring short code is configured.
    */
   protected getSchemasClient(): ScapiSchemasClient {
@@ -47,13 +55,5 @@ export abstract class ScapiSchemasCommand<T extends typeof Command> extends OAut
 
     const oauthStrategy = this.getOAuthStrategy();
     return createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
-  }
-
-  /**
-   * Get the organization ID from the tenant-id flag.
-   */
-  protected getOrganizationId(): string {
-    const tenantId = (this.flags as Record<string, string>)['tenant-id'];
-    return toOrganizationId(tenantId);
   }
 }

@@ -32,6 +32,21 @@ interface GetOutput {
  * Use --expand-all to get the full, unmodified schema.
  */
 export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSchemasGet> {
+  static args = {
+    apiFamily: Args.string({
+      description: t('args.apiFamily.description', 'API family (e.g., shopper, admin)'),
+      required: true,
+    }),
+    apiName: Args.string({
+      description: t('args.apiName.description', 'API name (e.g., products, orders)'),
+      required: true,
+    }),
+    apiVersion: Args.string({
+      description: t('args.apiVersion.description', 'API version (e.g., v1)'),
+      required: true,
+    }),
+  };
+
   static description = t(
     'commands.scapi.schemas.get.description',
     'Get a specific SCAPI schema with optional selective expansion',
@@ -55,21 +70,6 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
     // JSON wrapped output
     '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --json',
   ];
-
-  static args = {
-    apiFamily: Args.string({
-      description: t('args.apiFamily.description', 'API family (e.g., shopper, admin)'),
-      required: true,
-    }),
-    apiName: Args.string({
-      description: t('args.apiName.description', 'API name (e.g., products, orders)'),
-      required: true,
-    }),
-    apiVersion: Args.string({
-      description: t('args.apiVersion.description', 'API version (e.g., v1)'),
-      required: true,
-    }),
-  };
 
   static flags = {
     ...ScapiSchemasCommand.baseFlags,
@@ -127,7 +127,7 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
     }),
   };
 
-  async run(): Promise<GetOutput | string[] | null> {
+  async run(): Promise<GetOutput | null | string[]> {
     this.requireOAuthCredentials();
 
     const {apiFamily, apiName, apiVersion} = this.args;
@@ -364,7 +364,7 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
           for (const line of valueLines) {
             lines.push(`${indentStr}  ${line}`);
           }
-        } else if (Array.isArray(value) && value.length > 0 && value.some((item) => typeof item === 'object')) {
+        } else if (Array.isArray(value) && value.some((item) => typeof item === 'object')) {
           // Array with objects - put on next line
           lines.push(`${indentStr}${key}:`);
           const valueLines = serializedValue.split('\n');
