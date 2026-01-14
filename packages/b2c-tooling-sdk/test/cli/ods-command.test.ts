@@ -6,6 +6,7 @@
 import {expect} from 'chai';
 import {Config} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 
 // Create a test command class
 class TestOdsCommand extends OdsCommand<typeof TestOdsCommand> {
@@ -39,8 +40,13 @@ describe('cli/ods-command', () => {
   let command: TestOdsCommand;
 
   beforeEach(async () => {
+    isolateConfig();
     config = await Config.load();
     command = new TestOdsCommand([], config);
+  });
+
+  afterEach(() => {
+    restoreConfig();
   });
 
   describe('odsClient', () => {

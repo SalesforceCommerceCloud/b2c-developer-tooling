@@ -7,6 +7,7 @@ import {expect} from 'chai';
 import {Config} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {B2COperationContext, B2COperationResult, B2COperationType} from '@salesforce/b2c-tooling-sdk/cli';
+import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 
 // Create a test command class
 class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
@@ -65,8 +66,13 @@ describe('cli/instance-command', () => {
   let command: TestInstanceCommand;
 
   beforeEach(async () => {
+    isolateConfig();
     config = await Config.load();
     command = new TestInstanceCommand([], config);
+  });
+
+  afterEach(() => {
+    restoreConfig();
   });
 
   describe('requireServer', () => {

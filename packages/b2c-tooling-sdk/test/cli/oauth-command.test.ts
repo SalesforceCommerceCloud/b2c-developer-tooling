@@ -6,6 +6,7 @@
 import {expect} from 'chai';
 import {Config} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 
 // Create a test command class
 class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
@@ -44,8 +45,13 @@ describe('cli/oauth-command', () => {
   let command: TestOAuthCommand;
 
   beforeEach(async () => {
+    isolateConfig();
     config = await Config.load();
     command = new TestOAuthCommand([], config);
+  });
+
+  afterEach(() => {
+    restoreConfig();
   });
 
   describe('parseAuthMethods', () => {

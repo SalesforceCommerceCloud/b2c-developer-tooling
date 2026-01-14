@@ -6,6 +6,7 @@
 import {expect} from 'chai';
 import {Config} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 
 // Create a test command class
 class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
@@ -40,8 +41,13 @@ describe('cli/mrt-command', () => {
   let command: TestMrtCommand;
 
   beforeEach(async () => {
+    isolateConfig();
     config = await Config.load();
     command = new TestMrtCommand([], config);
+  });
+
+  afterEach(() => {
+    restoreConfig();
   });
 
   describe('requireMrtCredentials', () => {

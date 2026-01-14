@@ -6,6 +6,7 @@
 import {expect} from 'chai';
 import {Config} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 
 // Create a concrete test command class
 class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
@@ -53,8 +54,13 @@ describe('cli/base-command', () => {
   let command: TestBaseCommand;
 
   beforeEach(async () => {
+    isolateConfig();
     config = await Config.load();
     command = new TestBaseCommand([], config);
+  });
+
+  afterEach(() => {
+    restoreConfig();
   });
 
   describe('getExtraParams', () => {
