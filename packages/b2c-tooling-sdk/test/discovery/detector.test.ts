@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+import {expect} from 'chai';
+import {
+  WorkspaceTypeDetector,
+  detectWorkspaceType,
+  type DetectionPattern,
+  type ProjectType,
+} from '@salesforce/b2c-tooling-sdk/discovery';
+
+/**
+ * Creates a mock detection pattern for testing.
+ */
+function createMockPattern(name: string, projectType: ProjectType, matches: boolean | Error = true): DetectionPattern {
+  return {
+    name,
+    projectType,
+    detect: async () => {
+      if (matches instanceof Error) {
+        throw matches;
+      }
+      return matches;
+    },
+  };
+}
+
+describe('discovery/detector', () => {
+  describe('WorkspaceTypeDetector', () => {
+    describe('detect', () => {
+      it('returns empty arrays when no patterns match', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('no-match-1', 'pwa-kit-v3', false),
+            createMockPattern('no-match-2', 'cartridges', false),
+          ],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.projectTypes).to.deep.equal([]);
+        expect(result.matchedPatterns).to.deep.equal([]);
+        expect(result.autoDiscovered).to.equal(true);
+      });
+
+      it('returns matched project types and pattern names', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('pwa-kit-v3', 'pwa-kit-v3', true),
+            createMockPattern('cartridges', 'cartridges', false),
+          ],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.projectTypes).to.deep.equal(['pwa-kit-v3']);
+        expect(result.matchedPatterns).to.deep.equal(['pwa-kit-v3']);
+      });
+
+      it('returns multiple project types when multiple patterns match', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('pwa-kit-v3', 'pwa-kit-v3', true),
+            createMockPattern('cartridges', 'cartridges', true),
+          ],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.projectTypes).to.deep.equal(['pwa-kit-v3', 'cartridges']);
+        expect(result.matchedPatterns).to.deep.equal(['pwa-kit-v3', 'cartridges']);
+      });
+
+      it('deduplicates project types when multiple patterns match same type', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('pattern-1', 'cartridges', true),
+            createMockPattern('pattern-2', 'cartridges', true),
+          ],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.projectTypes).to.deep.equal(['cartridges']);
+        expect(result.matchedPatterns).to.deep.equal(['pattern-1', 'pattern-2']);
+      });
+
+      it('skips patterns that throw errors', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('error-pattern', 'pwa-kit-v3', new Error('Test error')),
+            createMockPattern('good-pattern', 'cartridges', true),
+          ],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.projectTypes).to.deep.equal(['cartridges']);
+        expect(result.matchedPatterns).to.deep.equal(['good-pattern']);
+      });
+
+      it('preserves pattern order in results', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('first', 'pwa-kit-v3', true),
+            createMockPattern('second', 'storefront-next', true),
+            createMockPattern('third', 'cartridges', true),
+          ],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.projectTypes).to.deep.equal(['pwa-kit-v3', 'storefront-next', 'cartridges']);
+        expect(result.matchedPatterns).to.deep.equal(['first', 'second', 'third']);
+      });
+    });
+
+    describe('pattern resolution', () => {
+      it('uses custom patterns when provided', async () => {
+        const customPattern = createMockPattern('custom', 'pwa-kit-v3', true);
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [customPattern],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.matchedPatterns).to.deep.equal(['custom']);
+      });
+
+      it('adds additional patterns to defaults', async () => {
+        const additionalPattern = createMockPattern('additional', 'cartridges', true);
+        const detector = new WorkspaceTypeDetector('/nonexistent/path', {
+          additionalPatterns: [additionalPattern],
+        });
+
+        const result = await detector.detect();
+
+        // Additional pattern should match
+        expect(result.matchedPatterns).to.include('additional');
+      });
+
+      it('excludes patterns by name', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('keep-me', 'pwa-kit-v3', true),
+            createMockPattern('exclude-me', 'cartridges', true),
+          ],
+          excludePatterns: ['exclude-me'],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.matchedPatterns).to.deep.equal(['keep-me']);
+        expect(result.matchedPatterns).to.not.include('exclude-me');
+      });
+
+      it('combines additionalPatterns and excludePatterns', async () => {
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [
+            createMockPattern('base-1', 'pwa-kit-v3', true),
+            createMockPattern('base-2', 'storefront-next', true),
+          ],
+          additionalPatterns: [createMockPattern('added', 'cartridges', true)],
+          excludePatterns: ['base-2'],
+        });
+
+        const result = await detector.detect();
+
+        expect(result.matchedPatterns).to.include('base-1');
+        expect(result.matchedPatterns).to.include('added');
+        expect(result.matchedPatterns).to.not.include('base-2');
+      });
+    });
+  });
+
+  describe('detectWorkspaceType', () => {
+    it('is a convenience function that returns detection result', async () => {
+      const result = await detectWorkspaceType('/nonexistent/path', {
+        patterns: [createMockPattern('test', 'pwa-kit-v3', true)],
+      });
+
+      expect(result.projectTypes).to.deep.equal(['pwa-kit-v3']);
+      expect(result.matchedPatterns).to.deep.equal(['test']);
+      expect(result.autoDiscovered).to.equal(true);
+    });
+
+    it('works without options', async () => {
+      // This will use default patterns against a non-existent path
+      // Default patterns should not match
+      const result = await detectWorkspaceType('/nonexistent/path/that/does/not/exist');
+
+      expect(result.projectTypes).to.be.an('array');
+      expect(result.matchedPatterns).to.be.an('array');
+      expect(result.autoDiscovered).to.equal(true);
+    });
+  });
+});
