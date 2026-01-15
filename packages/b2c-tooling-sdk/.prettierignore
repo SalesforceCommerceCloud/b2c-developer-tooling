@@ -1,1 +1,5 @@
 *.generated.ts
+dist
+coverage
+data
+specs

@@ -1,12 +1,7 @@
 {
   "all": true,
   "src": ["src"],
-  "exclude": [
-    "src/clients/*.generated.ts",
-    "test/**",
-    "**/*.d.ts",
-    "src/**/*types.ts"
-  ],
+  "exclude": ["src/clients/*.generated.ts", "test/**", "**/*.d.ts", "src/**/*types.ts"],
   "reporter": ["text", "text-summary", "html", "lcov"],
   "report-dir": "coverage",
   "check-coverage": true,

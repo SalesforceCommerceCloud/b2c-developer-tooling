@@ -76,10 +76,9 @@ describe('MrtCommand integration', () => {
 
   it('reports hasMrtCredentials false when no api-key provided', async () => {
     // Use --credentials-file to isolate from developer's ~/.mobify
-    const {error, result} = await runCommand<TestMrtResult>(
-      ['test-mrt', '--credentials-file', '/dev/null', '--json'],
-      {root: fixtureRoot},
-    );
+    const {error, result} = await runCommand<TestMrtResult>(['test-mrt', '--credentials-file', '/dev/null', '--json'], {
+      root: fixtureRoot,
+    });
 
     expect(error).to.be.undefined;
     expect(result?.hasApiKey).to.be.false;
