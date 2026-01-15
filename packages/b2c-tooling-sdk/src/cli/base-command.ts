@@ -14,7 +14,7 @@ import type {
 } from './hooks.js';
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
-import type {ExtraParamsConfig} from '../clients/middleware.js';
+import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
 import type {ConfigSource} from '../config/types.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 
@@ -121,6 +121,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     this.configureLogging();
+
+    // Register extra params middleware (from --extra-query, --extra-body, --extra-headers flags)
+    // This must happen before any API clients are created
+    this.registerExtraParamsMiddleware();
 
     // Collect middleware from plugins before any API clients are created
     await this.collectPluginHttpMiddleware();
@@ -356,5 +360,21 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     return config;
+  }
+
+  /**
+   * Register extra params (query, body, headers) as global middleware.
+   * This applies to ALL HTTP clients created during command execution.
+   */
+  private registerExtraParamsMiddleware(): void {
+    const extraParams = this.getExtraParams();
+    if (!extraParams) return;
+
+    globalMiddlewareRegistry.register({
+      name: 'cli-extra-params',
+      getMiddleware() {
+        return createExtraParamsMiddleware(extraParams);
+      },
+    });
   }
 }
