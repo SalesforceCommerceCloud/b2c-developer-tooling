@@ -332,24 +332,18 @@ export function resolveConfig(
   // Build sources list with priority ordering:
   // 1. sourcesBefore (high priority - override defaults)
   // 2. default sources (dw.json, ~/.mobify)
-  // 3. sourcesAfter / sources (low priority - fill gaps)
+  // 3. sourcesAfter (low priority - fill gaps)
   let sources: ConfigSource[];
 
-  if (options.replaceDefaultSources && (options.sources || options.sourcesAfter)) {
-    // Replace mode: only use provided sources
-    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? options.sources ?? [])];
+  if (options.replaceDefaultSources) {
+    // Replace mode: only use provided sources (no default dw.json/~/.mobify)
+    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? [])];
   } else {
     // Normal mode: before + defaults + after
     const defaultSources: ConfigSource[] = [new DwJsonSource(), new MobifySource()];
 
-    // Combine: sourcesBefore > defaults > sourcesAfter/sources
-    sources = [
-      ...(options.sourcesBefore ?? []),
-      ...defaultSources,
-      ...(options.sourcesAfter ?? []),
-      // Backward compat: 'sources' is treated as 'after' priority
-      ...(options.sources ?? []),
-    ];
+    // Combine: sourcesBefore > defaults > sourcesAfter
+    sources = [...(options.sourcesBefore ?? []), ...defaultSources, ...(options.sourcesAfter ?? [])];
   }
 
   const resolver = new ConfigResolver(sources);

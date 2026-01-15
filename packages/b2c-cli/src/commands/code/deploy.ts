@@ -51,8 +51,8 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     this.requireWebDavCredentials();
     this.requireOAuthCredentials();
 
-    const hostname = this.resolvedConfig.hostname!;
-    let version = this.resolvedConfig.codeVersion;
+    const hostname = this.resolvedConfig.values.hostname!;
+    let version = this.resolvedConfig.values.codeVersion;
 
     // If no code version specified, discover the active one
     if (!version) {

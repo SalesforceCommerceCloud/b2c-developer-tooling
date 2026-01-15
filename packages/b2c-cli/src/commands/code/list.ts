@@ -47,7 +47,7 @@ export default class CodeList extends InstanceCommand<typeof CodeList> {
   async run(): Promise<CodeVersionResult> {
     this.requireOAuthCredentials();
 
-    const hostname = this.resolvedConfig.hostname!;
+    const hostname = this.resolvedConfig.values.hostname!;
 
     this.log(t('commands.code.list.fetching', 'Fetching code versions from {{hostname}}...', {hostname}));
 

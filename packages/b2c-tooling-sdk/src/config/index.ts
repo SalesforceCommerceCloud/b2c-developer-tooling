@@ -107,16 +107,9 @@ export type {
   CreateMrtClientOptions,
 } from './types.js';
 
-// Mapping utilities
-export {
-  mapDwJsonToNormalizedConfig,
-  mergeConfigsWithProtection,
-  getPopulatedFields,
-  buildAuthConfigFromNormalized,
-  createInstanceFromConfig,
-} from './mapping.js';
-export type {MergeConfigOptions, MergeConfigResult} from './mapping.js';
+// Instance creation utility (public API for CLI commands)
+export {createInstanceFromConfig} from './mapping.js';
 
 // Low-level dw.json API (still available for advanced use)
 export {loadDwJson, findDwJson} from './dw-json.js';
-export type {DwJsonConfig, DwJsonMultiConfig, LoadDwJsonOptions} from './dw-json.js';
+export type {DwJsonConfig, DwJsonMultiConfig, LoadDwJsonOptions, LoadDwJsonResult} from './dw-json.js';

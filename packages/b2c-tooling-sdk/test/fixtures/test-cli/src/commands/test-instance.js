@@ -17,11 +17,11 @@ export default class TestInstance extends InstanceCommand {
 
   async run() {
     // Check server via resolvedConfig (no hasServer method on InstanceCommand)
-    const hasServer = Boolean(this.resolvedConfig.hostname);
+    const hasServer = Boolean(this.resolvedConfig.values.hostname);
 
     // Return server/instance info without requiring server (for testing flags work)
     const result = {
-      server: this.resolvedConfig.hostname,
+      server: this.resolvedConfig.values.hostname,
       hasServer,
     };
 

@@ -16,7 +16,7 @@ describe('config/resolved-config', () => {
       });
 
       it('hasB2CInstanceConfig returns false when hostname is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(config.hasB2CInstanceConfig()).to.be.false;
       });
 
@@ -26,7 +26,7 @@ describe('config/resolved-config', () => {
       });
 
       it('hasMrtConfig returns false when mrtApiKey is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(config.hasMrtConfig()).to.be.false;
       });
 
@@ -36,7 +36,7 @@ describe('config/resolved-config', () => {
       });
 
       it('hasOAuthConfig returns false when clientId is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(config.hasOAuthConfig()).to.be.false;
       });
 
@@ -46,12 +46,12 @@ describe('config/resolved-config', () => {
       });
 
       it('hasBasicAuthConfig returns false when username is missing', () => {
-        const config = resolveConfig({password: 'pass'}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({password: 'pass'}, {replaceDefaultSources: true});
         expect(config.hasBasicAuthConfig()).to.be.false;
       });
 
       it('hasBasicAuthConfig returns false when password is missing', () => {
-        const config = resolveConfig({username: 'user'}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({username: 'user'}, {replaceDefaultSources: true});
         expect(config.hasBasicAuthConfig()).to.be.false;
       });
     });
@@ -67,7 +67,7 @@ describe('config/resolved-config', () => {
       });
 
       it('throws error when hostname is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(() => config.createB2CInstance()).to.throw('B2C instance requires hostname');
       });
     });
@@ -82,12 +82,12 @@ describe('config/resolved-config', () => {
       });
 
       it('throws error when username is missing', () => {
-        const config = resolveConfig({password: 'pass'}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({password: 'pass'}, {replaceDefaultSources: true});
         expect(() => config.createBasicAuth()).to.throw('Basic auth requires username and password');
       });
 
       it('throws error when password is missing', () => {
-        const config = resolveConfig({username: 'user'}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({username: 'user'}, {replaceDefaultSources: true});
         expect(() => config.createBasicAuth()).to.throw('Basic auth requires username and password');
       });
     });
@@ -102,7 +102,7 @@ describe('config/resolved-config', () => {
       });
 
       it('throws error when clientId is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(() => config.createOAuth()).to.throw('OAuth requires clientId');
       });
 
@@ -123,7 +123,7 @@ describe('config/resolved-config', () => {
       });
 
       it('throws error when mrtApiKey is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(() => config.createMrtAuth()).to.throw('MRT auth requires mrtApiKey');
       });
     });
@@ -146,7 +146,7 @@ describe('config/resolved-config', () => {
       });
 
       it('throws error when no auth is available', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(() => config.createWebDavAuth()).to.throw(
           'WebDAV auth requires basic auth (username/password) or OAuth (clientId)',
         );
@@ -171,7 +171,7 @@ describe('config/resolved-config', () => {
       });
 
       it('throws error when mrtApiKey is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true, sources: []});
+        const config = resolveConfig({}, {replaceDefaultSources: true});
         expect(() => config.createMrtClient({org: 'test-org', project: 'test-project'})).to.throw(
           'MRT auth requires mrtApiKey',
         );

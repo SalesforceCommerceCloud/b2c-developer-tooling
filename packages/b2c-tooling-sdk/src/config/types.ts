@@ -138,12 +138,6 @@ export interface ResolveConfigOptions {
    */
   sourcesAfter?: ConfigSource[];
 
-  /**
-   * Custom configuration sources (added after default sources).
-   * @deprecated Use `sourcesAfter` for clarity. This is kept for backward compatibility.
-   */
-  sources?: ConfigSource[];
-
   /** Replace default sources entirely (instead of appending) */
   replaceDefaultSources?: boolean;
 }

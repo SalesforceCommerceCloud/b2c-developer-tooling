@@ -48,7 +48,7 @@ export default class SlasClientOpen extends BaseCommand<typeof SlasClientOpen> {
     const {'tenant-id': tenantId, 'short-code': shortCodeFlag} = this.flags;
     const {clientId} = this.args;
 
-    const shortCode = shortCodeFlag ?? this.resolvedConfig.shortCode;
+    const shortCode = shortCodeFlag ?? this.resolvedConfig.values.shortCode;
 
     if (!shortCode) {
       this.error(

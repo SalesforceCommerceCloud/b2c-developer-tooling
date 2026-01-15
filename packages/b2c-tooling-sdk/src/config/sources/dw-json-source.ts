@@ -8,7 +8,6 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
-import * as path from 'node:path';
 import {loadDwJson} from '../dw-json.js';
 import {getPopulatedFields} from '../mapping.js';
 import {mapDwJsonToNormalizedConfig} from '../mapping.js';
@@ -27,21 +26,21 @@ export class DwJsonSource implements ConfigSource {
   load(options: ResolveConfigOptions): NormalizedConfig | undefined {
     const logger = getLogger();
 
-    const dwConfig = loadDwJson({
+    const result = loadDwJson({
       instance: options.instance,
       path: options.configPath,
       startDir: options.startDir,
     });
 
-    if (!dwConfig) {
+    if (!result) {
       this.lastPath = undefined;
       return undefined;
     }
 
-    // Track the path for diagnostics - use explicit path or default location
-    this.lastPath = options.configPath ?? path.join(options.startDir || process.cwd(), 'dw.json');
+    // Track the actual path from the loaded result
+    this.lastPath = result.path;
 
-    const normalized = mapDwJsonToNormalizedConfig(dwConfig);
+    const normalized = mapDwJsonToNormalizedConfig(result.config);
     const fields = getPopulatedFields(normalized);
 
     logger.trace({path: this.lastPath, fields}, '[DwJsonSource] Loaded config');

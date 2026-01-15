@@ -104,7 +104,7 @@ export type {WebDavRootKey} from './webdav-command.js';
 
 // Config utilities
 export {loadConfig, findDwJson} from './config.js';
-export type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
+export type {LoadConfigOptions, PluginSources} from './config.js';
 
 // Hook types for plugin extensibility
 export type {

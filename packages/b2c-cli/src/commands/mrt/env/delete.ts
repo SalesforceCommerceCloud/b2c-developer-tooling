@@ -59,7 +59,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
     this.requireMrtCredentials();
 
     const {slug} = this.args;
-    const {mrtProject: project} = this.resolvedConfig;
+    const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
       this.error(
@@ -99,7 +99,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
         {
           projectSlug: project,
           slug,
-          origin: this.resolvedConfig.mrtOrigin,
+          origin: this.resolvedConfig.values.mrtOrigin,
         },
         this.getMrtAuth(),
       );

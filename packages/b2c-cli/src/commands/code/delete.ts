@@ -55,7 +55,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
     this.requireOAuthCredentials();
 
     const codeVersion = this.args.codeVersion;
-    const hostname = this.resolvedConfig.hostname!;
+    const hostname = this.resolvedConfig.values.hostname!;
 
     // Confirm deletion unless --force is used
     if (!this.flags.force) {

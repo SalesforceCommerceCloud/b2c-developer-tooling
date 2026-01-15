@@ -122,7 +122,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
         t(
           'commands.ods.create.settingPermissions',
           'Setting OCAPI and WebDAV permissions for client ID: {{clientId}}',
-          {clientId: this.resolvedConfig.clientId!},
+          {clientId: this.resolvedConfig.values.clientId!},
         ),
       );
     }
@@ -177,7 +177,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       return undefined;
     }
 
-    const clientId = this.resolvedConfig.clientId;
+    const clientId = this.resolvedConfig.values.clientId;
     if (!clientId) {
       return undefined;
     }

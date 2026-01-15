@@ -38,10 +38,10 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
     this.requireOAuthCredentials();
 
     const codeVersionArg = this.args.codeVersion;
-    const hostname = this.resolvedConfig.hostname!;
+    const hostname = this.resolvedConfig.values.hostname!;
 
     // Get code version from arg, flag, or config
-    const codeVersion = codeVersionArg ?? this.resolvedConfig.codeVersion;
+    const codeVersion = codeVersionArg ?? this.resolvedConfig.values.codeVersion;
 
     if (this.flags.reload) {
       // Reload mode - re-activate the code version

@@ -80,6 +80,16 @@ export interface LoadDwJsonOptions {
 }
 
 /**
+ * Result of loading dw.json configuration.
+ */
+export interface LoadDwJsonResult {
+  /** The parsed configuration */
+  config: DwJsonConfig;
+  /** The path to the dw.json file that was loaded */
+  path: string;
+}
+
+/**
  * Finds dw.json by searching upward from the starting directory.
  *
  * @param startDir - Directory to start searching from (defaults to cwd)
@@ -179,22 +189,26 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
  * Use `findDwJson()` if you need to search upward through parent directories.
  *
  * @param options - Loading options
- * @returns The parsed config, or undefined if no dw.json found
+ * @returns The parsed config with its path, or undefined if no dw.json found
  *
  * @example
  * // Load from ./dw.json (current directory)
- * const config = loadDwJson();
+ * const result = loadDwJson();
+ * if (result) {
+ *   console.log(`Loaded from ${result.path}`);
+ *   console.log(result.config.hostname);
+ * }
  *
  * // Load from specific directory
- * const config = loadDwJson({ startDir: '/path/to/project' });
+ * const result = loadDwJson({ startDir: '/path/to/project' });
  *
  * // Use named instance
- * const config = loadDwJson({ instance: 'staging' });
+ * const result = loadDwJson({ instance: 'staging' });
  *
  * // Explicit path
- * const config = loadDwJson({ path: './config/dw.json' });
+ * const result = loadDwJson({ path: './config/dw.json' });
  */
-export function loadDwJson(options: LoadDwJsonOptions = {}): DwJsonConfig | undefined {
+export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | undefined {
   const logger = getLogger();
 
   // If explicit path provided, use it. Otherwise default to ./dw.json (no upward search)
@@ -210,7 +224,10 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): DwJsonConfig | unde
   try {
     const content = fs.readFileSync(dwJsonPath, 'utf8');
     const json = JSON.parse(content) as DwJsonMultiConfig;
-    return selectConfig(json, options.instance);
+    return {
+      config: selectConfig(json, options.instance),
+      path: dwJsonPath,
+    };
   } catch (error) {
     // Invalid JSON or read error
     const message = error instanceof Error ? error.message : String(error);

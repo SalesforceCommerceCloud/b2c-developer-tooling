@@ -157,7 +157,7 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
       directory: absoluteDir,
       include: filterOptions.include,
       exclude: filterOptions.exclude,
-      codeVersion: this.resolvedConfig?.codeVersion,
+      codeVersion: this.resolvedConfig?.values.codeVersion,
       instance: this.instance,
     };
 

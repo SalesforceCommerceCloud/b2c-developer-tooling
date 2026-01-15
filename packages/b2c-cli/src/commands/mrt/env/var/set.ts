@@ -43,7 +43,7 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
     this.requireMrtCredentials();
 
     const {argv} = await this.parse(MrtEnvVarSet);
-    const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig;
+    const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
       this.error(
@@ -88,7 +88,7 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
         projectSlug: project,
         environment,
         variables,
-        origin: this.resolvedConfig.mrtOrigin,
+        origin: this.resolvedConfig.values.mrtOrigin,
       },
       this.getMrtAuth(),
     );
