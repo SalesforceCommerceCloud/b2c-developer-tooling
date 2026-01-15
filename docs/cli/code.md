@@ -1,3 +1,7 @@
+---
+description: Commands for deploying cartridges, activating code versions, and watching for file changes on B2C Commerce instances.
+---
+
 # Code Commands
 
 Commands for managing cartridge code on B2C Commerce instances.

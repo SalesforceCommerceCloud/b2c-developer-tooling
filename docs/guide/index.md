@@ -1,3 +1,7 @@
+---
+description: Introduction to the B2C CLI and SDK for Salesforce Commerce Cloud B2C code deployment, site management, and sandbox operations.
+---
+
 # Introduction
 
 The B2C CLI is a command-line interface for Salesforce Commerce Cloud B2C. It provides tools for:

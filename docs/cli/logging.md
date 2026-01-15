@@ -1,3 +1,7 @@
+---
+description: Configure CLI logging with log levels, JSON output for CI/CD, and environment variables for debugging.
+---
+
 # Logging
 
 The CLI uses [pino](https://github.com/pinojs/pino) for structured logging with pretty-printed output by default.

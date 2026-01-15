@@ -1,3 +1,7 @@
+---
+description: B2C CLI command reference with global flags and authentication options for managing Salesforce Commerce Cloud instances.
+---
+
 # CLI Reference
 
 The `b2c` CLI provides commands for managing Salesforce B2C Commerce instances.

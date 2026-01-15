@@ -256,6 +256,89 @@ describe('clients/middleware', () => {
       const body = JSON.parse(await modifiedRequest.text()) as Record<string, unknown>;
       expect(body.forced).to.equal(true);
     });
+
+    it('adds extra headers to request', async () => {
+      const middleware = createExtraParamsMiddleware({headers: {'X-Custom': 'value'}});
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+
+      const request = new Request('https://example.com/items', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      expect(modifiedRequest.headers.get('X-Custom')).to.equal('value');
+    });
+
+    it('overwrites existing headers with extra headers', async () => {
+      const middleware = createExtraParamsMiddleware({headers: {'X-Custom': 'new-value'}});
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+
+      const request = new Request('https://example.com/items', {
+        method: 'GET',
+        headers: {'X-Custom': 'old-value'},
+      });
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      expect(modifiedRequest.headers.get('X-Custom')).to.equal('new-value');
+    });
+
+    it('preserves other headers when adding extra headers', async () => {
+      const middleware = createExtraParamsMiddleware({headers: {'X-Custom': 'value'}});
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+
+      const request = new Request('https://example.com/items', {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'},
+      });
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      expect(modifiedRequest.headers.get('X-Custom')).to.equal('value');
+      expect(modifiedRequest.headers.get('Content-Type')).to.equal('application/json');
+    });
+
+    it('does nothing when headers config is empty', async () => {
+      const middleware = createExtraParamsMiddleware({headers: {}});
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+
+      const request = new Request('https://example.com/items', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      expect(modifiedRequest.url).to.equal(request.url);
+    });
+
+    it('adds multiple extra headers', async () => {
+      const middleware = createExtraParamsMiddleware({
+        headers: {
+          'CF-Access-Client-Id': 'client-id',
+          'CF-Access-Client-Secret': 'client-secret',
+        },
+      });
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+
+      const request = new Request('https://example.com/items', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      expect(modifiedRequest.headers.get('CF-Access-Client-Id')).to.equal('client-id');
+      expect(modifiedRequest.headers.get('CF-Access-Client-Secret')).to.equal('client-secret');
+    });
   });
 
   describe('createLoggingMiddleware', () => {

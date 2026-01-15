@@ -1,3 +1,7 @@
+---
+description: Commands for managing SCAPI Custom API endpoints, checking registration status, and debugging endpoint configurations.
+---
+
 # Custom APIs
 
 Commands for managing SCAPI Custom API endpoints.

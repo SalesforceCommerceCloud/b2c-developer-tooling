@@ -7,6 +7,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 import {stubParse} from '../helpers/stub-parse.js';
 
@@ -42,6 +43,8 @@ describe('cli/base-command', () => {
   afterEach(() => {
     sinon.restore();
     restoreConfig();
+    // Clean up the global middleware registry between tests
+    globalMiddlewareRegistry.clear();
   });
 
   describe('getExtraParams', () => {
@@ -84,12 +87,11 @@ describe('cli/base-command', () => {
     it('throws error for invalid JSON in extra-query', async () => {
       stubParse(command, {'extra-query': 'invalid-json'});
 
-      await command.init();
-
+      // Stub error before init() because registerExtraParamsMiddleware calls getExtraParams()
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       try {
-        command.testGetExtraParams();
+        await command.init();
       } catch {
         // Expected
       }
@@ -100,12 +102,48 @@ describe('cli/base-command', () => {
     it('throws error for invalid JSON in extra-body', async () => {
       stubParse(command, {'extra-body': 'invalid-json'});
 
-      await command.init();
-
+      // Stub error before init() because registerExtraParamsMiddleware calls getExtraParams()
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       try {
-        command.testGetExtraParams();
+        await command.init();
+      } catch {
+        // Expected
+      }
+
+      expect(errorStub.called).to.be.true;
+    });
+
+    it('parses extra-headers flag', async () => {
+      stubParse(command, {'extra-headers': '{"X-Custom-Header":"value"}'});
+
+      await command.init();
+      const params = command.testGetExtraParams();
+      expect(params?.headers).to.deep.equal({'X-Custom-Header': 'value'});
+    });
+
+    it('parses extra-query, extra-body, and extra-headers together', async () => {
+      stubParse(command, {
+        'extra-query': '{"debug":"true"}',
+        'extra-body': '{"_internal":true}',
+        'extra-headers': '{"X-Custom":"value"}',
+      });
+
+      await command.init();
+      const params = command.testGetExtraParams();
+      expect(params?.query).to.deep.equal({debug: 'true'});
+      expect(params?.body).to.deep.equal({_internal: true});
+      expect(params?.headers).to.deep.equal({'X-Custom': 'value'});
+    });
+
+    it('throws error for invalid JSON in extra-headers', async () => {
+      stubParse(command, {'extra-headers': 'invalid-json'});
+
+      // Stub error before init() because registerExtraParamsMiddleware calls getExtraParams()
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        await command.init();
       } catch {
         // Expected
       }

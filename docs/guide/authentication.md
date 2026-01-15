@@ -1,3 +1,7 @@
+---
+description: Set up authentication for the B2C CLI including Account Manager API clients, OCAPI permissions, and WebDAV access keys.
+---
+
 # Authentication Setup
 
 This guide covers setting up authentication for the B2C CLI, including Account Manager API clients, OCAPI permissions, and WebDAV access.
