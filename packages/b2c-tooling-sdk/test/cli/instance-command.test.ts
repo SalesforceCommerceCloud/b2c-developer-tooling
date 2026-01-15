@@ -4,10 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
+import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {B2COperationContext, B2COperationResult, B2COperationType} from '@salesforce/b2c-tooling-sdk/cli';
 import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
+import {stubParse} from '../helpers/stub-parse.js';
 
 // Create a test command class
 class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
@@ -48,19 +50,6 @@ class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
   }
 }
 
-// Type for mocking command properties in tests
-type MockableInstanceCommand = TestInstanceCommand & {
-  parse: () => Promise<{
-    args: Record<string, string | number | boolean>;
-    flags: Record<string, string | number | boolean>;
-    metadata: Record<string, string | number | boolean>;
-  }>;
-  flags: Record<string, string | number | boolean>;
-  args: Record<string, string | number | boolean>;
-  resolvedConfig: Record<string, string | number | boolean>;
-  error: (message: string) => never;
-};
-
 describe('cli/instance-command', () => {
   let config: Config;
   let command: TestInstanceCommand;
@@ -72,26 +61,17 @@ describe('cli/instance-command', () => {
   });
 
   afterEach(() => {
+    sinon.restore();
     restoreConfig();
   });
 
   describe('requireServer', () => {
     it('throws error when no server', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command);
 
-      await cmd.init();
-      let errorCalled = false;
-      const originalError = cmd.error.bind(command);
-      cmd.error = () => {
-        errorCalled = true;
-        throw new Error('Expected error');
-      };
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       try {
         command.testRequireServer();
@@ -99,46 +79,25 @@ describe('cli/instance-command', () => {
         // Expected
       }
 
-      expect(errorCalled).to.be.true;
-
-      cmd.error = originalError;
-      cmd.parse = originalParse;
+      expect(errorStub.called).to.be.true;
     });
 
     it('does not throw when server is set', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {server: 'test.demandware.net'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {server: 'test.demandware.net'});
 
-      await cmd.init();
+      await command.init();
       // Should not throw
       command.testRequireServer();
-
-      cmd.parse = originalParse;
     });
   });
 
   describe('requireCodeVersion', () => {
     it('throws error when no code version', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command);
 
-      await cmd.init();
-      let errorCalled = false;
-      const originalError = cmd.error.bind(command);
-      cmd.error = () => {
-        errorCalled = true;
-        throw new Error('Expected error');
-      };
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       try {
         command.testRequireCodeVersion();
@@ -146,46 +105,25 @@ describe('cli/instance-command', () => {
         // Expected
       }
 
-      expect(errorCalled).to.be.true;
-
-      cmd.error = originalError;
-      cmd.parse = originalParse;
+      expect(errorStub.called).to.be.true;
     });
 
     it('does not throw when code version is set', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {'code-version': 'v1'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {'code-version': 'v1'});
 
-      await cmd.init();
+      await command.init();
       // Should not throw
       command.testRequireCodeVersion();
-
-      cmd.parse = originalParse;
     });
   });
 
   describe('requireWebDavCredentials', () => {
     it('throws error when no credentials', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command);
 
-      await cmd.init();
-      let errorCalled = false;
-      const originalError = cmd.error.bind(command);
-      cmd.error = () => {
-        errorCalled = true;
-        throw new Error('Expected error');
-      };
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       try {
         command.testRequireWebDavCredentials();
@@ -193,141 +131,82 @@ describe('cli/instance-command', () => {
         // Expected
       }
 
-      expect(errorCalled).to.be.true;
-
-      cmd.error = originalError;
-      cmd.parse = originalParse;
+      expect(errorStub.called).to.be.true;
     });
 
     it('does not throw when credentials are set', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {username: 'user', password: 'pass'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {username: 'user', password: 'pass'});
 
-      await cmd.init();
+      await command.init();
       // Should not throw
       command.testRequireWebDavCredentials();
-
-      cmd.parse = originalParse;
     });
   });
 
   describe('instance', () => {
     it('throws error when no server', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command);
 
-      await cmd.init();
+      await command.init();
       try {
         command.testInstance();
         expect.fail('Should have thrown');
       } catch (error) {
         expect(error).to.be.an('error');
       }
-
-      cmd.parse = originalParse;
     });
 
     it('creates instance when server is set', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {server: 'test.demandware.net', 'client-id': 'test-client'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {server: 'test.demandware.net', 'client-id': 'test-client'});
 
-      await cmd.init();
+      await command.init();
       const instance = command.testInstance();
       expect(instance).to.be.an('object');
-
-      cmd.parse = originalParse;
     });
 
     it('creates instance lazily', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {server: 'test.demandware.net', 'client-id': 'test-client'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {server: 'test.demandware.net', 'client-id': 'test-client'});
 
-      await cmd.init();
+      await command.init();
       const instance1 = command.testInstance();
       const instance2 = command.testInstance();
       // Should return same instance
       expect(instance1).to.equal(instance2);
-
-      cmd.parse = originalParse;
     });
   });
 
   describe('createContext', () => {
     it('creates operation context', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {server: 'test.demandware.net', 'client-id': 'test-client'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {server: 'test.demandware.net', 'client-id': 'test-client'});
 
-      await cmd.init();
+      await command.init();
       const context = command.testCreateContext('job:run', {jobId: 'test-job'});
       expect(context.operationType).to.equal('job:run');
       expect(context.metadata.jobId).to.equal('test-job');
       expect(context.instance).to.be.an('object');
-
-      cmd.parse = originalParse;
     });
   });
 
   describe('runBeforeHooks', () => {
     it('returns empty result when no lifecycle runner', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {server: 'test.demandware.net', 'client-id': 'test-client'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {server: 'test.demandware.net', 'client-id': 'test-client'});
 
-      await cmd.init();
+      await command.init();
       const context = command.testCreateContext('job:run', {});
       const result = await command.testRunBeforeHooks(context);
       expect(result).to.deep.equal({});
-
-      cmd.parse = originalParse;
     });
   });
 
   describe('runAfterHooks', () => {
     it('does nothing when no lifecycle runner', async () => {
-      const cmd = command as MockableInstanceCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {},
-        flags: {server: 'test.demandware.net', 'client-id': 'test-client'},
-        metadata: {},
-      })) as typeof cmd.parse;
+      stubParse(command, {server: 'test.demandware.net', 'client-id': 'test-client'});
 
-      await cmd.init();
+      await command.init();
       const context = command.testCreateContext('job:run', {});
       const result = {success: true, duration: 100};
       // Should not throw
       await command.testRunAfterHooks(context, result);
-
-      cmd.parse = originalParse;
     });
   });
 });

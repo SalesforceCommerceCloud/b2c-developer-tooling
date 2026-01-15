@@ -12,6 +12,7 @@ This skill covers project-specific testing patterns for the B2C CLI project.
 - **Test Runner**: Mocha
 - **Assertions**: Chai (property-based)
 - **HTTP Mocking**: MSW (Mock Service Worker)
+- **Stubbing/Mocking**: Sinon
 - **Code Coverage**: c8
 - **TypeScript**: tsx (native execution without compilation)
 
@@ -120,14 +121,12 @@ const config = resolveConfig({}, {
 });
 ```
 
-In CLI command tests, mock the `credentials-file` flag:
+In CLI command tests, use the `stubParse` helper with the `credentials-file` flag:
 
 ```typescript
-cmd.parse = (async () => ({
-  args: {},
-  flags: {'credentials-file': '/dev/null'},  // Isolates from real ~/.mobify
-  metadata: {},
-})) as typeof cmd.parse;
+import { stubParse } from '../helpers/stub-parse.js';
+
+stubParse(command, {'credentials-file': '/dev/null'});  // Isolates from real ~/.mobify
 ```
 
 ## Polling Tests (Avoid Fake Timers)
@@ -312,25 +311,26 @@ const customAuth = new MockAuthStrategy('custom-token');
 
 Command tests should focus on **command-specific logic**, not trivial flag verification.
 
-### Good Command Tests
+### Using the stubParse Helper
 
-Test behavior that is specific to the command class:
+Use the `stubParse` helper from `test/helpers/stub-parse.js` to stub oclif's parse method. This handles the type casting needed for oclif's protected `parse` method:
 
 ```typescript
-describe('requireMrtCredentials', () => {
-  it('throws error when no credentials', async () => {
-    cmd.parse = (async () => ({
-      args: {},
-      flags: {'credentials-file': '/dev/null'},
-      metadata: {},
-    })) as typeof cmd.parse;
+import sinon from 'sinon';
+import { stubParse } from '../helpers/stub-parse.js';
+import { isolateConfig, restoreConfig } from '../helpers/config-isolation.js';
 
-    await cmd.init();
-    let errorCalled = false;
-    cmd.error = () => {
-      errorCalled = true;
-      throw new Error('Expected error');
-    };
+describe('cli/mrt-command', () => {
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
+  it('throws error when no credentials', async () => {
+    stubParse(command, {'credentials-file': '/dev/null'});
+    await command.init();
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
     try {
       command.testRequireMrtCredentials();
@@ -338,7 +338,7 @@ describe('requireMrtCredentials', () => {
       // Expected
     }
 
-    expect(errorCalled).to.be.true;
+    expect(errorStub.called).to.be.true;
   });
 });
 ```
@@ -350,12 +350,10 @@ Do not write tests that just verify flag values equal mocked values:
 ```typescript
 // BAD - tests nothing (just verifies JavaScript assignment works)
 it('handles server flag', async () => {
-  cmd.parse = (async () => ({
-    flags: {server: 'test.demandware.net'},
-  })) as typeof cmd.parse;
+  stubParse(command, {server: 'test.demandware.net'});
 
-  await cmd.init();
-  expect(cmd.flags.server).to.equal('test.demandware.net');  // Trivial!
+  await command.init();
+  expect(command.flags.server).to.equal('test.demandware.net');  // Trivial!
 });
 ```
 
@@ -372,6 +370,10 @@ it('handles server flag', async () => {
 
 ## Testing CLI Commands with oclif
 
+### Integration Tests with runCommand
+
+Use `@oclif/test`'s `runCommand()` for integration-style tests:
+
 ```typescript
 import { runCommand } from '@oclif/test';
 import { expect } from 'chai';
@@ -383,6 +385,18 @@ describe('ods list', () => {
   });
 });
 ```
+
+### SDK Base Command Integration Tests
+
+The SDK includes a test fixture at `test/fixtures/test-cli/` for integration testing base command behavior. See `test/cli/base-command.integration.test.ts` for examples.
+
+### When to Use Each Approach
+
+| Approach | Use For |
+|----------|---------|
+| Unit tests with `stubParse` | Testing protected method logic in isolation |
+| Integration tests with fixture | Testing full command lifecycle, flag parsing |
+| `runCommand()` in b2c-cli | Testing actual CLI commands |
 
 ## E2E Tests
 
