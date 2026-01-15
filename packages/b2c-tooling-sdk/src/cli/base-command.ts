@@ -75,11 +75,19 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }),
     'extra-query': Flags.string({
       description: 'Extra query parameters as JSON (e.g., \'{"debug":"true"}\')',
+      env: 'SFCC_EXTRA_QUERY',
       helpGroup: 'GLOBAL',
       hidden: true,
     }),
     'extra-body': Flags.string({
       description: 'Extra body fields to merge as JSON (e.g., \'{"_internal":true}\')',
+      env: 'SFCC_EXTRA_BODY',
+      helpGroup: 'GLOBAL',
+      hidden: true,
+    }),
+    'extra-headers': Flags.string({
+      description: 'Extra HTTP headers as JSON (e.g., \'{"X-Custom-Header": "value"}\')',
+      env: 'SFCC_EXTRA_HEADERS',
       helpGroup: 'GLOBAL',
       hidden: true,
     }),
@@ -307,7 +315,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
-   * Parse extra params from --extra-query and --extra-body flags.
+   * Parse extra params from --extra-query, --extra-body, and --extra-headers flags.
    * Returns undefined if no extra params are specified.
    *
    * @returns ExtraParamsConfig or undefined
@@ -315,8 +323,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected getExtraParams(): ExtraParamsConfig | undefined {
     const extraQuery = this.flags['extra-query'];
     const extraBody = this.flags['extra-body'];
+    const extraHeaders = this.flags['extra-headers'];
 
-    if (!extraQuery && !extraBody) {
+    if (!extraQuery && !extraBody && !extraHeaders) {
       return undefined;
     }
 
@@ -335,6 +344,14 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         config.body = JSON.parse(extraBody) as Record<string, unknown>;
       } catch {
         this.error(`Invalid JSON for --extra-body: ${extraBody}`);
+      }
+    }
+
+    if (extraHeaders) {
+      try {
+        config.headers = JSON.parse(extraHeaders) as Record<string, string>;
+      } catch {
+        this.error(`Invalid JSON for --extra-headers: ${extraHeaders}`);
       }
     }
 
