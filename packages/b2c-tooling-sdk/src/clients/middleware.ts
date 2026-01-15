@@ -165,10 +165,14 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
 
       const clonedResponse = response.clone();
       let responseBody: unknown;
+      // Read as text first, then try to parse as JSON.
+      // This avoids a bug where json() consumes the body stream even when parsing fails,
+      // making subsequent text() calls fail with "Body has already been read".
+      const text = await clonedResponse.text();
       try {
-        responseBody = await clonedResponse.json();
+        responseBody = JSON.parse(text);
       } catch {
-        responseBody = await clonedResponse.text();
+        responseBody = text;
       }
 
       // Mask sensitive/large body keys before logging
