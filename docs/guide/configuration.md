@@ -1,3 +1,7 @@
+---
+description: Configure the B2C CLI with environment variables, dw.json files, and multi-instance setups for different environments.
+---
+
 # Configuration
 
 The B2C CLI automatically detects and uses available credentials. You can provide credentials via CLI flags, environment variables, or configuration files.

@@ -1,3 +1,7 @@
+---
+description: Security practices for the B2C Developer Tooling project including supply chain protections and dependency management.
+---
+
 # Security
 
 This page covers security practices used in the B2C Developer Tooling project, with a focus on supply chain security.

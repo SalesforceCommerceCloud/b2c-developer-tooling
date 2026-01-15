@@ -1,3 +1,7 @@
+---
+description: Commands for creating, updating, and managing Shopper Login and API Access Service (SLAS) clients.
+---
+
 # SLAS Commands
 
 Commands for managing Shopper Login and API Security (SLAS) clients.

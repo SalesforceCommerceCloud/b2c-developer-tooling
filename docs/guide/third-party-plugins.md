@@ -1,3 +1,7 @@
+---
+description: Community plugins for the B2C CLI including IntelliJ SFCC config integration and macOS Keychain credential storage.
+---
+
 # 3rd Party Plugins
 
 The B2C CLI can be extended with community-developed plugins that add new functionality or integrate with external tools.

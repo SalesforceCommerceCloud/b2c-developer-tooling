@@ -1,3 +1,7 @@
+---
+description: Authentication commands for obtaining OAuth tokens and configuring Account Manager API clients, OCAPI, and WebDAV access.
+---
+
 # Auth Commands
 
 Commands for authentication and token management.

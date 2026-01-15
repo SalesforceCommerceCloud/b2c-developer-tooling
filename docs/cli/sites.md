@@ -1,3 +1,7 @@
+---
+description: Commands for listing and managing storefront sites on B2C Commerce instances.
+---
+
 # Sites Commands
 
 Commands for managing sites on B2C Commerce instances.

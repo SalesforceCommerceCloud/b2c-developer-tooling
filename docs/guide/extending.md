@@ -1,3 +1,7 @@
+---
+description: Extend the B2C CLI with custom plugins, configuration sources, HTTP middleware, and lifecycle hooks.
+---
+
 # Extending the CLI
 
 The B2C CLI can be extended with custom plugins using the [oclif plugin system](https://oclif.io/docs/plugins). Plugins can add new commands, provide custom configuration sources, and integrate with external systems.

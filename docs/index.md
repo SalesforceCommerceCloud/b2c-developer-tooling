@@ -1,4 +1,5 @@
 ---
+description: Command line tools and SDK for Salesforce Commerce Cloud B2C - deploy code, manage sandboxes, run jobs, and automate operations.
 layout: home
 
 hero:
