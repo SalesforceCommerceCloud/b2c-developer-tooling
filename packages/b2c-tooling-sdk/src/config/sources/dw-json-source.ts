@@ -8,7 +8,8 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
-import {loadDwJson, findDwJson} from '../dw-json.js';
+import * as path from 'node:path';
+import {loadDwJson} from '../dw-json.js';
 import {mapDwJsonToNormalizedConfig} from '../mapping.js';
 import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '../types.js';
 
@@ -33,8 +34,8 @@ export class DwJsonSource implements ConfigSource {
       return undefined;
     }
 
-    // Track the path for diagnostics
-    this.lastPath = options.configPath || findDwJson(options.startDir);
+    // Track the path for diagnostics - use explicit path or default location
+    this.lastPath = options.configPath ?? path.join(options.startDir || process.cwd(), 'dw.json');
 
     return mapDwJsonToNormalizedConfig(dwConfig);
   }

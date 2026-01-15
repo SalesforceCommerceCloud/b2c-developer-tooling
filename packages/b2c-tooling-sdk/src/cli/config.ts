@@ -44,6 +44,8 @@ export interface LoadConfigOptions {
   configPath?: string;
   /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
   cloudOrigin?: string;
+  /** Path to custom MRT credentials file (overrides default ~/.mobify) */
+  credentialsFile?: string;
 }
 
 /**
@@ -110,6 +112,7 @@ export function loadConfig(
     configPath: options.configPath,
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
+    credentialsFile: options.credentialsFile,
     sourcesBefore: pluginSources.before,
     sourcesAfter: pluginSources.after,
   });

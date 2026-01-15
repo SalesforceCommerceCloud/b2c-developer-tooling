@@ -4,278 +4,113 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
+import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {stubParse} from '../helpers/stub-parse.js';
+import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 
-// Create a test command class
 class TestCartridgeCommand extends CartridgeCommand<typeof TestCartridgeCommand> {
   static id = 'test:cartridge';
-  static description = 'Test cartridge command';
+  async run(): Promise<void> {}
 
-  async run(): Promise<void> {
-    // Test implementation
-  }
-
-  // Expose protected methods for testing
-  public testCartridgePath() {
+  // Expose protected for testing
+  public get testCartridgePath() {
     return this.cartridgePath;
   }
-
-  public testCartridgeOptions() {
+  public get testCartridgeOptions() {
     return this.cartridgeOptions;
   }
-
-  public testFindCartridgesWithProviders(directory?: string, options?: {include?: string[]; exclude?: string[]}) {
-    return this.findCartridgesWithProviders(directory, options);
+  public get testCartridgeProviderRunner() {
+    return this.cartridgeProviderRunner;
+  }
+  public testFindCartridgesWithProviders(dir?: string) {
+    return this.findCartridgesWithProviders(dir);
   }
 }
-
-// Type for mocking command properties in tests
-type MockableCartridgeCommand = TestCartridgeCommand & {
-  parse: () => Promise<{
-    args: Record<string, string | number | boolean>;
-    flags: Record<string, string | number | boolean | string[]>;
-    metadata: Record<string, string | number | boolean>;
-  }>;
-  flags: Record<string, string | number | boolean | string[]>;
-  args: Record<string, string | number | boolean>;
-  resolvedConfig: Record<string, string | number | boolean>;
-};
 
 describe('cli/cartridge-command', () => {
   let config: Config;
   let command: TestCartridgeCommand;
 
   beforeEach(async () => {
+    isolateConfig();
     config = await Config.load();
     command = new TestCartridgeCommand([], config);
   });
 
-  describe('init', () => {
-    it('initializes command with cartridge flags', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags).to.be.an('object');
-      expect(cmd.args).to.be.an('object');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles cartridgePath argument', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '/custom/path'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.args.cartridgePath).to.equal('/custom/path');
-
-      cmd.parse = originalParse;
-    });
-
-    it('uses default cartridgePath when not specified', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.args.cartridgePath).to.equal('.');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles cartridge flag', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {cartridge: ['cart1', 'cart2']},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags.cartridge).to.be.an('array');
-
-      cmd.parse = originalParse;
-    });
-
-    it('handles exclude-cartridge flag', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {'exclude-cartridge': ['cart1', 'cart2']},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      expect(cmd.flags['exclude-cartridge']).to.be.an('array');
-
-      cmd.parse = originalParse;
-    });
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
   });
 
   describe('cartridgePath', () => {
-    it('returns default path when not specified', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const path = command.testCartridgePath();
-      expect(path).to.equal('.');
-
-      cmd.parse = originalParse;
+    it('returns cartridgePath from args', async () => {
+      stubParse(command, {}, {cartridgePath: '/path/to/cartridges'});
+      await command.init();
+      expect(command.testCartridgePath).to.equal('/path/to/cartridges');
     });
 
-    it('returns custom path from args', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '/custom/path'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const path = command.testCartridgePath();
-      expect(path).to.equal('/custom/path');
-
-      cmd.parse = originalParse;
+    it('defaults to current directory', async () => {
+      stubParse(command, {}, {cartridgePath: '.'});
+      await command.init();
+      expect(command.testCartridgePath).to.equal('.');
     });
   });
 
   describe('cartridgeOptions', () => {
-    it('returns empty options when no flags', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
+    it('returns include/exclude from flags', async () => {
+      stubParse(
+        command,
+        {
+          cartridge: ['app_storefront', 'app_custom'],
+          'exclude-cartridge': ['bm_extensions'],
+        },
+        {cartridgePath: '.'},
+      );
+      await command.init();
 
-      await cmd.init();
-      const options = command.testCartridgeOptions();
+      const options = command.testCartridgeOptions;
+      expect(options.include).to.deep.equal(['app_storefront', 'app_custom']);
+      expect(options.exclude).to.deep.equal(['bm_extensions']);
+    });
+
+    it('returns undefined for unset include/exclude', async () => {
+      stubParse(command, {}, {cartridgePath: '.'});
+      await command.init();
+
+      const options = command.testCartridgeOptions;
       expect(options.include).to.be.undefined;
       expect(options.exclude).to.be.undefined;
-
-      cmd.parse = originalParse;
     });
+  });
 
-    it('returns include options from flag', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {cartridge: ['cart1', 'cart2']},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const options = command.testCartridgeOptions();
-      expect(options.include).to.be.an('array');
-      expect(options.include).to.include('cart1');
-      expect(options.include).to.include('cart2');
-
-      cmd.parse = originalParse;
-    });
-
-    it('returns exclude options from flag', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {'exclude-cartridge': ['cart1', 'cart2']},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      const options = command.testCartridgeOptions();
-      expect(options.exclude).to.be.an('array');
-      expect(options.exclude).to.include('cart1');
-      expect(options.exclude).to.include('cart2');
-
-      cmd.parse = originalParse;
+  describe('collectCartridgeProviders', () => {
+    it('creates CartridgeProviderRunner during init', async () => {
+      stubParse(command, {}, {cartridgePath: '.'});
+      await command.init();
+      // Runner is created even with no plugins
+      expect(command.testCartridgeProviderRunner).to.exist;
     });
   });
 
   describe('findCartridgesWithProviders', () => {
-    it('returns default cartridges when no providers', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
+    it('returns empty array when no cartridges found', async () => {
+      stubParse(command, {server: 'test.demandware.net'}, {cartridgePath: '.'});
+      await command.init();
 
-      await cmd.init();
-      // This will use the actual findCartridges function which may not find cartridges
-      // in the test environment, so we just verify it doesn't throw
-      try {
-        await command.testFindCartridgesWithProviders();
-      } catch {
-        // Expected if no cartridges found
-      }
-
-      cmd.parse = originalParse;
+      // With no .project files in cwd, returns empty array
+      const cartridges = await command.testFindCartridgesWithProviders();
+      expect(cartridges).to.be.an('array');
     });
 
-    it('accepts custom directory', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
+    it('uses custom directory when provided', async () => {
+      stubParse(command, {server: 'test.demandware.net'}, {cartridgePath: '/default/path'});
+      await command.init();
 
-      await cmd.init();
-      try {
-        await command.testFindCartridgesWithProviders('/custom/dir');
-      } catch {
-        // Expected if no cartridges found
-      }
-
-      cmd.parse = originalParse;
-    });
-
-    it('accepts custom options', async () => {
-      const cmd = command as MockableCartridgeCommand;
-      const originalParse = cmd.parse.bind(command);
-      cmd.parse = (async () => ({
-        args: {cartridgePath: '.'},
-        flags: {},
-        metadata: {},
-      })) as typeof cmd.parse;
-
-      await cmd.init();
-      try {
-        await command.testFindCartridgesWithProviders(undefined, {include: ['cart1']});
-      } catch {
-        // Expected if no cartridges found
-      }
-
-      cmd.parse = originalParse;
+      // Should not throw when using a custom directory
+      const cartridges = await command.testFindCartridgesWithProviders('/tmp');
+      expect(cartridges).to.be.an('array');
     });
   });
 });

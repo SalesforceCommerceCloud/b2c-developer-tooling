@@ -123,6 +123,8 @@ export interface ResolveConfigOptions {
   hostnameProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */
   cloudOrigin?: string;
+  /** Path to custom MRT credentials file (overrides default ~/.mobify) */
+  credentialsFile?: string;
 
   /**
    * Custom sources to add BEFORE default sources (higher priority).
