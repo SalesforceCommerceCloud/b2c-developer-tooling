@@ -198,8 +198,17 @@ SLAS_BASE="https://${SFCC_SHORTCODE}.api.commercecloud.salesforce.com"
 echo "  ORG ID: $ORG_ID"
 echo "  SLAS Base: $SLAS_BASE"
 
+# Build curl extra headers args if set (newline-separated, e.g. "X-Header: value")
+CURL_HEADER_ARGS=()
+if [ -n "$CURL_EXTRA_HEADERS" ]; then
+    while IFS= read -r header; do
+        [ -n "$header" ] && CURL_HEADER_ARGS+=(-H "$header")
+    done <<< "$CURL_EXTRA_HEADERS"
+fi
+
 # Get shopper token via client credentials (guest login)
 TOKEN_RESPONSE=$(curl -s "${SLAS_BASE}/shopper/auth/v1/organizations/${ORG_ID}/oauth2/token" \
+    "${CURL_HEADER_ARGS[@]}" \
     -u "${SLAS_CLIENT_ID}:${SLAS_SECRET}" \
     -d "grant_type=client_credentials&channel_id=${SITE_ID}")
 
@@ -220,6 +229,7 @@ echo ""
 echo "Step 8: Testing shopper product search..."
 
 SEARCH_RESPONSE=$(curl -s "${SLAS_BASE}/search/shopper-search/v1/organizations/${ORG_ID}/product-search?siteId=${SITE_ID}&limit=5&q=sample" \
+    "${CURL_HEADER_ARGS[@]}" \
     -H "Authorization: Bearer ${SHOPPER_TOKEN}")
 
 # Check if we got a valid response (should have a 'hits' array or 'total' field)
