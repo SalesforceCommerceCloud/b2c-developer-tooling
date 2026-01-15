@@ -1,3 +1,7 @@
+---
+description: Install the B2C CLI via Homebrew, npm, or GitHub releases, and optionally install the SDK for programmatic use.
+---
+
 # Installation
 
 ## Prerequisites

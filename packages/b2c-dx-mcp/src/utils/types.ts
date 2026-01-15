@@ -50,4 +50,6 @@ export interface StartupFlags {
   allowNonGaTools?: boolean;
   /** Path to config file (dw.json format) */
   configPath?: string;
+  /** Project working directory for tools (auto-discovery, scaffolding, etc.) */
+  workingDirectory?: string;
 }

@@ -14,7 +14,7 @@ import type {
 } from './hooks.js';
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
-import type {ExtraParamsConfig} from '../clients/middleware.js';
+import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
 import type {ConfigSource} from '../config/types.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 
@@ -68,13 +68,26 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       env: 'SFCC_INSTANCE',
       helpGroup: 'GLOBAL',
     }),
+    'working-directory': Flags.string({
+      description: 'Project working directory',
+      env: 'SFCC_WORKING_DIRECTORY',
+      helpGroup: 'GLOBAL',
+    }),
     'extra-query': Flags.string({
       description: 'Extra query parameters as JSON (e.g., \'{"debug":"true"}\')',
+      env: 'SFCC_EXTRA_QUERY',
       helpGroup: 'GLOBAL',
       hidden: true,
     }),
     'extra-body': Flags.string({
       description: 'Extra body fields to merge as JSON (e.g., \'{"_internal":true}\')',
+      env: 'SFCC_EXTRA_BODY',
+      helpGroup: 'GLOBAL',
+      hidden: true,
+    }),
+    'extra-headers': Flags.string({
+      description: 'Extra HTTP headers as JSON (e.g., \'{"X-Custom-Header": "value"}\')',
+      env: 'SFCC_EXTRA_HEADERS',
       helpGroup: 'GLOBAL',
       hidden: true,
     }),
@@ -108,6 +121,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     this.configureLogging();
+
+    // Register extra params middleware (from --extra-query, --extra-body, --extra-headers flags)
+    // This must happen before any API clients are created
+    this.registerExtraParamsMiddleware();
 
     // Collect middleware from plugins before any API clients are created
     await this.collectPluginHttpMiddleware();
@@ -302,7 +319,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
-   * Parse extra params from --extra-query and --extra-body flags.
+   * Parse extra params from --extra-query, --extra-body, and --extra-headers flags.
    * Returns undefined if no extra params are specified.
    *
    * @returns ExtraParamsConfig or undefined
@@ -310,8 +327,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected getExtraParams(): ExtraParamsConfig | undefined {
     const extraQuery = this.flags['extra-query'];
     const extraBody = this.flags['extra-body'];
+    const extraHeaders = this.flags['extra-headers'];
 
-    if (!extraQuery && !extraBody) {
+    if (!extraQuery && !extraBody && !extraHeaders) {
       return undefined;
     }
 
@@ -333,6 +351,30 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       }
     }
 
+    if (extraHeaders) {
+      try {
+        config.headers = JSON.parse(extraHeaders) as Record<string, string>;
+      } catch {
+        this.error(`Invalid JSON for --extra-headers: ${extraHeaders}`);
+      }
+    }
+
     return config;
+  }
+
+  /**
+   * Register extra params (query, body, headers) as global middleware.
+   * This applies to ALL HTTP clients created during command execution.
+   */
+  private registerExtraParamsMiddleware(): void {
+    const extraParams = this.getExtraParams();
+    if (!extraParams) return;
+
+    globalMiddlewareRegistry.register({
+      name: 'cli-extra-params',
+      getMiddleware() {
+        return createExtraParamsMiddleware(extraParams);
+      },
+    });
   }
 }

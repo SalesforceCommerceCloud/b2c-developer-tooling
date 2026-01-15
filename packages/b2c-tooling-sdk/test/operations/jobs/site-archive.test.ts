@@ -24,6 +24,9 @@ const TEST_HOST = 'test.demandware.net';
 const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
 const OCAPI_BASE = `https://${TEST_HOST}/s/-/dw/data/v25_6`;
 
+// Use short poll interval for fast tests (default is 3000ms)
+const FAST_WAIT_OPTIONS = {pollInterval: 10};
+
 describe('operations/jobs/site-archive', () => {
   const server = setupServer();
   let mockInstance: any;
@@ -106,6 +109,7 @@ describe('operations/jobs/site-archive', () => {
 
       const result = await siteArchiveImport(mockInstance, siteDir, {
         archiveName: 'test-import',
+        waitOptions: FAST_WAIT_OPTIONS,
       });
 
       expect(result.execution.id).to.equal('exec-1');
@@ -153,7 +157,9 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveImport(mockInstance, zipPath);
+      const result = await siteArchiveImport(mockInstance, zipPath, {
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
 
       expect(result.execution.id).to.equal('exec-2');
       expect(uploadedZip).to.not.be.null;
@@ -185,6 +191,7 @@ describe('operations/jobs/site-archive', () => {
 
       const result = await siteArchiveImport(mockInstance, zipBuffer, {
         archiveName: 'buffer-import',
+        waitOptions: FAST_WAIT_OPTIONS,
       });
 
       expect(result.execution.id).to.equal('exec-3');
@@ -210,7 +217,13 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveImport(mockInstance, {remoteFilename: 'existing-archive.zip'});
+      const result = await siteArchiveImport(
+        mockInstance,
+        {remoteFilename: 'existing-archive.zip'},
+        {
+          waitOptions: FAST_WAIT_OPTIONS,
+        },
+      );
 
       expect(result.execution.id).to.equal('exec-4');
       expect(result.archiveFilename).to.equal('existing-archive.zip');
@@ -248,6 +261,7 @@ describe('operations/jobs/site-archive', () => {
 
       const result = await siteArchiveImport(mockInstance, zipPath, {
         keepArchive: true,
+        waitOptions: FAST_WAIT_OPTIONS,
       });
 
       expect(result.archiveKept).to.be.true;
@@ -291,7 +305,9 @@ describe('operations/jobs/site-archive', () => {
       );
 
       try {
-        await siteArchiveImport(mockInstance, zipPath);
+        await siteArchiveImport(mockInstance, zipPath, {
+          waitOptions: FAST_WAIT_OPTIONS,
+        });
         expect.fail('Should have thrown JobExecutionError');
       } catch (error: any) {
         expect(error.name).to.equal('JobExecutionError');
@@ -333,7 +349,9 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveExportToPath(mockInstance, {global_data: {meta_data: true}}, exportPath);
+      const result = await siteArchiveExportToPath(mockInstance, {global_data: {meta_data: true}}, exportPath, {
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
 
       expect(result.execution.id).to.equal('export-1');
       expect(result.localPath).to.equal(exportPath);
@@ -371,7 +389,11 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveExport(mockInstance, {global_data: {meta_data: true}});
+      const result = await siteArchiveExport(
+        mockInstance,
+        {global_data: {meta_data: true}},
+        {waitOptions: FAST_WAIT_OPTIONS},
+      );
 
       expect(result.execution.id).to.equal('export-2');
       expect(result.data).to.be.instanceOf(Buffer);
@@ -399,7 +421,9 @@ describe('operations/jobs/site-archive', () => {
       );
 
       try {
-        await siteArchiveExportToPath(mockInstance, {}, exportPath);
+        await siteArchiveExportToPath(mockInstance, {}, exportPath, {
+          waitOptions: FAST_WAIT_OPTIONS,
+        });
         expect.fail('Should have thrown JobExecutionError');
       } catch (error: any) {
         expect(error.name).to.equal('JobExecutionError');
@@ -436,7 +460,11 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      const result = await siteArchiveExport(mockInstance, {global_data: {meta_data: true}});
+      const result = await siteArchiveExport(
+        mockInstance,
+        {global_data: {meta_data: true}},
+        {waitOptions: FAST_WAIT_OPTIONS},
+      );
 
       expect(result.archiveFilename).to.match(/\d{8}T\d{9}Z_export\.zip/);
     });

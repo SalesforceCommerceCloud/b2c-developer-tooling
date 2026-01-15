@@ -14,11 +14,11 @@
  * ## Flags
  *
  * ### MCP-Specific Flags
- * | Flag | Description |
- * |------|-------------|
- * | `--toolsets` | Comma-separated toolsets to enable (case-insensitive) |
- * | `--tools` | Comma-separated individual tools to enable (case-insensitive) |
- * | `--allow-non-ga-tools` | Enable experimental/non-GA tools |
+ * | Flag | Env Variable | Description |
+ * |------|--------------|-------------|
+ * | `--toolsets` | `SFCC_TOOLSETS` | Comma-separated toolsets to enable (case-insensitive) |
+ * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
+ * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
  *
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
@@ -39,14 +39,23 @@
  * | `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
  *
  * ### Global Flags (inherited from BaseCommand)
- * | Flag | Description |
- * |------|-------------|
- * | `--config` | Path to dw.json config file (auto-discovered if not provided) |
- * | `--instance` | Instance name from configuration file |
- * | `--log-level` | Set logging verbosity (trace, debug, info, warn, error, silent) |
- * | `--debug` | Enable debug logging |
- * | `--json` | Output logs as JSON lines |
- * | `--lang` | Language for messages |
+ * | Flag | Env Variable | Description |
+ * |------|--------------|-------------|
+ * | `--working-directory` | `SFCC_WORKING_DIRECTORY` | Project working directory (see note below) |
+ * | `--config` | `SFCC_CONFIG` | Path to dw.json config file (auto-discovered if not provided) |
+ * | `--instance` | `SFCC_INSTANCE` | Instance name from configuration file |
+ * | `--log-level` | `SFCC_LOG_LEVEL` | Set logging verbosity (trace, debug, info, warn, error, silent) |
+ * | `--debug` | `SFCC_DEBUG` | Enable debug logging |
+ * | `--json` | - | Output logs as JSON lines |
+ * | `--lang` | - | Language for messages |
+ *
+ * **Note on `--working-directory`**: Many MCP clients (Cursor, Claude Desktop) spawn servers from the
+ * user's home directory (`~`) rather than the project directory. This flag is used for:
+ * - Auto-discovery (detecting project type when no `--toolsets` or `--tools` are provided)
+ * - Scaffolding tools (creating files in the correct project location)
+ * - Any tool that needs to operate on the project directory
+ *
+ * Use `--working-directory` or `SFCC_WORKING_DIRECTORY` env var to specify the actual project path.
  *
  * ## Configuration
  *
@@ -227,6 +236,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
       allowNonGaTools: this.flags['allow-non-ga-tools'],
       configPath: this.flags.config,
+      // Working directory for auto-discovery. oclif handles flag with env fallback.
+      workingDirectory: this.flags['working-directory'],
     };
 
     // TODO: Telemetry - Initialize telemetry unless disabled

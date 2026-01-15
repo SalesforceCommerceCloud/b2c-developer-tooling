@@ -178,6 +178,17 @@
         "types": "./dist/cjs/config/index.d.ts",
         "default": "./dist/cjs/config/index.js"
       }
+    },
+    "./discovery": {
+      "development": "./src/discovery/index.ts",
+      "import": {
+        "types": "./dist/esm/discovery/index.d.ts",
+        "default": "./dist/esm/discovery/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/discovery/index.d.ts",
+        "default": "./dist/cjs/discovery/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
@@ -195,8 +206,8 @@
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
-    "format": "prettier --write src scripts",
-    "format:check": "prettier --check src scripts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
@@ -210,12 +221,14 @@
     "@eslint/compat": "^1",
     "@oclif/core": "^4",
     "@oclif/prettier-config": "^0.2.1",
+    "@oclif/test": "^4.1.14",
     "@salesforce/dev-config": "^4.3.2",
     "@tony.ganchev/eslint-plugin-header": "^3.1.11",
     "@types/archiver": "^7.0.0",
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.10",
     "@types/node": "^18.19.130",
+    "@types/sinon": "^21.0.0",
     "@types/xml2js": "^0.4.14",
     "c8": "^10.1.3",
     "chai": "^4.5.0",
@@ -227,6 +240,7 @@
     "openapi-typescript": "^7.10.1",
     "prettier": "^3.6.2",
     "shx": "^0.3.3",
+    "sinon": "^21.0.1",
     "tsx": "^4.20.6",
     "typescript": "^5",
     "typescript-eslint": "^8"
@@ -244,9 +258,9 @@
   },
   "dependencies": {
     "archiver": "^7.0.1",
-    "fuse.js": "^7.0.0",
     "chokidar": "^5.0.0",
     "cliui": "^9.0.1",
+    "fuse.js": "^7.0.0",
     "glob": "^13.0.0",
     "i18next": "^25.6.3",
     "jszip": "^3.10.1",

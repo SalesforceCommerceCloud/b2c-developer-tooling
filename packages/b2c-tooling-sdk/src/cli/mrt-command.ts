@@ -55,15 +55,21 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       description: `MRT cloud origin URL (default: ${DEFAULT_MRT_ORIGIN})`,
       env: 'SFCC_MRT_CLOUD_ORIGIN',
     }),
+    'credentials-file': Flags.string({
+      description: 'Path to MRT credentials file (overrides default ~/.mobify)',
+      env: 'MRT_CREDENTIALS_FILE',
+    }),
   };
 
   protected override loadConfiguration(): ResolvedConfig {
     const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
+    const credentialsFile = this.flags['credentials-file'] as string | undefined;
 
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
       cloudOrigin, // MobifySource uses this to load ~/.mobify--[hostname] if set
+      credentialsFile, // Override path to MRT credentials file
     };
 
     const flagConfig: Partial<ResolvedConfig> = {

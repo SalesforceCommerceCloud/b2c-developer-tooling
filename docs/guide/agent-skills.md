@@ -1,3 +1,7 @@
+---
+description: AI agent skills and plugins for Claude Code, Cursor, and GitHub Copilot that enhance B2C Commerce development.
+---
+
 # Agent Skills & Plugins
 
 The B2C Developer Tooling project provides agent skills that enhance the AI-assisted development experience when working with Salesforce B2C Commerce projects.
