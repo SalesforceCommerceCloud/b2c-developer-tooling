@@ -117,6 +117,14 @@ export function loadConfig(
     sourcesAfter: pluginSources.after,
   });
 
+  // Log source summary
+  for (const source of resolved.sources) {
+    logger.trace(
+      {source: source.name, path: source.path, fields: source.fieldsContributed},
+      `[${source.name}] Contributed fields`,
+    );
+  }
+
   // Log warnings
   for (const warning of resolved.warnings) {
     logger.trace({warning}, `[Config] ${warning.message}`);

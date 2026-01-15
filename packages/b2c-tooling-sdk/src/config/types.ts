@@ -64,7 +64,7 @@ export interface NormalizedConfig {
   mrtOrigin?: string;
 
   // Metadata
-  /** Instance name (from multi-config dw.json) */
+  /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
 }
 
@@ -113,7 +113,7 @@ export interface ConfigResolutionResult {
  * Options for configuration resolution.
  */
 export interface ResolveConfigOptions {
-  /** Named instance from dw.json "configs" array */
+  /** Named instance for supporting ConfigSources */
   instance?: string;
   /** Explicit path to config file (defaults to auto-discover) */
   configPath?: string;

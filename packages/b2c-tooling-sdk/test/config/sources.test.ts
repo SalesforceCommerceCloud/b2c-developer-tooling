@@ -126,7 +126,7 @@ describe('config/sources', () => {
       resolver.resolve();
       const {sources} = resolver.resolve();
 
-      const dwJsonSource = sources.find((s) => s.name === 'dw.json');
+      const dwJsonSource = sources.find((s) => s.name === 'DwJsonSource');
       // Normalize paths to handle macOS symlinks (/var -> /private/var)
       const expectedPath = fs.realpathSync(dwJsonPath);
       const actualPath = dwJsonSource?.path ? fs.realpathSync(dwJsonSource.path) : undefined;
@@ -346,7 +346,7 @@ describe('config/sources', () => {
         resolver.resolve();
         const {sources} = resolver.resolve();
 
-        const mobifySource = sources.find((s) => s.name === 'mobify');
+        const mobifySource = sources.find((s) => s.name === 'MobifySource');
         // Normalize paths to handle macOS symlinks
         const expectedPath = fs.realpathSync(mobifyPath);
         const actualPath = mobifySource?.path ? fs.realpathSync(mobifySource.path) : undefined;
