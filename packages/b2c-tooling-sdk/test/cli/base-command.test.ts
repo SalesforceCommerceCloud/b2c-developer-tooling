@@ -401,23 +401,16 @@ describe('cli/base-command', () => {
         metadata: {},
       })) as typeof cmd.parse;
 
-      await cmd.init();
-      let errorCalled = false;
-      const originalError = cmd.error.bind(command);
-      cmd.error = () => {
-        errorCalled = true;
-        throw new Error('Expected error');
-      };
-
+      // Error is thrown during init() when registerExtraParamsMiddleware() calls getExtraParams()
+      let errorThrown = false;
       try {
-        command.testGetExtraParams();
-      } catch {
-        // Expected
+        await cmd.init();
+      } catch (err) {
+        errorThrown = true;
+        expect((err as Error).message).to.include('Invalid JSON for --extra-query');
       }
 
-      expect(errorCalled).to.be.true;
-
-      cmd.error = originalError;
+      expect(errorThrown).to.be.true;
       cmd.parse = originalParse;
     });
 
@@ -430,23 +423,16 @@ describe('cli/base-command', () => {
         metadata: {},
       })) as typeof cmd.parse;
 
-      await cmd.init();
-      let errorCalled = false;
-      const originalError = cmd.error.bind(command);
-      cmd.error = () => {
-        errorCalled = true;
-        throw new Error('Expected error');
-      };
-
+      // Error is thrown during init() when registerExtraParamsMiddleware() calls getExtraParams()
+      let errorThrown = false;
       try {
-        command.testGetExtraParams();
-      } catch {
-        // Expected
+        await cmd.init();
+      } catch (err) {
+        errorThrown = true;
+        expect((err as Error).message).to.include('Invalid JSON for --extra-body');
       }
 
-      expect(errorCalled).to.be.true;
-
-      cmd.error = originalError;
+      expect(errorThrown).to.be.true;
       cmd.parse = originalParse;
     });
 
@@ -497,23 +483,16 @@ describe('cli/base-command', () => {
         metadata: {},
       })) as typeof cmd.parse;
 
-      await cmd.init();
-      let errorCalled = false;
-      const originalError = cmd.error.bind(command);
-      cmd.error = () => {
-        errorCalled = true;
-        throw new Error('Expected error');
-      };
-
+      // Error is thrown during init() when registerExtraParamsMiddleware() calls getExtraParams()
+      let errorThrown = false;
       try {
-        command.testGetExtraParams();
-      } catch {
-        // Expected
+        await cmd.init();
+      } catch (err) {
+        errorThrown = true;
+        expect((err as Error).message).to.include('Invalid JSON for --extra-headers');
       }
 
-      expect(errorCalled).to.be.true;
-
-      cmd.error = originalError;
+      expect(errorThrown).to.be.true;
       cmd.parse = originalParse;
     });
   });
