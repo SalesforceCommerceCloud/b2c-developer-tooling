@@ -449,6 +449,73 @@ describe('cli/base-command', () => {
       cmd.error = originalError;
       cmd.parse = originalParse;
     });
+
+    it('parses extra-headers flag', async () => {
+      const cmd = command as MockableBaseCommand;
+      const originalParse = cmd.parse.bind(command);
+      cmd.parse = (async () => ({
+        args: {},
+        flags: {'extra-headers': '{"X-Custom-Header":"value"}'},
+        metadata: {},
+      })) as typeof cmd.parse;
+
+      await cmd.init();
+      const params = command.testGetExtraParams();
+      expect(params?.headers).to.deep.equal({'X-Custom-Header': 'value'});
+
+      cmd.parse = originalParse;
+    });
+
+    it('parses extra-query, extra-body, and extra-headers together', async () => {
+      const cmd = command as MockableBaseCommand;
+      const originalParse = cmd.parse.bind(command);
+      cmd.parse = (async () => ({
+        args: {},
+        flags: {
+          'extra-query': '{"debug":"true"}',
+          'extra-body': '{"_internal":true}',
+          'extra-headers': '{"X-Custom":"value"}',
+        },
+        metadata: {},
+      })) as typeof cmd.parse;
+
+      await cmd.init();
+      const params = command.testGetExtraParams();
+      expect(params?.query).to.deep.equal({debug: 'true'});
+      expect(params?.body).to.deep.equal({_internal: true});
+      expect(params?.headers).to.deep.equal({'X-Custom': 'value'});
+
+      cmd.parse = originalParse;
+    });
+
+    it('throws error for invalid JSON in extra-headers', async () => {
+      const cmd = command as MockableBaseCommand;
+      const originalParse = cmd.parse.bind(command);
+      cmd.parse = (async () => ({
+        args: {},
+        flags: {'extra-headers': 'invalid-json'},
+        metadata: {},
+      })) as typeof cmd.parse;
+
+      await cmd.init();
+      let errorCalled = false;
+      const originalError = cmd.error.bind(command);
+      cmd.error = () => {
+        errorCalled = true;
+        throw new Error('Expected error');
+      };
+
+      try {
+        command.testGetExtraParams();
+      } catch {
+        // Expected
+      }
+
+      expect(errorCalled).to.be.true;
+
+      cmd.error = originalError;
+      cmd.parse = originalParse;
+    });
   });
 
   describe('baseCommandTest', () => {

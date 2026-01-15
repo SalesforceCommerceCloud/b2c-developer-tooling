@@ -23,6 +23,8 @@ export interface ExtraParamsConfig {
   query?: Record<string, string | number | boolean | undefined>;
   /** Extra body fields to merge into JSON request bodies */
   body?: Record<string, unknown>;
+  /** Extra HTTP headers to add to all requests */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -205,6 +207,21 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
   return {
     async onRequest({request}) {
       let modifiedRequest = request;
+
+      // Add extra headers first (before other modifications)
+      if (config.headers && Object.keys(config.headers).length > 0) {
+        const newHeaders = new Headers(modifiedRequest.headers);
+        for (const [key, value] of Object.entries(config.headers)) {
+          newHeaders.set(key, value);
+        }
+        logger.trace({extraHeaders: config.headers}, '[ExtraParams] Adding extra headers to request');
+        modifiedRequest = new Request(modifiedRequest.url, {
+          method: modifiedRequest.method,
+          headers: newHeaders,
+          body: modifiedRequest.body,
+          duplex: modifiedRequest.body ? 'half' : undefined,
+        } as RequestInit);
+      }
 
       // Add extra query parameters
       if (config.query && Object.keys(config.query).length > 0) {
