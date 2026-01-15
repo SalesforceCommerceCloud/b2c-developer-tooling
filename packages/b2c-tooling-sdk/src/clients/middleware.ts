@@ -212,6 +212,10 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
     async onRequest({request}) {
       let modifiedRequest = request;
 
+      // HTTP methods that don't allow a request body
+      const methodsWithoutBody = ['GET', 'HEAD'];
+      const canHaveBody = !methodsWithoutBody.includes(modifiedRequest.method.toUpperCase());
+
       // Add extra headers first (before other modifications)
       if (config.headers && Object.keys(config.headers).length > 0) {
         const newHeaders = new Headers(modifiedRequest.headers);
@@ -222,28 +226,26 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
         modifiedRequest = new Request(modifiedRequest.url, {
           method: modifiedRequest.method,
           headers: newHeaders,
-          body: modifiedRequest.body,
-          duplex: modifiedRequest.body ? 'half' : undefined,
+          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
         } as RequestInit);
       }
 
       // Add extra query parameters
       if (config.query && Object.keys(config.query).length > 0) {
-        const url = new URL(request.url);
+        const url = new URL(modifiedRequest.url);
         for (const [key, value] of Object.entries(config.query)) {
           if (value !== undefined) {
             url.searchParams.set(key, String(value));
           }
         }
         logger.trace(
-          {extraQuery: config.query, originalUrl: request.url, newUrl: url.toString()},
+          {extraQuery: config.query, originalUrl: modifiedRequest.url, newUrl: url.toString()},
           '[ExtraParams] Adding extra query params to URL',
         );
         modifiedRequest = new Request(url.toString(), {
-          method: request.method,
-          headers: request.headers,
-          body: request.body,
-          duplex: request.body ? 'half' : undefined,
+          method: modifiedRequest.method,
+          headers: modifiedRequest.headers,
+          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
         } as RequestInit);
       }
 
@@ -268,8 +270,8 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           } catch {
             logger.warn('[ExtraParams] Could not parse request body as JSON, skipping body merge');
           }
-        } else if (!modifiedRequest.body) {
-          // No existing body, create one with extra fields
+        } else if (!modifiedRequest.body && canHaveBody) {
+          // No existing body, create one with extra fields (only for methods that allow a body)
           logger.trace({body: config.body}, '[ExtraParams] Creating new body with extra fields');
           const headers = new Headers(modifiedRequest.headers);
           headers.set('content-type', 'application/json');

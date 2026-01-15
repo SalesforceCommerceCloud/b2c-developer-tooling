@@ -6,6 +6,7 @@
 import {expect} from 'chai';
 import {Config} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 
 // Create a concrete test command class
 class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
@@ -55,6 +56,11 @@ describe('cli/base-command', () => {
   beforeEach(async () => {
     config = await Config.load();
     command = new TestBaseCommand([], config);
+  });
+
+  afterEach(() => {
+    // Clean up the global middleware registry between tests
+    globalMiddlewareRegistry.clear();
   });
 
   describe('init', () => {
