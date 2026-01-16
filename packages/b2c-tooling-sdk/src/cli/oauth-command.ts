@@ -59,9 +59,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       helpGroup: 'AUTH',
     }),
     'account-manager-host': Flags.string({
-      description: 'Account Manager hostname for OAuth',
+      description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
-      default: DEFAULT_ACCOUNT_MANAGER_HOST,
       helpGroup: 'AUTH',
     }),
   };
