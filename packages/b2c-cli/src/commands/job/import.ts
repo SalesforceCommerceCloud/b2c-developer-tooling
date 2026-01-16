@@ -61,7 +61,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     this.requireWebDavCredentials();
 
     const {target} = this.args;
-    const {'keep-archive': keepArchive, remote, timeout, 'show-log': showLog} = this.flags;
+    const {'keep-archive': keepArchive, remote, timeout, 'show-log': showLog = true} = this.flags;
 
     const hostname = this.resolvedConfig.values.hostname!;
 
@@ -107,7 +107,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     try {
       const importTarget = remote ? {remoteFilename: target} : target;
 
-      const result = await siteArchiveImport(this.instance, importTarget, {
+      const result = await this.siteArchiveImport(importTarget, {
         keepArchive,
         waitOptions: {
           timeout: timeout ? timeout * 1000 : undefined,
@@ -177,5 +177,12 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       }
       throw error;
     }
+  }
+
+  protected async siteArchiveImport(
+    target: Parameters<typeof siteArchiveImport>[1],
+    options: Parameters<typeof siteArchiveImport>[2],
+  ) {
+    return siteArchiveImport(this.instance, target, options);
   }
 }

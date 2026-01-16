@@ -9,14 +9,41 @@ import {expect} from 'chai';
 import OdsStart from '../../../src/commands/ods/start.js';
 
 import OdsStop from '../../../src/commands/ods/stop.js';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import OdsRestart from '../../../src/commands/ods/restart.js';
-import {
-  makeCommandThrowOnError,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOdsClient,
-} from '../../helpers/ods.js';
+
+function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({'sandbox-api-host': sandboxApiHost}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+}
+
+function stubJsonEnabled(command: any, enabled: boolean): void {
+  command.jsonEnabled = () => enabled;
+}
+
+function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; DELETE: any}>): void {
+  Object.defineProperty(command, 'odsClient', {
+    value: client,
+    configurable: true,
+  });
+}
+
+function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
 
 /**
  * Unit tests for ODS operation commands CLI logic.

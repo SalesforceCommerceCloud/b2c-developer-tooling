@@ -114,7 +114,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       'no-download': noDownload,
       'zip-only': zipOnly,
       timeout,
-      'show-log': showLog,
+      'show-log': showLog = true,
     } = this.flags;
 
     const hostname = this.resolvedConfig.values.hostname!;
@@ -173,7 +173,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
     this.log(t('commands.job.export.dataUnits', 'Data units: {{dataUnits}}', {dataUnits: JSON.stringify(dataUnits)}));
 
     try {
-      const result = await siteArchiveExportToPath(this.instance, dataUnits, output, {
+      const result = await this.siteArchiveExportToPath(dataUnits, output, {
         keepArchive: keepArchive || noDownload,
         extractZip: !zipOnly,
         waitOptions: {
@@ -252,6 +252,14 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       }
       throw error;
     }
+  }
+
+  protected async siteArchiveExportToPath(
+    dataUnits: Parameters<typeof siteArchiveExportToPath>[1],
+    output: Parameters<typeof siteArchiveExportToPath>[2],
+    options: Parameters<typeof siteArchiveExportToPath>[3],
+  ) {
+    return siteArchiveExportToPath(this.instance, dataUnits, output, options);
   }
 
   private buildDataUnits(params: {

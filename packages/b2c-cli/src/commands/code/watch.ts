@@ -41,18 +41,7 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     }
 
     try {
-      const result = await watchCartridges(this.instance, this.cartridgePath, {
-        ...this.cartridgeOptions,
-        onUpload: (files) => {
-          this.log(t('commands.code.watch.uploaded', '[UPLOAD] {{count}} file(s)', {count: files.length}));
-        },
-        onDelete: (files) => {
-          this.log(t('commands.code.watch.deleted', '[DELETE] {{count}} file(s)', {count: files.length}));
-        },
-        onError: (error) => {
-          this.warn(t('commands.code.watch.error', 'Error: {{message}}', {message: error.message}));
-        },
-      });
+      const result = await this.watchCartridges();
 
       this.log(
         t('commands.code.watch.watching', 'Watching {{count}} cartridge(s)...', {count: result.cartridges.length}),
@@ -77,5 +66,20 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
       }
       throw error;
     }
+  }
+
+  protected async watchCartridges() {
+    return watchCartridges(this.instance, this.cartridgePath, {
+      ...this.cartridgeOptions,
+      onUpload: (files) => {
+        this.log(t('commands.code.watch.uploaded', '[UPLOAD] {{count}} file(s)', {count: files.length}));
+      },
+      onDelete: (files) => {
+        this.log(t('commands.code.watch.deleted', '[DELETE] {{count}} file(s)', {count: files.length}));
+      },
+      onError: (error) => {
+        this.warn(t('commands.code.watch.error', 'Error: {{message}}', {message: error.message}));
+      },
+    });
   }
 }
