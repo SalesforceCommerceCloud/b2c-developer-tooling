@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -24,18 +24,6 @@
     "marked-terminal": "^7.3.0",
     "open": "^11.0.0"
   },
-  "bundleDependencies": [
-    "@oclif/core",
-    "@oclif/plugin-autocomplete",
-    "@oclif/plugin-help",
-    "@oclif/plugin-not-found",
-    "@oclif/plugin-plugins",
-    "@oclif/plugin-version",
-    "@salesforce/b2c-tooling-sdk",
-    "cliui",
-    "marked",
-    "marked-terminal"
-  ],
   "devDependencies": {
     "@eslint/compat": "^1",
     "@oclif/prettier-config": "^0.2.1",
