@@ -1,12 +1,16 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.0.1-preview",
+  "version": "0.0.2",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
   },
   "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-autocomplete": "^3",
