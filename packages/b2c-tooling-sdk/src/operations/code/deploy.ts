@@ -178,7 +178,7 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
   logger.debug('Temporary archive deleted');
 
   logger.debug(
-    {hostname: instance.config.hostname, codeVersion, cartridgeCount: cartridges.length},
+    {server: instance.config.hostname, codeVersion, cartridgeCount: cartridges.length},
     `Uploaded ${cartridges.length} cartridges to ${instance.config.hostname}`,
   );
 }
