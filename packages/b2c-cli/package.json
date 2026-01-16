@@ -69,11 +69,16 @@
   ],
   "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling",
   "keywords": [
-    "SFCC",
-    "B2C",
-    "Commerce Cloud",
-    "CLI",
-    "Command Line Interface"
+    "salesforce",
+    "commerce-cloud",
+    "sfcc",
+    "b2c",
+    "cli",
+    "ecommerce",
+    "developer-tools",
+    "deployment",
+    "webdav",
+    "oclif"
   ],
   "license": "Apache-2.0",
   "main": "dist/index.js",

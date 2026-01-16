@@ -6,12 +6,16 @@
   "license": "MIT",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "keywords": [
+    "salesforce",
+    "commerce-cloud",
+    "sfcc",
+    "b2c",
     "mcp",
-    "server",
-    "SFCC",
-    "B2C",
-    "Commerce Cloud",
-    "tooling"
+    "model-context-protocol",
+    "ai",
+    "llm",
+    "ecommerce",
+    "developer-tools"
   ],
   "type": "module",
   "publishConfig": {

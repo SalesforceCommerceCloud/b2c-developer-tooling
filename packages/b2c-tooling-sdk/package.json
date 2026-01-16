@@ -6,10 +6,16 @@
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "keywords": [
-    "SFCC",
-    "B2C",
-    "Commerce Cloud",
-    "tooling"
+    "salesforce",
+    "commerce-cloud",
+    "sfcc",
+    "b2c",
+    "sdk",
+    "ecommerce",
+    "webdav",
+    "ocapi",
+    "scapi",
+    "developer-tools"
   ],
   "type": "module",
   "publishConfig": {
