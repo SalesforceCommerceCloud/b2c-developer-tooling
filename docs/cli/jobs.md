@@ -1,3 +1,7 @@
+---
+description: Commands for executing jobs, importing and exporting site archives, and monitoring job execution status.
+---
+
 # Job Commands
 
 Commands for executing and monitoring jobs on B2C Commerce instances.

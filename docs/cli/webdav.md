@@ -1,3 +1,7 @@
+---
+description: Commands for WebDAV file operations including listing, uploading, downloading, and managing files on B2C Commerce instances.
+---
+
 # WebDAV Commands
 
 Commands for file operations on B2C Commerce instance WebDAV.

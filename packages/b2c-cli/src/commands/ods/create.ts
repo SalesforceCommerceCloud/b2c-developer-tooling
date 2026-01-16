@@ -122,7 +122,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
         t(
           'commands.ods.create.settingPermissions',
           'Setting OCAPI and WebDAV permissions for client ID: {{clientId}}',
-          {clientId: this.resolvedConfig.clientId!},
+          {clientId: this.resolvedConfig.values.clientId!},
         ),
       );
     }
@@ -177,7 +177,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       return undefined;
     }
 
-    const clientId = this.resolvedConfig.clientId;
+    const clientId = this.resolvedConfig.values.clientId;
     if (!clientId) {
       return undefined;
     }
@@ -254,7 +254,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to be ready...'));
 
     // Initial delay before first poll to allow the sandbox to be registered in the API
-    await this.sleep(2000);
+    await this.sleep(pollIntervalMs);
 
     while (true) {
       // Check for timeout

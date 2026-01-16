@@ -117,12 +117,12 @@ export async function executeJob(
     const errorBody = await response.text().catch(() => '');
     if (errorBody.includes('JobAlreadyRunningException')) {
       if (waitForRunning) {
-        logger.warn(`Job ${jobId} already running, waiting for it to finish...`);
+        logger.warn({jobId}, `Job ${jobId} already running, waiting for it to finish...`);
 
         // Search for the running execution
         const runningExecution = await findRunningJobExecution(instance, jobId);
         if (runningExecution) {
-          logger.debug({executionId: runningExecution.id}, `Found running execution ${runningExecution.id}`);
+          logger.debug({jobId, executionId: runningExecution.id}, `Found running execution ${runningExecution.id}`);
           await waitForJob(instance, jobId, runningExecution.id!);
           // Retry execution after the running job finishes
           return executeJob(instance, jobId, {...options, waitForRunning: false});
@@ -139,7 +139,7 @@ export async function executeJob(
     throw new Error(message);
   }
 
-  logger.debug({executionId: data.id, status: data.execution_status}, `Job ${jobId} started: ${data.id}`);
+  logger.debug({jobId, executionId: data.id, status: data.execution_status}, `Job ${jobId} started: ${data.id}`);
 
   return data;
 }
@@ -231,14 +231,14 @@ export async function waitForJob(
 
     // Check for terminal states
     if (execution.execution_status === 'aborted' || execution.exit_status?.code === 'ERROR') {
-      logger.debug({execution}, `Job ${jobId} failed`);
+      logger.debug({jobId, executionId, execution}, `Job ${jobId} failed`);
       throw new JobExecutionError(`Job ${jobId} failed`, execution);
     }
 
     if (execution.execution_status === 'finished') {
       const durationSec = (execution.duration ?? 0) / 1000;
       logger.debug(
-        {executionId, status: execution.exit_status?.code, duration: durationSec},
+        {jobId, executionId, status: execution.exit_status?.code, duration: durationSec},
         `Job ${jobId} finished. Status: ${execution.exit_status?.code} (duration: ${durationSec}s)`,
       );
       return execution;
@@ -247,7 +247,7 @@ export async function waitForJob(
     // Log periodic updates
     if (ticks % 5 === 0) {
       logger.debug(
-        {executionId, status: execution.execution_status, elapsed: elapsed / 1000},
+        {jobId, executionId, status: execution.execution_status, elapsed: elapsed / 1000},
         `Waiting for job ${jobId} to finish (${(elapsed / 1000).toFixed(0)}s elapsed)...`,
       );
     }

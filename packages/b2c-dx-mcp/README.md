@@ -52,6 +52,66 @@ Since the package is not yet published to npm, see the [Development](#developmen
 | `--debug` | Enable debug logging |
 | `--json` | Output logs as JSON lines |
 | `--lang` | Language for messages |
+| `--working-directory` | Project working directory (env: `SFCC_WORKING_DIRECTORY`) |
+
+### Workspace Auto-Discovery
+
+When neither `--toolsets` nor `--tools` are provided, the MCP server automatically detects your project type and enables the appropriate toolsets.
+
+**How it works:**
+
+1. The server analyzes your working directory (from `--working-directory` flag, `SFCC_WORKING_DIRECTORY` env var, or current directory)
+2. It checks for project markers like `package.json` dependencies and `.project` files
+3. It enables all toolsets that match any detected project type, plus the base SCAPI toolset
+
+**Base Toolset:**
+
+The **SCAPI** toolset is always enabled, providing API discovery and custom API scaffolding capabilities.
+
+**Project Types and Toolsets:**
+
+| Project Type | Detection | Toolsets Enabled |
+|--------------|-----------|------------------|
+| **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` | PWAV3, MRT, SCAPI |
+| **Storefront Next** | `@salesforce/storefront-next-*` packages in package.json | STOREFRONTNEXT, MRT, SCAPI |
+| **Cartridges** | Any cartridge with `.project` file (detected via `findCartridges`) | CARTRIDGES, SCAPI |
+| **No project detected** | No B2C project markers found | SCAPI (base toolset only) |
+
+**Hybrid Projects:**
+
+If multiple project types are detected (e.g., cartridges + PWA Kit v3), toolsets from all matched types are combined.
+
+**Example:**
+
+**Cursor** (supports `${workspaceFolder}`):
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+**Claude Desktop** (use explicit path):
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": ["--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+> **Note:** Cursor supports `${workspaceFolder}` variable expansion, but Claude Desktop does not. For Claude Desktop, use an explicit path or set the `SFCC_WORKING_DIRECTORY` environment variable.
+
+> **Warning:** MCP clients like Cursor and Claude Desktop often spawn servers from the home directory (`~`) rather than the project directory. Always set `--working-directory` or `SFCC_WORKING_DIRECTORY` for reliable auto-discovery and scaffolding operations.
 
 ### Configuration Examples
 

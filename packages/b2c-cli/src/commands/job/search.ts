@@ -86,7 +86,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
 
     this.log(
       t('commands.job.search.searching', 'Searching job executions on {{hostname}}...', {
-        hostname: this.resolvedConfig.hostname!,
+        hostname: this.resolvedConfig.values.hostname!,
       }),
     );
 

@@ -197,7 +197,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     this.requireMrtCredentials();
 
     const {slug} = this.args;
-    const {mrtProject: project} = this.resolvedConfig;
+    const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
       this.error(
@@ -242,7 +242,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
           allowCookies: allowCookies || undefined,
           enableSourceMaps: enableSourceMaps || undefined,
           proxyConfigs,
-          origin: this.resolvedConfig.mrtOrigin,
+          origin: this.resolvedConfig.values.mrtOrigin,
         },
         this.getMrtAuth(),
       );
@@ -256,7 +256,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
           {
             projectSlug: project,
             slug,
-            origin: this.resolvedConfig.mrtOrigin,
+            origin: this.resolvedConfig.values.mrtOrigin,
             onPoll: (env) => {
               if (!this.jsonEnabled()) {
                 const elapsed = Math.round((Date.now() - waitStartTime) / 1000);

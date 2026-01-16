@@ -143,7 +143,12 @@ export class WebDavClient {
 
     // Trace: Log request details
     logger.trace(
-      {headers: this.headersToObject(request.headers), body: this.formatBody(init?.body)},
+      {
+        method: request.method,
+        url: request.url,
+        headers: this.headersToObject(request.headers),
+        body: this.formatBody(init?.body),
+      },
       `[WebDAV REQ BODY] ${request.method} ${request.url}`,
     );
 
@@ -188,7 +193,10 @@ export class WebDavClient {
       const clonedResponse = response.clone();
       responseBody = await clonedResponse.text();
     }
-    logger.trace({headers: responseHeaders, body: responseBody}, `[WebDAV RESP BODY] ${request.method} ${request.url}`);
+    logger.trace(
+      {method: request.method, url: request.url, headers: responseHeaders, body: responseBody},
+      `[WebDAV RESP BODY] ${request.method} ${request.url}`,
+    );
 
     return response;
   }

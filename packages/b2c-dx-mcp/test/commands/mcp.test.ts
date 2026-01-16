@@ -64,6 +64,12 @@ describe('McpServerCommand', () => {
       expect(flag).to.not.be.undefined;
       expect(flag.env).to.equal('SFCC_MRT_API_KEY');
     });
+
+    it('should define working-directory flag with env var support', () => {
+      const flag = McpServerCommand.flags['working-directory'];
+      expect(flag).to.not.be.undefined;
+      expect(flag.env).to.equal('SFCC_WORKING_DIRECTORY');
+    });
   });
 
   describe('flag parse functions', () => {

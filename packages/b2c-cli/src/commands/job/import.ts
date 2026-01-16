@@ -63,7 +63,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     const {target} = this.args;
     const {'keep-archive': keepArchive, remote, timeout, 'show-log': showLog} = this.flags;
 
-    const hostname = this.resolvedConfig.hostname!;
+    const hostname = this.resolvedConfig.values.hostname!;
 
     // Create lifecycle context
     const context = this.createContext('job:import', {

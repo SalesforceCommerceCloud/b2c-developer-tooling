@@ -80,6 +80,8 @@ jobs:
           SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
           SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
           TEST_REALM: ${{ vars.TEST_REALM }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
+          CURL_EXTRA_HEADERS: ${{ secrets.CURL_EXTRA_HEADERS }}
         run: |
           echo "Running E2E shell tests with realm: ${TEST_REALM}"
           cd packages/b2c-cli

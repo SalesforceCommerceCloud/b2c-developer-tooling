@@ -20,7 +20,7 @@ npm install @salesforce/b2c-tooling-sdk
 Use `resolveConfig()` to load configuration from project files (dw.json) and create a B2C instance:
 
 ```typescript
-import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 
 // Load configuration, override secrets from environment
 const config = resolveConfig({
@@ -36,8 +36,8 @@ await instance.webdav.mkcol('Cartridges/v1');
 await instance.webdav.put('Cartridges/v1/app.zip', zipBuffer);
 
 // Use typed OCAPI client (openapi-fetch)
-const { data, error } = await instance.ocapi.GET('/sites', {
-  params: { query: { select: '(**)' } },
+const {data, error} = await instance.ocapi.GET('/sites', {
+  params: {query: {select: '(**)'}},
 });
 ```
 
@@ -46,16 +46,16 @@ const { data, error } = await instance.ocapi.GET('/sites', {
 For advanced use cases, you can construct a B2CInstance directly:
 
 ```typescript
-import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+import {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 
 const instance = new B2CInstance(
-  { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
+  {hostname: 'your-sandbox.demandware.net', codeVersion: 'v1'},
   {
     oauth: {
       clientId: 'your-client-id',
-      clientSecret: 'your-client-secret'
-    }
-  }
+      clientSecret: 'your-client-secret',
+    },
+  },
 );
 ```
 
@@ -89,24 +89,24 @@ The OCAPI client uses [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) wit
 
 ```typescript
 // List sites
-const { data, error } = await instance.ocapi.GET('/sites', {
-  params: { query: { select: '(**)' } },
+const {data, error} = await instance.ocapi.GET('/sites', {
+  params: {query: {select: '(**)'}},
 });
 
 // Activate a code version
-const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version_id}', {
-  params: { path: { code_version_id: 'v1' } },
-  body: { active: true },
+const {data, error} = await instance.ocapi.PATCH('/code_versions/{code_version_id}', {
+  params: {path: {code_version_id: 'v1'}},
+  body: {active: true},
 });
 ```
 
 ### Code Deployment
 
 ```typescript
-import { findAndDeployCartridges, activateCodeVersion } from '@salesforce/b2c-tooling-sdk/operations/code';
+import {findAndDeployCartridges, activateCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 
 // Deploy cartridges
-await findAndDeployCartridges(instance, './cartridges', { reload: true });
+await findAndDeployCartridges(instance, './cartridges', {reload: true});
 
 // Activate code version
 await activateCodeVersion(instance, 'v1');
@@ -115,7 +115,7 @@ await activateCodeVersion(instance, 'v1');
 ### Job Execution
 
 ```typescript
-import { executeJob, waitForJob, siteArchiveImport } from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {executeJob, waitForJob, siteArchiveImport} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 
 // Run a job and wait for completion
 const execution = await executeJob(instance, 'my-job-id');
@@ -129,30 +129,32 @@ await siteArchiveImport(instance, './site-data.zip');
 
 The SDK provides subpath exports for tree-shaking and organization:
 
-| Export | Description |
-|--------|-------------|
-| `@salesforce/b2c-tooling-sdk` | Main entry point with all exports |
-| `@salesforce/b2c-tooling-sdk/config` | Configuration resolution (resolveConfig) |
-| `@salesforce/b2c-tooling-sdk/auth` | Authentication strategies (OAuth, Basic, API Key) |
-| `@salesforce/b2c-tooling-sdk/instance` | B2CInstance class |
-| `@salesforce/b2c-tooling-sdk/clients` | Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT) |
-| `@salesforce/b2c-tooling-sdk/operations/code` | Code deployment operations |
-| `@salesforce/b2c-tooling-sdk/operations/jobs` | Job execution and site import/export |
-| `@salesforce/b2c-tooling-sdk/operations/sites` | Site management |
-| `@salesforce/b2c-tooling-sdk/logging` | Structured logging utilities |
+| Export                                         | Description                                           |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| `@salesforce/b2c-tooling-sdk`                  | Main entry point with all exports                     |
+| `@salesforce/b2c-tooling-sdk/config`           | Configuration resolution (resolveConfig)              |
+| `@salesforce/b2c-tooling-sdk/auth`             | Authentication strategies (OAuth, Basic, API Key)     |
+| `@salesforce/b2c-tooling-sdk/instance`         | B2CInstance class                                     |
+| `@salesforce/b2c-tooling-sdk/clients`          | Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT) |
+| `@salesforce/b2c-tooling-sdk/operations/code`  | Code deployment operations                            |
+| `@salesforce/b2c-tooling-sdk/operations/jobs`  | Job execution and site import/export                  |
+| `@salesforce/b2c-tooling-sdk/operations/sites` | Site management                                       |
+| `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)        |
+| `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)          |
+| `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                          |
 
 ## Logging
 
 Configure logging for debugging HTTP requests:
 
 ```typescript
-import { configureLogger } from '@salesforce/b2c-tooling-sdk/logging';
+import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 // Enable debug logging (shows HTTP request summaries)
-configureLogger({ level: 'debug' });
+configureLogger({level: 'debug'});
 
 // Enable trace logging (shows full request/response with headers and bodies)
-configureLogger({ level: 'trace' });
+configureLogger({level: 'trace'});
 ```
 
 ## Documentation

@@ -107,20 +107,17 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
 
     const logger = getLogger();
     logger.debug(
-      {clientId: this.config.clientId, accountManagerHost: this.accountManagerHost, localPort: this.localPort},
-      `[Auth] ImplicitOAuthStrategy initialized for client: ${this.config.clientId}`,
+      {clientId: this.config.clientId, accountManagerHost: this.accountManagerHost, port: this.localPort},
+      '[Auth] ImplicitOAuthStrategy initialized',
     );
-    logger.trace(
-      {scopes: this.config.scopes},
-      `[Auth] Configured scopes: ${this.config.scopes?.join(', ') || '(none)'}`,
-    );
+    logger.trace({scopes: this.config.scopes}, '[Auth] Configured scopes');
   }
 
   async fetch(url: string, init: RequestInit = {}): Promise<Response> {
     const logger = getLogger();
     const method = init.method || 'GET';
 
-    logger.trace({method, url}, `[Auth] Fetching with implicit OAuth: ${method} ${url}`);
+    logger.trace({method, url}, '[Auth] Fetching with implicit OAuth');
 
     const token = await this.getAccessToken();
 
@@ -132,10 +129,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     let res = await fetch(url, {...init, headers});
     const duration = Date.now() - startTime;
 
-    logger.debug(
-      {method, url, status: res.status, duration},
-      `[Auth] Response: ${method} ${url} ${res.status} ${duration}ms`,
-    );
+    logger.debug({method, url, status: res.status, duration}, '[Auth] Response');
 
     // RESILIENCE: If the server says 401, the token might have expired or been revoked.
     // We retry exactly once after invalidating the cached token.
@@ -149,10 +143,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       res = await fetch(url, {...init, headers});
       const retryDuration = Date.now() - retryStart;
 
-      logger.debug(
-        {method, url, status: res.status, duration: retryDuration},
-        `[Auth] Retry response: ${method} ${url} ${res.status} ${retryDuration}ms`,
-      );
+      logger.debug({method, url, status: res.status, duration: retryDuration}, '[Auth] Retry response');
     }
 
     return res;
@@ -244,10 +235,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
         );
         ACCESS_TOKEN_CACHE.delete(clientId);
       } else {
-        logger.debug(
-          {timeUntilExpiryMs: timeUntilExpiry},
-          `[Auth] Reusing cached access token (expires in ${Math.round(timeUntilExpiry / 1000)}s)`,
-        );
+        logger.debug({timeUntilExpiryMs: timeUntilExpiry}, '[Auth] Reusing cached access token');
         return cached.accessToken;
       }
     }
@@ -314,7 +302,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     logger.trace({authorizeUrl}, '[Auth] Authorization URL');
 
     // Print URL to console (in case machine has no default browser)
-    logger.info(`Login URL: ${authorizeUrl}`);
+    logger.info({url: authorizeUrl}, `Login URL: ${authorizeUrl}`);
     logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
 
     // Attempt to open the browser
@@ -337,7 +325,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
             hasAccessToken: !!accessToken,
             hasError: !!error,
           },
-          `[Auth] Received redirect request: ${requestUrl.pathname}`,
+          '[Auth] Received redirect request',
         );
 
         if (!accessToken && !error) {
@@ -349,7 +337,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
         } else if (accessToken) {
           const authDuration = Date.now() - startTime;
           // Successfully received access token
-          logger.debug({authDurationMs: authDuration}, `[Auth] Got access token response (took ${authDuration}ms)`);
+          logger.debug({duration: authDuration}, `[Auth] Got access token response (${authDuration}ms)`);
           logger.info('Successfully authenticated');
 
           try {
@@ -366,7 +354,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
 
           logger.debug(
             {expiresIn, expiresAt: expiration.toISOString(), scopes},
-            `[Auth] Token expires in ${expiresIn}s, scopes: ${scopes.join(', ') || '(none)'}`,
+            `[Auth] Token expires in ${expiresIn}s, scopes: ${scopes.join(' ')}`,
           );
 
           resolve({
@@ -391,7 +379,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
         } else if (error) {
           // OAuth error response
           const errorMessage = errorDescription || error;
-          logger.error({error, errorDescription}, `[Auth] OAuth error: ${errorMessage}`);
+          logger.error({error, errorDescription}, `[Auth] OAuth error: ${error}`);
           response.writeHead(500, {'Content-Type': 'text/plain'});
           response.write(`Authentication failed: ${errorMessage}`);
           response.end();
@@ -421,7 +409,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       });
 
       server.on('error', (err) => {
-        logger.error({error: err.message, port: this.localPort}, `[Auth] Failed to start OAuth redirect server`);
+        logger.error({error: err.message, port: this.localPort}, '[Auth] Failed to start OAuth redirect server');
         reject(new Error(`Failed to start OAuth redirect server: ${err.message}`));
       });
     });

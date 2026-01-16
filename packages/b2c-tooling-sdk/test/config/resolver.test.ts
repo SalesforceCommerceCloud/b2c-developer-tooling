@@ -8,6 +8,7 @@ import {
   ConfigResolver,
   createConfigResolver,
   type ConfigSource,
+  type ConfigLoadResult,
   type NormalizedConfig,
   type ResolveConfigOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
@@ -19,15 +20,14 @@ class MockSource implements ConfigSource {
   constructor(
     public name: string,
     private config: NormalizedConfig | undefined,
-    private path?: string,
+    private location?: string,
   ) {}
 
-  load(_options: ResolveConfigOptions): NormalizedConfig | undefined {
-    return this.config;
-  }
-
-  getPath(): string | undefined {
-    return this.path;
+  load(_options: ResolveConfigOptions): ConfigLoadResult | undefined {
+    if (this.config === undefined) {
+      return undefined;
+    }
+    return {config: this.config, location: this.location};
   }
 }
 
@@ -90,16 +90,16 @@ describe('config/resolver', () => {
         expect(sources).to.have.length(2);
       });
 
-      it('tracks source paths when available', () => {
+      it('tracks source locations when available', () => {
         const source = new MockSource('test', {hostname: 'example.demandware.net'}, '/path/to/dw.json');
         const resolver = new ConfigResolver([source]);
 
         const {sources} = resolver.resolve();
 
-        expect(sources[0].path).to.equal('/path/to/dw.json');
+        expect(sources[0].location).to.equal('/path/to/dw.json');
       });
 
-      it('tracks which fields each source contributed', () => {
+      it('tracks which fields each source provided', () => {
         const source1 = new MockSource('first', {
           hostname: 'example.demandware.net',
         });
@@ -111,8 +111,37 @@ describe('config/resolver', () => {
 
         const {sources} = resolver.resolve();
 
-        expect(sources[0].fieldsContributed).to.deep.equal(['hostname']);
-        expect(sources[1].fieldsContributed).to.have.members(['clientId', 'clientSecret']);
+        expect(sources[0].fields).to.deep.equal(['hostname']);
+        expect(sources[0].fieldsIgnored).to.be.undefined;
+        expect(sources[1].fields).to.have.members(['clientId', 'clientSecret']);
+        expect(sources[1].fieldsIgnored).to.be.undefined;
+      });
+
+      it('tracks fieldsIgnored when higher priority source provides same fields', () => {
+        const source1 = new MockSource('higher-priority', {
+          hostname: 'example.demandware.net',
+          clientId: 'higher-client',
+          clientSecret: 'higher-secret',
+        });
+        const source2 = new MockSource('lower-priority', {
+          clientId: 'lower-client',
+          clientSecret: 'lower-secret',
+        });
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {sources, config} = resolver.resolve();
+
+        // Higher priority source provides and uses all its fields
+        expect(sources[0].fields).to.have.members(['hostname', 'clientId', 'clientSecret']);
+        expect(sources[0].fieldsIgnored).to.be.undefined;
+
+        // Lower priority source provides fields but they are ignored
+        expect(sources[1].fields).to.have.members(['clientId', 'clientSecret']);
+        expect(sources[1].fieldsIgnored).to.have.members(['clientId', 'clientSecret']);
+
+        // Final config uses higher priority values
+        expect(config.clientId).to.equal('higher-client');
+        expect(config.clientSecret).to.equal('higher-secret');
       });
 
       it('skips sources that return undefined', () => {

@@ -145,7 +145,7 @@ export async function watchCartridges(
 
   logger.debug({count: cartridges.length}, `Watching ${cartridges.length} cartridge(s)`);
   for (const c of cartridges) {
-    logger.info({cartridge: c.name, path: c.src}, `  ${c.name}`);
+    logger.info({cartridgeName: c.name, path: c.src}, `  ${c.name}`);
   }
 
   const webdav = instance.webdav;
@@ -229,7 +229,7 @@ export async function watchCartridges(
         await webdav.delete(uploadPath);
 
         logger.debug(
-          {fileCount: validUploadFiles.length, hostname: instance.config.hostname},
+          {fileCount: validUploadFiles.length, server: instance.config.hostname},
           `Uploaded ${validUploadFiles.length} file(s)`,
         );
 
@@ -253,9 +253,9 @@ export async function watchCartridges(
         const deletePath = `${webdavLocation}/${f.dest}`;
         try {
           await webdav.delete(deletePath);
-          logger.info({file: deletePath}, `Deleted: ${deletePath}`);
+          logger.info({path: deletePath}, `Deleted: ${deletePath}`);
         } catch (error) {
-          logger.debug({file: deletePath, error}, `Failed to delete ${deletePath}`);
+          logger.debug({path: deletePath, error}, `Failed to delete ${deletePath}`);
         }
       }
 
@@ -291,7 +291,7 @@ export async function watchCartridges(
     options.onError?.(error);
   });
 
-  logger.debug({hostname: instance.config.hostname, codeVersion}, 'Watching for changes...');
+  logger.debug({server: instance.config.hostname, codeVersion}, 'Watching for changes...');
 
   return {
     watcher,

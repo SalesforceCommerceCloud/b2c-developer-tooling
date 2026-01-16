@@ -1,3 +1,7 @@
+---
+description: Extend the B2C CLI with custom plugins, configuration sources, HTTP middleware, and lifecycle hooks.
+---
+
 # Extending the CLI
 
 The B2C CLI can be extended with custom plugins using the [oclif plugin system](https://oclif.io/docs/plugins). Plugins can add new commands, provide custom configuration sources, and integrate with external systems.
@@ -147,28 +151,27 @@ export default hook;
 // src/sources/my-custom-source.ts
 import type {
   ConfigSource,
-  NormalizedConfig,
+  ConfigLoadResult,
   ResolveConfigOptions
 } from '@salesforce/b2c-tooling-sdk/config';
 
 export class MyCustomSource implements ConfigSource {
   readonly name = 'my-custom-source';
 
-  load(options: ResolveConfigOptions): NormalizedConfig | undefined {
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     // Load config from your custom source
     // Return undefined if source is not available
 
     return {
-      hostname: 'example.sandbox.us03.dx.commercecloud.salesforce.com',
-      clientId: 'your-client-id',
-      clientSecret: 'your-client-secret',
-      codeVersion: 'version1',
+      config: {
+        hostname: 'example.sandbox.us03.dx.commercecloud.salesforce.com',
+        clientId: 'your-client-id',
+        clientSecret: 'your-client-secret',
+        codeVersion: 'version1',
+      },
+      // Location is used for diagnostics - can be a file path, keychain entry, URL, etc.
+      location: '/path/to/config/source',
     };
-  }
-
-  // Optional: return path for diagnostics
-  getPath(): string | undefined {
-    return '/path/to/config/source';
   }
 }
 ```

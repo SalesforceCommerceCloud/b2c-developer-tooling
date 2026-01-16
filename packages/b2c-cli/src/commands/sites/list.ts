@@ -42,7 +42,7 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
   async run(): Promise<Sites> {
     this.requireOAuthCredentials();
 
-    const hostname = this.resolvedConfig.hostname!;
+    const hostname = this.resolvedConfig.values.hostname!;
 
     this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', {hostname}));
 

@@ -23,6 +23,8 @@ export interface ExtraParamsConfig {
   query?: Record<string, string | number | boolean | undefined>;
   /** Extra body fields to merge into JSON request bodies */
   body?: Record<string, unknown>;
+  /** Extra HTTP headers to add to all requests */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -141,7 +143,7 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
       // Mask sensitive/large body keys before logging
       const maskedBody = maskBody(body, maskBodyKeys);
       logger.trace(
-        {headers: headersToObject(request.headers), body: maskedBody},
+        {method: request.method, url, headers: headersToObject(request.headers), body: maskedBody},
         `${reqTag} ${request.method} ${url} body`,
       );
 
@@ -163,16 +165,20 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
 
       const clonedResponse = response.clone();
       let responseBody: unknown;
+      // Read as text first, then try to parse as JSON.
+      // This avoids a bug where json() consumes the body stream even when parsing fails,
+      // making subsequent text() calls fail with "Body has already been read".
+      const text = await clonedResponse.text();
       try {
-        responseBody = await clonedResponse.json();
+        responseBody = JSON.parse(text);
       } catch {
-        responseBody = await clonedResponse.text();
+        responseBody = text;
       }
 
       // Mask sensitive/large body keys before logging
       const maskedResponseBody = maskBody(responseBody, maskBodyKeys);
       logger.trace(
-        {headers: headersToObject(response.headers), body: maskedResponseBody},
+        {method: request.method, url, headers: headersToObject(response.headers), body: maskedResponseBody},
         `${respTag} ${request.method} ${url} body`,
       );
 
@@ -206,23 +212,40 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
     async onRequest({request}) {
       let modifiedRequest = request;
 
+      // HTTP methods that don't allow a request body
+      const methodsWithoutBody = ['GET', 'HEAD'];
+      const canHaveBody = !methodsWithoutBody.includes(modifiedRequest.method.toUpperCase());
+
+      // Add extra headers first (before other modifications)
+      if (config.headers && Object.keys(config.headers).length > 0) {
+        const newHeaders = new Headers(modifiedRequest.headers);
+        for (const [key, value] of Object.entries(config.headers)) {
+          newHeaders.set(key, value);
+        }
+        logger.trace({extraHeaders: config.headers}, '[ExtraParams] Adding extra headers to request');
+        modifiedRequest = new Request(modifiedRequest.url, {
+          method: modifiedRequest.method,
+          headers: newHeaders,
+          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
+        } as RequestInit);
+      }
+
       // Add extra query parameters
       if (config.query && Object.keys(config.query).length > 0) {
-        const url = new URL(request.url);
+        const url = new URL(modifiedRequest.url);
         for (const [key, value] of Object.entries(config.query)) {
           if (value !== undefined) {
             url.searchParams.set(key, String(value));
           }
         }
         logger.trace(
-          {extraQuery: config.query, originalUrl: request.url, newUrl: url.toString()},
+          {extraQuery: config.query, originalUrl: modifiedRequest.url, newUrl: url.toString()},
           '[ExtraParams] Adding extra query params to URL',
         );
         modifiedRequest = new Request(url.toString(), {
-          method: request.method,
-          headers: request.headers,
-          body: request.body,
-          duplex: request.body ? 'half' : undefined,
+          method: modifiedRequest.method,
+          headers: modifiedRequest.headers,
+          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
         } as RequestInit);
       }
 
@@ -247,8 +270,8 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           } catch {
             logger.warn('[ExtraParams] Could not parse request body as JSON, skipping body merge');
           }
-        } else if (!modifiedRequest.body) {
-          // No existing body, create one with extra fields
+        } else if (!modifiedRequest.body && canHaveBody) {
+          // No existing body, create one with extra fields (only for methods that allow a body)
           logger.trace({body: config.body}, '[ExtraParams] Creating new body with extra fields');
           const headers = new Headers(modifiedRequest.headers);
           headers.set('content-type', 'application/json');

@@ -116,7 +116,7 @@ export async function reloadCodeVersion(instance: B2CInstance, codeVersionId?: s
     throw new Error('No code version specified and no active version found');
   }
 
-  logger.debug({targetVersion}, `Reloading code version ${targetVersion}`);
+  logger.debug({codeVersionId: targetVersion}, `Reloading code version ${targetVersion}`);
 
   // If the target is already active, we need to toggle to another version first
   if (activeVersion?.id === targetVersion) {
@@ -125,13 +125,13 @@ export async function reloadCodeVersion(instance: B2CInstance, codeVersionId?: s
       throw new Error('Cannot reload: no alternate code version available for toggle');
     }
 
-    logger.debug({alternateVersion: alternateVersion.id}, `Temporarily activating ${alternateVersion.id}`);
+    logger.debug({codeVersionId: alternateVersion.id}, `Temporarily activating ${alternateVersion.id}`);
     await activateCodeVersion(instance, alternateVersion.id!);
   }
 
   // Now activate the target version
   await activateCodeVersion(instance, targetVersion);
-  logger.debug({targetVersion}, `Code version ${targetVersion} reloaded`);
+  logger.debug({codeVersionId: targetVersion}, `Code version ${targetVersion} reloaded`);
 }
 
 /**

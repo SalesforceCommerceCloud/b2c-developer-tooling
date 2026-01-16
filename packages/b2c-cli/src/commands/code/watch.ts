@@ -31,8 +31,8 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     this.requireWebDavCredentials();
     this.requireOAuthCredentials();
 
-    const hostname = this.resolvedConfig.hostname!;
-    const version = this.resolvedConfig.codeVersion;
+    const hostname = this.resolvedConfig.values.hostname!;
+    const version = this.resolvedConfig.values.codeVersion;
 
     this.log(t('commands.code.watch.starting', 'Starting watcher for {{path}}', {path: this.cartridgePath}));
     this.log(t('commands.code.watch.target', 'Target: {{hostname}}', {hostname}));

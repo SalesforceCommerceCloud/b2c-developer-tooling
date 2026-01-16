@@ -92,10 +92,10 @@ export async function deleteCartridges(instance: B2CInstance, cartridges: Cartri
     const cartridgePath = `Cartridges/${codeVersion}/${c.dest}`;
     try {
       await webdav.delete(cartridgePath);
-      logger.debug({cartridge: c.dest}, `Deleted ${cartridgePath}`);
+      logger.debug({cartridgeName: c.dest, path: cartridgePath}, `Deleted ${cartridgePath}`);
     } catch {
       // Ignore errors - cartridge may not exist
-      logger.debug({cartridge: c.dest}, `Could not delete ${cartridgePath} (may not exist)`);
+      logger.debug({cartridgeName: c.dest, path: cartridgePath}, `Could not delete ${cartridgePath} (may not exist)`);
     }
   }
 }
@@ -178,7 +178,7 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
   logger.debug('Temporary archive deleted');
 
   logger.debug(
-    {hostname: instance.config.hostname, codeVersion, cartridgeCount: cartridges.length},
+    {server: instance.config.hostname, codeVersion, cartridgeCount: cartridges.length},
     `Uploaded ${cartridges.length} cartridges to ${instance.config.hostname}`,
   );
 }
@@ -243,7 +243,7 @@ export async function findAndDeployCartridges(
 
   logger.debug({count: cartridges.length}, `Found ${cartridges.length} cartridge(s)`);
   for (const c of cartridges) {
-    logger.debug({cartridge: c.name, path: c.src}, `  ${c.name}`);
+    logger.debug({cartridgeName: c.name, path: c.src}, `  ${c.name}`);
   }
 
   // Optionally delete existing cartridges first
