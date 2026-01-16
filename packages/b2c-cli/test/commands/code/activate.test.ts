@@ -27,7 +27,7 @@ describe('code activate', () => {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
     const patchStub = sinon.stub().resolves({data: {}, error: undefined});
     sinon.stub(command, 'instance').get(() => ({
@@ -47,7 +47,7 @@ describe('code activate', () => {
     const command: any = await createCommand({}, {});
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -67,7 +67,7 @@ describe('code activate', () => {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
     const getStub = sinon.stub().resolves({
       data: {
@@ -100,7 +100,7 @@ describe('code activate', () => {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
     const getStub = sinon.stub().resolves({
       data: {

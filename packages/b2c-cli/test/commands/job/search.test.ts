@@ -24,7 +24,7 @@ describe('job search', () => {
 
   function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
   }
 

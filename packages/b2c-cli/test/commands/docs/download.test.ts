@@ -26,7 +26,7 @@ describe('docs download', () => {
 
     sinon.stub(command, 'requireServer').returns(void 0);
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
     const downloadStub = sinon
@@ -45,7 +45,7 @@ describe('docs download', () => {
 
     sinon.stub(command, 'requireServer').returns(void 0);
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
     sinon.stub(command, 'downloadDocs').resolves({outputPath: './docs', fileCount: 2});

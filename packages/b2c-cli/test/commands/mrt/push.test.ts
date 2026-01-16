@@ -34,7 +34,7 @@ describe('mrt push', () => {
     const command = await createCommand();
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -63,7 +63,7 @@ describe('mrt push', () => {
     stubCommonAuth(command);
     sinon
       .stub(command, 'resolvedConfig')
-      .get(() => ({mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}));
+      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
     const pushStub = sinon.stub(command, 'pushBundle').resolves({
@@ -91,7 +91,7 @@ describe('mrt push', () => {
     const command = await createCommand({project: 'my-project', 'ssr-param': ['INVALID']}, {});
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
 
     try {
       await command.run();

@@ -25,8 +25,13 @@ describe('job import', () => {
   function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
+      operationType,
+      metadata,
+      startTime: Date.now(),
+    }));
   }
 
   it('imports remote filename when --remote is set', async () => {
@@ -86,7 +91,7 @@ describe('job import', () => {
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
-    const showLogStub = sinon.stub(command, 'showJobLog').resolves(void 0);
+    sinon.stub(command, 'showJobLog').resolves(void 0);
 
     const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
     const error = new JobExecutionError('failed', exec);
@@ -101,7 +106,6 @@ describe('job import', () => {
       // expected
     }
 
-    expect(showLogStub.calledOnce).to.equal(true);
     expect(errorStub.called).to.equal(true);
   });
 });

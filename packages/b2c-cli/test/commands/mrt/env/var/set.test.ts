@@ -45,7 +45,7 @@ describe('mrt env var set', () => {
     await command.init();
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: undefined, mrtEnvironment: 'staging'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'staging'}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -68,9 +68,11 @@ describe('mrt env var set', () => {
     stubCommonAuth(command);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({
-      mrtProject: 'my-project',
-      mrtEnvironment: 'production',
-      mrtOrigin: 'https://example.com',
+      values: {
+        mrtProject: 'my-project',
+        mrtEnvironment: 'production',
+        mrtOrigin: 'https://example.com',
+      },
     }));
 
     const setStub = sinon.stub(command, 'setEnvVars').resolves(void 0);

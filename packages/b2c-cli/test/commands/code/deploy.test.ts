@@ -26,7 +26,7 @@ describe('code deploy', () => {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: 'v1'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
     sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com', codeVersion: 'v1'}}));
   }
 
@@ -112,7 +112,7 @@ describe('code deploy', () => {
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
     const instanceConfig: any = {hostname: 'example.com', codeVersion: undefined};
     sinon.stub(command, 'instance').get(() => ({config: instanceConfig}));

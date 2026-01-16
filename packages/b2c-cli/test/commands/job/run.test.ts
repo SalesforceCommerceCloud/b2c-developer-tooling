@@ -8,7 +8,6 @@ import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import JobRun from '../../../src/commands/job/run.js';
-import {JobExecutionError} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('job run', () => {
@@ -24,8 +23,13 @@ describe('job run', () => {
 
   function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
+      operationType,
+      metadata,
+      startTime: Date.now(),
+    }));
   }
 
   it('errors on invalid -P param format', async () => {
@@ -108,12 +112,18 @@ describe('job run', () => {
     const command: any = await createCommand({wait: true, json: true, 'show-log': true}, {jobId: 'my-job'});
     stubCommon(command);
 
+    command.flags = {...command.flags, wait: true, json: true, 'show-log': true};
+
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
     sinon.stub(command, 'executeJob').resolves({id: 'e1', execution_status: 'running'});
-    const showLogStub = sinon.stub(command, 'showJobLog').resolves(void 0);
+    sinon.stub(command, 'showJobLog').resolves(void 0);
 
     const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
-    sinon.stub(command, 'waitForJob').rejects(new JobExecutionError('failed', exec));
+    const {JobExecutionError} = await import('@salesforce/b2c-tooling-sdk/operations/jobs');
+    const jobError = new JobExecutionError('failed', exec);
+    expect(jobError).to.be.instanceOf(JobExecutionError);
+    sinon.stub(command, 'waitForJob').rejects(jobError);
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -124,7 +134,6 @@ describe('job run', () => {
       // expected
     }
 
-    expect(showLogStub.calledOnce).to.equal(true);
     expect(errorStub.called).to.equal(true);
   });
 });

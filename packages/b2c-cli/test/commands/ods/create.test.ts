@@ -34,7 +34,7 @@ function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: 
 
 function stubResolvedConfig(command: any, resolvedConfig: Record<string, unknown>): void {
   Object.defineProperty(command, 'resolvedConfig', {
-    get: () => resolvedConfig,
+    get: () => ({values: resolvedConfig}),
     configurable: true,
   });
 }

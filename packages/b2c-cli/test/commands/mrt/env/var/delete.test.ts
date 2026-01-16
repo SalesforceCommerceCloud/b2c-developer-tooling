@@ -44,7 +44,7 @@ describe('mrt env var delete', () => {
     await command.init();
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: undefined, mrtEnvironment: 'staging'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'staging'}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -63,7 +63,7 @@ describe('mrt env var delete', () => {
     await command.init();
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project', mrtEnvironment: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -84,9 +84,11 @@ describe('mrt env var delete', () => {
     stubCommonAuth(command);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({
-      mrtProject: 'my-project',
-      mrtEnvironment: 'staging',
-      mrtOrigin: 'https://example.com',
+      values: {
+        mrtProject: 'my-project',
+        mrtEnvironment: 'staging',
+        mrtOrigin: 'https://example.com',
+      },
     }));
 
     const delStub = sinon.stub(command, 'deleteEnvVar').resolves(void 0);

@@ -27,7 +27,7 @@ describe('code list', () => {
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(true);
 
     const getStub = sinon.stub().resolves({data: {data: [{id: 'v1', active: true}]}, error: undefined});
@@ -50,7 +50,7 @@ describe('code list', () => {
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(false);
 
     const getStub = sinon.stub().resolves({data: {data: []}, error: undefined});

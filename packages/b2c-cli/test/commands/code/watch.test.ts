@@ -26,7 +26,7 @@ describe('code watch', () => {
 
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: 'v1'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
 
     const stopStub = sinon.stub().resolves(void 0);
     sinon.stub(command, 'watchCartridges').resolves({cartridges: [{name: 'c1'}], stop: stopStub});
@@ -57,7 +57,7 @@ describe('code watch', () => {
 
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com', codeVersion: 'v1'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
 
     sinon.stub(command, 'watchCartridges').rejects(new Error('boom'));
 

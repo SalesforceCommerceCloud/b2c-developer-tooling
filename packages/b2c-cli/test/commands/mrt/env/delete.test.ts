@@ -44,7 +44,7 @@ describe('mrt env delete', () => {
     await command.init();
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -64,7 +64,9 @@ describe('mrt env delete', () => {
 
     stubCommonAuth(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project', mrtOrigin: 'https://example.com'}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
 
     const deleteStub = sinon.stub(command, 'deleteEnv').resolves(void 0);
 
@@ -82,7 +84,7 @@ describe('mrt env delete', () => {
 
     stubCommonAuth(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
 
     const deleteStub = sinon.stub(command, 'deleteEnv').resolves(void 0);
 

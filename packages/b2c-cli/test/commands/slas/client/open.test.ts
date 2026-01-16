@@ -38,7 +38,7 @@ describe('slas client open', () => {
     stubParse(command, {'tenant-id': 'abcd_123'}, {clientId: 'my-client'});
     await command.init();
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({shortCode: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: undefined}}));
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -56,7 +56,7 @@ describe('slas client open', () => {
     stubParse(command, {'tenant-id': 'abcd_123'}, {clientId: 'my-client'});
     await command.init();
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({shortCode: 'kv7kzm78'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}}));
 
     const logStub = sinon.stub(command, 'log').returns(void 0);
 
@@ -74,7 +74,7 @@ describe('slas client open', () => {
     stubParse(command, {'tenant-id': 'abcd_123', 'short-code': 'flagcode'}, {clientId: 'my-client'});
     await command.init();
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({shortCode: 'kv7kzm78'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}}));
 
     sinon.stub(command, 'log').returns(void 0);
 

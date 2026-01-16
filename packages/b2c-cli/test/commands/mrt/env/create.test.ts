@@ -44,7 +44,7 @@ describe('mrt env create', () => {
     await command.init();
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: undefined}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -81,7 +81,9 @@ describe('mrt env create', () => {
     stubCommonAuth(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project', mrtOrigin: 'https://example.com'}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
 
     const createStub = sinon.stub(command, 'createEnv').resolves({
       slug: 'staging',
@@ -111,7 +113,9 @@ describe('mrt env create', () => {
     stubCommonAuth(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project', mrtOrigin: 'https://example.com'}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
 
     sinon.stub(command, 'createEnv').resolves({slug: 'staging', name: 'staging', is_production: false} as any);
 
@@ -134,7 +138,7 @@ describe('mrt env create', () => {
     await command.init();
 
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
 
     try {
       await command.run();

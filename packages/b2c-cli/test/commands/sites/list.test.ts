@@ -24,7 +24,7 @@ describe('sites list', () => {
 
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
   }
 
@@ -65,7 +65,7 @@ describe('sites list', () => {
     const command: any = await createCommand();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
 
     const ocapiGet = sinon.stub().resolves({data: undefined, error: {message: 'boom'}});
     sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));

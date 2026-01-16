@@ -25,7 +25,7 @@ describe('code delete', () => {
     const command: any = await createCommand({force: true}, {codeVersion: 'v1'});
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
     const deleteStub = sinon.stub().resolves({data: {}, error: undefined});
@@ -43,7 +43,7 @@ describe('code delete', () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
     const deleteStub = sinon.stub().rejects(new Error('Unexpected delete'));
@@ -65,7 +65,7 @@ describe('code delete', () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
     const deleteStub = sinon.stub().resolves({data: {}, error: undefined});
