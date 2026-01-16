@@ -86,7 +86,7 @@ jobs:
       - name: Publish to npm
         run: |
           cd packages/b2c-tooling-sdk && npm publish --provenance --tag ${{ steps.release-type.outputs.tag }}
-          # cd packages/b2c-cli && npm publish --provenance --tag ${{ steps.release-type.outputs.tag }}
+          cd ${{ github.workspace }}/packages/b2c-cli && npm publish --provenance --tag ${{ steps.release-type.outputs.tag }}
           # cd packages/b2c-dx-mcp && npm publish --provenance --tag ${{ steps.release-type.outputs.tag }}
 
       # - name: Extract changelog for release
