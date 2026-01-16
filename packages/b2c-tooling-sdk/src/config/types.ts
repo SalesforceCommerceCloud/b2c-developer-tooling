@@ -127,6 +127,8 @@ export interface ResolveConfigOptions {
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
   credentialsFile?: string;
+  /** Account Manager hostname for OAuth (passed to plugins for host-specific config) */
+  accountManagerHost?: string;
 
   /**
    * Custom sources to add BEFORE default sources (higher priority).

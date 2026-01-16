@@ -220,13 +220,17 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * - `pluginSourcesAfter`: Low priority sources (fill gaps)
    */
   protected async collectPluginConfigSources(): Promise<void> {
+    // Access flags that may be defined in subclasses (OAuthCommand, InstanceCommand)
+    const flags = this.flags as Record<string, unknown>;
+
     const hookOptions: ConfigSourcesHookOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
-      flags: this.flags as Record<string, unknown>,
+      flags,
       resolveOptions: {
         instance: this.flags.instance,
         configPath: this.flags.config,
+        accountManagerHost: flags['account-manager-host'] as string | undefined,
       },
     };
 

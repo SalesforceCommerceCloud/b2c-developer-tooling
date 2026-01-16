@@ -53,6 +53,8 @@ export interface DwJsonConfig {
   'secure-server'?: string;
   /** Allowed authentication methods in priority order */
   'auth-methods'?: AuthMethod[];
+  /** Account Manager hostname for OAuth */
+  'account-manager-host'?: string;
   /** MRT project slug */
   mrtProject?: string;
   /** MRT environment name (e.g., staging, production) */

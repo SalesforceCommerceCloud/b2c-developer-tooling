@@ -154,10 +154,15 @@ export class ConfigResolver {
     const sourceInfos: ConfigSourceInfo[] = [];
     const baseConfig: NormalizedConfig = {};
 
+    // Create enriched options that will be updated with accumulated config values.
+    // This allows later sources (like plugins) to use values discovered by earlier sources (like dw.json).
+    // CLI-provided options always take precedence over accumulated values.
+    const enrichedOptions: ResolveConfigOptions = {...options};
+
     // Load from each source in order, merging results
     // Earlier sources have higher priority - later sources only fill in missing values
     for (const source of this.sources) {
-      const result = source.load(options);
+      const result = source.load(enrichedOptions);
       if (result) {
         const {config: sourceConfig, location} = result;
         const fields = getPopulatedFields(sourceConfig);
@@ -197,6 +202,12 @@ export class ConfigResolver {
             fields,
             fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
           });
+
+          // Enrich options with accumulated config values for subsequent sources.
+          // Only set if not already provided via CLI options.
+          if (!enrichedOptions.accountManagerHost && baseConfig.accountManagerHost) {
+            enrichedOptions.accountManagerHost = baseConfig.accountManagerHost;
+          }
         }
       }
     }

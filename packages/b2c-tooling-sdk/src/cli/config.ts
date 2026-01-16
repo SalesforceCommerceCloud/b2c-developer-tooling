@@ -34,6 +34,8 @@ export interface LoadConfigOptions {
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
   credentialsFile?: string;
+  /** Account Manager hostname for OAuth (passed to plugins for host-specific config) */
+  accountManagerHost?: string;
 }
 
 /**
@@ -100,6 +102,7 @@ export function loadConfig(
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,
+    accountManagerHost: options.accountManagerHost,
     sourcesBefore: pluginSources.before,
     sourcesAfter: pluginSources.after,
   });
