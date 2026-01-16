@@ -19,8 +19,8 @@
  * ## Usage
  *
  * ```typescript
- * import { pushBundle } from '@salesforce/b2c-tooling-sdk/operations/mrt';
- * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { pushBundle } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
+ * import { ApiKeyStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
  *
  * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
  *

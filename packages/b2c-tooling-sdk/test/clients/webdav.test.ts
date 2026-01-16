@@ -6,8 +6,8 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {MiddlewareRegistry, WebDavClient} from '@salesforce/b2c-tooling-sdk/clients';
-import {HTTPError} from '@salesforce/b2c-tooling-sdk/errors';
+import {MiddlewareRegistry, WebDavClient} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
+import {HTTPError} from '@sfcc-dx-testing/b2c-tooling-sdk/errors';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const TEST_HOST = 'test.demandware.net';

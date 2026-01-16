@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {OdsCommand, TableRenderer, type ColumnDef} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import type {OdsComponents} from '@sfcc-dx-testing/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];

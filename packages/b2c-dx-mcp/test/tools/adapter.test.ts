@@ -10,7 +10,7 @@ import {createToolAdapter, textResult, jsonResult, errorResult} from '../../src/
 import {Services} from '../../src/services.js';
 import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import type {AuthStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 // Create a mock services instance for testing
 function createMockServices(options?: {mrtAuth?: AuthStrategy}): Services {

@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import {ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {ApiKeyStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 describe('auth/api-key', () => {
   describe('ApiKeyStrategy', () => {

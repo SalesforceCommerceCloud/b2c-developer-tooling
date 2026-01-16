@@ -86,7 +86,7 @@ async function openBrowser(url: string): Promise<void> {
  *
  * @example
  * ```typescript
- * import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ * import { ImplicitOAuthStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * const auth = new ImplicitOAuthStrategy({
  *   clientId: 'your-client-id',

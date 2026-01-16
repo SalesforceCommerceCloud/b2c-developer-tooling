@@ -11,7 +11,7 @@ import {
   resetLogger,
   createSilentLogger,
   type Logger,
-} from '@salesforce/b2c-tooling-sdk/logging';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
 
 describe('logging/logger', () => {
   beforeEach(() => {

@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {OdsCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
 import {stubParse} from '../helpers/stub-parse.js';
 

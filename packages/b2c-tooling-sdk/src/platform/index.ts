@@ -17,8 +17,8 @@
  * ## Usage
  *
  * ```typescript
- * import { MrtClient, OdsClient } from '@salesforce/b2c-tooling-sdk/platform';
- * import { ApiKeyStrategy, OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { MrtClient, OdsClient } from '@sfcc-dx-testing/b2c-tooling-sdk/platform';
+ * import { ApiKeyStrategy, OAuthStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
  *
  * // MRT operations use API key authentication
  * const mrtAuth = new ApiKeyStrategy('your-api-key');

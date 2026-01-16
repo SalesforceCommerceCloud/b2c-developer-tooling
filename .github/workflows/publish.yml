@@ -82,9 +82,11 @@ jobs:
 
       - name: Publish to npm
         run: |
-          pnpm --filter @salesforce/b2c-tooling-sdk publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
-          pnpm --filter @salesforce/b2c-cli publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
-          pnpm --filter @salesforce/b2c-dx-mcp publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          pnpm --filter @sfcc-dx-testing/b2c-tooling-sdk publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          pnpm --filter @sfcc-dx-testing/b2c-cli publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          pnpm --filter @sfcc-dx-testing/b2c-dx-mcp publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Extract changelog for release
         if: steps.release-type.outputs.type == 'stable'
@@ -101,15 +103,15 @@ jobs:
 
           # Build combined release notes
           {
-            echo "## @salesforce/b2c-cli"
+            echo "## @sfcc-dx-testing/b2c-cli"
             echo ""
             extract_version "$VERSION" packages/b2c-cli/CHANGELOG.md
             echo ""
-            echo "## @salesforce/b2c-dx-mcp"
+            echo "## @sfcc-dx-testing/b2c-dx-mcp"
             echo ""
             extract_version "$VERSION" packages/b2c-dx-mcp/CHANGELOG.md
             echo ""
-            echo "## @salesforce/b2c-tooling-sdk"
+            echo "## @sfcc-dx-testing/b2c-tooling-sdk"
             echo ""
             extract_version "$VERSION" packages/b2c-tooling-sdk/CHANGELOG.md
           } > /tmp/release-notes.md

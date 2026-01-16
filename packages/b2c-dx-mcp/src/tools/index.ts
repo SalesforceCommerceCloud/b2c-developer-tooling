@@ -8,7 +8,7 @@
  * MCP Tools for B2C Commerce developer experience.
  *
  * This module exports all available tools and utilities.
- * Tools use the @salesforce/b2c-tooling-sdk operations layer directly.
+ * Tools use the @sfcc-dx-testing/b2c-tooling-sdk operations layer directly.
  *
  * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
  * > Tools are currently placeholder implementations that return mock responses.

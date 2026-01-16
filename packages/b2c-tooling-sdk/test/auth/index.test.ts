@@ -14,7 +14,7 @@ import {
   checkAvailableAuthMethods,
   decodeJWT,
   resolveAuthStrategy,
-} from '@salesforce/b2c-tooling-sdk/auth';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 describe('auth/index', () => {
   it('exports core strategies and helpers from the auth entrypoint', () => {

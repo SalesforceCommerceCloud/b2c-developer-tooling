@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import {findDwJson, loadDwJson, type DwJsonConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {findDwJson, loadDwJson, type DwJsonConfig} from '@sfcc-dx-testing/b2c-tooling-sdk/config';
 
 describe('config/dw-json', () => {
   let tempDir: string;

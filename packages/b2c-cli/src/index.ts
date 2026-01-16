@@ -15,5 +15,5 @@ export {
   // Config utilities
   loadConfig,
   findDwJson,
-} from '@salesforce/b2c-tooling-sdk/cli';
-export type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+export type {LoadConfigOptions} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';

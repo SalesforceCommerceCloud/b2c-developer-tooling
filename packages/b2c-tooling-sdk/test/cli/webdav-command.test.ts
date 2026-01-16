@@ -5,7 +5,7 @@
  */
 import {expect} from 'chai';
 import {Config} from '@oclif/core';
-import {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS, type WebDavRootKey} from '@salesforce/b2c-tooling-sdk/cli';
+import {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS, type WebDavRootKey} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 
 // Create a test command class
 class TestWebDavCommand extends WebDavCommand<typeof TestWebDavCommand> {

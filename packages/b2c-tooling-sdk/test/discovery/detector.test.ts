@@ -9,7 +9,7 @@ import {
   detectWorkspaceType,
   type DetectionPattern,
   type ProjectType,
-} from '@salesforce/b2c-tooling-sdk/discovery';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
 
 /**
  * Creates a mock detection pattern for testing.

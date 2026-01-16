@@ -5,8 +5,8 @@
  */
 
 import {expect} from 'chai';
-import type {UnifiedMiddleware} from '@salesforce/b2c-tooling-sdk/clients';
-import {MiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
+import type {UnifiedMiddleware} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
+import {MiddlewareRegistry} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
 
 describe('clients/middleware-registry', () => {
   it('register() adds providers and getProviderNames() returns them', () => {

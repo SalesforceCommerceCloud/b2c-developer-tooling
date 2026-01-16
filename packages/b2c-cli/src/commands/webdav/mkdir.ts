@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
-import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {WebDavCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {t} from '../../i18n/index.js';
 
 interface MkdirResult {

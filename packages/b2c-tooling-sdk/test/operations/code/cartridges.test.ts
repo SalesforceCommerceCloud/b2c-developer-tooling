@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {findCartridges} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/code';
 
 describe('operations/code/cartridges', () => {
   describe('findCartridges', () => {

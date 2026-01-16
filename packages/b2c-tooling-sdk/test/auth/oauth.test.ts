@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {OAuthStrategy, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {OAuthStrategy, decodeJWT} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 const AM_HOST = 'account.demandware.com';
 const AM_URL = `https://${AM_HOST}/dwsso/oauth2/access_token`;

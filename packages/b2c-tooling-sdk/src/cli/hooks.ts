@@ -17,7 +17,7 @@
  * @example
  * ```typescript
  * // In your plugin's hooks/config-sources.ts
- * import type { ConfigSourcesHook } from '@salesforce/b2c-tooling-sdk/cli';
+ * import type { ConfigSourcesHook } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  * import { MyCustomSource } from '../sources/my-custom-source.js';
  *
  * const hook: ConfigSourcesHook = async function(options) {
@@ -110,7 +110,7 @@ export interface ConfigSourcesHookResult {
  *
  * @example
  * ```typescript
- * import type { ConfigSourcesHook } from '@salesforce/b2c-tooling-sdk/cli';
+ * import type { ConfigSourcesHook } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  *
  * const hook: ConfigSourcesHook = async function(options) {
  *   this.debug(`Hook called with instance: ${options.instance}`);
@@ -190,8 +190,8 @@ export interface HttpMiddlewareHookResult {
  *
  * @example
  * ```typescript
- * import type { HttpMiddlewareHook } from '@salesforce/b2c-tooling-sdk/cli';
- * import type { HttpMiddlewareProvider } from '@salesforce/b2c-tooling-sdk/clients';
+ * import type { HttpMiddlewareHook } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+ * import type { HttpMiddlewareProvider } from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
  *
  * const hook: HttpMiddlewareHook = async function(options) {
  *   this.debug('Registering custom middleware');

@@ -11,7 +11,7 @@ import {
   type ConfigLoadResult,
   type NormalizedConfig,
   type ResolveConfigOptions,
-} from '@salesforce/b2c-tooling-sdk/config';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/config';
 
 /**
  * Mock config source for testing.

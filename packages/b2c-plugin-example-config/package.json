@@ -1,5 +1,5 @@
 {
-  "name": "@salesforce/b2c-plugin-example-config",
+  "name": "@sfcc-dx-testing/b2c-plugin-example-config",
   "version": "0.0.1-preview",
   "description": "Example plugin demonstrating custom config source for B2C CLI",
   "author": "Salesforce Commerce Cloud",
@@ -22,7 +22,7 @@
     "format:check": "prettier --check src"
   },
   "dependencies": {
-    "@salesforce/b2c-tooling-sdk": "workspace:*"
+    "@sfcc-dx-testing/b2c-tooling-sdk": "workspace:*"
   },
   "peerDependencies": {
     "@oclif/core": "^4"

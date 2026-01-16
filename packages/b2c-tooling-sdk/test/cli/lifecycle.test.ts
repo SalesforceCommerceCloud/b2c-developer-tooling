@@ -11,8 +11,8 @@ import {
   type B2COperationResult,
   type B2COperationLifecycleProvider,
   type B2COperationContext,
-} from '@salesforce/b2c-tooling-sdk/cli';
-import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import {B2CInstance} from '@sfcc-dx-testing/b2c-tooling-sdk/instance';
 
 describe('cli/lifecycle', () => {
   let mockInstance: B2CInstance;

@@ -120,8 +120,8 @@ export interface CreateEnvOptions {
  *
  * @example
  * ```typescript
- * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
- * import { createEnv } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ * import { ApiKeyStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
+ * import { createEnv } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
  *
  * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
  *
@@ -239,8 +239,8 @@ export interface DeleteEnvOptions {
  *
  * @example
  * ```typescript
- * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
- * import { deleteEnv } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ * import { ApiKeyStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
+ * import { deleteEnv } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
  *
  * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
  *
@@ -308,8 +308,8 @@ export interface GetEnvOptions {
  *
  * @example
  * ```typescript
- * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
- * import { getEnv } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ * import { ApiKeyStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
+ * import { getEnv } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
  *
  * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
  *
@@ -388,8 +388,8 @@ export interface WaitForEnvOptions extends GetEnvOptions {
  *
  * @example
  * ```typescript
- * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
- * import { createEnv, waitForEnv } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ * import { ApiKeyStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
+ * import { createEnv, waitForEnv } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
  *
  * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
  *

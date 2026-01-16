@@ -13,7 +13,7 @@
  * ## Basic Usage
  *
  * ```typescript
- * import { createLogger } from '@salesforce/b2c-tooling-sdk/logging';
+ * import { createLogger } from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
  *
  * const logger = createLogger({ level: 'debug' });
  * logger.info('Hello world');
@@ -78,7 +78,7 @@
  * For CLI applications, use the global logger pattern:
  *
  * ```typescript
- * import { configureLogger, getLogger } from '@salesforce/b2c-tooling-sdk/logging';
+ * import { configureLogger, getLogger } from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
  *
  * // Configure once at startup
  * configureLogger({
@@ -97,7 +97,7 @@
  * **Library code** should accept a logger as a parameter:
  *
  * ```typescript
- * import type { Logger } from '@salesforce/b2c-tooling-sdk/logging';
+ * import type { Logger } from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
  *
  * export function myOperation(options: { logger?: Logger }) {
  *   const log = options.logger ?? console;

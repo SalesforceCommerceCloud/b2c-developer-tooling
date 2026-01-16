@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import {listCodeVersions, type CodeVersion, type CodeVersionResult} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {InstanceCommand, createTable, type ColumnDef} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import {listCodeVersions, type CodeVersion, type CodeVersionResult} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/code';
 import {t} from '../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {

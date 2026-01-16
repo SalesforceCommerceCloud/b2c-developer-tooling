@@ -15,8 +15,8 @@
  * Use {@link downloadDocs} to download documentation from a B2C instance:
  *
  * ```typescript
- * import { downloadDocs } from '@salesforce/b2c-tooling-sdk/operations/docs';
- * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
+ * import { downloadDocs } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/docs';
+ * import { B2CInstance } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * const instance = B2CInstance.fromEnvironment();
  * const result = await downloadDocs(instance, { outputDir: './docs' });
@@ -28,7 +28,7 @@
  * Use {@link searchDocs} and {@link readDocByQuery} to search and read bundled documentation:
  *
  * ```typescript
- * import { searchDocs, readDocByQuery } from '@salesforce/b2c-tooling-sdk/operations/docs';
+ * import { searchDocs, readDocByQuery } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/docs';
  *
  * // Search for documentation
  * const results = searchDocs('ProductMgr');

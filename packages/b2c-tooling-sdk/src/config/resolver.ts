@@ -87,7 +87,7 @@ function isFieldInClaimedGroup(field: string, claimedGroups: Set<number>): boole
  * ## Usage
  *
  * ```typescript
- * import { createConfigResolver } from '@salesforce/b2c-tooling-sdk/config';
+ * import { createConfigResolver } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const resolver = createConfigResolver();
  *
@@ -109,7 +109,7 @@ function isFieldInClaimedGroup(field: string, claimedGroups: Set<number>): boole
  * You can provide custom configuration sources:
  *
  * ```typescript
- * import { ConfigResolver } from '@salesforce/b2c-tooling-sdk/config';
+ * import { ConfigResolver } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * class MySource implements ConfigSource {
  *   name = 'my-source';
@@ -265,7 +265,7 @@ export class ConfigResolver {
    *
    * @example
    * ```typescript
-   * import { resolveAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+   * import { resolveAuthStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk';
    *
    * const credentials = resolver.createAuthCredentials({
    *   clientId: process.env.SFCC_CLIENT_ID,
@@ -300,7 +300,7 @@ export class ConfigResolver {
  *
  * @example
  * ```typescript
- * import { createConfigResolver } from '@salesforce/b2c-tooling-sdk/config';
+ * import { createConfigResolver } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const resolver = createConfigResolver();
  * const { config } = resolver.resolve({ hostname: 'example.com' });
@@ -326,7 +326,7 @@ export function createConfigResolver(): ConfigResolver {
  * ## Example
  *
  * ```typescript
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = resolveConfig({
  *   hostname: process.env.SFCC_SERVER,

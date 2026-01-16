@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import {cartridgesPattern} from '@salesforce/b2c-tooling-sdk/discovery';
+import {cartridgesPattern} from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
 
 describe('discovery/patterns/cartridges', () => {
   let tempDir: string;

@@ -40,7 +40,7 @@
  * ## Example Usage
  *
  * ```typescript
- * import { InstanceCommand, createTable, type ColumnDef } from '@salesforce/b2c-tooling-sdk/cli';
+ * import { InstanceCommand, createTable, type ColumnDef } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  *
  * export default class ListSites extends InstanceCommand {
  *   static description = 'List all sites on the instance';
@@ -64,7 +64,7 @@
  * Use {@link loadConfig} to resolve configuration from multiple sources:
  *
  * ```typescript
- * import { loadConfig } from '@salesforce/b2c-tooling-sdk/cli';
+ * import { loadConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  *
  * const config = await loadConfig({
  *   flags: { hostname: 'example.com' },
@@ -77,7 +77,7 @@
  * Use {@link createTable} for consistent tabular output:
  *
  * ```typescript
- * import { createTable, type ColumnDef } from '@salesforce/b2c-tooling-sdk/cli';
+ * import { createTable, type ColumnDef } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  *
  * const columns: Record<string, ColumnDef<Item>> = {
  *   id: { header: 'ID', get: (item) => item.id },

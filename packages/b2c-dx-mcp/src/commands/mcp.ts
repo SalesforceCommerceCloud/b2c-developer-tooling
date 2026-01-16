@@ -128,7 +128,7 @@
  */
 
 import {Flags} from '@oclif/core';
-import {BaseCommand, MrtCommand, InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand, MrtCommand, InstanceCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
@@ -139,7 +139,7 @@ import {TOOLSETS, type StartupFlags} from '../utils/index.js';
  * oclif Command that starts the B2C DX MCP server.
  *
  * Uses oclif's single-command strategy - this IS the CLI, not a subcommand.
- * Extends BaseCommand from @salesforce/b2c-tooling-sdk which provides:
+ * Extends BaseCommand from @sfcc-dx-testing/b2c-tooling-sdk which provides:
  * - Global flags for config, logging, and debugging
  * - Structured pino logging via `this.logger`
  * - Automatic dw.json loading via `this.resolvedConfig`

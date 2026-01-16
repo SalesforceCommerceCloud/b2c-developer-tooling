@@ -15,7 +15,7 @@
  * Plugins implement the `b2c:operation-lifecycle` hook to receive lifecycle events:
  *
  * ```typescript
- * import type { B2COperationLifecycleHook, B2COperationLifecycleProvider } from '@salesforce/b2c-tooling-sdk/cli';
+ * import type { B2COperationLifecycleHook, B2COperationLifecycleProvider } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  *
  * const auditProvider: B2COperationLifecycleProvider = {
  *   name: 'audit-logger',
@@ -182,7 +182,7 @@ export interface B2COperationLifecycleHookResult {
  *
  * @example
  * ```typescript
- * import type { B2COperationLifecycleHook } from '@salesforce/b2c-tooling-sdk/cli';
+ * import type { B2COperationLifecycleHook } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  *
  * const hook: B2COperationLifecycleHook = async function(options) {
  *   return {

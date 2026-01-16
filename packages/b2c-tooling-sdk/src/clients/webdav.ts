@@ -40,7 +40,7 @@ export interface PropfindEntry {
  *
  * @example
  * // Via B2CInstance (recommended)
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  * const config = resolveConfig();
  * const instance = config.createB2CInstance();
  * await instance.webdav.mkcol('Cartridges/v1');

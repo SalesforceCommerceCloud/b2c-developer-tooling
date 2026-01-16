@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import type {AuthStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 /**
  * Mock auth strategy for testing.

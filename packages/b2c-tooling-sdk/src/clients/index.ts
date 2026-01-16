@@ -24,7 +24,7 @@
  * and provides convenient `webdav` and `ocapi` getters.
  *
  * ```typescript
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = resolveConfig({
  *   clientId: process.env.SFCC_CLIENT_ID,
@@ -44,7 +44,7 @@
  * For advanced use cases, clients can be instantiated directly:
  *
  * ```typescript
- * import { WebDavClient, createOcapiClient, createSlasClient } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { WebDavClient, createOcapiClient, createSlasClient } from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
  *
  * const webdav = new WebDavClient('sandbox.demandware.net', authStrategy);
  * const ocapi = createOcapiClient('sandbox.demandware.net', authStrategy);

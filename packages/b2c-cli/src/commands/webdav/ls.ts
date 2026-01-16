@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
-import {WebDavCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import type {PropfindEntry} from '@salesforce/b2c-tooling-sdk/clients';
+import {WebDavCommand, createTable, type ColumnDef} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import type {PropfindEntry} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
 import {t} from '../../i18n/index.js';
 
 /**

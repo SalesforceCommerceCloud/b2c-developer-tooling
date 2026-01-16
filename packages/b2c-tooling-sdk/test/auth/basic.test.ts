@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import {BasicAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {BasicAuthStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 describe('auth/basic', () => {
   describe('BasicAuthStrategy', () => {

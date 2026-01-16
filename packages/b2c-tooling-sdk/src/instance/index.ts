@@ -17,7 +17,7 @@
  * Use {@link resolveConfig} to load configuration from dw.json and create an instance:
  *
  * ```typescript
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = resolveConfig({
  *   clientId: process.env.SFCC_CLIENT_ID,
@@ -68,7 +68,7 @@ export interface InstanceConfig {
  *
  * @example
  * // From configuration (recommended)
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = resolveConfig({
  *   clientId: process.env.SFCC_CLIENT_ID,

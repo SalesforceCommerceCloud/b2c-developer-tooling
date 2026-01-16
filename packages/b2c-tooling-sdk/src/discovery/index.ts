@@ -13,7 +13,7 @@
  * ## Quick Start
  *
  * ```typescript
- * import { detectWorkspaceType } from '@salesforce/b2c-tooling-sdk/discovery';
+ * import { detectWorkspaceType } from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
  *
  * const result = await detectWorkspaceType(process.cwd());
  *
@@ -41,7 +41,7 @@
  * You can extend detection with custom patterns:
  *
  * ```typescript
- * import { WorkspaceTypeDetector, type DetectionPattern } from '@salesforce/b2c-tooling-sdk/discovery';
+ * import { WorkspaceTypeDetector, type DetectionPattern } from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
  *
  * const myPattern: DetectionPattern = {
  *   name: 'my-framework',

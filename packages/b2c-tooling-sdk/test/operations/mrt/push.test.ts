@@ -6,9 +6,9 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {createMrtClient, DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
-import {uploadBundle, listBundles} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import type {Bundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {createMrtClient, DEFAULT_MRT_ORIGIN} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
+import {uploadBundle, listBundles} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
+import type {Bundle} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;

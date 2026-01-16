@@ -50,9 +50,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import type {B2CInstance} from '@sfcc-dx-testing/b2c-tooling-sdk';
+import type {AuthStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
+import {resolveConfig} from '@sfcc-dx-testing/b2c-tooling-sdk/config';
 
 /**
  * MRT (Managed Runtime) configuration.

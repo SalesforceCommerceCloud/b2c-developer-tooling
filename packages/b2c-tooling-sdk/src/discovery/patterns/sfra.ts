@@ -33,7 +33,7 @@ import {readPackageJson} from '../utils.js';
  * @example
  * ```
  * // Use in custom detection
- * import { sfraPattern } from '@salesforce/b2c-tooling-sdk/discovery';
+ * import { sfraPattern } from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
  *
  * const customPatterns = [sfraPattern, ...otherPatterns];
  * const result = await detectWorkspaceType(workspacePath, { patterns: customPatterns });

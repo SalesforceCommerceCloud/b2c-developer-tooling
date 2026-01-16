@@ -13,7 +13,7 @@
  * ## Quick Start
  *
  * ```typescript
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = resolveConfig({
  *   hostname: process.env.SFCC_SERVER,
@@ -66,7 +66,7 @@
  * Implement the {@link ConfigSource} interface to create custom sources:
  *
  * ```typescript
- * import { ConfigResolver, type ConfigSource, type ConfigLoadResult } from '@salesforce/b2c-tooling-sdk/config';
+ * import { ConfigResolver, type ConfigSource, type ConfigLoadResult } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * class MySource implements ConfigSource {
  *   name = 'my-source';
@@ -86,7 +86,7 @@
  * For advanced use cases, you can use the lower-level dw.json loading functions:
  *
  * ```typescript
- * import { loadDwJson, findDwJson } from '@salesforce/b2c-tooling-sdk/config';
+ * import { loadDwJson, findDwJson } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const dwJsonPath = findDwJson();
  * const config = loadDwJson({ path: dwJsonPath, instance: 'staging' });

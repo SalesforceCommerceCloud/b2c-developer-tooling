@@ -12,7 +12,7 @@
  * ## Usage
  *
  * ```typescript
- * import { resolveAuthStrategy, checkAvailableAuthMethods } from '@salesforce/b2c-tooling-sdk';
+ * import { resolveAuthStrategy, checkAvailableAuthMethods } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * // Auto-select best strategy based on credentials
  * const strategy = resolveAuthStrategy({
@@ -65,7 +65,7 @@ export interface AvailableAuthMethods {
  *
  * @example
  * ```typescript
- * import { checkAvailableAuthMethods } from '@salesforce/b2c-tooling-sdk';
+ * import { checkAvailableAuthMethods } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * const result = checkAvailableAuthMethods({
  *   clientId: 'my-client',
@@ -138,7 +138,7 @@ export function checkAvailableAuthMethods(
  *
  * @example
  * ```typescript
- * import { resolveAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ * import { resolveAuthStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * // Will use client-credentials if secret is available, otherwise implicit
  * const strategy = resolveAuthStrategy({

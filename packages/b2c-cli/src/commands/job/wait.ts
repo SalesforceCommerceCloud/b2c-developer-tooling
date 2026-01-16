@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {waitForJob, JobExecutionError, type JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {JobCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import {waitForJob, JobExecutionError, type JobExecution} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/jobs';
 import {t} from '../../i18n/index.js';
 
 export default class JobWait extends JobCommand<typeof JobWait> {

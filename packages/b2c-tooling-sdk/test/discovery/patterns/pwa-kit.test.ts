@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import {pwaKitV3Pattern} from '@salesforce/b2c-tooling-sdk/discovery';
+import {pwaKitV3Pattern} from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
 
 describe('discovery/patterns/pwa-kit', () => {
   let tempDir: string;

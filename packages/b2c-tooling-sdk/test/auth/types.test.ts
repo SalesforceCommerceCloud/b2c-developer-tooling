@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import {ALL_AUTH_METHODS} from '@salesforce/b2c-tooling-sdk/auth';
+import {ALL_AUTH_METHODS} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 describe('auth/types', () => {
   it('exports ALL_AUTH_METHODS in default priority order', () => {

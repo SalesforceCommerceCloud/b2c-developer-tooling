@@ -6,7 +6,7 @@
 import * as fs from 'node:fs';
 import {basename, resolve} from 'node:path';
 import {Args, Flags} from '@oclif/core';
-import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {WebDavCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {t} from '../../i18n/index.js';
 
 interface GetResult {

@@ -22,7 +22,7 @@
  * available credentials and allowed methods:
  *
  * ```typescript
- * import { resolveAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ * import { resolveAuthStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * // Automatically picks client-credentials if secret available, otherwise implicit
  * const strategy = resolveAuthStrategy({
@@ -42,7 +42,7 @@
  * All strategies implement the {@link AuthStrategy} interface:
  *
  * ```typescript
- * import { OAuthStrategy, ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ * import { OAuthStrategy, ImplicitOAuthStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * // For automated/server usage (client credentials)
  * const oauthAuth = new OAuthStrategy({

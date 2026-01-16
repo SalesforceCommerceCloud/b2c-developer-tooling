@@ -20,7 +20,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {getLogger} from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
 
 /**
  * Input type for cartridge_deploy tool.
@@ -89,7 +89,7 @@ function createCartridgeDeployTool(services: Services): McpTool {
         logger.debug({context}, 'cartridge_deploy context');
 
         // TODO: When implementing, use context.b2cInstance:
-        // import { findAndDeployCartridges } from '@salesforce/b2c-tooling-sdk/operations/code';
+        // import { findAndDeployCartridges } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/code';
         //
         // const directory = args.directory || '.';
         // const result = await findAndDeployCartridges(context.b2cInstance!, directory, {

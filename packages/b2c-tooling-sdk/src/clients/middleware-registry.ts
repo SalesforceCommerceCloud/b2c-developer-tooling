@@ -12,7 +12,7 @@
  * ## SDK Usage
  *
  * ```typescript
- * import { globalMiddlewareRegistry, HttpMiddlewareProvider } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { globalMiddlewareRegistry, HttpMiddlewareProvider } from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
  *
  * const loggingProvider: HttpMiddlewareProvider = {
  *   name: 'my-logger',
@@ -209,7 +209,7 @@ export class MiddlewareRegistry {
  *
  * @example
  * ```typescript
- * import { globalMiddlewareRegistry } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { globalMiddlewareRegistry } from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
  *
  * globalMiddlewareRegistry.register({
  *   name: 'request-logger',

@@ -5,8 +5,8 @@
  */
 import {ux} from '@oclif/core';
 import cliui from 'cliui';
-import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {OdsCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import type {OdsComponents} from '@sfcc-dx-testing/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type UserInfoSpec = OdsComponents['schemas']['UserInfoSpec'];

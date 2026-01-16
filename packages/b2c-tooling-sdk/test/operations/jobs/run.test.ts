@@ -13,7 +13,7 @@ import {
   findRunningJobExecution,
   getJobLog,
   JobExecutionError,
-} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/jobs';
 
 type FakeOcapi = {
   POST: (path: string, init: unknown) => Promise<{data?: unknown; error?: unknown; response: Response}>;

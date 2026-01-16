@@ -11,7 +11,7 @@
  */
 import {existsSync, readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '@salesforce/b2c-tooling-sdk/config';
+import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '@sfcc-dx-testing/b2c-tooling-sdk/config';
 
 /**
  * ConfigSource implementation that loads from .env.b2c files.

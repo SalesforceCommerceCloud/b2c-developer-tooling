@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
-import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
+import {getLogger} from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
+import {detectWorkspaceType, type ProjectType} from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
 import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';

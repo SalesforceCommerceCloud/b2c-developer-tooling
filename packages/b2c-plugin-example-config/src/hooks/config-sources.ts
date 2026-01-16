@@ -10,7 +10,7 @@
  * but before configuration is resolved. It returns custom ConfigSource instances
  * that will be merged with the default configuration sources.
  */
-import type {ConfigSourcesHook} from '@salesforce/b2c-tooling-sdk/cli';
+import type {ConfigSourcesHook} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {EnvFileSource} from '../sources/env-file-source.js';
 
 /**

@@ -20,7 +20,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {getLogger} from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
 
 /**
  * Input type for mrt_bundle_push tool.
@@ -101,7 +101,7 @@ function createMrtBundlePushTool(services: Services): McpTool {
 
         // TODO: When implementing, use context.mrtConfig.auth:
         //
-        // import { pushBundle } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+        // import { pushBundle } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
         //
         // // Parse comma-separated glob patterns (same as CLI defaults)
         // const ssrOnly = (args.ssrOnly || 'ssr.js,ssr.mjs,server/**/*').split(',').map(s => s.trim());

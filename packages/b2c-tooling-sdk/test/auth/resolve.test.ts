@@ -13,7 +13,7 @@ import {
   OAuthStrategy,
   checkAvailableAuthMethods,
   resolveAuthStrategy,
-} from '@salesforce/b2c-tooling-sdk/auth';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 describe('auth/resolve', () => {
   describe('checkAvailableAuthMethods', () => {

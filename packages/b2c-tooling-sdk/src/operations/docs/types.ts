@@ -11,7 +11,7 @@ import {createRequire} from 'node:module';
 // Uses createRequire to find the package.json location, which is robust
 // regardless of where this module is located in the build output
 const require = createRequire(import.meta.url);
-const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/package.json'));
+const packageRoot = path.dirname(require.resolve('@sfcc-dx-testing/b2c-tooling-sdk/package.json'));
 
 export const SCRIPT_API_DATA_DIR = path.join(packageRoot, 'data/script-api');
 export const XSD_DATA_DIR = path.join(packageRoot, 'data/xsd');

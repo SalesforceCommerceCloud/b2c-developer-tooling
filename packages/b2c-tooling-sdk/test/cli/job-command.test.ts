@@ -4,9 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Config} from '@oclif/core';
-import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import type {JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
+import {JobCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import type {JobExecution} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/jobs';
+import {B2CInstance} from '@sfcc-dx-testing/b2c-tooling-sdk/instance';
 
 // Create a test command class
 class TestJobCommand extends JobCommand<typeof TestJobCommand> {

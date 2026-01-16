@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {loadConfig, type LoadConfigOptions, type PluginSources} from '@salesforce/b2c-tooling-sdk/cli';
-import type {ConfigSource, ConfigLoadResult, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {loadConfig, type LoadConfigOptions, type PluginSources} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import type {ConfigSource, ConfigLoadResult, NormalizedConfig} from '@sfcc-dx-testing/b2c-tooling-sdk/config';
 
 /**
  * Mock config source for testing.

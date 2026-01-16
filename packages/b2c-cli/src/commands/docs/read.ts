@@ -7,8 +7,8 @@ import {Args, Flags} from '@oclif/core';
 import {marked} from 'marked';
 // eslint-disable-next-line import/namespace
 import {markedTerminal} from 'marked-terminal';
-import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/operations/docs';
+import {BaseCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import {readDocByQuery, type DocEntry} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/docs';
 import {t} from '../../i18n/index.js';
 
 interface ReadDocsResult {

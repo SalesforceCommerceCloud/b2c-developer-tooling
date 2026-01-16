@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {watchCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
-import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {watchCartridges} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/code';
+import {CartridgeCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {t} from '../../i18n/index.js';
 
 export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {

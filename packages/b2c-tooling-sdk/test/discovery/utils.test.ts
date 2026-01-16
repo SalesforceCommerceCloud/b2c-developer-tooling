@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import {readPackageJson, exists, glob, globDirs} from '@salesforce/b2c-tooling-sdk/discovery';
+import {readPackageJson, exists, glob, globDirs} from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
 
 describe('discovery/utils', () => {
   let tempDir: string;

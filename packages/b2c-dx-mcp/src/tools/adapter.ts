@@ -72,8 +72,8 @@
  */
 
 import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
-import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import type {B2CInstance} from '@sfcc-dx-testing/b2c-tooling-sdk';
+import type {AuthStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
 import type {Services} from '../services.js';
 

@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {ImplicitOAuthStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
 
 type TokenResponse = {
   accessToken: string;

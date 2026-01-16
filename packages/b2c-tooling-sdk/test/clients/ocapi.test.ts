@@ -8,7 +8,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {createOcapiClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {createOcapiClient} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 describe('clients/ocapi', () => {

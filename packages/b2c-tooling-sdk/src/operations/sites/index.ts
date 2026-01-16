@@ -17,8 +17,8 @@
  * ## Usage
  *
  * ```typescript
- * import { listSites, getSite } from '@salesforce/b2c-tooling-sdk/operations/sites';
- * import { B2CInstance, OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ * import { listSites, getSite } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/sites';
+ * import { B2CInstance, OAuthStrategy } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * const auth = new OAuthStrategy({
  *   clientId: 'your-client-id',

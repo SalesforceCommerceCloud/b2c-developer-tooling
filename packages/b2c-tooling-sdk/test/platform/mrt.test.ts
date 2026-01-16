@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {MrtClient, type MrtProject} from '@salesforce/b2c-tooling-sdk/platform';
+import {MrtClient, type MrtProject} from '@sfcc-dx-testing/b2c-tooling-sdk/platform';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const BASE_URL = 'https://api.commercecloud.salesforce.com/mrt';

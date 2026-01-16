@@ -4,13 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {JobCommand, type B2COperationContext} from '@salesforce/b2c-tooling-sdk/cli';
+import {JobCommand, type B2COperationContext} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {
   executeJob,
   waitForJob,
   JobExecutionError,
   type JobExecution,
-} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/jobs';
 import {t} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {

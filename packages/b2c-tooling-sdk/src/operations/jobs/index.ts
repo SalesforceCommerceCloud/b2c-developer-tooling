@@ -33,8 +33,8 @@
  *   searchJobExecutions,
  *   siteArchiveImport,
  *   siteArchiveExport,
- * } from '@salesforce/b2c-tooling-sdk/operations/jobs';
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * } from '@sfcc-dx-testing/b2c-tooling-sdk/operations/jobs';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = resolveConfig();
  * const instance = config.createB2CInstance();

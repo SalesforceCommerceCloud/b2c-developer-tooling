@@ -12,9 +12,9 @@ import {
   createAuthMiddleware,
   createExtraParamsMiddleware,
   createLoggingMiddleware,
-} from '@salesforce/b2c-tooling-sdk/clients';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
+import type {AuthStrategy} from '@sfcc-dx-testing/b2c-tooling-sdk/auth';
+import {configureLogger, resetLogger} from '@sfcc-dx-testing/b2c-tooling-sdk/logging';
 
 describe('clients/middleware', () => {
   describe('createAuthMiddleware', () => {

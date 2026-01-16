@@ -20,7 +20,7 @@ import {DEFAULT_PATTERNS} from './patterns/index.js';
  *
  * @example
  * ```typescript
- * import { WorkspaceTypeDetector } from '@salesforce/b2c-tooling-sdk/discovery';
+ * import { WorkspaceTypeDetector } from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
  *
  * const detector = new WorkspaceTypeDetector('/path/to/project');
  * const result = await detector.detect();
@@ -114,7 +114,7 @@ export class WorkspaceTypeDetector {
  *
  * @example
  * ```typescript
- * import { detectWorkspaceType } from '@salesforce/b2c-tooling-sdk/discovery';
+ * import { detectWorkspaceType } from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
  *
  * const result = await detectWorkspaceType(process.cwd());
  * console.log(`Detected types: ${result.projectTypes.join(', ')}`);

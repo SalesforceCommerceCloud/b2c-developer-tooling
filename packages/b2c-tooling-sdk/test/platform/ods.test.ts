@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {OdsClient, type OdsConfig} from '@salesforce/b2c-tooling-sdk/platform';
+import {OdsClient, type OdsConfig} from '@sfcc-dx-testing/b2c-tooling-sdk/platform';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const BASE_URL = 'https://api.commercecloud.salesforce.com/ods';

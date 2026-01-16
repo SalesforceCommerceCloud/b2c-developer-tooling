@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { TableRenderer, type ColumnDef } from '@salesforce/b2c-tooling-sdk/cli';
+ * import { TableRenderer, type ColumnDef } from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
  *
  * interface User {
  *   name: string;

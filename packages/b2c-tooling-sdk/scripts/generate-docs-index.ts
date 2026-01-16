@@ -6,7 +6,7 @@
 /**
  * Generates the search indexes for Script API documentation and XSD schemas.
  *
- * Run with: pnpm --filter @salesforce/b2c-tooling-sdk run generate:docs-index
+ * Run with: pnpm --filter @sfcc-dx-testing/b2c-tooling-sdk run generate:docs-index
  */
 
 import * as fs from 'node:fs';

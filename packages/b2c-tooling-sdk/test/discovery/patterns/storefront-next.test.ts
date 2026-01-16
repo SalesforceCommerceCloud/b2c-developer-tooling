@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import {storefrontNextPattern} from '@salesforce/b2c-tooling-sdk/discovery';
+import {storefrontNextPattern} from '@sfcc-dx-testing/b2c-tooling-sdk/discovery';
 
 describe('discovery/patterns/storefront-next', () => {
   let tempDir: string;

@@ -5,7 +5,7 @@
  */
 import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
-import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {WebDavCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {t} from '../../i18n/index.js';
 
 /**

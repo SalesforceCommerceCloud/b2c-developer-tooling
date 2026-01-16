@@ -91,7 +91,7 @@ export interface OcapiClientOptions {
  *
  * @example
  * // Via B2CInstance (recommended)
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  * const config = resolveConfig();
  * const instance = config.createB2CInstance();
  * const { data, error } = await instance.ocapi.GET('/sites', {});

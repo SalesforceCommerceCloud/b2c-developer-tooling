@@ -34,7 +34,7 @@
  * ## Usage
  *
  * ```typescript
- * import { t } from '@salesforce/b2c-tooling-sdk';
+ * import { t } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * // Simple translation with inline default
  * const message = t('error.serverRequired', 'Server is required.');
@@ -48,7 +48,7 @@
  * ## Adding Translations
  *
  * ```typescript
- * import { registerTranslations } from '@salesforce/b2c-tooling-sdk';
+ * import { registerTranslations } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * // Register translations for a new namespace
  * registerTranslations('my-package', 'de', {

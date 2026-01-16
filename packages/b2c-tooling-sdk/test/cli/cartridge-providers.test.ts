@@ -10,7 +10,7 @@ import {
   type CartridgeTransformer,
   type CartridgeDiscoveryOptions,
 } from '../../src/cli/cartridge-providers.js';
-import type {CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {CartridgeMapping} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/code';
 
 describe('cli/cartridge-providers', () => {
   describe('CartridgeProviderRunner', () => {

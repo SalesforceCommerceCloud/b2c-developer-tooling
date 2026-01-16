@@ -29,7 +29,7 @@ import type {NormalizedConfig, ConfigWarning} from './types.js';
  *
  * @example
  * ```typescript
- * import { mapDwJsonToNormalizedConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { mapDwJsonToNormalizedConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const dwJson = { hostname: 'example.com', 'code-version': 'v1' };
  * const config = mapDwJsonToNormalizedConfig(dwJson);
@@ -97,7 +97,7 @@ export interface MergeConfigResult {
  *
  * @example
  * ```typescript
- * import { mergeConfigsWithProtection } from '@salesforce/b2c-tooling-sdk/config';
+ * import { mergeConfigsWithProtection } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const { config, warnings } = mergeConfigsWithProtection(
  *   { hostname: 'staging.example.com' },
@@ -247,7 +247,7 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
  *
  * @example
  * ```typescript
- * import { createInstanceFromConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { createInstanceFromConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = { hostname: 'example.demandware.net', clientId: 'abc' };
  * const instance = createInstanceFromConfig(config);

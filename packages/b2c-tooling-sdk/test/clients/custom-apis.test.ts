@@ -15,7 +15,7 @@ import {
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
-} from '@salesforce/b2c-tooling-sdk/clients';
+} from '@sfcc-dx-testing/b2c-tooling-sdk/clients';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const SHORT_CODE = 'kv7kzm78';

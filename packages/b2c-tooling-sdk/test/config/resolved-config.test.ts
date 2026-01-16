@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
+import {resolveConfig} from '@sfcc-dx-testing/b2c-tooling-sdk/config';
+import {B2CInstance} from '@sfcc-dx-testing/b2c-tooling-sdk/instance';
 
 describe('config/resolved-config', () => {
   describe('ResolvedB2CConfig', () => {

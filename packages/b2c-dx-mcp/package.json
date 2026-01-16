@@ -1,5 +1,5 @@
 {
-  "name": "@salesforce/b2c-dx-mcp",
+  "name": "@sfcc-dx-testing/b2c-dx-mcp",
   "version": "0.0.1-preview",
   "description": "MCP server for B2C Commerce Cloud developer experience tools",
   "author": "Salesforce",
@@ -76,7 +76,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.0",
     "@oclif/core": "^4",
-    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "@sfcc-dx-testing/b2c-tooling-sdk": "workspace:*",
     "zod": "^3.25.76"
   },
   "devDependencies": {

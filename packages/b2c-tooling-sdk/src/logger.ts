@@ -17,7 +17,7 @@
  * ## Usage
  *
  * ```typescript
- * import { setLogger, getLogger, consoleLogger } from '@salesforce/b2c-tooling-sdk';
+ * import { setLogger, getLogger, consoleLogger } from '@sfcc-dx-testing/b2c-tooling-sdk';
  *
  * // Enable console logging
  * setLogger(consoleLogger);

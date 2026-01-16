@@ -167,7 +167,7 @@ export interface ConfigLoadResult {
  *
  * @example
  * ```typescript
- * import type { ConfigSource, ConfigLoadResult, ResolveConfigOptions } from '@salesforce/b2c-tooling-sdk/config';
+ * import type { ConfigSource, ConfigLoadResult, ResolveConfigOptions } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * class MyCustomSource implements ConfigSource {
  *   name = 'my-custom-source';
@@ -221,7 +221,7 @@ export interface CreateMrtClientOptions {
  *
  * @example
  * ```typescript
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ * import { resolveConfig } from '@sfcc-dx-testing/b2c-tooling-sdk/config';
  *
  * const config = resolveConfig({
  *   hostname: process.env.SFCC_SERVER,

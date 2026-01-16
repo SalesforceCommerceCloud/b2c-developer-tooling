@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
 import {t} from '../../../i18n/index.js';
 
 async function openBrowser(url: string): Promise<void> {

@@ -5,8 +5,8 @@
  */
 import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {InstanceCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import {deleteCodeVersion} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/code';
 import {t} from '../../i18n/index.js';
 
 /**

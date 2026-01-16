@@ -5,8 +5,8 @@
  */
 import {Args, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createEnv, waitForEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {MrtCommand} from '@sfcc-dx-testing/b2c-tooling-sdk/cli';
+import {createEnv, waitForEnv, type MrtEnvironment} from '@sfcc-dx-testing/b2c-tooling-sdk/operations/mrt';
 import {t} from '../../../i18n/index.js';
 
 /**
