@@ -9,6 +9,12 @@ A command-line interface for Salesforce Commerce Cloud B2C instances and platfor
 
 ## Installation
 
+### npm (Recommended)
+
+```sh
+npm install -g @salesforce/b2c-cli
+```
+
 ### Homebrew (macOS/Linux)
 
 ```sh
@@ -16,18 +22,12 @@ brew tap SalesforceCommerceCloud/tooling
 brew install b2c-cli
 ```
 
-### Preview Release (Pre-npm)
+### GitHub Release Tarball
 
-Download the latest tarball from [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) and install:
-
-```sh
-npm install -g ./salesforce-b2c-cli-0.0.1-preview.1.tgz
-```
-
-### From npm (Coming Soon)
+For pre-release versions not yet published to npm, download the tarball from [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) and install:
 
 ```sh
-npm install -g @salesforce/b2c-cli
+npm install -g ./salesforce-b2c-cli-<version>.tgz
 ```
 
 ## Usage
