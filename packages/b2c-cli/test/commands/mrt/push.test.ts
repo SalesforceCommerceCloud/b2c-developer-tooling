@@ -5,27 +5,20 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import MrtPush from '../../../src/commands/mrt/push.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('mrt push', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
+  beforeEach(hooks.beforeEach);
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
 
-  function createCommand(): any {
-    return new MrtPush([], config);
+  async function createCommand(flags: Record<string, unknown> = {}, args: Record<string, unknown> = {}): Promise<any> {
+    return createTestCommand(MrtPush, hooks.getConfig(), flags, args);
   }
 
   function stubErrorToThrow(command: any): sinon.SinonStub {
@@ -38,10 +31,7 @@ describe('mrt push', () => {
   }
 
   it('calls command.error when project is missing', async () => {
-    const command = createCommand();
-
-    stubParse(command, {}, {});
-    await command.init();
+    const command = await createCommand();
 
     stubCommonAuth(command);
     sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: undefined}));
@@ -57,10 +47,7 @@ describe('mrt push', () => {
   });
 
   it('parses --ssr-param and --node-version and calls SDK wrapper', async () => {
-    const command = createCommand();
-
-    stubParse(
-      command,
+    const command = await createCommand(
       {
         project: 'my-project',
         environment: 'staging',
@@ -72,7 +59,6 @@ describe('mrt push', () => {
       },
       {},
     );
-    await command.init();
 
     stubCommonAuth(command);
     sinon
@@ -102,10 +88,7 @@ describe('mrt push', () => {
   });
 
   it('calls command.error when ssr-param is invalid', async () => {
-    const command = createCommand();
-
-    stubParse(command, {project: 'my-project', 'ssr-param': ['INVALID']}, {});
-    await command.init();
+    const command = await createCommand({project: 'my-project', 'ssr-param': ['INVALID']}, {});
 
     stubCommonAuth(command);
     sinon.stub(command, 'resolvedConfig').get(() => ({mrtProject: 'my-project'}));

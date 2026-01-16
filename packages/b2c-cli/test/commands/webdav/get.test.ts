@@ -6,35 +6,28 @@
 
 import fs from 'node:fs';
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import WebDavGet from '../../../src/commands/webdav/get.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('webdav get', () => {
-  let config: Config;
   let writeFileSyncStub: sinon.SinonStub;
 
-  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
-    const command: any = new WebDavGet([], config);
-    stubParse(command, flags, args);
-    await command.init();
-    return command;
-  }
+  const hooks = createIsolatedConfigHooks();
 
   beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
+    await hooks.beforeEach();
 
     // Guard against any accidental real file writes.
     writeFileSyncStub = sinon.stub(fs, 'writeFileSync').throws(new Error('Unexpected fs.writeFileSync'));
   });
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    return createTestCommand(WebDavGet, hooks.getConfig(), flags, args);
+  }
 
   it('downloads to a file when output is omitted (defaults to basename(remote))', async () => {
     const command: any = await createCommand({root: 'impex'}, {remote: 'src/instance/export.zip'});

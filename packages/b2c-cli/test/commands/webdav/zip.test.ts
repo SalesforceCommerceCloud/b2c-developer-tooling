@@ -5,36 +5,29 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import WebDavZip from '../../../src/commands/webdav/zip.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('webdav zip', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
+  beforeEach(hooks.beforeEach);
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    return createTestCommand(WebDavZip, hooks.getConfig(), flags, args);
+  }
 
   it('posts ZIP request and returns source/archive paths', async () => {
-    const command = new WebDavZip([], config) as unknown as {
+    const command = (await createCommand({root: 'impex'}, {path: 'src/instance/data'})) as unknown as {
       ensureWebDavAuth: () => void;
       buildPath: (p: string) => string;
-      init: () => Promise<void>;
       instance: unknown;
       run: () => Promise<{archivePath: string; sourcePath: string}>;
     };
-
-    stubParse(command, {root: 'impex'}, {path: 'src/instance/data'});
-    await command.init();
 
     sinon.stub(command, 'ensureWebDavAuth').returns();
     const buildPathStub = sinon.stub(command, 'buildPath').callsFake((p: unknown) => {
@@ -70,17 +63,13 @@ describe('webdav zip', () => {
   });
 
   it('calls command.error when response is not ok', async () => {
-    const command = new WebDavZip([], config) as unknown as {
+    const command = (await createCommand({root: 'impex'}, {path: 'src/instance/data'})) as unknown as {
       ensureWebDavAuth: () => void;
       buildPath: (p: string) => string;
       error: (message: string) => never;
-      init: () => Promise<void>;
       instance: unknown;
       run: () => Promise<unknown>;
     };
-
-    stubParse(command, {root: 'impex'}, {path: 'src/instance/data'});
-    await command.init();
 
     sinon.stub(command, 'ensureWebDavAuth').returns();
     sinon.stub(command, 'buildPath').returns('Impex/src/instance/data');

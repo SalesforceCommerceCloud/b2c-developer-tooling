@@ -5,30 +5,24 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import WebDavMkdir from '../../../src/commands/webdav/mkdir.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('webdav mkdir', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
+  beforeEach(hooks.beforeEach);
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    return createTestCommand(WebDavMkdir, hooks.getConfig(), flags, args);
+  }
 
   it('creates all directories in the path (mkdir -p behavior)', async () => {
-    const command: any = new WebDavMkdir([], config);
-
-    stubParse(command, {root: 'impex'}, {path: 'src/instance/my-folder'});
-    await command.init();
+    const command: any = await createCommand({root: 'impex'}, {path: 'src/instance/my-folder'});
 
     sinon.stub(command, 'ensureWebDavAuth').returns(void 0);
 

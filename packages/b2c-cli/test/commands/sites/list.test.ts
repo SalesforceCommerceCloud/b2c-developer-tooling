@@ -4,21 +4,22 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {ux, Config} from '@oclif/core';
+import {ux} from '@oclif/core';
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import SitesList from '../../../src/commands/sites/list.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('sites list', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
 
   async function createCommand(flags: Record<string, unknown> = {}, args: Record<string, unknown> = {}) {
-    const command: any = new SitesList([], config);
-    stubParse(command, flags, args);
-    await command.init();
-    return command;
+    return createTestCommand(SitesList, hooks.getConfig(), flags, args);
   }
 
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
@@ -30,16 +31,6 @@ describe('sites list', () => {
   function stubErrorToThrow(command: any) {
     return sinon.stub(command, 'error').throws(new Error('Expected error'));
   }
-
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
-
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
 
   it('returns data in JSON mode', async () => {
     const command: any = await createCommand();

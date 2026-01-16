@@ -4,32 +4,23 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {ux, Config} from '@oclif/core';
+import {ux} from '@oclif/core';
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import JobSearch from '../../../src/commands/job/search.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('job search', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  async function createCommand(flags: Record<string, unknown>) {
-    const command: any = new JobSearch([], config);
-    stubParse(command, flags, {});
-    await command.init();
-    return command;
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    return createTestCommand(JobSearch, hooks.getConfig(), flags, args);
   }
-
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
-
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
 
   function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -38,7 +29,7 @@ describe('job search', () => {
   }
 
   it('returns results in json mode', async () => {
-    const command: any = await createCommand({json: true});
+    const command: any = await createCommand({json: true}, {});
     stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
@@ -53,7 +44,7 @@ describe('job search', () => {
   });
 
   it('prints no results in non-json mode', async () => {
-    const command: any = await createCommand({});
+    const command: any = await createCommand({}, {});
     stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(false);
 

@@ -6,35 +6,25 @@
 
 import fs from 'node:fs';
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import WebDavPut from '../../../src/commands/webdav/put.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('webdav put', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
 
   async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
-    const command: any = new WebDavPut([], config);
-    stubParse(command, flags, args);
-    await command.init();
-    return command;
+    return createTestCommand(WebDavPut, hooks.getConfig(), flags, args);
   }
 
   function stubErrorToThrow(command: any) {
     return sinon.stub(command, 'error').throws(new Error('Expected error'));
   }
-
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
-
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
 
   it('errors when local file does not exist', async () => {
     const command: any = await createCommand({root: 'impex'}, {local: './missing.zip', remote: '/'});

@@ -7,13 +7,43 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import OdsCreate from '../../../src/commands/ods/create.js';
-import {
-  makeCommandThrowOnError,
-  stubCommandConfigAndLogger,
-  stubOdsClient,
-  stubResolvedConfig,
-} from '../../helpers/ods.js';
 import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
+
+function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({'sandbox-api-host': sandboxApiHost}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+}
+
+function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; DELETE: any}>): void {
+  Object.defineProperty(command, 'odsClient', {
+    value: client,
+    configurable: true,
+  });
+}
+
+function stubResolvedConfig(command: any, resolvedConfig: Record<string, unknown>): void {
+  Object.defineProperty(command, 'resolvedConfig', {
+    get: () => resolvedConfig,
+    configurable: true,
+  });
+}
+
+function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
 
 /**
  * Unit tests for ODS create command CLI logic.

@@ -5,30 +5,24 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import WebDavLs from '../../../src/commands/webdav/ls.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('webdav ls', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
+  beforeEach(hooks.beforeEach);
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    return createTestCommand(WebDavLs, hooks.getConfig(), flags, args);
+  }
 
   it('filters out the queried directory entry and returns result in JSON mode', async () => {
-    const command: any = new WebDavLs([], config);
-
-    stubParse(command, {root: 'impex'}, {path: 'src/instance'});
-    await command.init();
+    const command: any = await createCommand({root: 'impex'}, {path: 'src/instance'});
 
     sinon.stub(command, 'ensureWebDavAuth').returns(void 0);
     sinon.stub(command, 'buildPath').returns('Impex/src/instance');
@@ -63,10 +57,7 @@ describe('webdav ls', () => {
   });
 
   it('returns empty entries when only the queried directory exists', async () => {
-    const command: any = new WebDavLs([], config);
-
-    stubParse(command, {root: 'impex'}, {path: 'src/instance'});
-    await command.init();
+    const command: any = await createCommand({root: 'impex'}, {path: 'src/instance'});
 
     sinon.stub(command, 'ensureWebDavAuth').returns(void 0);
     sinon.stub(command, 'buildPath').returns('Impex/src/instance');

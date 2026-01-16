@@ -5,26 +5,21 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config, ux} from '@oclif/core';
+import {ux} from '@oclif/core';
 import AuthToken from '../../../src/commands/auth/token.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
+import {createIsolatedConfigHooks} from '../../helpers/test-setup.js';
 
 describe('auth token', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
+  beforeEach(hooks.beforeEach);
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
 
   function createCommand(): any {
-    return new AuthToken([], config);
+    return new AuthToken([], hooks.getConfig());
   }
 
   it('returns structured JSON in JSON mode', async () => {

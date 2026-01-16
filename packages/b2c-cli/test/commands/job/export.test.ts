@@ -5,32 +5,22 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import JobExport from '../../../src/commands/job/export.js';
 import {JobExecutionError} from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('job export', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
 
   async function createCommand(flags: Record<string, unknown>) {
-    const command: any = new JobExport([], config);
-    stubParse(command, flags, {});
-    await command.init();
-    return command;
+    return createTestCommand(JobExport, hooks.getConfig(), flags, {});
   }
-
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
-
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
 
   function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);

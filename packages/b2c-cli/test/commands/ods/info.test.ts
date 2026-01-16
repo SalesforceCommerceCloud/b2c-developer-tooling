@@ -8,13 +8,42 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 
 import OdsInfo from '../../../src/commands/ods/info.js';
-import {
-  makeCommandThrowOnError,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOdsClientGet,
-} from '../../helpers/ods.js';
 import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
+
+function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({'sandbox-api-host': sandboxApiHost}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+}
+
+function stubJsonEnabled(command: any, enabled: boolean): void {
+  command.jsonEnabled = () => enabled;
+}
+
+function stubOdsClientGet(command: any, handler: (path: string) => Promise<any>): void {
+  Object.defineProperty(command, 'odsClient', {
+    value: {
+      GET: handler,
+    },
+    configurable: true,
+  });
+}
+
+function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
 
 /**
  * Unit tests for ODS info command CLI logic.

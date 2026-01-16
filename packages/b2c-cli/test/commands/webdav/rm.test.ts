@@ -6,30 +6,24 @@
 
 import readline from 'node:readline';
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import WebDavRm from '../../../src/commands/webdav/rm.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('webdav rm', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
+  beforeEach(hooks.beforeEach);
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    return createTestCommand(WebDavRm, hooks.getConfig(), flags, args);
+  }
 
   it('deletes when --force is set (no prompt)', async () => {
-    const command: any = new WebDavRm([], config);
-
-    stubParse(command, {root: 'impex', force: true}, {path: 'src/instance/old.zip'});
-    await command.init();
+    const command: any = await createCommand({root: 'impex', force: true}, {path: 'src/instance/old.zip'});
 
     sinon.stub(command, 'ensureWebDavAuth').returns(undefined);
     sinon.stub(command, 'buildPath').returns('Impex/src/instance/old.zip');
@@ -50,10 +44,7 @@ describe('webdav rm', () => {
   });
 
   it('does not delete when user declines confirmation', async () => {
-    const command: any = new WebDavRm([], config);
-
-    stubParse(command, {root: 'impex', force: false}, {path: 'src/instance/old.zip'});
-    await command.init();
+    const command: any = await createCommand({root: 'impex', force: false}, {path: 'src/instance/old.zip'});
 
     sinon.stub(command, 'ensureWebDavAuth').returns(void 0);
     sinon.stub(command, 'buildPath').returns('Impex/src/instance/old.zip');

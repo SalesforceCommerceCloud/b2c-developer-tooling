@@ -5,36 +5,29 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import WebDavUnzip from '../../../src/commands/webdav/unzip.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('webdav unzip', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
+  beforeEach(hooks.beforeEach);
 
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    return createTestCommand(WebDavUnzip, hooks.getConfig(), flags, args);
+  }
 
   it('posts UNZIP request and returns archive/extract paths', async () => {
-    const command = new WebDavUnzip([], config) as unknown as {
+    const command = (await createCommand({root: 'impex'}, {path: 'src/instance/export.zip'})) as unknown as {
       ensureWebDavAuth: () => void;
       buildPath: (p: string) => string;
-      init: () => Promise<void>;
       instance: unknown;
       run: () => Promise<{archivePath: string; extractPath: string}>;
     };
-
-    stubParse(command, {root: 'impex'}, {path: 'src/instance/export.zip'});
-    await command.init();
 
     sinon.stub(command, 'ensureWebDavAuth').returns();
     const buildPathStub = sinon.stub(command, 'buildPath').callsFake((p: unknown) => {
@@ -70,17 +63,13 @@ describe('webdav unzip', () => {
   });
 
   it('calls command.error when response is not ok', async () => {
-    const command = new WebDavUnzip([], config) as unknown as {
+    const command = (await createCommand({root: 'impex'}, {path: 'src/instance/export.zip'})) as unknown as {
       ensureWebDavAuth: () => void;
       buildPath: (p: string) => string;
       error: (message: string) => never;
-      init: () => Promise<void>;
       instance: unknown;
       run: () => Promise<unknown>;
     };
-
-    stubParse(command, {root: 'impex'}, {path: 'src/instance/export.zip'});
-    await command.init();
 
     sinon.stub(command, 'ensureWebDavAuth').returns();
     sinon.stub(command, 'buildPath').returns('Impex/src/instance/export.zip');

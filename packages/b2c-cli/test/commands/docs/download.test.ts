@@ -5,31 +5,21 @@
  */
 
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import DocsDownload from '../../../src/commands/docs/download.js';
-import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
-import {stubParse} from '../../helpers/stub-parse.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('docs download', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
 
   async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
-    const command: any = new DocsDownload([], config);
-    stubParse(command, flags, args);
-    await command.init();
-    return command;
+    return createTestCommand(DocsDownload, hooks.getConfig(), flags, args);
   }
-
-  beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
-  });
-
-  afterEach(() => {
-    sinon.restore();
-    restoreConfig();
-  });
 
   it('calls downloadDocs with outputDir and keepArchive', async () => {
     const command: any = await createCommand({'keep-archive': true}, {output: './docs'});
