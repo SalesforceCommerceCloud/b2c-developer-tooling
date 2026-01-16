@@ -178,7 +178,7 @@ export class OAuthStrategy implements AuthStrategy {
     logger.debug({method, url}, `[Auth REQ] ${method} ${url}`);
 
     // Trace: Log request details
-    logger.trace({headers: requestHeaders, body: params.toString()}, `[Auth REQ BODY] ${method} ${url}`);
+    logger.trace({method, url, headers: requestHeaders, body: params.toString()}, `[Auth REQ BODY] ${method} ${url}`);
 
     const startTime = Date.now();
     const response = await fetch(url, {
@@ -202,7 +202,7 @@ export class OAuthStrategy implements AuthStrategy {
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.trace({headers: responseHeaders, body: errorText}, `[Auth RESP BODY] ${method} ${url}`);
+      logger.trace({method, url, headers: responseHeaders, body: errorText}, `[Auth RESP BODY] ${method} ${url}`);
       throw new Error(`Failed to get access token: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
@@ -213,7 +213,7 @@ export class OAuthStrategy implements AuthStrategy {
     };
 
     // Trace: Log response details
-    logger.trace({headers: responseHeaders, body: data}, `[Auth RESP BODY] ${method} ${url}`);
+    logger.trace({method, url, headers: responseHeaders, body: data}, `[Auth RESP BODY] ${method} ${url}`);
 
     const jwt = decodeJWT(data.access_token);
     logger.trace({jwt: jwt.payload}, '[Auth] JWT payload');

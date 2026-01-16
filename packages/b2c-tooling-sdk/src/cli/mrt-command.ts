@@ -6,9 +6,9 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
+import type {LoadConfigOptions, PluginSources} from './config.js';
+import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
 import type {AuthStrategy} from '../auth/types.js';
-import {ApiKeyStrategy} from '../auth/api-key.js';
 import {MrtClient} from '../platform/mrt.js';
 import type {MrtProject} from '../platform/mrt.js';
 import {t} from '../i18n/index.js';
@@ -61,7 +61,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     }),
   };
 
-  protected override loadConfiguration(): ResolvedConfig {
+  protected override loadConfiguration(): ResolvedB2CConfig {
     const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
     const credentialsFile = this.flags['credentials-file'] as string | undefined;
 
@@ -72,7 +72,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       credentialsFile, // Override path to MRT credentials file
     };
 
-    const flagConfig: Partial<ResolvedConfig> = {
+    const flagConfig: Partial<NormalizedConfig> = {
       // Flag/env takes precedence, ConfigResolver handles ~/.mobify fallback
       mrtApiKey: this.flags['api-key'],
       // Project/environment from flags
@@ -94,10 +94,8 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
    * Gets an API key auth strategy for MRT.
    */
   protected getMrtAuth(): AuthStrategy {
-    const config = this.resolvedConfig;
-
-    if (config.mrtApiKey) {
-      return new ApiKeyStrategy(config.mrtApiKey, 'Authorization');
+    if (this.resolvedConfig.hasMrtConfig()) {
+      return this.resolvedConfig.createMrtAuth();
     }
 
     throw new Error(
@@ -112,7 +110,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
    * Check if MRT credentials are available.
    */
   protected hasMrtCredentials(): boolean {
-    return Boolean(this.resolvedConfig.mrtApiKey);
+    return this.resolvedConfig.hasMrtConfig();
   }
 
   /**

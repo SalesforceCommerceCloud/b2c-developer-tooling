@@ -51,8 +51,8 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     this.requireWebDavCredentials();
     this.requireOAuthCredentials();
 
-    const hostname = this.resolvedConfig.hostname!;
-    let version = this.resolvedConfig.codeVersion;
+    const hostname = this.resolvedConfig.values.hostname!;
+    let version = this.resolvedConfig.values.codeVersion;
 
     // If no code version specified, discover the active one
     if (!version) {
@@ -102,7 +102,8 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.error(t('commands.code.deploy.noCartridges', 'No cartridges found in {{path}}', {path: this.cartridgePath}));
     }
 
-    this.log(
+    this.logger?.info(
+      {path: this.cartridgePath, server: hostname, codeVersion: version},
       t('commands.code.deploy.deploying', 'Deploying {{path}} to {{hostname}} ({{version}})', {
         path: this.cartridgePath,
         hostname,
@@ -112,7 +113,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
 
     // Log found cartridges
     for (const c of cartridges) {
-      this.logger?.debug(`  ${c.name} (${c.src})`);
+      this.logger?.debug({cartridgeName: c.name, path: c.src}, `  ${c.name}`);
     }
 
     try {
@@ -141,7 +142,8 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         reloaded,
       };
 
-      this.log(
+      this.logger?.info(
+        {codeVersion: result.codeVersion, cartridgeCount: result.cartridges.length},
         t('commands.code.deploy.summary', 'Deployed {{count}} cartridge(s) to {{codeVersion}}', {
           count: result.cartridges.length,
           codeVersion: result.codeVersion,

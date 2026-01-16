@@ -5,7 +5,8 @@
  */
 import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
+import type {LoadConfigOptions, PluginSources} from './config.js';
+import type {ResolvedB2CConfig} from '../config/index.js';
 import type {
   ConfigSourcesHookOptions,
   ConfigSourcesHookResult,
@@ -95,7 +96,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
   protected flags!: Flags<T>;
   protected args!: Args<T>;
-  protected resolvedConfig!: ResolvedConfig;
+  protected resolvedConfig!: ResolvedB2CConfig;
   protected logger!: Logger;
 
   /** High-priority config sources from plugins (inserted before defaults) */
@@ -193,7 +194,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return input;
   }
 
-  protected loadConfiguration(): ResolvedConfig {
+  protected loadConfiguration(): ResolvedB2CConfig {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
@@ -219,13 +220,17 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * - `pluginSourcesAfter`: Low priority sources (fill gaps)
    */
   protected async collectPluginConfigSources(): Promise<void> {
+    // Access flags that may be defined in subclasses (OAuthCommand, InstanceCommand)
+    const flags = this.flags as Record<string, unknown>;
+
     const hookOptions: ConfigSourcesHookOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
-      flags: this.flags as Record<string, unknown>,
+      flags,
       resolveOptions: {
         instance: this.flags.instance,
         configPath: this.flags.config,
+        accountManagerHost: flags['account-manager-host'] as string | undefined,
       },
     };
 

@@ -82,7 +82,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       parameters: rawBody ? undefined : parameters,
       body: rawBody,
       wait,
-      hostname: this.resolvedConfig.hostname,
+      hostname: this.resolvedConfig.values.hostname,
     });
 
     // Run beforeOperation hooks - check for skip
@@ -100,7 +100,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     this.log(
       t('commands.job.run.executing', 'Executing job {{jobId}} on {{hostname}}...', {
         jobId,
-        hostname: this.resolvedConfig.hostname!,
+        hostname: this.resolvedConfig.values.hostname!,
       }),
     );
 

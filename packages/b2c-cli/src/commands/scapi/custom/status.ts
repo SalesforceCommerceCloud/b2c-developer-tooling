@@ -219,7 +219,7 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
     this.requireOAuthCredentials();
 
     const {'tenant-id': tenantId, status, 'group-by': groupBy} = this.flags;
-    const {shortCode} = this.resolvedConfig;
+    const {shortCode} = this.resolvedConfig.values;
 
     if (!shortCode) {
       this.error(

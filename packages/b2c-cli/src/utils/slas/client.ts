@@ -180,7 +180,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
    * Get the SLAS client, ensuring short code is configured.
    */
   protected getSlasClient(): SlasClient {
-    const {shortCode} = this.resolvedConfig;
+    const {shortCode} = this.resolvedConfig.values;
     if (!shortCode) {
       this.error(
         t(

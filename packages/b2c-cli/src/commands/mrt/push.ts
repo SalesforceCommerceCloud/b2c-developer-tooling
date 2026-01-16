@@ -79,7 +79,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
   async run(): Promise<PushResult> {
     this.requireMrtCredentials();
 
-    const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig;
+    const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig.values;
     const {message} = this.flags;
 
     if (!project) {
@@ -116,7 +116,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
           ssrOnly,
           ssrShared,
           ssrParameters,
-          origin: this.resolvedConfig.mrtOrigin,
+          origin: this.resolvedConfig.values.mrtOrigin,
         },
         this.getMrtAuth(),
       );

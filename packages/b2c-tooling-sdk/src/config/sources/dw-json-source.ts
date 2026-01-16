@@ -8,10 +8,11 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
-import * as path from 'node:path';
 import {loadDwJson} from '../dw-json.js';
+import {getPopulatedFields} from '../mapping.js';
 import {mapDwJsonToNormalizedConfig} from '../mapping.js';
-import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '../types.js';
+import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '../types.js';
+import {getLogger} from '../../logging/logger.js';
 
 /**
  * Configuration source that loads from dw.json files.
@@ -19,28 +20,26 @@ import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '../type
  * @internal
  */
 export class DwJsonSource implements ConfigSource {
-  readonly name = 'dw.json';
-  private lastPath?: string;
+  readonly name = 'DwJsonSource';
 
-  load(options: ResolveConfigOptions): NormalizedConfig | undefined {
-    const dwConfig = loadDwJson({
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+    const logger = getLogger();
+
+    const result = loadDwJson({
       instance: options.instance,
       path: options.configPath,
       startDir: options.startDir,
     });
 
-    if (!dwConfig) {
-      this.lastPath = undefined;
+    if (!result) {
       return undefined;
     }
 
-    // Track the path for diagnostics - use explicit path or default location
-    this.lastPath = options.configPath ?? path.join(options.startDir || process.cwd(), 'dw.json');
+    const config = mapDwJsonToNormalizedConfig(result.config);
+    const fields = getPopulatedFields(config);
 
-    return mapDwJsonToNormalizedConfig(dwConfig);
-  }
+    logger.trace({location: result.path, fields}, '[DwJsonSource] Loaded config');
 
-  getPath(): string | undefined {
-    return this.lastPath;
+    return {config, location: result.path};
   }
 }

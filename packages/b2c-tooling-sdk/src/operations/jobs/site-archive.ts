@@ -120,7 +120,7 @@ export async function siteArchiveImport(
       const archiveDirName = archiveName || `import-${timestamp}`;
       zipFilename = `${archiveDirName}.zip`;
 
-      logger.debug({directory: targetPath}, `Creating archive from directory: ${targetPath}`);
+      logger.debug({path: targetPath}, `Creating archive from directory: ${targetPath}`);
       archiveContent = await createArchiveFromDirectory(targetPath, archiveDirName);
     } else {
       throw new Error(`Target must be a file or directory: ${targetPath}`);
@@ -133,11 +133,14 @@ export async function siteArchiveImport(
   if (needsUpload && archiveContent) {
     logger.debug({path: uploadPath}, `Uploading archive to ${uploadPath}`);
     await instance.webdav.put(uploadPath, archiveContent as Buffer, 'application/zip');
-    logger.debug(`Archive uploaded: ${uploadPath}`);
+    logger.debug({path: uploadPath}, `Archive uploaded: ${uploadPath}`);
   }
 
   // Execute the import job with file_name parameter
-  logger.debug(`Executing ${IMPORT_JOB_ID} job with file_name: ${zipFilename}`);
+  logger.debug(
+    {jobId: IMPORT_JOB_ID, file: zipFilename},
+    `Executing ${IMPORT_JOB_ID} job with file_name: ${zipFilename}`,
+  );
 
   let execution: JobExecution;
 
@@ -167,7 +170,7 @@ export async function siteArchiveImport(
     execution = data;
   }
 
-  logger.debug({executionId: execution.id}, `Import job started: ${execution.id}`);
+  logger.debug({jobId: IMPORT_JOB_ID, executionId: execution.id}, `Import job started: ${execution.id}`);
 
   // Wait for completion
   try {
@@ -177,9 +180,9 @@ export async function siteArchiveImport(
       // Try to get log file
       try {
         const log = await getJobLog(instance, error.execution);
-        logger.error({logFile: error.execution.log_file_path}, `Job log:\n${log}`);
+        logger.error({jobId: IMPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
       } catch {
-        logger.error('Could not retrieve job log');
+        logger.error({jobId: IMPORT_JOB_ID}, 'Could not retrieve job log');
       }
     }
     throw error;
@@ -188,7 +191,7 @@ export async function siteArchiveImport(
   // Clean up archive if not keeping
   if (!keepArchive && needsUpload) {
     await instance.webdav.delete(uploadPath);
-    logger.debug(`Archive deleted: ${uploadPath}`);
+    logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
   }
 
   return {
@@ -389,8 +392,7 @@ export async function siteArchiveExport(
   const zipFilename = `${archiveDirName}.zip`;
   const webdavPath = `Impex/src/instance/${zipFilename}`;
 
-  logger.debug(`Executing ${EXPORT_JOB_ID} job`);
-  logger.debug({dataUnits}, 'Export data units');
+  logger.debug({jobId: EXPORT_JOB_ID, dataUnits}, `Executing ${EXPORT_JOB_ID} job`);
 
   let execution: JobExecution;
 
@@ -430,7 +432,7 @@ export async function siteArchiveExport(
     execution = data;
   }
 
-  logger.debug({executionId: execution.id}, `Export job started: ${execution.id}`);
+  logger.debug({jobId: EXPORT_JOB_ID, executionId: execution.id}, `Export job started: ${execution.id}`);
 
   // Wait for completion
   try {
@@ -440,22 +442,22 @@ export async function siteArchiveExport(
       // Try to get log file
       try {
         const log = await getJobLog(instance, error.execution);
-        logger.error({logFile: error.execution.log_file_path}, `Job log:\n${log}`);
+        logger.error({jobId: EXPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
       } catch {
-        logger.error('Could not retrieve job log');
+        logger.error({jobId: EXPORT_JOB_ID}, 'Could not retrieve job log');
       }
     }
     throw error;
   }
 
   // Download archive
-  logger.debug(`Downloading archive: ${webdavPath}`);
+  logger.debug({path: webdavPath}, `Downloading archive: ${webdavPath}`);
   const archiveData = await instance.webdav.get(webdavPath);
 
   // Clean up if not keeping
   if (!keepArchive) {
     await instance.webdav.delete(webdavPath);
-    logger.debug(`Archive deleted: ${webdavPath}`);
+    logger.debug({path: webdavPath}, `Archive deleted: ${webdavPath}`);
   }
 
   return {
@@ -510,7 +512,7 @@ export async function siteArchiveExportToPath(
     await fs.promises.mkdir(path.dirname(zipPath), {recursive: true});
     await fs.promises.writeFile(zipPath, result.data);
 
-    logger.debug(`Archive saved to: ${zipPath}`);
+    logger.debug({path: zipPath}, `Archive saved to: ${zipPath}`);
 
     return {
       ...result,
@@ -535,7 +537,7 @@ export async function siteArchiveExportToPath(
       }
     }
 
-    logger.debug(`Archive extracted to: ${outputPath}`);
+    logger.debug({path: outputPath}, `Archive extracted to: ${outputPath}`);
 
     return {
       ...result,

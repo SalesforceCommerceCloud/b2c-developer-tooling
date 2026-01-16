@@ -154,35 +154,59 @@ export class ConfigResolver {
     const sourceInfos: ConfigSourceInfo[] = [];
     const baseConfig: NormalizedConfig = {};
 
+    // Create enriched options that will be updated with accumulated config values.
+    // This allows later sources (like plugins) to use values discovered by earlier sources (like dw.json).
+    // CLI-provided options always take precedence over accumulated values.
+    const enrichedOptions: ResolveConfigOptions = {...options};
+
     // Load from each source in order, merging results
     // Earlier sources have higher priority - later sources only fill in missing values
     for (const source of this.sources) {
-      const sourceConfig = source.load(options);
-      if (sourceConfig) {
-        const fieldsContributed = getPopulatedFields(sourceConfig);
-        if (fieldsContributed.length > 0) {
-          sourceInfos.push({
-            name: source.name,
-            path: source.getPath?.(),
-            fieldsContributed,
-          });
-
+      const result = source.load(enrichedOptions);
+      if (result) {
+        const {config: sourceConfig, location} = result;
+        const fields = getPopulatedFields(sourceConfig);
+        if (fields.length > 0) {
           // Capture which credential groups are already claimed BEFORE processing this source
           // This allows a single source to provide complete credential pairs
           const claimedGroups = getClaimedCredentialGroups(baseConfig);
 
+          // Track which fields are ignored during merge
+          const fieldsIgnored: (keyof NormalizedConfig)[] = [];
+
           // Merge: source values fill in gaps (don't override existing values)
           for (const [key, value] of Object.entries(sourceConfig)) {
             if (value === undefined) continue;
-            if (baseConfig[key as keyof NormalizedConfig] !== undefined) continue;
+
+            const fieldKey = key as keyof NormalizedConfig;
+
+            // Skip if already set by higher-priority source
+            if (baseConfig[fieldKey] !== undefined) {
+              fieldsIgnored.push(fieldKey);
+              continue;
+            }
 
             // Skip if this field's credential group was already claimed by a higher-priority source
             // This prevents mixing credentials from different sources
             if (isFieldInClaimedGroup(key, claimedGroups)) {
+              fieldsIgnored.push(fieldKey);
               continue;
             }
 
             (baseConfig as Record<string, unknown>)[key] = value;
+          }
+
+          sourceInfos.push({
+            name: source.name,
+            location,
+            fields,
+            fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
+          });
+
+          // Enrich options with accumulated config values for subsequent sources.
+          // Only set if not already provided via CLI options.
+          if (!enrichedOptions.accountManagerHost && baseConfig.accountManagerHost) {
+            enrichedOptions.accountManagerHost = baseConfig.accountManagerHost;
           }
         }
       }
@@ -332,24 +356,18 @@ export function resolveConfig(
   // Build sources list with priority ordering:
   // 1. sourcesBefore (high priority - override defaults)
   // 2. default sources (dw.json, ~/.mobify)
-  // 3. sourcesAfter / sources (low priority - fill gaps)
+  // 3. sourcesAfter (low priority - fill gaps)
   let sources: ConfigSource[];
 
-  if (options.replaceDefaultSources && (options.sources || options.sourcesAfter)) {
-    // Replace mode: only use provided sources
-    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? options.sources ?? [])];
+  if (options.replaceDefaultSources) {
+    // Replace mode: only use provided sources (no default dw.json/~/.mobify)
+    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? [])];
   } else {
     // Normal mode: before + defaults + after
     const defaultSources: ConfigSource[] = [new DwJsonSource(), new MobifySource()];
 
-    // Combine: sourcesBefore > defaults > sourcesAfter/sources
-    sources = [
-      ...(options.sourcesBefore ?? []),
-      ...defaultSources,
-      ...(options.sourcesAfter ?? []),
-      // Backward compat: 'sources' is treated as 'after' priority
-      ...(options.sources ?? []),
-    ];
+    // Combine: sourcesBefore > defaults > sourcesAfter
+    sources = [...(options.sourcesBefore ?? []), ...defaultSources, ...(options.sourcesAfter ?? [])];
   }
 
   const resolver = new ConfigResolver(sources);

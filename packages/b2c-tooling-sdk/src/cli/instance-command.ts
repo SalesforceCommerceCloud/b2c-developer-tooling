@@ -6,8 +6,8 @@
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {loadConfig} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions, PluginSources} from './config.js';
-import {createInstanceFromConfig} from '../config/index.js';
+import type {LoadConfigOptions, PluginSources} from './config.js';
+import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
 import type {B2CInstance} from '../instance/index.js';
 import {t} from '../i18n/index.js';
 import {
@@ -159,13 +159,13 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
     await this.lifecycleRunner.runAfter(context, result);
   }
 
-  protected override loadConfiguration(): ResolvedConfig {
+  protected override loadConfiguration(): ResolvedB2CConfig {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
     };
 
-    const flagConfig: Partial<ResolvedConfig> = {
+    const flagConfig: Partial<NormalizedConfig> = {
       hostname: this.flags.server,
       webdavHostname: this.flags['webdav-server'],
       codeVersion: this.flags['code-version'],
@@ -175,6 +175,8 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       clientSecret: this.flags['client-secret'],
       authMethods: this.parseAuthMethods(),
       accountManagerHost: this.flags['account-manager-host'],
+      // Merge scopes from flags (if provided)
+      scopes: this.flags.scope && this.flags.scope.length > 0 ? this.flags.scope : undefined,
     };
 
     const pluginSources: PluginSources = {
@@ -182,14 +184,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       after: this.pluginSourcesAfter,
     };
 
-    const config = loadConfig(flagConfig, options, pluginSources);
-
-    // Merge scopes from flags with config file scopes (flags take precedence if provided)
-    if (this.flags.scope && this.flags.scope.length > 0) {
-      config.scopes = this.flags.scope;
-    }
-
-    return config;
+    return loadConfig(flagConfig, options, pluginSources);
   }
 
   /**
@@ -208,7 +203,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   protected get instance(): B2CInstance {
     if (!this._instance) {
       this.requireServer();
-      this._instance = createInstanceFromConfig(this.resolvedConfig);
+      this._instance = this.resolvedConfig.createB2CInstance();
     }
     return this._instance;
   }
@@ -217,16 +212,15 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    * Check if WebDAV credentials are available (Basic or OAuth including implicit).
    */
   protected hasWebDavCredentials(): boolean {
-    const config = this.resolvedConfig;
     // Basic auth, or OAuth (client-credentials needs secret, implicit only needs clientId)
-    return Boolean((config.username && config.password) || config.clientId);
+    return this.resolvedConfig.hasBasicAuthConfig() || this.resolvedConfig.hasOAuthConfig();
   }
 
   /**
    * Validates that server is configured, errors if not.
    */
   protected requireServer(): void {
-    if (!this.resolvedConfig.hostname) {
+    if (!this.resolvedConfig.hasB2CInstanceConfig()) {
       this.error(t('error.serverRequired', 'Server is required. Set via --server, SFCC_SERVER env var, or dw.json.'));
     }
   }
@@ -235,7 +229,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    * Validates that code version is configured, errors if not.
    */
   protected requireCodeVersion(): void {
-    if (!this.resolvedConfig.codeVersion) {
+    if (!this.resolvedConfig.values.codeVersion) {
       this.error(
         t(
           'error.codeVersionRequired',

@@ -56,7 +56,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
   async run(): Promise<ListEnvVarsResult> {
     this.requireMrtCredentials();
 
-    const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig;
+    const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
       this.error(
@@ -80,7 +80,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
       {
         projectSlug: project,
         environment,
-        origin: this.resolvedConfig.mrtOrigin,
+        origin: this.resolvedConfig.values.mrtOrigin,
       },
       this.getMrtAuth(),
     );

@@ -113,7 +113,7 @@ describe('config/sources', () => {
       expect(config.hostname).to.equal('staging.demandware.net');
     });
 
-    it('provides path via getPath', () => {
+    it('provides location from load result', () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
         dwJsonPath,
@@ -123,14 +123,13 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      resolver.resolve();
       const {sources} = resolver.resolve();
 
-      const dwJsonSource = sources.find((s) => s.name === 'dw.json');
+      const dwJsonSource = sources.find((s) => s.name === 'DwJsonSource');
       // Normalize paths to handle macOS symlinks (/var -> /private/var)
       const expectedPath = fs.realpathSync(dwJsonPath);
-      const actualPath = dwJsonSource?.path ? fs.realpathSync(dwJsonSource.path) : undefined;
-      expect(actualPath).to.equal(expectedPath);
+      const actualLocation = dwJsonSource?.location ? fs.realpathSync(dwJsonSource.location) : undefined;
+      expect(actualLocation).to.equal(expectedPath);
     });
   });
 
@@ -318,7 +317,7 @@ describe('config/sources', () => {
       }
     });
 
-    it('provides path via getPath', function () {
+    it('provides location from load result', function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -343,14 +342,13 @@ describe('config/sources', () => {
         );
 
         const resolver = new ConfigResolver();
-        resolver.resolve();
         const {sources} = resolver.resolve();
 
-        const mobifySource = sources.find((s) => s.name === 'mobify');
+        const mobifySource = sources.find((s) => s.name === 'MobifySource');
         // Normalize paths to handle macOS symlinks
         const expectedPath = fs.realpathSync(mobifyPath);
-        const actualPath = mobifySource?.path ? fs.realpathSync(mobifySource.path) : undefined;
-        expect(actualPath).to.equal(expectedPath);
+        const actualLocation = mobifySource?.location ? fs.realpathSync(mobifySource.location) : undefined;
+        expect(actualLocation).to.equal(expectedPath);
 
         // Restore
         Object.defineProperty(os, 'homedir', {

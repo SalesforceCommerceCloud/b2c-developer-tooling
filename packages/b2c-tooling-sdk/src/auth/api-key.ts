@@ -37,7 +37,7 @@ export class ApiKeyStrategy implements AuthStrategy {
 
     // Show partial key for identification (first 8 chars)
     const keyPreview = key.length > 8 ? `${key.slice(0, 8)}...` : key;
-    logger.debug({headerName}, `[Auth] Using API Key authentication (${headerName}): ${keyPreview}`);
+    logger.debug({headerName, keyPreview}, `[Auth] Using API Key authentication (${headerName}): ${keyPreview}`);
   }
 
   async fetch(url: string, init: RequestInit = {}): Promise<Response> {

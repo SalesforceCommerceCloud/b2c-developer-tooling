@@ -117,7 +117,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       'show-log': showLog,
     } = this.flags;
 
-    const hostname = this.resolvedConfig.hostname!;
+    const hostname = this.resolvedConfig.values.hostname!;
 
     // Build data units configuration
     const dataUnits = this.buildDataUnits({

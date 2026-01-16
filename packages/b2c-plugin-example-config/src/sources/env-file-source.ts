@@ -11,7 +11,7 @@
  */
 import {existsSync, readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '@salesforce/b2c-tooling-sdk/config';
+import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '@salesforce/b2c-tooling-sdk/config';
 
 /**
  * ConfigSource implementation that loads from .env.b2c files.
@@ -53,8 +53,6 @@ import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '@salesf
 export class EnvFileSource implements ConfigSource {
   readonly name = 'env-file (.env.b2c)';
 
-  private envFilePath?: string;
-
   /**
    * Load configuration from .env.b2c file.
    *
@@ -64,46 +62,43 @@ export class EnvFileSource implements ConfigSource {
    * 3. .env.b2c in current working directory
    *
    * @param options - Resolution options (startDir used for file lookup)
-   * @returns Parsed configuration or undefined if file not found
+   * @returns Parsed configuration and location, or undefined if file not found
    */
-  load(options: ResolveConfigOptions): NormalizedConfig | undefined {
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     // Check for explicit path override via environment variable
     const envOverride = process.env.B2C_ENV_FILE_PATH;
+    let envFilePath: string;
     if (envOverride) {
-      this.envFilePath = envOverride;
+      envFilePath = envOverride;
     } else {
       const searchDir = options.startDir ?? process.cwd();
-      this.envFilePath = join(searchDir, '.env.b2c');
+      envFilePath = join(searchDir, '.env.b2c');
     }
 
-    if (!existsSync(this.envFilePath)) {
+    if (!existsSync(envFilePath)) {
       return undefined;
     }
 
-    const content = readFileSync(this.envFilePath, 'utf-8');
+    const content = readFileSync(envFilePath, 'utf-8');
     const vars = this.parseEnvFile(content);
 
     return {
-      hostname: vars.HOSTNAME,
-      webdavHostname: vars.WEBDAV_HOSTNAME,
-      codeVersion: vars.CODE_VERSION,
-      username: vars.USERNAME,
-      password: vars.PASSWORD,
-      clientId: vars.CLIENT_ID,
-      clientSecret: vars.CLIENT_SECRET,
-      scopes: vars.SCOPES ? vars.SCOPES.split(',').map((s) => s.trim()) : undefined,
-      shortCode: vars.SHORT_CODE,
-      mrtProject: vars.MRT_PROJECT,
-      mrtEnvironment: vars.MRT_ENVIRONMENT,
-      mrtApiKey: vars.MRT_API_KEY,
+      config: {
+        hostname: vars.HOSTNAME,
+        webdavHostname: vars.WEBDAV_HOSTNAME,
+        codeVersion: vars.CODE_VERSION,
+        username: vars.USERNAME,
+        password: vars.PASSWORD,
+        clientId: vars.CLIENT_ID,
+        clientSecret: vars.CLIENT_SECRET,
+        scopes: vars.SCOPES ? vars.SCOPES.split(',').map((s) => s.trim()) : undefined,
+        shortCode: vars.SHORT_CODE,
+        mrtProject: vars.MRT_PROJECT,
+        mrtEnvironment: vars.MRT_ENVIRONMENT,
+        mrtApiKey: vars.MRT_API_KEY,
+      },
+      location: envFilePath,
     };
-  }
-
-  /**
-   * Get the path to the env file (for diagnostics).
-   */
-  getPath(): string | undefined {
-    return this.envFilePath;
   }
 
   /**

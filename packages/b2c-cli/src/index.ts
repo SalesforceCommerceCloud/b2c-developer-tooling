@@ -16,4 +16,4 @@ export {
   loadConfig,
   findDwJson,
 } from '@salesforce/b2c-tooling-sdk/cli';
-export type {ResolvedConfig, LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
+export type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';

@@ -46,7 +46,7 @@ export default class DocsDownload extends InstanceCommand<typeof DocsDownload> {
 
     this.log(
       t('commands.docs.download.downloading', 'Downloading documentation from {{hostname}}...', {
-        hostname: this.resolvedConfig.hostname,
+        hostname: this.resolvedConfig.values.hostname,
       }),
     );
 

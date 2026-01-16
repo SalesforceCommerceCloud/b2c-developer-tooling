@@ -76,7 +76,7 @@ describe('config/dw-json', () => {
       fs.writeFileSync(dwJsonPath, JSON.stringify(config));
 
       const result = loadDwJson();
-      expect(result).to.deep.equal(config);
+      expect(result?.config).to.deep.equal(config);
     });
 
     it('loads config from explicit path', () => {
@@ -87,7 +87,7 @@ describe('config/dw-json', () => {
       fs.writeFileSync(customPath, JSON.stringify(config));
 
       const result = loadDwJson({path: customPath});
-      expect(result).to.deep.equal(config);
+      expect(result?.config).to.deep.equal(config);
     });
 
     it('selects named instance from multi-config', () => {
@@ -102,8 +102,23 @@ describe('config/dw-json', () => {
       fs.writeFileSync(dwJsonPath, JSON.stringify(multiConfig));
 
       const result = loadDwJson({instance: 'staging'});
-      expect(result?.hostname).to.equal('staging.demandware.net');
-      expect(result?.name).to.equal('staging');
+      expect(result?.config.hostname).to.equal('staging.demandware.net');
+      expect(result?.config.name).to.equal('staging');
+    });
+
+    it('returns undefined when requested instance does not exist', () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      const multiConfig = {
+        hostname: 'root.demandware.net',
+        configs: [
+          {name: 'staging', hostname: 'staging.demandware.net'},
+          {name: 'production', hostname: 'prod.demandware.net'},
+        ],
+      };
+      fs.writeFileSync(dwJsonPath, JSON.stringify(multiConfig));
+
+      const result = loadDwJson({instance: 'nonexistent'});
+      expect(result).to.be.undefined;
     });
 
     it('selects active config when no instance specified', () => {
@@ -119,8 +134,8 @@ describe('config/dw-json', () => {
       fs.writeFileSync(dwJsonPath, JSON.stringify(multiConfig));
 
       const result = loadDwJson();
-      expect(result?.hostname).to.equal('prod.demandware.net');
-      expect(result?.name).to.equal('production');
+      expect(result?.config.hostname).to.equal('prod.demandware.net');
+      expect(result?.config.name).to.equal('production');
     });
 
     it('returns root config when no active config found', () => {
@@ -133,7 +148,7 @@ describe('config/dw-json', () => {
       fs.writeFileSync(dwJsonPath, JSON.stringify(multiConfig));
 
       const result = loadDwJson();
-      expect(result?.hostname).to.equal('root.demandware.net');
+      expect(result?.config.hostname).to.equal('root.demandware.net');
     });
 
     it('returns undefined for invalid JSON', () => {
@@ -160,9 +175,9 @@ describe('config/dw-json', () => {
       fs.writeFileSync(dwJsonPath, JSON.stringify(config));
 
       const result = loadDwJson();
-      expect(result?.['client-id']).to.equal('test-client');
-      expect(result?.['client-secret']).to.equal('test-secret');
-      expect(result?.['oauth-scopes']).to.deep.equal(['mail', 'roles']);
+      expect(result?.config['client-id']).to.equal('test-client');
+      expect(result?.config['client-secret']).to.equal('test-secret');
+      expect(result?.config['oauth-scopes']).to.deep.equal(['mail', 'roles']);
     });
 
     it('handles webdav-hostname', () => {
@@ -174,7 +189,7 @@ describe('config/dw-json', () => {
       fs.writeFileSync(dwJsonPath, JSON.stringify(config));
 
       const result = loadDwJson();
-      expect(result?.['webdav-hostname']).to.equal('webdav.test.com');
+      expect(result?.config['webdav-hostname']).to.equal('webdav.test.com');
     });
   });
 });

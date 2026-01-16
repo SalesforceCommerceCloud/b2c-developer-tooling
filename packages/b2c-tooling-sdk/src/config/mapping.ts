@@ -51,6 +51,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
     instanceName: json.name,
     authMethods: json['auth-methods'],
+    accountManagerHost: json['account-manager-host'],
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
   };

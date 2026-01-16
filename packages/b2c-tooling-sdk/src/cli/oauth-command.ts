@@ -6,7 +6,8 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
 import {loadConfig, ALL_AUTH_METHODS} from './config.js';
-import type {ResolvedConfig, LoadConfigOptions, AuthMethod, PluginSources} from './config.js';
+import type {LoadConfigOptions, AuthMethod, PluginSources} from './config.js';
+import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {t} from '../i18n/index.js';
@@ -58,9 +59,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       helpGroup: 'AUTH',
     }),
     'account-manager-host': Flags.string({
-      description: 'Account Manager hostname for OAuth',
+      description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
-      default: DEFAULT_ACCOUNT_MANAGER_HOST,
       helpGroup: 'AUTH',
     }),
   };
@@ -83,18 +83,20 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     return methods.length > 0 ? methods : undefined;
   }
 
-  protected override loadConfiguration(): ResolvedConfig {
+  protected override loadConfiguration(): ResolvedB2CConfig {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
     };
 
-    const flagConfig: Partial<ResolvedConfig> = {
+    const flagConfig: Partial<NormalizedConfig> = {
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
       shortCode: this.flags['short-code'],
       authMethods: this.parseAuthMethods(),
       accountManagerHost: this.flags['account-manager-host'],
+      // Merge scopes from flags (if provided)
+      scopes: this.flags.scope && this.flags.scope.length > 0 ? this.flags.scope : undefined,
     };
 
     const pluginSources: PluginSources = {
@@ -102,21 +104,14 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       after: this.pluginSourcesAfter,
     };
 
-    const config = loadConfig(flagConfig, options, pluginSources);
-
-    // Merge scopes from flags with config file scopes (flags take precedence if provided)
-    if (this.flags.scope && this.flags.scope.length > 0) {
-      config.scopes = this.flags.scope;
-    }
-
-    return config;
+    return loadConfig(flagConfig, options, pluginSources);
   }
 
   /**
    * Gets the configured Account Manager host.
    */
   protected get accountManagerHost(): string {
-    return this.resolvedConfig.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+    return this.resolvedConfig.values.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
   }
 
   /**
@@ -128,7 +123,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * @throws Error if no allowed method has the required credentials configured
    */
   protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy {
-    const config = this.resolvedConfig;
+    const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
     // Default to client-credentials and implicit if no methods specified
     const allowedMethods = config.authMethods || (['client-credentials', 'implicit'] as AuthMethod[]);
@@ -177,8 +172,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * Returns true if clientId is configured (with or without clientSecret).
    */
   protected hasOAuthCredentials(): boolean {
-    const config = this.resolvedConfig;
-    return Boolean(config.clientId);
+    return this.resolvedConfig.hasOAuthConfig();
   }
 
   /**
@@ -186,7 +180,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * Returns true only if both clientId and clientSecret are configured.
    */
   protected hasFullOAuthCredentials(): boolean {
-    const config = this.resolvedConfig;
+    const config = this.resolvedConfig.values;
     return Boolean(config.clientId && config.clientSecret);
   }
 
