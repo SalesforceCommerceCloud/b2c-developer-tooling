@@ -83,7 +83,7 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
       this.error(t('commands.mrt.env.var.set.noVariables', 'No environment variables provided. Use KEY=value format.'));
     }
 
-    await setEnvVars(
+    await this.setEnvVars(
       {
         projectSlug: project,
         environment,
@@ -112,5 +112,9 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
     }
 
     return {variables, project, environment};
+  }
+
+  protected async setEnvVars(input: Parameters<typeof setEnvVars>[0], auth: Parameters<typeof setEnvVars>[1]) {
+    return setEnvVars(input, auth);
   }
 }

@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+import {expect} from 'chai';
+import sinon from 'sinon';
+import {Config} from '@oclif/core';
+import JobImport from '../../../src/commands/job/import.js';
+import {JobExecutionError} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
+import {stubParse} from '../../helpers/stub-parse.js';
+
+describe('job import', () => {
+  let config: Config;
+
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
+    const command: any = new JobImport([], config);
+    stubParse(command, flags, args);
+    await command.init();
+    return command;
+  }
+
+  beforeEach(async () => {
+    isolateConfig();
+    config = await Config.load();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
+  function stubCommon(command: any) {
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'log').returns(void 0);
+  }
+
+  it('imports remote filename when --remote is set', async () => {
+    const command: any = await createCommand({remote: true, json: true}, {target: 'a.zip'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const importStub = sinon.stub(command, 'siteArchiveImport').resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'a.zip',
+      archiveKept: false,
+    });
+
+    await command.run();
+
+    expect(importStub.calledOnce).to.equal(true);
+    expect(importStub.getCall(0).args[0]).to.deep.equal({remoteFilename: 'a.zip'});
+  });
+
+  it('imports local target when --remote is not set', async () => {
+    const command: any = await createCommand({json: true}, {target: './dir'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const importStub = sinon.stub(command, 'siteArchiveImport').resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'a.zip',
+      archiveKept: false,
+    });
+
+    await command.run();
+
+    expect(importStub.calledOnce).to.equal(true);
+    expect(importStub.getCall(0).args[0]).to.equal('./dir');
+  });
+
+  it('returns early when before hooks skip', async () => {
+    const command: any = await createCommand({json: true}, {target: './dir'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: true, skipReason: 'by plugin'});
+    const importStub = sinon.stub(command, 'siteArchiveImport').rejects(new Error('Unexpected import'));
+
+    const result = await command.run();
+
+    expect(importStub.called).to.equal(false);
+    expect(result.execution.exit_status.code).to.equal('skipped');
+  });
+
+  it('shows job log and errors on JobExecutionError when show-log is true', async () => {
+    const command: any = await createCommand({json: true}, {target: './dir'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    const showLogStub = sinon.stub(command, 'showJobLog').resolves(void 0);
+
+    const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
+    const error = new JobExecutionError('failed', exec);
+    sinon.stub(command, 'siteArchiveImport').rejects(error);
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(showLogStub.calledOnce).to.equal(true);
+    expect(errorStub.called).to.equal(true);
+  });
+});

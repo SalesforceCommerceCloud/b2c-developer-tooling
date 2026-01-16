@@ -55,6 +55,10 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
     }),
   };
 
+  protected async deleteEnv(input: Parameters<typeof deleteEnv>[0], auth: Parameters<typeof deleteEnv>[1]) {
+    return deleteEnv(input, auth);
+  }
+
   async run(): Promise<{slug: string; project: string}> {
     this.requireMrtCredentials();
 
@@ -95,7 +99,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
     }
 
     try {
-      await deleteEnv(
+      await this.deleteEnv(
         {
           projectSlug: project,
           slug,

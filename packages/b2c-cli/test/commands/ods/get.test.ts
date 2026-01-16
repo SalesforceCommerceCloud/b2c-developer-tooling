@@ -5,7 +5,8 @@
  */
 
 import {expect} from 'chai';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import sinon from 'sinon';
+
 import OdsGet from '../../../src/commands/ods/get.js';
 import {
   makeCommandThrowOnError,
@@ -13,6 +14,7 @@ import {
   stubOdsClient,
   stubCommandConfigAndLogger,
 } from '../../helpers/ods.js';
+import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
 
 /**
  * Unit tests for ODS get command CLI logic.
@@ -20,6 +22,15 @@ import {
  * SDK tests cover the actual API calls.
  */
 describe('ods get', () => {
+  beforeEach(() => {
+    isolateConfig();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
   describe('command structure', () => {
     it('should require sandboxId as argument', () => {
       expect(OdsGet.args).to.have.property('sandboxId');

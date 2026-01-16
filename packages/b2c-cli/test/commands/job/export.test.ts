@@ -1,0 +1,164 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+import {expect} from 'chai';
+import sinon from 'sinon';
+import {Config} from '@oclif/core';
+import JobExport from '../../../src/commands/job/export.js';
+import {JobExecutionError} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
+import {stubParse} from '../../helpers/stub-parse.js';
+
+describe('job export', () => {
+  let config: Config;
+
+  async function createCommand(flags: Record<string, unknown>) {
+    const command: any = new JobExport([], config);
+    stubParse(command, flags, {});
+    await command.init();
+    return command;
+  }
+
+  beforeEach(async () => {
+    isolateConfig();
+    config = await Config.load();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
+  function stubCommon(command: any) {
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({hostname: 'example.com'}));
+    sinon.stub(command, 'log').returns(void 0);
+  }
+
+  it('errors when no data units are provided', async () => {
+    const command: any = await createCommand({output: './export'});
+    stubCommon(command);
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.calledOnce).to.equal(true);
+  });
+
+  it('errors on invalid --data-units json', async () => {
+    const command: any = await createCommand({'data-units': '{not json'});
+    stubCommon(command);
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.calledOnce).to.equal(true);
+  });
+
+  it('calls export operation and passes derived dataUnits', async () => {
+    const command: any = await createCommand({
+      output: './export',
+      'global-data': 'meta_data',
+      timeout: 1,
+      json: true,
+    });
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const exportStub = sinon.stub(command, 'siteArchiveExportToPath').resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}, duration: 1000} as any,
+      archiveFilename: 'a.zip',
+      archiveKept: false,
+      localPath: './export/a.zip',
+    });
+
+    const result = await command.run();
+
+    expect(exportStub.calledOnce).to.equal(true);
+    const args = exportStub.getCall(0).args;
+    expect(args[1]).to.equal('./export');
+    expect(result.archiveFilename).to.equal('a.zip');
+  });
+
+  it('returns early when before hooks skip', async () => {
+    const command: any = await createCommand({'global-data': 'meta_data'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: true, skipReason: 'by plugin'});
+    const exportStub = sinon.stub(command, 'siteArchiveExportToPath').rejects(new Error('Unexpected export'));
+
+    const result = await command.run();
+
+    expect(exportStub.called).to.equal(false);
+    expect(result.execution.exit_status.code).to.equal('skipped');
+  });
+
+  it('passes keepArchive when --no-download is set', async () => {
+    const command: any = await createCommand({
+      output: './export',
+      'global-data': 'meta_data',
+      'no-download': true,
+      'zip-only': true,
+      json: true,
+    });
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const exportStub = sinon.stub(command, 'siteArchiveExportToPath').resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'a.zip',
+      archiveKept: true,
+    });
+
+    await command.run();
+
+    const options = exportStub.getCall(0).args[2];
+    expect(options.keepArchive).to.equal(true);
+    expect(options.extractZip).to.equal(false);
+  });
+
+  it('shows job log and errors on JobExecutionError when show-log is true', async () => {
+    const command: any = await createCommand({'global-data': 'meta_data', json: true});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    const showLogStub = sinon.stub(command, 'showJobLog').resolves(void 0);
+
+    const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
+    const error = new JobExecutionError('failed', exec);
+    sinon.stub(command, 'siteArchiveExportToPath').rejects(error);
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(showLogStub.calledOnce).to.equal(true);
+    expect(errorStub.called).to.equal(true);
+  });
+});

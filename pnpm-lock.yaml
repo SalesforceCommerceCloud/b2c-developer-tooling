@@ -120,6 +120,9 @@ importers:
       shx:
         specifier: ^0.3.3
         version: 0.3.4
+      sinon:
+        specifier: ^21.0.1
+        version: 21.0.1
       tsx:
         specifier: ^4.20.6
         version: 4.20.6

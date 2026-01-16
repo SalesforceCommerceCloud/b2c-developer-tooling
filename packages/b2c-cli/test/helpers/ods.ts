@@ -4,8 +4,6 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
     value: {

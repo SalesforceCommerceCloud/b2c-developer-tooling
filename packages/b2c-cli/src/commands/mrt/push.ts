@@ -76,6 +76,10 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
     }),
   };
 
+  protected async pushBundle(input: Parameters<typeof pushBundle>[0], auth: Parameters<typeof pushBundle>[1]) {
+    return pushBundle(input, auth);
+  }
+
   async run(): Promise<PushResult> {
     this.requireMrtCredentials();
 
@@ -107,7 +111,7 @@ export default class MrtPush extends MrtCommand<typeof MrtPush> {
     }
 
     try {
-      const result = await pushBundle(
+      const result = await this.pushBundle(
         {
           projectSlug: project,
           target,

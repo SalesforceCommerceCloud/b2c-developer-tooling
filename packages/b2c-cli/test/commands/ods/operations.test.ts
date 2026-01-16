@@ -9,7 +9,7 @@ import {expect} from 'chai';
 import OdsStart from '../../../src/commands/ods/start.js';
 
 import OdsStop from '../../../src/commands/ods/stop.js';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import OdsRestart from '../../../src/commands/ods/restart.js';
 import {
   makeCommandThrowOnError,

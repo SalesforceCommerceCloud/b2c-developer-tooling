@@ -90,7 +90,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       }),
     );
 
-    const results = await searchJobExecutions(this.instance, {
+    const results = await this.searchJobExecutions({
       jobId,
       status,
       count,
@@ -120,5 +120,9 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
     createTable(COLUMNS).render(results.hits, DEFAULT_COLUMNS);
 
     return results;
+  }
+
+  protected async searchJobExecutions(options: Parameters<typeof searchJobExecutions>[1]) {
+    return searchJobExecutions(this.instance, options);
   }
 }

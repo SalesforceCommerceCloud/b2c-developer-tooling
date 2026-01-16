@@ -60,7 +60,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
     );
 
     try {
-      const execution = await waitForJob(this.instance, jobId, executionId, {
+      const execution = await this.waitForJob(jobId, executionId, {
         timeout: timeout ? timeout * 1000 : undefined,
         pollInterval: pollInterval * 1000,
         onProgress: (exec, elapsed) => {
@@ -98,5 +98,9 @@ export default class JobWait extends JobCommand<typeof JobWait> {
       }
       throw error;
     }
+  }
+
+  protected async waitForJob(jobId: string, executionId: string, options: Parameters<typeof waitForJob>[3]) {
+    return waitForJob(this.instance, jobId, executionId, options);
   }
 }

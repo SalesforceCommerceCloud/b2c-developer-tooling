@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import {expect} from 'chai';
+import sinon from 'sinon';
 import OdsList from '../../../src/commands/ods/list.js';
 import {
   makeCommandThrowOnError,
@@ -12,6 +13,7 @@ import {
   stubJsonEnabled,
   stubOdsClient,
 } from '../../helpers/ods.js';
+import {isolateConfig, restoreConfig} from '../../helpers/config-isolation.js';
 
 /**
  * Unit tests for ODS list command CLI logic.
@@ -19,6 +21,15 @@ import {
  * SDK tests cover the actual API calls.
  */
 describe('ods list', () => {
+  beforeEach(() => {
+    isolateConfig();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
   describe('getSelectedColumns', () => {
     it('should return default columns when no flags provided', () => {
       const command = new OdsList([], {} as any);
