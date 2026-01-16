@@ -83,8 +83,8 @@ jobs:
       - name: Publish to npm
         run: |
           pnpm --filter @sfcc-dx-testing/b2c-tooling-sdk publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
-          pnpm --filter @sfcc-dx-testing/b2c-cli publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
-          pnpm --filter @sfcc-dx-testing/b2c-dx-mcp publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          # pnpm --filter @sfcc-dx-testing/b2c-cli publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          # pnpm --filter @sfcc-dx-testing/b2c-dx-mcp publish --access public --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
