@@ -124,7 +124,7 @@ export function findDwJson(startDir: string = process.cwd()): string | undefined
  * 2. Config marked as `active: true`
  * 3. Root-level config
  */
-function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonConfig {
+function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonConfig | undefined {
   const logger = getLogger();
 
   // Single config or no configs array
@@ -152,11 +152,9 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
       logger.trace({selection: 'named', instanceName}, `[DwJsonSource] Selected config "${instanceName}" by name`);
       return found;
     }
-    // Instance not found, fall through to other selection methods
-    logger.trace(
-      {requestedInstance: instanceName},
-      `[DwJsonSource] Named instance "${instanceName}" not found, falling back`,
-    );
+    // Instance explicitly requested but not found - return undefined
+    logger.trace({requestedInstance: instanceName}, `[DwJsonSource] Named instance "${instanceName}" not found`);
+    return undefined;
   }
 
   // Find active config
@@ -224,8 +222,12 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | 
   try {
     const content = fs.readFileSync(dwJsonPath, 'utf8');
     const json = JSON.parse(content) as DwJsonMultiConfig;
+    const config = selectConfig(json, options.instance);
+    if (!config) {
+      return undefined;
+    }
     return {
-      config: selectConfig(json, options.instance),
+      config,
       path: dwJsonPath,
     };
   } catch (error) {

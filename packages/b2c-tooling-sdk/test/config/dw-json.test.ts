@@ -106,6 +106,21 @@ describe('config/dw-json', () => {
       expect(result?.config.name).to.equal('staging');
     });
 
+    it('returns undefined when requested instance does not exist', () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      const multiConfig = {
+        hostname: 'root.demandware.net',
+        configs: [
+          {name: 'staging', hostname: 'staging.demandware.net'},
+          {name: 'production', hostname: 'prod.demandware.net'},
+        ],
+      };
+      fs.writeFileSync(dwJsonPath, JSON.stringify(multiConfig));
+
+      const result = loadDwJson({instance: 'nonexistent'});
+      expect(result).to.be.undefined;
+    });
+
     it('selects active config when no instance specified', () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       const multiConfig = {
