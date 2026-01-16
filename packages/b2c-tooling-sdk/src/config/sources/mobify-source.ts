@@ -11,7 +11,7 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '../types.js';
+import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -39,19 +39,17 @@ interface MobifyConfigFile {
  */
 export class MobifySource implements ConfigSource {
   readonly name = 'MobifySource';
-  private lastPath?: string;
 
-  load(options: ResolveConfigOptions): NormalizedConfig | undefined {
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     const logger = getLogger();
 
     // Use explicit credentialsFile if provided, otherwise use default path
     const mobifyPath = options.credentialsFile ?? this.getMobifyPath(options.cloudOrigin);
-    this.lastPath = mobifyPath;
 
-    logger.trace({path: mobifyPath}, '[MobifySource] Checking for credentials file');
+    logger.trace({location: mobifyPath}, '[MobifySource] Checking for credentials file');
 
     if (!fs.existsSync(mobifyPath)) {
-      logger.trace({path: mobifyPath}, '[MobifySource] No credentials file found');
+      logger.trace({location: mobifyPath}, '[MobifySource] No credentials file found');
       return undefined;
     }
 
@@ -60,25 +58,22 @@ export class MobifySource implements ConfigSource {
       const config = JSON.parse(content) as MobifyConfigFile;
 
       if (!config.api_key) {
-        logger.trace({path: mobifyPath}, '[MobifySource] Credentials file found but no api_key present');
+        logger.trace({location: mobifyPath}, '[MobifySource] Credentials file found but no api_key present');
         return undefined;
       }
 
-      logger.trace({path: mobifyPath, fields: ['mrtApiKey']}, '[MobifySource] Loaded credentials');
+      logger.trace({location: mobifyPath, fields: ['mrtApiKey']}, '[MobifySource] Loaded credentials');
 
       return {
-        mrtApiKey: config.api_key,
+        config: {mrtApiKey: config.api_key},
+        location: mobifyPath,
       };
     } catch (error) {
       // Invalid JSON or read error
       const message = error instanceof Error ? error.message : String(error);
-      logger.trace({path: mobifyPath, error: message}, '[MobifySource] Failed to parse credentials file');
+      logger.trace({location: mobifyPath, error: message}, '[MobifySource] Failed to parse credentials file');
       return undefined;
     }
-  }
-
-  getPath(): string | undefined {
-    return this.lastPath;
   }
 
   /**

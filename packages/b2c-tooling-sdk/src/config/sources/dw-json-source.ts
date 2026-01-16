@@ -11,7 +11,7 @@
 import {loadDwJson} from '../dw-json.js';
 import {getPopulatedFields} from '../mapping.js';
 import {mapDwJsonToNormalizedConfig} from '../mapping.js';
-import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '../types.js';
+import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -21,9 +21,8 @@ import {getLogger} from '../../logging/logger.js';
  */
 export class DwJsonSource implements ConfigSource {
   readonly name = 'DwJsonSource';
-  private lastPath?: string;
 
-  load(options: ResolveConfigOptions): NormalizedConfig | undefined {
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     const logger = getLogger();
 
     const result = loadDwJson({
@@ -33,22 +32,14 @@ export class DwJsonSource implements ConfigSource {
     });
 
     if (!result) {
-      this.lastPath = undefined;
       return undefined;
     }
 
-    // Track the actual path from the loaded result
-    this.lastPath = result.path;
+    const config = mapDwJsonToNormalizedConfig(result.config);
+    const fields = getPopulatedFields(config);
 
-    const normalized = mapDwJsonToNormalizedConfig(result.config);
-    const fields = getPopulatedFields(normalized);
+    logger.trace({location: result.path, fields}, '[DwJsonSource] Loaded config');
 
-    logger.trace({path: this.lastPath, fields}, '[DwJsonSource] Loaded config');
-
-    return normalized;
-  }
-
-  getPath(): string | undefined {
-    return this.lastPath;
+    return {config, location: result.path};
   }
 }

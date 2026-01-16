@@ -157,33 +157,46 @@ export class ConfigResolver {
     // Load from each source in order, merging results
     // Earlier sources have higher priority - later sources only fill in missing values
     for (const source of this.sources) {
-      const sourceConfig = source.load(options);
-      if (sourceConfig) {
-        const fieldsContributed = getPopulatedFields(sourceConfig);
-        if (fieldsContributed.length > 0) {
-          sourceInfos.push({
-            name: source.name,
-            path: source.getPath?.(),
-            fieldsContributed,
-          });
-
+      const result = source.load(options);
+      if (result) {
+        const {config: sourceConfig, location} = result;
+        const fields = getPopulatedFields(sourceConfig);
+        if (fields.length > 0) {
           // Capture which credential groups are already claimed BEFORE processing this source
           // This allows a single source to provide complete credential pairs
           const claimedGroups = getClaimedCredentialGroups(baseConfig);
 
+          // Track which fields are ignored during merge
+          const fieldsIgnored: (keyof NormalizedConfig)[] = [];
+
           // Merge: source values fill in gaps (don't override existing values)
           for (const [key, value] of Object.entries(sourceConfig)) {
             if (value === undefined) continue;
-            if (baseConfig[key as keyof NormalizedConfig] !== undefined) continue;
+
+            const fieldKey = key as keyof NormalizedConfig;
+
+            // Skip if already set by higher-priority source
+            if (baseConfig[fieldKey] !== undefined) {
+              fieldsIgnored.push(fieldKey);
+              continue;
+            }
 
             // Skip if this field's credential group was already claimed by a higher-priority source
             // This prevents mixing credentials from different sources
             if (isFieldInClaimedGroup(key, claimedGroups)) {
+              fieldsIgnored.push(fieldKey);
               continue;
             }
 
             (baseConfig as Record<string, unknown>)[key] = value;
           }
+
+          sourceInfos.push({
+            name: source.name,
+            location,
+            fields,
+            fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
+          });
         }
       }
     }

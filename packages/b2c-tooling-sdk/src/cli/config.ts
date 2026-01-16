@@ -107,7 +107,12 @@ export function loadConfig(
   // Log source summary
   for (const source of resolved.sources) {
     logger.trace(
-      {source: source.name, path: source.path, fields: source.fieldsContributed},
+      {
+        source: source.name,
+        location: source.location,
+        fields: source.fields,
+        fieldsIgnored: source.fieldsIgnored,
+      },
       `[${source.name}] Contributed fields`,
     );
   }

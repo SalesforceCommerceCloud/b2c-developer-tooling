@@ -5,7 +5,7 @@
  */
 import {expect} from 'chai';
 import {loadConfig, type LoadConfigOptions, type PluginSources} from '@salesforce/b2c-tooling-sdk/cli';
-import type {ConfigSource, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import type {ConfigSource, ConfigLoadResult, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
 
 /**
  * Mock config source for testing.
@@ -14,15 +14,14 @@ class MockConfigSource implements ConfigSource {
   constructor(
     public name: string,
     private config: Partial<NormalizedConfig> | undefined,
-    private path?: string,
+    private location?: string,
   ) {}
 
-  load() {
-    return this.config as NormalizedConfig | undefined;
-  }
-
-  getPath(): string | undefined {
-    return this.path;
+  load(): ConfigLoadResult | undefined {
+    if (this.config === undefined) {
+      return undefined;
+    }
+    return {config: this.config as NormalizedConfig, location: this.location};
   }
 }
 

@@ -91,10 +91,12 @@ export interface ConfigWarning {
 export interface ConfigSourceInfo {
   /** Human-readable name of the source */
   name: string;
-  /** Path to the source file (if applicable) */
-  path?: string;
-  /** Fields that this source contributed to the final config */
-  fieldsContributed: (keyof NormalizedConfig)[];
+  /** Location of the source (file path, keychain entry, URL, etc.) */
+  location?: string;
+  /** All fields that this source provided values for */
+  fields: (keyof NormalizedConfig)[];
+  /** Fields that were not used because a higher priority source already provided them */
+  fieldsIgnored?: (keyof NormalizedConfig)[];
 }
 
 /**
@@ -143,6 +145,19 @@ export interface ResolveConfigOptions {
 }
 
 /**
+ * Result of loading configuration from a source.
+ */
+export interface ConfigLoadResult {
+  /** The loaded configuration */
+  config: NormalizedConfig;
+  /**
+   * Location of the source (for diagnostics).
+   * May be a file path, keychain entry, URL, or other identifier.
+   */
+  location?: string;
+}
+
+/**
  * A configuration source that can contribute config values.
  *
  * Implement this interface to create custom configuration sources.
@@ -150,14 +165,14 @@ export interface ResolveConfigOptions {
  *
  * @example
  * ```typescript
- * import type { ConfigSource, NormalizedConfig, ResolveConfigOptions } from '@salesforce/b2c-tooling-sdk/config';
+ * import type { ConfigSource, ConfigLoadResult, ResolveConfigOptions } from '@salesforce/b2c-tooling-sdk/config';
  *
  * class MyCustomSource implements ConfigSource {
  *   name = 'my-custom-source';
  *
- *   load(options: ResolveConfigOptions): NormalizedConfig | undefined {
+ *   load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
  *     // Load config from your custom source
- *     return { hostname: 'example.com' };
+ *     return { config: { hostname: 'example.com' }, location: '/path/to/config' };
  *   }
  * }
  * ```
@@ -170,15 +185,9 @@ export interface ConfigSource {
    * Load configuration from this source.
    *
    * @param options - Resolution options
-   * @returns Partial config from this source, or undefined if source not available
+   * @returns Config and location from this source, or undefined if source not available
    */
-  load(options: ResolveConfigOptions): NormalizedConfig | undefined;
-
-  /**
-   * Get the path to this source's file (if applicable).
-   * Used for diagnostics and source info.
-   */
-  getPath?(): string | undefined;
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined;
 }
 
 /**

@@ -66,11 +66,16 @@
  * Implement the {@link ConfigSource} interface to create custom sources:
  *
  * ```typescript
- * import { ConfigResolver, type ConfigSource } from '@salesforce/b2c-tooling-sdk/config';
+ * import { ConfigResolver, type ConfigSource, type ConfigLoadResult } from '@salesforce/b2c-tooling-sdk/config';
  *
  * class MySource implements ConfigSource {
  *   name = 'my-source';
- *   load(options) { return { hostname: 'custom.example.com' }; }
+ *   load(options): ConfigLoadResult | undefined {
+ *     return {
+ *       config: { hostname: 'custom.example.com' },
+ *       location: '/path/to/source',
+ *     };
+ *   }
  * }
  *
  * const resolver = new ConfigResolver([new MySource()]);
@@ -97,6 +102,7 @@ export {resolveConfig, ConfigResolver, createConfigResolver} from './resolver.js
 export type {
   NormalizedConfig,
   ConfigSource,
+  ConfigLoadResult,
   ConfigSourceInfo,
   ConfigResolutionResult,
   ConfigWarning,
