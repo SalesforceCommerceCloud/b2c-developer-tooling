@@ -85,9 +85,9 @@ jobs:
 
       - name: Publish to npm
         run: |
-          cd packages/b2c-tooling-sdk && npm publish --provenance --tag ${{ steps.release-type.outputs.tag }}
-          cd ${{ github.workspace }}/packages/b2c-cli && npm publish --provenance --tag ${{ steps.release-type.outputs.tag }}
-          # cd packages/b2c-dx-mcp && npm publish --provenance --tag ${{ steps.release-type.outputs.tag }}
+          pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          # pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
 
       # - name: Extract changelog for release
       #   if: steps.release-type.outputs.type == 'stable'

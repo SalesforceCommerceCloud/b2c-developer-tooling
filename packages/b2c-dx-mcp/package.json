@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-dx-mcp",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "MCP server for B2C Commerce Cloud developer experience tools",
   "author": "Salesforce",
   "license": "MIT",
