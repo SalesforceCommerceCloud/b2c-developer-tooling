@@ -1,6 +1,6 @@
 {
   "name": "@sfcc-dx-testing/b2c-dx-mcp",
-  "version": "0.0.1-preview",
+  "version": "0.0.2-preview",
   "description": "MCP server for B2C Commerce Cloud developer experience tools",
   "author": "Salesforce",
   "license": "MIT",
