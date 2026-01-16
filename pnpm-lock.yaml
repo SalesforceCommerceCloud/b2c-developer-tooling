@@ -53,7 +53,7 @@ importers:
       '@oclif/plugin-version':
         specifier: ^2
         version: 2.2.36
-      '@salesforce/b2c-tooling-sdk':
+      '@sfcc-dx-testing/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
       cliui:
@@ -141,7 +141,7 @@ importers:
       '@oclif/core':
         specifier: ^4
         version: 4.8.0
-      '@salesforce/b2c-tooling-sdk':
+      '@sfcc-dx-testing/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
       zod:
@@ -214,7 +214,7 @@ importers:
 
   packages/b2c-plugin-example-config:
     dependencies:
-      '@salesforce/b2c-tooling-sdk':
+      '@sfcc-dx-testing/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
     devDependencies:
