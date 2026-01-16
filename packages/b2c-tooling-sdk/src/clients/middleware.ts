@@ -143,7 +143,7 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
       // Mask sensitive/large body keys before logging
       const maskedBody = maskBody(body, maskBodyKeys);
       logger.trace(
-        {headers: headersToObject(request.headers), body: maskedBody},
+        {method: request.method, url, headers: headersToObject(request.headers), body: maskedBody},
         `${reqTag} ${request.method} ${url} body`,
       );
 
@@ -178,7 +178,7 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
       // Mask sensitive/large body keys before logging
       const maskedResponseBody = maskBody(responseBody, maskBodyKeys);
       logger.trace(
-        {headers: headersToObject(response.headers), body: maskedResponseBody},
+        {method: request.method, url, headers: headersToObject(response.headers), body: maskedResponseBody},
         `${respTag} ${request.method} ${url} body`,
       );
 
