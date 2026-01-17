@@ -70,6 +70,65 @@ export SFCC_INTELLIJ_CREDENTIALS_KEY="your-24-byte-key"
 b2c code deploy
 ```
 
+### Password Store Plugin
+
+**Repository:** [sfcc-solutions-share/b2c-plugin-password-store](https://github.com/sfcc-solutions-share/b2c-plugin-password-store)
+
+Loads B2C credentials from [pass](https://www.passwordstore.org/) (the standard Unix password manager). This allows secure GPG-encrypted storage of credentials that works across Linux, macOS, and WSL.
+
+#### Installation
+
+```bash
+b2c plugins install sfcc-solutions-share/b2c-plugin-password-store
+```
+
+#### Features
+
+- Uses GPG encryption via the standard `pass` tool
+- Supports global defaults via `b2c-cli/_default` (shared OAuth credentials)
+- Supports instance-specific credentials at `b2c-cli/<instance>`
+- Merges with other config sources (dw.json, environment variables)
+- Multi-line format with password on first line, followed by key-value pairs
+
+#### Storing Credentials
+
+```bash
+# Store global OAuth credentials (shared across all instances)
+pass insert -m b2c-cli/_default
+# Enter:
+# (blank first line or placeholder)
+# client-id: your-client-id
+# client-secret: your-client-secret
+
+# Store instance-specific credentials
+pass insert -m b2c-cli/staging
+# Enter:
+# your-webdav-password
+# username: user@example.com
+# hostname: staging.salesforce.com
+# code-version: version1
+```
+
+#### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SFCC_PASS_PREFIX` | Path prefix in pass store | `b2c-cli` |
+| `SFCC_PASS_INSTANCE` | Fallback instance name | (none) |
+
+#### Usage
+
+```bash
+# Use with explicit instance
+b2c code deploy --instance staging
+
+# View stored credentials
+pass show b2c-cli/staging
+
+# Edit credentials
+pass edit b2c-cli/staging
+```
+
 ### macOS Keychain Plugin
 
 **Repository:** [sfcc-solutions-share/b2c-plugin-macos-keychain](https://github.com/sfcc-solutions-share/b2c-plugin-macos-keychain)
