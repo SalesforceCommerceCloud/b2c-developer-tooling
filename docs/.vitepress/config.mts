@@ -44,8 +44,8 @@ const guideSidebar = [
 ];
 
 export default defineConfig({
-  title: 'B2C CLI',
-  description: 'Salesforce Agentforce Commerce B2C Command Line Tools',
+  title: 'B2C DX',
+  description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
   base: '/b2c-developer-tooling/',
 
   // Show deeper heading levels in the outline
@@ -65,8 +65,8 @@ export default defineConfig({
     ],
 
     footer: {
-      message: 'All rights reserved.',
-      copyright: `Copyright © ${new Date().getFullYear()} Salesforce, Inc. All rights reserved.`,
+      message: 'Released under the Apache-2.0 License.',
+      copyright: `Copyright © ${new Date().getFullYear()} Salesforce, Inc.`,
     },
 
     sidebar: {
