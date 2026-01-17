@@ -16,6 +16,7 @@
  * - {@link SlasClient} - SLAS Admin API for managing tenants and clients
  * - {@link OdsClient} - On-Demand Sandbox API for managing developer sandboxes
  * - {@link CustomApisClient} - Custom APIs DX API for retrieving endpoint status
+ * - {@link ScapiSchemasClient} - SCAPI Schemas API for discovering and retrieving OpenAPI schemas
  *
  * ## Usage
  *
@@ -181,3 +182,16 @@ export type {
   paths as CustomApisPaths,
   components as CustomApisComponents,
 } from './custom-apis.js';
+
+export {createScapiSchemasClient, SCAPI_SCHEMAS_DEFAULT_SCOPES} from './scapi-schemas.js';
+export type {
+  ScapiSchemasClient,
+  ScapiSchemasClientConfig,
+  ScapiSchemasError,
+  ScapiSchemasResponse,
+  SchemaListItem,
+  SchemaListResult,
+  OpenApiSchema,
+  paths as ScapiSchemasPaths,
+  components as ScapiSchemasComponents,
+} from './scapi-schemas.js';

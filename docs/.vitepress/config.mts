@@ -37,6 +37,7 @@ const guideSidebar = [
       { text: 'MRT Commands', link: '/cli/mrt' },
       { text: 'SLAS Commands', link: '/cli/slas' },
       { text: 'Custom APIs', link: '/cli/custom-apis' },
+      { text: 'SCAPI Schemas', link: '/cli/scapi-schemas' },
       { text: 'Auth Commands', link: '/cli/auth' },
       { text: 'Logging', link: '/cli/logging' },
     ],
