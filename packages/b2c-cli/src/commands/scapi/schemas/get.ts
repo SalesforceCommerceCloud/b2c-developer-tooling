@@ -278,6 +278,13 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
   }
 
   /**
+   * Check if a value is a non-empty object (not an array).
+   */
+  private isNonEmptyObject(value: unknown): boolean {
+    return typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
+  }
+
+  /**
    * Output a list of items (paths, schemas, or examples).
    */
   private outputList(items: string[], type: string): string[] {
@@ -302,18 +309,12 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
    * Uses a simple JSON-to-YAML conversion for basic YAML output.
    */
   private serializeToYaml(obj: unknown, indent = 0): string {
-    const indentStr = '  '.repeat(indent);
-
     if (obj === null || obj === undefined) {
       return 'null';
     }
 
     if (typeof obj === 'string') {
-      // Quote strings that need it
-      if (obj.includes('\n') || obj.includes(':') || obj.includes('#') || obj === '') {
-        return JSON.stringify(obj);
-      }
-      return obj;
+      return this.serializeYamlString(obj);
     }
 
     if (typeof obj === 'number' || typeof obj === 'boolean') {
@@ -321,64 +322,88 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
     }
 
     if (Array.isArray(obj)) {
-      if (obj.length === 0) {
-        return '[]';
-      }
-
-      // For arrays of primitives, use inline format
-      if (obj.every((item) => typeof item !== 'object' || item === null)) {
-        return `[${obj.map((item) => this.serializeToYaml(item, 0)).join(', ')}]`;
-      }
-
-      // For arrays of objects, use block format
-      const lines: string[] = [];
-      for (const item of obj) {
-        const serialized = this.serializeToYaml(item, indent + 1);
-        if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-          // Object items - first line starts with -, rest are indented
-          const objLines = serialized.split('\n');
-          lines.push(`${indentStr}- ${objLines[0]}`);
-          for (let i = 1; i < objLines.length; i++) {
-            lines.push(`${indentStr}  ${objLines[i]}`);
-          }
-        } else {
-          lines.push(`${indentStr}- ${serialized}`);
-        }
-      }
-      return lines.join('\n');
+      return this.serializeYamlArray(obj, indent);
     }
 
     if (typeof obj === 'object') {
-      const entries = Object.entries(obj as Record<string, unknown>);
-      if (entries.length === 0) {
-        return '{}';
-      }
-
-      const lines: string[] = [];
-      for (const [key, value] of entries) {
-        const serializedValue = this.serializeToYaml(value, indent + 1);
-        if (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length > 0) {
-          // Nested object - put on next line
-          lines.push(`${indentStr}${key}:`);
-          const valueLines = serializedValue.split('\n');
-          for (const line of valueLines) {
-            lines.push(`${indentStr}  ${line}`);
-          }
-        } else if (Array.isArray(value) && value.some((item) => typeof item === 'object')) {
-          // Array with objects - put on next line
-          lines.push(`${indentStr}${key}:`);
-          const valueLines = serializedValue.split('\n');
-          for (const line of valueLines) {
-            lines.push(line);
-          }
-        } else {
-          // Simple value or empty object/array - inline
-          lines.push(`${indentStr}${key}: ${serializedValue}`);
-        }
-      }
-      return lines.join('\n');
+      return this.serializeYamlObject(obj as Record<string, unknown>, indent);
     }
 
     return String(obj);
+  }
+
+  /**
+   * Serialize an array to YAML format.
+   */
+  private serializeYamlArray(arr: unknown[], indent: number): string {
+    if (arr.length === 0) {
+      return '[]';
+    }
+
+    // For arrays of primitives, use inline format
+    if (arr.every((item) => typeof item !== 'object' || item === null)) {
+      return `[${arr.map((item) => this.serializeToYaml(item, 0)).join(', ')}]`;
+    }
+
+    // For arrays of objects, use block format
+    const indentStr = '  '.repeat(indent);
+    const lines: string[] = [];
+    for (const item of arr) {
+      const serialized = this.serializeToYaml(item, indent + 1);
+      if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+        // Object items - first line starts with -, rest are indented
+        const objLines = serialized.split('\n');
+        lines.push(`${indentStr}- ${objLines[0]}`);
+        for (let i = 1; i < objLines.length; i++) {
+          lines.push(`${indentStr}  ${objLines[i]}`);
+        }
+      } else {
+        lines.push(`${indentStr}- ${serialized}`);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  /**
+   * Serialize an object to YAML format.
+   */
+  private serializeYamlObject(obj: Record<string, unknown>, indent: number): string {
+    const entries = Object.entries(obj);
+    if (entries.length === 0) {
+      return '{}';
+    }
+
+    const indentStr = '  '.repeat(indent);
+    const lines: string[] = [];
+    for (const [key, value] of entries) {
+      const serializedValue = this.serializeToYaml(value, indent + 1);
+      if (this.isNonEmptyObject(value)) {
+        // Nested object - put on next line
+        lines.push(`${indentStr}${key}:`);
+        for (const line of serializedValue.split('\n')) {
+          lines.push(`${indentStr}  ${line}`);
+        }
+      } else if (Array.isArray(value) && value.some((item) => typeof item === 'object')) {
+        // Array with objects - put on next line
+        lines.push(`${indentStr}${key}:`);
+        for (const line of serializedValue.split('\n')) {
+          lines.push(line);
+        }
+      } else {
+        // Simple value or empty object/array - inline
+        lines.push(`${indentStr}${key}: ${serializedValue}`);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  /**
+   * Serialize a string value to YAML, quoting if necessary.
+   */
+  private serializeYamlString(str: string): string {
+    if (str.includes('\n') || str.includes(':') || str.includes('#') || str === '') {
+      return JSON.stringify(str);
+    }
+    return str;
   }
 }

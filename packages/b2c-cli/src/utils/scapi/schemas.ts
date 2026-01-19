@@ -41,7 +41,7 @@ export abstract class ScapiSchemasCommand<T extends typeof Command> extends OAut
    * Get the SCAPI Schemas client, ensuring short code is configured.
    */
   protected getSchemasClient(): ScapiSchemasClient {
-    const {shortCode} = this.resolvedConfig;
+    const {shortCode} = this.resolvedConfig.values;
     const tenantId = (this.flags as Record<string, string>)['tenant-id'];
 
     if (!shortCode) {
