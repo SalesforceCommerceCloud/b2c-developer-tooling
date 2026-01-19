@@ -29,7 +29,8 @@ describe('code watch', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
 
     const stopStub = sinon.stub().resolves(void 0);
-    sinon.stub(command, 'watchCartridges').resolves({cartridges: [{name: 'c1'}], stop: stopStub});
+    const watchStub = sinon.stub().resolves({cartridges: [{name: 'c1'}], stop: stopStub});
+    command.operations = {...command.operations, watchCartridges: watchStub};
 
     const logStub = sinon.stub(command, 'log').returns(void 0);
 
@@ -59,7 +60,8 @@ describe('code watch', () => {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
 
-    sinon.stub(command, 'watchCartridges').rejects(new Error('boom'));
+    const watchStub = sinon.stub().rejects(new Error('boom'));
+    command.operations = {...command.operations, watchCartridges: watchStub};
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 

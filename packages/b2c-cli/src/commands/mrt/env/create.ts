@@ -193,9 +193,10 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     }),
   };
 
-  protected async createEnv(input: Parameters<typeof createEnv>[0], auth: Parameters<typeof createEnv>[1]) {
-    return createEnv(input, auth);
-  }
+  protected operations = {
+    createEnv,
+    waitForEnv,
+  };
 
   async run(): Promise<MrtEnvironment> {
     this.requireMrtCredentials();
@@ -233,7 +234,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     );
 
     try {
-      let result = await this.createEnv(
+      let result = await this.operations.createEnv(
         {
           projectSlug: project,
           slug,
@@ -256,7 +257,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
         this.log(t('commands.mrt.env.create.waiting', 'Waiting for environment "{{slug}}" to be ready...', {slug}));
 
         const waitStartTime = Date.now();
-        result = await this.waitForEnv(
+        result = await this.operations.waitForEnv(
           {
             projectSlug: project,
             slug,
@@ -295,9 +296,5 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       }
       throw error;
     }
-  }
-
-  protected async waitForEnv(input: Parameters<typeof waitForEnv>[0], auth: Parameters<typeof waitForEnv>[1]) {
-    return waitForEnv(input, auth);
   }
 }

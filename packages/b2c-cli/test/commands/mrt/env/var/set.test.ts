@@ -75,7 +75,8 @@ describe('mrt env var set', () => {
       },
     }));
 
-    const setStub = sinon.stub(command, 'setEnvVars').resolves(void 0);
+    const setStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, setEnvVars: setStub};
 
     const result = await command.run();
 

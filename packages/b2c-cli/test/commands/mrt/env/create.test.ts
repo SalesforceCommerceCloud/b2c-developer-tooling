@@ -85,12 +85,13 @@ describe('mrt env create', () => {
       .stub(command, 'resolvedConfig')
       .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
 
-    const createStub = sinon.stub(command, 'createEnv').resolves({
+    const createStub = sinon.stub().resolves({
       slug: 'staging',
       name: 'My Env',
       state: 'creating',
       is_production: true,
     } as any);
+    command.operations = {...command.operations, createEnv: createStub};
 
     const result = await command.run();
 
@@ -117,14 +118,16 @@ describe('mrt env create', () => {
       .stub(command, 'resolvedConfig')
       .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
 
-    sinon.stub(command, 'createEnv').resolves({slug: 'staging', name: 'staging', is_production: false} as any);
+    const createStub = sinon.stub().resolves({slug: 'staging', name: 'staging', is_production: false} as any);
+    command.operations = {...command.operations, createEnv: createStub};
 
-    const waitStub = sinon.stub(command, 'waitForEnv').resolves({
+    const waitStub = sinon.stub().resolves({
       slug: 'staging',
       name: 'staging',
       state: 'ready',
       is_production: false,
     } as any);
+    command.operations = {...command.operations, waitForEnv: waitStub};
 
     await command.run();
 

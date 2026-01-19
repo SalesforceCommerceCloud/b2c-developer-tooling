@@ -55,8 +55,9 @@ describe('job run', () => {
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const execStub = sinon.stub(command, 'executeJob').resolves({id: 'e1', execution_status: 'running'});
-    const waitStub = sinon.stub(command, 'waitForJob').rejects(new Error('Unexpected wait'));
+    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
+    const waitStub = sinon.stub().rejects(new Error('Unexpected wait'));
+    command.operations = {...command.operations, executeJob: execStub, waitForJob: waitStub};
 
     const result = await command.run();
 
@@ -72,8 +73,9 @@ describe('job run', () => {
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    sinon.stub(command, 'executeJob').resolves({id: 'e1', execution_status: 'running'});
-    const waitStub = sinon.stub(command, 'waitForJob').resolves({id: 'e1', execution_status: 'finished'});
+    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
+    const waitStub = sinon.stub().resolves({id: 'e1', execution_status: 'finished'});
+    command.operations = {...command.operations, executeJob: execStub, waitForJob: waitStub};
 
     const result = await command.run();
 
@@ -116,14 +118,16 @@ describe('job run', () => {
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
-    sinon.stub(command, 'executeJob').resolves({id: 'e1', execution_status: 'running'});
+    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
+    command.operations = {...command.operations, executeJob: execStub};
     sinon.stub(command, 'showJobLog').resolves(void 0);
 
     const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
     const {JobExecutionError} = await import('@salesforce/b2c-tooling-sdk/operations/jobs');
     const jobError = new JobExecutionError('failed', exec);
     expect(jobError).to.be.instanceOf(JobExecutionError);
-    sinon.stub(command, 'waitForJob').rejects(jobError);
+    const waitStub = sinon.stub().rejects(jobError);
+    command.operations = {...command.operations, waitForJob: waitStub};
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 

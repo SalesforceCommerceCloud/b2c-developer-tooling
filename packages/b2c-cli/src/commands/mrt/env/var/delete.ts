@@ -35,9 +35,9 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
     ...MrtCommand.baseFlags,
   };
 
-  protected async deleteEnvVar(input: Parameters<typeof deleteEnvVar>[0], auth: Parameters<typeof deleteEnvVar>[1]) {
-    return deleteEnvVar(input, auth);
-  }
+  protected operations = {
+    deleteEnvVar,
+  };
 
   async run(): Promise<{key: string; project: string; environment: string}> {
     this.requireMrtCredentials();
@@ -56,7 +56,7 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
       );
     }
 
-    await this.deleteEnvVar(
+    await this.operations.deleteEnvVar(
       {
         projectSlug: project,
         environment,

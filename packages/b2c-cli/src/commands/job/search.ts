@@ -79,6 +79,11 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
     }),
   };
 
+  protected operations = {
+    searchJobExecutions: async (options: Parameters<typeof searchJobExecutions>[1]) =>
+      searchJobExecutions(this.instance, options),
+  };
+
   async run(): Promise<JobExecutionSearchResult> {
     this.requireOAuthCredentials();
 
@@ -90,7 +95,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       }),
     );
 
-    const results = await this.searchJobExecutions({
+    const results = await this.operations.searchJobExecutions({
       jobId,
       status,
       count,
@@ -120,9 +125,5 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
     createTable(COLUMNS).render(results.hits, DEFAULT_COLUMNS);
 
     return results;
-  }
-
-  protected async searchJobExecutions(options: Parameters<typeof searchJobExecutions>[1]) {
-    return searchJobExecutions(this.instance, options);
   }
 }

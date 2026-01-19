@@ -73,7 +73,8 @@ describe('mrt env var list', () => {
       },
     }));
 
-    const listStub = sinon.stub(command, 'listEnvVars').resolves({variables: [{name: 'A', value: '1'}]} as any);
+    const listStub = sinon.stub().resolves({variables: [{name: 'A', value: '1'}]} as any);
+    command.operations = {...command.operations, listEnvVars: listStub};
 
     const result = await command.run();
 
@@ -93,7 +94,8 @@ describe('mrt env var list', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging'}}));
 
     sinon.stub(command, 'renderTable').returns(void 0);
-    sinon.stub(command, 'listEnvVars').resolves({variables: [{name: 'A', value: '1'}]} as any);
+    const listStub = sinon.stub().resolves({variables: [{name: 'A', value: '1'}]} as any);
+    command.operations = {...command.operations, listEnvVars: listStub};
 
     await command.run();
 

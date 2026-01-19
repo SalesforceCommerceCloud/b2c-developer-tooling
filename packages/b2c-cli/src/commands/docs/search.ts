@@ -70,9 +70,10 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     }),
   };
 
-  protected listDocs() {
-    return listDocs();
-  }
+  protected operations = {
+    listDocs,
+    searchDocs,
+  };
 
   async run(): Promise<ListDocsResponse | SearchDocsResponse> {
     const {query} = this.args;
@@ -80,7 +81,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
 
     // List mode
     if (list) {
-      const entries = this.listDocs();
+      const entries = this.operations.listDocs();
 
       if (this.jsonEnabled()) {
         return {entries};
@@ -113,7 +114,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       );
     }
 
-    const results = this.searchDocs(query, limit);
+    const results = this.operations.searchDocs(query, limit);
 
     const response: SearchDocsResponse = {
       query,
@@ -139,9 +140,5 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     );
 
     return response;
-  }
-
-  protected searchDocs(query: string, limit: number) {
-    return searchDocs(query, limit);
   }
 }

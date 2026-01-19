@@ -28,7 +28,8 @@ describe('job wait', () => {
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
-    const waitStub = sinon.stub(command, 'waitForJob').resolves({id: 'e1', execution_status: 'finished'});
+    const waitStub = sinon.stub().resolves({id: 'e1', execution_status: 'finished'});
+    command.operations = {...command.operations, waitForJob: waitStub};
 
     const result = await command.run();
 

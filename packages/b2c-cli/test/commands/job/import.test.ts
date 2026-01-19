@@ -41,11 +41,12 @@ describe('job import', () => {
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const importStub = sinon.stub(command, 'siteArchiveImport').resolves({
+    const importStub = sinon.stub().resolves({
       execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
       archiveFilename: 'a.zip',
       archiveKept: false,
     });
+    command.operations = {...command.operations, siteArchiveImport: importStub};
 
     await command.run();
 
@@ -60,11 +61,12 @@ describe('job import', () => {
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const importStub = sinon.stub(command, 'siteArchiveImport').resolves({
+    const importStub = sinon.stub().resolves({
       execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
       archiveFilename: 'a.zip',
       archiveKept: false,
     });
+    command.operations = {...command.operations, siteArchiveImport: importStub};
 
     await command.run();
 
@@ -77,7 +79,8 @@ describe('job import', () => {
     stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: true, skipReason: 'by plugin'});
-    const importStub = sinon.stub(command, 'siteArchiveImport').rejects(new Error('Unexpected import'));
+    const importStub = sinon.stub().rejects(new Error('Unexpected import'));
+    command.operations = {...command.operations, siteArchiveImport: importStub};
 
     const result = await command.run();
 
@@ -95,7 +98,8 @@ describe('job import', () => {
 
     const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
     const error = new JobExecutionError('failed', exec);
-    sinon.stub(command, 'siteArchiveImport').rejects(error);
+    const importStub = sinon.stub().rejects(error);
+    command.operations = {...command.operations, siteArchiveImport: importStub};
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 

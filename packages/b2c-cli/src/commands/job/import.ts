@@ -56,6 +56,13 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     }),
   };
 
+  protected operations = {
+    siteArchiveImport: async (
+      target: Parameters<typeof siteArchiveImport>[1],
+      options: Parameters<typeof siteArchiveImport>[2],
+    ) => siteArchiveImport(this.instance, target, options),
+  };
+
   async run(): Promise<SiteArchiveImportResult> {
     this.requireOAuthCredentials();
     this.requireWebDavCredentials();
@@ -107,7 +114,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     try {
       const importTarget = remote ? {remoteFilename: target} : target;
 
-      const result = await this.siteArchiveImport(importTarget, {
+      const result = await this.operations.siteArchiveImport(importTarget, {
         keepArchive,
         waitOptions: {
           timeout: timeout ? timeout * 1000 : undefined,
@@ -177,12 +184,5 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       }
       throw error;
     }
-  }
-
-  protected async siteArchiveImport(
-    target: Parameters<typeof siteArchiveImport>[1],
-    options: Parameters<typeof siteArchiveImport>[2],
-  ) {
-    return siteArchiveImport(this.instance, target, options);
   }
 }

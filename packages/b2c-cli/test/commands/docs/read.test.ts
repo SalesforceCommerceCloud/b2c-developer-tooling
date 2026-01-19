@@ -24,7 +24,8 @@ describe('docs read', () => {
   it('errors when no match is found', async () => {
     const command: any = await createCommand({}, {query: 'Nope'});
 
-    sinon.stub(command, 'readDocByQuery').returns(null);
+    const readStub = sinon.stub().returns(null);
+    command.operations = {...command.operations, readDocByQuery: readStub};
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -41,7 +42,8 @@ describe('docs read', () => {
   it('writes raw markdown when --raw is set', async () => {
     const command: any = await createCommand({raw: true}, {query: 'ProductMgr'});
 
-    sinon.stub(command, 'readDocByQuery').returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    command.operations = {...command.operations, readDocByQuery: readStub};
     sinon.stub(command, 'jsonEnabled').returns(false);
 
     const writeStub = sinon.stub(process.stdout, 'write');
@@ -55,9 +57,8 @@ describe('docs read', () => {
   it('returns data without writing to stdout in json mode', async () => {
     const command: any = await createCommand({json: true}, {query: 'ProductMgr'});
 
-    const readStub = sinon
-      .stub(command, 'readDocByQuery')
-      .returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    command.operations = {...command.operations, readDocByQuery: readStub};
     sinon.stub(command, 'jsonEnabled').returns(true);
 
     const result = await command.run();

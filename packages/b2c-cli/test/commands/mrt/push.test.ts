@@ -66,13 +66,14 @@ describe('mrt push', () => {
       .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
-    const pushStub = sinon.stub(command, 'pushBundle').resolves({
+    const pushStub = sinon.stub().resolves({
       bundleId: 1,
       deployed: true,
       message: 'ok',
       projectSlug: 'my-project',
       target: 'staging',
     } as any);
+    command.operations = {...command.operations, pushBundle: pushStub};
 
     const result = await command.run();
 

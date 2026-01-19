@@ -24,7 +24,8 @@ describe('docs schema', () => {
   it('lists schemas in json mode', async () => {
     const command: any = await createCommand({list: true, json: true}, {});
 
-    sinon.stub(command, 'listSchemas').returns([{id: 'a', title: 'a', filePath: 'a.xsd'}]);
+    const listStub = sinon.stub().returns([{id: 'a', title: 'a', filePath: 'a.xsd'}]);
+    command.operations = {...command.operations, listSchemas: listStub};
 
     const result = await command.run();
 
@@ -50,9 +51,8 @@ describe('docs schema', () => {
     const command: any = await createCommand({}, {query: 'catalog'});
 
     sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon
-      .stub(command, 'readSchemaByQuery')
-      .returns({entry: {id: 'catalog', title: 't', filePath: 'c.xsd'}, content: '<x/>'});
+    const readStub = sinon.stub().returns({entry: {id: 'catalog', title: 't', filePath: 'c.xsd'}, content: '<x/>'});
+    command.operations = {...command.operations, readSchemaByQuery: readStub};
 
     const writeStub = sinon.stub(process.stdout, 'write');
 

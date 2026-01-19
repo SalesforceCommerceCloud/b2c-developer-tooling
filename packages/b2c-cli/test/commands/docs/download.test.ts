@@ -29,9 +29,8 @@ describe('docs download', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
-    const downloadStub = sinon
-      .stub(command, 'downloadDocs')
-      .resolves({outputPath: './docs', fileCount: 1, archivePath: './docs/a.zip'});
+    const downloadStub = sinon.stub().resolves({outputPath: './docs', fileCount: 1, archivePath: './docs/a.zip'});
+    command.operations = {...command.operations, downloadDocs: downloadStub};
 
     const result = await command.run();
 
@@ -48,7 +47,8 @@ describe('docs download', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
-    sinon.stub(command, 'downloadDocs').resolves({outputPath: './docs', fileCount: 2});
+    const downloadStub = sinon.stub().resolves({outputPath: './docs', fileCount: 2});
+    command.operations = {...command.operations, downloadDocs: downloadStub};
 
     const result = await command.run();
 

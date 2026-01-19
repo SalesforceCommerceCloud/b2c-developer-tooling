@@ -72,9 +72,15 @@ describe('code deploy', () => {
     const cartridges = [{name: 'c1', src: '/tmp/c1', dest: 'c1'}];
     sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
 
-    const deleteStub = sinon.stub(command, 'deleteCartridges').resolves(void 0);
-    const uploadStub = sinon.stub(command, 'uploadCartridges').resolves(void 0);
-    const reloadStub = sinon.stub(command, 'reloadCodeVersion').resolves(void 0);
+    const deleteStub = sinon.stub().resolves(void 0);
+    const uploadStub = sinon.stub().resolves(void 0);
+    const reloadStub = sinon.stub().resolves(void 0);
+    command.operations = {
+      ...command.operations,
+      deleteCartridges: deleteStub,
+      uploadCartridges: uploadStub,
+      reloadCodeVersion: reloadStub,
+    };
 
     const result = await command.run();
 
@@ -96,8 +102,9 @@ describe('code deploy', () => {
     const cartridges = [{name: 'c1', src: '/tmp/c1', dest: 'c1'}];
     sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
 
-    sinon.stub(command, 'uploadCartridges').resolves(void 0);
-    sinon.stub(command, 'reloadCodeVersion').rejects(new Error('reload failed'));
+    const uploadStub = sinon.stub().resolves(void 0);
+    const reloadStub = sinon.stub().rejects(new Error('reload failed'));
+    command.operations = {...command.operations, uploadCartridges: uploadStub, reloadCodeVersion: reloadStub};
 
     const result = await command.run();
 
@@ -120,11 +127,12 @@ describe('code deploy', () => {
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    sinon.stub(command, 'getActiveCodeVersion').resolves({id: 'active', active: true});
+    const activeStub = sinon.stub().resolves({id: 'active', active: true});
 
     const cartridges = [{name: 'c1', src: '/tmp/c1', dest: 'c1'}];
     sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
-    sinon.stub(command, 'uploadCartridges').resolves(void 0);
+    const uploadStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, getActiveCodeVersion: activeStub, uploadCartridges: uploadStub};
 
     const result = await command.run();
 

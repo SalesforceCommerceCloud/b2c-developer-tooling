@@ -53,9 +53,9 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
     ...MrtCommand.baseFlags,
   };
 
-  protected async listEnvVars(input: Parameters<typeof listEnvVars>[0], auth: Parameters<typeof listEnvVars>[1]) {
-    return listEnvVars(input, auth);
-  }
+  protected operations = {
+    listEnvVars,
+  };
 
   protected renderTable(variables: EnvironmentVariable[]): void {
     createTable(COLUMNS).render(variables, DEFAULT_COLUMNS);
@@ -84,7 +84,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
       }),
     );
 
-    const result = await this.listEnvVars(
+    const result = await this.operations.listEnvVars(
       {
         projectSlug: project,
         environment,

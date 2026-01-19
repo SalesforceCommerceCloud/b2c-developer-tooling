@@ -51,9 +51,10 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
     }),
   };
 
-  protected async confirm(message: string): Promise<boolean> {
-    return confirm(message);
-  }
+  protected operations = {
+    confirm,
+    deleteCodeVersion: async (codeVersion: string) => deleteCodeVersion(this.instance, codeVersion),
+  };
 
   async run(): Promise<void> {
     this.requireOAuthCredentials();
@@ -63,7 +64,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
 
     // Confirm deletion unless --force is used
     if (!this.flags.force) {
-      const confirmed = await this.confirm(
+      const confirmed = await this.operations.confirm(
         t(
           'commands.code.delete.confirm',
           'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}? (y/n)',
@@ -84,7 +85,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
       }),
     );
 
-    await deleteCodeVersion(this.instance, codeVersion);
+    await this.operations.deleteCodeVersion(codeVersion);
     this.log(t('commands.code.delete.deleted', 'Code version {{codeVersion}} deleted successfully', {codeVersion}));
   }
 }

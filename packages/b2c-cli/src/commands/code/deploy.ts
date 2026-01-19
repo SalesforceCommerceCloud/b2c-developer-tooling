@@ -47,17 +47,14 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     }),
   };
 
-  protected async deleteCartridges(cartridges: Parameters<typeof deleteCartridges>[1]) {
-    return deleteCartridges(this.instance, cartridges);
-  }
-
-  protected async getActiveCodeVersion() {
-    return getActiveCodeVersion(this.instance);
-  }
-
-  protected async reloadCodeVersion(codeVersion: string) {
-    return reloadCodeVersion(this.instance, codeVersion);
-  }
+  protected operations = {
+    uploadCartridges: async (cartridges: Parameters<typeof uploadCartridges>[1]) =>
+      uploadCartridges(this.instance, cartridges),
+    deleteCartridges: async (cartridges: Parameters<typeof deleteCartridges>[1]) =>
+      deleteCartridges(this.instance, cartridges),
+    getActiveCodeVersion: async () => getActiveCodeVersion(this.instance),
+    reloadCodeVersion: async (codeVersion: string) => reloadCodeVersion(this.instance, codeVersion),
+  };
 
   async run(): Promise<DeployResult> {
     this.requireWebDavCredentials();
@@ -71,7 +68,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.warn(
         t('commands.code.deploy.noCodeVersion', 'No code version specified, discovering active code version...'),
       );
-      const activeVersion = await this.getActiveCodeVersion();
+      const activeVersion = await this.operations.getActiveCodeVersion();
       if (!activeVersion?.id) {
         this.error(
           t('commands.code.deploy.noActiveVersion', 'No active code version found. Specify one with --code-version.'),
@@ -131,17 +128,17 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     try {
       // Optionally delete existing cartridges first
       if (this.flags.delete) {
-        await this.deleteCartridges(cartridges);
+        await this.operations.deleteCartridges(cartridges);
       }
 
       // Upload cartridges
-      await this.uploadCartridges(cartridges);
+      await this.operations.uploadCartridges(cartridges);
 
       // Optionally reload code version
       let reloaded = false;
       if (this.flags.reload) {
         try {
-          await this.reloadCodeVersion(version);
+          await this.operations.reloadCodeVersion(version);
           reloaded = true;
         } catch (error) {
           this.logger?.debug(`Could not reload code version: ${error instanceof Error ? error.message : error}`);
@@ -187,9 +184,5 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       }
       throw error;
     }
-  }
-
-  protected async uploadCartridges(cartridges: Parameters<typeof uploadCartridges>[1]) {
-    return uploadCartridges(this.instance, cartridges);
   }
 }

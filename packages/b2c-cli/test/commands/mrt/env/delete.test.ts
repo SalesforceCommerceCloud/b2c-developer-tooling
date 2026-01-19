@@ -68,7 +68,8 @@ describe('mrt env delete', () => {
       .stub(command, 'resolvedConfig')
       .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
 
-    const deleteStub = sinon.stub(command, 'deleteEnv').resolves(void 0);
+    const deleteStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, deleteEnv: deleteStub};
 
     const result = await command.run();
 
@@ -86,7 +87,8 @@ describe('mrt env delete', () => {
     sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
 
-    const deleteStub = sinon.stub(command, 'deleteEnv').resolves(void 0);
+    const deleteStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, deleteEnv: deleteStub};
 
     await command.run();
 

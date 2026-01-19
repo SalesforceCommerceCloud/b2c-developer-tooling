@@ -91,7 +91,8 @@ describe('mrt env var delete', () => {
       },
     }));
 
-    const delStub = sinon.stub(command, 'deleteEnvVar').resolves(void 0);
+    const delStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, deleteEnvVar: delStub};
 
     const result = await command.run();
 

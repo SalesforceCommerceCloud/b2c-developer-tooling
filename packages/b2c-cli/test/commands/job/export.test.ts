@@ -78,12 +78,13 @@ describe('job export', () => {
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const exportStub = sinon.stub(command, 'siteArchiveExportToPath').resolves({
+    const exportStub = sinon.stub().resolves({
       execution: {execution_status: 'finished', exit_status: {code: 'OK'}, duration: 1000} as any,
       archiveFilename: 'a.zip',
       archiveKept: false,
       localPath: './export/a.zip',
     });
+    command.operations = {...command.operations, siteArchiveExportToPath: exportStub};
 
     const result = await command.run();
 
@@ -98,7 +99,8 @@ describe('job export', () => {
     stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: true, skipReason: 'by plugin'});
-    const exportStub = sinon.stub(command, 'siteArchiveExportToPath').rejects(new Error('Unexpected export'));
+    const exportStub = sinon.stub().rejects(new Error('Unexpected export'));
+    command.operations = {...command.operations, siteArchiveExportToPath: exportStub};
 
     const result = await command.run();
 
@@ -119,11 +121,12 @@ describe('job export', () => {
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const exportStub = sinon.stub(command, 'siteArchiveExportToPath').resolves({
+    const exportStub = sinon.stub().resolves({
       execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
       archiveFilename: 'a.zip',
       archiveKept: true,
     });
+    command.operations = {...command.operations, siteArchiveExportToPath: exportStub};
 
     await command.run();
 
@@ -142,7 +145,8 @@ describe('job export', () => {
 
     const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
     const error = new JobExecutionError('failed', exec);
-    sinon.stub(command, 'siteArchiveExportToPath').rejects(error);
+    const exportStub = sinon.stub().rejects(error);
+    command.operations = {...command.operations, siteArchiveExportToPath: exportStub};
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 

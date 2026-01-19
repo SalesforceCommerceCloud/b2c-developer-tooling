@@ -33,7 +33,8 @@ describe('job search', () => {
     stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
-    const searchStub = sinon.stub(command, 'searchJobExecutions').resolves({total: 1, hits: [{id: 'e1'}]});
+    const searchStub = sinon.stub().resolves({total: 1, hits: [{id: 'e1'}]});
+    command.operations = {...command.operations, searchJobExecutions: searchStub};
     const uxStub = sinon.stub(ux, 'stdout');
 
     const result = await command.run();
@@ -48,7 +49,8 @@ describe('job search', () => {
     stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(false);
 
-    sinon.stub(command, 'searchJobExecutions').resolves({total: 0, hits: []});
+    const searchStub = sinon.stub().resolves({total: 0, hits: []});
+    command.operations = {...command.operations, searchJobExecutions: searchStub};
     const uxStub = sinon.stub(ux, 'stdout');
 
     const result = await command.run();

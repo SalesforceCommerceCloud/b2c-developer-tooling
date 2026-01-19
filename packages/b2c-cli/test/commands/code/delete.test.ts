@@ -28,12 +28,8 @@ describe('code delete', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
-    const deleteStub = sinon.stub().resolves({data: {}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        DELETE: deleteStub,
-      },
-    }));
+    const deleteStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, deleteCodeVersion: deleteStub};
 
     await command.run();
     expect(deleteStub.calledOnce).to.equal(true);
@@ -47,13 +43,8 @@ describe('code delete', () => {
     sinon.stub(command, 'log').returns(void 0);
 
     const deleteStub = sinon.stub().rejects(new Error('Unexpected delete'));
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        DELETE: deleteStub,
-      },
-    }));
-
-    const confirmStub = sinon.stub(command, 'confirm').resolves(false);
+    const confirmStub = sinon.stub().resolves(false);
+    command.operations = {...command.operations, confirm: confirmStub, deleteCodeVersion: deleteStub};
 
     await command.run();
 
@@ -68,14 +59,9 @@ describe('code delete', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
 
-    const deleteStub = sinon.stub().resolves({data: {}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        DELETE: deleteStub,
-      },
-    }));
-
-    const confirmStub = sinon.stub(command, 'confirm').resolves(true);
+    const deleteStub = sinon.stub().resolves(void 0);
+    const confirmStub = sinon.stub().resolves(true);
+    command.operations = {...command.operations, confirm: confirmStub, deleteCodeVersion: deleteStub};
 
     await command.run();
 

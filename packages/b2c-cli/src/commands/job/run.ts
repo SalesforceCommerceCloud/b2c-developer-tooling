@@ -66,9 +66,12 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     }),
   };
 
-  protected async executeJob(jobId: string, options: Parameters<typeof executeJob>[2]) {
-    return executeJob(this.instance, jobId, options);
-  }
+  protected operations = {
+    executeJob: async (jobId: string, options: Parameters<typeof executeJob>[2]) =>
+      executeJob(this.instance, jobId, options),
+    waitForJob: async (jobId: string, executionId: string, options: Parameters<typeof waitForJob>[3]) =>
+      waitForJob(this.instance, jobId, executionId, options),
+  };
 
   async run(): Promise<JobExecution> {
     this.requireOAuthCredentials();
@@ -110,7 +113,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
 
     let execution: JobExecution;
     try {
-      execution = await this.executeJob(jobId, {
+      execution = await this.operations.executeJob(jobId, {
         parameters: rawBody ? undefined : parameters,
         body: rawBody,
         waitForRunning: !noWaitRunning,
@@ -145,10 +148,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     }
 
     return execution;
-  }
-
-  protected async waitForJob(jobId: string, executionId: string, options: Parameters<typeof waitForJob>[3]) {
-    return waitForJob(this.instance, jobId, executionId, options);
   }
 
   private handleExecutionError(error: unknown, context: B2COperationContext): never {
@@ -221,7 +220,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 
     try {
-      const execution = await this.waitForJob(jobId, executionId, {
+      const execution = await this.operations.waitForJob(jobId, executionId, {
         timeout: timeout ? timeout * 1000 : undefined,
         onProgress: (exec, elapsed) => {
           if (!this.jsonEnabled()) {

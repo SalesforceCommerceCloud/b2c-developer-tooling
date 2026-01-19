@@ -40,7 +40,8 @@ describe('docs search', () => {
   it('lists docs in json mode', async () => {
     const command: any = await createCommand({list: true, json: true}, {});
 
-    sinon.stub(command, 'listDocs').returns([{id: 'a', title: 'A', filePath: 'a.md'}]);
+    const listStub = sinon.stub().returns([{id: 'a', title: 'A', filePath: 'a.md'}]);
+    command.operations = {...command.operations, listDocs: listStub};
 
     const result = await command.run();
 
@@ -51,7 +52,8 @@ describe('docs search', () => {
     const command: any = await createCommand({limit: 5}, {query: 'x'});
 
     sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(command, 'searchDocs').returns([]);
+    const searchStub = sinon.stub().returns([]);
+    command.operations = {...command.operations, searchDocs: searchStub};
 
     const stdoutStub = sinon.stub(ux, 'stdout');
 
@@ -64,7 +66,8 @@ describe('docs search', () => {
   it('returns results in json mode', async () => {
     const command: any = await createCommand({json: true, limit: 5}, {query: 'x'});
 
-    sinon.stub(command, 'searchDocs').returns([{entry: {id: 'a', title: 'A', filePath: 'a.md'}, score: 0.1}]);
+    const searchStub = sinon.stub().returns([{entry: {id: 'a', title: 'A', filePath: 'a.md'}, score: 0.1}]);
+    command.operations = {...command.operations, searchDocs: searchStub};
 
     const result = await command.run();
 
