@@ -44,7 +44,7 @@ import type {Middleware} from 'openapi-fetch';
 /**
  * Types of HTTP clients that can receive middleware.
  */
-export type HttpClientType = 'ocapi' | 'slas' | 'ods' | 'mrt' | 'custom-apis' | 'webdav';
+export type HttpClientType = 'ocapi' | 'slas' | 'ods' | 'mrt' | 'custom-apis' | 'scapi-schemas' | 'webdav';
 
 /**
  * Middleware interface compatible with openapi-fetch.
