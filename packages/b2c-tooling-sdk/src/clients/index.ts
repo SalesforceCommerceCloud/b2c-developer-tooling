@@ -195,3 +195,19 @@ export type {
   paths as ScapiSchemasPaths,
   components as ScapiSchemasComponents,
 } from './scapi-schemas.js';
+
+export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
+export type {
+  CdnZonesClient,
+  CdnZonesClientConfig,
+  CdnZonesClientOptions,
+  CdnZonesError,
+  CdnZonesResponse,
+  Zone,
+  ZonesEnvelope,
+  Certificate,
+  SecuritySetting,
+  SpeedSetting,
+  paths as CdnZonesPaths,
+  components as CdnZonesComponents,
+} from './cdn-zones.js';

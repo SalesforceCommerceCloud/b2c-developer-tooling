@@ -131,6 +131,91 @@
             "description": "Browse and retrieve SCAPI schema specifications"
           }
         }
+      },
+      "ecdn": {
+        "description": "Manage eCDN zones, certificates, WAF, and security settings",
+        "subtopics": {
+          "zones": {
+            "description": "List and create CDN zones"
+          },
+          "cache": {
+            "description": "Manage CDN cache operations"
+          },
+          "certificates": {
+            "description": "Manage SSL certificates"
+          },
+          "security": {
+            "description": "Manage security settings"
+          },
+          "speed": {
+            "description": "Manage speed optimization settings"
+          },
+          "waf": {
+            "description": "Manage Web Application Firewall",
+            "subtopics": {
+              "groups": {
+                "description": "WAF v1 rule groups"
+              },
+              "rules": {
+                "description": "WAF v1 rules"
+              },
+              "rulesets": {
+                "description": "WAF v2 rulesets"
+              },
+              "managed-rules": {
+                "description": "WAF v2 managed rules"
+              },
+              "owasp": {
+                "description": "OWASP ModSecurity package"
+              }
+            }
+          },
+          "firewall": {
+            "description": "Manage custom firewall rules"
+          },
+          "rate-limit": {
+            "description": "Manage rate limiting rules"
+          },
+          "logpush": {
+            "description": "Manage log export configuration",
+            "subtopics": {
+              "jobs": {
+                "description": "Logpush job management"
+              }
+            }
+          },
+          "page-shield": {
+            "description": "Manage Page Shield security",
+            "subtopics": {
+              "notifications": {
+                "description": "Page Shield notification webhooks"
+              },
+              "policies": {
+                "description": "Content Security Policy rules"
+              },
+              "scripts": {
+                "description": "Detected script monitoring"
+              }
+            }
+          },
+          "mrt-rules": {
+            "description": "Manage MRT routing rules",
+            "subtopics": {
+              "rules": {
+                "description": "Individual MRT rules"
+              }
+            }
+          },
+          "mtls": {
+            "description": "Manage mTLS certificates"
+          },
+          "cipher-suites": {
+            "description": "Manage TLS cipher configuration"
+          },
+          "origin-headers": {
+            "description": "Manage origin header modifications"
+          }
+        }
       }
     }
   },
