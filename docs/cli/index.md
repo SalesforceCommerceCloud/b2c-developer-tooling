@@ -41,6 +41,7 @@ These flags are available on all commands that interact with B2C instances:
 - [ODS Commands](./ods) - Create and manage On-Demand Sandboxes (ODS)
 - [MRT Commands](./mrt) - Manage Managed Runtime (MRT) projects and deployments
 - [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
+- [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
 
 ### Utilities
 
