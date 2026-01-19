@@ -73,9 +73,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # - name: Create snapshot versions
-      #   if: steps.release-type.outputs.type == 'nightly'
-      #   run: pnpm changeset version --snapshot nightly
+      - name: Create snapshot versions
+        if: steps.release-type.outputs.type == 'nightly'
+        run: pnpm changeset version --snapshot nightly
 
       - name: Build packages
         run: pnpm run build
@@ -89,41 +89,41 @@ jobs:
           pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
           # pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
 
-      # - name: Extract changelog for release
-      #   if: steps.release-type.outputs.type == 'stable'
-      #   run: |
-      #     VERSION="${GITHUB_REF_NAME#v}"
-      #
-      #     # Function to extract version section from a changelog
-      #     extract_version() {
-      #       awk -v ver="$1" '
-      #         /^## / { if (found) exit; if ($2 == ver) found=1; next }
-      #         found { print }
-      #       ' "$2"
-      #     }
-      #
-      #     # Build combined release notes
-      #     {
-      #       echo "## @salesforce/b2c-cli"
-      #       echo ""
-      #       extract_version "$VERSION" packages/b2c-cli/CHANGELOG.md
-      #       echo ""
-      #       echo "## @salesforce/b2c-dx-mcp"
-      #       echo ""
-      #       extract_version "$VERSION" packages/b2c-dx-mcp/CHANGELOG.md
-      #       echo ""
-      #       echo "## @salesforce/b2c-tooling-sdk"
-      #       echo ""
-      #       extract_version "$VERSION" packages/b2c-tooling-sdk/CHANGELOG.md
-      #     } > /tmp/release-notes.md
-      #
-      # - name: Create GitHub Release
-      #   if: steps.release-type.outputs.type == 'stable'
-      #   run: |
-      #     PRERELEASE_FLAG=""
-      #     if [[ "${{ steps.release-type.outputs.prerelease }}" == "true" ]]; then
-      #       PRERELEASE_FLAG="--prerelease"
-      #     fi
-      #     gh release create "$GITHUB_REF_NAME" --notes-file /tmp/release-notes.md $PRERELEASE_FLAG
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract changelog for release
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Function to extract version section from a changelog
+          extract_version() {
+            awk -v ver="$1" '
+              /^## / { if (found) exit; if ($2 == ver) found=1; next }
+              found { print }
+            ' "$2"
+          }
+
+          # Build combined release notes
+          {
+            echo "## @salesforce/b2c-cli"
+            echo ""
+            extract_version "$VERSION" packages/b2c-cli/CHANGELOG.md
+            echo ""
+            echo "## @salesforce/b2c-dx-mcp"
+            echo ""
+            extract_version "$VERSION" packages/b2c-dx-mcp/CHANGELOG.md
+            echo ""
+            echo "## @salesforce/b2c-tooling-sdk"
+            echo ""
+            extract_version "$VERSION" packages/b2c-tooling-sdk/CHANGELOG.md
+          } > /tmp/release-notes.md
+
+      - name: Create GitHub Release
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "${{ steps.release-type.outputs.prerelease }}" == "true" ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          gh release create "$GITHUB_REF_NAME" --notes-file /tmp/release-notes.md $PRERELEASE_FLAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
