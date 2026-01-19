@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import MrtEnvVarSet from '../../../../../src/commands/mrt/env/var/set.js';
-import {isolateConfig, restoreConfig} from '../../../../helpers/config-isolation.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 
 describe('mrt env var set', () => {
   let config: Config;

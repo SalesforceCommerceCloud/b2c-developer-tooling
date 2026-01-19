@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import MrtEnvVarDelete from '../../../../../src/commands/mrt/env/var/delete.js';
-import {isolateConfig, restoreConfig} from '../../../../helpers/config-isolation.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../../helpers/stub-parse.js';
 
 describe('mrt env var delete', () => {

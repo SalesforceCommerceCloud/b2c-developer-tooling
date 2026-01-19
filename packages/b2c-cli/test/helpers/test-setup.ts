@@ -6,7 +6,7 @@
 
 import type {Config} from '@oclif/core';
 import sinon from 'sinon';
-import {isolateConfig, restoreConfig} from './config-isolation.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from './stub-parse.js';
 
 export function createIsolatedEnvHooks(): {
