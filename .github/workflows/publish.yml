@@ -75,7 +75,18 @@ jobs:
 
       - name: Create snapshot versions
         if: steps.release-type.outputs.type == 'nightly'
-        run: pnpm changeset version --snapshot nightly
+        run: |
+          SNAPSHOT="0.0.0-nightly.$(date +%Y%m%d%H%M%S)"
+          for pkg in packages/b2c-tooling-sdk packages/b2c-cli packages/b2c-dx-mcp; do
+            node -e "
+              const fs = require('fs');
+              const path = '$pkg/package.json';
+              const pkg = JSON.parse(fs.readFileSync(path));
+              pkg.version = '$SNAPSHOT';
+              fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+            "
+          done
+          echo "Set snapshot version: $SNAPSHOT"
 
       - name: Build packages
         run: pnpm run build

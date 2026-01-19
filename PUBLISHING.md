@@ -79,10 +79,10 @@ When making changes that should be released:
    pnpm changeset
    ```
 
-2. **Select the change type**:
-   - `patch` - Bug fixes, documentation updates
-   - `minor` - New features, non-breaking changes
-   - `major` - Breaking changes
+2. **Select the change type** (pre-1.0):
+   - `patch` - Bug fixes, documentation updates, new features
+   - `minor` - New features, major improvements
+   - `major` - Breaking changes: 1.0 --- initial GA release
 
 3. **Write a summary** - This appears in the changelog
 
