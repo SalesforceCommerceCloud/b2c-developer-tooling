@@ -131,6 +131,9 @@
             "description": "Browse and retrieve SCAPI schema specifications"
           }
         }
+      },
+      "setup": {
+        "description": "Setup commands for development environment"
       }
     }
   },
