@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import {createWriteStream, mkdirSync} from 'node:fs';
+import {dirname, resolve} from 'node:path';
 import {pipeline} from 'node:stream/promises';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
@@ -92,7 +92,7 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
 
       // Download the file
       const outputPath = this.flags.output ?? `bundle-${bundleId}.tgz`;
-      const absolutePath = path.resolve(outputPath);
+      const absolutePath = resolve(outputPath);
 
       this.log(
         t('commands.mrt.bundle.download.downloading', 'Downloading bundle {{bundleId}} to {{filePath}}...', {
@@ -115,13 +115,13 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
       }
 
       // Ensure directory exists
-      const dir = path.dirname(absolutePath);
+      const dir = dirname(absolutePath);
       if (dir !== '.') {
-        fs.mkdirSync(dir, {recursive: true});
+        mkdirSync(dir, {recursive: true});
       }
 
       // Stream the response to file
-      const fileStream = fs.createWriteStream(absolutePath);
+      const fileStream = createWriteStream(absolutePath);
       await pipeline(response.body, fileStream);
 
       if (!this.jsonEnabled()) {
