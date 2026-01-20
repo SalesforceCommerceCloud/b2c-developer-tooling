@@ -65,12 +65,52 @@ export type {
 } from './env-var.js';
 
 // Environment (target) operations
-export {createEnv, deleteEnv, getEnv, waitForEnv} from './env.js';
+export {createEnv, deleteEnv, getEnv, waitForEnv, listEnvs, updateEnv} from './env.js';
 export type {
   CreateEnvOptions,
   DeleteEnvOptions,
   GetEnvOptions,
   WaitForEnvOptions,
+  ListEnvsOptions,
+  ListEnvsResult,
+  UpdateEnvOptions,
   MrtEnvironment,
   MrtEnvironmentState,
+  MrtEnvironmentUpdate,
+  PatchedMrtEnvironment,
 } from './env.js';
+
+// Deployment operations
+export {listDeployments, createDeployment} from './deployment.js';
+export type {
+  ListDeploymentsOptions,
+  ListDeploymentsResult,
+  CreateDeploymentOptions,
+  CreateDeploymentResult,
+  MrtDeployment,
+  MrtDeploymentCreate,
+} from './deployment.js';
+
+// Organization operations
+export {listOrganizations} from './organization.js';
+export type {
+  ListOrganizationsOptions,
+  ListOrganizationsResult,
+  MrtOrganization,
+  OrganizationLimits,
+} from './organization.js';
+
+// Project operations
+export {listProjects, createProject, getProject, updateProject, deleteProject} from './project.js';
+export type {
+  ListProjectsOptions,
+  ListProjectsResult,
+  CreateProjectOptions,
+  GetProjectOptions,
+  UpdateProjectOptions,
+  DeleteProjectOptions,
+  MrtProject,
+  MrtProjectUpdate,
+  PatchedMrtProject,
+  SsrRegion,
+} from './project.js';

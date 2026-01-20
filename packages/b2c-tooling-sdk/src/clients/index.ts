@@ -195,3 +195,16 @@ export type {
   paths as ScapiSchemasPaths,
   components as ScapiSchemasComponents,
 } from './scapi-schemas.js';
+
+export {createMrtB2CClient, DEFAULT_MRT_B2C_ORIGIN} from './mrt-b2c.js';
+export type {
+  MrtB2CClient,
+  MrtB2CClientConfig,
+  MrtB2CError,
+  MrtB2CResponse,
+  B2COrgInfo,
+  B2CTargetInfo,
+  PatchedB2CTargetInfo,
+  paths as MrtB2CPaths,
+  components as MrtB2CComponents,
+} from './mrt-b2c.js';
