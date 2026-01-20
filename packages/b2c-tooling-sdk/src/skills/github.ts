@@ -13,6 +13,7 @@ import {getLogger} from '../logging/logger.js';
 
 const GITHUB_REPO = 'SalesforceCommerceCloud/b2c-developer-tooling';
 const GITHUB_API_BASE = 'https://api.github.com';
+const GITHUB_DOWNLOAD_BASE = 'https://github.com';
 
 /**
  * Asset filename patterns for skill archives.
@@ -21,6 +22,22 @@ const ASSET_NAMES: Record<SkillSet, string> = {
   b2c: 'b2c-skills.zip',
   'b2c-cli': 'b2c-cli-skills.zip',
 };
+
+/**
+ * Build direct download URL for a release asset.
+ * These URLs don't require API calls and avoid rate limiting.
+ *
+ * @param version - 'latest' or specific version tag
+ * @param assetName - Name of the asset file
+ * @returns Direct download URL
+ */
+function getDirectDownloadUrl(version: string, assetName: string): string {
+  if (version === 'latest') {
+    return `${GITHUB_DOWNLOAD_BASE}/${GITHUB_REPO}/releases/latest/download/${assetName}`;
+  }
+  const tag = version.startsWith('v') ? version : `v${version}`;
+  return `${GITHUB_DOWNLOAD_BASE}/${GITHUB_REPO}/releases/download/${tag}/${assetName}`;
+}
 
 /**
  * Get the cache directory for skills.
@@ -150,7 +167,20 @@ export function getCachedArtifact(version: string, skillSet: SkillSet): CachedAr
 }
 
 /**
+ * Extract version tag from a GitHub release download URL.
+ * URLs follow pattern: .../releases/download/{tag}/...
+ *
+ * @param url - The final URL after redirects
+ * @returns Version tag or null if not found
+ */
+function extractVersionFromUrl(url: string): string | null {
+  const match = url.match(/\/releases\/download\/([^/]+)\//);
+  return match ? match[1] : null;
+}
+
+/**
  * Download and extract skills artifact.
+ * Uses direct download URLs to avoid GitHub API rate limits.
  *
  * @param skillSet - Which skill set to download ('b2c' or 'b2c-cli')
  * @param options - Download options
@@ -160,42 +190,53 @@ export function getCachedArtifact(version: string, skillSet: SkillSet): CachedAr
 export async function downloadSkillsArtifact(skillSet: SkillSet, options: DownloadSkillsOptions = {}): Promise<string> {
   const logger = getLogger();
   const {version = 'latest', forceDownload = false} = options;
+  const assetName = ASSET_NAMES[skillSet];
 
-  // Get release info to determine version and asset URL
-  const release = await getRelease(version);
-  const actualVersion = release.tagName;
-
-  // Check cache first (unless forced)
-  if (!forceDownload) {
-    const cached = getCachedArtifact(actualVersion, skillSet);
+  // For specific versions, check cache first (before any network calls)
+  if (version !== 'latest' && !forceDownload) {
+    const versionTag = version.startsWith('v') ? version : `v${version}`;
+    const cached = getCachedArtifact(versionTag, skillSet);
     if (cached && fs.existsSync(cached.path)) {
-      logger.debug({version: actualVersion, skillSet, path: cached.path}, 'Using cached skills');
+      logger.debug({version: versionTag, skillSet, path: cached.path}, 'Using cached skills');
       return cached.path;
     }
   }
 
-  // Determine asset URL
-  const assetUrl = skillSet === 'b2c' ? release.b2cSkillsAssetUrl : release.b2cCliSkillsAssetUrl;
+  // Build direct download URL (avoids API rate limits)
+  const downloadUrl = getDirectDownloadUrl(version, assetName);
+  logger.debug({url: downloadUrl, skillSet}, 'Downloading skills artifact');
 
-  if (!assetUrl) {
-    throw new Error(`Skills artifact '${ASSET_NAMES[skillSet]}' not found in release ${actualVersion}`);
-  }
-
-  logger.debug({url: assetUrl, skillSet}, 'Downloading skills artifact');
-
-  // Download artifact
-  const response = await fetch(assetUrl, {
+  // Download artifact - GitHub will redirect to the actual file
+  const response = await fetch(downloadUrl, {
     headers: {
       'User-Agent': 'b2c-cli',
     },
+    redirect: 'follow',
   });
 
   if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(
+        `Skills artifact '${assetName}' not found for ${version === 'latest' ? 'latest release' : `version ${version}`}`,
+      );
+    }
     throw new Error(`Failed to download skills: ${response.status} ${response.statusText}`);
   }
 
+  // Extract actual version from the final URL (after redirects)
+  const actualVersion = extractVersionFromUrl(response.url) || version;
+
+  // Check cache for the resolved version (for 'latest' which we now know)
+  if (version === 'latest' && !forceDownload) {
+    const cached = getCachedArtifact(actualVersion, skillSet);
+    if (cached && fs.existsSync(cached.path)) {
+      logger.debug({version: actualVersion, skillSet, path: cached.path}, 'Using cached skills (resolved latest)');
+      return cached.path;
+    }
+  }
+
   const zipBuffer = Buffer.from(await response.arrayBuffer());
-  logger.debug({size: zipBuffer.length}, 'Downloaded skills archive');
+  logger.debug({size: zipBuffer.length, version: actualVersion}, 'Downloaded skills archive');
 
   // Extract to cache directory
   const cacheDir = options.cacheDir || getCacheDir();

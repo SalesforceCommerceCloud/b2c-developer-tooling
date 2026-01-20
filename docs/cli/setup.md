@@ -22,7 +22,7 @@ b2c setup skills [SKILLSET]
 
 | Argument | Description | Default |
 |----------|-------------|---------|
-| `SKILLSET` | Skill set to install: `b2c`, `b2c-cli`, or `all` | `all` |
+| `SKILLSET` | Skill set to install: `b2c` or `b2c-cli` | Prompted interactively |
 
 ### Flags
 
@@ -30,7 +30,7 @@ b2c setup skills [SKILLSET]
 |------|-------------|---------|
 | `--list`, `-l` | List available skills without installing | `false` |
 | `--skill` | Install specific skill(s) (can be repeated) | |
-| `--ide` | Target IDE(s) (can be repeated) | Auto-detect |
+| `--ide` | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual | Auto-detect |
 | `--global`, `-g` | Install to user home directory (global scope) | `false` |
 | `--update`, `-u` | Update existing skills (overwrite) | `false` |
 | `--version` | Specific release version | `latest` |
@@ -44,8 +44,8 @@ b2c setup skills [SKILLSET]
 | `claude-code` | Claude Code | `.claude/skills/` | `~/.claude/skills/` |
 | `cursor` | Cursor | `.cursor/skills/` | `~/.cursor/skills/` |
 | `windsurf` | Windsurf | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| `github-copilot` | GitHub Copilot | `.github/skills/` | `~/.copilot/skills/` |
-| `codex` | Codex CLI | `.codex/skills/` | `~/.codex/skills/` |
+| `vscode` | VS Code / GitHub Copilot | `.github/skills/` | `~/.copilot/skills/` |
+| `codex` | OpenAI Codex CLI | `.codex/skills/` | `~/.codex/skills/` |
 | `opencode` | OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` |
 | `manual` | Manual | `.claude/skills/` | `~/.claude/skills/` |
 
@@ -54,50 +54,51 @@ Use `manual` when you want to install to the Claude Code paths without marketpla
 ### Examples
 
 ```bash
-# List all available skills
-b2c setup skills --list
-
-# Interactive installation (auto-detects IDEs)
+# Interactive mode (prompts for skillset and IDEs)
 b2c setup skills
 
-# Install to Cursor (project scope)
-b2c setup skills --ide cursor
+# List available skills in a skillset
+b2c setup skills b2c --list
+b2c setup skills b2c-cli --list
 
-# Install to Cursor (global/user scope)
-b2c setup skills --ide cursor --global
+# Install b2c skills to Cursor (project scope)
+b2c setup skills b2c --ide cursor
+
+# Install b2c-cli skills to Cursor (global/user scope)
+b2c setup skills b2c-cli --ide cursor --global
 
 # Install to multiple IDEs
-b2c setup skills --ide cursor --ide windsurf
-
-# Install only b2c-cli skills
-b2c setup skills b2c-cli --ide cursor
+b2c setup skills b2c --ide cursor --ide windsurf
 
 # Install specific skills only
-b2c setup skills --skill b2c-code --skill b2c-webdav --ide cursor
+b2c setup skills b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor
 
 # Update existing skills
-b2c setup skills --ide cursor --update
+b2c setup skills b2c --ide cursor --update
 
-# Non-interactive mode (for CI/CD)
-b2c setup skills --ide cursor --global --force
+# Non-interactive mode (for CI/CD) - skillset required
+b2c setup skills b2c-cli --ide cursor --global --force
 
 # Install a specific version
-b2c setup skills --version v0.1.0 --ide cursor
+b2c setup skills b2c --version v0.1.0 --ide cursor
 
 # Output as JSON
-b2c setup skills --list --json
+b2c setup skills b2c --list --json
 ```
 
 ### Interactive Mode
 
 When run without `--force`, the command provides an interactive experience:
 
-1. Downloads skills from the latest release (or specified version)
-2. Auto-detects installed IDEs
-3. Prompts you to select target IDEs
-4. Shows installation preview
-5. Confirms before installing
-6. Reports results
+1. Prompts you to select skill set(s) (if not provided as argument) - you can select both `b2c` and `b2c-cli`
+2. Downloads skills from the latest release (or specified version)
+3. Auto-detects installed IDEs
+4. Prompts you to select target IDEs
+5. Shows installation preview
+6. Confirms before installing
+7. Reports results
+
+In non-interactive mode (`--force`), the skillset argument is required.
 
 ### Claude Code Recommendation
 
@@ -122,7 +123,6 @@ Use `--ide manual` if you prefer manual installation to the same paths.
 |-----------|-------------|
 | `b2c` | B2C Commerce development patterns and practices |
 | `b2c-cli` | B2C CLI commands and operations |
-| `all` | Both skill sets (default) |
 
 ### Output
 
@@ -136,9 +136,9 @@ Example output:
 ```
 Downloading skills from release latest...
 Detecting installed IDEs...
-Installing 24 skills to Cursor (project)
+Installing 12 skills to Cursor (project)
 
-Successfully installed 24 skill(s):
+Successfully installed 12 skill(s):
   - b2c-code → .cursor/skills/b2c-code/
   - b2c-webdav → .cursor/skills/b2c-webdav/
   ...

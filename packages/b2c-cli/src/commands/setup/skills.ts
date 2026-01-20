@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as readline from 'node:readline';
 import {Args, Flags, ux} from '@oclif/core';
+import {checkbox, confirm} from '@inquirer/prompts';
 import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   type IdeType,
@@ -17,57 +17,10 @@ import {
   scanSkills,
   installSkills,
   getIdeDisplayName,
+  getIdeDocsUrl,
   findSkillsByName,
 } from '@salesforce/b2c-tooling-sdk/skills';
 import {t} from '../../i18n/index.js';
-
-/**
- * Simple confirmation prompt.
- */
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
-    });
-  });
-}
-
-/**
- * Simple selection prompt (returns selected indices).
- */
-async function selectMultiple(message: string, options: string[]): Promise<number[]> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-
-  // Display options
-  process.stderr.write(`${message}\n`);
-  for (const [i, opt] of options.entries()) {
-    process.stderr.write(`  ${i + 1}. ${opt}\n`);
-  }
-
-  return new Promise((resolve) => {
-    rl.question('Enter numbers separated by commas (or "all" for all): ', (answer) => {
-      rl.close();
-      if (answer.toLowerCase() === 'all') {
-        resolve(options.map((_, i) => i));
-        return;
-      }
-      const indices = answer
-        .split(',')
-        .map((s) => Number.parseInt(s.trim(), 10) - 1)
-        .filter((n) => !Number.isNaN(n) && n >= 0 && n < options.length);
-      resolve(indices);
-    });
-  });
-}
 
 /**
  * Table columns for skill listing.
@@ -106,9 +59,8 @@ interface SetupSkillsResponse {
 export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static args = {
     skillset: Args.string({
-      description: 'Skill set to install: b2c, b2c-cli, or all',
-      options: ['b2c', 'b2c-cli', 'all'],
-      default: 'all',
+      description: 'Skill set to install: b2c or b2c-cli',
+      options: ['b2c', 'b2c-cli'],
     }),
   };
 
@@ -117,12 +69,11 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> b2c',
     '<%= config.bin %> <%= command.id %> b2c-cli --ide cursor --global',
-    '<%= config.bin %> <%= command.id %> --list',
-    '<%= config.bin %> <%= command.id %> --skill b2c-code --skill b2c-webdav --ide cursor',
-    '<%= config.bin %> <%= command.id %> --global --update --force',
-    '<%= config.bin %> <%= command.id %> --version v0.1.0',
+    '<%= config.bin %> <%= command.id %> b2c --list',
+    '<%= config.bin %> <%= command.id %> b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor',
+    '<%= config.bin %> <%= command.id %> b2c --global --update --force',
   ];
 
   static flags = {
@@ -137,7 +88,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       multiple: true,
     }),
     ide: Flags.string({
-      description: 'Target IDE(s): claude-code, cursor, windsurf, github-copilot, codex, opencode, manual',
+      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual',
       options: ALL_IDE_TYPES,
       multiple: true,
     }),
@@ -161,7 +112,30 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   };
 
   async run(): Promise<SetupSkillsResponse> {
-    const skillsets: SkillSet[] = this.args.skillset === 'all' ? ['b2c', 'b2c-cli'] : [this.args.skillset as SkillSet];
+    // Determine skillsets - prompt if not provided
+    let skillsets: SkillSet[];
+    if (this.args.skillset) {
+      skillsets = [this.args.skillset as SkillSet];
+    } else if (this.flags.force) {
+      this.error(
+        t(
+          'commands.setup.skills.skillsetRequired',
+          'Skillset argument required in non-interactive mode. Specify b2c or b2c-cli.',
+        ),
+      );
+    } else {
+      skillsets = await checkbox({
+        message: t('commands.setup.skills.selectSkillset', 'Select skill set(s) to install:'),
+        choices: [
+          {name: 'b2c - B2C Commerce development patterns', value: 'b2c' as SkillSet},
+          {name: 'b2c-cli - B2C CLI commands and operations', value: 'b2c-cli' as SkillSet},
+        ],
+      });
+      if (skillsets.length === 0) {
+        ux.stdout(t('commands.setup.skills.noSkillsetsSelected', 'No skill sets selected.'));
+        return {};
+      }
+    }
 
     // Download and scan skills
     this.log(
@@ -219,7 +193,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     }
 
     if (skillsToInstall.length === 0) {
-      this.log(t('commands.setup.skills.noSkillsToInstall', 'No skills to install.'));
+      ux.stdout(t('commands.setup.skills.noSkillsToInstall', 'No skills to install.'));
       return {};
     }
 
@@ -232,7 +206,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       const detectedIdes = await detectInstalledIdes();
 
       if (detectedIdes.length === 0) {
-        this.log(
+        ux.stdout(
           t(
             'commands.setup.skills.noIdesDetected',
             'No IDEs detected. Use --ide to specify target (e.g., --ide cursor --ide manual).',
@@ -241,26 +215,27 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
         return {};
       }
 
-      if (this.flags.force) {
-        // Non-interactive: use all detected IDEs
-        targetIdes = detectedIdes;
-      } else {
-        // Interactive: let user select
-        const ideNames = detectedIdes.map((ide) => getIdeDisplayName(ide));
-        const selected = await selectMultiple('Select target IDEs:', ideNames);
-        targetIdes = selected.map((i) => detectedIdes[i]);
-      }
+      // Non-interactive: use all detected IDEs; Interactive: let user select
+      targetIdes = this.flags.force
+        ? detectedIdes
+        : await checkbox({
+            message: t('commands.setup.skills.selectIdes', 'Select target IDEs:'),
+            choices: detectedIdes.map((ide) => ({
+              name: getIdeDisplayName(ide),
+              value: ide,
+            })),
+          });
     }
 
     if (targetIdes.length === 0) {
-      this.log(t('commands.setup.skills.noIdesSelected', 'No IDEs selected.'));
+      ux.stdout(t('commands.setup.skills.noIdesSelected', 'No IDEs selected.'));
       return {};
     }
 
     // Claude Code marketplace recommendation
     if (targetIdes.includes('claude-code')) {
-      this.log('');
-      this.log(
+      ux.stdout('');
+      ux.stdout(
         t(
           'commands.setup.skills.claudeCodeRecommendation',
           'Note: For Claude Code, we recommend using the plugin marketplace for automatic updates:\n' +
@@ -272,11 +247,14 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       );
 
       if (!this.flags.force) {
-        const proceed = await confirm('Continue with Claude Code installation? (y/n)');
+        const proceed = await confirm({
+          message: t('commands.setup.skills.confirmClaudeCode', 'Continue with Claude Code installation?'),
+          default: true,
+        });
         if (!proceed) {
           targetIdes = targetIdes.filter((ide) => ide !== 'claude-code');
           if (targetIdes.length === 0) {
-            this.log(t('commands.setup.skills.cancelled', 'Installation cancelled.'));
+            ux.stdout(t('commands.setup.skills.cancelled', 'Installation cancelled.'));
             return {};
           }
         }
@@ -285,8 +263,8 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
 
     // Show installation preview
     const scope = this.flags.global ? 'global (user home)' : 'project';
-    this.log('');
-    this.log(
+    ux.stdout('');
+    ux.stdout(
       t('commands.setup.skills.preview', 'Installing {{count}} skills to {{ides}} ({{scope}})', {
         count: skillsToInstall.length,
         ides: targetIdes.map((ide) => getIdeDisplayName(ide)).join(', '),
@@ -296,14 +274,16 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
 
     // Confirm installation
     if (!this.flags.force) {
-      const proceed = await confirm('Proceed with installation? (y/n)');
+      const proceed = await confirm({
+        message: t('commands.setup.skills.confirmInstall', 'Proceed with installation?'),
+        default: true,
+      });
       if (!proceed) {
-        this.log(t('commands.setup.skills.cancelled', 'Installation cancelled.'));
+        ux.stdout(t('commands.setup.skills.cancelled', 'Installation cancelled.'));
         return {};
       }
     }
 
-    // Install skills for each skillset
     // Install skills for all skillsets in parallel
     const installPromises = skillsets
       .map((skillset) => {
@@ -320,59 +300,81 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
 
     const installResults = await Promise.all(installPromises);
 
-    const combinedResult: InstallSkillsResult = {
+    const result: InstallSkillsResult = {
       installed: [],
       skipped: [],
       errors: [],
     };
 
-    for (const result of installResults) {
-      combinedResult.installed.push(...result.installed);
-      combinedResult.skipped.push(...result.skipped);
-      combinedResult.errors.push(...result.errors);
+    for (const r of installResults) {
+      result.installed.push(...r.installed);
+      result.skipped.push(...r.skipped);
+      result.errors.push(...r.errors);
     }
 
     // Report results
-    if (combinedResult.installed.length > 0) {
-      this.log('');
-      this.log(
+    if (result.installed.length > 0) {
+      ux.stdout('');
+      ux.stdout(
         t('commands.setup.skills.installed', 'Successfully installed {{count}} skill(s):', {
-          count: combinedResult.installed.length,
+          count: result.installed.length,
         }),
       );
-      for (const item of combinedResult.installed) {
-        this.log(`  - ${item.skill} → ${item.path}`);
+      for (const item of result.installed) {
+        ux.stdout(`  - ${item.skill} → ${item.path}`);
       }
     }
 
-    if (combinedResult.skipped.length > 0) {
-      this.log('');
-      this.log(
+    if (result.skipped.length > 0) {
+      ux.stdout('');
+      ux.stdout(
         t('commands.setup.skills.skippedCount', 'Skipped {{count}} skill(s):', {
-          count: combinedResult.skipped.length,
+          count: result.skipped.length,
         }),
       );
-      for (const item of combinedResult.skipped) {
-        this.log(`  - ${item.skill} (${getIdeDisplayName(item.ide)}): ${item.reason}`);
+      for (const item of result.skipped) {
+        ux.stdout(`  - ${item.skill} (${getIdeDisplayName(item.ide)}): ${item.reason}`);
       }
     }
 
-    if (combinedResult.errors.length > 0) {
-      this.log('');
+    if (result.errors.length > 0) {
+      ux.stdout('');
       this.warn(
         t('commands.setup.skills.errorsCount', 'Failed to install {{count}} skill(s):', {
-          count: combinedResult.errors.length,
+          count: result.errors.length,
         }),
       );
-      for (const item of combinedResult.errors) {
-        this.log(`  - ${item.skill} (${getIdeDisplayName(item.ide)}): ${item.error}`);
+      for (const item of result.errors) {
+        ux.stdout(`  - ${item.skill} (${getIdeDisplayName(item.ide)}): ${item.error}`);
+      }
+    }
+
+    // Show IDE-specific documentation notes
+    if (result.installed.length > 0) {
+      const installedIdes = [...new Set(result.installed.map((item) => item.ide))];
+      const ideNotes: Array<{displayName: string; docsUrl: string}> = [];
+
+      for (const ide of installedIdes) {
+        if (ide === 'manual') continue;
+        const docsUrl = getIdeDocsUrl(ide);
+        if (docsUrl) {
+          ideNotes.push({displayName: getIdeDisplayName(ide), docsUrl});
+        }
+      }
+
+      if (ideNotes.length > 0) {
+        ux.stdout('');
+        ux.stdout(t('commands.setup.skills.ideNotes', 'See IDE documentation for skill configuration:'));
+        for (const note of ideNotes) {
+          ux.stdout(`  - ${note.displayName}: ${note.docsUrl}`);
+        }
       }
     }
 
     return {
-      installed: combinedResult.installed,
-      skipped: combinedResult.skipped,
-      errors: combinedResult.errors,
+      installed: result.installed,
+      skipped: result.skipped,
+      errors: result.errors,
     };
   }
 }

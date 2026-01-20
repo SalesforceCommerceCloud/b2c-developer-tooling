@@ -13,7 +13,6 @@ const home = os.homedir();
 
 /**
  * IDE configurations with paths and detection logic.
- * Based on patterns from the add-skill reference implementation.
  */
 export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
   'claude-code': {
@@ -26,6 +25,7 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     detectInstalled: async () => {
       return fs.existsSync(path.join(home, '.claude'));
     },
+    docsUrl: 'https://docs.anthropic.com/en/docs/claude-code',
   },
   cursor: {
     id: 'cursor',
@@ -37,6 +37,7 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     detectInstalled: async () => {
       return fs.existsSync(path.join(home, '.cursor'));
     },
+    docsUrl: 'https://cursor.com/docs/context/skills',
   },
   windsurf: {
     id: 'windsurf',
@@ -48,10 +49,11 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     detectInstalled: async () => {
       return fs.existsSync(path.join(home, '.codeium/windsurf'));
     },
+    docsUrl: 'https://docs.windsurf.com/',
   },
-  'github-copilot': {
-    id: 'github-copilot',
-    displayName: 'GitHub Copilot',
+  vscode: {
+    id: 'vscode',
+    displayName: 'VS Code / GitHub Copilot',
     paths: {
       projectDir: '.github/skills',
       globalDir: path.join(home, '.copilot/skills'),
@@ -60,10 +62,11 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
       // Check for either .github directory (project-based) or ~/.copilot
       return fs.existsSync(path.join(home, '.copilot'));
     },
+    docsUrl: 'https://code.visualstudio.com/docs/copilot/customization/agent-skills',
   },
   codex: {
     id: 'codex',
-    displayName: 'OpenAI Codex',
+    displayName: 'OpenAI Codex CLI',
     paths: {
       projectDir: '.codex/skills',
       globalDir: path.join(home, '.codex/skills'),
@@ -71,6 +74,7 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     detectInstalled: async () => {
       return fs.existsSync(path.join(home, '.codex'));
     },
+    docsUrl: 'https://github.com/openai/codex',
   },
   opencode: {
     id: 'opencode',
@@ -82,6 +86,7 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     detectInstalled: async () => {
       return fs.existsSync(path.join(home, '.config/opencode'));
     },
+    docsUrl: 'https://opencode.ai/',
   },
   manual: {
     id: 'manual',
@@ -101,15 +106,7 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
 /**
  * All supported IDE types in display order.
  */
-export const ALL_IDE_TYPES: IdeType[] = [
-  'claude-code',
-  'cursor',
-  'windsurf',
-  'github-copilot',
-  'codex',
-  'opencode',
-  'manual',
-];
+export const ALL_IDE_TYPES: IdeType[] = ['claude-code', 'cursor', 'windsurf', 'vscode', 'codex', 'opencode', 'manual'];
 
 /**
  * Detect which IDEs are installed on the system.
@@ -166,4 +163,14 @@ export function getSkillInstallPath(
  */
 export function getIdeDisplayName(ide: IdeType): string {
   return IDE_CONFIGS[ide].displayName;
+}
+
+/**
+ * Get the documentation URL for an IDE.
+ *
+ * @param ide - IDE type
+ * @returns Documentation URL or undefined if not available
+ */
+export function getIdeDocsUrl(ide: IdeType): string | undefined {
+  return IDE_CONFIGS[ide].docsUrl;
 }

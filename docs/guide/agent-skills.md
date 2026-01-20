@@ -107,10 +107,21 @@ claude plugin marketplace remove b2c-developer-tooling
 
 The B2C CLI provides a `setup skills` command that downloads and installs agent skills to any supported IDE.
 
+### Interactive Mode
+
+Run without arguments to interactively select skill sets and IDEs:
+
+```bash
+b2c setup skills
+```
+
+This prompts you to select which skill sets (`b2c`, `b2c-cli`, or both) and which IDEs to install to.
+
 ### List Available Skills
 
 ```bash
-b2c setup skills --list
+b2c setup skills b2c --list
+b2c setup skills b2c-cli --list
 ```
 
 ### Install to Specific IDEs
@@ -118,22 +129,22 @@ b2c setup skills --list
 ::: code-group
 
 ```bash [Project Scope]
-# Install to Cursor (current project only)
-b2c setup skills --ide cursor
+# Install b2c skills to Cursor (current project only)
+b2c setup skills b2c --ide cursor
 
-# Install to Windsurf
-b2c setup skills --ide windsurf
+# Install b2c-cli skills to Windsurf
+b2c setup skills b2c-cli --ide windsurf
 
 # Install to multiple IDEs
-b2c setup skills --ide cursor --ide windsurf
+b2c setup skills b2c --ide cursor --ide windsurf
 ```
 
 ```bash [User Scope]
 # Install globally (available in all projects)
-b2c setup skills --ide cursor --global
+b2c setup skills b2c --ide cursor --global
 
 # Install to GitHub Copilot globally
-b2c setup skills --ide github-copilot --global
+b2c setup skills b2c-cli --ide vscode --global
 ```
 
 :::
@@ -141,26 +152,23 @@ b2c setup skills --ide github-copilot --global
 ### Install Specific Skills
 
 ```bash
-# Install only certain skills
-b2c setup skills --skill b2c-code --skill b2c-webdav --ide cursor
-
-# Install only b2c-cli skills (not b2c development skills)
-b2c setup skills b2c-cli --ide cursor
+# Install only certain skills from a skillset
+b2c setup skills b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor
 ```
 
 ### Update Existing Skills
 
 ```bash
 # Overwrite existing skills with latest versions
-b2c setup skills --ide cursor --update
+b2c setup skills b2c --ide cursor --update
 ```
 
 ### Non-Interactive Mode
 
-For CI/CD pipelines or scripted installations:
+For CI/CD pipelines or scripted installations, the skillset argument is required:
 
 ```bash
-b2c setup skills --ide cursor --global --force
+b2c setup skills b2c-cli --ide cursor --global --force
 ```
 
 See [Setup Commands](/cli/setup) for full CLI documentation.

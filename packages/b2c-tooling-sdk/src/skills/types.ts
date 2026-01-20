@@ -7,7 +7,7 @@
 /**
  * Supported IDE types for skill installation.
  */
-export type IdeType = 'claude-code' | 'cursor' | 'windsurf' | 'github-copilot' | 'codex' | 'opencode' | 'manual';
+export type IdeType = 'claude-code' | 'cursor' | 'windsurf' | 'vscode' | 'codex' | 'opencode' | 'manual';
 
 /**
  * Skill set categories matching the plugins directory structure.
@@ -36,6 +36,8 @@ export interface IdeConfig {
   paths: IdePaths;
   /** Function to detect if IDE is installed */
   detectInstalled: () => Promise<boolean>;
+  /** Optional documentation URL for skill configuration */
+  docsUrl?: string;
 }
 
 /**

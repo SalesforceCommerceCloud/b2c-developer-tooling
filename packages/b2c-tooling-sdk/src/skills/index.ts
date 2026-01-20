@@ -60,7 +60,14 @@ export type {
 } from './types.js';
 
 // Agent/IDE utilities
-export {IDE_CONFIGS, ALL_IDE_TYPES, detectInstalledIdes, getSkillInstallPath, getIdeDisplayName} from './agents.js';
+export {
+  IDE_CONFIGS,
+  ALL_IDE_TYPES,
+  detectInstalledIdes,
+  getSkillInstallPath,
+  getIdeDisplayName,
+  getIdeDocsUrl,
+} from './agents.js';
 
 // GitHub/download utilities
 export {
