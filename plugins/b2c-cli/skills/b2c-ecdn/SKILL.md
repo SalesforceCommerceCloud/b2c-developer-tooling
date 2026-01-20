@@ -1,11 +1,11 @@
 ---
 name: b2c-ecdn
-description: Using the b2c CLI for eCDN (Enhanced Content Delivery Network) management
+description: Using the b2c CLI for eCDN (embedded Content Delivery Network) management
 ---
 
 # B2C eCDN Skill
 
-Use the `b2c` CLI plugin to manage eCDN (Enhanced Content Delivery Network) zones, certificates, security settings, and more.
+Use the `b2c` CLI plugin to manage eCDN (embedded Content Delivery Network) zones, certificates, security settings, and more.
 
 ## Prerequisites
 

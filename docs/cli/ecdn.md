@@ -1,10 +1,10 @@
 ---
-description: Commands for managing eCDN (Enhanced Content Delivery Network) zones, certificates, security, WAF, and more.
+description: Commands for managing eCDN (embedded Content Delivery Network) zones, certificates, security, WAF, and more.
 ---
 
 # eCDN Commands
 
-Commands for managing eCDN (Enhanced Content Delivery Network) for B2C Commerce storefronts.
+Commands for managing eCDN (embedded Content Delivery Network) for B2C Commerce storefronts.
 
 ## Global Flags
 
