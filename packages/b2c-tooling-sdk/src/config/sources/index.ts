@@ -10,3 +10,4 @@
  */
 export {DwJsonSource} from './dw-json-source.js';
 export {MobifySource} from './mobify-source.js';
+export {PackageJsonSource} from './package-json-source.js';

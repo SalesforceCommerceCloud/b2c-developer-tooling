@@ -14,7 +14,7 @@
 import type {AuthCredentials} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 import {mergeConfigsWithProtection, getPopulatedFields, createInstanceFromConfig} from './mapping.js';
-import {DwJsonSource, MobifySource} from './sources/index.js';
+import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
   ConfigSource,
   ConfigSourceInfo,
@@ -125,10 +125,13 @@ export class ConfigResolver {
   /**
    * Creates a new ConfigResolver.
    *
-   * @param sources - Custom configuration sources. If not provided, uses default sources (dw.json, ~/.mobify).
+   * @param sources - Custom configuration sources. If not provided, uses default sources (dw.json, ~/.mobify, package.json).
+   *                  Sources are automatically sorted by priority (lower number = higher priority).
    */
   constructor(sources?: ConfigSource[]) {
-    this.sources = sources ?? [new DwJsonSource(), new MobifySource()];
+    const configSources = sources ?? [new DwJsonSource(), new MobifySource(), new PackageJsonSource()];
+    // Sort sources by priority (lower number = higher priority, undefined = 0)
+    this.sources = [...configSources].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
   }
 
   /**
@@ -355,21 +358,22 @@ export function resolveConfig(
 ): ResolvedB2CConfig {
   // Build sources list with priority ordering:
   // 1. sourcesBefore (high priority - override defaults)
-  // 2. default sources (dw.json, ~/.mobify)
+  // 2. default sources (dw.json, ~/.mobify, package.json)
   // 3. sourcesAfter (low priority - fill gaps)
   let sources: ConfigSource[];
 
   if (options.replaceDefaultSources) {
-    // Replace mode: only use provided sources (no default dw.json/~/.mobify)
+    // Replace mode: only use provided sources (no default dw.json/~/.mobify/package.json)
     sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? [])];
   } else {
     // Normal mode: before + defaults + after
-    const defaultSources: ConfigSource[] = [new DwJsonSource(), new MobifySource()];
+    const defaultSources: ConfigSource[] = [new DwJsonSource(), new MobifySource(), new PackageJsonSource()];
 
-    // Combine: sourcesBefore > defaults > sourcesAfter
+    // Combine all sources
     sources = [...(options.sourcesBefore ?? []), ...defaultSources, ...(options.sourcesAfter ?? [])];
   }
 
+  // ConfigResolver constructor will sort by priority
   const resolver = new ConfigResolver(sources);
   const {config, warnings, sources: sourceInfos} = resolver.resolve(overrides, options);
 

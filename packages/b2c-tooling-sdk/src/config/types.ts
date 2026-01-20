@@ -184,6 +184,19 @@ export interface ConfigSource {
   name: string;
 
   /**
+   * Priority for source ordering. Lower numbers = higher priority.
+   *
+   * Recommended ranges:
+   * - < 0: Before built-in sources (override defaults)
+   * - 0: Built-in sources (DwJsonSource, MobifySource)
+   * - 1-999: After built-in sources (fill gaps)
+   * - 1000: Lowest priority (PackageJsonSource)
+   *
+   * @default 0
+   */
+  priority?: number;
+
+  /**
    * Load configuration from this source.
    *
    * @param options - Resolution options
