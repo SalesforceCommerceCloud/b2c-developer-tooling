@@ -100,40 +100,37 @@
         "description": "WebDAV file operations (ls, get, put, rm, zip, unzip)"
       },
       "mrt": {
-        "description": "Manage Managed Runtime projects and deployments"
+        "description": "Manage Managed Runtime (MRT) projects, environments, bundles, and deployments"
       },
       "mrt:env": {
-        "description": "Manage MRT environments"
+        "description": "Create, update, delete, and configure MRT environments (targets)"
       },
       "mrt:env:var": {
-        "description": "Manage environment variables"
+        "description": "Set and delete environment variables for MRT environments"
       },
       "mrt:env:redirect": {
-        "description": "Manage URL redirects"
+        "description": "Configure URL redirects and clone redirect rules between environments"
       },
       "mrt:org": {
-        "description": "Manage MRT organizations"
+        "description": "List organizations and view B2C Commerce instance connections"
       },
       "mrt:project": {
-        "description": "Manage MRT projects"
+        "description": "Create, update, delete, and configure MRT projects"
       },
       "mrt:project:member": {
-        "description": "Manage project members"
+        "description": "Add, remove, and update project member roles and permissions"
       },
       "mrt:project:notification": {
-        "description": "Manage deployment notifications"
+        "description": "Configure email notifications for deployment events (start, success, failure)"
       },
       "mrt:env:access-control": {
-        "description": "Manage access control headers"
+        "description": "Configure access control headers for environment security"
       },
       "mrt:bundle": {
-        "description": "Manage and deploy bundles"
+        "description": "Push builds, deploy bundles, view deployment history, and download artifacts"
       },
       "mrt:user": {
-        "description": "Manage user profile and settings"
-      },
-      "mrt:b2c": {
-        "description": "Manage B2C Commerce integrations"
+        "description": "View profile, reset API keys, and configure email preferences"
       },
       "ods": {
         "description": "Manage On-Demand Sandboxes"
