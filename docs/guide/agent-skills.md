@@ -103,28 +103,140 @@ To remove the marketplace:
 claude plugin marketplace remove b2c-developer-tooling
 ```
 
+## Installation with B2C CLI
+
+The B2C CLI provides a `setup skills` command that downloads and installs agent skills to any supported IDE.
+
+### List Available Skills
+
+```bash
+b2c setup skills --list
+```
+
+### Install to Specific IDEs
+
+::: code-group
+
+```bash [Project Scope]
+# Install to Cursor (current project only)
+b2c setup skills --ide cursor
+
+# Install to Windsurf
+b2c setup skills --ide windsurf
+
+# Install to multiple IDEs
+b2c setup skills --ide cursor --ide windsurf
+```
+
+```bash [User Scope]
+# Install globally (available in all projects)
+b2c setup skills --ide cursor --global
+
+# Install to GitHub Copilot globally
+b2c setup skills --ide github-copilot --global
+```
+
+:::
+
+### Install Specific Skills
+
+```bash
+# Install only certain skills
+b2c setup skills --skill b2c-code --skill b2c-webdav --ide cursor
+
+# Install only b2c-cli skills (not b2c development skills)
+b2c setup skills b2c-cli --ide cursor
+```
+
+### Update Existing Skills
+
+```bash
+# Overwrite existing skills with latest versions
+b2c setup skills --ide cursor --update
+```
+
+### Non-Interactive Mode
+
+For CI/CD pipelines or scripted installations:
+
+```bash
+b2c setup skills --ide cursor --global --force
+```
+
+See [Setup Commands](/cli/setup) for full CLI documentation.
+
 ## Installation with Other IDEs
 
 The B2C skills follow the [Agent Skills](https://agentskills.io/home) standard and can be used with other AI-powered development tools.
+
+::: tip Recommended
+Use the [`b2c setup skills`](/cli/setup) command for easier installation to any supported IDE.
+:::
 
 ### Cursor
 
 See the [Cursor Skills documentation](https://cursor.com/docs/context/skills) for configuration instructions.
 
-Copy skill files from the plugin directories to your Cursor skills location:
+Skills are installed to:
+- **Project scope**: `.cursor/skills/` in your project
+- **User scope**: `~/.cursor/skills/`
 
-- [b2c-cli skills](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c-cli/skills)
-- [b2c skills](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c/skills)
+### Windsurf
+
+See the [Windsurf documentation](https://docs.windsurf.com/) for configuration instructions.
+
+Skills are installed to:
+- **Project scope**: `.windsurf/skills/` in your project
+- **User scope**: `~/.codeium/windsurf/skills/`
 
 ### VS Code with GitHub Copilot
 
 See the [VS Code Agent Skills documentation](https://code.visualstudio.com/docs/copilot/customization/agent-skills) for configuration instructions.
 
+Skills are installed to:
+- **Project scope**: `.github/skills/` in your project
+- **User scope**: `~/.copilot/skills/`
+
 You can also append skill content to `.github/copilot-instructions.md` in your repository.
 
-### Other IDEs
+### Codex CLI
 
-For other AI-powered IDEs, copy the `SKILL.md` files and any `references/` directories to your IDE's custom instructions location.
+See the [Codex documentation](https://github.com/openai/codex) for configuration instructions.
+
+Skills are installed to:
+- **Project scope**: `.codex/skills/` in your project
+- **User scope**: `~/.codex/skills/`
+
+### OpenCode
+
+See the [OpenCode documentation](https://opencode.ai/) for configuration instructions.
+
+Skills are installed to:
+- **Project scope**: `.opencode/skills/` in your project
+- **User scope**: `~/.config/opencode/skills/`
+
+### Manual Installation
+
+For other AI-powered IDEs, download the skills zip files from the [latest GitHub release](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest):
+
+| Artifact | Contents |
+|----------|----------|
+| `b2c-cli-skills.zip` | Skills for B2C CLI commands and operations |
+| `b2c-skills.zip` | Skills for B2C Commerce development patterns |
+
+Each zip contains a `skills/` folder with individual skill directories. Extract and copy to your IDE's custom instructions location:
+
+```bash
+# Download from latest release
+curl -LO https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest/download/b2c-cli-skills.zip
+curl -LO https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest/download/b2c-skills.zip
+
+# Extract and copy to your IDE's skills directory
+unzip b2c-cli-skills.zip -d /path/to/your/ide/skills/
+unzip b2c-skills.zip -d /path/to/your/ide/skills/
+```
+
+Each skill is a directory containing a `SKILL.md` file and optionally a `references/` folder with additional documentation.
 
 ## Usage Examples
 
