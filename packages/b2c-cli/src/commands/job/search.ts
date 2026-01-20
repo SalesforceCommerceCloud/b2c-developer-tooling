@@ -80,8 +80,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
   };
 
   protected operations = {
-    searchJobExecutions: async (options: Parameters<typeof searchJobExecutions>[1]) =>
-      searchJobExecutions(this.instance, options),
+    searchJobExecutions,
   };
 
   async run(): Promise<JobExecutionSearchResult> {
@@ -95,7 +94,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       }),
     );
 
-    const results = await this.operations.searchJobExecutions({
+    const results = await this.operations.searchJobExecutions(this.instance, {
       jobId,
       status,
       count,

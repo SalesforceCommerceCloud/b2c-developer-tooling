@@ -23,14 +23,17 @@ describe('job search', () => {
   }
 
   function stubCommon(command: any) {
+    const instance = {config: {hostname: 'example.com'}};
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
+    return instance;
   }
 
   it('returns results in json mode', async () => {
     const command: any = await createCommand({json: true}, {});
-    stubCommon(command);
+    const instance = stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
     const searchStub = sinon.stub().resolves({total: 1, hits: [{id: 'e1'}]});
@@ -40,13 +43,14 @@ describe('job search', () => {
     const result = await command.run();
 
     expect(searchStub.calledOnce).to.equal(true);
+    expect(searchStub.getCall(0).args[0]).to.equal(instance);
     expect(uxStub.called).to.equal(false);
     expect(result.total).to.equal(1);
   });
 
   it('prints no results in non-json mode', async () => {
     const command: any = await createCommand({}, {});
-    stubCommon(command);
+    const instance = stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(false);
 
     const searchStub = sinon.stub().resolves({total: 0, hits: []});
@@ -57,5 +61,6 @@ describe('job search', () => {
 
     expect(result.total).to.equal(0);
     expect(uxStub.calledOnce).to.equal(true);
+    expect(searchStub.getCall(0).args[0]).to.equal(instance);
   });
 });

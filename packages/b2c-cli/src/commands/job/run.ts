@@ -67,10 +67,8 @@ export default class JobRun extends JobCommand<typeof JobRun> {
   };
 
   protected operations = {
-    executeJob: async (jobId: string, options: Parameters<typeof executeJob>[2]) =>
-      executeJob(this.instance, jobId, options),
-    waitForJob: async (jobId: string, executionId: string, options: Parameters<typeof waitForJob>[3]) =>
-      waitForJob(this.instance, jobId, executionId, options),
+    executeJob,
+    waitForJob,
   };
 
   async run(): Promise<JobExecution> {
@@ -113,7 +111,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
 
     let execution: JobExecution;
     try {
-      execution = await this.operations.executeJob(jobId, {
+      execution = await this.operations.executeJob(this.instance, jobId, {
         parameters: rawBody ? undefined : parameters,
         body: rawBody,
         waitForRunning: !noWaitRunning,
@@ -220,7 +218,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 
     try {
-      const execution = await this.operations.waitForJob(jobId, executionId, {
+      const execution = await this.operations.waitForJob(this.instance, jobId, executionId, {
         timeout: timeout ? timeout * 1000 : undefined,
         onProgress: (exec, elapsed) => {
           if (!this.jsonEnabled()) {

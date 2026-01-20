@@ -47,8 +47,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
   };
 
   protected operations = {
-    waitForJob: async (jobId: string, executionId: string, options: Parameters<typeof waitForJob>[3]) =>
-      waitForJob(this.instance, jobId, executionId, options),
+    waitForJob,
   };
 
   async run(): Promise<JobExecution> {
@@ -65,7 +64,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
     );
 
     try {
-      const execution = await this.operations.waitForJob(jobId, executionId, {
+      const execution = await this.operations.waitForJob(this.instance, jobId, executionId, {
         timeout: timeout ? timeout * 1000 : undefined,
         pollInterval: pollInterval * 1000,
         onProgress: (exec, elapsed) => {

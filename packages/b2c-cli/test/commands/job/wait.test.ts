@@ -24,7 +24,10 @@ describe('job wait', () => {
   it('waits using wrapper without real polling', async () => {
     const command: any = await createCommand({'poll-interval': 1, json: true}, {jobId: 'my-job', executionId: 'e1'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
@@ -34,6 +37,7 @@ describe('job wait', () => {
     const result = await command.run();
 
     expect(waitStub.calledOnce).to.equal(true);
+    expect(waitStub.getCall(0).args[0]).to.equal(instance);
     expect(result.id).to.equal('e1');
   });
 });

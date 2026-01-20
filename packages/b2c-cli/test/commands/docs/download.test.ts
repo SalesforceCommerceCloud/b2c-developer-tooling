@@ -24,9 +24,12 @@ describe('docs download', () => {
   it('calls downloadDocs with outputDir and keepArchive', async () => {
     const command: any = await createCommand({'keep-archive': true}, {output: './docs'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireServer').returns(void 0);
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
 
     const downloadStub = sinon.stub().resolves({outputPath: './docs', fileCount: 1, archivePath: './docs/a.zip'});
@@ -35,16 +38,20 @@ describe('docs download', () => {
     const result = await command.run();
 
     expect(downloadStub.calledOnce).to.equal(true);
-    expect(downloadStub.getCall(0).args[0]).to.deep.equal({outputDir: './docs', keepArchive: true});
+    expect(downloadStub.getCall(0).args[0]).to.equal(instance);
+    expect(downloadStub.getCall(0).args[1]).to.deep.equal({outputDir: './docs', keepArchive: true});
     expect(result.fileCount).to.equal(1);
   });
 
   it('returns result directly in json mode', async () => {
     const command: any = await createCommand({json: true}, {output: './docs'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireServer').returns(void 0);
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
 
     const downloadStub = sinon.stub().resolves({outputPath: './docs', fileCount: 2});

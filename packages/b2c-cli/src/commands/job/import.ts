@@ -57,10 +57,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
   };
 
   protected operations = {
-    siteArchiveImport: async (
-      target: Parameters<typeof siteArchiveImport>[1],
-      options: Parameters<typeof siteArchiveImport>[2],
-    ) => siteArchiveImport(this.instance, target, options),
+    siteArchiveImport,
   };
 
   async run(): Promise<SiteArchiveImportResult> {
@@ -114,7 +111,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     try {
       const importTarget = remote ? {remoteFilename: target} : target;
 
-      const result = await this.operations.siteArchiveImport(importTarget, {
+      const result = await this.operations.siteArchiveImport(this.instance, importTarget, {
         keepArchive,
         waitOptions: {
           timeout: timeout ? timeout * 1000 : undefined,

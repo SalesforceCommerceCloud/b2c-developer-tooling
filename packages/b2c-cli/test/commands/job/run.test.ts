@@ -22,14 +22,17 @@ describe('job run', () => {
   }
 
   function stubCommon(command: any) {
+    const instance = {config: {hostname: 'example.com'}};
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
       operationType,
       metadata,
       startTime: Date.now(),
     }));
+    return instance;
   }
 
   it('errors on invalid -P param format', async () => {
@@ -50,7 +53,7 @@ describe('job run', () => {
 
   it('executes without waiting when --wait is false', async () => {
     const command: any = await createCommand({param: ['A=1'], json: true}, {jobId: 'my-job'});
-    stubCommon(command);
+    const instance = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -62,13 +65,14 @@ describe('job run', () => {
     const result = await command.run();
 
     expect(execStub.calledOnce).to.equal(true);
+    expect(execStub.getCall(0).args[0]).to.equal(instance);
     expect(waitStub.called).to.equal(false);
     expect(result.id).to.equal('e1');
   });
 
   it('waits when --wait is true', async () => {
     const command: any = await createCommand({wait: true, timeout: 1, json: true}, {jobId: 'my-job'});
-    stubCommon(command);
+    const instance = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -80,6 +84,7 @@ describe('job run', () => {
     const result = await command.run();
 
     expect(waitStub.calledOnce).to.equal(true);
+    expect(waitStub.getCall(0).args[0]).to.equal(instance);
     expect(result.execution_status).to.equal('finished');
   });
 

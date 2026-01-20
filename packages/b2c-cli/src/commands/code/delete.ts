@@ -53,7 +53,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
 
   protected operations = {
     confirm,
-    deleteCodeVersion: async (codeVersion: string) => deleteCodeVersion(this.instance, codeVersion),
+    deleteCodeVersion,
   };
 
   async run(): Promise<void> {
@@ -85,7 +85,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
       }),
     );
 
-    await this.operations.deleteCodeVersion(codeVersion);
+    await this.operations.deleteCodeVersion(this.instance, codeVersion);
     this.log(t('commands.code.delete.deleted', 'Code version {{codeVersion}} deleted successfully', {codeVersion}));
   }
 }

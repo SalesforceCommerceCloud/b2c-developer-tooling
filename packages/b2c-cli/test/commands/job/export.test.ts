@@ -23,15 +23,18 @@ describe('job export', () => {
   }
 
   function stubCommon(command: any) {
+    const instance = {config: {hostname: 'example.com'}};
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
       operationType,
       metadata,
       startTime: Date.now(),
     }));
+    return instance;
   }
 
   it('errors when no data units are provided', async () => {
@@ -73,7 +76,7 @@ describe('job export', () => {
       timeout: 1,
       json: true,
     });
-    stubCommon(command);
+    const instance = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -90,7 +93,8 @@ describe('job export', () => {
 
     expect(exportStub.calledOnce).to.equal(true);
     const args = exportStub.getCall(0).args;
-    expect(args[1]).to.equal('./export');
+    expect(args[0]).to.equal(instance);
+    expect(args[2]).to.equal('./export');
     expect(result.archiveFilename).to.equal('a.zip');
   });
 
@@ -130,7 +134,7 @@ describe('job export', () => {
 
     await command.run();
 
-    const options = exportStub.getCall(0).args[2];
+    const options = exportStub.getCall(0).args[3];
     expect(options.keepArchive).to.equal(true);
     expect(options.extractZip).to.equal(false);
   });

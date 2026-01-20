@@ -38,7 +38,7 @@ export default class DocsDownload extends InstanceCommand<typeof DocsDownload> {
   };
 
   protected operations = {
-    downloadDocs: async (input: Parameters<typeof downloadDocs>[1]) => downloadDocs(this.instance, input),
+    downloadDocs,
   };
 
   async run(): Promise<DownloadDocsResult> {
@@ -54,7 +54,7 @@ export default class DocsDownload extends InstanceCommand<typeof DocsDownload> {
       }),
     );
 
-    const result = await this.operations.downloadDocs({
+    const result = await this.operations.downloadDocs(this.instance, {
       outputDir,
       keepArchive,
     });

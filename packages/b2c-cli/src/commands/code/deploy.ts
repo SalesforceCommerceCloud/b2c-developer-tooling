@@ -48,12 +48,10 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
   };
 
   protected operations = {
-    uploadCartridges: async (cartridges: Parameters<typeof uploadCartridges>[1]) =>
-      uploadCartridges(this.instance, cartridges),
-    deleteCartridges: async (cartridges: Parameters<typeof deleteCartridges>[1]) =>
-      deleteCartridges(this.instance, cartridges),
-    getActiveCodeVersion: async () => getActiveCodeVersion(this.instance),
-    reloadCodeVersion: async (codeVersion: string) => reloadCodeVersion(this.instance, codeVersion),
+    uploadCartridges,
+    deleteCartridges,
+    getActiveCodeVersion,
+    reloadCodeVersion,
   };
 
   async run(): Promise<DeployResult> {
@@ -68,7 +66,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.warn(
         t('commands.code.deploy.noCodeVersion', 'No code version specified, discovering active code version...'),
       );
-      const activeVersion = await this.operations.getActiveCodeVersion();
+      const activeVersion = await this.operations.getActiveCodeVersion(this.instance);
       if (!activeVersion?.id) {
         this.error(
           t('commands.code.deploy.noActiveVersion', 'No active code version found. Specify one with --code-version.'),
@@ -128,17 +126,17 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     try {
       // Optionally delete existing cartridges first
       if (this.flags.delete) {
-        await this.operations.deleteCartridges(cartridges);
+        await this.operations.deleteCartridges(this.instance, cartridges);
       }
 
       // Upload cartridges
-      await this.operations.uploadCartridges(cartridges);
+      await this.operations.uploadCartridges(this.instance, cartridges);
 
       // Optionally reload code version
       let reloaded = false;
       if (this.flags.reload) {
         try {
-          await this.operations.reloadCodeVersion(version);
+          await this.operations.reloadCodeVersion(this.instance, version);
           reloaded = true;
         } catch (error) {
           this.logger?.debug(`Could not reload code version: ${error instanceof Error ? error.message : error}`);

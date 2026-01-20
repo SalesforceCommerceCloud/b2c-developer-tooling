@@ -24,9 +24,13 @@ describe('code watch', () => {
   it('stops watcher on SIGINT', async () => {
     const command: any = await createCommand({}, {cartridgePath: '.'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
+    sinon.stub(command, 'instance').get(() => instance);
+    sinon.stub(command, 'cartridgeOptions').get(() => ({}));
 
     const stopStub = sinon.stub().resolves(void 0);
     const watchStub = sinon.stub().resolves({cartridges: [{name: 'c1'}], stop: stopStub});
@@ -56,9 +60,13 @@ describe('code watch', () => {
   it('calls command.error when watcher setup fails', async () => {
     const command: any = await createCommand({}, {cartridgePath: '.'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
+    sinon.stub(command, 'instance').get(() => instance);
+    sinon.stub(command, 'cartridgeOptions').get(() => ({}));
 
     const watchStub = sinon.stub().rejects(new Error('boom'));
     command.operations = {...command.operations, watchCartridges: watchStub};

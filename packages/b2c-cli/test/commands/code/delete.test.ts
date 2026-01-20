@@ -24,22 +24,28 @@ describe('code delete', () => {
   it('deletes without prompting when --force is set', async () => {
     const command: any = await createCommand({force: true}, {codeVersion: 'v1'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
 
     const deleteStub = sinon.stub().resolves(void 0);
     command.operations = {...command.operations, deleteCodeVersion: deleteStub};
 
     await command.run();
-    expect(deleteStub.calledOnce).to.equal(true);
+    expect(deleteStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
   });
 
   it('does not delete when prompt is declined', async () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
 
     const deleteStub = sinon.stub().rejects(new Error('Unexpected delete'));
@@ -55,8 +61,11 @@ describe('code delete', () => {
   it('deletes when prompt is accepted', async () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
 
+    const instance = {config: {hostname: 'example.com'}};
+
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
 
     const deleteStub = sinon.stub().resolves(void 0);
@@ -66,6 +75,6 @@ describe('code delete', () => {
     await command.run();
 
     expect(confirmStub.calledOnce).to.equal(true);
-    expect(deleteStub.calledOnce).to.equal(true);
+    expect(deleteStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
   });
 });

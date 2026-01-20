@@ -22,12 +22,14 @@ describe('code deploy', () => {
   }
 
   function stubCommon(command: any) {
+    const instance = {config: {hostname: 'example.com', codeVersion: 'v1'}};
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
-    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com', codeVersion: 'v1'}}));
+    sinon.stub(command, 'instance').get(() => instance);
+    return instance;
   }
 
   it('runs before hooks and returns early when skipped', async () => {
@@ -64,7 +66,7 @@ describe('code deploy', () => {
 
   it('calls delete + upload and reload when flags are set', async () => {
     const command: any = await createCommand({delete: true, reload: true}, {cartridgePath: '.'});
-    stubCommon(command);
+    const instance = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     const afterHooksStub = sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -84,9 +86,9 @@ describe('code deploy', () => {
 
     const result = await command.run();
 
-    expect(deleteStub.calledOnceWithExactly(cartridges)).to.equal(true);
-    expect(uploadStub.calledOnceWithExactly(cartridges)).to.equal(true);
-    expect(reloadStub.calledOnceWithExactly('v1')).to.equal(true);
+    expect(deleteStub.calledOnceWithExactly(instance, cartridges)).to.equal(true);
+    expect(uploadStub.calledOnceWithExactly(instance, cartridges)).to.equal(true);
+    expect(reloadStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
 
     expect(result).to.deep.include({codeVersion: 'v1', reloaded: true});
     expect(afterHooksStub.calledOnce).to.equal(true);
@@ -122,7 +124,8 @@ describe('code deploy', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
     const instanceConfig: any = {hostname: 'example.com', codeVersion: undefined};
-    sinon.stub(command, 'instance').get(() => ({config: instanceConfig}));
+    const instance = {config: instanceConfig};
+    sinon.stub(command, 'instance').get(() => instance);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -135,6 +138,8 @@ describe('code deploy', () => {
     command.operations = {...command.operations, getActiveCodeVersion: activeStub, uploadCartridges: uploadStub};
 
     const result = await command.run();
+
+    expect(activeStub.getCall(0).args[0]).to.equal(instance);
 
     expect(instanceConfig.codeVersion).to.equal('active');
     expect(result.codeVersion).to.equal('active');

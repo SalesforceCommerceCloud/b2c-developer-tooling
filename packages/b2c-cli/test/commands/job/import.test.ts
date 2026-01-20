@@ -23,20 +23,23 @@ describe('job import', () => {
   }
 
   function stubCommon(command: any) {
+    const instance = {config: {hostname: 'example.com'}};
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
       operationType,
       metadata,
       startTime: Date.now(),
     }));
+    return instance;
   }
 
   it('imports remote filename when --remote is set', async () => {
     const command: any = await createCommand({remote: true, json: true}, {target: 'a.zip'});
-    stubCommon(command);
+    const instance = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -51,12 +54,13 @@ describe('job import', () => {
     await command.run();
 
     expect(importStub.calledOnce).to.equal(true);
-    expect(importStub.getCall(0).args[0]).to.deep.equal({remoteFilename: 'a.zip'});
+    expect(importStub.getCall(0).args[0]).to.equal(instance);
+    expect(importStub.getCall(0).args[1]).to.deep.equal({remoteFilename: 'a.zip'});
   });
 
   it('imports local target when --remote is not set', async () => {
     const command: any = await createCommand({json: true}, {target: './dir'});
-    stubCommon(command);
+    const instance = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -71,7 +75,8 @@ describe('job import', () => {
     await command.run();
 
     expect(importStub.calledOnce).to.equal(true);
-    expect(importStub.getCall(0).args[0]).to.equal('./dir');
+    expect(importStub.getCall(0).args[0]).to.equal(instance);
+    expect(importStub.getCall(0).args[1]).to.equal('./dir');
   });
 
   it('returns early when before hooks skip', async () => {
