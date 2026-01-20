@@ -100,12 +100,40 @@
         "description": "WebDAV file operations (ls, get, put, rm, zip, unzip)"
       },
       "mrt": {
-        "description": "Manage Managed Runtime projects and deployments",
-        "subtopics": {
-          "env-var": {
-            "description": "Manage environment variables on MRT projects"
-          }
-        }
+        "description": "Manage Managed Runtime projects and deployments"
+      },
+      "mrt:env": {
+        "description": "Manage MRT environments"
+      },
+      "mrt:env:var": {
+        "description": "Manage environment variables"
+      },
+      "mrt:env:redirect": {
+        "description": "Manage URL redirects"
+      },
+      "mrt:org": {
+        "description": "Manage MRT organizations"
+      },
+      "mrt:project": {
+        "description": "Manage MRT projects"
+      },
+      "mrt:project:member": {
+        "description": "Manage project members"
+      },
+      "mrt:project:notification": {
+        "description": "Manage deployment notifications"
+      },
+      "mrt:env:access-control": {
+        "description": "Manage access control headers"
+      },
+      "mrt:bundle": {
+        "description": "Manage and deploy bundles"
+      },
+      "mrt:user": {
+        "description": "Manage user profile and settings"
+      },
+      "mrt:b2c": {
+        "description": "Manage B2C Commerce integrations"
       },
       "ods": {
         "description": "Manage On-Demand Sandboxes"

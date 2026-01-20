@@ -5,7 +5,11 @@
  */
 import {Flags} from '@oclif/core';
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import {listDeployments, type ListDeploymentsResult, type MrtDeployment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {
+  listDeployments,
+  type ListDeploymentsResult,
+  type MrtDeployment,
+} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t} from '../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtDeployment>> = {
@@ -40,8 +44,11 @@ const DEFAULT_COLUMNS = ['bundleId', 'bundleMessage', 'status', 'type', 'created
 /**
  * List deployment history for an MRT environment.
  */
-export default class MrtDeployList extends MrtCommand<typeof MrtDeployList> {
-  static description = t('commands.mrt.deploy.list.description', 'List deployment history for a Managed Runtime environment');
+export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory> {
+  static description = t(
+    'commands.mrt.bundle.history.description',
+    'List deployment history for a Managed Runtime environment',
+  );
 
   static enableJsonFlag = true;
 
@@ -80,7 +87,7 @@ export default class MrtDeployList extends MrtCommand<typeof MrtDeployList> {
     const {limit, offset} = this.flags;
 
     this.log(
-      t('commands.mrt.deploy.list.fetching', 'Fetching deployments for {{project}}/{{environment}}...', {
+      t('commands.mrt.bundle.history.fetching', 'Fetching deployment history for {{project}}/{{environment}}...', {
         project,
         environment,
       }),
@@ -99,9 +106,9 @@ export default class MrtDeployList extends MrtCommand<typeof MrtDeployList> {
 
     if (!this.jsonEnabled()) {
       if (result.deployments.length === 0) {
-        this.log(t('commands.mrt.deploy.list.empty', 'No deployments found.'));
+        this.log(t('commands.mrt.bundle.history.empty', 'No deployments found.'));
       } else {
-        this.log(t('commands.mrt.deploy.list.count', 'Found {{count}} deployment(s):', {count: result.count}));
+        this.log(t('commands.mrt.bundle.history.count', 'Found {{count}} deployment(s):', {count: result.count}));
         createTable(COLUMNS).render(result.deployments, DEFAULT_COLUMNS);
       }
     }
