@@ -12,6 +12,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.2.0",
     "@oclif/core": "^4",
     "@oclif/plugin-autocomplete": "^3",
     "@oclif/plugin-help": "^6",
@@ -131,6 +132,9 @@
             "description": "Browse and retrieve SCAPI schema specifications"
           }
         }
+      },
+      "setup": {
+        "description": "Setup commands for development environment"
       }
     }
   },
