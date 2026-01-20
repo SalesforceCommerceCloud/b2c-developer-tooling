@@ -208,6 +208,9 @@ export class ConfigResolver {
           if (!enrichedOptions.accountManagerHost && baseConfig.accountManagerHost) {
             enrichedOptions.accountManagerHost = baseConfig.accountManagerHost;
           }
+          if (!enrichedOptions.cloudOrigin && baseConfig.mrtOrigin) {
+            enrichedOptions.cloudOrigin = baseConfig.mrtOrigin;
+          }
         }
       }
     }
