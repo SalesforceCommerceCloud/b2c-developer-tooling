@@ -4,15 +4,46 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, unicorn/consistent-function-scoping */
 import {expect} from 'chai';
+import sinon from 'sinon';
 import OdsCreate from '../../../src/commands/ods/create.js';
-import {
-  makeCommandThrowOnError,
-  stubCommandConfigAndLogger,
-  stubOdsClient,
-  stubResolvedConfig,
-} from '../../helpers/ods.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+
+function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({'sandbox-api-host': sandboxApiHost}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+}
+
+function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; DELETE: any}>): void {
+  Object.defineProperty(command, 'odsClient', {
+    value: client,
+    configurable: true,
+  });
+}
+
+function stubResolvedConfig(command: any, resolvedConfig: Record<string, unknown>): void {
+  Object.defineProperty(command, 'resolvedConfig', {
+    get: () => ({values: resolvedConfig}),
+    configurable: true,
+  });
+}
+
+function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
 
 /**
  * Unit tests for ODS create command CLI logic.
@@ -20,6 +51,15 @@ import {
  * SDK tests cover the actual API calls.
  */
 describe('ods create', () => {
+  beforeEach(() => {
+    isolateConfig();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
   describe('buildSettings', () => {
     it('should return undefined when set-permissions is false', () => {
       const command = new OdsCreate([], {} as any);
@@ -284,9 +324,13 @@ describe('ods create', () => {
       it('should timeout if sandbox never reaches terminal state', async () => {
         const command = setupCreateCommand();
 
+        sinon.stub(command as any, 'sleep').resolves(undefined);
+        sinon.stub(Date, 'now').onFirstCall().returns(0).returns(1001);
+
         stubOdsClient(command, {
           GET: async () => ({
-            data: {data: {state: 'creating'}},
+            data: {data: {id: 'sb-1', state: 'creating'}},
+            response: new Response(),
           }),
         });
 

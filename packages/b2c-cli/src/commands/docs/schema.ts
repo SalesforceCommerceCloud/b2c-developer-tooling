@@ -45,13 +45,18 @@ export default class DocsSchema extends BaseCommand<typeof DocsSchema> {
     }),
   };
 
+  protected operations = {
+    listSchemas,
+    readSchemaByQuery,
+  };
+
   async run(): Promise<ListResult | SchemaResult> {
     const {query} = this.args;
     const {list} = this.flags;
 
     // List mode
     if (list) {
-      const entries = listSchemas();
+      const entries = this.operations.listSchemas();
 
       if (this.jsonEnabled()) {
         return {entries};
@@ -72,7 +77,7 @@ export default class DocsSchema extends BaseCommand<typeof DocsSchema> {
       this.error(t('commands.docs.schema.queryRequired', 'Schema name is required. Use --list to see all schemas.'));
     }
 
-    const result = readSchemaByQuery(query);
+    const result = this.operations.readSchemaByQuery(query);
 
     if (!result) {
       this.error(t('commands.docs.schema.notFound', 'No schema found matching: {{query}}', {query}), {

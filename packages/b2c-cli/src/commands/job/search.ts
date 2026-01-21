@@ -79,6 +79,10 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
     }),
   };
 
+  protected operations = {
+    searchJobExecutions,
+  };
+
   async run(): Promise<JobExecutionSearchResult> {
     this.requireOAuthCredentials();
 
@@ -90,7 +94,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       }),
     );
 
-    const results = await searchJobExecutions(this.instance, {
+    const results = await this.operations.searchJobExecutions(this.instance, {
       jobId,
       status,
       count,
