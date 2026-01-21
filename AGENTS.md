@@ -101,3 +101,23 @@ pnpm run test                                    # Run all tests
 pnpm --filter @salesforce/b2c-tooling-sdk run test  # Test specific package
 pnpm mocha "test/clients/webdav.test.ts"         # Single file (no coverage)
 ```
+
+## Changesets
+
+This project uses [Changesets](https://github.com/changesets/changesets) for version management. When making changes that affect users, create a changeset:
+
+```bash
+# Create a changeset (interactive prompt)
+pnpm changeset
+
+# Check pending changesets
+pnpm changeset status
+```
+
+Changeset guidelines:
+- Create a changeset for any user-facing changes (features, bug fixes)
+- Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
+- This is a pre-1.0 preview release, so there are no `major` breaking change bumps
+- Write a clear, concise description of the change for the changelog
+- The three main packages (`@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`) are version-linked
+- Internal-only changes (tests, docs, refactoring) typically don't need changesets
