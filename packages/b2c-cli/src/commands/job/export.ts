@@ -96,6 +96,10 @@ export default class JobExport extends JobCommand<typeof JobExport> {
     }),
   };
 
+  protected operations = {
+    siteArchiveExportToPath,
+  };
+
   async run(): Promise<SiteArchiveExportResult & {localPath?: string}> {
     this.requireOAuthCredentials();
     this.requireWebDavCredentials();
@@ -114,7 +118,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       'no-download': noDownload,
       'zip-only': zipOnly,
       timeout,
-      'show-log': showLog,
+      'show-log': showLog = true,
     } = this.flags;
 
     const hostname = this.resolvedConfig.values.hostname!;
@@ -173,7 +177,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
     this.log(t('commands.job.export.dataUnits', 'Data units: {{dataUnits}}', {dataUnits: JSON.stringify(dataUnits)}));
 
     try {
-      const result = await siteArchiveExportToPath(this.instance, dataUnits, output, {
+      const result = await this.operations.siteArchiveExportToPath(this.instance, dataUnits, output, {
         keepArchive: keepArchive || noDownload,
         extractZip: !zipOnly,
         waitOptions: {

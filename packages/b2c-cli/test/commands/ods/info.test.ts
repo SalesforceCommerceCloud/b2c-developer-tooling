@@ -5,14 +5,45 @@
  */
 
 import {expect} from 'chai';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import sinon from 'sinon';
+
 import OdsInfo from '../../../src/commands/ods/info.js';
-import {
-  makeCommandThrowOnError,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOdsClientGet,
-} from '../../helpers/ods.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+
+function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({'sandbox-api-host': sandboxApiHost}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+}
+
+function stubJsonEnabled(command: any, enabled: boolean): void {
+  command.jsonEnabled = () => enabled;
+}
+
+function stubOdsClientGet(command: any, handler: (path: string) => Promise<any>): void {
+  Object.defineProperty(command, 'odsClient', {
+    value: {
+      GET: handler,
+    },
+    configurable: true,
+  });
+}
+
+function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
 
 /**
  * Unit tests for ODS info command CLI logic.
@@ -20,6 +51,15 @@ import {
  * SDK tests cover the actual API calls.
  */
 describe('ods info', () => {
+  beforeEach(() => {
+    isolateConfig();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
   describe('command structure', () => {
     it('should have correct description', () => {
       expect(OdsInfo.description).to.be.a('string');

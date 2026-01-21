@@ -27,6 +27,10 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     ...CartridgeCommand.cartridgeFlags,
   };
 
+  protected operations = {
+    watchCartridges,
+  };
+
   async run(): Promise<void> {
     this.requireWebDavCredentials();
     this.requireOAuthCredentials();
@@ -41,7 +45,7 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     }
 
     try {
-      const result = await watchCartridges(this.instance, this.cartridgePath, {
+      const result = await this.operations.watchCartridges(this.instance, this.cartridgePath, {
         ...this.cartridgeOptions,
         onUpload: (files) => {
           this.log(t('commands.code.watch.uploaded', '[UPLOAD] {{count}} file(s)', {count: files.length}));

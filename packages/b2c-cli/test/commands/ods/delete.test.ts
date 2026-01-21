@@ -5,14 +5,43 @@
  */
 
 import {expect} from 'chai';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import sinon from 'sinon';
+
 import OdsDelete from '../../../src/commands/ods/delete.js';
-import {
-  makeCommandThrowOnError,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOdsClient,
-} from '../../helpers/ods.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+
+function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({'sandbox-api-host': sandboxApiHost}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+}
+
+function stubJsonEnabled(command: any, enabled: boolean): void {
+  command.jsonEnabled = () => enabled;
+}
+
+function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; DELETE: any}>): void {
+  Object.defineProperty(command, 'odsClient', {
+    value: client,
+    configurable: true,
+  });
+}
+
+function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
 
 /**
  * Unit tests for ODS delete command CLI logic.
@@ -20,6 +49,15 @@ import {
  * SDK tests cover the actual API calls.
  */
 describe('ods delete', () => {
+  beforeEach(() => {
+    isolateConfig();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
   describe('command structure', () => {
     it('should require sandboxId as argument', () => {
       expect(OdsDelete.args).to.have.property('sandboxId');
