@@ -115,7 +115,7 @@ pnpm changeset status
 ```
 
 Changeset guidelines:
-- Create a changeset for any user-facing changes (features, bug fixes)
+- Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; a pull request can have multiple changesets
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - This is a pre-1.0 preview release, so there are no `major` breaking change bumps
 - Write a clear, concise description of the change for the changelog
