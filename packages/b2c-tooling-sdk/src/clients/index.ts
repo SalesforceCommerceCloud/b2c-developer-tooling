@@ -195,3 +195,46 @@ export type {
   paths as ScapiSchemasPaths,
   components as ScapiSchemasComponents,
 } from './scapi-schemas.js';
+
+export {
+  createAccountManagerClient,
+  getUser,
+  listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  purgeUser,
+  resetUser,
+  findUserByLogin,
+  mapToInternalRole,
+  mapFromInternalRole,
+  ROLE_NAMES_MAP,
+  ROLE_NAMES_MAP_REVERSE,
+} from './am-users-api.js';
+export type {
+  AccountManagerClient,
+  AccountManagerClientConfig,
+  AccountManagerUser,
+  AccountManagerResponse,
+  AccountManagerError,
+  UserCreate,
+  UserUpdate,
+  UserCollection,
+  UserState,
+  ListUsersOptions,
+  paths as AccountManagerPaths,
+  components as AccountManagerComponents,
+} from './am-users-api.js';
+
+export {createAccountManagerRolesClient, getRole, listRoles} from './am-roles-api.js';
+export type {
+  AccountManagerRolesClient,
+  AccountManagerRolesClientConfig,
+  AccountManagerRole,
+  AccountManagerRolesResponse,
+  AccountManagerRolesError,
+  RoleCollection,
+  ListRolesOptions,
+  paths as AccountManagerRolesPaths,
+  components as AccountManagerRolesComponents,
+} from './am-roles-api.js';

@@ -1,0 +1,1102 @@
+openapi: 3.0.1
+info:
+  title: Users
+  description: |
+    # API Overview
+
+    Manage user accounts within the Account Manager system. Users represent individual accounts with access to the platform. They can be assigned roles and organizations, have configurable authentication preferences, and support various lifecycle states (INITIAL, ENABLED, DELETED).
+
+    ## Authentication & Authorization
+
+    All requests to the Users API must be authenticated using OAuth 2.0 bearer token authentication. The API supports two OAuth 2.0 flows: client credentials and authorization code. The token endpoint is available at `https://account.demandware.com/dwsso/oauth2/access_token`.
+
+    ## Use Cases
+
+    ### Create and Manage User Accounts
+
+    Create new user accounts, update user information, and manage user lifecycle states. Users are created in INITIAL state and must be activated before they can log in.
+
+    ### Reset User Accounts
+
+    Reset users to INITIAL state and send activation instructions, useful for password resets or account recovery scenarios.
+
+    ### Disable and Purge Users
+
+    Disable user accounts (setting state to DELETED) and purge users that have been disabled. Users must be in DELETED state before they can be purged.
+  version: 1.0.0-beta
+servers:
+  - url: https://account.demandware.com
+    description: Account Manager Production Instance
+security:
+  - AmOAuth2: []
+paths:
+  /dw/rest/v1/users:
+    get:
+      operationId: getUsers
+      summary: List all users.
+      description: Retrieve a paginated list of all users.
+      parameters:
+        - name: pageable
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Pageable"
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCollection"
+              example:
+                content:
+                  - id: "a7f3c8e2-91d4-4b5a-8c6f-2e9d1a3b7f4c"
+                    mail: "alice.johnson@example.com"
+                    firstName: "Alice"
+                    lastName: "Johnson"
+                    displayName: "Alice Johnson"
+                    mobilePhone: "+1-555-9876"
+                    preferredLocale: "en_US"
+                    roles:
+                      - "bm-user"
+                    roleTenantFilter: "ECOM_USER:abcd_prd"
+                    organizations:
+                      - "b2c8f7a3-45d6-4e9a-8b1c-3f7e2d9a6c5b"
+                    primaryOrganization: "b2c8f7a3-45d6-4e9a-8b1c-3f7e2d9a6c5b"
+                    userState: "ENABLED"
+                    createdAt: "2024-01-15T10:30:00Z"
+                    lastModified: "2024-11-20T14:22:00Z"
+                    lastLoginDate: "2024-12-03"
+                    linkedToSfIdentity: false
+                  - id: "c9b5e7f1-84a2-4d6c-9e3b-7f2a1c8d5e9a"
+                    mail: "robert.williams@example.com"
+                    firstName: "Robert"
+                    lastName: "Williams"
+                    displayName: "Robert Williams"
+                    preferredLocale: "en_US"
+                    roles:
+                      - "bm-user"
+                    roleTenantFilter: "ECOM_USER:wxyz_stg"
+                    organizations:
+                      - "d4f8a2c6-53e9-4b7a-9c1d-6e3f9a2b8c7d"
+                    primaryOrganization: "d4f8a2c6-53e9-4b7a-9c1d-6e3f9a2b8c7d"
+                    userState: "INITIAL"
+                    createdAt: "2024-12-04T09:15:00Z"
+                    linkedToSfIdentity: false
+
+    post:
+      operationId: createUser
+      summary: Create user.
+      description: |
+        Create a new user with the specified properties.
+        Note: Users are created in INITIAL state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+            example:
+              mail: "john.doe@example.com"
+              firstName: "John"
+              lastName: "Doe"
+              primaryOrganization: "e39dbb7a-63bd-4972-980b-0f6fb3a24bd6"
+              organizations:
+                - "e39dbb7a-63bd-4972-980b-0f6fb3a24bd6"
+              roles:
+                - "bm-user"
+              roleTenantFilter: "ECOM_USER:abcd_prd"
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorCreatingUserFailed:
+                  $ref: "#/components/examples/ErrorUserValidation"
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        201:
+          description: Created
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+            Location:
+              description: URL to read created user
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRead"
+              example:
+                id: "c9b5e7f1-84a2-4d6c-9e3b-7f2a1c8d5e9a"
+                mail: "robert.williams@example.com"
+                firstName: "Robert"
+                lastName: "Williams"
+                displayName: "Robert Williams"
+                primaryOrganization: "d4f8a2c6-53e9-4b7a-9c1d-6e3f9a2b8c7d"
+                organizations:
+                  - "d4f8a2c6-53e9-4b7a-9c1d-6e3f9a2b8c7d"
+                userState: "INITIAL"
+                createdAt: "2024-12-04T09:15:00Z"
+                roles:
+                  - "bm-user"
+                roleTenantFilter: "ECOM_USER:abcd_prd"
+  /dw/rest/v1/users/{userId}:
+    get:
+      operationId: getUser
+      summary: Get user by ID.
+      description: Retrieve a specific user by ID. Use the expand parameter to retrieve more information on related organizations and roles.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: expand
+          in: query
+          required: false
+          style: form
+          explode: false
+          example: organizations
+          description: Comma-separated list of fields that should be expanded in the response. Ensures that fully inlined organization and/or role objects get returned.
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - organizations
+                - roles
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "404":
+          description: A user with this ID was not found.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRead"
+              example:
+                id: "a7f3c8e2-91d4-4b5a-8c6f-2e9d1a3b7f4c"
+                mail: "alice.johnson@example.com"
+                firstName: "Alice"
+                lastName: "Johnson"
+                displayName: "Alice Johnson"
+                mobilePhone: "+1-555-9876"
+                preferredLocale: "en_US"
+                roles:
+                  - "bm-user"
+                roleTenantFilter: "ECOM_USER:abcd_prd"
+                organizations:
+                  - "b2c8f7a3-45d6-4e9a-8b1c-3f7e2d9a6c5b"
+                primaryOrganization: "b2c8f7a3-45d6-4e9a-8b1c-3f7e2d9a6c5b"
+                userState: "ENABLED"
+                createdAt: "2024-01-15T10:30:00Z"
+                lastModified: "2024-11-20T14:22:00Z"
+                lastLoginDate: "2024-12-03"
+                linkedToSfIdentity: false
+    put:
+      operationId: updateUser
+      summary: Update user.
+      description: Apply a partial update to an existing user, i.e. an omitted field stays at its previous value, a contained field replaces the previously saved value.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+            example:
+              firstName: "Jane"
+              lastName: "Smith"
+              displayName: "Jane Smith"
+              mobilePhone: "+1-555-0123"
+              preferredLocale: "en_US"
+              roles:
+                - "bm-user"
+              roleTenantFilter: "ECOM_USER:abcd_prd"
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorUpdatingUserFailed:
+                  $ref: "#/components/examples/ErrorUserValidation"
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRead"
+    delete:
+      operationId: purgeUser
+      summary: Purge user.
+      description: |
+        Purge a user. Only users in state Deleted may be purged.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "404":
+          description: A user with this ID was not found.
+        "412":
+          description: Precondition Failed - User must be in status DELETED to be purged.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "204":
+          description: User has been purged.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+  /dw/rest/v1/users/{userId}/reset:
+    post:
+      operationId: resetUser
+      summary: Reset user to INITIAL status
+      description: Reset a user to INITIAL status and send activation instructions.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserResetResource"
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "404":
+          description: User not found.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "204":
+          description: User has been reset.
+  /dw/rest/v1/users/{userId}/disable:
+    post:
+      operationId: disableUser
+      summary: Disable user.
+      description: Disable a user, setting their userState to DELETED. This is a prerequisite for purging a user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserDeactivationResource"
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "404":
+          description: User not found.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "204":
+          description: User has been disabled.
+components:
+  examples:
+    ErrorUserValidation:
+      summary: 400 Bad request
+      description: Response for `400 Bad request` status
+      value: >
+        {
+          "errors": [
+            {
+              "message": "invalid argument User",
+              "code": "invalid argument User",
+              "fieldErrors": [
+                {
+                  "codes": [
+                    "ValidEmail.user.mail",
+                    "ValidEmail.mail",
+                    "ValidEmail.java.lang.String",
+                    "ValidEmail"
+                  ],
+                  "arguments": null,
+                  "defaultMessage": "Email 'null' invalid, reason 'Email address must not be null.'.",
+                  "objectName": "user",
+                  "field": "mail",
+                  "rejectedValue": null,
+                  "bindingFailure": false,
+                  "code": "ValidEmail"
+                },
+                {
+                  "codes": [
+                    "NotNull.user.primaryOrganization",
+                    "NotNull.primaryOrganization",
+                    "NotNull.java.lang.String",
+                    "NotNull"
+                  ],
+                  "arguments": null,
+                  "defaultMessage": "must not be null",
+                  "objectName": "user",
+                  "field": "primaryOrganization",
+                  "rejectedValue": null,
+                  "bindingFailure": false,
+                  "code": "NotNull"
+                },
+                {
+                  "codes": [
+                    "NotNull.user.lastName",
+                    "NotNull.lastName",
+                    "NotNull.java.lang.String",
+                    "NotNull"
+                  ],
+                  "arguments": null,
+                  "defaultMessage": "must not be null",
+                  "objectName": "user",
+                  "field": "lastName",
+                  "rejectedValue": null,
+                  "bindingFailure": false,
+                  "code": "NotNull"
+                },
+                {
+                  "codes": [
+                    "NotNull.user.mail",
+                    "NotNull.mail",
+                    "NotNull.java.lang.String",
+                    "NotNull"
+                  ],
+                  "arguments": null,
+                  "defaultMessage": "must not be null",
+                  "objectName": "user",
+                  "field": "mail",
+                  "rejectedValue": null,
+                  "bindingFailure": false,
+                  "code": "NotNull"
+                }
+              ]
+            }
+          ]
+        }
+    ErrorAuthenticationRequired:
+      summary: 401 Unauthorized
+      description: Response for `401 Unauthorized` status
+      value: >
+        {
+          "message": "Full authentication is required to access this resource",
+          "code": "InsufficientAuthenticationException",
+          "fieldErrors": null
+        }
+  responses:
+    RateLimitedError:
+      description: Request has been rate-limited. The X-RateLimit-* headers can be used to improve retry behavior.
+      headers:
+        X-RateLimit-Limit:
+          $ref: "#/components/headers/X-RateLimit-Limit"
+        X-RateLimit-Remaining:
+          $ref: "#/components/headers/X-RateLimit-Remaining"
+        X-RateLimit-Reset:
+          $ref: "#/components/headers/X-RateLimit-Reset"
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      description: Account Manager OAuth 2.0 bearer token authentication.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes: {}
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes: {}
+  headers:
+    X-RateLimit-Limit:
+      schema:
+        type: integer
+      description: Rate limit per minute.
+    X-RateLimit-Remaining:
+      schema:
+        type: integer
+      description: The number of requests left in the current time window.
+    X-RateLimit-Reset:
+      schema:
+        type: string
+        format: date-time
+      description: The UTC timestamp at which the current rate limit window resets.
+  schemas:
+    UserCreate:
+      type: object
+      description: Request body for creating a new user.
+      required:
+        - mail
+        - firstName
+        - lastName
+        - organizations
+        - primaryOrganization
+      properties:
+        mail:
+          type: string
+          description: Email address of the user.
+        firstName:
+          maxLength: 40
+          minLength: 1
+          type: string
+          description: First name of the user.
+        lastName:
+          maxLength: 40
+          minLength: 1
+          type: string
+          description: Last name of the user.
+        displayName:
+          maxLength: 100
+          minLength: 1
+          type: string
+          description: Display name of the user.
+        businessPhone:
+          type: string
+          nullable: true
+          description: Business phone number.
+        homePhone:
+          type: string
+          nullable: true
+          description: Home phone number.
+        mobilePhone:
+          type: string
+          nullable: true
+          description: Mobile phone number.
+        preferredLocale:
+          type: string
+          nullable: true
+          description: Preferred locale for the user.
+          enum:
+            - none
+            - de
+            - de_DE
+            - en
+            - en_CA
+            - en_US
+            - es
+            - fr
+            - fr_CA
+            - nl
+        roles:
+          uniqueItems: true
+          type: array
+          description: List of IDs of the roles this user possesses.
+          items:
+            type: string
+            title: Role ID
+        organizations:
+          uniqueItems: true
+          type: array
+          description: List of organization IDs this user belongs to.
+          items:
+            type: string
+            title: Organization ID
+        primaryOrganization:
+          type: string
+          description: Primary organization ID for the user.
+        roleTenantFilter:
+          $ref: "#/components/schemas/RoleTenantFilter"
+        supportTicketId:
+          type: string
+          x-internal: true
+          writeOnly: true
+          description: Only required for users of the Salesforce organization.
+    UserUpdate:
+      type: object
+      description: Request body for updating an existing user.
+      properties:
+        mail:
+          type: string
+          description: Email address of the user.
+        firstName:
+          maxLength: 40
+          minLength: 1
+          type: string
+          description: First name of the user.
+        lastName:
+          maxLength: 40
+          minLength: 1
+          type: string
+          description: Last name of the user.
+        displayName:
+          maxLength: 100
+          minLength: 1
+          type: string
+          description: Display name of the user.
+        businessPhone:
+          type: string
+          nullable: true
+          description: Business phone number.
+        homePhone:
+          type: string
+          nullable: true
+          description: Home phone number.
+        mobilePhone:
+          type: string
+          nullable: true
+          description: Mobile phone number.
+        preferredLocale:
+          type: string
+          nullable: true
+          description: Preferred locale for the user.
+          enum:
+            - none
+            - de
+            - de_DE
+            - en
+            - en_CA
+            - en_US
+            - es
+            - fr
+            - fr_CA
+            - nl
+        roles:
+          uniqueItems: true
+          type: array
+          description: List of IDs of the roles this user possesses.
+          items:
+            type: string
+            title: Role ID
+        organizations:
+          uniqueItems: true
+          type: array
+          description: List of organization IDs this user belongs to.
+          items:
+            type: string
+            title: Organization ID
+        primaryOrganization:
+          type: string
+          description: Primary organization ID for the user.
+        roleTenantFilter:
+          $ref: "#/components/schemas/RoleTenantFilter"
+        supportTicketId:
+          type: string
+          x-internal: true
+          writeOnly: true
+          description: Only required for users of the Salesforce organization.
+    UserRead:
+      type: object
+      description: User object returned in read operations.
+      properties:
+        mail:
+          type: string
+          description: Email address of the user.
+        firstName:
+          maxLength: 40
+          minLength: 1
+          type: string
+          description: First name of the user.
+        lastName:
+          maxLength: 40
+          minLength: 1
+          type: string
+          description: Last name of the user.
+        displayName:
+          maxLength: 100
+          minLength: 1
+          type: string
+          description: Display name of the user.
+        businessPhone:
+          type: string
+          nullable: true
+          description: Business phone number.
+        homePhone:
+          type: string
+          nullable: true
+          description: Home phone number.
+        mobilePhone:
+          type: string
+          nullable: true
+          description: Mobile phone number.
+        preferredLocale:
+          type: string
+          nullable: true
+          description: Preferred locale for the user.
+          enum:
+            - none
+            - de
+            - de_DE
+            - en
+            - en_CA
+            - en_US
+            - es
+            - fr
+            - fr_CA
+            - nl
+        roles:
+          uniqueItems: true
+          type: array
+          description: List of IDs of the roles this user possesses.
+          items:
+            oneOf:
+              - type: string
+                title: Role ID
+              - $ref: "#/components/schemas/Role"
+        organizations:
+          uniqueItems: true
+          type: array
+          description: List of organization IDs this user belongs to.
+          items:
+            oneOf:
+              - type: string
+                title: Organization ID
+              - $ref: "#/components/schemas/Organization"
+        primaryOrganization:
+          type: string
+          description: Primary organization ID for the user.
+        roleTenantFilter:
+          $ref: "#/components/schemas/RoleTenantFilter"
+        passwordExpirationTimestamp:
+          type: integer
+          format: int64
+          readOnly: true
+          nullable: true
+          description: Timestamp when the password expires.
+        passwordModificationTimestamp:
+          type: integer
+          format: int64
+          readOnly: true
+          nullable: true
+          description: Timestamp of the last password modification.
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp when the user was created.
+        lastModified:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the last modification.
+        lastLoginDate:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Date of the last successful login.
+        userState:
+          type: string
+          readOnly: true
+          description: Current state of the user account.
+          enum:
+            - INITIAL
+            - ENABLED
+            - DELETED
+        activationCodeCreationTimestamp:
+          type: integer
+          format: int64
+          readOnly: true
+          nullable: true
+          description: Timestamp when the activation code was created.
+        sfUserId:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Salesforce user identifier.
+        verifiers:
+          type: array
+          readOnly: true
+          description: List of authentication verifiers (e.g., MFA devices).
+          items:
+            $ref: "#/components/schemas/Verifier"
+        deleteTimestamp:
+          type: integer
+          format: int64
+          readOnly: true
+          nullable: true
+          description: Timestamp when the user was marked for deletion.
+        roleTenantFilterMap:
+          type: object
+          readOnly: true
+          description: Map of role tenant filter assignments.
+        linkedToSfIdentity:
+          type: boolean
+          readOnly: true
+          description: Indicates if the user is linked to a Salesforce identity.
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Unique identifier of the user.
+        supportTicketId:
+          type: string
+          x-internal: true
+          writeOnly: true
+          description: Only required for users of the Salesforce organization.
+    Verifier:
+      type: object
+      description: A verifier represents a two-factor authentication device or method associated with a user account.
+      required:
+        - displayName
+        - id
+        - status
+        - type
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the verifier.
+        type:
+          type: string
+          description: Type of verifier (e.g., SMS, TOTP, WebAuthn).
+        displayName:
+          type: string
+          description: Human-readable name for the verifier.
+        status:
+          type: string
+          description: Current status of the verifier.
+    UserResetResource:
+      type: object
+      description: Request body for resetting a user to INITIAL state.
+      properties:
+        supportTicketId:
+          type: string
+          x-internal: true
+          description: Only required for users of the Salesforce organization.
+    UserDeactivationResource:
+      type: object
+      description: Request body for disabling a user.
+      properties:
+        supportTicketId:
+          type: string
+          x-internal: true
+          description: Only required for users of the Salesforce organization.
+    Pageable:
+      type: object
+      description: Pagination parameters for list operations.
+      properties:
+        page:
+          minimum: 0
+          type: integer
+          format: int32
+          description: Zero-based page index.
+        size:
+          minimum: 1
+          default: 20
+          maximum: 4000
+          type: integer
+          format: int32
+          description: Number of items to return per page.
+    UserCollection:
+      type: object
+      description: A paginated collection of users.
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRead"
+    Role:
+      type: object
+      description: A role defines permissions and access levels that can be assigned to Users and API Clients.
+      properties:
+        description:
+          type: string
+          description: Description of the role.
+        roleEnumName:
+          maxLength: 50
+          minLength: 0
+          type: string
+          description: Enumeration name of the role.
+        permissions:
+          uniqueItems: true
+          type: array
+          description: List of permissions granted by this role.
+          items:
+            type: string
+        scope:
+          type: string
+          description: Scope level of the role (global or instance-specific).
+          enum:
+            - GLOBAL
+            - INSTANCE
+        targetType:
+          type: string
+          nullable: true
+          description: Type of entity this role can be assigned to.
+          enum:
+            - ApiClient
+            - User
+        twoFAEnabled:
+          type: boolean
+          description: Indicates if two-factor authentication is required for this role.
+        id:
+          type: string
+          description: Unique identifier of the role.
+    Organization:
+      type: object
+      description: An organization represents a customer, partner, or internal entity within the Account Manager system.
+      properties:
+        name:
+          type: string
+          description: Name of the organization.
+        contactUsers:
+          type: array
+          description: List of contact user IDs.
+          items:
+            type: string
+        realms:
+          type: array
+          description: List of realm identifiers.
+          items:
+            type: string
+        passwordMinEntropy:
+          type: integer
+          description: Minimum password entropy requirement.
+        passwordHistorySize:
+          type: integer
+          description: Number of previous passwords to remember.
+        passwordDaysExpiration:
+          type: integer
+          description: Number of days until password expires.
+        sfAccountIds:
+          type: array
+          description: Salesforce account identifiers.
+          items:
+            type: string
+        type:
+          type: string
+          description: Type of organization.
+          enum:
+            - CUSTOMER
+            - PARTNER
+            - INTERNAL
+        twoFARoles:
+          type: array
+          description: List of role IDs that require two-factor authentication.
+          items:
+            type: string
+        twoFAEnabled:
+          type: boolean
+          description: Indicates if two-factor authentication is enabled for the organization.
+        sfMyDomain:
+          type: string
+          nullable: true
+          description: Salesforce My Domain name.
+        sfMyDomainSuffix:
+          type: string
+          description: Salesforce My Domain suffix.
+        sfMyDomainVerified:
+          type: boolean
+          description: Indicates if Salesforce My Domain is verified.
+        sfMyDomainVerificationTimestamp:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when Salesforce My Domain was verified.
+        sfIdentityFederation:
+          type: string
+          description: Salesforce identity federation status.
+          enum:
+            - DISABLED
+            - ENABLED
+        justInTimeUserProvisioningEnabled:
+          type: boolean
+          description: Indicates if just-in-time user provisioning is enabled.
+        allowedVerifierTypes:
+          type: array
+          description: List of allowed verifier types for authentication.
+          items:
+            type: string
+        disableInactiveUsers:
+          type: boolean
+          description: Indicates if inactive users should be automatically disabled.
+        inactiveUserDays:
+          type: integer
+          description: Number of days before a user is considered inactive.
+        id:
+          type: string
+          readOnly: true
+          description: Unique identifier of the organization.
+    ErrorResponse:
+      type: object
+      description: Standard error response format returned when API requests fail.
+      properties:
+        errors:
+          type: array
+          description: The list of errors.
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message.
+              code:
+                type: string
+                description: Error code.
+              fieldErrors:
+                type: array
+                nullable: true
+                description: Field-specific errors.
+                items:
+                  type: object
+                  properties:
+                    codes:
+                      type: array
+                      items:
+                        type: string
+                      description: List of error codes.
+                    arguments:
+                      nullable: true
+                      description: Arguments for the error message.
+                    defaultMessage:
+                      type: string
+                      description: Default error message.
+                    objectName:
+                      type: string
+                      description: Name of the object that failed validation.
+                    field:
+                      type: string
+                      description: The field that contained the erroneous value.
+                    rejectedValue:
+                      nullable: true
+                      description: The value that was rejected.
+                    bindingFailure:
+                      type: boolean
+                      description: Whether this error was caused by failed binding (e.g. type mismatch).
+                    code:
+                      type: string
+                      description: Error code.
+    RoleTenantFilter:
+      type: string
+      pattern: '(\w+:\w{4,}_\w{3,}(,\w{4,}_\w{3,})*(;)?)*'
+      description: |
+        Filter for role tenant assignments. Format: ROLE_ENUM_NAME:instance_id,instance_id;ROLE_ENUM_NAME:instance_id
+        - Role enum names are separated by semicolons (;)
+        - Each role enum name is followed by a colon (:) and its tenant filters
+        - Tenant filters are comma-separated (,)
+        - Each tenant filter consists of a 4-character realm and 3-character instance_id separated by underscore (_)
+        - A special case is an instance_id ending in _sbx, as it gives access to all sandboxes of a realm
+
+        Example: CC_USER:aabc_prd,aabc_t12;LOGCENTER_USER:aamn_sbx

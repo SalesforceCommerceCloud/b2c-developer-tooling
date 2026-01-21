@@ -42,6 +42,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "execa": "^9.6.1",
     "mocha": "^10",
+    "msw": "^2.0.0",
     "oclif": "^4",
     "prettier": "^3.6.2",
     "shx": "^0.3.3",
@@ -114,6 +115,12 @@
       },
       "sites": {
         "description": "List and inspect storefront sites"
+      },
+      "user": {
+        "description": "Manage Account Manager users"
+      },
+      "role": {
+        "description": "Manage roles for Account Manager users"
       },
       "slas": {
         "description": "Manage SLAS API clients and credentials",
