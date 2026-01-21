@@ -5,9 +5,9 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
-import {loadConfig} from './config.js';
+import {loadConfig, extractInstanceFlags} from './config.js';
 import type {LoadConfigOptions, PluginSources} from './config.js';
-import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
+import type {ResolvedB2CConfig} from '../config/index.js';
 import type {B2CInstance} from '../instance/index.js';
 import {t} from '../i18n/index.js';
 import {
@@ -165,26 +165,12 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       configPath: this.flags.config,
     };
 
-    const flagConfig: Partial<NormalizedConfig> = {
-      hostname: this.flags.server,
-      webdavHostname: this.flags['webdav-server'],
-      codeVersion: this.flags['code-version'],
-      username: this.flags.username,
-      password: this.flags.password,
-      clientId: this.flags['client-id'],
-      clientSecret: this.flags['client-secret'],
-      authMethods: this.parseAuthMethods(),
-      accountManagerHost: this.flags['account-manager-host'],
-      // Merge scopes from flags (if provided)
-      scopes: this.flags.scope && this.flags.scope.length > 0 ? this.flags.scope : undefined,
-    };
-
     const pluginSources: PluginSources = {
       before: this.pluginSourcesBefore,
       after: this.pluginSourcesAfter,
     };
 
-    return loadConfig(flagConfig, options, pluginSources);
+    return loadConfig(extractInstanceFlags(this.flags as Record<string, unknown>), options, pluginSources);
   }
 
   /**

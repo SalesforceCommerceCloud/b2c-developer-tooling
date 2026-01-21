@@ -23,6 +23,103 @@ export {ALL_AUTH_METHODS};
 export {findDwJson};
 
 /**
+ * Type for oclif parsed flags object.
+ * Using Record<string, unknown> since flags can have various types.
+ */
+export type ParsedFlags = Record<string, unknown>;
+
+/**
+ * Extracts OAuth-related configuration from oclif flags.
+ *
+ * Use this to extract OAuth flags (--client-id, --client-secret, etc.)
+ * from parsed oclif flags into a NormalizedConfig partial.
+ *
+ * @param flags - Parsed oclif flags
+ * @returns Partial NormalizedConfig with OAuth fields
+ *
+ * @example
+ * ```typescript
+ * const flagConfig = extractOAuthFlags(this.flags);
+ * return loadConfig(flagConfig, options);
+ * ```
+ */
+export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
+  const scopes = flags.scope as string[] | undefined;
+
+  // Parse auth methods from --auth-methods flag
+  const authMethodValues = flags['auth-methods'] as string[] | undefined;
+  let authMethods: AuthMethod[] | undefined;
+  if (authMethodValues && authMethodValues.length > 0) {
+    const methods = authMethodValues
+      .map((s) => s.trim())
+      .filter((s): s is AuthMethod => ALL_AUTH_METHODS.includes(s as AuthMethod));
+    authMethods = methods.length > 0 ? methods : undefined;
+  }
+
+  return {
+    clientId: flags['client-id'] as string | undefined,
+    clientSecret: flags['client-secret'] as string | undefined,
+    shortCode: flags['short-code'] as string | undefined,
+    authMethods,
+    accountManagerHost: flags['account-manager-host'] as string | undefined,
+    scopes: scopes && scopes.length > 0 ? scopes : undefined,
+  };
+}
+
+/**
+ * Extracts B2C instance-related configuration from oclif flags.
+ *
+ * Includes both instance-specific flags (--server, --username, etc.)
+ * and OAuth flags since instance operations often need both.
+ *
+ * @param flags - Parsed oclif flags
+ * @returns Partial NormalizedConfig with instance and OAuth fields
+ *
+ * @example
+ * ```typescript
+ * const flagConfig = extractInstanceFlags(this.flags);
+ * return loadConfig(flagConfig, options);
+ * ```
+ */
+export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
+  return {
+    // Instance-specific flags
+    hostname: flags.server as string | undefined,
+    webdavHostname: flags['webdav-server'] as string | undefined,
+    codeVersion: flags['code-version'] as string | undefined,
+    username: flags.username as string | undefined,
+    password: flags.password as string | undefined,
+    // Include OAuth flags (instance operations often need OAuth too)
+    ...extractOAuthFlags(flags),
+  };
+}
+
+/**
+ * Extracts MRT (Managed Runtime) configuration from oclif flags.
+ *
+ * Use this to extract MRT flags (--api-key, --project, --environment, --cloud-origin)
+ * from parsed oclif flags into a NormalizedConfig partial.
+ *
+ * @param flags - Parsed oclif flags
+ * @returns Partial NormalizedConfig with MRT fields
+ *
+ * @example
+ * ```typescript
+ * const flagConfig = extractMrtFlags(this.flags);
+ * return loadConfig(flagConfig, options);
+ * ```
+ */
+export function extractMrtFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
+  const cloudOrigin = flags['cloud-origin'] as string | undefined;
+  return {
+    mrtApiKey: flags['api-key'] as string | undefined,
+    mrtProject: flags.project as string | undefined,
+    mrtEnvironment: flags.environment as string | undefined,
+    mrtOrigin: cloudOrigin,
+  };
+}
+
+/**
  * Options for loading configuration.
  */
 export interface LoadConfigOptions {
@@ -30,6 +127,8 @@ export interface LoadConfigOptions {
   instance?: string;
   /** Explicit path to config file (skips searching if provided) */
   configPath?: string;
+  /** Starting directory for config file search (default: current working directory) */
+  startDir?: string;
   /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
@@ -99,6 +198,7 @@ export function loadConfig(
   const resolved = resolveConfig(effectiveFlags, {
     instance: options.instance,
     configPath: options.configPath,
+    startDir: options.startDir,
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,

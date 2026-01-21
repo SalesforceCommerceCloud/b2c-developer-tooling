@@ -198,6 +198,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const options: LoadConfigOptions = {
       instance: this.flags.instance,
       configPath: this.flags.config,
+      startDir: this.flags['working-directory'],
     };
 
     const pluginSources: PluginSources = {

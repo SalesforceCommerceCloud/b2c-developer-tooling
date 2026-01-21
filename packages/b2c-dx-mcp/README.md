@@ -60,7 +60,9 @@ npm install -g @salesforce/b2c-dx-mcp
 
 ### Workspace Auto-Discovery
 
-When neither `--toolsets` nor `--tools` are provided, the MCP server automatically detects your project type and enables the appropriate toolsets.
+The MCP server automatically detects your project type and enables appropriate toolsets when:
+1. Neither `--toolsets` nor `--tools` are provided
+2. All provided `--toolsets` or `--tools` are invalid (typos, unknown names)
 
 **How it works:**
 
@@ -77,7 +79,7 @@ The **SCAPI** toolset is always enabled, providing API discovery and custom API 
 | Project Type | Detection | Toolsets Enabled |
 |--------------|-----------|------------------|
 | **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` | PWAV3, MRT, SCAPI |
-| **Storefront Next** | `@salesforce/storefront-next-*` packages in package.json | STOREFRONTNEXT, MRT, SCAPI |
+| **Storefront Next** | `@salesforce/storefront-next-*` packages in package.json | STOREFRONTNEXT, MRT, CARTRIDGES, SCAPI |
 | **Cartridges** | Any cartridge with `.project` file (detected via `findCartridges`) | CARTRIDGES, SCAPI |
 | **No project detected** | No B2C project markers found | SCAPI (base toolset only) |
 
@@ -504,10 +506,43 @@ Tools that interact with B2C Commerce instances (e.g., `cartridge_deploy`, SCAPI
 
 **Option E: dw.json with auto-discovery**
 
-When `--config` is not provided, the MCP server searches upward from `~/` for a `dw.json` file.
+When `--config` is not provided, the MCP server searches for `dw.json` starting from the `--working-directory` path (or `SFCC_WORKING_DIRECTORY` env var).
 
-> **Note:** Auto-discovery starts from the home directory, so it won't find project-level `dw.json` files. Use `--config` with an explicit path instead.
+> **Important:** MCP clients like Cursor and Claude Desktop often spawn servers from the home directory (`~`) rather than the project directory. Always set `--working-directory` for reliable `dw.json` auto-discovery.
 
+**Cursor** (supports `${workspaceFolder}`):
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": [
+        "--toolsets", "CARTRIDGES",
+        "--working-directory", "${workspaceFolder}",
+        "--allow-non-ga-tools"
+      ]
+    }
+  }
+}
+```
+
+**Claude Desktop** (use explicit path):
+```json
+{
+  "mcpServers": {
+    "b2c-dx": {
+      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+      "args": [
+        "--toolsets", "CARTRIDGES",
+        "--working-directory", "/path/to/your/project",
+        "--allow-non-ga-tools"
+      ]
+    }
+  }
+}
+```
+
+**Example dw.json:**
 ```json
 {
   "hostname": "your-sandbox.demandware.net",

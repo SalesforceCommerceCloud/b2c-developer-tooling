@@ -128,7 +128,16 @@
  */
 
 import {Flags} from '@oclif/core';
-import {BaseCommand, MrtCommand, InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  MrtCommand,
+  InstanceCommand,
+  loadConfig,
+  extractInstanceFlags,
+  extractMrtFlags,
+} from '@salesforce/b2c-tooling-sdk/cli';
+import type {LoadConfigOptions, PluginSources} from '@salesforce/b2c-tooling-sdk/cli';
+import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
@@ -203,13 +212,52 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
   };
 
   /**
+   * Loads configuration from flags, environment variables, and config files.
+   *
+   * Combines configuration from both InstanceCommand (B2C instance) and MrtCommand (MRT)
+   * since this command supports both B2C instance tools and MRT tools.
+   *
+   * Uses SDK helper functions for flag extraction:
+   * - extractInstanceFlags() - B2C instance flags (--server, --username, etc.)
+   * - extractMrtFlags() - MRT flags (--api-key, --project, etc.)
+   *
+   * Priority (highest to lowest):
+   * 1. CLI flags (--server, --username, --api-key, etc.)
+   * 2. Environment variables (SFCC_SERVER, SFCC_USERNAME, SFCC_MRT_API_KEY, etc.)
+   * 3. dw.json file (via --config flag or auto-discovered from --working-directory)
+   * 4. ~/.mobify file (for MRT API key)
+   */
+  protected override loadConfiguration(): ResolvedB2CConfig {
+    const options: LoadConfigOptions = {
+      instance: this.flags.instance,
+      configPath: this.flags.config,
+      startDir: this.flags['working-directory'],
+      cloudOrigin: this.flags['cloud-origin'] as string | undefined, // MobifySource uses this to load ~/.mobify--[hostname] if set
+      credentialsFile: this.flags['credentials-file'] as string | undefined, // Override path to MRT credentials file
+    };
+
+    const pluginSources: PluginSources = {
+      before: this.pluginSourcesBefore,
+      after: this.pluginSourcesAfter,
+    };
+
+    // Combine B2C instance flags and MRT flags using SDK helper functions
+    const flagConfig = {
+      ...extractInstanceFlags(this.flags as Record<string, unknown>),
+      ...extractMrtFlags(this.flags as Record<string, unknown>),
+    };
+
+    return loadConfig(flagConfig, options, pluginSources);
+  }
+
+  /**
    * Main entry point - starts the MCP server.
    *
    * Execution flow:
    * 1. BaseCommand.init() parses flags and loads config
    * 2. Filter and validate toolsets (invalid ones are skipped with warning)
    * 3. Create B2CDxMcpServer instance
-   * 4. Create Services via Services.create() which resolves B2C instance and MRT config
+   * 4. Create Services via Services.fromResolvedConfig() using already-resolved config
    * 5. Register tools based on --toolsets and --tools flags
    * 6. Connect to stdio transport (JSON-RPC over stdin/stdout)
    * 7. Log startup message to stderr
@@ -268,24 +316,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       },
     );
 
-    // Create services with config resolved from flags (which have env var fallbacks via oclif)
-    const services = Services.create({
-      b2cInstance: {
-        configPath: this.flags.config,
-        hostname: this.flags.server,
-        codeVersion: this.flags['code-version'],
-        username: this.flags.username,
-        password: this.flags.password,
-        clientId: this.flags['client-id'],
-        clientSecret: this.flags['client-secret'],
-      },
-      mrt: {
-        apiKey: this.flags['api-key'],
-        cloudOrigin: this.flags['cloud-origin'],
-        project: this.flags.project,
-        environment: this.flags.environment,
-      },
-    });
+    // Create services from already-resolved config (BaseCommand.init() already resolved it)
+    const services = Services.fromResolvedConfig(this.resolvedConfig);
 
     // Register toolsets
     await registerToolsets(startupFlags, server, services);
