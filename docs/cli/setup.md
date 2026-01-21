@@ -1,10 +1,107 @@
 ---
-description: Commands for installing AI agent skills for Claude Code, Cursor, Windsurf, and other agentic IDEs.
+description: Commands for viewing configuration, installing AI agent skills, and setting up the development environment.
 ---
 
 # Setup Commands
 
-Commands for setting up the development environment with AI agent skills.
+Commands for viewing configuration and setting up the development environment.
+
+## b2c setup config
+
+Display the resolved configuration from all sources, showing which values are set and where they came from. Useful for debugging configuration issues.
+
+### Usage
+
+```bash
+b2c setup config [FLAGS]
+```
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--unmask` | Show sensitive values unmasked (passwords, secrets, API keys) | `false` |
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# Display resolved configuration (sensitive values masked)
+b2c setup config
+
+# Display configuration with sensitive values unmasked
+b2c setup config --unmask
+
+# Output as JSON for scripting
+b2c setup config --json
+
+# Debug configuration with a specific instance
+b2c setup config -i staging
+```
+
+### Output
+
+The command displays configuration organized by category:
+
+- **Instance**: hostname, webdavHostname, codeVersion
+- **Authentication (Basic)**: username, password
+- **Authentication (OAuth)**: clientId, clientSecret, scopes, authMethods, accountManagerHost
+- **SCAPI**: shortCode
+- **Managed Runtime (MRT)**: mrtProject, mrtEnvironment, mrtApiKey, mrtOrigin
+- **Metadata**: instanceName
+- **Sources**: List of configuration sources that contributed values
+
+Each value shows its source in brackets (e.g., `[dw.json]`, `[SFCC_CLIENT_ID]`, `[~/.mobify]`).
+
+Example output:
+
+```
+Configuration
+────────────────────────────────────────────────────────────
+
+Instance
+  hostname              my-sandbox.dx.commercecloud.salesforce.com  [DwJsonSource]
+  webdavHostname        -
+  codeVersion           version1                                     [DwJsonSource]
+
+Authentication (Basic)
+  username              admin                                        [DwJsonSource]
+  password              admi...REDACTED                              [DwJsonSource]
+
+Authentication (OAuth)
+  clientId              my-client-id                                 [password-store]
+  clientSecret          my-c...REDACTED                              [password-store]
+  scopes                -
+  authMethods           -
+  accountManagerHost    -
+
+SCAPI
+  shortCode             abc123                                       [DwJsonSource]
+
+Managed Runtime (MRT)
+  mrtProject            my-project                                   [MobifySource]
+  mrtApiKey             mrtk...REDACTED                              [MobifySource]
+
+Sources
+────────────────────────────────────────────────────────────
+  1. DwJsonSource         /path/to/project/dw.json
+  2. MobifySource         /Users/user/.mobify
+  3. password-store       pass:b2c-cli/_default
+```
+
+### Sensitive Values
+
+By default, sensitive fields are masked to prevent accidental exposure:
+
+- `password` - Basic auth access key
+- `clientSecret` - OAuth client secret
+- `mrtApiKey` - MRT API key
+
+Use `--unmask` to reveal the actual values when needed for debugging.
+
+### See Also
+
+- [Configuration Guide](/guide/configuration) - How to configure the CLI
 
 ## b2c setup skills
 

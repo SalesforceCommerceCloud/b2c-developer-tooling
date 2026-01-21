@@ -264,6 +264,29 @@ SFCC_AUTH_METHODS=client-credentials,implicit b2c code deploy
 
 The CLI will try each method in order until one succeeds.
 
+## Debugging Configuration
+
+Use `b2c setup config` to view the resolved configuration and see which source provided each value:
+
+```bash
+# Display resolved configuration (sensitive values masked)
+b2c setup config
+
+# Show actual sensitive values
+b2c setup config --unmask
+
+# Output as JSON
+b2c setup config --json
+```
+
+This command helps troubleshoot issues like:
+- Verifying which configuration file is being used
+- Checking if environment variables are being read
+- Understanding credential source priority
+- Identifying hostname mismatch protection triggers
+
+See [setup config](/cli/setup#b2c-setup-config) for full documentation.
+
 ## Next Steps
 
 - [CLI Reference](/cli/) - Browse available commands
