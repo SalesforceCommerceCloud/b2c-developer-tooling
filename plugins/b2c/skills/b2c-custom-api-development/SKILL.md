@@ -291,12 +291,52 @@ To query the Custom API status report, use an Account Manager token with scope:
 2. **Define contract** (schema.yaml) with endpoints and security
 3. **Implement logic** (script.js) with exported functions
 4. **Create mapping** (api.json) binding endpoints to implementation
-5. **Upload cartridge** to your B2C instance
-6. **Activate code version** to register endpoints
-7. **Check status** to verify registration
-8. **Test endpoints** with appropriate authentication
-9. **Monitor logs** for errors during development
-10. **Iterate** on implementation as needed
+5. **Deploy and activate** to register endpoints
+6. **Check registration status** to verify endpoints are active
+7. **Test endpoints** with appropriate authentication
+8. **Monitor logs** for errors during development
+9. **Iterate** on implementation as needed
+
+### Deployment Commands
+
+Deploy your cartridge and activate to trigger Custom API registration:
+
+```bash
+# Deploy cartridge and reload (re-activate) to register endpoints
+b2c code deploy ./my-cartridge --reload
+
+# Or deploy then activate separately
+b2c code deploy ./my-cartridge
+b2c code activate my-code-version
+```
+
+See the `b2c-cli:b2c-code` skill for more deployment options.
+
+### Check Registration Status
+
+After deployment, verify your endpoints are registered:
+
+```bash
+# Check Custom API registration status
+# Tenant ID: derive from hostname (e.g., zzpq-013 → zzpq_013)
+b2c scapi custom status --tenant-id zzpq_013
+
+# Filter to see only failed registrations
+b2c scapi custom status --tenant-id zzpq_013 --status not_registered
+
+# Show error reasons for failed registrations
+b2c scapi custom status --tenant-id zzpq_013 --status not_registered --columns apiName,endpointPath,errorReason
+```
+
+See the `b2c-cli:b2c-scapi-custom` skill for more status options.
+
+### Common Registration Issues
+
+| Issue | Solution |
+|-------|----------|
+| Endpoint shows `not_registered` | Check errorReason column, verify schema.yaml syntax |
+| Endpoint not appearing | Verify cartridge is in site's cartridge path, re-activate code version |
+| 404 on requests | Endpoint not registered or wrong URL path |
 
 ## HTTP Methods Supported
 
@@ -344,6 +384,8 @@ To import a service configuration:
 
 ## Related Skills
 
+- `b2c-cli:b2c-code` - Deploying cartridges and activating code versions
+- `b2c-cli:b2c-scapi-custom` - Checking Custom API registration status
 - `b2c:b2c-webservices` - Service configuration, HTTP/FTP/SOAP clients, services.xml format
 - `b2c-cli:b2c-job` - Running jobs and importing site archives
 
