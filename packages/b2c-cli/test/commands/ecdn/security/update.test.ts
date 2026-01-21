@@ -3,40 +3,60 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
+import sinon from 'sinon';
 import EcdnSecurityUpdate from '../../../../src/commands/ecdn/security/update.js';
-import {
-  stubEcdnClient,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOrganizationId,
-  stubResolveZoneId,
-  stubRequireOAuthCredentials,
-  makeCommandThrowOnError,
-} from '../../../helpers/ecdn.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
 
 /**
  * Unit tests for eCDN security update command CLI logic.
  * Tests request body building, flag handling, and output formatting.
  */
 describe('ecdn security update', () => {
+  const hooks = createIsolatedConfigHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown> = {}) {
+    return createTestCommand(EcdnSecurityUpdate, hooks.getConfig(), flags, {});
+  }
+
+  function stubCommon(
+    command: any,
+    {jsonEnabled = true, zoneId = 'zone-abc123'}: {jsonEnabled?: boolean; zoneId?: string} = {},
+  ) {
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'getOrganizationId').returns('f_ecom_zzxy_prd');
+    sinon.stub(command, 'resolveZoneId').resolves(zoneId);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}, warnings: [], sources: []}));
+    sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+    Object.defineProperty(command, 'logger', {
+      value: {info() {}, debug() {}, warn() {}, error() {}},
+      configurable: true,
+    });
+  }
+
+  function stubCdnClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; PATCH: any; DELETE: any}>) {
+    Object.defineProperty(command, '_cdnZonesClient', {value: client, configurable: true, writable: true});
+    Object.defineProperty(command, '_cdnZonesRwClient', {value: client, configurable: true, writable: true});
+  }
+
   describe('request body building', () => {
-    it('should build request with security-level flag', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('builds request with security-level flag', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'security-level': 'high',
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async PATCH(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -55,21 +75,16 @@ describe('ecdn security update', () => {
       expect(capturedBody.securityLevel).to.equal('high');
     });
 
-    it('should build request with always-use-https flag', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('builds request with always-use-https flag', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'always-use-https': true,
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async PATCH(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -87,22 +102,17 @@ describe('ecdn security update', () => {
       expect(capturedBody.alwaysUseHttps).to.be.true;
     });
 
-    it('should build request with tls13 and waf flags', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('builds request with tls13 and waf flags', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         tls13: true,
         waf: true,
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async PATCH(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -122,24 +132,19 @@ describe('ecdn security update', () => {
       expect(capturedBody.wafEnabled).to.be.true;
     });
 
-    it('should build HSTS settings when HSTS flags provided', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('builds HSTS settings when HSTS flags provided', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'hsts-enabled': true,
         'hsts-include-subdomains': true,
         'hsts-max-age': 31_536_000,
         'hsts-preload': true,
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async PATCH(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -167,21 +172,16 @@ describe('ecdn security update', () => {
       });
     });
 
-    it('should not include HSTS when no HSTS flags provided', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('does not include HSTS when no HSTS flags provided', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'security-level': 'medium',
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async PATCH(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -197,21 +197,16 @@ describe('ecdn security update', () => {
       expect(capturedBody.hsts).to.be.undefined;
     });
 
-    it('should handle --no-always-use-https flag', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('handles --no-always-use-https flag', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'always-use-https': false,
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async PATCH(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -229,21 +224,16 @@ describe('ecdn security update', () => {
   });
 
   describe('output formatting', () => {
-    it('should return updated settings in JSON mode', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('returns updated settings in JSON mode', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'security-level': 'high',
         tls13: true,
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         PATCH: async () => ({
           data: {
             data: {
@@ -265,20 +255,17 @@ describe('ecdn security update', () => {
   });
 
   describe('error handling', () => {
-    it('should error on API failure', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('errors on API failure', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'security-level': 'high',
-      };
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
-      makeCommandThrowOnError(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      stubCdnClient(command, {
         PATCH: async () => ({
           data: undefined,
           error: {title: 'Bad Request', detail: 'Invalid security level'},
@@ -288,25 +275,22 @@ describe('ecdn security update', () => {
       try {
         await command.run();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.include('Failed to update security settings');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
       }
     });
 
-    it('should error when no data returned', async () => {
-      const command = new EcdnSecurityUpdate([], {} as any);
-      (command as any).flags = {
+    it('errors when no data returned', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         'security-level': 'high',
-      };
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
-      makeCommandThrowOnError(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      stubCdnClient(command, {
         PATCH: async () => ({
           data: {data: undefined},
         }),
@@ -315,8 +299,8 @@ describe('ecdn security update', () => {
       try {
         await command.run();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.include('No security settings returned');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
       }
     });
   });

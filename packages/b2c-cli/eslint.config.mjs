@@ -55,6 +55,9 @@ export default [
       'import/no-named-as-default-member': 'off',
       // import/namespace behaves inconsistently across environments when parsing CJS modules like marked-terminal
       'import/namespace': 'off',
+      // Disable for tests: ESLint import resolver doesn't understand conditional exports (development condition)
+      // but Node.js resolves them correctly at runtime
+      'import/no-unresolved': 'off',
     },
   },
   {
@@ -62,6 +65,14 @@ export default [
     rules: {
       // marked-terminal is CJS and breaks import/namespace static analysis
       'import/namespace': 'off',
+    },
+  },
+  {
+    files: ['src/commands/setup/**/*.ts'],
+    rules: {
+      // ESLint import resolver doesn't understand conditional exports (development condition)
+      // but Node.js resolves them correctly at runtime
+      'import/no-unresolved': 'off',
     },
   },
 ];

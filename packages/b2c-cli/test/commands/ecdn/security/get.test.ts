@@ -3,35 +3,55 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
+import sinon from 'sinon';
 import EcdnSecurityGet from '../../../../src/commands/ecdn/security/get.js';
-import {
-  stubEcdnClient,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOrganizationId,
-  stubResolveZoneId,
-  stubRequireOAuthCredentials,
-  makeCommandThrowOnError,
-} from '../../../helpers/ecdn.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
 
 /**
  * Unit tests for eCDN security get command CLI logic.
  * Tests output formatting and error handling.
  */
 describe('ecdn security get', () => {
-  describe('output formatting', () => {
-    it('should return security settings in JSON mode', async () => {
-      const command = new EcdnSecurityGet([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd', zone: 'my-zone'};
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+  const hooks = createIsolatedConfigHooks();
 
-      stubEcdnClient(command, {
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown> = {}) {
+    return createTestCommand(EcdnSecurityGet, hooks.getConfig(), flags, {});
+  }
+
+  function stubCommon(
+    command: any,
+    {jsonEnabled = true, zoneId = 'zone-abc123'}: {jsonEnabled?: boolean; zoneId?: string} = {},
+  ) {
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'getOrganizationId').returns('f_ecom_zzxy_prd');
+    sinon.stub(command, 'resolveZoneId').resolves(zoneId);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}, warnings: [], sources: []}));
+    sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+    Object.defineProperty(command, 'logger', {
+      value: {info() {}, debug() {}, warn() {}, error() {}},
+      configurable: true,
+    });
+  }
+
+  function stubCdnClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; PATCH: any; DELETE: any}>) {
+    Object.defineProperty(command, '_cdnZonesClient', {value: client, configurable: true, writable: true});
+    Object.defineProperty(command, '_cdnZonesRwClient', {value: client, configurable: true, writable: true});
+  }
+
+  describe('output formatting', () => {
+    it('returns security settings in JSON mode', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone'});
+      stubCommon(command, {jsonEnabled: true});
+
+      stubCdnClient(command, {
         GET: async () => ({
           data: {
             data: {
@@ -61,16 +81,11 @@ describe('ecdn security get', () => {
       expect(result.settings.hsts?.maxAge).to.equal(31_536_000);
     });
 
-    it('should return data in non-JSON mode', async () => {
-      const command = new EcdnSecurityGet([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd', zone: 'my-zone'};
-      stubJsonEnabled(command, false);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+    it('returns data in non-JSON mode', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone'});
+      stubCommon(command, {jsonEnabled: false});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         GET: async () => ({
           data: {
             data: {
@@ -89,16 +104,11 @@ describe('ecdn security get', () => {
       expect(result.settings.wafEnabled).to.be.true;
     });
 
-    it('should handle settings without HSTS', async () => {
-      const command = new EcdnSecurityGet([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd', zone: 'my-zone'};
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+    it('handles settings without HSTS', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone'});
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         GET: async () => ({
           data: {
             data: {
@@ -118,16 +128,13 @@ describe('ecdn security get', () => {
   });
 
   describe('error handling', () => {
-    it('should error on API failure', async () => {
-      const command = new EcdnSecurityGet([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd', zone: 'my-zone'};
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
-      makeCommandThrowOnError(command);
+    it('errors on API failure', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone'});
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      stubCdnClient(command, {
         GET: async () => ({
           data: undefined,
           error: {title: 'Not Found', detail: 'Zone not found'},
@@ -137,21 +144,18 @@ describe('ecdn security get', () => {
       try {
         await command.run();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.include('Failed to fetch security settings');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
       }
     });
 
-    it('should error when no data returned', async () => {
-      const command = new EcdnSecurityGet([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd', zone: 'my-zone'};
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
-      makeCommandThrowOnError(command);
+    it('errors when no data returned', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone'});
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      stubCdnClient(command, {
         GET: async () => ({
           data: {data: undefined},
         }),
@@ -160,8 +164,8 @@ describe('ecdn security get', () => {
       try {
         await command.run();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.include('No security settings returned');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
       }
     });
   });

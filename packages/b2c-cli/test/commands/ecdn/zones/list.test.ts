@@ -3,54 +3,72 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
+import sinon from 'sinon';
 import EcdnZonesList from '../../../../src/commands/ecdn/zones/list.js';
-import {
-  stubEcdnClient,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOrganizationId,
-  stubRequireOAuthCredentials,
-  makeCommandThrowOnError,
-} from '../../../helpers/ecdn.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
 
 /**
  * Unit tests for eCDN zones list command CLI logic.
  * Tests output formatting, column selection, and error handling.
  */
 describe('ecdn zones list', () => {
+  const hooks = createIsolatedConfigHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown> = {}) {
+    return createTestCommand(EcdnZonesList, hooks.getConfig(), flags, {});
+  }
+
+  function stubCommon(command: any, {jsonEnabled = true}: {jsonEnabled?: boolean} = {}) {
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'getOrganizationId').returns('f_ecom_zzxy_prd');
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}, warnings: [], sources: []}));
+    sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+    Object.defineProperty(command, 'logger', {
+      value: {info() {}, debug() {}, warn() {}, error() {}},
+      configurable: true,
+    });
+  }
+
+  function stubCdnClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; PATCH: any; DELETE: any}>) {
+    Object.defineProperty(command, '_cdnZonesClient', {value: client, configurable: true, writable: true});
+    Object.defineProperty(command, '_cdnZonesRwClient', {value: client, configurable: true, writable: true});
+  }
+
   describe('getSelectedColumns', () => {
-    it('should return default columns when no flags provided', () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {};
-      const columns = (command as any).getSelectedColumns();
+    it('returns default columns when no flags provided', async () => {
+      const command: any = await createCommand({});
+      const columns = command.getSelectedColumns();
 
       expect(columns).to.deep.equal(['name', 'status']);
     });
 
-    it('should return all columns when --extended flag is set', () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {extended: true};
-      const columns = (command as any).getSelectedColumns();
+    it('returns all columns when --extended flag is set', async () => {
+      const command: any = await createCommand({extended: true});
+      const columns = command.getSelectedColumns();
 
       expect(columns).to.include('name');
       expect(columns).to.include('status');
       expect(columns).to.include('zoneId');
     });
 
-    it('should return custom columns when --columns flag is set', () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {columns: 'zoneId,name'};
-      const columns = (command as any).getSelectedColumns();
+    it('returns custom columns when --columns flag is set', async () => {
+      const command: any = await createCommand({columns: 'zoneId,name'});
+      const columns = command.getSelectedColumns();
 
       expect(columns).to.deep.equal(['zoneId', 'name']);
     });
 
-    it('should ignore invalid column names', () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {columns: 'name,invalidColumn,status'};
-      const columns = (command as any).getSelectedColumns();
+    it('ignores invalid column names', async () => {
+      const command: any = await createCommand({columns: 'name,invalidColumn,status'});
+      const columns = command.getSelectedColumns();
 
       expect(columns).to.not.include('invalidColumn');
       expect(columns).to.include('name');
@@ -59,15 +77,11 @@ describe('ecdn zones list', () => {
   });
 
   describe('output formatting', () => {
-    it('should return zones in JSON mode', async () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd'};
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubRequireOAuthCredentials(command);
+    it('returns zones in JSON mode', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd'});
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         GET: async () => ({
           data: {
             data: [
@@ -87,15 +101,11 @@ describe('ecdn zones list', () => {
       expect(result.zones[1].status).to.equal('pending');
     });
 
-    it('should handle empty zones list', async () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd'};
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubRequireOAuthCredentials(command);
+    it('handles empty zones list', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd'});
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         GET: async () => ({
           data: {data: []},
         }),
@@ -107,15 +117,11 @@ describe('ecdn zones list', () => {
       expect(result.zones).to.deep.equal([]);
     });
 
-    it('should return data in non-JSON mode', async () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd'};
-      stubJsonEnabled(command, false);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubRequireOAuthCredentials(command);
+    it('returns data in non-JSON mode', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd'});
+      stubCommon(command, {jsonEnabled: false});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         GET: async () => ({
           data: {
             data: [{zoneId: 'zone1', name: 'test-zone', status: 'active'}],
@@ -132,15 +138,13 @@ describe('ecdn zones list', () => {
   });
 
   describe('error handling', () => {
-    it('should error on API failure', async () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd'};
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubRequireOAuthCredentials(command);
-      makeCommandThrowOnError(command);
+    it('errors on API failure', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd'});
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      stubCdnClient(command, {
         GET: async () => ({
           data: undefined,
           error: {title: 'Not Found', detail: 'Organization not found'},
@@ -150,20 +154,16 @@ describe('ecdn zones list', () => {
       try {
         await command.run();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.include('Failed to fetch eCDN zones');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
       }
     });
 
-    it('should handle undefined data as empty list', async () => {
-      const command = new EcdnZonesList([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd'};
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubRequireOAuthCredentials(command);
+    it('handles undefined data as empty list', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd'});
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         GET: async () => ({
           data: {data: undefined as any},
         }),

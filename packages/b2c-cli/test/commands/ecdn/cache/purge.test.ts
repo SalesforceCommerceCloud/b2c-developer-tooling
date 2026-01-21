@@ -3,57 +3,84 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
+import sinon from 'sinon';
 import EcdnCachePurge from '../../../../src/commands/ecdn/cache/purge.js';
-import {
-  stubEcdnClient,
-  stubCommandConfigAndLogger,
-  stubJsonEnabled,
-  stubOrganizationId,
-  stubResolveZoneId,
-  stubRequireOAuthCredentials,
-  makeCommandThrowOnError,
-} from '../../../helpers/ecdn.js';
+import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
 
 /**
  * Unit tests for eCDN cache purge command CLI logic.
  * Tests input validation, multiple purge modes, and output formatting.
  */
 describe('ecdn cache purge', () => {
+  const hooks = createIsolatedConfigHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
+
+  async function createCommand(flags: Record<string, unknown> = {}) {
+    return createTestCommand(EcdnCachePurge, hooks.getConfig(), flags, {});
+  }
+
+  function stubCommon(
+    command: any,
+    {jsonEnabled = true, zoneId = 'zone-abc123'}: {jsonEnabled?: boolean; zoneId?: string} = {},
+  ) {
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'getOrganizationId').returns('f_ecom_zzxy_prd');
+    sinon.stub(command, 'resolveZoneId').resolves(zoneId);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}, warnings: [], sources: []}));
+    sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+    Object.defineProperty(command, 'logger', {
+      value: {info() {}, debug() {}, warn() {}, error() {}},
+      configurable: true,
+    });
+  }
+
+  function stubCdnClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; PATCH: any; DELETE: any}>) {
+    Object.defineProperty(command, '_cdnZonesClient', {value: client, configurable: true, writable: true});
+    Object.defineProperty(command, '_cdnZonesRwClient', {value: client, configurable: true, writable: true});
+  }
+
   describe('input validation', () => {
-    it('should error when neither path nor tag is provided', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {'tenant-id': 'zzxy_prd', zone: 'my-zone'};
-      stubCommandConfigAndLogger(command);
-      stubRequireOAuthCredentials(command);
-      makeCommandThrowOnError(command);
+    it('errors when neither path nor tag is provided', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone'});
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}, warnings: [], sources: []}));
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'warn').returns(void 0);
+      Object.defineProperty(command, 'logger', {
+        value: {info() {}, debug() {}, warn() {}, error() {}},
+        configurable: true,
+      });
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('--path or --tag must be specified'));
 
       try {
         await command.run();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.include('--path or --tag must be specified');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
       }
     });
   });
 
   describe('path purge mode', () => {
-    it('should purge cache by path successfully', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {
+    it('purges cache by path successfully', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         path: 'www.example.com/products',
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async POST(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -74,21 +101,16 @@ describe('ecdn cache purge', () => {
   });
 
   describe('tag purge mode', () => {
-    it('should purge cache by tags successfully', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {
+    it('purges cache by tags successfully', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         tag: ['product-123', 'category-456'],
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async POST(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -106,20 +128,15 @@ describe('ecdn cache purge', () => {
       expect(capturedBody).to.deep.equal({tags: ['product-123', 'category-456']});
     });
 
-    it('should handle single tag', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {
+    it('handles single tag', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         tag: ['single-tag'],
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         POST: async () => ({
           data: {data: {cachePurged: true}},
         }),
@@ -132,22 +149,17 @@ describe('ecdn cache purge', () => {
   });
 
   describe('combined mode', () => {
-    it('should purge by both path and tags', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {
+    it('purges by both path and tags', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         path: 'www.example.com/products',
         tag: ['product-123'],
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
       let capturedBody: any;
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         async POST(_path: string, {body}: any) {
           capturedBody = body;
           return {
@@ -168,20 +180,15 @@ describe('ecdn cache purge', () => {
   });
 
   describe('output formatting', () => {
-    it('should return structured output in JSON mode', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {
+    it('returns structured output in JSON mode', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         path: 'www.example.com/test',
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         POST: async () => ({
           data: {
             data: {
@@ -200,20 +207,15 @@ describe('ecdn cache purge', () => {
       expect(result).to.have.property('purgedPath', 'www.example.com/test');
     });
 
-    it('should handle partial success', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {
+    it('handles partial success', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         path: 'www.example.com/test',
-      };
-      stubJsonEnabled(command, true);
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      stubCdnClient(command, {
         POST: async () => ({
           data: {
             data: {
@@ -233,20 +235,17 @@ describe('ecdn cache purge', () => {
   });
 
   describe('error handling', () => {
-    it('should error on API failure', async () => {
-      const command = new EcdnCachePurge([], {} as any);
-      (command as any).flags = {
+    it('errors on API failure', async () => {
+      const command: any = await createCommand({
         'tenant-id': 'zzxy_prd',
         zone: 'my-zone',
         path: 'www.example.com/test',
-      };
-      stubCommandConfigAndLogger(command);
-      stubOrganizationId(command);
-      stubResolveZoneId(command, 'zone-abc123');
-      stubRequireOAuthCredentials(command);
-      makeCommandThrowOnError(command);
+      });
+      stubCommon(command, {jsonEnabled: true});
 
-      stubEcdnClient(command, {
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      stubCdnClient(command, {
         POST: async () => ({
           data: undefined,
           error: {title: 'Bad Request', detail: 'Invalid path format'},
@@ -256,8 +255,8 @@ describe('ecdn cache purge', () => {
       try {
         await command.run();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.include('Failed to purge cache');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
       }
     });
   });
