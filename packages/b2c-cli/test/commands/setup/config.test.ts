@@ -5,10 +5,33 @@
  */
 
 import {expect} from 'chai';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import sinon from 'sinon';
+
 import SetupConfig from '../../../src/commands/setup/config.js';
-import {stubCommandConfigAndLogger, stubJsonEnabled} from '../../helpers/ods.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import type {ConfigSourceInfo, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+function stubCommandConfigAndLogger(command: any): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+}
+
+function stubJsonEnabled(command: any, enabled: boolean): void {
+  command.jsonEnabled = () => enabled;
+}
 
 /**
  * Stub the resolved config with custom values and sources.
@@ -33,6 +56,15 @@ function stubResolvedConfig(
  * Unit tests for setup config command.
  */
 describe('setup config', () => {
+  beforeEach(() => {
+    isolateConfig();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    restoreConfig();
+  });
+
   describe('command structure', () => {
     it('should have correct description', () => {
       expect(SetupConfig.description).to.be.a('string');
