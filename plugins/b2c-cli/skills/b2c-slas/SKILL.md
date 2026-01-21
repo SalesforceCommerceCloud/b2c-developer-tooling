@@ -83,7 +83,8 @@ After creating a SLAS client, obtain a token for API testing:
 
 ```bash
 # Set credentials from client creation output
-SHORTCODE="zzpq"
+# Find your shortcode in Business Manager: Administration > Site Development > Salesforce Commerce API Settings
+SHORTCODE="kv7kzm78"  # Example shortcode - yours will be different
 ORG="f_ecom_zzpq_013"
 CLIENT_ID="your-client-id"
 CLIENT_SECRET="your-client-secret"
