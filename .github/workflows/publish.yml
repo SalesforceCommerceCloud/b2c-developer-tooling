@@ -1,0 +1,159 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Stable releases: v1.0.0, v2.1.3
+      - 'v[0-9]+.[0-9]+.[0-9]+-*' # Pre-releases: v1.0.0-beta.1, v1.0.0-rc.1
+  schedule:
+    - cron: '0 2 * * 1-5' # Weekdays at 2 AM UTC (Mon-Fri)
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'nightly'
+        type: choice
+        options:
+          - nightly
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # For creating GitHub releases
+      id-token: write # Required for npm OIDC trusted publishers
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Determine release type
+        id: release-type
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            echo "type=stable" >> $GITHUB_OUTPUT
+            # Pre-release versions (v1.0.0-beta.1) publish to @next, stable to @latest
+            if [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-.+ ]]; then
+              echo "tag=next" >> $GITHUB_OUTPUT
+              echo "prerelease=true" >> $GITHUB_OUTPUT
+            else
+              echo "tag=latest" >> $GITHUB_OUTPUT
+              echo "prerelease=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "type=nightly" >> $GITHUB_OUTPUT
+            echo "tag=nightly" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate tag matches package version
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./packages/b2c-tooling-sdk/package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Error: Tag version ($TAG_VERSION) does not match package version ($PKG_VERSION)"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create snapshot versions
+        if: steps.release-type.outputs.type == 'nightly'
+        run: |
+          SNAPSHOT="0.0.0-nightly.$(date +%Y%m%d%H%M%S)"
+          for pkg in packages/b2c-tooling-sdk packages/b2c-cli packages/b2c-dx-mcp; do
+            node -e "
+              const fs = require('fs');
+              const path = '$pkg/package.json';
+              const pkg = JSON.parse(fs.readFileSync(path));
+              pkg.version = '$SNAPSHOT';
+              fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+            "
+          done
+          echo "Set snapshot version: $SNAPSHOT"
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Run tests
+        run: pnpm run test
+
+      - name: Publish to npm
+        run: |
+          pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+          # pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+
+      - name: Extract changelog for release
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Function to extract version section from a changelog
+          extract_version() {
+            awk -v ver="$1" '
+              /^## / { if (found) exit; if ($2 == ver) found=1; next }
+              found { print }
+            ' "$2"
+          }
+
+          # Build combined release notes
+          {
+            echo "## @salesforce/b2c-cli"
+            echo ""
+            extract_version "$VERSION" packages/b2c-cli/CHANGELOG.md
+            echo ""
+            echo "## @salesforce/b2c-dx-mcp"
+            echo ""
+            extract_version "$VERSION" packages/b2c-dx-mcp/CHANGELOG.md
+            echo ""
+            echo "## @salesforce/b2c-tooling-sdk"
+            echo ""
+            extract_version "$VERSION" packages/b2c-tooling-sdk/CHANGELOG.md
+          } > /tmp/release-notes.md
+
+      - name: Create GitHub Release
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "${{ steps.release-type.outputs.prerelease }}" == "true" ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          gh release create "$GITHUB_REF_NAME" --notes-file /tmp/release-notes.md $PRERELEASE_FLAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package skills artifacts
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          # Create b2c-skills.zip containing plugins/b2c/skills/
+          cd plugins/b2c && zip -r ../../b2c-skills.zip skills/
+          cd ../..
+          # Create b2c-cli-skills.zip containing plugins/b2c-cli/skills/
+          cd plugins/b2c-cli && zip -r ../../b2c-cli-skills.zip skills/
+          cd ../..
+          echo "Created skills artifacts:"
+          ls -la *.zip
+
+      - name: Upload skills to release
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          gh release upload "$GITHUB_REF_NAME" b2c-skills.zip b2c-cli-skills.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

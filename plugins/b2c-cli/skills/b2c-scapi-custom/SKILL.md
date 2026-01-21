@@ -87,3 +87,8 @@ The tenant ID and short code can be set via environment variables:
 ### More Commands
 
 See `b2c scapi custom --help` for a full list of available commands and options.
+
+## Related Skills
+
+- `b2c:b2c-custom-api-development` - Creating Custom API endpoints (schema, script, mapping)
+- `b2c-cli:b2c-code` - Deploying and activating code versions (triggers registration)

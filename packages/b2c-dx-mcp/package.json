@@ -1,19 +1,27 @@
 {
   "name": "@salesforce/b2c-dx-mcp",
-  "version": "0.0.1-preview",
+  "version": "0.1.0",
   "description": "MCP server for B2C Commerce Cloud developer experience tools",
   "author": "Salesforce",
   "license": "MIT",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "keywords": [
+    "salesforce",
+    "commerce-cloud",
+    "sfcc",
+    "b2c",
     "mcp",
-    "server",
-    "SFCC",
-    "B2C",
-    "Commerce Cloud",
-    "tooling"
+    "model-context-protocol",
+    "ai",
+    "llm",
+    "ecommerce",
+    "developer-tools"
   ],
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "main": "dist/commands/mcp.js",
   "types": "dist/commands/mcp.d.ts",
   "bin": {

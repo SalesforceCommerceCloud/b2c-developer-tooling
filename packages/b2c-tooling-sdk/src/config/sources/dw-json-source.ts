@@ -21,6 +21,7 @@ import {getLogger} from '../../logging/logger.js';
  */
 export class DwJsonSource implements ConfigSource {
   readonly name = 'DwJsonSource';
+  readonly priority = 0;
 
   load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     const logger = getLogger();

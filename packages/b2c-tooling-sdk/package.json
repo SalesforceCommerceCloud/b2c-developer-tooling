@@ -1,17 +1,27 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
-  "version": "0.0.1-preview",
+  "version": "0.1.0",
   "description": "Core tooling library for Salesforce Commerce Cloud B2C CLI",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "keywords": [
-    "SFCC",
-    "B2C",
-    "Commerce Cloud",
-    "tooling"
+    "salesforce",
+    "commerce-cloud",
+    "sfcc",
+    "b2c",
+    "sdk",
+    "ecommerce",
+    "webdav",
+    "ocapi",
+    "scapi",
+    "developer-tools"
   ],
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -113,6 +123,17 @@
         "default": "./dist/cjs/operations/docs/index.js"
       }
     },
+    "./operations/scapi-schemas": {
+      "development": "./src/operations/scapi-schemas/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/scapi-schemas/index.d.ts",
+        "default": "./dist/esm/operations/scapi-schemas/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/scapi-schemas/index.d.ts",
+        "default": "./dist/cjs/operations/scapi-schemas/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {
@@ -179,6 +200,17 @@
         "default": "./dist/cjs/discovery/index.js"
       }
     },
+    "./skills": {
+      "development": "./src/skills/index.ts",
+      "import": {
+        "types": "./dist/esm/skills/index.d.ts",
+        "default": "./dist/esm/skills/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/skills/index.d.ts",
+        "default": "./dist/cjs/skills/index.js"
+      }
+    },
     "./test-utils": {
       "development": "./src/test-utils/index.ts",
       "import": {
@@ -200,7 +232,7 @@
     "data"
   ],
   "scripts": {
-    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts",
+    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts",
     "build": "pnpm run generate:types && pnpm run build:esm && pnpm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",

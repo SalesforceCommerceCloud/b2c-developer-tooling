@@ -1,5 +1,5 @@
 ---
-description: Install the B2C CLI via Homebrew, npm, or GitHub releases, and optionally install the SDK for programmatic use.
+description: Install the B2C CLI via npm, Homebrew, or GitHub releases, and optionally install the SDK for programmatic use.
 ---
 
 # Installation
@@ -9,41 +9,7 @@ description: Install the B2C CLI via Homebrew, npm, or GitHub releases, and opti
 - macOS, Linux, or Windows
 - Node.js 22.0.0 or higher (for npm installation or SDK usage)
 
-## Install via Homebrew (Recommended)
-
-The easiest way to install the B2C CLI on macOS or Linux is via Homebrew:
-
-```bash
-brew install salesforcecommercecloud/tools/b2c-cli
-```
-
-Or tap the repository first:
-
-```bash
-brew tap salesforcecommercecloud/tools
-brew install b2c-cli
-```
-
-### Using a Brewfile
-
-Add to your `Brewfile`:
-
-```ruby
-tap "salesforcecommercecloud/tools"
-brew "b2c-cli"
-```
-
-Then run:
-
-```bash
-brew bundle
-```
-
-## Install via npm
-
-::: warning Not Yet Available
-The B2C CLI is not yet published to npm. This installation method will be available in a future release. For now, please use Homebrew or download from GitHub Releases.
-:::
+## Install via npm (Recommended)
 
 Install the CLI globally using your preferred package manager:
 
@@ -63,6 +29,21 @@ yarn global add @salesforce/b2c-cli
 
 :::
 
+## Install via Homebrew
+
+On macOS or Linux, you can install via Homebrew:
+
+```bash
+brew install salesforcecommercecloud/tools/b2c-cli
+```
+
+Or tap the repository first:
+
+```bash
+brew tap salesforcecommercecloud/tools
+brew install b2c-cli
+```
+
 ## Install from GitHub Releases
 
 Download the latest release tarball from [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) and install manually:
@@ -80,10 +61,6 @@ b2c --version
 ```
 
 ## Install the SDK (Optional)
-
-::: warning Not Yet Available
-The SDK is not yet published to npm. This installation method will be available in a future release.
-:::
 
 If you want to use the SDK library in your own projects:
 

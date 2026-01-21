@@ -1,13 +1,18 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.0.1-preview",
+  "version": "0.1.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
   },
   "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
+    "@inquirer/prompts": "^8.2.0",
     "@oclif/core": "^4",
     "@oclif/plugin-autocomplete": "^3",
     "@oclif/plugin-help": "^6",
@@ -20,18 +25,6 @@
     "marked-terminal": "^7.3.0",
     "open": "^11.0.0"
   },
-  "bundleDependencies": [
-    "@oclif/core",
-    "@oclif/plugin-autocomplete",
-    "@oclif/plugin-help",
-    "@oclif/plugin-not-found",
-    "@oclif/plugin-plugins",
-    "@oclif/plugin-version",
-    "@salesforce/b2c-tooling-sdk",
-    "cliui",
-    "marked",
-    "marked-terminal"
-  ],
   "devDependencies": {
     "@eslint/compat": "^1",
     "@oclif/prettier-config": "^0.2.1",
@@ -66,11 +59,16 @@
   ],
   "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling",
   "keywords": [
-    "SFCC",
-    "B2C",
-    "Commerce Cloud",
-    "CLI",
-    "Command Line Interface"
+    "salesforce",
+    "commerce-cloud",
+    "sfcc",
+    "b2c",
+    "cli",
+    "ecommerce",
+    "developer-tools",
+    "deployment",
+    "webdav",
+    "oclif"
   ],
   "license": "Apache-2.0",
   "main": "dist/index.js",
@@ -130,8 +128,14 @@
         "subtopics": {
           "custom": {
             "description": "Manage Custom API endpoints"
+          },
+          "schemas": {
+            "description": "Browse and retrieve SCAPI schema specifications"
           }
         }
+      },
+      "setup": {
+        "description": "Setup commands for development environment"
       }
     }
   },

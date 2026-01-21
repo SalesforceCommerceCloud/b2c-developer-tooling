@@ -71,14 +71,22 @@ export interface ConfigSourcesHookResult {
   /** Config sources to add to the resolution chain */
   sources: ConfigSource[];
   /**
-   * Where to insert sources relative to default sources.
+   * Priority for the returned sources. Can be a string or number:
    *
-   * - `'before'`: Higher priority than dw.json/~/.mobify (plugin overrides defaults)
-   * - `'after'`: Lower priority than defaults (plugin fills gaps)
+   * String values (legacy, still supported):
+   * - `'before'`: Maps to priority -1 (higher priority than defaults)
+   * - `'after'`: Maps to priority 10 (lower priority than defaults)
    *
-   * @default 'after'
+   * Numeric values (preferred):
+   * - Any number. Lower numbers = higher priority.
+   * - Built-in sources use priority 0.
+   * - package.json uses priority 1000.
+   *
+   * If a source already has a `priority` property set, it will not be overridden.
+   *
+   * @default 'after' (maps to 10)
    */
-  priority?: 'before' | 'after';
+  priority?: 'before' | 'after' | number;
 }
 
 /**

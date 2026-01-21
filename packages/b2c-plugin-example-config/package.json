@@ -1,10 +1,14 @@
 {
   "name": "@salesforce/b2c-plugin-example-config",
-  "version": "0.0.1-preview",
+  "version": "0.0.8",
   "description": "Example plugin demonstrating custom config source for B2C CLI",
   "author": "Salesforce Commerce Cloud",
   "license": "Apache-2.0",
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

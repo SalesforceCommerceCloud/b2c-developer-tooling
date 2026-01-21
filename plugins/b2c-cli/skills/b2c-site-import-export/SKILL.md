@@ -193,6 +193,7 @@ b2c job import ./my-import --wait
 
 ```
 site-archive/
+├── services.xml                           # Service configurations (credentials, profiles, services)
 ├── meta/
 │   ├── system-objecttype-extensions.xml   # Custom attributes on system objects
 │   └── custom-objecttype-definitions.xml  # Custom object type definitions
@@ -238,6 +239,27 @@ b2c job import ./my-data --wait --show-log
 4. **Keep archives organized** by feature or change type
 5. **Version control your metadata** XML files
 
+### Configuring External Services
+
+For service configurations (HTTP, FTP, SOAP services), see the `b2c:b2c-webservices` skill which includes:
+- Complete services.xml examples
+- Credential, profile, and service element patterns
+- Import/export workflows
+
+Quick example:
+```bash
+# Import service configuration
+b2c job import ./services-folder
+```
+
+Where `services-folder/services.xml` follows the patterns in the `b2c:b2c-webservices` skill.
+
 ## Detailed Reference
 
 - [Metadata XML Patterns](references/METADATA-XML.md) - Common XML patterns for imports
+
+## Related Skills
+
+- `b2c:b2c-webservices` - Service configurations (HTTP, FTP, SOAP), services.xml format
+- `b2c:b2c-metadata` - System object extensions and custom object definitions
+- `b2c-cli:b2c-job` - Running jobs and monitoring import status

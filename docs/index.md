@@ -1,14 +1,14 @@
 ---
-description: Command line tools and SDK for Salesforce Commerce Cloud B2C - deploy code, manage sandboxes, run jobs, and automate operations.
+description: Developer experience tools for Salesforce Commerce Cloud B2C - CLI, MCP Server, and SDK for AI-assisted development, deployment, and automation.
 layout: home
 
 hero:
-  name: B2C CLI
-  text: Salesforce Commerce Cloud B2C Command Line Tools
-  tagline: A powerful CLI and SDK for managing B2C Commerce Cloud instances
+  name: B2C DX
+  text: Salesforce Agentforce Commerce Developer Tools
+  tagline: Powerful CLI tools and AI-assisted development for B2C Commerce
   image:
     src: /cli-screenshot.png
-    alt: B2C CLI help output
+    alt: B2C DX CLI
   actions:
     - theme: brand
       text: Get Started
@@ -21,12 +21,66 @@ hero:
       link: /api/
 
 features:
-  - title: Code Deployment
-    details: Deploy cartridges and manage code versions on your B2C Commerce instances.
-  - title: Site Management
-    details: List and manage sites across your Commerce Cloud organization.
-  - title: Managed Runtime
-    details: Configure and manage MRT environments and environment variables.
-  - title: SDK Library
-    details: Use the @salesforce/b2c-tooling-sdk package to build your own integrations.
+  - icon: "\U0001F680"
+    title: Code Deployment
+    details: Deploy cartridges, activate code versions, and watch for changes with instant sync.
+    link: /cli/code
+    linkText: Learn more
+  - icon: "\u26A1"
+    title: Job Execution
+    details: Run jobs, import/export site archives, and automate business processes.
+    link: /cli/jobs
+    linkText: Learn more
+  - icon: "\U0001F3D6\uFE0F"
+    title: Sandbox Management
+    details: Create, manage, and provision On-Demand Sandboxes programmatically.
+    link: /cli/ods
+    linkText: Learn more
+  - icon: "\U0001F9E0"
+    title: Agent Skills
+    details: AI skills for Claude Code, Cursor, and GitHub Copilot that teach assistants B2C Commerce development.
+    link: /guide/agent-skills
+    linkText: Learn more
+  - icon: "\U0001F916"
+    title: AI-Assisted Development
+    details: MCP Server for Claude, Cursor, and other AI tools to interact with your B2C instances.
+    link: /guide/
+    linkText: Learn more
+  - icon: "\U0001F4E6"
+    title: SDK Library
+    details: Build custom integrations with @salesforce/b2c-tooling-sdk - the same SDK powering the CLI.
+    link: /api/
+    linkText: API Reference
 ---
+
+## Quick Install
+
+Get started with the CLI in seconds:
+
+::: code-group
+
+```bash [npm]
+npm install -g @salesforce/b2c-cli
+```
+
+```bash [npx]
+npx @salesforce/b2c-cli --help
+```
+
+```bash [Homebrew]
+brew install SalesforceCommerceCloud/tooling/b2c-cli
+
+# or
+brew tap SalesforceCommerceCloud/tooling
+brew install b2c-cli
+```
+
+:::
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| [@salesforce/b2c-cli](https://www.npmjs.com/package/@salesforce/b2c-cli) | Command-line tools for B2C Commerce |
+| [@salesforce/b2c-dx-mcp](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp) | MCP Server for AI-assisted development |
+| [@salesforce/b2c-tooling-sdk](https://www.npmjs.com/package/@salesforce/b2c-tooling-sdk) | SDK library for custom integrations |

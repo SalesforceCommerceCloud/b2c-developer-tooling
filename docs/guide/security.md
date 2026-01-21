@@ -60,6 +60,10 @@ When adding a new dependency that requires build scripts:
 2. Review what the build script does
 3. Add it to `onlyBuiltDependencies` if necessary
 
+## NPM Trusted Publishing
+
+This project uses [NPM trusted publishers](https://docs.npmjs.com/trusted-publishers) for package publication. Instead of storing long-lived npm tokens, packages are published via GitHub Actions using short-lived OIDC tokens that cannot be extracted or reused.
+
 ## Best Practices
 
 ### For Contributors
