@@ -39,6 +39,7 @@ interface MobifyConfigFile {
  */
 export class MobifySource implements ConfigSource {
   readonly name = 'MobifySource';
+  readonly priority = 0;
 
   load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     const logger = getLogger();

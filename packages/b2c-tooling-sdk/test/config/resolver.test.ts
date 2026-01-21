@@ -17,11 +17,16 @@ import {
  * Mock config source for testing.
  */
 class MockSource implements ConfigSource {
+  public priority?: number;
+
   constructor(
     public name: string,
     private config: NormalizedConfig | undefined,
     private location?: string,
-  ) {}
+    priority?: number,
+  ) {
+    this.priority = priority;
+  }
 
   load(_options: ResolveConfigOptions): ConfigLoadResult | undefined {
     if (this.config === undefined) {
@@ -351,6 +356,88 @@ describe('config/resolver', () => {
       const {config} = resolver.resolve({hostname: 'test.demandware.net'});
 
       expect(config.hostname).to.equal('test.demandware.net');
+    });
+  });
+
+  describe('priority-based sorting', () => {
+    it('sorts sources by priority (lower number = higher priority)', () => {
+      // Sources added in wrong order, but should be sorted by priority
+      const lowPriority = new MockSource('low', {clientId: 'low-client'}, undefined, 100);
+      const highPriority = new MockSource('high', {clientId: 'high-client'}, undefined, -10);
+      const defaultPriority = new MockSource('default', {clientId: 'default-client'}, undefined, 0);
+
+      // Pass sources in "wrong" order - they should get sorted
+      const resolver = new ConfigResolver([lowPriority, defaultPriority, highPriority]);
+      const {config} = resolver.resolve();
+
+      // High priority source (-10) wins
+      expect(config.clientId).to.equal('high-client');
+    });
+
+    it('treats undefined priority as 0', () => {
+      const withPriority = new MockSource('with', {clientId: 'with-priority'}, undefined, 10);
+      const noPriority = new MockSource('no', {clientId: 'no-priority'}, undefined, undefined);
+
+      // No priority (=0) should win over priority 10
+      const resolver = new ConfigResolver([withPriority, noPriority]);
+      const {config} = resolver.resolve();
+
+      expect(config.clientId).to.equal('no-priority');
+    });
+
+    it('maintains insertion order for same priority', () => {
+      const first = new MockSource('first', {clientId: 'first-client'}, undefined, 0);
+      const second = new MockSource('second', {clientId: 'second-client'}, undefined, 0);
+
+      const resolver = new ConfigResolver([first, second]);
+      const {config} = resolver.resolve();
+
+      // First source should win since both have same priority
+      expect(config.clientId).to.equal('first-client');
+    });
+
+    it('negative priorities come before 0', () => {
+      const before = new MockSource('before', {hostname: 'before.com'}, undefined, -1);
+      const builtin = new MockSource('builtin', {hostname: 'builtin.com'}, undefined, 0);
+
+      const resolver = new ConfigResolver([builtin, before]);
+      const {config} = resolver.resolve();
+
+      // -1 priority should win
+      expect(config.hostname).to.equal('before.com');
+    });
+
+    it('high priorities (1000) come last', () => {
+      const packageJson = new MockSource('package', {shortCode: 'package-code'}, undefined, 1000);
+      const dwJson = new MockSource('dwjson', {shortCode: 'dw-code'}, undefined, 0);
+
+      const resolver = new ConfigResolver([packageJson, dwJson]);
+      const {config} = resolver.resolve();
+
+      // 0 priority should win over 1000
+      expect(config.shortCode).to.equal('dw-code');
+    });
+
+    it('plugin priorities work with before/after pattern', () => {
+      // Simulating: plugin 'before' (-1), builtin (0), plugin 'after' (10)
+      const pluginBefore = new MockSource('plugin-before', {clientId: 'before-client'}, undefined, -1);
+      const builtin = new MockSource('builtin', {clientId: 'builtin-client', hostname: 'builtin.com'}, undefined, 0);
+      const pluginAfter = new MockSource(
+        'plugin-after',
+        {clientId: 'after-client', mrtProject: 'after-project'},
+        undefined,
+        10,
+      );
+
+      const resolver = new ConfigResolver([pluginAfter, builtin, pluginBefore]);
+      const {config} = resolver.resolve();
+
+      // 'before' plugin wins for clientId
+      expect(config.clientId).to.equal('before-client');
+      // builtin provides hostname (not in before plugin)
+      expect(config.hostname).to.equal('builtin.com');
+      // 'after' plugin provides mrtProject (not in others)
+      expect(config.mrtProject).to.equal('after-project');
     });
   });
 });

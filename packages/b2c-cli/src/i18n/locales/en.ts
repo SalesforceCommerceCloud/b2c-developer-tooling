@@ -119,5 +119,35 @@ export const en = {
         },
       },
     },
+    setup: {
+      skills: {
+        description: 'Install agent skills for AI-powered IDEs',
+        downloading: 'Downloading skills from release {{version}}...',
+        detecting: 'Detecting installed IDEs...',
+        noSkills: 'No skills found.',
+        noSkillsToInstall: 'No skills to install.',
+        notFound: 'Skills not found: {{skills}}',
+        noIdesDetected: 'No IDEs detected. Use --ide to specify target (e.g., --ide cursor --ide manual).',
+        noIdesSelected: 'No IDEs selected.',
+        claudeCodeRecommendation:
+          'Note: For Claude Code, we recommend using the plugin marketplace for automatic updates:\n' +
+          '  claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling\n' +
+          '  claude plugin install b2c-cli\n' +
+          '  claude plugin install b2c\n\n' +
+          'Use --ide manual for manual installation to the same paths.',
+        preview: 'Installing {{count}} skills to {{ides}} ({{scope}})',
+        cancelled: 'Installation cancelled.',
+        installed: 'Successfully installed {{count}} skill(s):',
+        skippedCount: 'Skipped {{count}} skill(s):',
+        errorsCount: 'Failed to install {{count}} skill(s):',
+        skillsetRequired: 'Skillset argument required in non-interactive mode. Specify b2c or b2c-cli.',
+        selectSkillset: 'Select skill set(s) to install:',
+        noSkillsetsSelected: 'No skill sets selected.',
+        selectIdes: 'Select target IDEs:',
+        confirmClaudeCode: 'Continue with Claude Code installation?',
+        confirmInstall: 'Proceed with installation?',
+        ideNotes: 'See IDE documentation for skill configuration:',
+      },
+    },
   },
 };
