@@ -308,6 +308,45 @@ To query the Custom API status report, use an Account Manager token with scope:
 - HEAD
 - OPTIONS
 
+## External Service Configuration
+
+When your Custom API calls external services via `LocalServiceRegistry.createService()`, you must configure the service in Business Manager or import it via site archive.
+
+See the `b2c:b2c-webservices` skill for:
+- Service configuration patterns
+- Services XML import format (credentials, profiles, services)
+- HTTP, FTP, and SOAP service examples
+
+### Calling External Services
+
+```javascript
+var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
+
+var service = LocalServiceRegistry.createService('my.external.api', {
+    createRequest: function(svc, args) {
+        svc.setRequestMethod('GET');
+        svc.addHeader('Authorization', 'Bearer ' + args.token);
+        return null;
+    },
+    parseResponse: function(svc, client) {
+        return JSON.parse(client.text);
+    }
+});
+
+var result = service.call({ token: 'my-token' });
+```
+
+### Quick Reference
+
+To import a service configuration:
+1. Create `services.xml` following the `b2c:b2c-webservices` skill patterns
+2. Import: `b2c job import ./my-services-folder`
+
+## Related Skills
+
+- `b2c:b2c-webservices` - Service configuration, HTTP/FTP/SOAP clients, services.xml format
+- `b2c-cli:b2c-job` - Running jobs and importing site archives
+
 ## Limitations
 
 - Maximum 50 remote includes per request

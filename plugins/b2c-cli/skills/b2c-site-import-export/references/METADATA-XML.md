@@ -14,6 +14,10 @@ b2c docs schema metadata
 b2c docs schema --list
 ```
 
+## Other Import Formats
+
+For service configurations (HTTP services, credentials, profiles), see the `b2c:b2c-webservices` skill.
+
 ## System Object Extensions
 
 ### Add String Attribute to Product
