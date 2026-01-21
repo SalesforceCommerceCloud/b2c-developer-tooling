@@ -380,6 +380,62 @@ it('fetches endpoints', async () => {
 
 ---
 
+## Error Handling
+
+When API requests fail, use `getApiErrorMessage()` to extract clean, user-friendly error messages. This utility handles multiple error formats and ensures HTML response bodies (like error pages from stopped sandboxes) are never shown to users.
+
+### Using getApiErrorMessage
+
+```typescript
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
+
+const {data, error, response} = await client.GET('/sites', {...});
+
+if (error) {
+  // Returns structured error message or "HTTP 521 Web Server Is Down"
+  const message = getApiErrorMessage(error, response);
+  this.error(`Failed to fetch sites: ${message}`);
+}
+```
+
+### Supported Error Patterns
+
+The utility extracts messages from these patterns in priority order:
+
+| API | Error Structure | Message Location |
+|-----|-----------------|------------------|
+| ODS/SLAS | `{ error: { message } }` | `error.error.message` |
+| OCAPI | `{ fault: { message } }` | `error.fault.message` |
+| SCAPI/Problem+JSON | `{ title, detail }` | `error.detail` or `error.title` |
+| Standard Error | `{ message }` | `error.message` |
+| Fallback | Any | `HTTP {status} {statusText}` |
+
+### Why This Matters
+
+**Without `getApiErrorMessage`:**
+```
+ERROR: Failed to fetch sites: <!DOCTYPE html><html lang="en"><head><title>521 - Sandbox Down</title>...
+```
+
+**With `getApiErrorMessage`:**
+```
+ERROR: Failed to fetch sites: HTTP 521 Web Server Is Down
+```
+
+### Important: Always Destructure `response`
+
+When making API calls, always destructure the `response` object alongside `error`:
+
+```typescript
+// GOOD: Include response for error handling
+const {data, error, response} = await client.GET('/endpoint', {...});
+
+// BAD: Missing response - can't get clean error message
+const {data, error} = await client.GET('/endpoint', {...});
+```
+
+---
+
 ## Checklist: New SCAPI Client
 
 1. Add OpenAPI spec to `specs/`
