@@ -239,6 +239,24 @@ b2c webdav rm src/instance/old-export.zip
 b2c webdav rm old-file.txt --root=temp
 ```
 
+### Delete Cartridges
+
+To delete cartridges from a code version, use the `cartridges` root with the path format `{code-version}/{cartridge-name}`:
+
+```bash
+# delete a cartridge from a code version
+b2c webdav rm v25_1_0/app_mysite --root=cartridges
+
+# delete multiple cartridges
+b2c webdav rm v25_1_0/app_mysite --root=cartridges
+b2c webdav rm v25_1_0/int_myintegration --root=cartridges
+
+# list cartridges in a code version first
+b2c webdav ls v25_1_0 --root=cartridges
+```
+
+**Important:** The path is `{code-version}/{cartridge-name}`, not `/cartridges/{code-version}/...`. The `--root=cartridges` (or `-r cartridges`) flag sets the WebDAV root.
+
 ### Zip/Unzip Remote Files
 
 ```bash
@@ -252,3 +270,8 @@ b2c webdav unzip src/instance/archive.zip
 ### More Commands
 
 See `b2c webdav --help` for a full list of available commands and options in the `webdav` topic.
+
+## Related Skills
+
+- `b2c-cli:b2c-code` - Higher-level code deployment (preferred for cartridge upload)
+- `b2c-cli:b2c-job` - Import/export site archives

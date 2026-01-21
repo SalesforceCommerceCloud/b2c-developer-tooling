@@ -47,6 +47,13 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     }),
   };
 
+  protected operations = {
+    uploadCartridges,
+    deleteCartridges,
+    getActiveCodeVersion,
+    reloadCodeVersion,
+  };
+
   async run(): Promise<DeployResult> {
     this.requireWebDavCredentials();
     this.requireOAuthCredentials();
@@ -59,7 +66,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.warn(
         t('commands.code.deploy.noCodeVersion', 'No code version specified, discovering active code version...'),
       );
-      const activeVersion = await getActiveCodeVersion(this.instance);
+      const activeVersion = await this.operations.getActiveCodeVersion(this.instance);
       if (!activeVersion?.id) {
         this.error(
           t('commands.code.deploy.noActiveVersion', 'No active code version found. Specify one with --code-version.'),
@@ -119,17 +126,17 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     try {
       // Optionally delete existing cartridges first
       if (this.flags.delete) {
-        await deleteCartridges(this.instance, cartridges);
+        await this.operations.deleteCartridges(this.instance, cartridges);
       }
 
       // Upload cartridges
-      await uploadCartridges(this.instance, cartridges);
+      await this.operations.uploadCartridges(this.instance, cartridges);
 
       // Optionally reload code version
       let reloaded = false;
       if (this.flags.reload) {
         try {
-          await reloadCodeVersion(this.instance, version);
+          await this.operations.reloadCodeVersion(this.instance, version);
           reloaded = true;
         } catch (error) {
           this.logger?.debug(`Could not reload code version: ${error instanceof Error ? error.message : error}`);

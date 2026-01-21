@@ -66,6 +66,11 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     }),
   };
 
+  protected operations = {
+    executeJob,
+    waitForJob,
+  };
+
   async run(): Promise<JobExecution> {
     this.requireOAuthCredentials();
 
@@ -106,7 +111,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
 
     let execution: JobExecution;
     try {
-      execution = await executeJob(this.instance, jobId, {
+      execution = await this.operations.executeJob(this.instance, jobId, {
         parameters: rawBody ? undefined : parameters,
         body: rawBody,
         waitForRunning: !noWaitRunning,
@@ -213,7 +218,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 
     try {
-      const execution = await waitForJob(this.instance, jobId, executionId, {
+      const execution = await this.operations.waitForJob(this.instance, jobId, executionId, {
         timeout: timeout ? timeout * 1000 : undefined,
         onProgress: (exec, elapsed) => {
           if (!this.jsonEnabled()) {

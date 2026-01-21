@@ -106,18 +106,27 @@ pnpm mocha "test/clients/webdav.test.ts"         # Single file (no coverage)
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management. When making changes that affect users, create a changeset:
 
-```bash
-# Create a changeset (interactive prompt)
-pnpm changeset
-
-# Check pending changesets
-pnpm changeset status
-```
-
 Changeset guidelines:
-- Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; a pull request can have multiple changesets
+- Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; 
+- a pull request can have multiple changesets
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - This is a pre-1.0 preview release, so there are no `major` breaking change bumps
-- Write a clear, concise description of the change for the changelog
-- The three main packages (`@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`) are version-linked
-- Internal-only changes (tests, docs, refactoring) typically don't need changesets
+- Good changesets explain:
+  - WHAT the change is
+  - WHY the change was made
+  - HOW a consumer should update their code
+- Good changesets are brief and user-focused (not contributor); they are generally 1 line or a short paragraph for detailed changes
+
+create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
+
+```md
+---
+'@salesforce/b2c-cli': patch
+'@salesforce/b2c-tooling-sdk': patch
+---
+
+Description of the change explaining WHAT, WHY, and HOW to update
+```
+
+- Include only the packages that were modified
+- Use `patch` for bug fixes, `minor` for new features

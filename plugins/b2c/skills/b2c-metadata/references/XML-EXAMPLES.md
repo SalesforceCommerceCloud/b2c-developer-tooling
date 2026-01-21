@@ -2,6 +2,21 @@
 
 Complete examples for common metadata import/export scenarios.
 
+## XSD Schema Reference
+
+For authoritative XML schema definitions, use the `b2c` CLI (if installed):
+
+```bash
+# View specific schemas
+b2c docs schema metadata
+b2c docs schema catalog
+b2c docs schema library
+b2c docs schema preferences
+
+# List all available schemas
+b2c docs schema --list
+```
+
 ## Site Archive Structure
 
 ```
