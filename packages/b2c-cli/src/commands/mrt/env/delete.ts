@@ -55,6 +55,11 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
     }),
   };
 
+  protected operations = {
+    confirm,
+    deleteEnv,
+  };
+
   async run(): Promise<{slug: string; project: string}> {
     this.requireMrtCredentials();
 
@@ -71,7 +76,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
 
     // Confirm deletion unless --force is used
     if (!force && !this.jsonEnabled()) {
-      const confirmed = await confirm(
+      const confirmed = await this.operations.confirm(
         t(
           'commands.mrt.env.delete.confirm',
           'Are you sure you want to delete environment "{{slug}}" from {{project}}? (y/n)',
@@ -95,7 +100,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
     }
 
     try {
-      await deleteEnv(
+      await this.operations.deleteEnv(
         {
           projectSlug: project,
           slug,

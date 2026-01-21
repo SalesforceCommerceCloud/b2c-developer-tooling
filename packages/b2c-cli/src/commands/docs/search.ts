@@ -70,13 +70,18 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     }),
   };
 
+  protected operations = {
+    listDocs,
+    searchDocs,
+  };
+
   async run(): Promise<ListDocsResponse | SearchDocsResponse> {
     const {query} = this.args;
     const {limit, list} = this.flags;
 
     // List mode
     if (list) {
-      const entries = listDocs();
+      const entries = this.operations.listDocs();
 
       if (this.jsonEnabled()) {
         return {entries};
@@ -109,7 +114,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       );
     }
 
-    const results = searchDocs(query, limit);
+    const results = this.operations.searchDocs(query, limit);
 
     const response: SearchDocsResponse = {
       query,

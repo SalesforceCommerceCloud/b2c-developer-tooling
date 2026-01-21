@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {marked} from 'marked';
-// eslint-disable-next-line import/namespace
+
 import {markedTerminal} from 'marked-terminal';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/operations/docs';
@@ -57,11 +57,15 @@ export default class DocsRead extends BaseCommand<typeof DocsRead> {
     }),
   };
 
+  protected operations = {
+    readDocByQuery,
+  };
+
   async run(): Promise<ReadDocsResult> {
     const {query} = this.args;
     const {raw} = this.flags;
 
-    const result = readDocByQuery(query);
+    const result = this.operations.readDocByQuery(query);
 
     if (!result) {
       this.error(t('commands.docs.read.notFound', 'No documentation found matching: {{query}}', {query}), {

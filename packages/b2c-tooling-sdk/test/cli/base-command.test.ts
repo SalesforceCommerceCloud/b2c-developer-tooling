@@ -8,7 +8,7 @@ import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
-import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
 
 // Create a concrete test command class

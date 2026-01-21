@@ -8,7 +8,7 @@ import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {stubParse} from '../helpers/stub-parse.js';
-import {isolateConfig, restoreConfig} from '../helpers/config-isolation.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 
 class TestCartridgeCommand extends CartridgeCommand<typeof TestCartridgeCommand> {
   static id = 'test:cartridge';
