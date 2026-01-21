@@ -1,11 +1,14 @@
 ---
 name: b2c-job
-description: Using the b2c CLI for job execution and site archive import/export (IMPEX)
+description: Using the b2c CLI to run and monitor existing jobs, import/export site archives (IMPEX). Use this for executing jobs, not creating new job step code.
+keywords: [run job, execute job, import data, export data, site archive, IMPEX, job status, job log]
 ---
 
 # B2C Job Skill
 
-Use the `b2c` CLI plugin to run jobs and import/export site archives on Salesforce B2C Commerce instances.
+Use the `b2c` CLI plugin to **run existing jobs** and import/export site archives on Salesforce B2C Commerce instances.
+
+> **Creating a new job?** If you need to write custom job step code (batch processing, scheduled tasks, data sync), use the `b2c:b2c-custom-job-steps` skill instead.
 
 ## Examples
 
@@ -90,3 +93,8 @@ b2c job wait <execution-id>
 ### More Commands
 
 See `b2c job --help` for a full list of available commands and options in the `job` topic.
+
+## Related Skills
+
+- `b2c:b2c-custom-job-steps` - For **creating** new custom job steps (batch processing scripts, scheduled tasks, data sync jobs)
+- `b2c-cli:b2c-site-import-export` - For site archive structure and metadata XML patterns

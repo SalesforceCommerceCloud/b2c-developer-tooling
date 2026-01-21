@@ -2,6 +2,15 @@
 
 Complete reference for B2C Commerce form definitions.
 
+## XSD Schema Reference
+
+For the authoritative XML schema definition, use the `b2c` CLI (if installed):
+
+```bash
+# View the form XSD schema
+b2c docs schema form
+```
+
 ## XML Schema
 
 ```xml

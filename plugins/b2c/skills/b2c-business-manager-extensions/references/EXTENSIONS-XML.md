@@ -2,6 +2,15 @@
 
 Complete reference for bm_extensions.xml schema.
 
+## XSD Schema Reference
+
+For the authoritative XML schema definition, use the `b2c` CLI (if installed):
+
+```bash
+# View the BM extensions XSD schema
+b2c docs schema bmext
+```
+
 ## File Location
 
 ```
