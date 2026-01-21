@@ -186,6 +186,51 @@ List and inspect storefront sites.
 b2c sites list
 ```
 
+### User Management (Account Manager)
+
+Manage users in Account Manager.
+
+```sh
+# List users with pagination
+b2c user list --page 0 --size 20
+
+# Get user details by email
+b2c user get user@example.com
+
+# Create a new user
+b2c user create --org org-id --mail user@example.com --first-name John --last-name Doe
+
+# Update a user
+b2c user update user@example.com --first-name Jane
+
+# Reset a user to INITIAL state
+b2c user reset user@example.com
+
+# Delete (disable) a user
+b2c user delete user@example.com
+```
+
+### Role Management (Account Manager)
+
+Manage roles and role assignments in Account Manager.
+
+```sh
+# List roles with pagination
+b2c role list --page 0 --size 20 --target-type User
+
+# Get role details
+b2c role get bm-admin
+
+# Grant a role to a user
+b2c role grant user@example.com --role bm-admin
+
+# Grant a role with tenant scope
+b2c role grant user@example.com --role bm-admin --scope "tenant1,tenant2"
+
+# Revoke a role from a user
+b2c role revoke user@example.com --role bm-admin
+```
+
 ### Authentication
 
 Get OAuth tokens for scripting.

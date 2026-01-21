@@ -66,6 +66,7 @@ export {
   createSlasClient,
   createOdsClient,
   createCustomApisClient,
+  createAccountManagerClient,
   createCdnZonesClient,
   toOrganizationId,
   toTenantId,
@@ -103,6 +104,26 @@ export type {
   CustomApisResponse,
   CustomApisPaths,
   CustomApisComponents,
+  AccountManagerClient,
+  AccountManagerClientConfig,
+  AccountManagerUser,
+  AccountManagerResponse,
+  AccountManagerError,
+  UserCreate,
+  UserUpdate,
+  UserCollection,
+  UserState,
+  AccountManagerPaths,
+  AccountManagerComponents,
+  AccountManagerRolesClient,
+  AccountManagerRolesClientConfig,
+  AccountManagerRole,
+  AccountManagerRolesResponse,
+  AccountManagerRolesError,
+  RoleCollection,
+  ListRolesOptions,
+  AccountManagerRolesPaths,
+  AccountManagerRolesComponents,
   CdnZonesClient,
   CdnZonesClientConfig,
   CdnZonesClientOptions,
@@ -203,6 +224,23 @@ export {
   resolveSandboxId,
   SandboxNotFoundError,
 } from './operations/ods/index.js';
+
+// Operations - Users
+export {
+  getUser,
+  getUserByLogin,
+  listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  purgeUser,
+  resetUser,
+  grantRole,
+  revokeRole,
+} from './operations/users/index.js';
+
+// Operations - Roles
+export {getRole, listRoles} from './operations/roles/index.js';
 
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';

@@ -125,6 +125,91 @@ const result = await waitForJob(instance, 'my-job-id', execution.id);
 await siteArchiveImport(instance, './site-data.zip');
 ```
 
+### Account Manager User Management
+
+```typescript
+import {
+  getUserByLogin,
+  listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  resetUser,
+  grantRole,
+  revokeRole,
+} from '@salesforce/b2c-tooling-sdk/operations/users';
+import {createAccountManagerClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerClient({}, auth);
+
+// List users with pagination
+const users = await listUsers(client, {size: 25, page: 0});
+
+// Get user by email
+const user = await getUserByLogin(client, 'user@example.com');
+
+// Create a new user
+const newUser = await createUser(client, {
+  user: {
+    mail: 'newuser@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    organizations: ['org-id'],
+    primaryOrganization: 'org-id',
+  },
+});
+
+// Update a user
+await updateUser(client, {
+  userId: user.id!,
+  changes: {firstName: 'Jane'},
+});
+
+// Grant a role to a user
+await grantRole(client, {
+  userId: user.id!,
+  role: 'bm-admin',
+  scope: 'tenant1,tenant2', // Optional tenant filter
+});
+
+// Reset user to INITIAL state
+await resetUser(client, user.id!);
+```
+
+### Account Manager Role Management
+
+```typescript
+import {getRole, listRoles} from '@salesforce/b2c-tooling-sdk/operations/roles';
+import {createAccountManagerRolesClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerRolesClient({}, auth);
+
+// Get role details by ID
+const role = await getRole(client, 'bm-admin');
+
+// List all roles with pagination
+const roles = await listRoles(client, {size: 25, page: 0});
+
+// List roles filtered by target type
+const userRoles = await listRoles(client, {
+  size: 25,
+  page: 0,
+  roleTargetType: 'User',
+});
+```
+
 ## Module Exports
 
 The SDK provides subpath exports for tree-shaking and organization:
@@ -139,6 +224,8 @@ The SDK provides subpath exports for tree-shaking and organization:
 | `@salesforce/b2c-tooling-sdk/operations/code`  | Code deployment operations                            |
 | `@salesforce/b2c-tooling-sdk/operations/jobs`  | Job execution and site import/export                  |
 | `@salesforce/b2c-tooling-sdk/operations/sites` | Site management                                       |
+| `@salesforce/b2c-tooling-sdk/operations/users` | Account Manager user management                       |
+| `@salesforce/b2c-tooling-sdk/operations/roles` | Account Manager role management                       |
 | `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)        |
 | `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)          |
 | `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                          |

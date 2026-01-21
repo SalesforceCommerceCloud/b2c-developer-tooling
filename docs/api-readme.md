@@ -240,6 +240,122 @@ const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version
 });
 ```
 
+## Account Manager Operations
+
+The SDK provides operations for managing users and roles.
+
+### User Management
+
+```typescript
+import {
+  createAccountManagerClient,
+  listUsers,
+  getUserByLogin,
+  createUser,
+  updateUser,
+  deleteUser,
+  resetUser,
+  grantRole,
+  revokeRole,
+} from '@salesforce/b2c-tooling-sdk/operations/users';
+import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager client
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// List users with pagination
+const users = await listUsers(client, { size: 25, page: 0 });
+
+// Get user by email
+const user = await getUserByLogin(client, 'user@example.com');
+
+// Create a new user
+const newUser = await createUser(client, {
+  user: {
+    mail: 'newuser@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    organizations: ['org-id'],
+    primaryOrganization: 'org-id',
+  },
+});
+
+// Update a user
+await updateUser(client, {
+  userId: user.id!,
+  changes: { firstName: 'Jane' },
+});
+
+// Grant a role to a user
+await grantRole(client, {
+  userId: user.id!,
+  role: 'bm-admin',
+  scope: 'tenant1,tenant2', // Optional tenant filter
+});
+
+// Revoke a role from a user
+await revokeRole(client, {
+  userId: user.id!,
+  role: 'bm-admin',
+  scope: 'tenant1', // Optional: remove specific scope
+});
+
+// Reset user to INITIAL state
+await resetUser(client, user.id!);
+
+// Delete (disable) a user
+await deleteUser(client, user.id!);
+```
+
+### Role Management
+
+```typescript
+import {
+  createAccountManagerRolesClient,
+  getRole,
+  listRoles,
+} from '@salesforce/b2c-tooling-sdk/operations/roles';
+import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager Roles client
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerRolesClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Get role details by ID
+const role = await getRole(client, 'bm-admin');
+
+// List all roles with pagination
+const roles = await listRoles(client, { size: 25, page: 0 });
+
+// List roles filtered by target type
+const userRoles = await listRoles(client, {
+  size: 25,
+  page: 0,
+  roleTargetType: 'User',
+});
+```
+
+### Required Permissions
+
+Account Manager operations require:
+- OAuth client with `sfcc.accountmanager.user.manage` scope
+- Account Manager hostname configuration
+
 ## Logging
 
 Configure logging for debugging HTTP requests:
