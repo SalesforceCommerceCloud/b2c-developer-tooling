@@ -148,18 +148,56 @@ For multi-instance configurations, each config object also supports:
 | `name` | Instance name for selection with `-i`/`--instance` |
 | `active` | Set to `true` to use this config by default |
 
+## Project Configuration (package.json)
+
+You can store project-level defaults in your `package.json` file under the `b2c` key. This is useful for settings that are shared across your entire project and safe to commit to version control.
+
+```json
+{
+  "name": "my-storefront",
+  "version": "1.0.0",
+  "b2c": {
+    "shortCode": "abc123",
+    "clientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "mrtProject": "my-project",
+    "accountManagerHost": "account.demandware.com"
+  }
+}
+```
+
+### Allowed Fields
+
+Only non-sensitive, project-level fields can be configured in `package.json`:
+
+| Field | Description |
+|-------|-------------|
+| `shortCode` | SCAPI short code |
+| `clientId` | OAuth client ID (for implicit login discovery) |
+| `mrtProject` | MRT project slug |
+| `mrtOrigin` | MRT API origin URL override |
+| `accountManagerHost` | Account Manager hostname for OAuth |
+
+::: warning Security Note
+Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `mrtApiKey` are intentionally **not** supported in `package.json`. These should be configured via `dw.json` (which should be in `.gitignore`), environment variables, or secure credential stores.
+:::
+
+::: tip Lowest Priority
+`package.json` has the lowest priority of all configuration sources. Values from `dw.json`, environment variables, or CLI flags will always override `package.json` settings. This makes it ideal for project defaults that can be overridden per-environment.
+:::
+
 ### Resolution Priority
 
 Configuration is resolved with the following precedence (highest to lowest):
 
 1. **CLI flags and environment variables** - Explicit values always take priority
-2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'`
-3. **dw.json** - Project configuration file
-4. **~/.mobify** - Home directory file (for MRT API key only)
-5. **Plugin sources (low priority)** - Custom sources with `priority: 'after'`
+2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'` (or priority < 0)
+3. **dw.json** - Project configuration file (priority 0)
+4. **~/.mobify** - Home directory file for MRT API key (priority 0)
+5. **Plugin sources (low priority)** - Custom sources with `priority: 'after'` (or priority 1-999)
+6. **package.json** - Project-level defaults (priority 1000, lowest)
 
 ::: tip Extending Configuration
-Plugins can add custom configuration sources like secret managers or environment-specific files. See [Extending the CLI](./extending) for details.
+Plugins can add custom configuration sources like secret managers or environment-specific files. Plugins can use numeric priorities for fine-grained control over ordering. See [Extending the CLI](./extending) for details.
 :::
 
 ### Credential Grouping
