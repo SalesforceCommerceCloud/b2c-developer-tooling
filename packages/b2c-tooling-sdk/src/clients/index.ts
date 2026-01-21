@@ -195,3 +195,5 @@ export type {
   paths as ScapiSchemasPaths,
   components as ScapiSchemasComponents,
 } from './scapi-schemas.js';
+
+export {getApiErrorMessage} from './error-utils.js';

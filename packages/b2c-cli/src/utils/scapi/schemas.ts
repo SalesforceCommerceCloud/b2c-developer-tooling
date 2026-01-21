@@ -5,14 +5,19 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createScapiSchemasClient, toOrganizationId, type ScapiSchemasClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  createScapiSchemasClient,
+  getApiErrorMessage,
+  toOrganizationId,
+  type ScapiSchemasClient,
+} from '@salesforce/b2c-tooling-sdk/clients';
 import {t} from '../../i18n/index.js';
 
 /**
  * Format API error for display.
  */
-export function formatApiError(error: unknown): string {
-  return typeof error === 'object' ? JSON.stringify(error) : String(error);
+export function formatApiError(error: unknown, response: Response): string {
+  return getApiErrorMessage(error, response);
 }
 
 /**

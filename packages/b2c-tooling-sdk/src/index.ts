@@ -74,6 +74,7 @@ export {
   toOrganizationId,
   toTenantId,
   buildTenantScope,
+  getApiErrorMessage,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
   CUSTOM_APIS_DEFAULT_SCOPES,
