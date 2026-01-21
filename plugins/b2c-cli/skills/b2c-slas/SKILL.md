@@ -55,6 +55,8 @@ b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes 
 
 Note: By default, the tenant is automatically created if it doesn't exist.
 
+**Warning:** Use `--scopes` (plural) for client scopes, NOT `--scope` (singular). The `--scope` flag is a global authentication option and will cause errors if used here.
+
 ### Create Client for Custom API Testing
 
 When testing a Custom API that requires custom scopes:

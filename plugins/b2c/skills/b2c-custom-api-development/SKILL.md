@@ -361,6 +361,8 @@ b2c slas client create \
 # Save the client_id and client_secret from the output
 ```
 
+**Warning:** Use `--scopes` (plural) for client scopes, NOT `--scope` (singular).
+
 See `b2c-cli:b2c-slas` skill for more options.
 
 ### Get a Shopper Token (Private Client)
