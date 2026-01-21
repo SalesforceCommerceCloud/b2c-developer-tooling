@@ -8,6 +8,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import {ConfigResolver} from '@salesforce/b2c-tooling-sdk/config';
+import {PackageJsonSource} from '../../src/config/sources/package-json-source.js';
 
 describe('config/sources', () => {
   let tempDir: string;
@@ -358,6 +359,179 @@ describe('config/sources', () => {
           configurable: true,
         });
       }
+    });
+  });
+
+  describe('PackageJsonSource', () => {
+    it('loads allowed fields from package.json b2c key', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {
+            shortCode: 'abc123',
+            clientId: 'test-client-id',
+            mrtProject: 'my-project',
+            mrtOrigin: 'https://custom.cloud.com',
+            accountManagerHost: 'account.demandware.com',
+          },
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = resolver.resolve();
+
+      expect(config.shortCode).to.equal('abc123');
+      expect(config.clientId).to.equal('test-client-id');
+      expect(config.mrtProject).to.equal('my-project');
+      expect(config.mrtOrigin).to.equal('https://custom.cloud.com');
+      expect(config.accountManagerHost).to.equal('account.demandware.com');
+    });
+
+    it('ignores sensitive/instance-specific fields', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {
+            shortCode: 'abc123',
+            // These should be ignored
+            hostname: 'should-be-ignored.demandware.net',
+            password: 'secret-password',
+            clientSecret: 'secret-client-secret',
+            username: 'secret-user',
+            mrtApiKey: 'secret-api-key',
+          },
+        }),
+      );
+
+      // Use PackageJsonSource directly to test in isolation
+      const source = new PackageJsonSource();
+      const result = source.load({startDir: tempDir});
+
+      expect(result).to.not.be.undefined;
+      expect(result!.config.shortCode).to.equal('abc123');
+      // Sensitive/instance-specific fields should NOT be loaded by PackageJsonSource
+      expect(result!.config.hostname).to.be.undefined;
+      expect(result!.config.password).to.be.undefined;
+      expect(result!.config.clientSecret).to.be.undefined;
+      expect(result!.config.username).to.be.undefined;
+      expect(result!.config.mrtApiKey).to.be.undefined;
+    });
+
+    it('returns undefined when package.json does not exist', () => {
+      const resolver = new ConfigResolver();
+      const {sources} = resolver.resolve();
+
+      const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
+      expect(packageJsonSource).to.be.undefined;
+    });
+
+    it('returns undefined when b2c key is missing', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {sources} = resolver.resolve();
+
+      const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
+      expect(packageJsonSource).to.be.undefined;
+    });
+
+    it('returns undefined when b2c key has only disallowed fields', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {
+            hostname: 'should-be-ignored.demandware.net',
+            password: 'secret',
+          },
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {sources} = resolver.resolve();
+
+      const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
+      expect(packageJsonSource).to.be.undefined;
+    });
+
+    it('has lowest priority (1000) and does not override other sources', () => {
+      // Create dw.json with clientId
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          'client-id': 'dw-client-id',
+          shortCode: 'dw-short-code',
+        }),
+      );
+
+      // Create package.json with different clientId and shortCode
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {
+            clientId: 'package-client-id',
+            shortCode: 'package-short-code',
+            mrtProject: 'package-project', // Only in package.json
+          },
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = resolver.resolve();
+
+      // dw.json values should take precedence (priority 0 < 1000)
+      expect(config.clientId).to.equal('dw-client-id');
+      expect(config.shortCode).to.equal('dw-short-code');
+      // package.json should fill in gaps
+      expect(config.mrtProject).to.equal('package-project');
+    });
+
+    it('provides location from load result', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {
+            shortCode: 'abc123',
+          },
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {sources} = resolver.resolve();
+
+      const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
+      // Normalize paths to handle macOS symlinks
+      const expectedPath = fs.realpathSync(packageJsonPath);
+      const actualLocation = packageJsonSource?.location ? fs.realpathSync(packageJsonSource.location) : undefined;
+      expect(actualLocation).to.equal(expectedPath);
+    });
+
+    it('handles invalid JSON gracefully', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(packageJsonPath, 'invalid json');
+
+      const resolver = new ConfigResolver();
+      const {sources} = resolver.resolve();
+
+      const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
+      expect(packageJsonSource).to.be.undefined;
     });
   });
 });

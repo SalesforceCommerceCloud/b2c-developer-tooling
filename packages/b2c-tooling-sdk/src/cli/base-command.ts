@@ -218,6 +218,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Plugin sources are collected into two arrays based on their priority:
    * - `pluginSourcesBefore`: High priority sources (override defaults)
    * - `pluginSourcesAfter`: Low priority sources (fill gaps)
+   *
+   * Priority mapping:
+   * - 'before' → -1 (higher priority than defaults)
+   * - 'after' → 10 (lower priority than defaults)
+   * - number → used directly
    */
   protected async collectPluginConfigSources(): Promise<void> {
     // Access flags that may be defined in subclasses (OAuthCommand, InstanceCommand)
@@ -241,10 +246,28 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       const result = success.result as ConfigSourcesHookResult | undefined;
       if (!result?.sources?.length) continue;
 
-      if (result.priority === 'before') {
+      // Map priority: 'before' → -1, 'after' → 10, number → as-is, undefined → 10
+      const numericPriority =
+        result.priority === 'before'
+          ? -1
+          : result.priority === 'after'
+            ? 10
+            : typeof result.priority === 'number'
+              ? result.priority
+              : 10; // default 'after'
+
+      // Apply priority to sources that don't already have one set
+      for (const source of result.sources) {
+        if (source.priority === undefined) {
+          (source as {priority?: number}).priority = numericPriority;
+        }
+      }
+
+      // Still use before/after arrays for backwards compatibility
+      // The resolver will sort all sources by priority anyway
+      if (numericPriority < 0) {
         this.pluginSourcesBefore.push(...result.sources);
       } else {
-        // Default priority is 'after'
         this.pluginSourcesAfter.push(...result.sources);
       }
     }

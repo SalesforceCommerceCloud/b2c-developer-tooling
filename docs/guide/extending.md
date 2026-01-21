@@ -58,18 +58,47 @@ This hook is called during command initialization, after CLI flags are parsed bu
 | Property | Type | Description |
 |----------|------|-------------|
 | `sources` | `ConfigSource[]` | Config sources to add to resolution |
-| `priority` | `'before' \| 'after'` | Where to insert relative to defaults (default: `'after'`) |
+| `priority` | `'before' \| 'after' \| number` | Priority for sources (see below). Default: `'after'` |
+
+::: tip Numeric Priorities
+String values map to numeric priorities: `'before'` → -1, `'after'` → 10. You can also use any numeric value directly for fine-grained control. Lower numbers = higher priority.
+:::
 
 ### Priority Ordering
+
+Configuration sources use a numeric priority system where **lower numbers = higher priority**:
+
+| Priority | Description | Example |
+|----------|-------------|---------|
+| < 0 | Override built-in sources | `'before'` maps to -1 |
+| 0 | Built-in sources | `dw.json`, `~/.mobify` |
+| 1-999 | After built-in sources | `'after'` maps to 10 |
+| 1000 | Lowest priority | `package.json` |
 
 Configuration is resolved with the following precedence:
 
 1. **CLI flags and environment variables** - Always highest priority
-2. **Plugin sources with `priority: 'before'`** - Override dw.json defaults
-3. **Default sources** - `dw.json` and `~/.mobify`
-4. **Plugin sources with `priority: 'after'`** - Fill gaps left by defaults
+2. **Plugin sources with `priority: 'before'` (or < 0)** - Override dw.json defaults
+3. **Default sources** - `dw.json` and `~/.mobify` (priority 0)
+4. **Plugin sources with `priority: 'after'` (or 1-999)** - Fill gaps left by defaults
+5. **package.json** - Project-level defaults (priority 1000)
 
 Each source fills in missing values - it doesn't override values from higher-priority sources.
+
+::: tip Custom ConfigSource Priority
+When implementing a custom `ConfigSource`, you can set the `priority` property directly on your class:
+
+```typescript
+export class MyCustomSource implements ConfigSource {
+  readonly name = 'my-custom-source';
+  readonly priority = 5; // Between 'before' (-1) and 'after' (10)
+
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+    // ...
+  }
+}
+```
+:::
 
 ::: warning Credential Grouping
 OAuth credentials (`clientId`/`clientSecret`) and Basic auth credentials (`username`/`password`) are treated as atomic groups. If any field in a group is already set by a higher-priority source, all fields in that group from your source will be ignored. Ensure your source provides complete credential pairs, or that higher-priority sources don't partially define the same credentials.

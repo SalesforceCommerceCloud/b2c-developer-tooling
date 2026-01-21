@@ -138,3 +138,22 @@ jobs:
           gh release create "$GITHUB_REF_NAME" --notes-file /tmp/release-notes.md $PRERELEASE_FLAG
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package skills artifacts
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          # Create b2c-skills.zip containing plugins/b2c/skills/
+          cd plugins/b2c && zip -r ../../b2c-skills.zip skills/
+          cd ../..
+          # Create b2c-cli-skills.zip containing plugins/b2c-cli/skills/
+          cd plugins/b2c-cli && zip -r ../../b2c-cli-skills.zip skills/
+          cd ../..
+          echo "Created skills artifacts:"
+          ls -la *.zip
+
+      - name: Upload skills to release
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          gh release upload "$GITHUB_REF_NAME" b2c-skills.zip b2c-cli-skills.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
