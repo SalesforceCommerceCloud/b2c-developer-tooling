@@ -53,6 +53,14 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
     ...MrtCommand.baseFlags,
   };
 
+  protected operations = {
+    listEnvVars,
+  };
+
+  protected renderTable(variables: EnvironmentVariable[]): void {
+    createTable(COLUMNS).render(variables, DEFAULT_COLUMNS);
+  }
+
   async run(): Promise<ListEnvVarsResult> {
     this.requireMrtCredentials();
 
@@ -76,7 +84,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
       }),
     );
 
-    const result = await listEnvVars(
+    const result = await this.operations.listEnvVars(
       {
         projectSlug: project,
         environment,
@@ -89,7 +97,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
       if (result.variables.length === 0) {
         this.log(t('commands.mrt.env.var.list.empty', 'No environment variables found.'));
       } else {
-        createTable(COLUMNS).render(result.variables, DEFAULT_COLUMNS);
+        this.renderTable(result.variables);
       }
     }
 

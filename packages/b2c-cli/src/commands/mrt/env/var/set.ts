@@ -39,6 +39,10 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
   // Allow multiple arguments
   static strict = false;
 
+  protected operations = {
+    setEnvVars,
+  };
+
   async run(): Promise<{variables: Record<string, string>; project: string; environment: string}> {
     this.requireMrtCredentials();
 
@@ -83,7 +87,7 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
       this.error(t('commands.mrt.env.var.set.noVariables', 'No environment variables provided. Use KEY=value format.'));
     }
 
-    await setEnvVars(
+    await this.operations.setEnvVars(
       {
         projectSlug: project,
         environment,

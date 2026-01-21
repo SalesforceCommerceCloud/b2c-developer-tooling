@@ -269,9 +269,11 @@ When endpoints return 404 or fail to register:
 
 ### For Shopper APIs (ShopperToken)
 
-1. Configure custom scope in SLAS Admin UI
-2. Obtain token via Shopper Login (SLAS)
-3. Include `siteId` in requests
+1. **Create or update a SLAS client** with your custom scope(s)
+   - Use `b2c slas client create --default-scopes --scopes "c_my_scope"` to create a test client
+   - See `b2c-cli:b2c-slas` skill for full client management options
+2. Obtain token via Shopper Login (SLAS) using the client credentials
+3. Include `siteId` in all requests
 
 ### For Admin APIs (AmOAuth2)
 
@@ -291,12 +293,111 @@ To query the Custom API status report, use an Account Manager token with scope:
 2. **Define contract** (schema.yaml) with endpoints and security
 3. **Implement logic** (script.js) with exported functions
 4. **Create mapping** (api.json) binding endpoints to implementation
-5. **Upload cartridge** to your B2C instance
-6. **Activate code version** to register endpoints
-7. **Check status** to verify registration
-8. **Test endpoints** with appropriate authentication
-9. **Monitor logs** for errors during development
-10. **Iterate** on implementation as needed
+5. **Deploy and activate** to register endpoints
+6. **Check registration status** to verify endpoints are active
+7. **Test endpoints** with appropriate authentication
+8. **Monitor logs** for errors during development
+9. **Iterate** on implementation as needed
+
+### Deployment Commands
+
+Deploy your cartridge and activate to trigger Custom API registration:
+
+```bash
+# Deploy cartridge and reload (re-activate) to register endpoints
+b2c code deploy ./my-cartridge --reload
+
+# Or deploy then activate separately
+b2c code deploy ./my-cartridge
+b2c code activate my-code-version
+```
+
+See the `b2c-cli:b2c-code` skill for more deployment options.
+
+### Check Registration Status
+
+After deployment, verify your endpoints are registered:
+
+```bash
+# Check Custom API registration status
+# Tenant ID: derive from hostname (e.g., zzpq-013 → zzpq_013)
+b2c scapi custom status --tenant-id zzpq_013
+
+# Filter to see only failed registrations
+b2c scapi custom status --tenant-id zzpq_013 --status not_registered
+
+# Show error reasons for failed registrations
+b2c scapi custom status --tenant-id zzpq_013 --status not_registered --columns apiName,endpointPath,errorReason
+```
+
+See the `b2c-cli:b2c-scapi-custom` skill for more status options.
+
+### Common Registration Issues
+
+| Issue | Solution |
+|-------|----------|
+| Endpoint shows `not_registered` | Check errorReason column, verify schema.yaml syntax |
+| Endpoint not appearing | Verify cartridge is in site's cartridge path, re-activate code version |
+| 404 on requests | Endpoint not registered or wrong URL path |
+
+## Testing Custom APIs
+
+Test your Custom API endpoints using curl after deployment.
+
+### Prerequisites for Testing
+
+Before testing a Shopper API with custom scopes, ensure you have a SLAS client configured with those scopes:
+
+```bash
+# Create a test client with your custom scope (replace c_my_scope with your scope)
+b2c slas client create \
+  --tenant-id zzpq_013 \
+  --channels RefArch \
+  --default-scopes \
+  --scopes "c_my_scope" \
+  --redirect-uri http://localhost:3000/callback \
+  --json
+
+# Save the client_id and client_secret from the output
+```
+
+**Warning:** Use `--scopes` (plural) for client scopes, NOT `--scope` (singular).
+
+See `b2c-cli:b2c-slas` skill for more options.
+
+### Get a Shopper Token (Private Client)
+
+Using a private SLAS client with client credentials grant:
+
+```bash
+# Set your credentials
+SHORTCODE="your-short-code"
+ORG="f_ecom_xxxx_xxx"
+SLAS_CLIENT_ID="your-client-id"
+SLAS_CLIENT_SECRET="your-client-secret"
+SITE="RefArch"
+
+# Get access token
+TOKEN=$(curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/$ORG/oauth2/token" \
+    -u "$SLAS_CLIENT_ID:$SLAS_CLIENT_SECRET" \
+    -d "grant_type=client_credentials&channel_id=$SITE" | jq -r '.access_token')
+
+echo $TOKEN
+```
+
+### Call Your Custom API
+
+```bash
+# Call the Custom API endpoint
+curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-api/v1/organizations/$ORG/my-endpoint?siteId=$SITE" \
+    -H "Authorization: Bearer $TOKEN" | jq
+```
+
+### Testing Tips
+
+- Use `b2c slas client list` to find existing SLAS clients
+- Use `b2c slas client create --default-scopes --scopes "c_my_scope"` to create a test client
+- Check logs with `b2c webdav get` from the `logs` root if requests fail
 
 ## HTTP Methods Supported
 
@@ -307,6 +408,87 @@ To query the Custom API status report, use an Account Manager token with scope:
 - DELETE
 - HEAD
 - OPTIONS
+
+## External Service Configuration
+
+When your Custom API calls external services via `LocalServiceRegistry.createService()`, you must configure the service in Business Manager or import it via site archive.
+
+See the `b2c:b2c-webservices` skill for:
+- Service configuration patterns
+- Services XML import format (credentials, profiles, services)
+- HTTP, FTP, and SOAP service examples
+
+### Calling External Services
+
+```javascript
+var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
+
+var service = LocalServiceRegistry.createService('my.external.api', {
+    createRequest: function(svc, args) {
+        svc.setRequestMethod('GET');
+        svc.addHeader('Authorization', 'Bearer ' + args.token);
+        return null;
+    },
+    parseResponse: function(svc, client) {
+        return JSON.parse(client.text);
+    }
+});
+
+var result = service.call({ token: 'my-token' });
+```
+
+### Inline services.xml Example
+
+For simple HTTP services:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+
+    <service-credential service-credential-id="my.external.api">
+        <url>https://api.example.com/v1</url>
+    </service-credential>
+
+    <service-profile service-profile-id="my.external.api.profile">
+        <timeout-millis>5000</timeout-millis>
+        <rate-limit-enabled>false</rate-limit-enabled>
+        <rate-limit-calls>0</rate-limit-calls>
+        <rate-limit-millis>0</rate-limit-millis>
+        <cb-enabled>true</cb-enabled>
+        <cb-calls>5</cb-calls>
+        <cb-millis>10000</cb-millis>
+    </service-profile>
+
+    <service service-id="my.external.api">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>MYAPI</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>false</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>my.external.api.profile</profile-id>
+        <credential-id>my.external.api</credential-id>
+    </service>
+
+</services>
+```
+
+**Common XML element name mistakes:**
+- Use `service-credential-id`, NOT `id`
+- Use `user-id`, NOT `user`
+- Use `force-prd-enabled`, NOT `force-prd-comm-log-enabled`
+
+Import with: `b2c job import ./my-services-folder`
+
+See `b2c:b2c-webservices` skill for complete schema documentation, or run `b2c docs schema services` for the XSD.
+
+## Related Skills
+
+- `b2c-cli:b2c-code` - Deploying cartridges and activating code versions
+- `b2c-cli:b2c-scapi-custom` - Checking Custom API registration status
+- `b2c-cli:b2c-slas` - Creating SLAS clients for testing Shopper APIs with custom scopes
+- `b2c:b2c-webservices` - Service configuration, HTTP/FTP/SOAP clients, services.xml format
+- `b2c-cli:b2c-job` - Running jobs and importing site archives
 
 ## Limitations
 

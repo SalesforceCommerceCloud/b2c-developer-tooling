@@ -6,6 +6,7 @@
   "reporter": "spec",
   "timeout": 60000,
   "node-option": [
-    "import=tsx"
+    "import=tsx",
+    "conditions=development"
   ]
 }

@@ -2,6 +2,22 @@
 
 Common XML patterns for site archive imports.
 
+## XSD Schema Reference
+
+For authoritative XML schema definitions, use the `b2c` CLI (if installed):
+
+```bash
+# View the metadata XSD schema
+b2c docs schema metadata
+
+# List all available schemas
+b2c docs schema --list
+```
+
+## Other Import Formats
+
+For service configurations (HTTP services, credentials, profiles), see the `b2c:b2c-webservices` skill.
+
 ## System Object Extensions
 
 ### Add String Attribute to Product

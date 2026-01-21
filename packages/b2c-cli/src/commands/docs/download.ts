@@ -37,6 +37,10 @@ export default class DocsDownload extends InstanceCommand<typeof DocsDownload> {
     }),
   };
 
+  protected operations = {
+    downloadDocs,
+  };
+
   async run(): Promise<DownloadDocsResult> {
     this.requireServer();
     this.requireWebDavCredentials();
@@ -50,7 +54,7 @@ export default class DocsDownload extends InstanceCommand<typeof DocsDownload> {
       }),
     );
 
-    const result = await downloadDocs(this.instance, {
+    const result = await this.operations.downloadDocs(this.instance, {
       outputDir,
       keepArchive,
     });
