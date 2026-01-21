@@ -6,7 +6,7 @@
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
 import {loadConfig, extractOAuthFlags, ALL_AUTH_METHODS} from './config.js';
-import type {LoadConfigOptions, AuthMethod, PluginSources} from './config.js';
+import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
@@ -84,17 +84,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   protected override loadConfiguration(): ResolvedB2CConfig {
-    const options: LoadConfigOptions = {
-      instance: this.flags.instance,
-      configPath: this.flags.config,
-    };
-
-    const pluginSources: PluginSources = {
-      before: this.pluginSourcesBefore,
-      after: this.pluginSourcesAfter,
-    };
-
-    return loadConfig(extractOAuthFlags(this.flags as Record<string, unknown>), options, pluginSources);
+    return loadConfig(
+      extractOAuthFlags(this.flags as Record<string, unknown>),
+      this.getBaseConfigOptions(),
+      this.getPluginSources(),
+    );
   }
 
   /**
