@@ -338,6 +338,44 @@ See the `b2c-cli:b2c-scapi-custom` skill for more status options.
 | Endpoint not appearing | Verify cartridge is in site's cartridge path, re-activate code version |
 | 404 on requests | Endpoint not registered or wrong URL path |
 
+## Testing Custom APIs
+
+Test your Custom API endpoints using curl after deployment.
+
+### Get a Shopper Token (Private Client)
+
+Using a private SLAS client with client credentials grant:
+
+```bash
+# Set your credentials
+SHORTCODE="your-short-code"
+ORG="f_ecom_xxxx_xxx"
+SLAS_CLIENT_ID="your-client-id"
+SLAS_CLIENT_SECRET="your-client-secret"
+SITE="RefArch"
+
+# Get access token
+TOKEN=$(curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/$ORG/oauth2/token" \
+    -u "$SLAS_CLIENT_ID:$SLAS_CLIENT_SECRET" \
+    -d "grant_type=client_credentials&channel_id=$SITE" | jq -r '.access_token')
+
+echo $TOKEN
+```
+
+### Call Your Custom API
+
+```bash
+# Call the Custom API endpoint
+curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-api/v1/organizations/$ORG/my-endpoint?siteId=$SITE" \
+    -H "Authorization: Bearer $TOKEN" | jq
+```
+
+### Testing Tips
+
+- Use `b2c slas client list` to find existing SLAS clients
+- Use `b2c slas client create --scopes "c_my_scope,sfcc.shopper-*"` to create a test client
+- Check logs with `b2c webdav get` from the `logs` root if requests fail
+
 ## HTTP Methods Supported
 
 - GET (no transaction commits)
@@ -376,11 +414,50 @@ var service = LocalServiceRegistry.createService('my.external.api', {
 var result = service.call({ token: 'my-token' });
 ```
 
-### Quick Reference
+### Inline services.xml Example
 
-To import a service configuration:
-1. Create `services.xml` following the `b2c:b2c-webservices` skill patterns
-2. Import: `b2c job import ./my-services-folder`
+For simple HTTP services:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+
+    <service-credential service-credential-id="my.external.api">
+        <url>https://api.example.com/v1</url>
+    </service-credential>
+
+    <service-profile service-profile-id="my.external.api.profile">
+        <timeout-millis>5000</timeout-millis>
+        <rate-limit-enabled>false</rate-limit-enabled>
+        <rate-limit-calls>0</rate-limit-calls>
+        <rate-limit-millis>0</rate-limit-millis>
+        <cb-enabled>true</cb-enabled>
+        <cb-calls>5</cb-calls>
+        <cb-millis>10000</cb-millis>
+    </service-profile>
+
+    <service service-id="my.external.api">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>MYAPI</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>false</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>my.external.api.profile</profile-id>
+        <credential-id>my.external.api</credential-id>
+    </service>
+
+</services>
+```
+
+**Common XML element name mistakes:**
+- Use `service-credential-id`, NOT `id`
+- Use `user-id`, NOT `user`
+- Use `force-prd-enabled`, NOT `force-prd-comm-log-enabled`
+
+Import with: `b2c job import ./my-services-folder`
+
+See `b2c:b2c-webservices` skill for complete schema documentation, or run `b2c docs schema services` for the XSD.
 
 ## Related Skills
 
