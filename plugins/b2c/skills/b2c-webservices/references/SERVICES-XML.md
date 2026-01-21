@@ -2,6 +2,15 @@
 
 XML format for importing and exporting service configurations via site import/export.
 
+## XSD Schema Reference
+
+For the authoritative XML schema definition, use the `b2c` CLI (if installed):
+
+```bash
+# View the services XSD schema
+b2c docs schema services
+```
+
 ## XML Namespace
 
 ```xml
@@ -195,11 +204,9 @@ Links service type, profile, and credential together.
         <password>client_secret_here</password>
     </service-credential>
 
-    <!-- API Credential -->
+    <!-- API Credential (no auth needed, only URL) -->
     <service-credential service-credential-id="my.api.cred">
         <url>https://api.example.com/v2</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <!-- SFTP Credential -->
