@@ -7,6 +7,14 @@ description: Using the b2c CLI for SLAS (Shopper Login and API Access Service) c
 
 Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) API clients and credentials.
 
+## When to Use This Skill
+
+Common scenarios requiring SLAS client management:
+
+- **Testing Custom APIs**: Create a client with custom scopes (e.g., `c_loyalty`) to test your Custom API endpoints
+- **PWA/Headless Development**: Configure clients for composable storefronts
+- **Integration Testing**: Create dedicated test clients with specific scope sets
+
 ## Examples
 
 ### List SLAS Clients
@@ -47,6 +55,44 @@ b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes 
 
 Note: By default, the tenant is automatically created if it doesn't exist.
 
+### Create Client for Custom API Testing
+
+When testing a Custom API that requires custom scopes:
+
+```bash
+# Create a private client with custom scope for testing
+# Replace c_my_scope with your API's custom scope from schema.yaml
+b2c slas client create \
+  --tenant-id zzpq_013 \
+  --channels RefArch \
+  --default-scopes \
+  --scopes "c_my_scope" \
+  --redirect-uri http://localhost:3000/callback \
+  --json
+
+# Output includes client_id and client_secret - save these for token requests
+```
+
+**Important:** The custom scope in your SLAS client must match the scope defined in your Custom API's `schema.yaml` security section.
+
+### Get a Token for Testing
+
+After creating a SLAS client, obtain a token for API testing:
+
+```bash
+# Set credentials from client creation output
+SHORTCODE="zzpq"
+ORG="f_ecom_zzpq_013"
+CLIENT_ID="your-client-id"
+CLIENT_SECRET="your-client-secret"
+SITE="RefArch"
+
+# Get access token
+curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/$ORG/oauth2/token" \
+  -u "$CLIENT_ID:$CLIENT_SECRET" \
+  -d "grant_type=client_credentials&channel_id=$SITE"
+```
+
 ### Update SLAS Client
 
 ```bash
@@ -69,3 +115,8 @@ The tenant ID can be set via environment variable:
 ### More Commands
 
 See `b2c slas --help` for a full list of available commands and options in the `slas` topic.
+
+## Related Skills
+
+- `b2c:b2c-custom-api-development` - Creating Custom APIs that require SLAS authentication
+- `b2c-cli:b2c-scapi-custom` - Checking Custom API registration status

@@ -269,9 +269,11 @@ When endpoints return 404 or fail to register:
 
 ### For Shopper APIs (ShopperToken)
 
-1. Configure custom scope in SLAS Admin UI
-2. Obtain token via Shopper Login (SLAS)
-3. Include `siteId` in requests
+1. **Create or update a SLAS client** with your custom scope(s)
+   - Use `b2c slas client create --default-scopes --scopes "c_my_scope"` to create a test client
+   - See `b2c-cli:b2c-slas` skill for full client management options
+2. Obtain token via Shopper Login (SLAS) using the client credentials
+3. Include `siteId` in all requests
 
 ### For Admin APIs (AmOAuth2)
 
@@ -342,6 +344,25 @@ See the `b2c-cli:b2c-scapi-custom` skill for more status options.
 
 Test your Custom API endpoints using curl after deployment.
 
+### Prerequisites for Testing
+
+Before testing a Shopper API with custom scopes, ensure you have a SLAS client configured with those scopes:
+
+```bash
+# Create a test client with your custom scope (replace c_my_scope with your scope)
+b2c slas client create \
+  --tenant-id zzpq_013 \
+  --channels RefArch \
+  --default-scopes \
+  --scopes "c_my_scope" \
+  --redirect-uri http://localhost:3000/callback \
+  --json
+
+# Save the client_id and client_secret from the output
+```
+
+See `b2c-cli:b2c-slas` skill for more options.
+
 ### Get a Shopper Token (Private Client)
 
 Using a private SLAS client with client credentials grant:
@@ -373,7 +394,7 @@ curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-api/v1/or
 ### Testing Tips
 
 - Use `b2c slas client list` to find existing SLAS clients
-- Use `b2c slas client create --scopes "c_my_scope,sfcc.shopper-*"` to create a test client
+- Use `b2c slas client create --default-scopes --scopes "c_my_scope"` to create a test client
 - Check logs with `b2c webdav get` from the `logs` root if requests fail
 
 ## HTTP Methods Supported
@@ -463,6 +484,7 @@ See `b2c:b2c-webservices` skill for complete schema documentation, or run `b2c d
 
 - `b2c-cli:b2c-code` - Deploying cartridges and activating code versions
 - `b2c-cli:b2c-scapi-custom` - Checking Custom API registration status
+- `b2c-cli:b2c-slas` - Creating SLAS clients for testing Shopper APIs with custom scopes
 - `b2c:b2c-webservices` - Service configuration, HTTP/FTP/SOAP clients, services.xml format
 - `b2c-cli:b2c-job` - Running jobs and importing site archives
 
