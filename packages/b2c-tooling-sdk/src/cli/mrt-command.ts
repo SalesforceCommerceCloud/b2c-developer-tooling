@@ -31,7 +31,8 @@ import {DEFAULT_MRT_ORIGIN} from '../clients/mrt.js';
  * Cloud origin resolution:
  * 1. --cloud-origin flag
  * 2. SFCC_MRT_CLOUD_ORIGIN environment variable
- * 3. Default: https://cloud.mobify.com
+ * 3. dw.json (mrtOrigin field)
+ * 4. Default: https://cloud.mobify.com
  */
 export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
@@ -52,7 +53,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       env: 'SFCC_MRT_ENVIRONMENT',
     }),
     'cloud-origin': Flags.string({
-      description: `MRT cloud origin URL (default: ${DEFAULT_MRT_ORIGIN})`,
+      description: `MRT cloud origin URL (or set mrtOrigin in dw.json; default: ${DEFAULT_MRT_ORIGIN})`,
       env: 'SFCC_MRT_CLOUD_ORIGIN',
     }),
     'credentials-file': Flags.string({

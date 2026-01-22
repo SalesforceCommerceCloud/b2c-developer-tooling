@@ -59,6 +59,10 @@ export interface DwJsonConfig {
   mrtProject?: string;
   /** MRT environment name (e.g., staging, production) */
   mrtEnvironment?: string;
+  /** MRT cloud origin URL */
+  mrtOrigin?: string;
+  /** MRT cloud origin URL (alias) */
+  cloudOrigin?: string;
 }
 
 /**

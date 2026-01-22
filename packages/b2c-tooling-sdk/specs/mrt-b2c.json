@@ -1,0 +1,384 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Managed Runtime API",
+    "version": "v1",
+    "description": "Set up how a storefront or other headless commerce application is deployed to Managed Runtime. <br /><br />Note: Where possible, we changed noninclusive terms to align with our company value of Equality. We maintained certain terms to avoid any effect on customer implementations."
+  },
+  "paths": {
+    "/b2c-organization-info/{organization_slug}/": {
+      "get": {
+        "operationId": "cc_b2c_organization_info_retrieve",
+        "description": "Get the list of B2C Commerce instances connected to a specified organization. This allows you to track the integrations between your Managed Runtime targets (environments) and Commerce Cloud.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "b2c-organization-info"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIB2COrgInfo"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "is_b2c_customer": true,
+                      "instances": [
+                        "aaaa_prd",
+                        "aaaa_stg",
+                        "aaaa_dev",
+                        "aaaa_001"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/projects/{project_slug}/b2c-target-info/{target_slug}/": {
+      "get": {
+        "operationId": "cc_b2c_target_info_retrieve",
+        "description": "Get the B2C Commerce instance and sites connected to a specified target (environment). This allows you to track the integrations between your Managed Runtime targets and Commerce Cloud.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIB2CTargetInfo"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "instance_id": "aaaa_prd",
+                      "sites": [
+                        "DemoSite1",
+                        "DemoSite2"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "put": {
+        "operationId": "cc_b2c_target_info_update",
+        "description": "Create B2C information for a target.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIB2CTargetInfo"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "instance_id": "aaaa_prd",
+                    "sites": [
+                      "DemoSite1",
+                      "DemoSite2"
+                    ]
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APIB2CTargetInfo"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APIB2CTargetInfo"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIB2CTargetInfo"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "instance_id": "aaaa_prd",
+                      "sites": [
+                        "DemoSite1",
+                        "DemoSite2"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "cc_b2c_target_info_partial_update",
+        "description": "Edit a specified target's (environment's) connection to a B2C Commerce instance. If you pass in a list of site IDs, that list replaces the existing sites connected to the target.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIB2CTargetInfo"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "instance_id": "aaaa_prd",
+                    "sites": [
+                      "DemoSite1",
+                      "DemoSite2"
+                    ]
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIB2CTargetInfo"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIB2CTargetInfo"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIB2CTargetInfo"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "instance_id": "aaaa_prd",
+                      "sites": [
+                        "DemoSite1",
+                        "DemoSite2"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIB2COrgInfo": {
+        "type": "object",
+        "properties": {
+          "is_b2c_customer": {
+            "type": "boolean",
+            "description": "Specifies whether the organization is a B2C customer account. Returns true if the organization is a B2C customer account. Returns false if the organization isn't a B2C customer account."
+          },
+          "instances": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "List of B2C Commerce instances.",
+              "maxLength": 8
+            }
+          }
+        },
+        "required": [
+          "instances",
+          "is_b2c_customer"
+        ]
+      },
+      "APIB2CTargetInfo": {
+        "type": "object",
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "description": "ID of the B2C Commerce instance associated with the target",
+            "maxLength": 8
+          },
+          "sites": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "List of site IDs associated with the B2C Commerce instance",
+              "maxLength": 32
+            },
+            "nullable": true
+          }
+        },
+        "required": [
+          "instance_id"
+        ]
+      },
+      "PatchedAPIB2CTargetInfo": {
+        "type": "object",
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "description": "ID of the B2C Commerce instance associated with the target",
+            "maxLength": 8
+          },
+          "sites": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "List of site IDs associated with the B2C Commerce instance",
+              "maxLength": 32
+            },
+            "nullable": true
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Basic": {
+        "type": "http",
+        "description": "A basic authentication scheme for Managed Runtime API endpoints. To make an API request, concatenate your email address and API key separated by a colon (:). Base64 encode the concatenated string and include it in the HTTP request Authorization header.<br><br>Example:<br><br>`Authorization: Basic $B64_ENCODED_VALUE`",
+        "scheme": "basic"
+      },
+      "BearerToken": {
+        "type": "http",
+        "description": "A bearer token authentication scheme for Managed Runtime API endpoints. To make an API request, include your API key in the HTTP request Authorization header.<br><br>Example:<br><br>`Authorization: Bearer $API_KEY`",
+        "scheme": "bearer",
+        "bearerFormat": "Bearer .*"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://cloud.mobify.com/api/cc/b2c/"
+    }
+  ]
+}

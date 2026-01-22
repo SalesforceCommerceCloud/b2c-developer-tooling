@@ -5,63 +5,148 @@ description: Using the b2c CLI for Managed Runtime (MRT) project and deployment 
 
 # B2C MRT Skill
 
-Use the `b2c` CLI plugin to manage Managed Runtime (MRT) projects and deployments for PWA Kit storefronts.
+Use the `b2c` CLI to manage Managed Runtime (MRT) projects, environments, bundles, and deployments for PWA Kit storefronts.
 
-## Examples
+## Command Structure
 
-### Push Bundle to Managed Runtime
+```
+mrt
+├── org (list, b2c)              - Organizations and B2C connections
+├── project                      - Project management
+│   ├── member                   - Team member management
+│   └── notification             - Deployment notifications
+├── env                          - Environment management
+│   ├── var                      - Environment variables
+│   ├── redirect                 - URL redirects
+│   └── access-control           - Access control headers
+├── bundle                       - Bundle and deployment management
+└── user                         - User profile and settings
+```
+
+## Quick Examples
+
+### Deploy a Bundle
 
 ```bash
-# push a bundle to MRT for a specific project
-b2c mrt push --project my-storefront
+# Push local build to staging
+b2c mrt bundle deploy -p my-storefront -e staging
 
-# push to a specific environment (staging, production, etc.)
-b2c mrt push --project my-storefront --environment staging
+# Push to production with release message
+b2c mrt bundle deploy -p my-storefront -e production -m "Release v1.0.0"
 
-# push to production with a release message
-b2c mrt push --project my-storefront --environment production --message "Release v1.0.0"
-
-# push from a custom build directory
-b2c mrt push --project my-storefront --build-dir ./dist
-
-# specify Node.js version for SSR runtime
-b2c mrt push --project my-storefront --node-version 20.x
-
-# add SSR parameters
-b2c mrt push --project my-storefront --ssr-param SSRProxyPath=/api
-
-# use JSON output for automation
-b2c mrt push --project my-storefront --json
+# Deploy existing bundle by ID
+b2c mrt bundle deploy 12345 -p my-storefront -e production
 ```
 
 ### Manage Environments
 
 ```bash
-# create a new MRT environment
-b2c mrt env create
+# List environments
+b2c mrt env list -p my-storefront
 
-# delete an MRT environment
-b2c mrt env delete
+# Create a new environment
+b2c mrt env create qa -p my-storefront --name "QA Environment"
+
+# Get environment details
+b2c mrt env get -p my-storefront -e production
+
+# Invalidate CDN cache
+b2c mrt env invalidate -p my-storefront -e production
 ```
 
 ### Environment Variables
 
 ```bash
-# manage environment variables for an MRT environment
-b2c mrt env var
+# List variables
+b2c mrt env var list -p my-storefront -e production
+
+# Set variables
+b2c mrt env var set API_KEY=secret DEBUG=true -p my-storefront -e staging
+
+# Delete a variable
+b2c mrt env var delete OLD_VAR -p my-storefront -e production
 ```
 
-### Configuration
+### View Deployment History
 
-MRT settings can be configured in `dw.json`:
-- `mrtProject`: MRT project slug
-- `mrtEnvironment`: MRT environment name (staging, production, etc.)
+```bash
+# List bundles in project
+b2c mrt bundle list -p my-storefront
 
-Environment variables:
-- `SFCC_MRT_PROJECT`: MRT project slug
-- `SFCC_MRT_ENVIRONMENT`: MRT environment
-- `SFCC_MRT_API_KEY`: MRT API key
+# View deployment history for environment
+b2c mrt bundle history -p my-storefront -e production
+
+# Download a bundle artifact
+b2c mrt bundle download 12345 -p my-storefront
+```
+
+### Project Management
+
+```bash
+# List projects
+b2c mrt project list
+
+# Get project details
+b2c mrt project get -p my-storefront
+
+# List project members
+b2c mrt project member list -p my-storefront
+
+# Add a member
+b2c mrt project member add user@example.com -p my-storefront --role developer
+```
+
+### URL Redirects
+
+```bash
+# List redirects
+b2c mrt env redirect list -p my-storefront -e production
+
+# Create a redirect
+b2c mrt env redirect create -p my-storefront -e production \
+  --from "/old-path" --to "/new-path"
+
+# Clone redirects between environments
+b2c mrt env redirect clone -p my-storefront --source staging --target production
+```
+
+## Configuration
+
+### dw.json
+
+Configure MRT settings in your project's `dw.json`:
+
+```json
+{
+  "mrtProject": "my-storefront",
+  "mrtEnvironment": "staging"
+}
+```
+
+### Environment Variables
+
+```bash
+export SFCC_MRT_API_KEY=your-api-key
+export SFCC_MRT_PROJECT=my-storefront
+export SFCC_MRT_ENVIRONMENT=staging
+```
+
+### ~/.mobify Config
+
+Store your API key in `~/.mobify`:
+
+```json
+{
+  "api_key": "your-mrt-api-key"
+}
+```
+
+## Detailed References
+
+- [Project Commands](references/PROJECT-COMMANDS.md) - Projects, members, and notifications
+- [Environment Commands](references/ENVIRONMENT-COMMANDS.md) - Environments, variables, redirects
+- [Bundle Commands](references/BUNDLE-COMMANDS.md) - Deployments, history, downloads
 
 ### More Commands
 
-See `b2c mrt --help` for a full list of available commands and options in the `mrt` topic.
+See `b2c mrt --help` for a full list of available commands and options.

@@ -206,35 +206,206 @@ export async function uploadBundle(
 }
 
 /**
- * Gets the list of bundles for a project.
- *
- * @param client - MRT client instance
- * @param projectSlug - Project to list bundles for
- * @param options - Pagination options
- * @returns List of bundles
+ * Bundle list item from API.
  */
-export async function listBundles(
-  client: MrtClient,
-  projectSlug: string,
-  options?: {limit?: number; offset?: number},
-): Promise<components['schemas']['BundleList'][]> {
+export type MrtBundle = components['schemas']['BundleList'];
+
+/**
+ * Options for listing bundles.
+ */
+export interface ListBundlesOptions {
+  /**
+   * The project slug.
+   */
+  projectSlug: string;
+
+  /**
+   * Maximum number of results to return.
+   */
+  limit?: number;
+
+  /**
+   * Offset for pagination.
+   */
+  offset?: number;
+
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Result of listing bundles.
+ */
+export interface ListBundlesResult {
+  /**
+   * Total count of bundles.
+   */
+  count: number;
+
+  /**
+   * URL for next page of results.
+   */
+  next: string | null;
+
+  /**
+   * URL for previous page of results.
+   */
+  previous: string | null;
+
+  /**
+   * Array of bundles.
+   */
+  bundles: MrtBundle[];
+}
+
+/**
+ * Lists bundles for an MRT project.
+ *
+ * @param options - List options including project slug
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns Paginated list of bundles
+ * @throws Error if request fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { listBundles } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const result = await listBundles({
+ *   projectSlug: 'my-storefront'
+ * }, auth);
+ *
+ * for (const bundle of result.bundles) {
+ *   console.log(`Bundle ${bundle.id}: ${bundle.message}`);
+ * }
+ * ```
+ */
+export async function listBundles(options: ListBundlesOptions, auth: AuthStrategy): Promise<ListBundlesResult> {
   const logger = getLogger();
+  const {projectSlug, limit, offset, origin} = options;
 
   logger.debug({projectSlug}, '[MRT] Listing bundles');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
 
   const {data, error} = await client.GET('/api/projects/{project_slug}/bundles/', {
     params: {
       path: {project_slug: projectSlug},
       query: {
-        limit: options?.limit,
-        offset: options?.offset,
+        limit,
+        offset,
       },
     },
   });
 
   if (error) {
-    throw new Error(`Failed to list bundles: ${JSON.stringify(error)}`);
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to list bundles: ${errorMessage}`);
   }
 
-  return data?.results || [];
+  logger.debug({count: data.count}, '[MRT] Bundles listed');
+
+  return {
+    count: data.count ?? 0,
+    next: data.next ?? null,
+    previous: data.previous ?? null,
+    bundles: data.results ?? [],
+  };
+}
+
+/**
+ * Options for downloading a bundle.
+ */
+export interface DownloadBundleOptions {
+  /**
+   * The project slug.
+   */
+  projectSlug: string;
+
+  /**
+   * The bundle ID to download.
+   */
+  bundleId: number;
+
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Result of getting a bundle download URL.
+ */
+export interface DownloadBundleResult {
+  /**
+   * Presigned URL for downloading the bundle archive.
+   * Valid for one hour.
+   */
+  downloadUrl: string;
+}
+
+/**
+ * Gets a presigned URL to download a bundle archive.
+ *
+ * The returned URL is valid for one hour.
+ *
+ * @param options - Download options
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns Download URL result
+ * @throws Error if request fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { downloadBundle } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const result = await downloadBundle({
+ *   projectSlug: 'my-storefront',
+ *   bundleId: 12345
+ * }, auth);
+ *
+ * console.log(`Download URL: ${result.downloadUrl}`);
+ * ```
+ */
+export async function downloadBundle(
+  options: DownloadBundleOptions,
+  auth: AuthStrategy,
+): Promise<DownloadBundleResult> {
+  const logger = getLogger();
+  const {projectSlug, bundleId, origin} = options;
+
+  logger.debug({projectSlug, bundleId}, '[MRT] Getting bundle download URL');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+
+  const {data, error} = await client.GET('/api/projects/{project_slug}/bundles/{bundle_id}/download/', {
+    params: {
+      path: {project_slug: projectSlug, bundle_id: String(bundleId)},
+    },
+  });
+
+  if (error) {
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to get bundle download URL: ${errorMessage}`);
+  }
+
+  logger.debug({bundleId}, '[MRT] Bundle download URL retrieved');
+
+  return {
+    downloadUrl: data.download_url,
+  };
 }

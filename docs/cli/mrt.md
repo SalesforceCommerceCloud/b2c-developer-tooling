@@ -1,10 +1,25 @@
 ---
-description: Commands for managing Managed Runtime projects, pushing bundles, creating environments, and configuring environment variables.
+description: Commands for managing Managed Runtime projects, environments, bundles, and deployments.
 ---
 
 # MRT Commands
 
-Commands for managing Managed Runtime (MRT) projects, environments, and bundles.
+Commands for managing Managed Runtime (MRT) projects, environments, and bundles for PWA Kit storefronts.
+
+## Command Overview
+
+| Topic | Commands | Description |
+|-------|----------|-------------|
+| `mrt org` | `list`, `b2c` | List organizations and B2C connections |
+| `mrt project` | `list`, `create`, `get`, `update`, `delete` | Manage MRT projects |
+| `mrt project member` | `list`, `add`, `get`, `update`, `remove` | Manage project members |
+| `mrt project notification` | `list`, `create`, `get`, `update`, `delete` | Manage deployment notifications |
+| `mrt env` | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments |
+| `mrt env var` | `list`, `set`, `delete` | Manage environment variables |
+| `mrt env redirect` | `list`, `create`, `delete`, `clone` | Manage URL redirects |
+| `mrt env access-control` | `list` | Manage access control headers |
+| `mrt bundle` | `deploy`, `list`, `history`, `download` | Manage bundles and deployments |
+| `mrt user` | `profile`, `api-key`, `email-prefs` | Manage user settings |
 
 ## Global MRT Flags
 
@@ -27,24 +42,21 @@ MRT commands resolve configuration in the following order of precedence:
 
 ## Authentication
 
-MRT commands use API key authentication. The API key is configured in the Managed Runtime dashboard and grants access to specific projects.
+MRT commands use API key authentication. The API key is configured in the Managed Runtime dashboard.
 
 ### Getting an API Key
 
 1. Log in to the [Managed Runtime dashboard](https://runtime.commercecloud.com/)
 2. Navigate to **Account Settings** > **API Keys**
 3. Create a new API key or use an existing one
-4. The API key grants access to all projects in your organization
 
 ### Configuration
 
-Provide the API key via one of these methods (in order of precedence):
+Provide the API key via one of these methods:
 
 1. **Command-line flag**: `--api-key your-api-key`
 2. **Environment variable**: `export SFCC_MRT_API_KEY=your-api-key`
 3. **Mobify config file**: `~/.mobify` with `api_key` field
-
-### Example ~/.mobify File
 
 ```json
 {
@@ -52,328 +64,509 @@ Provide the API key via one of these methods (in order of precedence):
 }
 ```
 
-### Project Access
-
-Your API key provides access to all projects in your MRT organization. Specify the project using:
-
-- `--project` flag or `SFCC_MRT_PROJECT` environment variable
-- `mrtProject` field in `dw.json`
-
 ---
 
-## b2c mrt push
+## Organization Commands
 
-Push a bundle to Managed Runtime.
+### b2c mrt org list
 
-Creates a bundle from the build directory and uploads it to the specified MRT project. Optionally deploys the bundle to a target environment.
-
-### Usage
+List organizations you have access to.
 
 ```bash
-b2c mrt push [FLAGS]
+b2c mrt org list
+b2c mrt org list --json
 ```
 
-### Flags
+### b2c mrt org b2c
 
-In addition to [global MRT flags](#global-mrt-flags):
-
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--message`, `-m` | Bundle message/description | |
-| `--build-dir`, `-b` | Path to the build directory | `build` |
-| `--ssr-only` | Glob patterns for server-only files (comma-separated) | `ssr.js,server/**/*` |
-| `--ssr-shared` | Glob patterns for shared files (comma-separated) | `static/**/*,client/**/*` |
-| `--node-version`, `-n` | Node.js version for SSR runtime | `20.x` |
-| `--ssr-param` | SSR parameter in key=value format (can be specified multiple times) | |
-| `--json` | Output result as JSON | |
-
-### Examples
+Get B2C Commerce instances connected to an organization.
 
 ```bash
-# Push a bundle to a project
-b2c mrt push --project my-storefront
-
-# Push and deploy to staging
-b2c mrt push --project my-storefront --environment staging
-
-# Push with a release message
-b2c mrt push --project my-storefront --environment production --message "Release v1.0.0"
-
-# Push from a custom build directory
-b2c mrt push --project my-storefront --build-dir ./dist
-
-# Specify Node.js version for SSR
-b2c mrt push --project my-storefront --node-version 20.x
-
-# Set SSR parameters
-b2c mrt push --project my-storefront --ssr-param SSRProxyPath=/api
-
-# Using environment variables
-export SFCC_MRT_API_KEY=your-api-key
-export SFCC_MRT_PROJECT=my-storefront
-export SFCC_MRT_ENVIRONMENT=staging
-b2c mrt push
-```
-
-### Output
-
-On success, the command displays the bundle ID, project, and deployment status:
-
-```
-Pushing bundle to my-storefront...
-Bundle will be deployed to staging
-Bundle #42 pushed to my-storefront and deployed to staging (Release v1.0.0)
+b2c mrt org b2c my-organization
+b2c mrt org b2c my-organization --json
 ```
 
 ---
 
-## b2c mrt env create
+## Project Commands
 
-Create a new environment (target) in a Managed Runtime project.
+### b2c mrt project list
 
-### Usage
+List MRT projects.
 
 ```bash
-b2c mrt env create SLUG [FLAGS]
+b2c mrt project list
+b2c mrt project list --limit 10 --offset 0
+b2c mrt project list --json
 ```
 
-### Arguments
+### b2c mrt project create
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SLUG` | Environment slug/identifier (e.g., staging, production) | Yes |
+Create a new MRT project.
 
-### Flags
+```bash
+b2c mrt project create my-storefront --name "My Storefront"
+b2c mrt project create my-storefront --name "My Storefront" --organization my-org
+```
 
-In addition to [global MRT flags](#global-mrt-flags):
+### b2c mrt project get
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--name`, `-n` | Display name for the environment | **Required** |
-| `--region`, `-r` | AWS region for SSR deployment | |
-| `--production` | Mark as a production environment | `false` |
-| `--hostname` | Hostname pattern for V8 Tag loading | |
-| `--external-hostname` | Full external hostname (e.g., www.example.com) | |
-| `--external-domain` | External domain for Universal PWA SSR (e.g., example.com) | |
-| `--allow-cookies` | Forward HTTP cookies to origin | `false` |
-| `--no-allow-cookies` | Disable cookie forwarding | |
-| `--enable-source-maps` | Enable source map support in the environment | `false` |
-| `--no-enable-source-maps` | Disable source map support | |
-| `--json` | Output result as JSON | |
+Get details of an MRT project.
 
-### Supported Regions
+```bash
+b2c mrt project get --project my-storefront
+b2c mrt project get -p my-storefront --json
+```
 
-Available AWS regions: `us-east-1`, `us-east-2`, `us-west-1`, `us-west-2`, `ap-south-1`, `ap-south-2`, `ap-northeast-1`, `ap-northeast-2`, `ap-northeast-3`, `ap-southeast-1`, `ap-southeast-2`, `ap-southeast-3`, `ca-central-1`, `eu-central-1`, `eu-central-2`, `eu-west-1`, `eu-west-2`, `eu-west-3`, `eu-north-1`, `eu-south-1`, `il-central-1`, `me-central-1`, `sa-east-1`
+### b2c mrt project update
 
-### Examples
+Update an MRT project.
+
+```bash
+b2c mrt project update --project my-storefront --name "Updated Name"
+```
+
+### b2c mrt project delete
+
+Delete an MRT project.
+
+```bash
+b2c mrt project delete --project my-storefront
+b2c mrt project delete -p my-storefront --force
+```
+
+---
+
+## Project Member Commands
+
+### b2c mrt project member list
+
+List members of an MRT project.
+
+```bash
+b2c mrt project member list --project my-storefront
+b2c mrt project member list -p my-storefront --json
+```
+
+### b2c mrt project member add
+
+Add a member to an MRT project.
+
+```bash
+b2c mrt project member add user@example.com --project my-storefront --role admin
+b2c mrt project member add user@example.com -p my-storefront --role developer
+```
+
+**Roles:** `admin`, `developer`, `viewer`
+
+### b2c mrt project member get
+
+Get details of a project member.
+
+```bash
+b2c mrt project member get user@example.com --project my-storefront
+```
+
+### b2c mrt project member update
+
+Update a project member's role.
+
+```bash
+b2c mrt project member update user@example.com --project my-storefront --role viewer
+```
+
+### b2c mrt project member remove
+
+Remove a member from an MRT project.
+
+```bash
+b2c mrt project member remove user@example.com --project my-storefront
+b2c mrt project member remove user@example.com -p my-storefront --force
+```
+
+---
+
+## Project Notification Commands
+
+Configure email notifications for deployment events.
+
+### b2c mrt project notification list
+
+List notifications for an MRT project.
+
+```bash
+b2c mrt project notification list --project my-storefront
+```
+
+### b2c mrt project notification create
+
+Create a deployment notification.
+
+```bash
+# Notify on deployment failures
+b2c mrt project notification create -p my-storefront \
+  --target staging --target production \
+  --recipient ops@example.com \
+  --on-failed
+
+# Notify on all deployment events
+b2c mrt project notification create -p my-storefront \
+  --target production \
+  --recipient team@example.com \
+  --on-start --on-success --on-failed
+```
+
+### b2c mrt project notification get
+
+Get details of a notification.
+
+```bash
+b2c mrt project notification get abc-123 --project my-storefront
+```
+
+### b2c mrt project notification update
+
+Update a notification.
+
+```bash
+b2c mrt project notification update abc-123 -p my-storefront --on-start --no-on-failed
+```
+
+### b2c mrt project notification delete
+
+Delete a notification.
+
+```bash
+b2c mrt project notification delete abc-123 --project my-storefront
+b2c mrt project notification delete abc-123 -p my-storefront --force
+```
+
+---
+
+## Environment Commands
+
+### b2c mrt env list
+
+List environments in an MRT project.
+
+```bash
+b2c mrt env list --project my-storefront
+b2c mrt env list -p my-storefront --json
+```
+
+### b2c mrt env create
+
+Create a new environment.
 
 ```bash
 # Create a staging environment
 b2c mrt env create staging --project my-storefront --name "Staging Environment"
 
-# Create a production environment
-b2c mrt env create production --project my-storefront --name "Production" --production
+# Create a production environment in a specific region
+b2c mrt env create production -p my-storefront --name "Production" \
+  --production --region eu-west-1
 
-# Create an environment in a specific region
-b2c mrt env create feature-test -p my-storefront -n "Feature Test" --region eu-west-1
-
-# Create with external hostname configuration
-b2c mrt env create prod -p my-storefront -n "Production" --production \
+# Create with external hostname
+b2c mrt env create prod -p my-storefront --name "Production" \
+  --production \
   --external-hostname www.example.com \
   --external-domain example.com
-
-# Output as JSON
-b2c mrt env create staging -p my-storefront -n "Staging" --json
 ```
 
-### Output
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--name`, `-n` | Display name (required) |
+| `--region`, `-r` | AWS region for SSR |
+| `--production` | Mark as production |
+| `--hostname` | Hostname pattern for V8 Tag |
+| `--external-hostname` | Full external hostname |
+| `--external-domain` | External domain for SSR |
+| `--allow-cookies` | Forward HTTP cookies |
+| `--enable-source-maps` | Enable source maps |
 
-On success, displays the created environment details:
+### b2c mrt env get
 
+Get environment details.
+
+```bash
+b2c mrt env get --project my-storefront --environment staging
+b2c mrt env get -p my-storefront -e production --json
 ```
-Creating environment "staging" in my-storefront...
-Environment created successfully.
 
-Slug:              staging
-Name:              Staging Environment
-Project:           my-storefront
-State:             created
-Production:        No
-Region:            us-east-1
-Hostname:          staging-my-storefront.mobify-storefront.com
+### b2c mrt env update
+
+Update an environment.
+
+```bash
+b2c mrt env update -p my-storefront -e staging --name "Updated Staging"
+b2c mrt env update -p my-storefront -e production --allow-cookies
+```
+
+### b2c mrt env delete
+
+Delete an environment.
+
+```bash
+b2c mrt env delete staging --project my-storefront
+b2c mrt env delete old-env -p my-storefront --force
+```
+
+### b2c mrt env invalidate
+
+Invalidate CDN cache for an environment.
+
+```bash
+# Invalidate all cached content
+b2c mrt env invalidate -p my-storefront -e production
+
+# Invalidate specific paths
+b2c mrt env invalidate -p my-storefront -e production --path "/products/*" --path "/categories/*"
+```
+
+### b2c mrt env b2c
+
+Get or update B2C Commerce connection for an environment.
+
+```bash
+# Get current B2C configuration
+b2c mrt env b2c -p my-storefront -e production
+
+# Set B2C instance connection
+b2c mrt env b2c -p my-storefront -e production --instance-id aaaa_prd
+
+# Set B2C instance with specific sites
+b2c mrt env b2c -p my-storefront -e production --instance-id aaaa_prd --sites RefArch,SiteGenesis
 ```
 
 ---
 
-## b2c mrt env delete
+## Environment Variable Commands
 
-Delete an environment (target) from a Managed Runtime project.
+### b2c mrt env var list
 
-### Usage
+List environment variables.
 
 ```bash
-b2c mrt env delete SLUG [FLAGS]
+b2c mrt env var list --project my-storefront --environment production
+b2c mrt env var list -p my-storefront -e staging --json
 ```
 
-### Arguments
+### b2c mrt env var set
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SLUG` | Environment slug/identifier to delete | Yes |
+Set environment variables.
 
-### Flags
+```bash
+# Set a single variable
+b2c mrt env var set MY_VAR=value -p my-storefront -e production
 
-In addition to [global MRT flags](#global-mrt-flags):
+# Set multiple variables
+b2c mrt env var set API_KEY=secret DEBUG=true -p my-storefront -e staging
 
+# Set value with spaces
+b2c mrt env var set "MESSAGE=hello world" -p my-storefront -e production
+```
+
+### b2c mrt env var delete
+
+Delete an environment variable.
+
+```bash
+b2c mrt env var delete MY_VAR -p my-storefront -e production
+```
+
+---
+
+## URL Redirect Commands
+
+### b2c mrt env redirect list
+
+List URL redirects for an environment.
+
+```bash
+b2c mrt env redirect list -p my-storefront -e production
+b2c mrt env redirect list -p my-storefront -e production --limit 50
+```
+
+### b2c mrt env redirect create
+
+Create a URL redirect.
+
+```bash
+b2c mrt env redirect create -p my-storefront -e production \
+  --from "/old-path" --to "/new-path"
+
+# Permanent redirect (301)
+b2c mrt env redirect create -p my-storefront -e production \
+  --from "/legacy/*" --to "/modern/$1" --permanent
+```
+
+### b2c mrt env redirect delete
+
+Delete a URL redirect.
+
+```bash
+b2c mrt env redirect delete abc-123 -p my-storefront -e production
+```
+
+### b2c mrt env redirect clone
+
+Clone redirects from one environment to another.
+
+```bash
+b2c mrt env redirect clone -p my-storefront \
+  --source staging --target production
+```
+
+---
+
+## Access Control Commands
+
+### b2c mrt env access-control list
+
+List access control headers for an environment.
+
+```bash
+b2c mrt env access-control list -p my-storefront -e staging
+b2c mrt env access-control list -p my-storefront -e staging --json
+```
+
+---
+
+## Bundle Commands
+
+### b2c mrt bundle deploy
+
+Push a local build or deploy an existing bundle.
+
+```bash
+# Push local build to project
+b2c mrt bundle deploy --project my-storefront
+
+# Push and deploy to staging
+b2c mrt bundle deploy -p my-storefront -e staging
+
+# Push with release message
+b2c mrt bundle deploy -p my-storefront -e production --message "Release v1.0.0"
+
+# Push from custom build directory
+b2c mrt bundle deploy -p my-storefront --build-dir ./dist
+
+# Deploy existing bundle by ID
+b2c mrt bundle deploy 12345 -p my-storefront -e production
+```
+
+**Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--force`, `-f` | Skip confirmation prompt | `false` |
-| `--json` | Output result as JSON | |
+| `--message`, `-m` | Bundle message/description | |
+| `--build-dir`, `-b` | Path to build directory | `build` |
+| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
+| `--node-version`, `-n` | Node.js version for SSR | `22.x` |
+| `--ssr-param` | SSR parameters (key=value) | |
 
-### Examples
+### b2c mrt bundle list
 
-```bash
-# Delete an environment (with confirmation prompt)
-b2c mrt env delete feature-test --project my-storefront
-
-# Delete without confirmation
-b2c mrt env delete old-staging -p my-storefront --force
-```
-
-### Notes
-
-- The command will prompt for confirmation unless `--force` is used
-- Be cautious when deleting production environments
-
----
-
-## b2c mrt env var list
-
-List environment variables on a Managed Runtime environment.
-
-### Usage
+List bundles in a project.
 
 ```bash
-b2c mrt env var list [FLAGS]
+b2c mrt bundle list --project my-storefront
+b2c mrt bundle list -p my-storefront --limit 10
+b2c mrt bundle list -p my-storefront --json
 ```
 
-### Flags
+### b2c mrt bundle history
 
-Uses [global MRT flags](#global-mrt-flags). Both `--project` and `--environment` are required.
-
-| Flag | Description |
-|------|-------------|
-| `--json` | Output result as JSON |
-
-### Examples
+View deployment history for an environment.
 
 ```bash
-# List environment variables
-b2c mrt env var list --project acme-storefront --environment production
-
-# Short form
-b2c mrt env var list -p my-project -e staging
-
-# Output as JSON
-b2c mrt env var list -p my-project -e production --json
+b2c mrt bundle history -p my-storefront -e production
+b2c mrt bundle history -p my-storefront -e staging --limit 5
 ```
 
-### Output
+### b2c mrt bundle download
 
-Displays a table of environment variables:
+Download a bundle artifact.
 
-```
-Listing env vars for my-project/production...
-Name              Value                    Status      Updated
-─────────────────────────────────────────────────────────────────────
-API_KEY           sk-xxx...xxx             Published   12/10/2024, 2:30:00 PM
-DEBUG             false                    Published   12/9/2024, 10:15:00 AM
-FEATURE_FLAG      enabled                  Pending     12/10/2024, 3:00:00 PM
+```bash
+# Download to current directory
+b2c mrt bundle download 12345 -p my-storefront
+
+# Download to specific path
+b2c mrt bundle download 12345 -p my-storefront -o ./artifacts/bundle.tgz
+
+# Get download URL only
+b2c mrt bundle download 12345 -p my-storefront --url-only
 ```
 
 ---
 
-## b2c mrt env var set
+## User Commands
 
-Set environment variables on a Managed Runtime environment.
+### b2c mrt user profile
 
-### Usage
-
-```bash
-b2c mrt env var set KEY=value [KEY=value...] [FLAGS]
-```
-
-### Arguments
-
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `KEY=value` | Environment variable(s) in KEY=value format | Yes |
-
-### Flags
-
-Uses [global MRT flags](#global-mrt-flags). Both `--project` and `--environment` are required.
-
-| Flag | Description |
-|------|-------------|
-| `--json` | Output result as JSON |
-
-### Examples
+View your MRT user profile.
 
 ```bash
-# Set a single environment variable
-b2c mrt env var set MY_VAR=value --project acme-storefront --environment production
-
-# Set multiple environment variables
-b2c mrt env var set API_KEY=secret DEBUG=true -p my-project -e staging
-
-# Set a value with spaces (use quotes)
-b2c mrt env var set "MESSAGE=hello world" -p my-project -e production
-
-# Using environment variables for auth
-export SFCC_MRT_API_KEY=your-api-key
-export SFCC_MRT_PROJECT=my-project
-export SFCC_MRT_ENVIRONMENT=staging
-b2c mrt env var set MY_VAR=value
+b2c mrt user profile
+b2c mrt user profile --json
 ```
 
-### Notes
+### b2c mrt user api-key
 
-- Variable values are set immediately but may take time to propagate
-- Use quotes around values containing spaces
-- Multiple variables can be set in a single command
+Reset your MRT API key.
+
+```bash
+b2c mrt user api-key --reset
+```
+
+### b2c mrt user email-prefs
+
+View or update email preferences.
+
+```bash
+# View current preferences
+b2c mrt user email-prefs
+
+# Update preferences
+b2c mrt user email-prefs --marketing --no-notifications
+```
 
 ---
 
-## b2c mrt env var delete
+## Common Workflows
 
-Delete an environment variable from a Managed Runtime environment.
-
-### Usage
+### Deploy to Production
 
 ```bash
-b2c mrt env var delete KEY [FLAGS]
+# 1. Push and deploy to staging for testing
+b2c mrt bundle deploy -p my-storefront -e staging -m "v1.0.0-rc1"
+
+# 2. After testing, deploy to production
+b2c mrt bundle deploy -p my-storefront -e production -m "v1.0.0"
+
+# 3. Or deploy an existing bundle
+b2c mrt bundle deploy 12345 -p my-storefront -e production
 ```
 
-### Arguments
-
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `KEY` | Environment variable name to delete | Yes |
-
-### Flags
-
-Uses [global MRT flags](#global-mrt-flags). Both `--project` and `--environment` are required.
-
-| Flag | Description |
-|------|-------------|
-| `--json` | Output result as JSON |
-
-### Examples
+### Set Up a New Environment
 
 ```bash
-# Delete an environment variable
-b2c mrt env var delete MY_VAR --project acme-storefront --environment production
+# 1. Create the environment
+b2c mrt env create qa -p my-storefront --name "QA Environment" --region us-east-1
 
-# Short form
-b2c mrt env var delete OLD_API_KEY -p my-project -e staging
+# 2. Configure environment variables
+b2c mrt env var set API_URL=https://api.qa.example.com -p my-storefront -e qa
+
+# 3. Deploy a bundle
+b2c mrt bundle deploy -p my-storefront -e qa
+```
+
+### Invalidate Cache After Content Update
+
+```bash
+# Invalidate specific paths
+b2c mrt env invalidate -p my-storefront -e production \
+  --path "/products/*" --path "/categories/*"
 ```

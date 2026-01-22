@@ -3,4 +3,4 @@
 '@salesforce/b2c-tooling-sdk': minor
 ---
 
-adds package.json config source for project level shared config
+Add `b2c ecdn` commands for managing eCDN zones, certificates, WAF, caching, security settings, and related configurations.

@@ -446,3 +446,259 @@ export async function waitForEnv(options: WaitForEnvOptions, auth: AuthStrategy)
 
   throw new Error(`Timeout waiting for environment "${slug}" to be ready after ${timeout}ms`);
 }
+
+/**
+ * MRT environment type for updates.
+ */
+export type MrtEnvironmentUpdate = components['schemas']['APITargetV2Update'];
+
+/**
+ * Patched environment for partial updates.
+ */
+export type PatchedMrtEnvironment = components['schemas']['PatchedAPITargetV2Update'];
+
+/**
+ * Options for listing MRT environments.
+ */
+export interface ListEnvsOptions {
+  /**
+   * The project slug to list environments for.
+   */
+  projectSlug: string;
+
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Result of listing environments.
+ */
+export interface ListEnvsResult {
+  /**
+   * Array of environments.
+   */
+  environments: MrtEnvironment[];
+}
+
+/**
+ * Lists environments (targets) for an MRT project.
+ *
+ * @param options - List options
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns List of environments
+ * @throws Error if request fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { listEnvs } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const result = await listEnvs({ projectSlug: 'my-storefront' }, auth);
+ * for (const env of result.environments) {
+ *   console.log(`- ${env.name} (${env.slug}): ${env.state}`);
+ * }
+ * ```
+ */
+export async function listEnvs(options: ListEnvsOptions, auth: AuthStrategy): Promise<ListEnvsResult> {
+  const logger = getLogger();
+  const {projectSlug, origin} = options;
+
+  logger.debug({projectSlug}, '[MRT] Listing environments');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+
+  const {data, error} = await client.GET('/api/projects/{project_slug}/target/', {
+    params: {
+      path: {project_slug: projectSlug},
+    },
+  });
+
+  if (error) {
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to list environments: ${errorMessage}`);
+  }
+
+  logger.debug({count: data.count}, '[MRT] Environments listed');
+
+  return {
+    environments: data.results ?? [],
+  };
+}
+
+/**
+ * Options for updating an MRT environment.
+ */
+export interface UpdateEnvOptions {
+  /**
+   * The project slug containing the environment.
+   */
+  projectSlug: string;
+
+  /**
+   * Environment slug/identifier to update.
+   */
+  slug: string;
+
+  /**
+   * New display name for the environment.
+   */
+  name?: string;
+
+  /**
+   * Mark as a production environment.
+   */
+  isProduction?: boolean;
+
+  /**
+   * Hostname pattern for V8 Tag loading.
+   */
+  hostname?: string | null;
+
+  /**
+   * Full external hostname (e.g., www.example.com).
+   */
+  externalHostname?: string | null;
+
+  /**
+   * External domain for Universal PWA SSR (e.g., example.com).
+   */
+  externalDomain?: string | null;
+
+  /**
+   * Forward HTTP cookies to origin.
+   */
+  allowCookies?: boolean | null;
+
+  /**
+   * Enable source map support in the environment.
+   */
+  enableSourceMaps?: boolean | null;
+
+  /**
+   * Minimum log level for the environment.
+   */
+  logLevel?: LogLevel | null;
+
+  /**
+   * IP whitelist (CIDR blocks, space-separated).
+   */
+  whitelistedIps?: string | null;
+
+  /**
+   * Proxy configurations for SSR.
+   */
+  proxyConfigs?: Array<{
+    path: string;
+    host: string;
+  }> | null;
+
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Updates an environment (target) in an MRT project.
+ *
+ * Important: This endpoint automatically re-deploys the current bundle
+ * if any of the SSR-related properties are changed.
+ *
+ * @param options - Environment update options
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns The updated environment
+ * @throws Error if update fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { updateEnv } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const updated = await updateEnv({
+ *   projectSlug: 'my-storefront',
+ *   slug: 'staging',
+ *   name: 'Staging v2',
+ *   enableSourceMaps: true
+ * }, auth);
+ * ```
+ */
+export async function updateEnv(options: UpdateEnvOptions, auth: AuthStrategy): Promise<MrtEnvironmentUpdate> {
+  const logger = getLogger();
+  const {projectSlug, slug, origin} = options;
+
+  logger.debug({projectSlug, slug}, '[MRT] Updating environment');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+
+  const body: PatchedMrtEnvironment = {};
+
+  if (options.name !== undefined) {
+    body.name = options.name;
+  }
+
+  if (options.isProduction !== undefined) {
+    body.is_production = options.isProduction;
+  }
+
+  if (options.hostname !== undefined) {
+    body.hostname = options.hostname;
+  }
+
+  if (options.externalHostname !== undefined) {
+    body.ssr_external_hostname = options.externalHostname;
+  }
+
+  if (options.externalDomain !== undefined) {
+    body.ssr_external_domain = options.externalDomain;
+  }
+
+  if (options.allowCookies !== undefined) {
+    body.allow_cookies = options.allowCookies;
+  }
+
+  if (options.enableSourceMaps !== undefined) {
+    body.enable_source_maps = options.enableSourceMaps;
+  }
+
+  if (options.logLevel !== undefined) {
+    body.log_level = options.logLevel;
+  }
+
+  if (options.whitelistedIps !== undefined) {
+    body.ssr_whitelisted_ips = options.whitelistedIps;
+  }
+
+  if (options.proxyConfigs !== undefined) {
+    body.ssr_proxy_configs = options.proxyConfigs as typeof body.ssr_proxy_configs;
+  }
+
+  const {data, error} = await client.PATCH('/api/projects/{project_slug}/target/{target_slug}/', {
+    params: {
+      path: {project_slug: projectSlug, target_slug: slug},
+    },
+    body,
+  });
+
+  if (error) {
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to update environment: ${errorMessage}`);
+  }
+
+  logger.debug({slug: data.slug, state: data.state}, '[MRT] Environment updated');
+
+  return data;
+}

@@ -196,6 +196,35 @@ export type {
   components as ScapiSchemasComponents,
 } from './scapi-schemas.js';
 
+export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
+export type {
+  CdnZonesClient,
+  CdnZonesClientConfig,
+  CdnZonesClientOptions,
+  CdnZonesError,
+  CdnZonesResponse,
+  Zone,
+  ZonesEnvelope,
+  Certificate,
+  SecuritySetting,
+  SpeedSetting,
+  paths as CdnZonesPaths,
+  components as CdnZonesComponents,
+} from './cdn-zones.js';
+
+export {createMrtB2CClient, DEFAULT_MRT_B2C_ORIGIN} from './mrt-b2c.js';
+export type {
+  MrtB2CClient,
+  MrtB2CClientConfig,
+  MrtB2CError,
+  MrtB2CResponse,
+  B2COrgInfo,
+  B2CTargetInfo,
+  PatchedB2CTargetInfo,
+  paths as MrtB2CPaths,
+  components as MrtB2CComponents,
+} from './mrt-b2c.js';
+
 export {
   createAccountManagerClient,
   getUser,

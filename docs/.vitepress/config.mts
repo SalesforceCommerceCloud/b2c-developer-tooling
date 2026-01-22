@@ -35,6 +35,7 @@ const guideSidebar = [
       { text: 'WebDAV Commands', link: '/cli/webdav' },
       { text: 'ODS Commands', link: '/cli/ods' },
       { text: 'MRT Commands', link: '/cli/mrt' },
+      { text: 'eCDN Commands', link: '/cli/ecdn' },
       { text: 'SLAS Commands', link: '/cli/slas' },
       { text: 'Custom APIs', link: '/cli/custom-apis' },
       { text: 'SCAPI Schemas', link: '/cli/scapi-schemas' },

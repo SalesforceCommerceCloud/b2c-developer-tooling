@@ -54,6 +54,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     accountManagerHost: json['account-manager-host'],
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
+    mrtOrigin: json.mrtOrigin || json.cloudOrigin,
   };
 }
 
