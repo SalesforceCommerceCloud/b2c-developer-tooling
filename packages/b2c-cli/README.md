@@ -231,6 +231,30 @@ b2c role grant user@example.com --role bm-admin --scope "tenant1,tenant2"
 b2c role revoke user@example.com --role bm-admin
 ```
 
+### Organization Management (Account Manager)
+
+Manage organizations in Account Manager.
+
+```sh
+# List organizations with pagination
+b2c org list --page 0 --size 25
+
+# List all organizations
+b2c org list --all
+
+# Get organization details by ID
+b2c org get org-123
+
+# Get organization details by name
+b2c org get "My Organization"
+
+# Get audit logs for an organization
+b2c org audit org-123
+
+# Get audit logs with extended columns
+b2c org audit org-123 --extended
+```
+
 ### Authentication
 
 Get OAuth tokens for scripting.
