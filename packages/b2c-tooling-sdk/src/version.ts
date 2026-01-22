@@ -11,7 +11,8 @@
 import {createRequire} from 'node:module';
 
 const require = createRequire(import.meta.url);
-const pkg = require('../package.json') as {name: string; version: string};
+// Use the package.json exports path to resolve correctly from both src/ and dist/
+const pkg = require('@salesforce/b2c-tooling-sdk/package.json') as {name: string; version: string};
 
 /**
  * The SDK package name.
