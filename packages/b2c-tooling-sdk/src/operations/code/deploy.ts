@@ -173,9 +173,14 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
   }
   logger.debug('Archive unzipped');
 
-  // Delete temporary archive
-  await webdav.delete(uploadPath);
-  logger.debug('Temporary archive deleted');
+  // Delete temporary archive (best-effort cleanup)
+  try {
+    await webdav.delete(uploadPath);
+    logger.debug('Temporary archive deleted');
+  } catch (error) {
+    // Log warning but don't fail deployment - the code is already deployed
+    logger.warn({error, uploadPath}, 'Failed to clean up temporary archive (non-fatal)');
+  }
 
   logger.debug(
     {server: instance.config.hostname, codeVersion, cartridgeCount: cartridges.length},
