@@ -145,6 +145,17 @@
         "default": "./dist/cjs/operations/roles/index.js"
       }
     },
+    "./operations/orgs": {
+      "development": "./src/operations/orgs/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/orgs/index.d.ts",
+        "default": "./dist/esm/operations/orgs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/orgs/index.d.ts",
+        "default": "./dist/cjs/operations/orgs/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {

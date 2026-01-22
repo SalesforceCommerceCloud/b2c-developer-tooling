@@ -247,6 +247,17 @@ export type {
   components as AccountManagerRolesComponents,
 } from './am-roles-api.js';
 
+export {createAccountManagerOrgsClient} from './am-orgs-api.js';
+export type {
+  AccountManagerOrgsClient,
+  AccountManagerOrgsClientConfig,
+  AccountManagerOrganization,
+  OrganizationCollection,
+  AuditLogRecord,
+  AuditLogCollection,
+  ListOrgsOptions,
+} from './am-orgs-api.js';
+
 export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
 export type {
   CdnZonesClient,

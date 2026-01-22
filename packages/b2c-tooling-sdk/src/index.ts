@@ -124,6 +124,13 @@ export type {
   ListRolesOptions,
   AccountManagerRolesPaths,
   AccountManagerRolesComponents,
+  AccountManagerOrgsClient,
+  AccountManagerOrgsClientConfig,
+  AccountManagerOrganization,
+  OrganizationCollection,
+  AuditLogRecord,
+  AuditLogCollection,
+  ListOrgsOptions,
   CdnZonesClient,
   CdnZonesClientConfig,
   CdnZonesClientOptions,
@@ -241,6 +248,9 @@ export {
 
 // Operations - Roles
 export {getRole, listRoles} from './operations/roles/index.js';
+
+// Operations - Organizations
+export {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from './operations/orgs/index.js';
 
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';

@@ -55,7 +55,8 @@ export type HttpClientType =
   | 'cdn-zones'
   | 'webdav'
   | 'am-users-api'
-  | 'am-roles-api';
+  | 'am-roles-api'
+  | 'am-orgs-api';
 
 /**
  * Middleware interface compatible with openapi-fetch.

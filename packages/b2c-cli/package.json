@@ -147,6 +147,9 @@
       "role": {
         "description": "Manage roles for Account Manager users"
       },
+      "org": {
+        "description": "Manage Account Manager organizations"
+      },
       "slas": {
         "description": "Manage SLAS API clients and credentials\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
         "subtopics": {

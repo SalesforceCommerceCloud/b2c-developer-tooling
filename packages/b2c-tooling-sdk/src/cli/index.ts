@@ -101,6 +101,7 @@ export {MrtCommand} from './mrt-command.js';
 export {OdsCommand} from './ods-command.js';
 export {UserCommand} from './user-command.js';
 export {RoleCommand} from './role-command.js';
+export {OrgCommand} from './org-command.js';
 export {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS} from './webdav-command.js';
 export type {WebDavRootKey} from './webdav-command.js';
 

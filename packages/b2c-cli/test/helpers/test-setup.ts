@@ -70,3 +70,70 @@ export async function createTestCommand<T extends {init: () => Promise<void>}>(
   await command.init();
   return command as T;
 }
+
+/**
+ * Stubs command config and logger for testing.
+ * @param command - The command instance to stub
+ * @param accountManagerHost - Account Manager hostname (default: 'account.test.demandware.com')
+ */
+export function stubCommandConfigAndLogger(command: any, accountManagerHost = 'account.test.demandware.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'resolvedConfig', {
+    value: {
+      values: {
+        accountManagerHost,
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+      },
+      hasOAuthConfig() {
+        return Boolean(this.values.clientId);
+      },
+    },
+    configurable: true,
+  });
+}
+
+/**
+ * Stubs the JSON enabled flag for a command.
+ * @param command - The command instance to stub
+ * @param enabled - Whether JSON mode is enabled
+ */
+export function stubJsonEnabled(command: any, enabled: boolean): void {
+  command.jsonEnabled = () => enabled;
+}
+
+/**
+ * Stubs a client property on a command.
+ * @param command - The command instance to stub
+ * @param propertyName - The name of the client property (e.g., 'accountManagerClient', 'accountManagerRolesClient', 'accountManagerOrgsClient')
+ * @param client - The client instance to stub
+ */
+export function stubClient(command: any, propertyName: string, client: any): void {
+  Object.defineProperty(command, propertyName, {
+    get: () => client,
+    configurable: true,
+  });
+}
+
+/**
+ * Makes a command throw on error instead of using oclif's error handling.
+ * @param command - The command instance to modify
+ */
+export function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
