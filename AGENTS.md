@@ -110,12 +110,12 @@ Changeset guidelines:
 - Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; 
 - a pull request can have multiple changesets
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
-- This is a pre-1.0 preview release, so there are no `major` breaking change bumps
+- This is a pre-1.0 preview release, so there are no `major` breaking change bumps yet
 - Good changesets explain:
   - WHAT the change is
   - WHY the change was made
   - HOW a consumer should update their code
-- Good changesets are brief and user-focused (not contributor); they are generally 1 line or a short paragraph for detailed changes
+- Good changesets are brief and user-focused (not contributor); they are generally 1 line or a short paragraph for detailed changes; The content of the changeset is used in CHANGELOG and release notes.
 
 create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 
@@ -129,4 +129,3 @@ Description of the change explaining WHAT, WHY, and HOW to update
 ```
 
 - Include only the packages that were modified
-- Use `patch` for bug fixes, `minor` for new features
