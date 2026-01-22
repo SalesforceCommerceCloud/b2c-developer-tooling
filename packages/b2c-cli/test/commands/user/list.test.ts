@@ -5,8 +5,10 @@
  */
 
 import {expect} from 'chai';
+import sinon from 'sinon';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import UserList from '../../../src/commands/user/list.js';
 import {stubCommandConfigAndLogger, stubJsonEnabled, makeCommandThrowOnError} from '../../helpers/test-setup.js';
 
@@ -59,8 +61,14 @@ describe('user list', () => {
     server.listen({onUnhandledRequest: 'error'});
   });
 
+  beforeEach(() => {
+    isolateConfig();
+  });
+
   afterEach(() => {
+    sinon.restore();
     server.resetHandlers();
+    restoreConfig();
   });
 
   after(() => {
