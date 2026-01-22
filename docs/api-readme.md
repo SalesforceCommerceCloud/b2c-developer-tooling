@@ -242,7 +242,7 @@ const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version
 
 ## Account Manager Operations
 
-The SDK provides operations for managing users and roles.
+The SDK provides operations for managing users, roles, and organizations.
 
 ### User Management
 
@@ -348,6 +348,45 @@ const userRoles = await listRoles(client, {
   page: 0,
   roleTargetType: 'User',
 });
+```
+
+### Organization Management
+
+```typescript
+import {
+  createAccountManagerOrgsClient,
+  getOrg,
+  getOrgByName,
+  listOrgs,
+  getOrgAuditLogs,
+} from '@salesforce/b2c-tooling-sdk/operations/orgs';
+import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager Organizations client
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerOrgsClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Get organization by ID
+const org = await getOrg(client, 'org-123');
+
+// Get organization by name
+const orgByName = await getOrgByName(client, 'My Organization');
+
+// List organizations with pagination
+const orgs = await listOrgs(client, { size: 25, page: 0 });
+
+// List all organizations (uses max page size of 5000)
+const allOrgs = await listOrgs(client, { all: true });
+
+// Get audit logs for an organization
+const auditLogs = await getOrgAuditLogs(client, 'org-123');
 ```
 
 ### Required Permissions

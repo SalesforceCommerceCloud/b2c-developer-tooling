@@ -47,6 +47,7 @@ These flags are available on all commands that interact with B2C instances:
 
 - [User Management](./user) - Manage Account Manager users (list, create, update, delete, reset)
 - [Role Management](./role) - Manage Account Manager roles and role assignments
+- [Organization Management](./org) - Manage Account Manager organizations (list, view details, audit logs)
 
 ### Utilities
 

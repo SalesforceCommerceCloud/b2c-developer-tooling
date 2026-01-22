@@ -210,6 +210,41 @@ const userRoles = await listRoles(client, {
 });
 ```
 
+### Account Manager Organization Management
+
+```typescript
+import {
+  getOrg,
+  getOrgByName,
+  listOrgs,
+  getOrgAuditLogs,
+} from '@salesforce/b2c-tooling-sdk/operations/orgs';
+import {createAccountManagerOrgsClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerOrgsClient({}, auth);
+
+// Get organization by ID
+const org = await getOrg(client, 'org-123');
+
+// Get organization by name
+const orgByName = await getOrgByName(client, 'My Organization');
+
+// List organizations with pagination
+const orgs = await listOrgs(client, {size: 25, page: 0});
+
+// List all organizations (uses max page size of 5000)
+const allOrgs = await listOrgs(client, {all: true});
+
+// Get audit logs for an organization
+const auditLogs = await getOrgAuditLogs(client, 'org-123');
+```
+
 ## Module Exports
 
 The SDK provides subpath exports for tree-shaking and organization:
@@ -226,6 +261,7 @@ The SDK provides subpath exports for tree-shaking and organization:
 | `@salesforce/b2c-tooling-sdk/operations/sites` | Site management                                       |
 | `@salesforce/b2c-tooling-sdk/operations/users` | Account Manager user management                       |
 | `@salesforce/b2c-tooling-sdk/operations/roles` | Account Manager role management                       |
+| `@salesforce/b2c-tooling-sdk/operations/orgs`  | Account Manager organization management               |
 | `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)        |
 | `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)          |
 | `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                          |
