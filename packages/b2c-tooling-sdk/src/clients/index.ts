@@ -211,3 +211,5 @@ export type {
   paths as CdnZonesPaths,
   components as CdnZonesComponents,
 } from './cdn-zones.js';
+
+export {getApiErrorMessage} from './error-utils.js';

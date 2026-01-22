@@ -6,7 +6,7 @@
 import {Command, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createSlasClient, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
+import {createSlasClient, getApiErrorMessage, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 export type Client = SlasComponents['schemas']['Client'];
@@ -91,8 +91,8 @@ export function printClientDetails(output: ClientOutput, showSecret = true): voi
 /**
  * Format API error for display.
  */
-export function formatApiError(error: unknown): string {
-  return typeof error === 'object' ? JSON.stringify(error) : String(error);
+export function formatApiError(error: unknown, response: Response): string {
+  return getApiErrorMessage(error, response);
 }
 
 /**
@@ -139,7 +139,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (!isTenantNotFound) {
       this.error(
         t('commands.slas.client.create.tenantError', 'Failed to check tenant: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }
@@ -149,7 +149,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
       this.log(t('commands.slas.client.create.creatingTenant', 'Creating SLAS tenant {{tenantId}}...', {tenantId}));
     }
 
-    const {error: createError} = await slasClient.PUT('/tenants/{tenantId}', {
+    const {error: createError, response: createResponse} = await slasClient.PUT('/tenants/{tenantId}', {
       params: {
         path: {tenantId},
       },
@@ -166,7 +166,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (createError) {
       this.error(
         t('commands.slas.client.create.tenantCreateError', 'Failed to create tenant: {{message}}', {
-          message: formatApiError(createError),
+          message: formatApiError(createError, createResponse),
         }),
       );
     }
