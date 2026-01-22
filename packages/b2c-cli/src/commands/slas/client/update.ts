@@ -77,7 +77,6 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     this.requireOAuthCredentials();
 
     const {
-      'tenant-id': tenantId,
       name,
       secret,
       channels,
@@ -87,6 +86,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
       replace,
     } = this.flags;
     const {clientId} = this.args;
+    const tenantId = this.requireTenantId();
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.update.fetching', 'Fetching SLAS client {{clientId}}...', {clientId}));

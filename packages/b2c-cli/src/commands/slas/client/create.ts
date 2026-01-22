@@ -109,7 +109,6 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     this.requireOAuthCredentials();
 
     const {
-      'tenant-id': tenantId,
       name,
       channels,
       scopes,
@@ -120,6 +119,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       public: isPublic,
       'create-tenant': createTenant,
     } = this.flags;
+    const tenantId = this.requireTenantId();
 
     // Validate that either --scopes or --default-scopes is provided
     if (!scopes && !useDefaultScopes) {

@@ -49,6 +49,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       env: 'SFCC_SHORTCODE',
       helpGroup: 'AUTH',
     }),
+    'tenant-id': Flags.string({
+      description: 'Organization/tenant ID',
+      env: 'SFCC_TENANT_ID',
+      helpGroup: 'AUTH',
+    }),
     'auth-methods': Flags.string({
       description: 'Allowed auth methods in priority order (comma-separated)',
       env: 'SFCC_AUTH_METHODS',
@@ -93,6 +98,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       clientId: this.flags['client-id'],
       clientSecret: this.flags['client-secret'],
       shortCode: this.flags['short-code'],
+      tenantId: this.flags['tenant-id'],
       authMethods: this.parseAuthMethods(),
       accountManagerHost: this.flags['account-manager-host'],
       // Merge scopes from flags (if provided)

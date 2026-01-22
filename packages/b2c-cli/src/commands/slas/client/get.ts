@@ -38,7 +38,7 @@ export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGe
   async run(): Promise<ClientOutput> {
     this.requireOAuthCredentials();
 
-    const {'tenant-id': tenantId} = this.flags;
+    const tenantId = this.requireTenantId();
     const {clientId} = this.args;
 
     if (!this.jsonEnabled()) {

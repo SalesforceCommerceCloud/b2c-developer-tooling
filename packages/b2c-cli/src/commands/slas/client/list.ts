@@ -51,7 +51,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
   async run(): Promise<ClientListOutput> {
     this.requireOAuthCredentials();
 
-    const {'tenant-id': tenantId} = this.flags;
+    const tenantId = this.requireTenantId();
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.list.fetching', 'Fetching SLAS clients for tenant {{tenantId}}...', {tenantId}));

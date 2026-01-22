@@ -36,7 +36,7 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
   async run(): Promise<DeleteOutput> {
     this.requireOAuthCredentials();
 
-    const {'tenant-id': tenantId} = this.flags;
+    const tenantId = this.requireTenantId();
     const {clientId} = this.args;
 
     if (!this.jsonEnabled()) {
