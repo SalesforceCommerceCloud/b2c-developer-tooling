@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import UserList from '../../../src/commands/user/list.js';
+import OrgList from '../../../src/commands/org/list.js';
 import {stubCommandConfigAndLogger, stubJsonEnabled, makeCommandThrowOnError} from '../../helpers/test-setup.js';
 
 const TEST_HOST = 'account.test.demandware.com';
@@ -23,35 +23,37 @@ function createMockJWT(payload: Record<string, unknown> = {}): string {
 }
 
 /**
- * Unit tests for user list command CLI logic.
+ * Unit tests for org list command CLI logic.
  * Tests column selection, pagination validation, output formatting.
  * SDK tests cover the actual API calls.
  */
-describe('user list', () => {
+describe('org list', () => {
   const server = setupServer();
 
-  const mockUsers = [
+  const mockOrgs = [
     {
-      id: 'user-1',
-      mail: 'user1@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      userState: 'ACTIVE',
-      passwordExpirationTimestamp: null,
-      verifiers: [],
-      linkedToSfIdentity: false,
-      lastLoginDate: '2025-01-01',
+      id: 'org-1',
+      name: 'Organization 1',
+      realms: ['realm1', 'realm2'],
+      emailsDomains: ['example.com'],
+      twoFARoles: ['role1'],
+      twoFAEnabled: true,
+      allowedVerifierTypes: ['TOTP'],
+      vaasEnabled: false,
+      sfIdentityFederation: true,
+      passwordMinEntropy: 8,
     },
     {
-      id: 'user-2',
-      mail: 'user2@example.com',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      userState: 'INITIAL',
-      passwordExpirationTimestamp: Date.now() - 1000,
-      verifiers: [{id: 'verifier-1'}],
-      linkedToSfIdentity: true,
-      lastLoginDate: null,
+      id: 'org-2',
+      name: 'Organization 2',
+      realms: ['realm3'],
+      emailsDomains: ['test.com', 'example.org'],
+      twoFARoles: [],
+      twoFAEnabled: false,
+      allowedVerifierTypes: [],
+      vaasEnabled: true,
+      sfIdentityFederation: false,
+      passwordMinEntropy: 12,
     },
   ];
 
@@ -69,55 +71,18 @@ describe('user list', () => {
 
   describe('command structure', () => {
     it('should have correct description', () => {
-      expect(UserList.description).to.be.a('string');
-      expect(UserList.description.length).to.be.greaterThan(0);
+      expect(OrgList.description).to.be.a('string');
+      expect(OrgList.description.length).to.be.greaterThan(0);
     });
 
     it('should enable JSON flag', () => {
-      expect(UserList.enableJsonFlag).to.be.true;
-    });
-  });
-
-  describe('getSelectedColumns', () => {
-    it('should return default columns when no flags provided', () => {
-      const command = new UserList([], {} as any);
-      (command as any).flags = {};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal([
-        'mail',
-        'firstName',
-        'lastName',
-        'userState',
-        'passwordExpired',
-        'twoFAEnabled',
-        'linkedToSfIdentity',
-        'lastLoginDate',
-      ]);
-    });
-
-    it('should return all columns when --extended flag is set', () => {
-      const command = new UserList([], {} as any);
-      (command as any).flags = {extended: true};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.include('mail');
-      expect(columns).to.include('roles');
-      expect(columns).to.include('organizations');
-    });
-
-    it('should return custom columns when --columns flag is set', () => {
-      const command = new UserList([], {} as any);
-      (command as any).flags = {columns: 'mail,firstName,userState'};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['mail', 'firstName', 'userState']);
+      expect(OrgList.enableJsonFlag).to.be.true;
     });
   });
 
   describe('pagination validation', () => {
     it('should validate size parameter - minimum', async () => {
-      const command = new UserList([], {} as any);
+      const command = new OrgList([], {} as any);
       (command as any).flags = {size: 0};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
@@ -126,13 +91,13 @@ describe('user list', () => {
         await command.run();
         expect.fail('Should have thrown');
       } catch (error: unknown) {
-        expect((error as Error).message).to.match(/Page size must be between 1 and 4000/);
+        expect((error as Error).message).to.match(/Size must be at least 1/);
       }
     });
 
     it('should validate size parameter - maximum', async () => {
-      const command = new UserList([], {} as any);
-      (command as any).flags = {size: 5000};
+      const command = new OrgList([], {} as any);
+      (command as any).flags = {size: 5001};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
 
@@ -140,12 +105,12 @@ describe('user list', () => {
         await command.run();
         expect.fail('Should have thrown');
       } catch (error: unknown) {
-        expect((error as Error).message).to.match(/Page size must be between 1 and 4000/);
+        expect((error as Error).message).to.match(/Size cannot exceed 5000/);
       }
     });
 
     it('should validate page parameter - negative', async () => {
-      const command = new UserList([], {} as any);
+      const command = new OrgList([], {} as any);
       (command as any).flags = {page: -1};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
@@ -154,14 +119,14 @@ describe('user list', () => {
         await command.run();
         expect.fail('Should have thrown');
       } catch (error: unknown) {
-        expect((error as Error).message).to.match(/Page number must be a non-negative integer/);
+        expect((error as Error).message).to.match(/Page must be a non-negative integer/);
       }
     });
   });
 
   describe('output formatting', () => {
-    it('should return user collection in JSON mode', async () => {
-      const command = new UserList([], {} as any);
+    it('should return organization collection in JSON mode', async () => {
+      const command = new OrgList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -174,8 +139,8 @@ describe('user list', () => {
             scope: 'sfcc.accountmanager.user.manage',
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: mockUsers});
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: mockOrgs, totalElements: 2, totalPages: 1, number: 0, size: 25});
         }),
       );
 
@@ -184,11 +149,12 @@ describe('user list', () => {
       expect(result).to.have.property('content');
       expect(result.content).to.not.be.undefined;
       expect(result.content).to.have.lengthOf(2);
-      expect(result.content![0].mail).to.equal('user1@example.com');
+      expect(result.content![0].id).to.equal('org-1');
+      expect(result.content![0].name).to.equal('Organization 1');
     });
 
     it('should handle empty results', async () => {
-      const command = new UserList([], {} as any);
+      const command = new OrgList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -201,8 +167,8 @@ describe('user list', () => {
             scope: 'sfcc.accountmanager.user.manage',
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: []});
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: [], totalElements: 0, totalPages: 0, number: 0, size: 25});
         }),
       );
 
@@ -212,7 +178,7 @@ describe('user list', () => {
     });
 
     it('should return data in non-JSON mode', async () => {
-      const command = new UserList([], {} as any);
+      const command = new OrgList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, false);
       stubCommandConfigAndLogger(command);
@@ -225,8 +191,8 @@ describe('user list', () => {
             scope: 'sfcc.accountmanager.user.manage',
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: mockUsers});
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: mockOrgs, totalElements: 2, totalPages: 1, number: 0, size: 25});
         }),
       );
 
@@ -237,7 +203,7 @@ describe('user list', () => {
     });
 
     it('should use default pagination when not specified', async () => {
-      const command = new UserList([], {} as any);
+      const command = new OrgList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -253,22 +219,22 @@ describe('user list', () => {
             scope: 'sfcc.accountmanager.user.manage',
           });
         }),
-        http.get(`${BASE_URL}/users`, ({request}) => {
+        http.get(`${BASE_URL}/organizations`, ({request}) => {
           const url = new URL(request.url);
           capturedSize = url.searchParams.get('size');
           capturedPage = url.searchParams.get('page');
-          return HttpResponse.json({content: []});
+          return HttpResponse.json({content: [], totalElements: 0, totalPages: 0, number: 0, size: 25});
         }),
       );
 
       await command.run();
 
-      expect(capturedSize).to.equal('20');
+      expect(capturedSize).to.equal('25');
       expect(capturedPage).to.equal('0');
     });
 
     it('should pass custom pagination parameters', async () => {
-      const command = new UserList([], {} as any);
+      const command = new OrgList([], {} as any);
       (command as any).flags = {size: 50, page: 2};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -284,11 +250,11 @@ describe('user list', () => {
             scope: 'sfcc.accountmanager.user.manage',
           });
         }),
-        http.get(`${BASE_URL}/users`, ({request}) => {
+        http.get(`${BASE_URL}/organizations`, ({request}) => {
           const url = new URL(request.url);
           capturedSize = url.searchParams.get('size');
           capturedPage = url.searchParams.get('page');
-          return HttpResponse.json({content: []});
+          return HttpResponse.json({content: [], totalElements: 0, totalPages: 0, number: 2, size: 50});
         }),
       );
 
@@ -296,6 +262,84 @@ describe('user list', () => {
 
       expect(capturedSize).to.equal('50');
       expect(capturedPage).to.equal('2');
+    });
+
+    it('should use max page size when --all flag is set', async () => {
+      const command = new OrgList([], {} as any);
+      (command as any).flags = {all: true};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+
+      let capturedSize: null | string = null;
+
+      server.use(
+        http.post(OAUTH_URL, () => {
+          return HttpResponse.json({
+            access_token: createMockJWT({sub: 'test-client'}),
+            expires_in: 1800,
+            scope: 'sfcc.accountmanager.user.manage',
+          });
+        }),
+        http.get(`${BASE_URL}/organizations`, ({request}) => {
+          const url = new URL(request.url);
+          capturedSize = url.searchParams.get('size');
+          return HttpResponse.json({content: [], totalElements: 0, totalPages: 0, number: 0, size: 5000});
+        }),
+      );
+
+      await command.run();
+
+      expect(capturedSize).to.equal('5000');
+    });
+
+    it('should handle column selection with --columns flag', async () => {
+      const command = new OrgList([], {} as any);
+      (command as any).flags = {columns: 'id,name,realms'};
+      stubJsonEnabled(command, false);
+      stubCommandConfigAndLogger(command);
+
+      server.use(
+        http.post(OAUTH_URL, () => {
+          return HttpResponse.json({
+            access_token: createMockJWT({sub: 'test-client'}),
+            expires_in: 1800,
+            scope: 'sfcc.accountmanager.user.manage',
+          });
+        }),
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: mockOrgs, totalElements: 2, totalPages: 1, number: 0, size: 25});
+        }),
+      );
+
+      const result = await command.run();
+
+      expect(result).to.have.property('content');
+      expect(result.content).to.have.lengthOf(2);
+    });
+
+    it('should handle extended columns with --extended flag', async () => {
+      const command = new OrgList([], {} as any);
+      (command as any).flags = {extended: true};
+      stubJsonEnabled(command, false);
+      stubCommandConfigAndLogger(command);
+
+      server.use(
+        http.post(OAUTH_URL, () => {
+          return HttpResponse.json({
+            access_token: createMockJWT({sub: 'test-client'}),
+            expires_in: 1800,
+            scope: 'sfcc.accountmanager.user.manage',
+          });
+        }),
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: mockOrgs, totalElements: 2, totalPages: 1, number: 0, size: 25});
+        }),
+      );
+
+      const result = await command.run();
+
+      expect(result).to.have.property('content');
+      expect(result.content).to.have.lengthOf(2);
     });
   });
 });

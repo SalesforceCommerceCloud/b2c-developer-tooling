@@ -238,3 +238,14 @@ export type {
   paths as AccountManagerRolesPaths,
   components as AccountManagerRolesComponents,
 } from './am-roles-api.js';
+
+export {createAccountManagerOrgsClient} from './am-orgs-api.js';
+export type {
+  AccountManagerOrgsClient,
+  AccountManagerOrgsClientConfig,
+  AccountManagerOrganization,
+  OrganizationCollection,
+  AuditLogRecord,
+  AuditLogCollection,
+  ListOrgsOptions,
+} from './am-orgs-api.js';

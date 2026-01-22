@@ -7,9 +7,8 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import UserUpdate from '../../../src/commands/user/update.js';
-import {stubCommandConfigAndLogger, stubJsonEnabled, makeCommandThrowOnError} from '../../helpers/user.js';
+import {stubCommandConfigAndLogger, stubJsonEnabled, makeCommandThrowOnError} from '../../helpers/test-setup.js';
 
 const TEST_HOST = 'account.test.demandware.com';
 const BASE_URL = `https://${TEST_HOST}/dw/rest/v1`;
