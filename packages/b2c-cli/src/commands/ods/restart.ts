@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type SandboxOperationModel = OdsComponents['schemas']['SandboxOperationModel'];
@@ -45,11 +45,9 @@ export default class OdsRestart extends OdsCommand<typeof OdsRestart> {
     });
 
     if (!result.data?.data) {
-      const errorResponse = result.error as OdsComponents['schemas']['ErrorResponse'] | undefined;
-      const errorMessage = errorResponse?.error?.message || result.response?.statusText || 'Unknown error';
       this.error(
         t('commands.ods.restart.error', 'Failed to restart sandbox: {{message}}', {
-          message: errorMessage,
+          message: getApiErrorMessage(result.error, result.response),
         }),
       );
     }

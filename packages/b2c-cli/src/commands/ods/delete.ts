@@ -6,7 +6,7 @@
 import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 /**
@@ -92,11 +92,9 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
     });
 
     if (result.response.status !== 202) {
-      const errorResponse = result.error as OdsComponents['schemas']['ErrorResponse'] | undefined;
-      const errorMessage = errorResponse?.error?.message || result.response?.statusText || 'Unknown error';
       this.error(
         t('commands.ods.delete.error', 'Failed to delete sandbox: {{message}}', {
-          message: errorMessage,
+          message: getApiErrorMessage(result.error, result.response),
         }),
       );
     }

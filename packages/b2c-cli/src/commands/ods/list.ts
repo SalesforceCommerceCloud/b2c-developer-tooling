@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
@@ -142,11 +142,9 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
     });
 
     if (result.error) {
-      const errorResponse = result.error as OdsComponents['schemas']['ErrorResponse'] | undefined;
-      const errorMessage = errorResponse?.error?.message || result.response?.statusText || 'Unknown error';
       this.error(
         t('commands.ods.list.error', 'Failed to fetch sandboxes: {{message}}', {
-          message: errorMessage,
+          message: getApiErrorMessage(result.error, result.response),
         }),
       );
     }

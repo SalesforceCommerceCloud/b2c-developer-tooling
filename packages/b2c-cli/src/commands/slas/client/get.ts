@@ -47,7 +47,7 @@ export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGe
 
     const slasClient = this.getSlasClient();
 
-    const {data, error} = await slasClient.GET('/tenants/{tenantId}/clients/{clientId}', {
+    const {data, error, response} = await slasClient.GET('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},
       },
@@ -56,7 +56,7 @@ export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGe
     if (error) {
       this.error(
         t('commands.slas.client.get.error', 'Failed to get SLAS client: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }

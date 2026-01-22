@@ -106,7 +106,7 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
 
     const client = this.getSchemasClient();
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/schemas', {
+    const {data, error, response} = await client.GET('/organizations/{organizationId}/schemas', {
       params: {
         path: {organizationId: this.getOrganizationId()},
         query: {
@@ -121,7 +121,7 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
     if (error) {
       this.error(
         t('commands.scapi.schemas.list.error', 'Failed to fetch SCAPI schemas: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }

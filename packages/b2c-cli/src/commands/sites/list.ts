@@ -5,6 +5,7 @@
  */
 import {ux} from '@oclif/core';
 import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
 import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
@@ -46,12 +47,16 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
 
     this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', {hostname}));
 
-    const {data, error} = await this.instance.ocapi.GET('/sites', {
+    const {data, error, response} = await this.instance.ocapi.GET('/sites', {
       params: {query: {select: '(**)'}},
     });
 
     if (error) {
-      this.error(t('commands.sites.list.error', 'Failed to fetch sites: {{message}}', {message: String(error)}));
+      this.error(
+        t('commands.sites.list.error', 'Failed to fetch sites: {{message}}', {
+          message: getApiErrorMessage(error, response),
+        }),
+      );
     }
 
     const sites = data as Sites;

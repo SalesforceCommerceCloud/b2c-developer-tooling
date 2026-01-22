@@ -57,6 +57,7 @@ import { InstanceCommand, CartridgeCommand, OdsCommand } from '@salesforce/b2c-t
  */
 import {Args, Flags} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 interface MyCommandResponse {
@@ -105,27 +106,27 @@ export default class MyCommand extends InstanceCommand<typeof MyCommand> {
     this.log(t('commands.topic.mycommand.working', 'Working on {{name}}...', {name}));
 
     // Implementation
-    const result = await this.instance.ocapi.GET('/some/endpoint');
+    const {data, error, response} = await this.instance.ocapi.GET('/some/endpoint');
 
-    if (!result.data) {
+    if (error) {
       this.error(t('commands.topic.mycommand.error', 'Failed: {{message}}', {
-        message: result.response?.statusText || 'Unknown error',
+        message: getApiErrorMessage(error, response),
       }));
     }
 
-    const response: MyCommandResponse = {
+    const result: MyCommandResponse = {
       success: true,
-      data: result.data,
+      data,
     };
 
     // JSON mode returns the object directly (oclif handles serialization)
     if (this.jsonEnabled()) {
-      return response;
+      return result;
     }
 
     // Human-readable output
     this.log('Success!');
-    return response;
+    return result;
   }
 }
 ```
@@ -305,13 +306,20 @@ this.error('Config file not found', {
 // Warning (continues execution)
 this.warn('Deprecated flag used');
 
-// Structured API errors
-if (result.error) {
+// API errors - use getApiErrorMessage for clean messages
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+
+const {data, error, response} = await this.instance.ocapi.GET('/sites', {...});
+if (error) {
   this.error(t('commands.topic.cmd.apiError', 'API error: {{message}}', {
-    message: formatApiError(result.error),
+    message: getApiErrorMessage(error, response),
   }));
 }
 ```
+
+**Important:** Always destructure `response` alongside `error` when making API calls. The `getApiErrorMessage` utility extracts clean messages from ODS, OCAPI, and SCAPI error patterns, and falls back to HTTP status (e.g., "HTTP 521 Web Server Is Down") for non-JSON responses like HTML error pages.
+
+See [API Client Development](../api-client-development/SKILL.md#error-handling) for supported error patterns.
 
 ## Creating a Command Checklist
 

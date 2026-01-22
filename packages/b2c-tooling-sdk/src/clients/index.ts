@@ -249,3 +249,5 @@ export type {
   AuditLogCollection,
   ListOrgsOptions,
 } from './am-orgs-api.js';
+
+export {getApiErrorMessage} from './error-utils.js';

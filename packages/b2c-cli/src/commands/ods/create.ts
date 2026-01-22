@@ -6,7 +6,7 @@
 import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
@@ -139,11 +139,9 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     });
 
     if (!result.data?.data) {
-      const errorResponse = result.error as OdsComponents['schemas']['ErrorResponse'] | undefined;
-      const errorMessage = errorResponse?.error?.message || result.response?.statusText || 'Unknown error';
       this.error(
         t('commands.ods.create.error', 'Failed to create sandbox: {{message}}', {
-          message: errorMessage,
+          message: getApiErrorMessage(result.error, result.response),
         }),
       );
     }
