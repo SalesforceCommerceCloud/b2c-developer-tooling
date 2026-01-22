@@ -18,6 +18,7 @@ import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging
 import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
 import type {ConfigSource} from '../config/types.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
+import {setUserAgent} from '../clients/user-agent.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
@@ -122,6 +123,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     this.configureLogging();
+
+    // Set CLI User-Agent (CLI name/version only, without @salesforce/ prefix)
+    // This must happen before any API clients are created
+    setUserAgent(`${this.config.name.replace(/^@salesforce\//, '')}/${this.config.version}`);
 
     // Register extra params middleware (from --extra-query, --extra-body, --extra-headers flags)
     // This must happen before any API clients are created
