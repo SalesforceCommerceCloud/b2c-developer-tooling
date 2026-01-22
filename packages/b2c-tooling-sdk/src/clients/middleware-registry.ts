@@ -49,6 +49,7 @@ export type HttpClientType =
   | 'slas'
   | 'ods'
   | 'mrt'
+  | 'mrt-b2c'
   | 'custom-apis'
   | 'scapi-schemas'
   | 'cdn-zones'

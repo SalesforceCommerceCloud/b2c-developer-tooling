@@ -49,9 +49,17 @@
 export {createBundle, createGlobFilter, getDefaultMessage, DEFAULT_SSR_PARAMETERS} from './bundle.js';
 export type {CreateBundleOptions, Bundle} from './bundle.js';
 
-// Push operations
-export {pushBundle, uploadBundle, listBundles} from './push.js';
-export type {PushOptions, PushResult} from './push.js';
+// Push and bundle operations
+export {pushBundle, uploadBundle, listBundles, downloadBundle} from './push.js';
+export type {
+  PushOptions,
+  PushResult,
+  ListBundlesOptions,
+  ListBundlesResult,
+  DownloadBundleOptions,
+  DownloadBundleResult,
+  MrtBundle,
+} from './push.js';
 
 // Environment variable operations
 export {listEnvVars, setEnvVar, setEnvVars, deleteEnvVar} from './env-var.js';
@@ -65,12 +73,152 @@ export type {
 } from './env-var.js';
 
 // Environment (target) operations
-export {createEnv, deleteEnv, getEnv, waitForEnv} from './env.js';
+export {createEnv, deleteEnv, getEnv, waitForEnv, listEnvs, updateEnv} from './env.js';
 export type {
   CreateEnvOptions,
   DeleteEnvOptions,
   GetEnvOptions,
   WaitForEnvOptions,
+  ListEnvsOptions,
+  ListEnvsResult,
+  UpdateEnvOptions,
   MrtEnvironment,
   MrtEnvironmentState,
+  MrtEnvironmentUpdate,
+  PatchedMrtEnvironment,
 } from './env.js';
+
+// Deployment operations
+export {listDeployments, createDeployment} from './deployment.js';
+export type {
+  ListDeploymentsOptions,
+  ListDeploymentsResult,
+  CreateDeploymentOptions,
+  CreateDeploymentResult,
+  MrtDeployment,
+  MrtDeploymentCreate,
+} from './deployment.js';
+
+// Organization operations
+export {listOrganizations} from './organization.js';
+export type {
+  ListOrganizationsOptions,
+  ListOrganizationsResult,
+  MrtOrganization,
+  OrganizationLimits,
+} from './organization.js';
+
+// Project operations
+export {listProjects, createProject, getProject, updateProject, deleteProject} from './project.js';
+export type {
+  ListProjectsOptions,
+  ListProjectsResult,
+  CreateProjectOptions,
+  GetProjectOptions,
+  UpdateProjectOptions,
+  DeleteProjectOptions,
+  MrtProject,
+  MrtProjectUpdate,
+  PatchedMrtProject,
+  SsrRegion,
+} from './project.js';
+
+// Member operations
+export {listMembers, addMember, getMember, updateMember, removeMember, MEMBER_ROLES} from './member.js';
+export type {
+  ListMembersOptions,
+  ListMembersResult,
+  AddMemberOptions,
+  GetMemberOptions,
+  UpdateMemberOptions,
+  RemoveMemberOptions,
+  MrtMember,
+  PatchedMrtMember,
+  MemberRoleValue,
+} from './member.js';
+
+// Notification operations
+export {
+  listNotifications,
+  createNotification,
+  getNotification,
+  updateNotification,
+  deleteNotification,
+} from './notification.js';
+export type {
+  ListNotificationsOptions,
+  ListNotificationsResult,
+  CreateNotificationOptions,
+  GetNotificationOptions,
+  UpdateNotificationOptions,
+  DeleteNotificationOptions,
+  MrtNotification,
+  MrtEmailNotification,
+  PatchedMrtNotification,
+} from './notification.js';
+
+// Redirect operations
+export {
+  listRedirects,
+  createRedirect,
+  getRedirect,
+  updateRedirect,
+  deleteRedirect,
+  cloneRedirects,
+} from './redirect.js';
+export type {
+  ListRedirectsOptions,
+  ListRedirectsResult,
+  CreateRedirectOptions,
+  GetRedirectOptions,
+  UpdateRedirectOptions,
+  DeleteRedirectOptions,
+  CloneRedirectsOptions,
+  CloneRedirectsResult,
+  MrtRedirect,
+  PatchedMrtRedirect,
+  RedirectHttpStatusCode,
+} from './redirect.js';
+
+// Access control header operations
+export {
+  listAccessControlHeaders,
+  createAccessControlHeader,
+  getAccessControlHeader,
+  deleteAccessControlHeader,
+} from './access-control.js';
+export type {
+  ListAccessControlHeadersOptions,
+  ListAccessControlHeadersResult,
+  CreateAccessControlHeaderOptions,
+  GetAccessControlHeaderOptions,
+  DeleteAccessControlHeaderOptions,
+  MrtAccessControlHeader,
+} from './access-control.js';
+
+// Cache operations
+export {invalidateCache} from './cache.js';
+export type {InvalidateCacheOptions, InvalidateCacheResult} from './cache.js';
+
+// User operations
+export {getProfile, resetApiKey, getEmailPreferences, updateEmailPreferences} from './user.js';
+export type {
+  UserOperationOptions,
+  ApiKeyResult,
+  UpdateEmailPreferencesOptions,
+  MrtUserProfile,
+  MrtEmailPreferences,
+  PatchedMrtEmailPreferences,
+} from './user.js';
+
+// B2C Commerce config operations
+export {getB2COrgInfo, getB2CTargetInfo, setB2CTargetInfo, updateB2CTargetInfo} from './b2c-config.js';
+export type {
+  GetB2COrgInfoOptions,
+  GetB2CTargetInfoOptions,
+  SetB2CTargetInfoOptions,
+  UpdateB2CTargetInfoOptions,
+  B2COrgInfo,
+  B2CTargetInfo,
+  PatchedB2CTargetInfo,
+} from './b2c-config.js';

@@ -102,12 +102,37 @@
         "description": "WebDAV file operations (ls, get, put, rm, zip, unzip)"
       },
       "mrt": {
-        "description": "Manage Managed Runtime projects and deployments",
-        "subtopics": {
-          "env-var": {
-            "description": "Manage environment variables on MRT projects"
-          }
-        }
+        "description": "Manage Managed Runtime (MRT) projects, environments, bundles, and deployments"
+      },
+      "mrt:env": {
+        "description": "Create, update, delete, and configure MRT environments (targets)"
+      },
+      "mrt:env:var": {
+        "description": "Set and delete environment variables for MRT environments"
+      },
+      "mrt:env:redirect": {
+        "description": "Configure URL redirects and clone redirect rules between environments"
+      },
+      "mrt:org": {
+        "description": "List organizations and view B2C Commerce instance connections"
+      },
+      "mrt:project": {
+        "description": "Create, update, delete, and configure MRT projects"
+      },
+      "mrt:project:member": {
+        "description": "Add, remove, and update project member roles and permissions"
+      },
+      "mrt:project:notification": {
+        "description": "Configure email notifications for deployment events (start, success, failure)"
+      },
+      "mrt:env:access-control": {
+        "description": "Configure access control headers for environment security"
+      },
+      "mrt:bundle": {
+        "description": "Push builds, deploy bundles, view deployment history, and download artifacts"
+      },
+      "mrt:user": {
+        "description": "View profile, reset API keys, and configure email preferences"
       },
       "ods": {
         "description": "Manage On-Demand Sandboxes"

@@ -212,4 +212,17 @@ export type {
   components as CdnZonesComponents,
 } from './cdn-zones.js';
 
+export {createMrtB2CClient, DEFAULT_MRT_B2C_ORIGIN} from './mrt-b2c.js';
+export type {
+  MrtB2CClient,
+  MrtB2CClientConfig,
+  MrtB2CError,
+  MrtB2CResponse,
+  B2COrgInfo,
+  B2CTargetInfo,
+  PatchedB2CTargetInfo,
+  paths as MrtB2CPaths,
+  components as MrtB2CComponents,
+} from './mrt-b2c.js';
+
 export {getApiErrorMessage} from './error-utils.js';
