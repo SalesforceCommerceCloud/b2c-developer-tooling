@@ -16,6 +16,8 @@ import {SDK_USER_AGENT} from '../version.js';
 import {createUserAgentMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry} from './middleware-registry.js';
 import type {HttpMiddlewareProvider} from './middleware-registry.js';
+import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
+import type {AuthMiddlewareProvider} from '../auth/middleware.js';
 
 // Current User-Agent string - defaults to SDK User-Agent
 let currentUserAgent = SDK_USER_AGENT;
@@ -57,7 +59,7 @@ export function resetUserAgent(): void {
 }
 
 /**
- * User-Agent middleware provider.
+ * User-Agent middleware provider for HTTP clients.
  *
  * This provider is automatically registered with the global middleware registry
  * when this module is imported.
@@ -69,5 +71,25 @@ export const userAgentProvider: HttpMiddlewareProvider = {
   },
 };
 
-// Auto-register with global middleware registry on module import
+/**
+ * User-Agent middleware provider for auth requests.
+ *
+ * This provider is automatically registered with the global auth middleware registry
+ * when this module is imported. It ensures OAuth token requests include User-Agent headers.
+ */
+export const userAgentAuthProvider: AuthMiddlewareProvider = {
+  name: 'user-agent',
+  getMiddleware() {
+    return {
+      async onRequest({request}) {
+        request.headers.set('User-Agent', currentUserAgent);
+        request.headers.set('sfdc_user_agent', currentUserAgent);
+        return request;
+      },
+    };
+  },
+};
+
+// Auto-register with global middleware registries on module import
 globalMiddlewareRegistry.register(userAgentProvider);
+globalAuthMiddlewareRegistry.register(userAgentAuthProvider);

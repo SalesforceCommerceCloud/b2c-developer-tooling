@@ -12,12 +12,15 @@ import type {
   ConfigSourcesHookResult,
   HttpMiddlewareHookOptions,
   HttpMiddlewareHookResult,
+  AuthMiddlewareHookOptions,
+  AuthMiddlewareHookResult,
 } from './hooks.js';
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
 import type {ConfigSource} from '../config/types.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
+import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {setUserAgent} from '../clients/user-agent.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
@@ -134,6 +137,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Collect middleware from plugins before any API clients are created
     await this.collectPluginHttpMiddleware();
+
+    // Collect auth middleware from plugins before any authentication is performed
+    await this.collectPluginAuthMiddleware();
 
     // Collect config sources from plugins before loading configuration
     await this.collectPluginConfigSources();
@@ -313,6 +319,39 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Log warnings for hook failures (don't break the CLI)
     for (const failure of hookResult.failures) {
       this.logger?.warn(`Plugin ${failure.plugin.name} b2c:http-middleware hook failed: ${failure.error.message}`);
+    }
+  }
+
+  /**
+   * Collects auth middleware from plugins via the `b2c:auth-middleware` hook.
+   *
+   * This method is called during command initialization, after flags are parsed
+   * but before any authentication is performed. It allows CLI plugins to provide
+   * custom middleware that will be applied to OAuth token requests.
+   *
+   * Plugin middleware is registered with the global auth middleware registry.
+   */
+  protected async collectPluginAuthMiddleware(): Promise<void> {
+    const hookOptions: AuthMiddlewareHookOptions = {
+      flags: this.flags as Record<string, unknown>,
+    };
+
+    const hookResult = await this.config.runHook('b2c:auth-middleware', hookOptions);
+
+    // Register middleware from all plugins that responded
+    for (const success of hookResult.successes) {
+      const result = success.result as AuthMiddlewareHookResult | undefined;
+      if (!result?.providers?.length) continue;
+
+      for (const provider of result.providers) {
+        globalAuthMiddlewareRegistry.register(provider);
+        this.logger?.debug(`Registered auth middleware provider: ${provider.name}`);
+      }
+    }
+
+    // Log warnings for hook failures (don't break the CLI)
+    for (const failure of hookResult.failures) {
+      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:auth-middleware hook failed: ${failure.error.message}`);
     }
   }
 
