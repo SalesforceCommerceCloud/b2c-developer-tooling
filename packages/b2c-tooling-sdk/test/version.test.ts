@@ -24,7 +24,8 @@ describe('version', () => {
     expect(SDK_USER_AGENT).to.equal(`${pkg.name.replace(/^@salesforce\//, '')}/${pkg.version}`);
   });
 
-  it('SDK_USER_AGENT is b2c-tooling-sdk/x.x.x format', () => {
-    expect(SDK_USER_AGENT).to.match(/^b2c-tooling-sdk\/\d+\.\d+\.\d+$/);
+  it('SDK_USER_AGENT is b2c-tooling-sdk/x.x.x format (with optional prerelease)', () => {
+    // Allow semver with optional prerelease suffix (e.g., 0.0.0-nightly.20260122)
+    expect(SDK_USER_AGENT).to.match(/^b2c-tooling-sdk\/\d+\.\d+\.\d+(-[\w.]+)?$/);
   });
 });
