@@ -71,6 +71,7 @@ export {
   createSlasClient,
   createOdsClient,
   createCustomApisClient,
+  createCdnZonesClient,
   toOrganizationId,
   toTenantId,
   buildTenantScope,
@@ -78,6 +79,8 @@ export {
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
   CUSTOM_APIS_DEFAULT_SCOPES,
+  CDN_ZONES_READ_SCOPES,
+  CDN_ZONES_RW_SCOPES,
 } from './clients/index.js';
 export type {
   PropfindEntry,
@@ -105,6 +108,15 @@ export type {
   CustomApisResponse,
   CustomApisPaths,
   CustomApisComponents,
+  CdnZonesClient,
+  CdnZonesClientConfig,
+  CdnZonesClientOptions,
+  CdnZonesError,
+  CdnZonesResponse,
+  Zone,
+  ZonesEnvelope,
+  CdnZonesPaths,
+  CdnZonesComponents,
 } from './clients/index.js';
 
 // Context Layer - Platform
