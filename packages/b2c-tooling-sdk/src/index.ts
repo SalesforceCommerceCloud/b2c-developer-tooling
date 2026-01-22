@@ -210,3 +210,6 @@ export type {
 
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';
+
+// Version info
+export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';
