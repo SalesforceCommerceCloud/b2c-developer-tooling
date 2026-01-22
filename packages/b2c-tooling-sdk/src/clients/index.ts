@@ -208,3 +208,5 @@ export type {
   paths as MrtB2CPaths,
   components as MrtB2CComponents,
 } from './mrt-b2c.js';
+
+export {getApiErrorMessage} from './error-utils.js';
