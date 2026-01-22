@@ -1,7 +1,6 @@
 ---
 name: b2c-custom-job-steps
-description: Guide for creating custom job steps for batch processing, imports, exports, scheduled tasks, and data sync in Salesforce B2C Commerce. Use this when writing new job code.
-keywords: [create job, new job, batch job, scheduled job, import job, export job, data sync, bulk processing, steptypes.json, job step code]
+description: Create custom job steps for B2C Commerce batch processing. Use when writing scheduled tasks, data sync jobs, import/export scripts, or any server-side batch processing code. Covers steptypes.json, chunk-oriented processing, and task-oriented execution. For running existing jobs, use b2c-job instead.
 ---
 
 # Custom Job Steps Skill
@@ -10,7 +9,7 @@ This skill guides you through **creating new custom job steps** for Salesforce B
 
 > **Running an existing job?** If you need to execute jobs or import site archives via CLI, use the `b2c-cli:b2c-job` skill instead.
 
-## When to Use This Skill
+## When to Use
 
 - Creating a **new scheduled job** for batch processing
 - Building a **data import job** (customers, products, orders)

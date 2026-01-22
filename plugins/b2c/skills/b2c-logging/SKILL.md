@@ -1,6 +1,6 @@
 ---
 name: b2c-logging
-description: Guide for implementing logging in Salesforce B2C Commerce scripts
+description: Implement logging in B2C Commerce scripts using dw.system.Logger. Use when adding debug output, error tracking, or custom log files to server-side code. Covers getLogger, log categories, log levels (debug, info, warn, error, fatal), and custom named log files.
 ---
 
 # Logging Skill

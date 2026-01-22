@@ -1,6 +1,6 @@
 ---
 name: b2c-isml
-description: Guide for working with ISML templates in Salesforce B2C Commerce
+description: Work with ISML templates in B2C Commerce. Use when writing storefront templates, using isprint/isset/isloop tags, understanding ISML expressions (${...}), or creating custom template modules. Covers tag syntax, expression language, and template includes.
 ---
 
 # ISML Skill

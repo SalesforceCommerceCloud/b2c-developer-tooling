@@ -1,6 +1,6 @@
 ---
 name: b2c-custom-api-development
-description: Guide for developing SCAPI Custom APIs on Salesforce B2C Commerce
+description: Develop Custom SCAPI endpoints for B2C Commerce. Use when creating REST APIs, defining api.json routes, writing schema.yaml (OAS 3.0), or building headless commerce integrations. Covers cartridge structure, endpoint implementation, and OAuth scope configuration.
 ---
 
 # Custom API Development Skill
