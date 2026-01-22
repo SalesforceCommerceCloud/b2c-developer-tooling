@@ -178,7 +178,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     if (error) {
       this.error(
         t('commands.slas.client.create.error', 'Failed to create/update SLAS client: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }

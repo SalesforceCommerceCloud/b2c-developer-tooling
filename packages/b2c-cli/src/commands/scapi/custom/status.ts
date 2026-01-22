@@ -5,7 +5,12 @@
  */
 import {Command, Flags, ux} from '@oclif/core';
 import {OAuthCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import {createCustomApisClient, toOrganizationId, type CustomApisComponents} from '@salesforce/b2c-tooling-sdk';
+import {
+  createCustomApisClient,
+  getApiErrorMessage,
+  toOrganizationId,
+  type CustomApisComponents,
+} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
 type CustomApiEndpoint = CustomApisComponents['schemas']['CustomApiEndpoint'];
@@ -242,7 +247,11 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
     // Ensure organizationId has the required f_ecom_ prefix
     const organizationId = toOrganizationId(tenantId);
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/endpoints', {
+    const {
+      data,
+      error,
+      response: httpResponse,
+    } = await client.GET('/organizations/{organizationId}/endpoints', {
       params: {
         path: {organizationId},
         query: status ? {status: status as 'active' | 'not_registered'} : undefined,
@@ -252,7 +261,7 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
     if (error) {
       this.error(
         t('commands.scapi.custom.status.error', 'Failed to fetch Custom API endpoints: {{message}}', {
-          message: typeof error === 'object' ? JSON.stringify(error) : String(error),
+          message: getApiErrorMessage(error, httpResponse),
         }),
       );
     }
