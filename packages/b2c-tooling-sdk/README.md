@@ -213,12 +213,7 @@ const userRoles = await listRoles(client, {
 ### Account Manager Organization Management
 
 ```typescript
-import {
-  getOrg,
-  getOrgByName,
-  listOrgs,
-  getOrgAuditLogs,
-} from '@salesforce/b2c-tooling-sdk/operations/orgs';
+import {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from '@salesforce/b2c-tooling-sdk/operations/orgs';
 import {createAccountManagerOrgsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
