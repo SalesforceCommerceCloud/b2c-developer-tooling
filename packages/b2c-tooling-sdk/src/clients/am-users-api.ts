@@ -28,9 +28,9 @@ export type {paths, components};
 /**
  * The typed Account Manager Users client - this is the openapi-fetch Client with full type safety.
  *
- * @see {@link createAccountManagerClient} for instantiation
+ * @see {@link createAccountManagerUsersClient} for instantiation
  */
-export type AccountManagerClient = Client<paths>;
+export type AccountManagerUsersClient = Client<paths>;
 
 /**
  * Helper type to extract response data from an operation.
@@ -95,7 +95,7 @@ function createPageableTransformMiddleware(): Middleware {
 /**
  * Configuration for creating an Account Manager client.
  */
-export interface AccountManagerClientConfig {
+export interface AccountManagerUsersClientConfig {
   /**
    * Account Manager hostname.
    * Defaults to: account.demandware.com
@@ -129,7 +129,7 @@ export interface AccountManagerClientConfig {
  *   clientSecret: 'your-client-secret',
  * });
  *
- * const client = createAccountManagerClient({}, oauthStrategy);
+ * const client = createAccountManagerUsersClient({}, oauthStrategy);
  *
  * // List users
  * const { data, error } = await client.GET('/dw/rest/v1/users', {
@@ -152,10 +152,10 @@ export interface AccountManagerClientConfig {
  *   }
  * });
  */
-export function createAccountManagerClient(
-  config: AccountManagerClientConfig,
+export function createAccountManagerUsersClient(
+  config: AccountManagerUsersClientConfig,
   auth: AuthStrategy,
-): AccountManagerClient {
+): AccountManagerUsersClient {
   const hostname = config.hostname ?? DEFAULT_ACCOUNT_MANAGER_HOST;
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
@@ -241,7 +241,7 @@ export interface ListUsersOptions {
  * @returns User details
  * @throws Error if user is not found or request fails
  */
-export async function getUser(client: AccountManagerClient, userId: string): Promise<AccountManagerUser> {
+export async function getUser(client: AccountManagerUsersClient, userId: string): Promise<AccountManagerUser> {
   const result = await client.GET('/dw/rest/v1/users/{userId}', {
     params: {path: {userId}},
   });
@@ -269,7 +269,10 @@ export async function getUser(client: AccountManagerClient, userId: string): Pro
  * @returns Paginated user collection
  * @throws Error if request fails
  */
-export async function listUsers(client: AccountManagerClient, options: ListUsersOptions = {}): Promise<UserCollection> {
+export async function listUsers(
+  client: AccountManagerUsersClient,
+  options: ListUsersOptions = {},
+): Promise<UserCollection> {
   const {size = 20, page = 0} = options;
 
   const result = await client.GET('/dw/rest/v1/users', {
@@ -311,7 +314,7 @@ export async function listUsers(client: AccountManagerClient, options: ListUsers
  * @returns Created user
  * @throws Error if request fails
  */
-export async function createUser(client: AccountManagerClient, user: UserCreate): Promise<AccountManagerUser> {
+export async function createUser(client: AccountManagerUsersClient, user: UserCreate): Promise<AccountManagerUser> {
   const result = await client.POST('/dw/rest/v1/users', {
     body: user,
   });
@@ -338,7 +341,7 @@ export async function createUser(client: AccountManagerClient, user: UserCreate)
  * @throws Error if request fails
  */
 export async function updateUser(
-  client: AccountManagerClient,
+  client: AccountManagerUsersClient,
   userId: string,
   changes: UserUpdate,
 ): Promise<AccountManagerUser> {
@@ -367,7 +370,7 @@ export async function updateUser(
  * @param userId - User ID
  * @throws Error if request fails
  */
-export async function deleteUser(client: AccountManagerClient, userId: string): Promise<void> {
+export async function deleteUser(client: AccountManagerUsersClient, userId: string): Promise<void> {
   const result = await client.POST('/dw/rest/v1/users/{userId}/disable', {
     params: {path: {userId}},
     body: {},
@@ -387,7 +390,7 @@ export async function deleteUser(client: AccountManagerClient, userId: string): 
  * @param userId - User ID
  * @throws Error if request fails
  */
-export async function purgeUser(client: AccountManagerClient, userId: string): Promise<void> {
+export async function purgeUser(client: AccountManagerUsersClient, userId: string): Promise<void> {
   const result = await client.DELETE('/dw/rest/v1/users/{userId}', {
     params: {path: {userId}},
   });
@@ -405,7 +408,7 @@ export async function purgeUser(client: AccountManagerClient, userId: string): P
  * @param userId - User ID
  * @throws Error if request fails
  */
-export async function resetUser(client: AccountManagerClient, userId: string): Promise<void> {
+export async function resetUser(client: AccountManagerUsersClient, userId: string): Promise<void> {
   const result = await client.POST('/dw/rest/v1/users/{userId}/reset', {
     params: {path: {userId}},
     body: {},
@@ -427,7 +430,7 @@ export async function resetUser(client: AccountManagerClient, userId: string): P
  * @throws Error if request fails
  */
 export async function findUserByLogin(
-  client: AccountManagerClient,
+  client: AccountManagerUsersClient,
   login: string,
 ): Promise<AccountManagerUser | undefined> {
   // Search through paginated results

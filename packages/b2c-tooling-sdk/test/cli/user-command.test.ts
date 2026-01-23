@@ -21,8 +21,8 @@ class TestUserCommand extends UserCommand<typeof TestUserCommand> {
   }
 
   // Expose protected methods for testing
-  public testAccountManagerClient() {
-    return this.accountManagerClient;
+  public testAccountManagerUsersClient() {
+    return this.accountManagerUsersClient;
   }
 }
 
@@ -41,12 +41,12 @@ describe('cli/user-command', () => {
     restoreConfig();
   });
 
-  describe('accountManagerClient', () => {
-    it('should create account manager client', async () => {
+  describe('accountManagerUsersClient', () => {
+    it('should create account manager users client', async () => {
       stubParse(command, {'client-id': 'test-client', 'client-secret': 'test-secret'});
 
       await command.init();
-      const client = command.testAccountManagerClient();
+      const client = command.testAccountManagerUsersClient();
 
       expect(client).to.exist;
     });
@@ -55,7 +55,7 @@ describe('cli/user-command', () => {
       stubParse(command, {'client-id': 'test-client', 'client-secret': 'test-secret'});
 
       await command.init();
-      const client = command.testAccountManagerClient();
+      const client = command.testAccountManagerUsersClient();
 
       expect(client).to.exist;
       // Client should be created with OAuth authentication

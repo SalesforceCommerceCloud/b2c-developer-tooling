@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {getUserByLogin, createUser, updateUser, grantRole, revokeRole} from '../../../src/operations/users/index.js';
-import {createAccountManagerClient} from '../../../src/clients/am-users-api.js';
+import {createAccountManagerUsersClient} from '../../../src/clients/am-users-api.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const TEST_HOST = 'account.test.demandware.com';
@@ -29,12 +29,12 @@ describe('operations/users', () => {
     server.close();
   });
 
-  let client: ReturnType<typeof createAccountManagerClient>;
+  let client: ReturnType<typeof createAccountManagerUsersClient>;
   let mockAuth: MockAuthStrategy;
 
   beforeEach(() => {
     mockAuth = new MockAuthStrategy();
-    client = createAccountManagerClient({hostname: TEST_HOST}, mockAuth);
+    client = createAccountManagerUsersClient({hostname: TEST_HOST}, mockAuth);
   });
 
   describe('getUserByLogin', () => {

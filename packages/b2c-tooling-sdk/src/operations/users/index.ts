@@ -29,7 +29,7 @@
  *   createUser,
  *   grantRole,
  * } from '@salesforce/b2c-tooling-sdk/operations/users';
- * import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { createAccountManagerUsersClient } from '@salesforce/b2c-tooling-sdk/clients';
  * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
  *
  * const auth = new OAuthStrategy({
@@ -37,7 +37,7 @@
  *   clientSecret: 'your-client-secret',
  * });
  *
- * const client = createAccountManagerClient({}, auth);
+ * const client = createAccountManagerUsersClient({}, auth);
  *
  * // Get a user by login
  * const user = await getUserByLogin(client, 'user@example.com');
@@ -61,7 +61,12 @@
  *
  * @module operations/users
  */
-import type {AccountManagerClient, AccountManagerUser, UserCreate, UserUpdate} from '../../clients/am-users-api.js';
+import type {
+  AccountManagerUsersClient,
+  AccountManagerUser,
+  UserCreate,
+  UserUpdate,
+} from '../../clients/am-users-api.js';
 import {
   getUser,
   listUsers,
@@ -127,7 +132,7 @@ export {getUser, listUsers, deleteUser, purgeUser, resetUser};
  * @returns User details
  * @throws Error if user is not found
  */
-export async function getUserByLogin(client: AccountManagerClient, login: string): Promise<AccountManagerUser> {
+export async function getUserByLogin(client: AccountManagerUsersClient, login: string): Promise<AccountManagerUser> {
   const user = await findUserByLogin(client, login);
   if (!user) {
     throw new Error(`User ${login} not found`);
@@ -143,7 +148,7 @@ export async function getUserByLogin(client: AccountManagerClient, login: string
  * @returns Created user
  */
 export async function createUser(
-  client: AccountManagerClient,
+  client: AccountManagerUsersClient,
   options: CreateUserOptions,
 ): Promise<AccountManagerUser> {
   return createUserApi(client, options.user);
@@ -157,7 +162,7 @@ export async function createUser(
  * @returns Updated user
  */
 export async function updateUser(
-  client: AccountManagerClient,
+  client: AccountManagerUsersClient,
   options: UpdateUserOptions,
 ): Promise<AccountManagerUser> {
   return updateUserApi(client, options.userId, options.changes);
@@ -171,7 +176,10 @@ export async function updateUser(
  * @param options - Grant options (userId, role, optional scope)
  * @returns Updated user
  */
-export async function grantRole(client: AccountManagerClient, options: GrantRoleOptions): Promise<AccountManagerUser> {
+export async function grantRole(
+  client: AccountManagerUsersClient,
+  options: GrantRoleOptions,
+): Promise<AccountManagerUser> {
   // First get the current user
   const user = await getUser(client, options.userId);
 
@@ -221,7 +229,7 @@ export async function grantRole(client: AccountManagerClient, options: GrantRole
  * @returns Updated user
  */
 export async function revokeRole(
-  client: AccountManagerClient,
+  client: AccountManagerUsersClient,
   options: RevokeRoleOptions,
 ): Promise<AccountManagerUser> {
   // First get the current user

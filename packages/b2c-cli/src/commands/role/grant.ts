@@ -47,7 +47,7 @@ export default class RoleGrant extends UserCommand<typeof RoleGrant> {
 
     this.log(t('commands.role.grant.fetching', 'Fetching user {{login}}...', {login}));
 
-    const user = await getUserByLogin(this.accountManagerClient, login);
+    const user = await getUserByLogin(this.accountManagerUsersClient, login);
 
     if (!user.id) {
       this.error(t('commands.role.grant.noId', 'User does not have an ID'));
@@ -60,7 +60,7 @@ export default class RoleGrant extends UserCommand<typeof RoleGrant> {
       }),
     );
 
-    const updatedUser = await grantRole(this.accountManagerClient, {
+    const updatedUser = await grantRole(this.accountManagerUsersClient, {
       userId: user.id,
       role,
       scope,

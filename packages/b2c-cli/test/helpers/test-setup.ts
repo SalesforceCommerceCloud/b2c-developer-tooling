@@ -118,7 +118,7 @@ export function stubJsonEnabled(command: any, enabled: boolean): void {
 /**
  * Stubs a client property on a command.
  * @param command - The command instance to stub
- * @param propertyName - The name of the client property (e.g., 'accountManagerClient', 'accountManagerRolesClient', 'accountManagerOrgsClient')
+ * @param propertyName - The name of the client property (e.g., 'accountManagerUsersClient', 'accountManagerRolesClient', 'accountManagerOrgsClient')
  * @param client - The client instance to stub
  */
 export function stubClient(command: any, propertyName: string, client: any): void {

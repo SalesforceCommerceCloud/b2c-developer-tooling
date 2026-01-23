@@ -205,7 +205,7 @@ export type {
 } from './scapi-schemas.js';
 
 export {
-  createAccountManagerClient,
+  createAccountManagerUsersClient,
   getUser,
   listUsers,
   createUser,
@@ -220,8 +220,8 @@ export {
   ROLE_NAMES_MAP_REVERSE,
 } from './am-users-api.js';
 export type {
-  AccountManagerClient,
-  AccountManagerClientConfig,
+  AccountManagerUsersClient,
+  AccountManagerUsersClientConfig,
   AccountManagerUser,
   AccountManagerResponse,
   AccountManagerError,

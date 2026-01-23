@@ -248,7 +248,6 @@ The SDK provides operations for managing users, roles, and organizations.
 
 ```typescript
 import {
-  createAccountManagerClient,
   listUsers,
   getUserByLogin,
   createUser,
@@ -258,6 +257,7 @@ import {
   grantRole,
   revokeRole,
 } from '@salesforce/b2c-tooling-sdk/operations/users';
+import {createAccountManagerUsersClient} from '@salesforce/b2c-tooling-sdk/clients';
 import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
 
 // Create Account Manager client
@@ -266,7 +266,7 @@ const auth = new OAuthStrategy({
   clientSecret: 'your-client-secret',
 });
 
-const client = createAccountManagerClient(
+const client = createAccountManagerUsersClient(
   { accountManagerHost: 'account.demandware.com' },
   auth,
 );

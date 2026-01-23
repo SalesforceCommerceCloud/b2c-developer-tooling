@@ -5,39 +5,39 @@
  */
 import {Command} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
-import {createAccountManagerClient} from '../clients/am-users-api.js';
-import type {AccountManagerClient} from '../clients/am-users-api.js';
+import {createAccountManagerUsersClient} from '../clients/am-users-api.js';
+import type {AccountManagerUsersClient} from '../clients/am-users-api.js';
 
 /**
  * Base command for Account Manager user operations.
  *
- * Extends OAuthCommand with Account Manager client setup.
+ * Extends OAuthCommand with Account Manager Users client setup.
  *
  * @example
  * export default class UserList extends UserCommand<typeof UserList> {
  *   async run(): Promise<void> {
- *     const users = await this.accountManagerClient.listUsers();
+ *     const users = await this.accountManagerUsersClient.listUsers();
  *     // ...
  *   }
  * }
  */
 export abstract class UserCommand<T extends typeof Command> extends OAuthCommand<T> {
-  private _accountManagerClient?: AccountManagerClient;
+  private _accountManagerUsersClient?: AccountManagerUsersClient;
 
   /**
-   * Gets the Account Manager client, creating it if necessary.
+   * Gets the Account Manager Users client, creating it if necessary.
    */
-  protected get accountManagerClient(): AccountManagerClient {
-    if (!this._accountManagerClient) {
+  protected get accountManagerUsersClient(): AccountManagerUsersClient {
+    if (!this._accountManagerUsersClient) {
       this.requireOAuthCredentials();
       const authStrategy = this.getOAuthStrategy();
-      this._accountManagerClient = createAccountManagerClient(
+      this._accountManagerUsersClient = createAccountManagerUsersClient(
         {
           hostname: this.accountManagerHost,
         },
         authStrategy,
       );
     }
-    return this._accountManagerClient;
+    return this._accountManagerUsersClient;
   }
 }

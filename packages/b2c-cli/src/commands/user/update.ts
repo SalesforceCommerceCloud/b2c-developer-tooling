@@ -44,7 +44,7 @@ export default class UserUpdate extends UserCommand<typeof UserUpdate> {
 
     this.log(t('commands.user.update.fetching', 'Fetching user {{login}}...', {login}));
 
-    const user = await getUserByLogin(this.accountManagerClient, login);
+    const user = await getUserByLogin(this.accountManagerUsersClient, login);
 
     if (!user.id) {
       this.error(t('commands.user.update.noId', 'User does not have an ID'));
@@ -64,7 +64,7 @@ export default class UserUpdate extends UserCommand<typeof UserUpdate> {
 
     this.log(t('commands.user.update.updating', 'Updating user {{login}}...', {login}));
 
-    const updatedUser = await updateUser(this.accountManagerClient, {
+    const updatedUser = await updateUser(this.accountManagerUsersClient, {
       userId: user.id,
       changes: changes as UserUpdateType,
     });
