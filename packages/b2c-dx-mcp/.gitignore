@@ -15,5 +15,6 @@ yarn.lock
 package-lock.json
 
 dw.json
+config.json
 
 export/

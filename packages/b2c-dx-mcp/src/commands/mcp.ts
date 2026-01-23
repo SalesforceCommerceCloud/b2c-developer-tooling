@@ -19,6 +19,7 @@
  * | `--toolsets` | `SFCC_TOOLSETS` | Comma-separated toolsets to enable (case-insensitive) |
  * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
+ * | `--no-telemetry` | `SFCC_NO_TELEMETRY` | Disable telemetry collection |
  *
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
@@ -143,6 +144,7 @@ import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
 import {registerToolsets} from '../registry.js';
 import {TOOLSETS, type StartupFlags} from '../utils/index.js';
+import {Telemetry} from '../utils/telemetry.js';
 
 /**
  * oclif Command that starts the B2C DX MCP server.
@@ -207,6 +209,11 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     'allow-non-ga-tools': Flags.boolean({
       description: 'Enable non-GA (experimental) tools',
       env: 'SFCC_ALLOW_NON_GA_TOOLS',
+      default: false,
+    }),
+    'no-telemetry': Flags.boolean({
+      description: 'Disable telemetry collection',
+      env: 'SFCC_NO_TELEMETRY',
       default: false,
     }),
   };
@@ -281,21 +288,35 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       workingDirectory: this.flags['working-directory'],
     };
 
-    // TODO: Telemetry - Initialize telemetry unless disabled
-    // if (!flags["no-telemetry"]) {
-    //   telemetry = new Telemetry({
-    //     toolsets: (startupFlags.toolsets ?? []).join(", "),
-    //     configDir,
-    //     version: this.config.version,
-    //   });
-    //   await telemetry.start();
-    //   process.stdin.on("close", (err) => {
-    //     telemetry?.sendEvent(err ? "SERVER_STOPPED_ERROR" : "SERVER_STOPPED_SUCCESS");
-    //     telemetry?.stop();
-    //   });
-    // }
+    // Initialize telemetry unless disabled
+    let telemetry: Telemetry | undefined;
+    if (!this.flags['no-telemetry']) {
+      telemetry = new Telemetry({
+        toolsets: (startupFlags.toolsets ?? []).join(','),
+        version: this.config.version,
+      });
+      await telemetry.start();
 
-    // Create MCP server
+      // Set up process exit handlers to send SERVER_STATUS stopped events
+      const sendStop = (signal: string): void => {
+        telemetry?.sendEvent('SERVER_STATUS', {status: 'stopped', signal});
+        telemetry?.stop();
+      };
+
+      process.on('exit', () => sendStop('exit'));
+      process.on('SIGINT', () => {
+        sendStop('SIGINT');
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(0);
+      });
+      process.on('SIGTERM', () => {
+        sendStop('SIGTERM');
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(0);
+      });
+    }
+
+    // Create MCP server with telemetry
     const server = new B2CDxMcpServer(
       {
         name: this.config.name,
@@ -306,6 +327,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
           resources: {},
           tools: {},
         },
+        telemetry,
       },
     );
 
