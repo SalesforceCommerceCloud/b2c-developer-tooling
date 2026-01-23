@@ -160,6 +160,7 @@ export type {
 // Redirect operations
 export {
   listRedirects,
+  listAllRedirects,
   createRedirect,
   getRedirect,
   updateRedirect,
@@ -168,6 +169,7 @@ export {
 } from './redirect.js';
 export type {
   ListRedirectsOptions,
+  ListAllRedirectsOptions,
   ListRedirectsResult,
   CreateRedirectOptions,
   GetRedirectOptions,

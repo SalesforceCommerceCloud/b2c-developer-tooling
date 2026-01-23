@@ -160,6 +160,75 @@ export async function listRedirects(options: ListRedirectsOptions, auth: AuthStr
 }
 
 /**
+ * Options for listing all redirects (auto-paginated).
+ */
+export type ListAllRedirectsOptions = Omit<ListRedirectsOptions, 'limit' | 'offset'>;
+
+/**
+ * Lists all redirects for an MRT environment, automatically handling pagination.
+ *
+ * This function fetches all pages of results and returns them in a single response.
+ * For large redirect sets, consider using {@link listRedirects} with pagination
+ * parameters for better memory efficiency.
+ *
+ * @param options - List options (limit/offset not supported, handled automatically)
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns All redirects for the environment
+ * @throws Error if request fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { listAllRedirects } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const result = await listAllRedirects({
+ *   projectSlug: 'my-storefront',
+ *   targetSlug: 'staging'
+ * }, auth);
+ *
+ * console.log(`Total redirects: ${result.count}`);
+ * for (const redirect of result.redirects) {
+ *   console.log(`${redirect.from_path} -> ${redirect.to_url}`);
+ * }
+ * ```
+ */
+export async function listAllRedirects(
+  options: ListAllRedirectsOptions,
+  auth: AuthStrategy,
+): Promise<ListRedirectsResult> {
+  const logger = getLogger();
+  const pageSize = 100;
+  const allRedirects: MrtRedirect[] = [];
+  let offset = 0;
+  let totalCount = 0;
+
+  logger.debug({projectSlug: options.projectSlug, targetSlug: options.targetSlug}, '[MRT] Listing all redirects');
+
+  do {
+    const result = await listRedirects({...options, limit: pageSize, offset}, auth);
+    allRedirects.push(...result.redirects);
+    totalCount = result.count;
+    offset += result.redirects.length;
+
+    // Safety check: if we got no results but count says there are more, break to avoid infinite loop
+    if (result.redirects.length === 0) {
+      break;
+    }
+  } while (offset < totalCount);
+
+  logger.debug({count: allRedirects.length, totalCount}, '[MRT] All redirects listed');
+
+  return {
+    count: totalCount,
+    next: null,
+    previous: null,
+    redirects: allRedirects,
+  };
+}
+
+/**
  * Options for creating a redirect.
  */
 export interface CreateRedirectOptions {

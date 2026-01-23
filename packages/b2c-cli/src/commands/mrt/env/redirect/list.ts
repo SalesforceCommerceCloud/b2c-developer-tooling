@@ -5,7 +5,12 @@
  */
 import {Flags} from '@oclif/core';
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import {listRedirects, type ListRedirectsResult, type MrtRedirect} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {
+  listRedirects,
+  listAllRedirects,
+  type ListRedirectsResult,
+  type MrtRedirect,
+} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t} from '../../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtRedirect>> = {
@@ -43,12 +48,17 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --all',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --search "/old"',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --json',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
+    all: Flags.boolean({
+      description: 'Fetch all results (auto-paginate)',
+      exclusive: ['limit', 'offset'],
+    }),
     limit: Flags.integer({
       description: 'Maximum number of results to return',
     }),
@@ -76,7 +86,7 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
       );
     }
 
-    const {limit, offset, search} = this.flags;
+    const {all, limit, offset, search} = this.flags;
 
     this.log(
       t('commands.mrt.redirect.list.fetching', 'Fetching redirects for {{project}}/{{environment}}...', {
@@ -85,17 +95,27 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
       }),
     );
 
-    const result = await listRedirects(
-      {
-        projectSlug: project,
-        targetSlug: environment,
-        limit,
-        offset,
-        search,
-        origin: this.resolvedConfig.values.mrtOrigin,
-      },
-      this.getMrtAuth(),
-    );
+    const result = all
+      ? await listAllRedirects(
+          {
+            projectSlug: project,
+            targetSlug: environment,
+            search,
+            origin: this.resolvedConfig.values.mrtOrigin,
+          },
+          this.getMrtAuth(),
+        )
+      : await listRedirects(
+          {
+            projectSlug: project,
+            targetSlug: environment,
+            limit,
+            offset,
+            search,
+            origin: this.resolvedConfig.values.mrtOrigin,
+          },
+          this.getMrtAuth(),
+        );
 
     if (!this.jsonEnabled()) {
       if (result.redirects.length === 0) {
