@@ -8,52 +8,42 @@ import {randomBytes} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {fileURLToPath} from 'node:url';
 import {TelemetryReporter} from '@salesforce/telemetry';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const PROJECT = 'b2c-dx-mcp';
-
-interface TelemetryAttributes {
-  [key: string]: boolean | number | string | undefined;
-}
-
-const loadConfigValue = (key: string): null | string => {
-  try {
-    const cfgPath = path.resolve(__dirname, '../../config.json');
-    if (!fs.existsSync(cfgPath)) return null;
-    const raw = fs.readFileSync(cfgPath, 'utf8');
-    const cfg = JSON.parse(raw) as Record<string, unknown>;
-    const v = cfg?.[key];
-    return typeof v === 'string' && v.trim() ? v.trim() : null;
-  } catch {
-    return null;
-  }
-};
-
-const customAppInsightsKey = loadConfigValue('applicationInsightsConnectionString');
+import type {TelemetryAttributes, TelemetryOptions} from './types.js';
 
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
-// Our own persistent CLI ID location: ~/.b2c-dx-mcp/cliid
-const getOwnCliIdPath = (): null | {dir: string; file: string} => {
+/**
+ * Get the path to the persistent CLI ID file.
+ * @param project - Project name used for the directory (e.g., 'b2c-dx-mcp' -> ~/.b2c-dx-mcp/cliid)
+ */
+const getCliIdPath = (project: string): {dir: string; file: string} | null => {
   const home = os.homedir();
   if (!home) return null;
-  const dir = path.join(home, `.${PROJECT}`);
+  const dir = path.join(home, `.${project}`);
   const file = path.join(dir, 'cliid');
   return {dir, file};
 };
 
-const readOrCreateOwnCliId = (): null | string => {
-  const loc = getOwnCliIdPath();
-  if (!loc) return null;
+/**
+ * Read or create a persistent CLI ID for the given project.
+ */
+const readOrCreateCliId = (project: string): string => {
+  const loc = getCliIdPath(project);
+  if (!loc) return generateRandomId();
+
+  // Try to read existing ID
   if (fs.existsSync(loc.file)) {
-    const value = fs.readFileSync(loc.file, 'utf8');
-    const trimmed = value?.trim();
-    if (trimmed) return trimmed;
+    try {
+      const value = fs.readFileSync(loc.file, 'utf8');
+      const trimmed = value?.trim();
+      if (trimmed) return trimmed;
+    } catch {
+      // Fall through to create new
+    }
   }
-  // Create new
+
+  // Create new ID
   const newId = generateRandomId();
   try {
     if (!fs.existsSync(loc.dir)) {
@@ -66,50 +56,56 @@ const readOrCreateOwnCliId = (): null | string => {
   return newId;
 };
 
-const readCliIdIfPresent = (): string => {
-  // Use our own persisted cliid under the user's home; if not present, generate one
-  const ownId = readOrCreateOwnCliId();
-  if (ownId) return ownId;
-  // Fallback: generate a random id for this session
-  return generateRandomId();
-};
-
-// Read version from package.json
-const getPackageVersion = (): string => {
-  try {
-    const pkgPath = path.resolve(__dirname, '../../package.json');
-    const raw = fs.readFileSync(pkgPath, 'utf8');
-    const pkg = JSON.parse(raw) as {version?: string};
-    return pkg?.version ?? '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
-};
-
-class McpTelemetryReporter extends TelemetryReporter {
-  // Always allow telemetry for this reporter; gating is handled by instantiation site.
+/**
+ * Custom TelemetryReporter that always enables telemetry.
+ * Gating is handled at the instantiation site.
+ */
+class ConfigurableTelemetryReporter extends TelemetryReporter {
   override isSfdxTelemetryEnabled(): boolean {
     return true;
   }
 }
 
+/**
+ * Telemetry client for sending events to Application Insights.
+ *
+ * @example
+ * ```typescript
+ * const telemetry = new Telemetry({
+ *   project: 'my-app',
+ *   appInsightsKey: 'InstrumentationKey=...',
+ *   version: '1.0.0',
+ * });
+ *
+ * await telemetry.start();
+ * telemetry.sendEvent('USER_ACTION', { action: 'click' });
+ * telemetry.stop();
+ * ```
+ */
 export class Telemetry {
   private attributes: TelemetryAttributes;
   private cliId: string;
+  private project: string;
   private reporter: TelemetryReporter | undefined;
   private sessionId: string;
   private started: boolean;
   private version: string;
+  private appInsightsKey: string | undefined;
 
-  constructor(initialAttributes: TelemetryAttributes = {}) {
-    this.attributes = {...initialAttributes};
-    this.cliId = readCliIdIfPresent();
+  constructor(options: TelemetryOptions) {
+    this.project = options.project;
+    this.appInsightsKey = options.appInsightsKey;
+    this.attributes = {...(options.initialAttributes ?? {})};
+    this.cliId = readOrCreateCliId(options.project);
     this.reporter = undefined;
     this.sessionId = generateRandomId();
     this.started = false;
-    this.version = getPackageVersion();
+    this.version = options.version ?? '0.0.0';
   }
 
+  /**
+   * Add additional attributes to include with all future events.
+   */
   addAttributes(attributes: TelemetryAttributes): void {
     this.attributes = {...this.attributes, ...attributes};
   }
@@ -123,6 +119,7 @@ export class Telemetry {
   sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
     try {
       this.reporter?.sendTelemetryEvent(eventName, {
+        // TODO create interface for clarity
         ...this.attributes,
         ...attributes,
         // Identifiers
@@ -134,7 +131,7 @@ export class Telemetry {
         arch: process.arch,
         nodeVersion: process.version,
         nodeEnv: process.env.NODE_ENV,
-        origin: PROJECT,
+        origin: this.project,
         // Timestamps
         date: new Date().toUTCString(),
         timestamp: String(Date.now()),
@@ -145,38 +142,46 @@ export class Telemetry {
     }
   }
 
+  /**
+   * Start the telemetry reporter.
+   * Must be called before sending events.
+   */
   async start(): Promise<void> {
     if (this.started) return;
     this.started = true;
+
+    // If no key provided, telemetry is disabled
+    if (!this.appInsightsKey) return;
+
     try {
-      await this.createMcpTelemetryReporter();
+      await this.createReporter();
     } catch {
       // Best-effort retry after ~1s: first runs can hit transient failures
       // establishing the Application Insights connection (DNS/proxy/VPN warm-up,
       // brief network blips, or backend cold start). One short delay usually fixes it.
-      // If the retry still fails, ignore it to avoid impacting the server.
+      // If the retry still fails, ignore it to avoid impacting the application.
       try {
         await this.delay(1000);
-        await this.createMcpTelemetryReporter();
+        await this.createReporter();
       } catch {
         // ignore
       }
     }
   }
 
+  /**
+   * Stop the telemetry reporter and flush any pending events.
+   */
   stop(): void {
     if (!this.started) return;
     this.started = false;
     this.reporter?.stop();
   }
 
-  /**
-   * Creates and initializes the MCP telemetry reporter with App Insights.
-   */
-  private async createMcpTelemetryReporter(): Promise<void> {
-    this.reporter = await McpTelemetryReporter.create({
-      project: PROJECT,
-      key: customAppInsightsKey ?? '',
+  private async createReporter(): Promise<void> {
+    this.reporter = await ConfigurableTelemetryReporter.create({
+      project: this.project,
+      key: this.appInsightsKey ?? '',
       userId: this.cliId,
       waitForConnection: true,
     });

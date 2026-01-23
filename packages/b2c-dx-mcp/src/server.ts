@@ -15,7 +15,7 @@ import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
 import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
 import type {ZodRawShape} from 'zod';
-import type {Telemetry} from './utils/telemetry.js';
+import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 
 /**
  * Extended server options.

@@ -88,8 +88,6 @@
     "@modelcontextprotocol/sdk": "^1.18.0",
     "@oclif/core": "^4",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "@salesforce/telemetry": "^6.1.0",
-    "applicationinsights": "^3.13.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

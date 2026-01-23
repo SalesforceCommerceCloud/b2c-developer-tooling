@@ -139,12 +139,12 @@ import {
 } from '@salesforce/b2c-tooling-sdk/cli';
 import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {createTelemetry, type Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
 import {registerToolsets} from '../registry.js';
-import {TOOLSETS, type StartupFlags} from '../utils/index.js';
-import {Telemetry} from '../utils/telemetry.js';
+import {TOOLSETS, type StartupFlags, loadAppInsightsKey} from '../utils/index.js';
 
 /**
  * oclif Command that starts the B2C DX MCP server.
@@ -291,28 +291,18 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     // Initialize telemetry unless disabled
     let telemetry: Telemetry | undefined;
     if (!this.flags['no-telemetry']) {
-      telemetry = new Telemetry({
-        toolsets: (startupFlags.toolsets ?? []).join(','),
+      telemetry = createTelemetry({
+        project: 'b2c-dx-mcp',
+        appInsightsKey: loadAppInsightsKey(),
         version: this.config.version,
+        initialAttributes: {
+          toolsets: (startupFlags.toolsets ?? []).join(', '),
+        },
       });
       await telemetry.start();
-
-      // Set up process exit handlers to send SERVER_STATUS stopped events
-      const sendStop = (signal: string): void => {
-        telemetry?.sendEvent('SERVER_STATUS', {status: 'stopped', signal});
+      process.stdin.on('close', (err) => {
+        telemetry?.sendEvent(err ? 'SERVER_STOPPED_ERROR' : 'SERVER_STOPPED_SUCCESS');
         telemetry?.stop();
-      };
-
-      process.on('exit', () => sendStop('exit'));
-      process.on('SIGINT', () => {
-        sendStop('SIGINT');
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(0);
-      });
-      process.on('SIGTERM', () => {
-        sendStop('SIGTERM');
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(0);
       });
     }
 
