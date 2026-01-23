@@ -53,7 +53,8 @@ export type HttpClientType =
   | 'custom-apis'
   | 'scapi-schemas'
   | 'cdn-zones'
-  | 'webdav';
+  | 'webdav'
+  | 'sdapi';
 
 /**
  * Middleware interface compatible with openapi-fetch.
