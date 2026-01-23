@@ -51,6 +51,7 @@ jobs:
           TEST_REALM: ${{ vars.TEST_REALM }}
           SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
           SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
         run: |
           if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ]; then
             echo "has-secrets=true" >> $GITHUB_OUTPUT

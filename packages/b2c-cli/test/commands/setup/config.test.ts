@@ -11,8 +11,6 @@ import SetupConfig from '../../../src/commands/setup/config.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import type {ConfigSourceInfo, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 function stubCommandConfigAndLogger(command: any): void {
   Object.defineProperty(command, 'config', {
     value: {
