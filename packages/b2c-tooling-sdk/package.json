@@ -210,6 +210,17 @@
         "types": "./dist/cjs/test-utils/index.d.ts",
         "default": "./dist/cjs/test-utils/index.js"
       }
+    },
+    "./telemetry": {
+      "development": "./src/telemetry/index.ts",
+      "import": {
+        "types": "./dist/esm/telemetry/index.d.ts",
+        "default": "./dist/esm/telemetry/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/telemetry/index.d.ts",
+        "default": "./dist/cjs/telemetry/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
@@ -281,6 +292,7 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "@salesforce/telemetry": "^6.1.0",
     "archiver": "^7.0.1",
     "chokidar": "^5.0.0",
     "cliui": "^9.0.1",

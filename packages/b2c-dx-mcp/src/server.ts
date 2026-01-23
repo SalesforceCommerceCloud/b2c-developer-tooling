@@ -15,19 +15,27 @@ import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
 import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
 import type {ZodRawShape} from 'zod';
+import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 
 /**
  * Extended server options.
  */
-export type B2CDxMcpServerOptions = ServerOptions;
+export interface B2CDxMcpServerOptions extends ServerOptions {
+  /**
+   * Telemetry instance for tracking server and tool events.
+   * If not provided, telemetry is disabled.
+   */
+  telemetry?: Telemetry;
+}
 
 /**
  * A server implementation that extends the base MCP server.
  *
- *
  * @augments {McpServer}
  */
 export class B2CDxMcpServer extends McpServer {
+  private telemetry?: Telemetry;
+
   /**
    * Creates a new B2CDxMcpServer instance
    *
@@ -36,15 +44,17 @@ export class B2CDxMcpServer extends McpServer {
    */
   public constructor(serverInfo: Implementation, options?: B2CDxMcpServerOptions) {
     super(serverInfo, options);
+    this.telemetry = options?.telemetry;
 
     // Set up oninitialized handler
     this.server.oninitialized = (): void => {
       const clientInfo = this.server.getClientVersion();
       if (clientInfo) {
-        // TODO: Telemetry - Add client info attributes
-        // telemetry.addAttributes({ clientName: clientInfo.name, clientVersion: clientInfo.version });
+        this.telemetry?.addAttributes({
+          clientName: clientInfo.name,
+          clientVersion: clientInfo.version,
+        });
       }
-      // TODO: Telemetry - Send SERVER_START_SUCCESS event
     };
   }
 
@@ -68,13 +78,29 @@ export class B2CDxMcpServer extends McpServer {
       args: Record<string, unknown>,
       _extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
     ): Promise<CallToolResult> => {
-      // TODO: Telemetry - Track timing and send TOOL_CALLED event
-      // const startTime = Date.now();
-      const result = await handler(args);
-      // const runtimeMs = Date.now() - startTime;
-      // telemetry.sendEvent('TOOL_CALLED', { name, runtimeMs, isError: result.isError });
+      const startTime = Date.now();
+      try {
+        const result = await handler(args);
+        const runTimeMs = Date.now() - startTime;
 
-      return result;
+        this.telemetry?.sendEvent('TOOL_CALLED', {
+          toolName: name,
+          runTimeMs,
+          isError: result.isError ?? false,
+        });
+
+        return result;
+      } catch (error) {
+        const runTimeMs = Date.now() - startTime;
+
+        this.telemetry?.sendEvent('TOOL_CALLED', {
+          toolName: name,
+          runTimeMs,
+          isError: true,
+        });
+
+        throw error;
+      }
     };
 
     // Use the new registerTool API (tool() is deprecated)
@@ -85,10 +111,22 @@ export class B2CDxMcpServer extends McpServer {
    * Connect to a transport.
    */
   public override async connect(transport: Transport): Promise<void> {
-    await super.connect(transport);
-    if (!this.isConnected()) {
-      // TODO: Telemetry - Send SERVER_START_ERROR event with "Server not connected"
+    try {
+      await super.connect(transport);
+      if (this.isConnected()) {
+        this.telemetry?.sendEvent('SERVER_STATUS', {status: 'started'});
+      } else {
+        this.telemetry?.sendEvent('SERVER_STATUS', {
+          status: 'error',
+          errorMessage: 'Server not connected after connect() call',
+        });
+      }
+    } catch (error) {
+      this.telemetry?.sendEvent('SERVER_STATUS', {
+        status: 'error',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     }
-    // TODO: Telemetry - wrap with try/catch to send SERVER_START_ERROR event with error details
   }
 }

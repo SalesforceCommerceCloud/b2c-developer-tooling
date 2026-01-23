@@ -34,7 +34,10 @@
       "strategy": "single",
       "target": "./dist/commands/mcp.js"
     },
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "telemetry": {
+      "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
+    }
   },
   "files": [
     "bin",
@@ -99,6 +102,7 @@
     "@types/chai": "^4",
     "@types/mocha": "^10",
     "@types/node": "^22.16.5",
+    "@types/sinon": "^21.0.0",
     "chai": "^4",
     "eslint": "^9",
     "eslint-config-oclif": "^6",
@@ -109,6 +113,7 @@
     "oclif": "^4",
     "prettier": "^3.6.2",
     "shx": "^0.3.3",
+    "sinon": "^21.0.1",
     "tsx": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8"

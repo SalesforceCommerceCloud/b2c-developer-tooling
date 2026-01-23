@@ -20,6 +20,13 @@
  * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
  *
+ * ### Environment Variables for Telemetry
+ * | Env Variable | Description |
+ * |--------------|-------------|
+ * | `SF_DISABLE_TELEMETRY` | Set to `true` to disable telemetry (sf CLI standard) |
+ * | `SFCC_DISABLE_TELEMETRY` | Set to `true` to disable telemetry |
+ * | `SFCC_APP_INSIGHTS_KEY` | Override connection string from package.json |
+ *
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
  * |------|--------------|-------------|
@@ -152,6 +159,7 @@ import {TOOLSETS, type StartupFlags} from '../utils/index.js';
  * - Global flags for config, logging, and debugging
  * - Structured pino logging via `this.logger`
  * - Automatic dw.json loading via `this.resolvedConfig`
+ * - Automatic telemetry initialization via `this.telemetry`
  * - `this.config` - package.json metadata and standard config paths
  */
 export default class McpServerCommand extends BaseCommand<typeof McpServerCommand> {
@@ -247,9 +255,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * Main entry point - starts the MCP server.
    *
    * Execution flow:
-   * 1. BaseCommand.init() parses flags and loads config
+   * 1. BaseCommand.init() parses flags, loads config, and initializes telemetry
    * 2. Filter and validate toolsets (invalid ones are skipped with warning)
-   * 3. Create B2CDxMcpServer instance
+   * 3. Create B2CDxMcpServer instance with telemetry from BaseCommand
    * 4. Create Services via Services.fromResolvedConfig() using already-resolved config
    * 5. Register tools based on --toolsets and --tools flags
    * 6. Connect to stdio transport (JSON-RPC over stdin/stdout)
@@ -261,6 +269,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * - `this.flags` - Parsed flags including global flags (config, debug, log-level, etc.)
    * - `this.resolvedConfig` - Loaded dw.json configuration
    * - `this.logger` - Structured pino logger
+   * - `this.telemetry` - Telemetry instance (auto-initialized from package.json config)
    *
    * oclif provides standard config paths via `this.config`:
    * - `this.config.configDir` - User config (~/.config/b2c-dx-mcp)
@@ -281,21 +290,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       workingDirectory: this.flags['working-directory'],
     };
 
-    // TODO: Telemetry - Initialize telemetry unless disabled
-    // if (!flags["no-telemetry"]) {
-    //   telemetry = new Telemetry({
-    //     toolsets: (startupFlags.toolsets ?? []).join(", "),
-    //     configDir,
-    //     version: this.config.version,
-    //   });
-    //   await telemetry.start();
-    //   process.stdin.on("close", (err) => {
-    //     telemetry?.sendEvent(err ? "SERVER_STOPPED_ERROR" : "SERVER_STOPPED_SUCCESS");
-    //     telemetry?.stop();
-    //   });
-    // }
+    // Add toolsets to telemetry attributes
+    if (this.telemetry && startupFlags.toolsets) {
+      this.telemetry.addAttributes({toolsets: startupFlags.toolsets.join(', ')});
+    }
 
-    // Create MCP server
+    // Create MCP server with telemetry from BaseCommand
     const server = new B2CDxMcpServer(
       {
         name: this.config.name,
@@ -306,6 +306,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
           resources: {},
           tools: {},
         },
+        telemetry: this.telemetry,
       },
     );
 
@@ -318,6 +319,13 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     // Connect to stdio transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
+
+    // Track server stop when stdin closes (MCP client disconnects)
+    // Note: The 'close' event has no arguments - it's just a signal that the stream closed
+    process.stdin.on('close', () => {
+      this.telemetry?.sendEvent('SERVER_STOPPED');
+      // Don't call stop() here - let finally() handle telemetry cleanup
+    });
 
     // Log startup message using the structured logger
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
