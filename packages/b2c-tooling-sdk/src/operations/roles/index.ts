@@ -45,9 +45,4 @@
  * @module operations/roles
  */
 export {getRole, listRoles} from '../../clients/am-roles-api.js';
-export type {
-  AccountManagerRolesClient,
-  AccountManagerRole,
-  RoleCollection,
-  ListRolesOptions,
-} from '../../clients/am-roles-api.js';
+export type {AccountManagerRole, RoleCollection, ListRolesOptions} from '../../clients/am-roles-api.js';

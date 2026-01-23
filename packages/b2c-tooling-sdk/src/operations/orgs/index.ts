@@ -64,7 +64,6 @@ import type {
 
 // Re-export types
 export type {
-  AccountManagerOrgsClient,
   AccountManagerOrganization,
   OrganizationCollection,
   AuditLogCollection,

@@ -138,7 +138,7 @@ import {
   grantRole,
   revokeRole,
 } from '@salesforce/b2c-tooling-sdk/operations/users';
-import {createAccountManagerClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {createAccountManagerUsersClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
 const auth = new OAuthStrategy({
@@ -146,7 +146,7 @@ const auth = new OAuthStrategy({
   clientSecret: 'your-client-secret',
 });
 
-const client = createAccountManagerClient({}, auth);
+const client = createAccountManagerUsersClient({}, auth);
 
 // List users with pagination
 const users = await listUsers(client, {size: 25, page: 0});

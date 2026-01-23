@@ -41,7 +41,7 @@ export default class UserDelete extends UserCommand<typeof UserDelete> {
 
     this.log(t('commands.user.delete.fetching', 'Fetching user {{login}}...', {login}));
 
-    const user = await getUserByLogin(this.accountManagerClient, login);
+    const user = await getUserByLogin(this.accountManagerUsersClient, login);
 
     if (!user.id) {
       this.error(t('commands.user.delete.noId', 'User does not have an ID'));
@@ -53,14 +53,14 @@ export default class UserDelete extends UserCommand<typeof UserDelete> {
           login,
         }),
       );
-      await purgeUser(this.accountManagerClient, user.id);
+      await purgeUser(this.accountManagerUsersClient, user.id);
     } else {
       this.log(
         t('commands.user.delete.deleting', 'Deleting user {{login}}...', {
           login,
         }),
       );
-      await deleteUser(this.accountManagerClient, user.id);
+      await deleteUser(this.accountManagerUsersClient, user.id);
     }
 
     if (this.jsonEnabled()) {

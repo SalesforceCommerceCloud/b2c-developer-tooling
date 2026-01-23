@@ -35,7 +35,7 @@ export default class UserGet extends UserCommand<typeof UserGet> {
 
     this.log(t('commands.user.get.fetching', 'Fetching user {{login}}...', {login}));
 
-    const user = await getUserByLogin(this.accountManagerClient, login);
+    const user = await getUserByLogin(this.accountManagerUsersClient, login);
 
     if (this.jsonEnabled()) {
       return user;

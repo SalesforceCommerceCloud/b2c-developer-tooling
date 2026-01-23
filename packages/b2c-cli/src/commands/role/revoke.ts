@@ -47,7 +47,7 @@ export default class RoleRevoke extends UserCommand<typeof RoleRevoke> {
 
     this.log(t('commands.role.revoke.fetching', 'Fetching user {{login}}...', {login}));
 
-    const user = await getUserByLogin(this.accountManagerClient, login);
+    const user = await getUserByLogin(this.accountManagerUsersClient, login);
 
     if (!user.id) {
       this.error(t('commands.role.revoke.noId', 'User does not have an ID'));
@@ -60,7 +60,7 @@ export default class RoleRevoke extends UserCommand<typeof RoleRevoke> {
       }),
     );
 
-    const updatedUser = await revokeRole(this.accountManagerClient, {
+    const updatedUser = await revokeRole(this.accountManagerUsersClient, {
       userId: user.id,
       role,
       scope,

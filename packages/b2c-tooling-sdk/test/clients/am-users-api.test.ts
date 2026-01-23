@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {
-  createAccountManagerClient,
+  createAccountManagerUsersClient,
   getUser,
   listUsers,
   createUser,
@@ -39,24 +39,24 @@ describe('Account Manager Users API Client', () => {
     server.close();
   });
 
-  let client: ReturnType<typeof createAccountManagerClient>;
+  let client: ReturnType<typeof createAccountManagerUsersClient>;
   let mockAuth: MockAuthStrategy;
 
   beforeEach(() => {
     mockAuth = new MockAuthStrategy();
-    client = createAccountManagerClient({hostname: TEST_HOST}, mockAuth);
+    client = createAccountManagerUsersClient({hostname: TEST_HOST}, mockAuth);
   });
 
   describe('client creation', () => {
     it('should create client with default host', () => {
       const auth = new MockAuthStrategy();
-      const client = createAccountManagerClient({}, auth);
+      const client = createAccountManagerUsersClient({}, auth);
       expect(client).to.exist;
     });
 
     it('should create client with custom host', () => {
       const auth = new MockAuthStrategy();
-      const client = createAccountManagerClient({hostname: 'custom.host.com'}, auth);
+      const client = createAccountManagerUsersClient({hostname: 'custom.host.com'}, auth);
       expect(client).to.exist;
     });
   });

@@ -137,7 +137,7 @@ export default class UserList extends UserCommand<typeof UserList> {
 
     this.log(t('commands.user.list.fetching', 'Fetching users...'));
 
-    const result = await listUsers(this.accountManagerClient, {
+    const result = await listUsers(this.accountManagerUsersClient, {
       size: pageSize,
       page: pageNumber,
     });

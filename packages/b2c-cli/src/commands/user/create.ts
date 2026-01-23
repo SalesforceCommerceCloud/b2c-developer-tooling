@@ -48,7 +48,7 @@ export default class UserCreate extends UserCommand<typeof UserCreate> {
 
     this.log(t('commands.user.create.creating', 'Creating user {{mail}} in organization {{org}}...', {mail, org}));
 
-    const user = await createUser(this.accountManagerClient, {
+    const user = await createUser(this.accountManagerUsersClient, {
       user: {
         mail,
         firstName,

@@ -33,7 +33,7 @@ export default class UserReset extends UserCommand<typeof UserReset> {
 
     this.log(t('commands.user.reset.fetching', 'Fetching user {{login}}...', {login}));
 
-    const user = await getUserByLogin(this.accountManagerClient, login);
+    const user = await getUserByLogin(this.accountManagerUsersClient, login);
 
     if (!user.id) {
       this.error(t('commands.user.reset.noId', 'User does not have an ID'));
@@ -41,7 +41,7 @@ export default class UserReset extends UserCommand<typeof UserReset> {
 
     this.log(t('commands.user.reset.resetting', 'Resetting password for user {{login}}...', {login}));
 
-    await resetUser(this.accountManagerClient, user.id);
+    await resetUser(this.accountManagerUsersClient, user.id);
 
     if (this.jsonEnabled()) {
       return;
