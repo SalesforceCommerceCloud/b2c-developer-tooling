@@ -13,11 +13,15 @@
  *
  * - {@link listSites} - List all sites on an instance
  * - {@link getSite} - Get details for a specific site
+ * - {@link getSiteCartridgePath} - Get site's cartridge path
+ * - {@link addCartridgeToSite} - Add a cartridge to site's path
+ * - {@link removeCartridgeFromSite} - Remove a cartridge from site's path
+ * - {@link setSiteCartridgePath} - Set (overwrite) site's cartridge path
  *
  * ## Usage
  *
  * ```typescript
- * import { listSites, getSite } from '@salesforce/b2c-tooling-sdk/operations/sites';
+ * import { listSites, getSite, getSiteCartridgePath } from '@salesforce/b2c-tooling-sdk/operations/sites';
  * import { B2CInstance, OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
  *
  * const auth = new OAuthStrategy({
@@ -37,6 +41,9 @@
  *
  * // Get a specific site
  * const site = await getSite(instance, 'RefArch');
+ *
+ * // Get site's cartridge path
+ * const cartridges = await getSiteCartridgePath(instance, 'RefArch');
  * ```
  *
  * ## Authentication
@@ -76,3 +83,12 @@ export async function getSite(instance: B2CInstance, siteId: string): Promise<Si
 
   return null;
 }
+
+// Cartridge path operations
+export {
+  getSiteCartridgePath,
+  addCartridgeToSite,
+  removeCartridgeFromSite,
+  setSiteCartridgePath,
+  type CartridgePosition,
+} from './cartridges.js';

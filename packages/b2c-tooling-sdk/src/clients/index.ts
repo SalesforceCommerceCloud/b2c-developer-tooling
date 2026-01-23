@@ -234,3 +234,6 @@ export type {
 } from './mrt-b2c.js';
 
 export {getApiErrorMessage} from './error-utils.js';
+
+export {SdapiClient} from './sdapi.js';
+export type {Breakpoint, ThreadInfo, StackFrame, EvalResult, SdapiClientOptions} from './sdapi.js';
