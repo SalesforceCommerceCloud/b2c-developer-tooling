@@ -371,7 +371,7 @@ Using a private SLAS client with client credentials grant:
 
 ```bash
 # Set your credentials
-SHORTCODE="your-short-code" # see b2c-cli:b2c-config skill to find this value; this it NOT the instance realm ID
+SHORTCODE="your-short-code" # see b2c-cli:b2c-config (b2c setup config) skill to find this value; this it NOT the instance realm ID
 ORG="f_ecom_xxxx_xxx"
 SLAS_CLIENT_ID="your-client-id"
 SLAS_CLIENT_SECRET="your-client-secret"
