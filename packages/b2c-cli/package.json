@@ -21,6 +21,7 @@
     "@oclif/plugin-version": "^2",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "^9.0.1",
+    "glob": "^13.0.0",
     "marked": "^15.0.0",
     "marked-terminal": "^7.3.0",
     "open": "^11.0.0"
