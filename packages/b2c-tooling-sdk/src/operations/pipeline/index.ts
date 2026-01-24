@@ -73,9 +73,12 @@ export class UnconvertablePipelineError extends Error {
 
 /**
  * Validates a pipeline for unconvertable pipelets.
- * @throws UnconvertablePipelineError if any unconvertable pipelets are found
+ * @param pipeline - The pipeline IR to validate
+ * @param allowUnsupported - If true, return warnings instead of throwing
+ * @returns Array of warning messages when allowUnsupported is true
+ * @throws UnconvertablePipelineError if unconvertable pipelets are found and allowUnsupported is false
  */
-function validatePipeline(pipeline: PipelineIR): void {
+function validatePipeline(pipeline: PipelineIR, allowUnsupported: boolean = false): string[] {
   const unconvertable: Array<{name: string; reason: string}> = [];
 
   for (const node of pipeline.nodes.values()) {
@@ -95,8 +98,14 @@ function validatePipeline(pipeline: PipelineIR): void {
   }
 
   if (unconvertable.length > 0) {
+    if (allowUnsupported) {
+      // Return warnings instead of throwing
+      return unconvertable.map((p) => `Unsupported pipelet "${p.name}": ${p.reason}`);
+    }
     throw new UnconvertablePipelineError(pipeline.name, unconvertable);
   }
+
+  return [];
 }
 
 // Re-export all types
@@ -173,13 +182,13 @@ export async function convertPipeline(inputPath: string, options: ConvertOptions
   const pipeline = await parsePipeline(xml, pipelineName);
 
   // Validate for unconvertable pipelets
-  validatePipeline(pipeline);
+  const validationWarnings = validatePipeline(pipeline, options.allowUnsupported);
 
   // Analyze
   const analysis = analyzePipeline(pipeline);
 
-  // Generate
-  const code = generateController(pipeline, analysis);
+  // Generate (pass allowUnsupported to enable UNSUPPORTED comment generation)
+  const code = generateController(pipeline, analysis, {allowUnsupported: options.allowUnsupported});
 
   // Write output if not dry-run
   let outputPath: string | undefined;
@@ -192,7 +201,7 @@ export async function convertPipeline(inputPath: string, options: ConvertOptions
     pipelineName,
     code,
     outputPath,
-    warnings: analysis.warnings,
+    warnings: [...validationWarnings, ...analysis.warnings],
   };
 }
 
@@ -212,15 +221,19 @@ export async function convertPipeline(inputPath: string, options: ConvertOptions
  * console.log(result.code);
  * ```
  */
-export async function convertPipelineContent(xml: string, pipelineName: string): Promise<ConvertResult> {
+export async function convertPipelineContent(
+  xml: string,
+  pipelineName: string,
+  options: ConvertOptions = {},
+): Promise<ConvertResult> {
   const pipeline = await parsePipeline(xml, pipelineName);
-  validatePipeline(pipeline);
+  const validationWarnings = validatePipeline(pipeline, options.allowUnsupported);
   const analysis = analyzePipeline(pipeline);
-  const code = generateController(pipeline, analysis);
+  const code = generateController(pipeline, analysis, {allowUnsupported: options.allowUnsupported});
 
   return {
     pipelineName,
     code,
-    warnings: analysis.warnings,
+    warnings: [...validationWarnings, ...analysis.warnings],
   };
 }

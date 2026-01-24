@@ -24,6 +24,14 @@ export const VARIABLE_MAPPINGS: Record<string, string> = {
 };
 
 /**
+ * Options for code generation.
+ */
+export interface GeneratorOptions {
+  /** If true, allow unsupported pipelets to be converted with UNSUPPORTED comments instead of failing. */
+  allowUnsupported?: boolean;
+}
+
+/**
  * Context for code generation.
  */
 export interface GeneratorContext {
@@ -37,6 +45,8 @@ export interface GeneratorContext {
   requires: Map<string, string>;
   /** The current pipeline name (for call node resolution). */
   pipelineName: string;
+  /** Generator options. */
+  options?: GeneratorOptions;
 }
 
 /**

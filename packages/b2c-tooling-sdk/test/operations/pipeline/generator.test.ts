@@ -10,6 +10,7 @@ import {
   analyzePipeline,
   generateController,
   convertPipelineContent,
+  UnconvertablePipelineError,
 } from '@salesforce/b2c-tooling-sdk/operations/pipeline';
 
 describe('operations/pipeline/generator', () => {
@@ -778,6 +779,63 @@ describe('operations/pipeline/generator', () => {
       expect(result.code).to.include('function Edit()');
       expect(result.code).to.include('exports.Show.public = true;');
       expect(result.code).to.include('exports.Edit.public = true;');
+    });
+  });
+
+  describe('allowUnsupported option', () => {
+    const xmlWithUnconvertable = `<?xml version="1.0" encoding="UTF-8"?>
+      <pipeline>
+        <branch basename="Test">
+          <segment>
+            <node><start-node name="Test"/></node>
+            <simple-transition/>
+            <node>
+              <pipelet-node pipelet-name="GetLastVisitedProducts" pipelet-set-identifier="bc_api">
+                <key-binding alias="Products" key="Products"/>
+              </pipelet-node>
+            </node>
+            <simple-transition/>
+            <node><end-node/></node>
+          </segment>
+        </branch>
+      </pipeline>`;
+
+    it('throws UnconvertablePipelineError by default for unsupported pipelets', async () => {
+      try {
+        await convertPipelineContent(xmlWithUnconvertable, 'Test');
+        expect.fail('Should have thrown UnconvertablePipelineError');
+      } catch (error) {
+        expect(error).to.be.instanceOf(UnconvertablePipelineError);
+        expect((error as UnconvertablePipelineError).pipelineName).to.equal('Test');
+        expect((error as UnconvertablePipelineError).unconvertablePipelets).to.have.length(1);
+        expect((error as UnconvertablePipelineError).unconvertablePipelets[0].name).to.equal('GetLastVisitedProducts');
+      }
+    });
+
+    it('generates UNSUPPORTED comments when allowUnsupported is true', async () => {
+      const result = await convertPipelineContent(xmlWithUnconvertable, 'Test', {allowUnsupported: true});
+
+      expect(result.code).to.include('// UNSUPPORTED: GetLastVisitedProducts');
+      expect(result.code).to.include('// Reason: Session-based pipelet');
+      expect(result.code).to.include('// TODO: Manual conversion required');
+      expect(result.code).to.include('//   Products = Products');
+    });
+
+    it('returns warnings for unsupported pipelets when allowUnsupported is true', async () => {
+      const result = await convertPipelineContent(xmlWithUnconvertable, 'Test', {allowUnsupported: true});
+
+      expect(result.warnings).to.include(
+        'Unsupported pipelet "GetLastVisitedProducts": Session-based pipelet. Use session.custom or clickstream API instead.',
+      );
+    });
+
+    it('works with generateController directly when allowUnsupported is true', async () => {
+      const pipeline = await parsePipeline(xmlWithUnconvertable, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis, {allowUnsupported: true});
+
+      expect(code).to.include('// UNSUPPORTED: GetLastVisitedProducts');
+      expect(code).to.include('// TODO: Manual conversion required');
     });
   });
 });

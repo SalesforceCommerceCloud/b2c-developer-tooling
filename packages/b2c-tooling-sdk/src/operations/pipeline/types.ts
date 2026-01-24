@@ -27,6 +27,8 @@ export interface ConvertOptions {
   outputPath?: string;
   /** If true, don't write the file, just return the generated code. */
   dryRun?: boolean;
+  /** If true, allow unsupported pipelets to be converted with TODO comments instead of failing. */
+  allowUnsupported?: boolean;
 }
 
 /**

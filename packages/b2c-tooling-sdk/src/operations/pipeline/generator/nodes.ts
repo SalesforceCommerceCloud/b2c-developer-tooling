@@ -10,6 +10,7 @@
  * @module operations/pipeline/generator/nodes
  */
 
+import {getUnconvertablePipelet} from '../pipelets/index.js';
 import type {
   CallNodeIR,
   EndNodeIR,
@@ -249,6 +250,20 @@ function generateInteractionContinueNode(node: InteractionContinueNodeIR, contex
 function generatePipeletNode(node: PipeletNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
   const lines: string[] = [];
+
+  // Check if pipelet is unconvertable (only when allowUnsupported is true)
+  if (context.options?.allowUnsupported) {
+    const unconvertableInfo = getUnconvertablePipelet(node.pipeletName);
+    if (unconvertableInfo) {
+      lines.push(`${ind}// UNSUPPORTED: ${node.pipeletName}`);
+      lines.push(`${ind}// Reason: ${unconvertableInfo.unconvertableReason ?? 'No script API equivalent'}`);
+      lines.push(`${ind}// TODO: Manual conversion required`);
+      for (const kb of node.keyBindings) {
+        lines.push(`${ind}//   ${kb.key} = ${kb.value}`);
+      }
+      return lines.join('\n');
+    }
+  }
 
   switch (node.pipeletName) {
     // Common pipelets

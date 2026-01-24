@@ -59,6 +59,10 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
       description: 'Preview generated code without writing files',
       default: false,
     }),
+    'allow-unsupported': Flags.boolean({
+      description: 'Continue conversion with unsupported pipelets (generates TODO comments instead of failing)',
+      default: false,
+    }),
   };
 
   protected operations = {
@@ -67,7 +71,7 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
 
   async run(): Promise<ConvertResponse> {
     const {input} = this.args;
-    const {output, 'dry-run': dryRun} = this.flags;
+    const {output, 'dry-run': dryRun, 'allow-unsupported': allowUnsupported} = this.flags;
 
     // Resolve input files
     const inputFiles = await this.resolveInputFiles(input);
@@ -81,7 +85,7 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
     }
 
     // Process all files and collect results
-    const conversionResults = await this.processFiles(inputFiles, output, dryRun);
+    const conversionResults = await this.processFiles(inputFiles, output, dryRun, allowUnsupported);
 
     const response: ConvertResponse = {
       results: conversionResults.results,
@@ -130,6 +134,7 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
     inputFile: string,
     output: string | undefined,
     dryRun: boolean,
+    allowUnsupported: boolean,
   ): Promise<{result?: ConvertResult; success: boolean; error?: ConvertError}> {
     const pipelineName = basename(inputFile, '.xml');
 
@@ -152,6 +157,7 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
       const result = await this.operations.convertPipeline(inputFile, {
         outputPath,
         dryRun,
+        allowUnsupported,
       });
 
       if (result.warnings.length > 0) {
@@ -181,8 +187,8 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
       }
 
       return {result, success};
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.logToStderr(
         t('commands.pipeline.convert.failed', 'Failed to convert {{name}}: {{error}}', {
           name: pipelineName,
@@ -203,6 +209,7 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
     inputFiles: string[],
     output: string | undefined,
     dryRun: boolean,
+    allowUnsupported: boolean,
   ): Promise<{
     results: ConvertResult[];
     errors: ConvertError[];
@@ -219,7 +226,7 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
     // Process files sequentially to maintain order and avoid concurrent file operations
     for (const inputFile of inputFiles) {
       // eslint-disable-next-line no-await-in-loop
-      const fileResult = await this.processFile(inputFile, output, dryRun);
+      const fileResult = await this.processFile(inputFile, output, dryRun, allowUnsupported);
       if (fileResult.result) {
         results.push(fileResult.result);
         warningCount += fileResult.result.warnings.length;

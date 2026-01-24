@@ -14,16 +14,17 @@
 
 import type {AnalyzedFunction, AnalysisResult, PipelineIR} from '../types.js';
 import {generateBlock} from './blocks.js';
-import {type GeneratorContext, getRequireVarName, indent} from './helpers.js';
+import {type GeneratorContext, type GeneratorOptions, getRequireVarName, indent} from './helpers.js';
 
 /**
  * Generates JavaScript controller code from the analysis result.
  *
  * @param pipeline - The parsed pipeline IR
  * @param analysis - The control flow analysis result
+ * @param options - Generator options
  * @returns Generated JavaScript code
  */
-export function generateController(pipeline: PipelineIR, analysis: AnalysisResult): string {
+export function generateController(pipeline: PipelineIR, analysis: AnalysisResult, options?: GeneratorOptions): string {
   // Collect all requires from all functions
   // Only include dw/* modules and relative controller paths at the top
   // Script pipelets use inline require() calls
@@ -54,6 +55,7 @@ export function generateController(pipeline: PipelineIR, analysis: AnalysisResul
       declaredVars: new Set(),
       requires: allRequires,
       pipelineName: pipeline.name,
+      options,
     };
 
     const funcCode = generateFunction(func, context);
