@@ -52,7 +52,7 @@
 import {readFile, writeFile} from 'fs/promises';
 import {basename} from 'path';
 import {analyzePipeline} from './analyzer.js';
-import {generateController} from './generator.js';
+import {generateController} from './generator/index.js';
 import {parsePipeline} from './parser.js';
 import type {ConvertOptions, ConvertResult} from './types.js';
 
@@ -88,7 +88,7 @@ export type {
 // Re-export core functions
 export {parsePipeline} from './parser.js';
 export {analyzePipeline} from './analyzer.js';
-export {generateController} from './generator.js';
+export {generateController} from './generator/index.js';
 
 // Re-export pipelet utilities
 export {getPipeletMapping, isPipeletMapped, PIPELET_MAPPINGS} from './pipelets/index.js';
