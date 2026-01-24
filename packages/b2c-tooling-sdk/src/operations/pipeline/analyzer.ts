@@ -43,6 +43,8 @@ interface AnalysisContext {
   requiredImports: Set<string>;
   /** Warnings accumulated during analysis. */
   warnings: string[];
+  /** Stop node ID - analysis stops when reaching this node (for branch convergence). */
+  stopAtNodeId?: string;
 }
 
 /**
@@ -119,6 +121,11 @@ function analyzeFromNode(nodeId: string, context: AnalysisContext): ControlFlowB
   let currentId: string | undefined = nodeId;
 
   while (currentId) {
+    // Stop if we've reached the convergence point
+    if (context.stopAtNodeId && currentId === context.stopAtNodeId) {
+      break;
+    }
+
     // Cycle detection
     if (context.visited.has(currentId)) {
       context.warnings.push(`Cycle detected at node ${currentId}`);
@@ -208,18 +215,21 @@ function analyzeDecisionNode(node: DecisionNodeIR, context: AnalysisContext): If
   const yesTransition = node.transitions.find((t) => t.connector === 'yes');
   const noTransition = node.transitions.find((t) => t.connector === 'no');
 
+  // Find convergence point to limit branch analysis
+  const convergencePoint = findConvergencePoint(node, context);
+
   let thenBlock: ControlFlowBlock = {type: 'sequence', blocks: []};
   let elseBlock: ControlFlowBlock | undefined;
 
   if (yesTransition) {
-    const branchContext = createBranchContext(context);
+    const branchContext = createBranchContext(context, convergencePoint);
     thenBlock = analyzeFromNode(yesTransition.targetId, branchContext);
     context.warnings.push(...branchContext.warnings);
     mergeImports(context, branchContext);
   }
 
   if (noTransition) {
-    const branchContext = createBranchContext(context);
+    const branchContext = createBranchContext(context, convergencePoint);
     elseBlock = analyzeFromNode(noTransition.targetId, branchContext);
     context.warnings.push(...branchContext.warnings);
     mergeImports(context, branchContext);
@@ -296,20 +306,24 @@ function analyzePipeletWithError(node: PipeletNodeIR, context: AnalysisContext):
   const errorTransition = node.transitions.find((t) => t.connector === 'error');
   const successTransition = node.transitions.find((t) => !t.connector || t.connector === 'next');
 
-  // Try block: the pipelet + success path
+  // Find convergence point to limit branch analysis
+  const convergencePoint = findConvergencePoint(node, context);
+
+  // Try block: the pipelet only (success path analyzed separately after try-catch)
   const tryBlocks: ControlFlowBlock[] = [createStatement(node.id)];
-  if (successTransition) {
-    const successContext = createBranchContext(context);
+  if (successTransition && convergencePoint) {
+    // Only analyze the success path up to convergence point
+    const successContext = createBranchContext(context, convergencePoint);
     const successBlock = analyzeFromNode(successTransition.targetId, successContext);
     tryBlocks.push(successBlock);
     context.warnings.push(...successContext.warnings);
     mergeImports(context, successContext);
   }
 
-  // Catch block: error path
+  // Catch block: error path up to convergence point
   let catchBlock: ControlFlowBlock = {type: 'sequence', blocks: []};
   if (errorTransition) {
-    const errorContext = createBranchContext(context);
+    const errorContext = createBranchContext(context, convergencePoint);
     catchBlock = analyzeFromNode(errorTransition.targetId, errorContext);
     context.warnings.push(...errorContext.warnings);
     mergeImports(context, errorContext);
@@ -356,12 +370,13 @@ function buildInteractionContinueHandler(node: InteractionContinueNodeIR, contex
 /**
  * Creates a branch context for analyzing nested control flow.
  */
-function createBranchContext(parent: AnalysisContext): AnalysisContext {
+function createBranchContext(parent: AnalysisContext, stopAtNodeId?: string): AnalysisContext {
   return {
     pipeline: parent.pipeline,
     visited: new Set(parent.visited),
     requiredImports: new Set(),
     warnings: [],
+    stopAtNodeId,
   };
 }
 

@@ -116,7 +116,8 @@ export interface RawPipeletNode {
  */
 export interface RawCallNode {
   $: {
-    'start-name-ref': string;
+    'start-name-ref'?: string;
+    'start-name-key'?: string;
   };
 }
 
@@ -125,7 +126,8 @@ export interface RawCallNode {
  */
 export interface RawJumpNode {
   $: {
-    'start-name-ref': string;
+    'start-name-ref'?: string;
+    'start-name-key'?: string;
   };
 }
 
@@ -361,6 +363,10 @@ export interface CallNodeIR extends NodeIRBase {
   pipelineName: string;
   /** Parsed start node name. */
   startName: string;
+  /** Whether this is a dynamic reference resolved at runtime. */
+  isDynamic?: boolean;
+  /** The key for dynamic dispatch (site preference name). */
+  dynamicKey?: string;
 }
 
 /**
@@ -374,6 +380,10 @@ export interface JumpNodeIR extends NodeIRBase {
   pipelineName: string;
   /** Parsed start node name. */
   startName: string;
+  /** Whether this is a dynamic reference resolved at runtime. */
+  isDynamic?: boolean;
+  /** The key for dynamic dispatch (site preference name). */
+  dynamicKey?: string;
 }
 
 /**

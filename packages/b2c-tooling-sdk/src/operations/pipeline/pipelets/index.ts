@@ -26,7 +26,72 @@ export interface PipeletMapping {
   canError: boolean;
   /** Whether this pipelet is transactional. */
   transactional: boolean;
+  /** If true, this pipelet cannot be converted (no script API equivalent). */
+  unconvertable?: boolean;
+  /** Reason why this pipelet cannot be converted. */
+  unconvertableReason?: string;
 }
+
+/**
+ * Pipelets that cannot be converted to JavaScript (no script API equivalent).
+ * These are typically job-step pipelets or system pipelets.
+ */
+export const UNCONVERTABLE_PIPELETS: Record<string, PipeletMapping> = {
+  ImportInventoryLists: {
+    name: 'ImportInventoryLists',
+    description: 'Imports inventory lists from XML files',
+    requiredImports: [],
+    canError: true,
+    transactional: false,
+    unconvertable: true,
+    unconvertableReason: 'Job-step pipelet with no script API equivalent. Use job steps instead.',
+  },
+  SendGoogleSiteMap: {
+    name: 'SendGoogleSiteMap',
+    description: 'Sends sitemap to Google',
+    requiredImports: [],
+    canError: true,
+    transactional: false,
+    unconvertable: true,
+    unconvertableReason: 'Job-step pipelet with no script API equivalent. Use job steps instead.',
+  },
+  RedirectURL: {
+    name: 'RedirectURL',
+    description: 'System redirect pipelet',
+    requiredImports: [],
+    canError: false,
+    transactional: false,
+    unconvertable: true,
+    unconvertableReason: 'System pipelet. Use response.redirect() with URLUtils instead.',
+  },
+  SourceCodeRedirectURL: {
+    name: 'SourceCodeRedirectURL',
+    description: 'Source code redirect handling',
+    requiredImports: [],
+    canError: false,
+    transactional: false,
+    unconvertable: true,
+    unconvertableReason: 'System pipelet. Use SourceCodeInfo API instead.',
+  },
+  AddGiftCertificateToProductList: {
+    name: 'AddGiftCertificateToProductList',
+    description: 'Adds gift certificate to product list',
+    requiredImports: [],
+    canError: true,
+    transactional: true,
+    unconvertable: true,
+    unconvertableReason: 'Specialized pipelet. Manual conversion required using ProductList API.',
+  },
+  GetLastVisitedProducts: {
+    name: 'GetLastVisitedProducts',
+    description: 'Gets last visited products from session',
+    requiredImports: [],
+    canError: false,
+    transactional: false,
+    unconvertable: true,
+    unconvertableReason: 'Session-based pipelet. Use session.custom or clickstream API instead.',
+  },
+};
 
 /**
  * Known pipelet mappings for conversion.
@@ -674,4 +739,18 @@ export function getPipeletMapping(name: string): PipeletMapping | undefined {
  */
 export function isPipeletMapped(name: string): boolean {
   return name in PIPELET_MAPPINGS;
+}
+
+/**
+ * Checks if a pipelet is unconvertable (no script API equivalent).
+ */
+export function isUnconvertablePipelet(name: string): boolean {
+  return name in UNCONVERTABLE_PIPELETS;
+}
+
+/**
+ * Gets the unconvertable pipelet info, or undefined if not in the list.
+ */
+export function getUnconvertablePipelet(name: string): PipeletMapping | undefined {
+  return UNCONVERTABLE_PIPELETS[name];
 }

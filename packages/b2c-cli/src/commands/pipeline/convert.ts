@@ -13,10 +13,17 @@ import {convertPipeline, type ConvertResult} from '@salesforce/b2c-tooling-sdk/o
 import {glob} from 'glob';
 import {t} from '../../i18n/index.js';
 
+interface ConvertError {
+  pipelineName: string;
+  error: string;
+}
+
 interface ConvertResponse {
   results: ConvertResult[];
+  errors: ConvertError[];
   totalPipelines: number;
   successCount: number;
+  failureCount: number;
   warningCount: number;
 }
 
@@ -78,8 +85,10 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
 
     const response: ConvertResponse = {
       results: conversionResults.results,
+      errors: conversionResults.errors,
       totalPipelines: inputFiles.length,
       successCount: conversionResults.successCount,
+      failureCount: conversionResults.failureCount,
       warningCount: conversionResults.warningCount,
     };
 
@@ -89,12 +98,26 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
 
     if (!dryRun) {
       this.log('');
-      this.log(
-        t('commands.pipeline.convert.summary', 'Converted {{count}} pipeline(s) with {{warnings}} warning(s)', {
-          count: conversionResults.successCount,
-          warnings: conversionResults.warningCount,
-        }),
-      );
+      if (conversionResults.failureCount > 0) {
+        this.log(
+          t(
+            'commands.pipeline.convert.summaryWithFailures',
+            'Converted {{success}} pipeline(s), {{failures}} failed, {{warnings}} warning(s)',
+            {
+              success: conversionResults.successCount,
+              failures: conversionResults.failureCount,
+              warnings: conversionResults.warningCount,
+            },
+          ),
+        );
+      } else {
+        this.log(
+          t('commands.pipeline.convert.summary', 'Converted {{count}} pipeline(s) with {{warnings}} warning(s)', {
+            count: conversionResults.successCount,
+            warnings: conversionResults.warningCount,
+          }),
+        );
+      }
     }
 
     return response;
@@ -107,7 +130,7 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
     inputFile: string,
     output: string | undefined,
     dryRun: boolean,
-  ): Promise<{result: ConvertResult; success: boolean}> {
+  ): Promise<{result?: ConvertResult; success: boolean; error?: ConvertError}> {
     const pipelineName = basename(inputFile, '.xml');
 
     if (!dryRun) {
@@ -125,37 +148,52 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
         ? join(output, `${pipelineName}.js`)
         : join(dirname(inputFile), `${pipelineName}.js`);
 
-    const result = await this.operations.convertPipeline(inputFile, {
-      outputPath,
-      dryRun,
-    });
+    try {
+      const result = await this.operations.convertPipeline(inputFile, {
+        outputPath,
+        dryRun,
+      });
 
-    if (result.warnings.length > 0) {
-      for (const warning of result.warnings) {
-        this.warn(warning);
+      if (result.warnings.length > 0) {
+        for (const warning of result.warnings) {
+          this.warn(warning);
+        }
       }
-    }
 
-    let success = false;
-    if (dryRun) {
-      // In dry-run mode, output the generated code
-      if (!this.jsonEnabled()) {
-        ux.stdout(`\n// === ${pipelineName}.js ===\n`);
-        ux.stdout(result.code);
-        ux.stdout('\n');
+      let success = false;
+      if (dryRun) {
+        // In dry-run mode, output the generated code
+        if (!this.jsonEnabled()) {
+          ux.stdout(`\n// === ${pipelineName}.js ===\n`);
+          ux.stdout(result.code);
+          ux.stdout('\n');
+        }
+        success = true;
+      } else if (outputPath) {
+        // Write the file
+        await writeFile(outputPath, result.code, 'utf8');
+        this.log(
+          t('commands.pipeline.convert.generated', 'Generated: {{path}}', {
+            path: outputPath,
+          }),
+        );
+        success = true;
       }
-    } else if (outputPath) {
-      // Write the file
-      await writeFile(outputPath, result.code, 'utf8');
-      this.log(
-        t('commands.pipeline.convert.generated', 'Generated: {{path}}', {
-          path: outputPath,
+
+      return {result, success};
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      this.logToStderr(
+        t('commands.pipeline.convert.failed', 'Failed to convert {{name}}: {{error}}', {
+          name: pipelineName,
+          error: errorMessage,
         }),
       );
-      success = true;
+      return {
+        success: false,
+        error: {pipelineName, error: errorMessage},
+      };
     }
-
-    return {result, success};
   }
 
   /**
@@ -165,21 +203,37 @@ export default class PipelineConvert extends BaseCommand<typeof PipelineConvert>
     inputFiles: string[],
     output: string | undefined,
     dryRun: boolean,
-  ): Promise<{results: ConvertResult[]; successCount: number; warningCount: number}> {
+  ): Promise<{
+    results: ConvertResult[];
+    errors: ConvertError[];
+    successCount: number;
+    failureCount: number;
+    warningCount: number;
+  }> {
     const results: ConvertResult[] = [];
+    const errors: ConvertError[] = [];
     let successCount = 0;
+    let failureCount = 0;
     let warningCount = 0;
 
     // Process files sequentially to maintain order and avoid concurrent file operations
     for (const inputFile of inputFiles) {
       // eslint-disable-next-line no-await-in-loop
       const fileResult = await this.processFile(inputFile, output, dryRun);
-      results.push(fileResult.result);
-      successCount += fileResult.success ? 1 : 0;
-      warningCount += fileResult.result.warnings.length;
+      if (fileResult.result) {
+        results.push(fileResult.result);
+        warningCount += fileResult.result.warnings.length;
+      }
+      if (fileResult.error) {
+        errors.push(fileResult.error);
+        failureCount++;
+      }
+      if (fileResult.success) {
+        successCount++;
+      }
     }
 
-    return {results, successCount, warningCount};
+    return {results, errors, successCount, failureCount, warningCount};
   }
 
   /**

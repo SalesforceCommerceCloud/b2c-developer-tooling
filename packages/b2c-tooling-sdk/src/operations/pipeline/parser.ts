@@ -354,32 +354,62 @@ function parseNodeWrapper(
   if (wrapper['call-node']?.[0]) {
     const raw = wrapper['call-node'][0];
     const targetRef = raw.$['start-name-ref'];
-    const [pipelineName, startName] = parseTargetRef(targetRef);
+    const dynamicKey = raw.$['start-name-key'];
 
-    node = {
-      type: 'call',
-      id: generateNodeId(context),
-      targetRef,
-      pipelineName,
-      startName,
-      transitions: [],
-    } satisfies CallNodeIR;
+    if (dynamicKey && !targetRef) {
+      // Dynamic dispatch - target determined at runtime
+      node = {
+        type: 'call',
+        id: generateNodeId(context),
+        targetRef: dynamicKey,
+        pipelineName: dynamicKey,
+        startName: dynamicKey,
+        isDynamic: true,
+        dynamicKey,
+        transitions: [],
+      } satisfies CallNodeIR;
+    } else {
+      const [pipelineName, startName] = parseTargetRef(targetRef ?? '');
+      node = {
+        type: 'call',
+        id: generateNodeId(context),
+        targetRef: targetRef ?? '',
+        pipelineName,
+        startName,
+        transitions: [],
+      } satisfies CallNodeIR;
+    }
   }
 
   // Jump node
   if (wrapper['jump-node']?.[0]) {
     const raw = wrapper['jump-node'][0];
     const targetRef = raw.$['start-name-ref'];
-    const [pipelineName, startName] = parseTargetRef(targetRef);
+    const dynamicKey = raw.$['start-name-key'];
 
-    node = {
-      type: 'jump',
-      id: generateNodeId(context),
-      targetRef,
-      pipelineName,
-      startName,
-      transitions: [],
-    } satisfies JumpNodeIR;
+    if (dynamicKey && !targetRef) {
+      // Dynamic dispatch - target determined at runtime
+      node = {
+        type: 'jump',
+        id: generateNodeId(context),
+        targetRef: dynamicKey,
+        pipelineName: dynamicKey,
+        startName: dynamicKey,
+        isDynamic: true,
+        dynamicKey,
+        transitions: [],
+      } satisfies JumpNodeIR;
+    } else {
+      const [pipelineName, startName] = parseTargetRef(targetRef ?? '');
+      node = {
+        type: 'jump',
+        id: generateNodeId(context),
+        targetRef: targetRef ?? '',
+        pipelineName,
+        startName,
+        transitions: [],
+      } satisfies JumpNodeIR;
+    }
   }
 
   // Loop node

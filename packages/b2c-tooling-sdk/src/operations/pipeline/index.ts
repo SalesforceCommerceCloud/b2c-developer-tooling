@@ -54,7 +54,50 @@ import {basename} from 'path';
 import {analyzePipeline} from './analyzer.js';
 import {generateController} from './generator/index.js';
 import {parsePipeline} from './parser.js';
-import type {ConvertOptions, ConvertResult} from './types.js';
+import {getUnconvertablePipelet} from './pipelets/index.js';
+import type {ConvertOptions, ConvertResult, PipelineIR, PipeletNodeIR} from './types.js';
+
+/**
+ * Error thrown when a pipeline contains unconvertable pipelets.
+ */
+export class UnconvertablePipelineError extends Error {
+  constructor(
+    public readonly pipelineName: string,
+    public readonly unconvertablePipelets: Array<{name: string; reason: string}>,
+  ) {
+    const pipeletList = unconvertablePipelets.map((p) => `  - ${p.name}: ${p.reason}`).join('\n');
+    super(`Pipeline "${pipelineName}" contains unconvertable pipelets:\n${pipeletList}`);
+    this.name = 'UnconvertablePipelineError';
+  }
+}
+
+/**
+ * Validates a pipeline for unconvertable pipelets.
+ * @throws UnconvertablePipelineError if any unconvertable pipelets are found
+ */
+function validatePipeline(pipeline: PipelineIR): void {
+  const unconvertable: Array<{name: string; reason: string}> = [];
+
+  for (const node of pipeline.nodes.values()) {
+    if (node.type === 'pipelet') {
+      const pipeletNode = node as PipeletNodeIR;
+      const info = getUnconvertablePipelet(pipeletNode.pipeletName);
+      if (info) {
+        // Only add if not already in the list
+        if (!unconvertable.some((p) => p.name === pipeletNode.pipeletName)) {
+          unconvertable.push({
+            name: pipeletNode.pipeletName,
+            reason: info.unconvertableReason ?? 'No script API equivalent',
+          });
+        }
+      }
+    }
+  }
+
+  if (unconvertable.length > 0) {
+    throw new UnconvertablePipelineError(pipeline.name, unconvertable);
+  }
+}
 
 // Re-export all types
 export type {
@@ -91,7 +134,14 @@ export {analyzePipeline} from './analyzer.js';
 export {generateController} from './generator/index.js';
 
 // Re-export pipelet utilities
-export {getPipeletMapping, isPipeletMapped, PIPELET_MAPPINGS} from './pipelets/index.js';
+export {
+  getPipeletMapping,
+  getUnconvertablePipelet,
+  isPipeletMapped,
+  isUnconvertablePipelet,
+  PIPELET_MAPPINGS,
+  UNCONVERTABLE_PIPELETS,
+} from './pipelets/index.js';
 export type {PipeletMapping} from './pipelets/index.js';
 
 /**
@@ -121,6 +171,9 @@ export async function convertPipeline(inputPath: string, options: ConvertOptions
 
   // Parse
   const pipeline = await parsePipeline(xml, pipelineName);
+
+  // Validate for unconvertable pipelets
+  validatePipeline(pipeline);
 
   // Analyze
   const analysis = analyzePipeline(pipeline);
@@ -161,6 +214,7 @@ export async function convertPipeline(inputPath: string, options: ConvertOptions
  */
 export async function convertPipelineContent(xml: string, pipelineName: string): Promise<ConvertResult> {
   const pipeline = await parsePipeline(xml, pipelineName);
+  validatePipeline(pipeline);
   const analysis = analyzePipeline(pipeline);
   const code = generateController(pipeline, analysis);
 

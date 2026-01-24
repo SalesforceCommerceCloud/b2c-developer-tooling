@@ -179,6 +179,11 @@ function generateEndNode(node: EndNodeIR, context: GeneratorContext): string {
 function generateCallNode(node: CallNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
 
+  // Dynamic dispatch - target determined at runtime from site preference
+  if (node.isDynamic && node.dynamicKey) {
+    return `${ind}// TODO: Dynamic pipeline call - target resolved from key: ${node.dynamicKey}\n${ind}// Original: call-node start-name-key="${node.dynamicKey}"`;
+  }
+
   if (node.pipelineName === context.pipelineName) {
     // Same pipeline - direct function call
     return `${ind}${node.startName}();`;
@@ -193,6 +198,11 @@ function generateCallNode(node: CallNodeIR, context: GeneratorContext): string {
  */
 function generateJumpNode(node: JumpNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
+
+  // Dynamic dispatch - target determined at runtime from site preference
+  if (node.isDynamic && node.dynamicKey) {
+    return `${ind}// TODO: Dynamic pipeline jump - target resolved from key: ${node.dynamicKey}\n${ind}// Original: jump-node start-name-key="${node.dynamicKey}"`;
+  }
 
   // Convert Pipeline-Start to Controller-Action URL
   return `${ind}response.redirect(URLUtils.url('${node.pipelineName}-${node.startName}'));`;
