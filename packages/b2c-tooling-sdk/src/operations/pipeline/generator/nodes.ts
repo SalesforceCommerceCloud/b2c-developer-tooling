@@ -198,14 +198,19 @@ function generateCallNode(node: CallNodeIR, context: GeneratorContext): string {
  */
 function generateJumpNode(node: JumpNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
+  const lines: string[] = [];
 
   // Dynamic dispatch - target determined at runtime from site preference
   if (node.isDynamic && node.dynamicKey) {
-    return `${ind}// TODO: Dynamic pipeline jump - target resolved from key: ${node.dynamicKey}\n${ind}// Original: jump-node start-name-key="${node.dynamicKey}"`;
+    lines.push(`${ind}// TODO: Dynamic pipeline jump - target resolved from key: ${node.dynamicKey}`);
+    lines.push(`${ind}// Original: jump-node start-name-key="${node.dynamicKey}"`);
+  } else {
+    // Convert Pipeline-Start to Controller-Action URL
+    lines.push(`${ind}response.redirect(URLUtils.url('${node.pipelineName}-${node.startName}'));`);
   }
+  lines.push(`${ind}return;`);
 
-  // Convert Pipeline-Start to Controller-Action URL
-  return `${ind}response.redirect(URLUtils.url('${node.pipelineName}-${node.startName}'));`;
+  return lines.join('\n');
 }
 
 /**
@@ -213,8 +218,12 @@ function generateJumpNode(node: JumpNodeIR, context: GeneratorContext): string {
  */
 function generateInteractionNode(node: InteractionNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
+  const lines: string[] = [];
 
-  return `${ind}ISML.renderTemplate('${node.templateName}', pdict);`;
+  lines.push(`${ind}ISML.renderTemplate('${node.templateName}', pdict);`);
+  lines.push(`${ind}return;`);
+
+  return lines.join('\n');
 }
 
 /**

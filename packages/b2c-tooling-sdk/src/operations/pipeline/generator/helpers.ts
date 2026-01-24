@@ -118,7 +118,8 @@ export function transformExpression(expr: string): string {
 
   // Match capitalized identifiers that are NOT preceded by a dot (not property access)
   // and NOT followed by a dot or open paren (not a namespace or function call)
-  result = result.replace(/(?<![.\w])([A-Z][a-zA-Z0-9_]*)(?!\s*[.(])/g, (match, name, offset) => {
+  // Use word boundary \b to prevent backtracking from matching partial identifiers
+  result = result.replace(/(?<![.\w])([A-Z][a-zA-Z0-9_]*)\b(?!\s*[.(])/g, (match, name, offset) => {
     // Skip our placeholder tokens
     if (name.startsWith('___') && name.endsWith('___')) {
       return match;
@@ -149,7 +150,29 @@ export function transformExpression(expr: string): string {
  * Transforms a pipeline variable reference to JavaScript.
  */
 export function transformVariable(varRef: string): string {
-  if (!varRef) return varRef;
+  if (!varRef || varRef === 'null') return varRef;
+
+  // Don't transform JavaScript built-in names
+  const jsBuiltins = new Set([
+    'Object',
+    'Array',
+    'String',
+    'Number',
+    'Boolean',
+    'Date',
+    'Error',
+    'JSON',
+    'Math',
+    'RegExp',
+    'Function',
+    'Symbol',
+    'Map',
+    'Set',
+    'Promise',
+  ]);
+  if (jsBuiltins.has(varRef)) {
+    return varRef;
+  }
 
   // Apply known mappings
   for (const [prefix, replacement] of Object.entries(VARIABLE_MAPPINGS)) {

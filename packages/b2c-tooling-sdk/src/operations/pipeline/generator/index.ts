@@ -105,6 +105,8 @@ function generateFunction(func: AnalyzedFunction, context: GeneratorContext): st
   const bodyCode = generateBlock(func.body, context);
   if (bodyCode.trim()) {
     lines.push(bodyCode);
+  } else {
+    lines.push(`${indent(1)}// TODO: Empty pipeline - no nodes to convert`);
   }
 
   lines.push('}');

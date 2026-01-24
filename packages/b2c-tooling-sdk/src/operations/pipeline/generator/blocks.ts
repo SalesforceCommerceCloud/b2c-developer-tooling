@@ -80,8 +80,20 @@ function generateLoop(block: LoopBlock, context: GeneratorContext): string {
   const lines: string[] = [];
   const ind = indent(context.indent);
 
-  const iteratorVar = transformVariable(block.iteratorVar);
+  // Transform iterator - handle dotted paths properly
+  let iteratorVar = block.iteratorVar;
+  if (iteratorVar.includes('.')) {
+    const parts = iteratorVar.split('.');
+    const firstPart = transformVariable(parts[0]);
+    iteratorVar = [firstPart, ...parts.slice(1)].join('.');
+  } else {
+    iteratorVar = transformVariable(iteratorVar);
+  }
+
   const elementVar = block.elementVar;
+
+  // Track loop variable to avoid pdict prefixing inside loop body
+  context.declaredVars.add(elementVar);
 
   // Use for..of for iterators
   lines.push(`${ind}for (var ${elementVar} of ${iteratorVar}) {`);

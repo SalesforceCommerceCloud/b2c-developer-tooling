@@ -26,15 +26,19 @@ export function generateUpdatePageMetaDataPipelet(node: PipeletNodeIR, context: 
 
   lines.push(`${ind}var pageMetaData = request.pageMetaData;`);
 
-  if (product) {
-    lines.push(`${ind}pageMetaData.setTitle(${transformExpression(product)}.name);`);
-    lines.push(`${ind}pageMetaData.setDescription(${transformExpression(product)}.shortDescription);`);
-  } else if (category) {
-    lines.push(`${ind}pageMetaData.setTitle(${transformExpression(category)}.displayName);`);
-    lines.push(`${ind}pageMetaData.setDescription(${transformExpression(category)}.description);`);
-  } else if (content) {
-    lines.push(`${ind}pageMetaData.setTitle(${transformExpression(content)}.name);`);
-    lines.push(`${ind}pageMetaData.setDescription(${transformExpression(content)}.description);`);
+  // Only generate if binding exists and is not null
+  if (product && product !== 'null') {
+    const prodExpr = transformExpression(product);
+    lines.push(`${ind}pageMetaData.setTitle(${prodExpr}.name);`);
+    lines.push(`${ind}pageMetaData.setDescription(${prodExpr}.shortDescription);`);
+  } else if (category && category !== 'null') {
+    const catExpr = transformExpression(category);
+    lines.push(`${ind}pageMetaData.setTitle(${catExpr}.displayName);`);
+    lines.push(`${ind}pageMetaData.setDescription(${catExpr}.description);`);
+  } else if (content && content !== 'null') {
+    const contentExpr = transformExpression(content);
+    lines.push(`${ind}pageMetaData.setTitle(${contentExpr}.name);`);
+    lines.push(`${ind}pageMetaData.setDescription(${contentExpr}.description);`);
   }
 
   return lines.join('\n');

@@ -315,8 +315,8 @@ function parseNodeWrapper(
 
     if (raw['key-binding']) {
       for (const kb of raw['key-binding']) {
-        // Skip null bindings
-        if (kb.$.alias !== 'null' || kb.$.key !== 'null') {
+        // Skip null bindings - only add if BOTH alias and key are not 'null'
+        if (kb.$.alias !== 'null' && kb.$.key !== 'null') {
           keyBindings.push({
             key: kb.$.key,
             value: kb.$.alias,
