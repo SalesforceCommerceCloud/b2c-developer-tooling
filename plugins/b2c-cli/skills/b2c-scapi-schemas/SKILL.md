@@ -42,11 +42,11 @@ b2c scapi schemas list --tenant-id zzxy_prd --json
 ### Filter Schemas
 
 ```bash
-# filter by API family (shopper or admin)
-b2c scapi schemas list --tenant-id zzxy_prd --api-family shopper
+# filter by API family (e.g., product, checkout, search)
+b2c scapi schemas list --tenant-id zzxy_prd --api-family product
 
 # filter by API name
-b2c scapi schemas list --tenant-id zzxy_prd --api-name products
+b2c scapi schemas list --tenant-id zzxy_prd --api-name shopper-products
 
 # filter by status
 b2c scapi schemas list --tenant-id zzxy_prd --status current
@@ -58,10 +58,10 @@ By default, schemas are output in a collapsed format optimized for context effic
 
 ```bash
 # get collapsed schema (paths show methods, schemas show names only)
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd
 
 # save to file
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd > schema.json
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd > schema.json
 ```
 
 ### Get Schema with Selective Expansion
@@ -70,20 +70,20 @@ Expand only the parts of the schema you need:
 
 ```bash
 # expand specific paths
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-paths /products,/products/{id}
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-paths /products,/products/{productId}
 
 # expand specific schemas
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-schemas Product,SearchResult
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-schemas Product,ProductResult
 
 # combine expansions
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-paths /products --expand-schemas Product
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-paths /products --expand-schemas Product
 ```
 
 ### Get Full Schema
 
 ```bash
 # get full schema without any collapsing
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-all
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-all
 ```
 
 ### List Available Paths/Schemas/Examples
@@ -92,33 +92,33 @@ Discover what's available in a schema before expanding:
 
 ```bash
 # list all paths in the schema
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --list-paths
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-paths
 
 # list all schema names
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --list-schemas
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-schemas
 
 # list all examples
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --list-examples
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-examples
 ```
 
 ### Output Formats
 
 ```bash
 # output as YAML
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --yaml
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --yaml
 
 # output wrapped JSON with metadata (apiFamily, apiName, apiVersion, schema)
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --json
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --json
 ```
 
 ### Custom Properties
 
 ```bash
 # include custom properties (default behavior)
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd
 
 # exclude custom properties
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --no-expand-custom-properties
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --no-expand-custom-properties
 ```
 
 ### Configuration

@@ -34,11 +34,11 @@ interface GetOutput {
 export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSchemasGet> {
   static args = {
     apiFamily: Args.string({
-      description: t('args.apiFamily.description', 'API family (e.g., shopper, admin)'),
+      description: t('args.apiFamily.description', 'API family (e.g., product, checkout, search)'),
       required: true,
     }),
     apiName: Args.string({
-      description: t('args.apiName.description', 'API name (e.g., products, orders)'),
+      description: t('args.apiName.description', 'API name (e.g., shopper-products, shopper-baskets)'),
       required: true,
     }),
     apiVersion: Args.string({
@@ -56,19 +56,19 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
 
   static examples = [
     // Basic usage
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd',
     // Full schema
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --expand-all',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd --expand-all',
     // Selective expansion
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --expand-paths /products',
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --expand-schemas Product,SearchResult',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd --expand-paths /products',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd --expand-schemas Product,ProductResult',
     // List available paths/schemas
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --list-paths',
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --list-schemas',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd --list-paths',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd --list-schemas',
     // YAML output
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --yaml',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd --yaml',
     // JSON wrapped output
-    '<%= config.bin %> <%= command.id %> shopper products v1 --tenant-id f_ecom_zzxy_prd --json',
+    '<%= config.bin %> <%= command.id %> product shopper-products v1 --tenant-id f_ecom_zzxy_prd --json',
   ];
 
   static flags = {
