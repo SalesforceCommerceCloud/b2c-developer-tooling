@@ -253,6 +253,8 @@
   "scripts": {
     "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
     "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "postpack": "shx rm -f oclif.manifest.json",
@@ -262,6 +264,7 @@
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
+    "test:agent": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter min --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:e2e": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "version": "oclif readme && git add README.md",

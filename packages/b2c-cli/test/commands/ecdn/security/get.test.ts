@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import EcdnSecurityGet from '../../../../src/commands/ecdn/security/get.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../../helpers/test-setup.js';
 
 /**
  * Unit tests for eCDN security get command CLI logic.
@@ -98,7 +98,7 @@ describe('ecdn security get', () => {
         }),
       });
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       expect(result.settings.securityLevel).to.equal('high');
       expect(result.settings.wafEnabled).to.be.true;

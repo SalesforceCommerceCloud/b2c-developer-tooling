@@ -180,10 +180,6 @@ export type {
   ExportGlobalDataConfiguration,
 } from './operations/jobs/index.js';
 
-// Operations - Sites
-export {listSites, getSite} from './operations/sites/index.js';
-export type {Site} from './operations/sites/index.js';
-
 // Operations - Docs
 export {
   searchDocs,

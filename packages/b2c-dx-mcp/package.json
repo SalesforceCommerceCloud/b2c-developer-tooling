@@ -70,6 +70,8 @@
     "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "preinspect": "pnpm run build",
@@ -77,6 +79,7 @@
     "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all --allow-non-ga-tools",
     "pretest": "tsc --noEmit -p test",
     "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest",
     "postpack": "shx rm -f oclif.manifest.json"

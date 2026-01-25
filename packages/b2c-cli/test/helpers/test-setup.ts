@@ -5,9 +5,23 @@
  */
 
 import type {Config} from '@oclif/core';
+import {captureOutput} from '@oclif/test';
 import sinon from 'sinon';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from './stub-parse.js';
+
+/**
+ * Run a command silently, capturing stdout/stderr.
+ * Use this when you don't need to verify console output.
+ *
+ * @example
+ * const result = await runSilent(() => command.run());
+ */
+export async function runSilent<T>(fn: () => Promise<T>): Promise<T> {
+  const {result, error} = await captureOutput(fn);
+  if (error) throw error;
+  return result as T;
+}
 
 export function createIsolatedEnvHooks(): {
   beforeEach: () => void;
