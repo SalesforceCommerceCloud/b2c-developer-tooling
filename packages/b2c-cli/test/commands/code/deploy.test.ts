@@ -24,7 +24,7 @@ describe('code deploy', () => {
   function stubCommon(command: any) {
     const instance = {config: {hostname: 'example.com', codeVersion: 'v1'}};
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(true);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
@@ -117,7 +117,7 @@ describe('code deploy', () => {
     const command: any = await createCommand({}, {cartridgePath: '.'});
 
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(true);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
 
