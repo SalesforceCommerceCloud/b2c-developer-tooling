@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {SlasClientCommand, formatApiError} from '../../../utils/slas/client.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 interface DeleteOutput {
   clientId: string;
@@ -20,7 +20,10 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
     }),
   };
 
-  static description = t('commands.slas.client.delete.description', 'Delete a SLAS client');
+  static description = withDocs(
+    t('commands.slas.client.delete.description', 'Delete a SLAS client'),
+    '/cli/slas.html#b2c-slas-client-delete',
+  );
 
   static enableJsonFlag = true;
 

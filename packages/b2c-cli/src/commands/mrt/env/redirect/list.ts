@@ -6,7 +6,7 @@
 import {Flags} from '@oclif/core';
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {listRedirects, type ListRedirectsResult, type MrtRedirect} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtRedirect>> = {
   fromPath: {
@@ -37,7 +37,10 @@ const DEFAULT_COLUMNS = ['fromPath', 'toUrl', 'status', 'publishingStatus'];
  * List redirects for an MRT environment.
  */
 export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> {
-  static description = t('commands.mrt.redirect.list.description', 'List redirects for a Managed Runtime environment');
+  static description = withDocs(
+    t('commands.mrt.redirect.list.description', 'List redirects for a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-redirect-list',
+  );
 
   static enableJsonFlag = true;
 

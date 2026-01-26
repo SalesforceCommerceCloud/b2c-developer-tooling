@@ -12,7 +12,7 @@ import {
   printClientDetails,
   formatApiError,
 } from '../../../utils/slas/client.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGet> {
   static args = {
@@ -22,7 +22,10 @@ export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGe
     }),
   };
 
-  static description = t('commands.slas.client.get.description', 'Get a SLAS client');
+  static description = withDocs(
+    t('commands.slas.client.get.description', 'Get a SLAS client'),
+    '/cli/slas.html#b2c-slas-client-get',
+  );
 
   static enableJsonFlag = true;
 

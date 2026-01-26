@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Print environment details in a formatted table.
@@ -66,7 +66,10 @@ function printEnvDetails(env: MrtEnvironment, project: string): void {
  * Get details of a Managed Runtime environment.
  */
 export default class MrtEnvGet extends MrtCommand<typeof MrtEnvGet> {
-  static description = t('commands.mrt.env.get.description', 'Get details of a Managed Runtime environment');
+  static description = withDocs(
+    t('commands.mrt.env.get.description', 'Get details of a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-get',
+  );
 
   static enableJsonFlag = true;
 

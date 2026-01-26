@@ -12,7 +12,7 @@ import {
   type PushResult,
   type CreateDeploymentResult,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Parses SSR parameter flags into a key-value object.
@@ -50,9 +50,9 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }),
   };
 
-  static description = t(
-    'commands.mrt.bundle.deploy.description',
-    'Push a local build or deploy an existing bundle to Managed Runtime',
+  static description = withDocs(
+    t('commands.mrt.bundle.deploy.description', 'Push a local build or deploy an existing bundle to Managed Runtime'),
+    '/cli/mrt.html#b2c-mrt-bundle-deploy',
   );
 
   static enableJsonFlag = true;

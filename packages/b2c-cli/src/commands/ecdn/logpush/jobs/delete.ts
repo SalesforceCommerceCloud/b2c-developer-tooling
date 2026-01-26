@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Response type for the delete command.
@@ -19,7 +19,10 @@ interface DeleteOutput {
  * Command to delete a Logpush job for a zone.
  */
 export default class EcdnLogpushJobsDelete extends EcdnZoneCommand<typeof EcdnLogpushJobsDelete> {
-  static description = t('commands.ecdn.logpush.jobs.delete.description', 'Delete a Logpush job');
+  static description = withDocs(
+    t('commands.ecdn.logpush.jobs.delete.description', 'Delete a Logpush job'),
+    '/cli/ecdn.html#b2c-ecdn-logpush-jobs-delete',
+  );
 
   static enableJsonFlag = true;
 

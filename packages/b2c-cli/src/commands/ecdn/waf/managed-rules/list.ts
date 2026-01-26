@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type WAFManagedRule = CdnZonesComponents['schemas']['WAFManagedRule'];
 
@@ -56,7 +56,10 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list WAF v2 managed rules within a ruleset.
  */
 export default class EcdnWafManagedRulesList extends EcdnZoneCommand<typeof EcdnWafManagedRulesList> {
-  static description = t('commands.ecdn.waf.managed-rules.list.description', 'List WAF v2 managed rules in a ruleset');
+  static description = withDocs(
+    t('commands.ecdn.waf.managed-rules.list.description', 'List WAF v2 managed rules in a ruleset'),
+    '/cli/ecdn.html#b2c-ecdn-waf-managed-rules-list',
+  );
 
   static enableJsonFlag = true;
 

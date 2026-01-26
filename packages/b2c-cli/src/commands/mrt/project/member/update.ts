@@ -11,7 +11,7 @@ import {
   type MrtMember,
   type MemberRoleValue,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Update a member's role in an MRT project.
@@ -24,7 +24,10 @@ export default class MrtMemberUpdate extends MrtCommand<typeof MrtMemberUpdate> 
     }),
   };
 
-  static description = t('commands.mrt.member.update.description', "Update a Managed Runtime project member's role");
+  static description = withDocs(
+    t('commands.mrt.member.update.description', "Update a Managed Runtime project member's role"),
+    '/cli/mrt.html#b2c-mrt-project-member-update',
+  );
 
   static enableJsonFlag = true;
 

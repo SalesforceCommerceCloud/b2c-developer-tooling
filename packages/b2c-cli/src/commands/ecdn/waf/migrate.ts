@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type WAFManagedRuleset = CdnZonesComponents['schemas']['WAFManagedRuleset'];
 
@@ -44,9 +44,12 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to migrate a zone from WAF v1 to WAF v2.
  */
 export default class EcdnWafMigrate extends EcdnZoneCommand<typeof EcdnWafMigrate> {
-  static description = t(
-    'commands.ecdn.waf.migrate.description',
-    'Migrate a zone from WAF v1 to WAF v2 (only applicable for existing WAFv1 zones)',
+  static description = withDocs(
+    t(
+      'commands.ecdn.waf.migrate.description',
+      'Migrate a zone from WAF v1 to WAF v2 (only applicable for existing WAFv1 zones)',
+    ),
+    '/cli/ecdn.html#b2c-ecdn-waf-migrate',
   );
 
   static enableJsonFlag = true;

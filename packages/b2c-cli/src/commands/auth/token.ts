@@ -6,7 +6,7 @@
 import {ux} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccessTokenResponse} from '@salesforce/b2c-tooling-sdk/auth';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * JSON output structure for the token command
@@ -18,7 +18,10 @@ interface TokenJsonOutput {
 }
 
 export default class AuthToken extends OAuthCommand<typeof AuthToken> {
-  static description = t('commands.auth.token.description', 'Get an OAuth access token');
+  static description = withDocs(
+    t('commands.auth.token.description', 'Get an OAuth access token'),
+    '/cli/auth.html#b2c-auth-token',
+  );
 
   static enableJsonFlag = true;
 

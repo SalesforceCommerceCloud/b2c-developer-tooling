@@ -12,7 +12,7 @@ import {
   type OpenApiSchemaInput,
 } from '@salesforce/b2c-tooling-sdk/operations/scapi-schemas';
 import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the get command when using --json flag.
@@ -47,9 +47,9 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
     }),
   };
 
-  static description = t(
-    'commands.scapi.schemas.get.description',
-    'Get a specific SCAPI schema with optional selective expansion',
+  static description = withDocs(
+    t('commands.scapi.schemas.get.description', 'Get a specific SCAPI schema with optional selective expansion'),
+    '/cli/scapi-schemas.html#b2c-scapi-schemas-get',
   );
 
   static enableJsonFlag = true;

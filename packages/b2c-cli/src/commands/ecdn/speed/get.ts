@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type SpeedSetting = CdnZonesComponents['schemas']['SpeedSetting'];
 
@@ -22,7 +22,10 @@ interface GetOutput {
  * Command to get speed settings for a zone.
  */
 export default class EcdnSpeedGet extends EcdnZoneCommand<typeof EcdnSpeedGet> {
-  static description = t('commands.ecdn.speed.get.description', 'Get speed/performance settings for a zone');
+  static description = withDocs(
+    t('commands.ecdn.speed.get.description', 'Get speed/performance settings for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-speed-get',
+  );
 
   static enableJsonFlag = true;
 

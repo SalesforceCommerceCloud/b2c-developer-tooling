@@ -6,7 +6,7 @@
 import {ux} from '@oclif/core';
 import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {listCodeVersions, type CodeVersion, type CodeVersionResult} from '@salesforce/b2c-tooling-sdk/operations/code';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {
   id: {
@@ -34,7 +34,10 @@ const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {
 const DEFAULT_COLUMNS = ['id', 'active', 'rollback', 'lastModified', 'cartridges'];
 
 export default class CodeList extends InstanceCommand<typeof CodeList> {
-  static description = t('commands.code.list.description', 'List code versions on a B2C Commerce instance');
+  static description = withDocs(
+    t('commands.code.list.description', 'List code versions on a B2C Commerce instance'),
+    '/cli/code.html#b2c-code-list',
+  );
 
   static enableJsonFlag = true;
 
