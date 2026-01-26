@@ -6,6 +6,40 @@ description: Commands for executing jobs, importing and exporting site archives,
 
 Commands for executing and monitoring jobs on B2C Commerce instances.
 
+## Authentication
+
+Job commands require OAuth authentication with OCAPI permissions.
+
+### Required OCAPI Permissions
+
+Configure these resources in Business Manager under **Administration** > **Site Development** > **Open Commerce API Settings**:
+
+| Resource | Methods | Commands |
+|----------|---------|----------|
+| `/jobs/*/executions` | POST | `job run` |
+| `/jobs/*/executions/*` | GET | `job run --wait`, `job wait` |
+| `/job_execution_search` | POST | `job search` |
+
+### WebDAV Access
+
+The `job import` and `job export` commands also require WebDAV access for file transfer.
+
+### Configuration
+
+```bash
+# OAuth credentials
+export SFCC_CLIENT_ID=your-client-id
+export SFCC_CLIENT_SECRET=your-client-secret
+
+# WebDAV (for import/export)
+export SFCC_USERNAME=your-bm-username
+export SFCC_PASSWORD=your-webdav-access-key
+```
+
+For complete setup instructions, see the [Authentication Guide](/guide/authentication).
+
+---
+
 ## b2c job run
 
 Execute a job on a B2C Commerce instance.
@@ -68,10 +102,6 @@ b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":[
 b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'
 ```
 
-### Authentication
-
-This command requires OAuth authentication with OCAPI permissions for the `/jobs` resource.
-
 ---
 
 ## b2c job wait
@@ -113,10 +143,6 @@ b2c job wait my-job abc123-def456 --timeout 600
 # Wait with custom polling interval
 b2c job wait my-job abc123-def456 --poll-interval 5
 ```
-
-### Authentication
-
-This command requires OAuth authentication with OCAPI permissions for the `/jobs` resource.
 
 ---
 
@@ -171,10 +197,6 @@ The command displays a table of job executions with:
 - Status
 - Start Time
 
-### Authentication
-
-This command requires OAuth authentication with OCAPI permissions for the `/job_execution_search` resource.
-
 ---
 
 ## b2c job import
@@ -228,10 +250,6 @@ b2c job import ./my-site-data --timeout 300
 - When importing a directory, it will be automatically zipped before upload
 - The archive is uploaded to `Impex/src/instance/` on the instance
 - By default, the archive is deleted after successful import (use `--keep-archive` to retain)
-
-### Authentication
-
-This command requires OAuth authentication with OCAPI permissions for the `/jobs` resource and WebDAV access for file upload.
 
 ---
 
@@ -317,6 +335,3 @@ When using `--global-data`, available types include:
 - `services` - Service configurations
 - And more (see OCAPI documentation)
 
-### Authentication
-
-This command requires OAuth authentication with OCAPI permissions for the `/jobs` resource and WebDAV access for file download.

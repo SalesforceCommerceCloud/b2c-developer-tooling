@@ -29,9 +29,9 @@ SLAS commands require an Account Manager API Client.
 
 **Client Credentials**: Used when both `--client-id` and `--client-secret` are provided. Roles must be assigned to the API client.
 
-### Tenant Scope
+### Tenant Filter
 
-The API client must have tenant scope configured for the organization you wish to manage. This is configured in Account Manager under the API client's **Organizations** section.
+The API client's roles must have a tenant filter configured for the organization you wish to manage. In Account Manager, under each role (e.g., `Sandbox API User`, `SLAS Organization Administrator`), add the organization IDs you need to access to the **Tenant Filter**.
 
 ### Configuration
 
@@ -44,6 +44,8 @@ export SFCC_CLIENT_ID=my-client
 export SFCC_CLIENT_SECRET=my-secret
 b2c slas client list --tenant-id abcd_123
 ```
+
+For complete setup instructions, see the [Authentication Guide](/guide/authentication#account-manager-api-client).
 
 ---
 
