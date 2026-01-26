@@ -508,7 +508,7 @@ Tools that interact with B2C Commerce instances (e.g., `cartridge_deploy`, SCAPI
 
 When `--config` is not provided, the MCP server searches for `dw.json` starting from the `--working-directory` path (or `SFCC_WORKING_DIRECTORY` env var).
 
-> **Important:** MCP clients like Cursor and Claude Desktop often spawn servers from the home directory (`~`) rather than the project directory. Always set `--working-directory` for reliable `dw.json` auto-discovery.
+> **Important:** MCP clients like Cursor and Claude Desktop often spawn servers from the home directory (`~`) rather than the project directory. Always set `--working-directory` for reliable configuration loading and auto-discovery.
 
 **Cursor** (supports `${workspaceFolder}`):
 ```json
