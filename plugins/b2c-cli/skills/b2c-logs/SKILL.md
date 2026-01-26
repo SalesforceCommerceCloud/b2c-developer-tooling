@@ -100,6 +100,15 @@ b2c logs tail
 # Tail specific log types
 b2c logs tail --filter debug --filter error
 
+# Tail only ERROR and FATAL level entries
+b2c logs tail --level ERROR --level FATAL
+
+# Tail with text search
+b2c logs tail --search "PaymentProcessor"
+
+# Combined filtering
+b2c logs tail --filter customerror --level ERROR --search "OrderMgr"
+
 # Stop with Ctrl+C
 ```
 

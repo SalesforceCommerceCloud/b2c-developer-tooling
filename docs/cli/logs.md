@@ -168,6 +168,8 @@ b2c logs tail
 | `--filter`, `-f` | Log prefixes to filter (can specify multiple) | `error`, `customerror` |
 | `--interval` | Polling interval in milliseconds | `3000` |
 | `--last`, `-l` | Show last N entries per file on startup (0 to skip) | `1` |
+| `--level` | Filter by log level (can specify multiple): ERROR, WARN, INFO, DEBUG, FATAL, TRACE | - |
+| `--search`, `-g` | Filter entries containing this text (case-insensitive) | - |
 | `--cartridge-path` | Override cartridge path for path normalization | Auto-discovered |
 | `--no-normalize` | Disable automatic path normalization | `false` |
 | `--no-color` | Disable colored output | `false` |
@@ -190,6 +192,15 @@ b2c logs tail --last 0
 
 # Show last 5 entries per file on startup
 b2c logs tail --last 5
+
+# Tail only ERROR and FATAL entries
+b2c logs tail --level ERROR --level FATAL
+
+# Tail with text search
+b2c logs tail --search "PaymentProcessor"
+
+# Combined filtering
+b2c logs tail --filter customerror --level ERROR --search "OrderMgr"
 
 # NDJSON output for streaming parsers
 b2c logs tail --json

@@ -5,81 +5,20 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  tailLogs,
-  createPathNormalizer,
-  discoverAndCreateNormalizer,
-  type LogEntry,
-  type LogFile,
-} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {tailLogs, type LogEntry, type LogFile} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {t} from '../../i18n/index.js';
-
-/**
- * Default log prefixes to tail.
- */
-const DEFAULT_PREFIXES = ['error', 'customerror'];
+import {
+  DEFAULT_PREFIXES,
+  formatEntry,
+  setupPathNormalizer,
+  matchesLevel,
+  matchesSearch,
+} from '../../utils/logs/index.js';
 
 /**
  * Default polling interval in milliseconds.
  */
 const DEFAULT_INTERVAL = 3000;
-
-/**
- * ANSI color codes for log levels.
- */
-const LEVEL_COLORS: Record<string, string> = {
-  ERROR: '\u001B[31m', // Red
-  FATAL: '\u001B[35m', // Magenta
-  WARN: '\u001B[33m', // Yellow
-  INFO: '\u001B[36m', // Cyan
-  DEBUG: '\u001B[90m', // Gray
-  TRACE: '\u001B[90m', // Gray
-};
-
-const RESET = '\u001B[0m';
-const DIM = '\u001B[2m';
-const BOLD = '\u001B[1m';
-
-/**
- * Formats a log entry for human-readable output.
- *
- * Output format:
- * LEVEL [timestamp] [file]
- * message (may be multi-line)
- */
-function formatEntry(entry: LogEntry, useColor: boolean): string {
-  const headerParts: string[] = [];
-
-  // Level first (most important for scanning)
-  if (entry.level) {
-    if (useColor) {
-      const color = LEVEL_COLORS[entry.level] || '';
-      headerParts.push(`${color}${BOLD}${entry.level}${RESET}`);
-    } else {
-      headerParts.push(entry.level);
-    }
-  }
-
-  // Timestamp
-  if (entry.timestamp) {
-    if (useColor) {
-      headerParts.push(`${DIM}[${entry.timestamp}]${RESET}`);
-    } else {
-      headerParts.push(`[${entry.timestamp}]`);
-    }
-  }
-
-  // File name (dimmed)
-  if (useColor) {
-    headerParts.push(`${DIM}[${entry.file}]${RESET}`);
-  } else {
-    headerParts.push(`[${entry.file}]`);
-  }
-
-  // Build output: header line followed by message, with trailing blank line
-  const header = headerParts.join(' ');
-  return `${header}\n${entry.message}\n`;
-}
 
 export default class LogsTail extends InstanceCommand<typeof LogsTail> {
   static description = t('commands.logs.tail.description', 'Tail log files on a B2C Commerce instance in real-time');
@@ -93,6 +32,9 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
     '<%= config.bin %> <%= command.id %> --cartridge-path ./cartridges',
     '<%= config.bin %> <%= command.id %> --last 5',
     '<%= config.bin %> <%= command.id %> --last 0',
+    '<%= config.bin %> <%= command.id %> --level ERROR --level FATAL',
+    '<%= config.bin %> <%= command.id %> --search "PaymentProcessor"',
+    '<%= config.bin %> <%= command.id %> --level ERROR --search "OrderMgr"',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
@@ -120,6 +62,14 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
       description: 'Show last N entries per file on startup (0 to skip)',
       default: 1,
     }),
+    level: Flags.string({
+      description: 'Filter by log level (ERROR, WARN, INFO, DEBUG, FATAL, TRACE)',
+      multiple: true,
+    }),
+    search: Flags.string({
+      char: 'g',
+      description: 'Filter entries containing this text (case-insensitive)',
+    }),
     'no-color': Flags.boolean({
       description: 'Disable colored output',
       default: false,
@@ -134,13 +84,11 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
     const useColor = !this.flags['no-color'] && process.stdout.isTTY && !this.jsonEnabled();
 
     // Set up path normalizer for IDE click-to-open
-    // Priority: 1) explicit --cartridge-path, 2) auto-discover cartridges, 3) none
-    let pathNormalizer: ((msg: string) => string) | undefined;
-    if (!this.flags['no-normalize']) {
-      pathNormalizer = this.flags['cartridge-path']
-        ? createPathNormalizer({cartridgePath: this.flags['cartridge-path']})
-        : discoverAndCreateNormalizer();
-    }
+    const pathNormalizer = setupPathNormalizer(this.flags['cartridge-path'], this.flags['no-normalize']);
+
+    // Store filter flags for use in callback
+    const levelFilter = this.flags.level;
+    const searchFilter = this.flags.search;
 
     this.log(
       t('commands.logs.tail.starting', 'Tailing logs from {{hostname}} (prefixes: {{prefixes}})...', {
@@ -160,6 +108,14 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
       lastEntries: this.flags.last,
       pathNormalizer,
       onEntry: (entry) => {
+        // Apply filters
+        if (levelFilter && levelFilter.length > 0 && !matchesLevel(entry, levelFilter)) {
+          return;
+        }
+        if (searchFilter && !matchesSearch(entry, searchFilter)) {
+          return;
+        }
+
         if (this.jsonEnabled()) {
           // NDJSON output - one JSON object per line
           ux.stdout(JSON.stringify(entry));
