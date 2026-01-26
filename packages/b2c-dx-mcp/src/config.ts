@@ -10,7 +10,7 @@
  */
 
 const DEFAULT_APPLICATION_INSIGHTS_CONNECTION_STRING =
-  'InstrumentationKey=acf013a7-d3b9-49e3-9d26-03fd87dbec0b;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=efe01240-2e8f-40c1-938a-534cca8a270b';
+  'InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d';
 
 /**
  * Application Insights connection string for telemetry.
