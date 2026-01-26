@@ -188,6 +188,7 @@ describe('cli/config', () => {
         'client-id': 'my-client-id',
         'client-secret': 'my-client-secret',
         'short-code': 'abc123',
+        'tenant-id': 'my-tenant_001',
         'account-manager-host': 'account.demandware.com',
         scope: ['sfcc.products', 'sfcc.orders'],
       };
@@ -197,6 +198,7 @@ describe('cli/config', () => {
       expect(result.clientId).to.equal('my-client-id');
       expect(result.clientSecret).to.equal('my-client-secret');
       expect(result.shortCode).to.equal('abc123');
+      expect(result.tenantId).to.equal('my-tenant_001');
       expect(result.accountManagerHost).to.equal('account.demandware.com');
       expect(result.scopes).to.deep.equal(['sfcc.products', 'sfcc.orders']);
     });
@@ -208,6 +210,7 @@ describe('cli/config', () => {
       expect(result.clientId).to.be.undefined;
       expect(result.clientSecret).to.be.undefined;
       expect(result.shortCode).to.be.undefined;
+      expect(result.tenantId).to.be.undefined;
       expect(result.scopes).to.be.undefined;
     });
 

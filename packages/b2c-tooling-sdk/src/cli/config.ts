@@ -60,6 +60,7 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     clientId: flags['client-id'] as string | undefined,
     clientSecret: flags['client-secret'] as string | undefined,
     shortCode: flags['short-code'] as string | undefined,
+    tenantId: flags['tenant-id'] as string | undefined,
     authMethods,
     accountManagerHost: flags['account-manager-host'] as string | undefined,
     scopes: scopes && scopes.length > 0 ? scopes : undefined,
