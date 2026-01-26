@@ -112,6 +112,40 @@ b2c logs tail --filter customerror --level ERROR --search "OrderMgr"
 # Stop with Ctrl+C
 ```
 
+## Downloading Full Log Files
+
+When you see a log entry and need the full log file for more context, use `b2c webdav get` with the filename from the entry header:
+
+```
+ERROR [2026-01-26 04:35:32.227 GMT] [customerror-odspod-0-appserver-20260126.log]
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                    This is the log filename
+```
+
+```bash
+# Download the full log file
+b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs
+
+# Output to stdout for searching
+b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o -
+
+# Pipe to grep to find related errors
+b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o - | grep "OrderMgr"
+
+# Download to a specific local file
+b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o ./error.log
+```
+
+For archived logs (older than 3 days):
+
+```bash
+# List archived logs
+b2c webdav ls log_archive --root=logs
+
+# Download archived (gzipped) log
+b2c webdav get log_archive/customerror-odspod-0-appserver-20260123.log.gz --root=logs
+```
+
 ## JSON Output Structure
 
 When using `--json`, `logs get` returns:
