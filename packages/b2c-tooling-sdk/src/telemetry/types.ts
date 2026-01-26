@@ -12,6 +12,34 @@ export interface TelemetryAttributes {
 }
 
 /**
+ * Core properties automatically included with every telemetry event.
+ */
+export interface TelemetryEventProperties extends TelemetryAttributes {
+  /** Unique session identifier (generated per Telemetry instance) */
+  sessionId: string;
+  /** Persistent CLI identifier (stored in ~/.{project}/cliid) */
+  cliId: string;
+  /** Package version */
+  version: string;
+  /** Operating system platform (e.g., 'darwin', 'linux', 'win32') */
+  platform: string;
+  /** CPU architecture (e.g., 'x64', 'arm64') */
+  arch: string;
+  /** Node.js version */
+  nodeVersion: string;
+  /** NODE_ENV environment variable value */
+  nodeEnv: string | undefined;
+  /** Project name / origin of the event */
+  origin: string;
+  /** Human-readable UTC date string */
+  date: string;
+  /** Unix timestamp in milliseconds */
+  timestamp: string;
+  /** Process uptime in milliseconds */
+  processUptime: number;
+}
+
+/**
  * Options for creating a Telemetry instance.
  */
 export interface TelemetryOptions {

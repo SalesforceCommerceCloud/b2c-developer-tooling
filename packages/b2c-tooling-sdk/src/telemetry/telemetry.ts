@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {TelemetryReporter} from '@salesforce/telemetry';
-import type {TelemetryAttributes, TelemetryOptions} from './types.js';
+import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} from './types.js';
 
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
@@ -118,25 +118,22 @@ export class Telemetry {
    */
   sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
     try {
-      this.reporter?.sendTelemetryEvent(eventName, {
-        // TODO create interface for clarity
+      const eventProperties: TelemetryEventProperties = {
         ...this.attributes,
         ...attributes,
-        // Identifiers
         sessionId: this.sessionId,
         cliId: this.cliId,
-        // System information
         version: this.version,
         platform: process.platform,
         arch: process.arch,
         nodeVersion: process.version,
         nodeEnv: process.env.NODE_ENV,
         origin: this.project,
-        // Timestamps
         date: new Date().toUTCString(),
         timestamp: String(Date.now()),
         processUptime: process.uptime() * 1000,
-      });
+      };
+      this.reporter?.sendTelemetryEvent(eventName, eventProperties);
     } catch {
       // ignore send errors
     }
