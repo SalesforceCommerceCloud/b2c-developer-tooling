@@ -123,6 +123,17 @@
         "default": "./dist/cjs/operations/scapi-schemas/index.js"
       }
     },
+    "./operations/logs": {
+      "development": "./src/operations/logs/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/logs/index.d.ts",
+        "default": "./dist/esm/operations/logs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/logs/index.d.ts",
+        "default": "./dist/cjs/operations/logs/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {
