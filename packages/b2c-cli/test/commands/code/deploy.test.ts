@@ -113,6 +113,52 @@ describe('code deploy', () => {
     expect(result.reloaded).to.equal(false);
   });
 
+  it('errors when no code version and no OAuth credentials', async () => {
+    const command: any = await createCommand({}, {cartridgePath: '.'});
+
+    sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.calledOnce).to.equal(true);
+    const errorMessage = errorStub.firstCall.args[0];
+    expect(errorMessage).to.include('auto-discover');
+  });
+
+  it('errors when --reload flag set but no OAuth credentials', async () => {
+    const command: any = await createCommand({reload: true}, {cartridgePath: '.'});
+
+    sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.calledOnce).to.equal(true);
+    const errorMessage = errorStub.firstCall.args[0];
+    expect(errorMessage).to.include('reload');
+  });
+
   it('uses active code version when resolvedConfig is missing codeVersion', async () => {
     const command: any = await createCommand({}, {cartridgePath: '.'});
 
