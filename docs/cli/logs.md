@@ -247,23 +247,10 @@ B2C Commerce instances generate various log files:
 
 ## Downloading Full Log Files
 
-When you see a log entry and need the complete log file for more context, use `b2c webdav get` with the filename shown in the entry header:
-
-```
-ERROR [2026-01-26 04:35:32.227 GMT] [customerror-odspod-0-appserver-20260126.log]
-                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                    This is the log filename
-```
+To download the complete log file for deeper investigation, use `b2c webdav get` with the filename from the log entry (shown in brackets in human output, or the `file` field in JSON output):
 
 ```bash
-# Download the full log file
-b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs
-
-# Output to stdout for searching/piping
-b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o -
-
-# Search for specific text in the full log
-b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o - | grep "OrderMgr"
+b2c webdav get error-odspod-0-appserver-20260126.log --root=logs -o -
 ```
 
 See [WebDAV Commands](/cli/webdav#reading-log-files) for more details on log file access.

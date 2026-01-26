@@ -114,56 +114,38 @@ b2c logs tail --filter customerror --level ERROR --search "OrderMgr"
 
 ## Downloading Full Log Files
 
-When you see a log entry and need the full log file for more context, use `b2c webdav get` with the filename from the entry header:
-
-```
-ERROR [2026-01-26 04:35:32.227 GMT] [customerror-odspod-0-appserver-20260126.log]
-                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                    This is the log filename
-```
+To download the complete log file, use the `file` field from the JSON output with `b2c-cli:b2c-webdav`:
 
 ```bash
-# Download the full log file
-b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs
-
-# Output to stdout for searching
-b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o -
-
-# Pipe to grep to find related errors
-b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o - | grep "OrderMgr"
-
-# Download to a specific local file
-b2c webdav get customerror-odspod-0-appserver-20260126.log --root=logs -o ./error.log
-```
-
-For archived logs (older than 3 days):
-
-```bash
-# List archived logs
-b2c webdav ls log_archive --root=logs
-
-# Download archived (gzipped) log
-b2c webdav get log_archive/customerror-odspod-0-appserver-20260123.log.gz --root=logs
+b2c webdav get error-odspod-0-appserver-20260126.log --root=logs -o -
 ```
 
 ## JSON Output Structure
 
 When using `--json`, `logs get` returns:
 
-```typescript
-interface LogsGetResult {
-  count: number;      // Number of entries returned
-  entries: LogEntry[]; // Array of log entries
-}
-
-interface LogEntry {
-  file: string;       // Source log file name
-  level?: string;     // Log level (ERROR, WARN, INFO, DEBUG, FATAL, TRACE)
-  timestamp?: string; // Timestamp from log entry (e.g., "2026-01-25 10:30:45.123 GMT")
-  message: string;    // Log message (paths normalized for IDE click-to-open)
-  raw: string;        // Raw unprocessed log line
+```json
+{
+  "count": 1,
+  "entries": [
+    {
+      "file": "error-odspod-0-appserver-20260126.log",
+      "timestamp": "2026-01-26 04:38:03.022 GMT",
+      "level": "ERROR",
+      "message": "PipelineCallServlet|156679877|Sites-Site|...",
+      "raw": "[2026-01-26 04:38:03.022 GMT] ERROR PipelineCallServlet|..."
+    }
+  ]
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `file` | Source log file name (use with `b2c-cli:b2c-webdav` to download full file) |
+| `level` | Log level: ERROR, WARN, INFO, DEBUG, FATAL, TRACE |
+| `timestamp` | Entry timestamp |
+| `message` | Log message (paths normalized for IDE click-to-open) |
+| `raw` | Raw unprocessed log line |
 
 ## Log Types
 
