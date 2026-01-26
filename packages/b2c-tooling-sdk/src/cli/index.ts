@@ -111,7 +111,7 @@ export {
   extractInstanceFlags,
   extractMrtFlags,
 } from './config.js';
-export type {LoadConfigOptions, PluginSources, ParsedFlags} from './config.js';
+export type {LoadConfigOptions, PluginSources, ParsedFlags, ExtractedMrtFlags} from './config.js';
 
 // Hook types for plugin extensibility
 export type {

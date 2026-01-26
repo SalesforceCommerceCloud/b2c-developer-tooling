@@ -95,27 +95,51 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
 }
 
 /**
+ * Result of extracting MRT flags from oclif parsed flags.
+ *
+ * Contains both config values (for loadConfig's first argument) and
+ * loading options (to spread into LoadConfigOptions).
+ */
+export interface ExtractedMrtFlags {
+  /** MRT config values to pass to loadConfig's first argument */
+  config: Partial<NormalizedConfig>;
+  /** MRT loading options to spread into LoadConfigOptions */
+  options: Pick<LoadConfigOptions, 'cloudOrigin' | 'credentialsFile'>;
+}
+
+/**
  * Extracts MRT (Managed Runtime) configuration from oclif flags.
  *
- * Use this to extract MRT flags (--api-key, --project, --environment, --cloud-origin)
- * from parsed oclif flags into a NormalizedConfig partial.
+ * Use this to extract MRT flags (--api-key, --project, --environment, --cloud-origin, --credentials-file)
+ * from parsed oclif flags. Returns both config values and loading options.
  *
  * @param flags - Parsed oclif flags
- * @returns Partial NormalizedConfig with MRT fields
+ * @returns Object with `config` (NormalizedConfig partial) and `options` (LoadConfigOptions partial)
  *
  * @example
  * ```typescript
- * const flagConfig = extractMrtFlags(this.flags);
- * return loadConfig(flagConfig, options);
+ * const mrt = extractMrtFlags(this.flags);
+ * const options: LoadConfigOptions = {
+ *   ...this.getBaseConfigOptions(),
+ *   ...mrt.options,
+ * };
+ * return loadConfig(mrt.config, options, this.getPluginSources());
  * ```
  */
-export function extractMrtFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
+export function extractMrtFlags(flags: ParsedFlags): ExtractedMrtFlags {
   const cloudOrigin = flags['cloud-origin'] as string | undefined;
+  const credentialsFile = flags['credentials-file'] as string | undefined;
   return {
-    mrtApiKey: flags['api-key'] as string | undefined,
-    mrtProject: flags.project as string | undefined,
-    mrtEnvironment: flags.environment as string | undefined,
-    mrtOrigin: cloudOrigin,
+    config: {
+      mrtApiKey: flags['api-key'] as string | undefined,
+      mrtProject: flags.project as string | undefined,
+      mrtEnvironment: flags.environment as string | undefined,
+      mrtOrigin: cloudOrigin,
+    },
+    options: {
+      cloudOrigin,
+      credentialsFile,
+    },
   };
 }
 

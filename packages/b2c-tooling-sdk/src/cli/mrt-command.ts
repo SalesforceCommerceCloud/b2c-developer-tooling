@@ -62,13 +62,13 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
   };
 
   protected override loadConfiguration(): ResolvedB2CConfig {
+    const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
     const options: LoadConfigOptions = {
       ...this.getBaseConfigOptions(),
-      cloudOrigin: this.flags['cloud-origin'] as string | undefined, // MobifySource uses this to load ~/.mobify--[hostname] if set
-      credentialsFile: this.flags['credentials-file'] as string | undefined, // Override path to MRT credentials file
+      ...mrt.options,
     };
 
-    return loadConfig(extractMrtFlags(this.flags as Record<string, unknown>), options, this.getPluginSources());
+    return loadConfig(mrt.config, options, this.getPluginSources());
   }
 
   /**

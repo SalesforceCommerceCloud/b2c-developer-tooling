@@ -136,7 +136,7 @@ import {
   extractInstanceFlags,
   extractMrtFlags,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import type {LoadConfigOptions, PluginSources} from '@salesforce/b2c-tooling-sdk/cli';
+import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
@@ -219,7 +219,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    *
    * Uses SDK helper functions for flag extraction:
    * - extractInstanceFlags() - B2C instance flags (--server, --username, etc.)
-   * - extractMrtFlags() - MRT flags (--api-key, --project, etc.)
+   * - extractMrtFlags() - MRT flags (--api-key, --project, etc.) and loading options
    *
    * Priority (highest to lowest):
    * 1. CLI flags (--server, --username, --api-key, etc.)
@@ -228,26 +228,19 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 4. ~/.mobify file (for MRT API key)
    */
   protected override loadConfiguration(): ResolvedB2CConfig {
+    const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
     const options: LoadConfigOptions = {
-      instance: this.flags.instance,
-      configPath: this.flags.config,
-      startDir: this.flags['working-directory'],
-      cloudOrigin: this.flags['cloud-origin'] as string | undefined, // MobifySource uses this to load ~/.mobify--[hostname] if set
-      credentialsFile: this.flags['credentials-file'] as string | undefined, // Override path to MRT credentials file
+      ...this.getBaseConfigOptions(),
+      ...mrt.options,
     };
 
-    const pluginSources: PluginSources = {
-      before: this.pluginSourcesBefore,
-      after: this.pluginSourcesAfter,
-    };
-
-    // Combine B2C instance flags and MRT flags using SDK helper functions
+    // Combine B2C instance flags and MRT config flags
     const flagConfig = {
       ...extractInstanceFlags(this.flags as Record<string, unknown>),
-      ...extractMrtFlags(this.flags as Record<string, unknown>),
+      ...mrt.config,
     };
 
-    return loadConfig(flagConfig, options, pluginSources);
+    return loadConfig(flagConfig, options);
   }
 
   /**

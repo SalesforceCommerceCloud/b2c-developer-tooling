@@ -289,24 +289,35 @@ describe('cli/config', () => {
         project: 'my-project',
         environment: 'staging',
         'cloud-origin': 'https://cloud-staging.mobify.com',
+        'credentials-file': '/custom/path/.mobify',
       };
 
       const result = extractMrtFlags(flags);
 
-      expect(result.mrtApiKey).to.equal('my-api-key');
-      expect(result.mrtProject).to.equal('my-project');
-      expect(result.mrtEnvironment).to.equal('staging');
-      expect(result.mrtOrigin).to.equal('https://cloud-staging.mobify.com');
+      // Config values
+      expect(result.config.mrtApiKey).to.equal('my-api-key');
+      expect(result.config.mrtProject).to.equal('my-project');
+      expect(result.config.mrtEnvironment).to.equal('staging');
+      expect(result.config.mrtOrigin).to.equal('https://cloud-staging.mobify.com');
+
+      // Loading options
+      expect(result.options.cloudOrigin).to.equal('https://cloud-staging.mobify.com');
+      expect(result.options.credentialsFile).to.equal('/custom/path/.mobify');
     });
 
     it('handles empty flags', () => {
       const flags: ParsedFlags = {};
       const result = extractMrtFlags(flags);
 
-      expect(result.mrtApiKey).to.be.undefined;
-      expect(result.mrtProject).to.be.undefined;
-      expect(result.mrtEnvironment).to.be.undefined;
-      expect(result.mrtOrigin).to.be.undefined;
+      // Config values
+      expect(result.config.mrtApiKey).to.be.undefined;
+      expect(result.config.mrtProject).to.be.undefined;
+      expect(result.config.mrtEnvironment).to.be.undefined;
+      expect(result.config.mrtOrigin).to.be.undefined;
+
+      // Loading options
+      expect(result.options.cloudOrigin).to.be.undefined;
+      expect(result.options.credentialsFile).to.be.undefined;
     });
 
     it('handles partial flags', () => {
@@ -316,9 +327,11 @@ describe('cli/config', () => {
 
       const result = extractMrtFlags(flags);
 
-      expect(result.mrtApiKey).to.be.undefined;
-      expect(result.mrtProject).to.equal('my-project');
-      expect(result.mrtEnvironment).to.be.undefined;
+      expect(result.config.mrtApiKey).to.be.undefined;
+      expect(result.config.mrtProject).to.equal('my-project');
+      expect(result.config.mrtEnvironment).to.be.undefined;
+      expect(result.options.cloudOrigin).to.be.undefined;
+      expect(result.options.credentialsFile).to.be.undefined;
     });
   });
 });
