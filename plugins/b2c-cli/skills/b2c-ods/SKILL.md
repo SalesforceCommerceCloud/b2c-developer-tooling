@@ -1,6 +1,6 @@
 ---
 name: b2c-ods
-description: Using the b2c CLI for on-demand sandbox (ODS) management
+description: Create and manage on-demand sandboxes (ODS). Use when provisioning development instances, starting/stopping sandboxes, checking sandbox status, or managing sandbox lifecycle. Only create or delete sandboxes when explicitly requested.
 ---
 
 # B2C ODS Skill

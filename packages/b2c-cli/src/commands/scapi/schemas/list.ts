@@ -61,8 +61,8 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd',
-    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-family shopper',
-    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-name products',
+    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-family product',
+    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-name shopper-products',
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --status current',
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --extended',
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --json',
@@ -71,10 +71,10 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
   static flags = {
     ...ScapiSchemasCommand.baseFlags,
     'api-family': Flags.string({
-      description: t('flags.apiFamily.description', 'Filter by API family (e.g., shopper, admin)'),
+      description: t('flags.apiFamily.description', 'Filter by API family (e.g., product, checkout, search)'),
     }),
     'api-name': Flags.string({
-      description: t('flags.apiName.description', 'Filter by API name (e.g., products, orders)'),
+      description: t('flags.apiName.description', 'Filter by API name (e.g., shopper-products, shopper-baskets)'),
     }),
     'api-version': Flags.string({
       description: t('flags.apiVersion.description', 'Filter by API version (e.g., v1)'),
@@ -106,7 +106,7 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
 
     const client = this.getSchemasClient();
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/schemas', {
+    const {data, error, response} = await client.GET('/organizations/{organizationId}/schemas', {
       params: {
         path: {organizationId: this.getOrganizationId()},
         query: {
@@ -121,7 +121,7 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
     if (error) {
       this.error(
         t('commands.scapi.schemas.list.error', 'Failed to fetch SCAPI schemas: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }

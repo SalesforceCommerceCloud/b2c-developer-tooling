@@ -1,13 +1,13 @@
 ---
 name: b2c-slas
-description: Using the b2c CLI for SLAS (Shopper Login and API Access Service) client management
+description: Manage SLAS (Shopper Login and API Access Service) clients. Use when configuring shopper authentication, creating API clients for PWA/headless, managing OAuth scopes (including custom scopes like c_loyalty), or debugging token issues.
 ---
 
 # B2C SLAS Skill
 
 Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) API clients and credentials.
 
-## When to Use This Skill
+## When to Use
 
 Common scenarios requiring SLAS client management:
 

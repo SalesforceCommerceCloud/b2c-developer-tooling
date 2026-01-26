@@ -191,7 +191,16 @@ export default class SetupConfig extends BaseCommand<typeof SetupConfig> {
     );
 
     // SCAPI section
-    this.renderSection(ui, 'SCAPI', [['shortCode', config.shortCode]], fieldSources, unmask);
+    this.renderSection(
+      ui,
+      'SCAPI',
+      [
+        ['shortCode', config.shortCode],
+        ['tenantId', config.tenantId],
+      ],
+      fieldSources,
+      unmask,
+    );
 
     // MRT section
     this.renderSection(

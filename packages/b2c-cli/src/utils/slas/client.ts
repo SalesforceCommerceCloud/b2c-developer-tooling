@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Command, Flags, ux} from '@oclif/core';
+import {Command, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createSlasClient, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
+import {createSlasClient, getApiErrorMessage, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 export type Client = SlasComponents['schemas']['Client'];
@@ -91,8 +91,8 @@ export function printClientDetails(output: ClientOutput, showSecret = true): voi
 /**
  * Format API error for display.
  */
-export function formatApiError(error: unknown): string {
-  return typeof error === 'object' ? JSON.stringify(error) : String(error);
+export function formatApiError(error: unknown, response: Response): string {
+  return getApiErrorMessage(error, response);
 }
 
 /**
@@ -100,15 +100,6 @@ export function formatApiError(error: unknown): string {
  * Provides common flags and helper methods.
  */
 export abstract class SlasClientCommand<T extends typeof Command> extends OAuthCommand<T> {
-  static baseFlags = {
-    ...OAuthCommand.baseFlags,
-    'tenant-id': Flags.string({
-      description: 'SLAS tenant ID (organization ID)',
-      env: 'SFCC_TENANT_ID',
-      required: true,
-    }),
-  };
-
   /**
    * Ensure tenant exists, creating it if necessary.
    * This is required before creating SLAS clients.
@@ -139,7 +130,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (!isTenantNotFound) {
       this.error(
         t('commands.slas.client.create.tenantError', 'Failed to check tenant: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }
@@ -149,7 +140,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
       this.log(t('commands.slas.client.create.creatingTenant', 'Creating SLAS tenant {{tenantId}}...', {tenantId}));
     }
 
-    const {error: createError} = await slasClient.PUT('/tenants/{tenantId}', {
+    const {error: createError, response: createResponse} = await slasClient.PUT('/tenants/{tenantId}', {
       params: {
         path: {tenantId},
       },
@@ -166,7 +157,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (createError) {
       this.error(
         t('commands.slas.client.create.tenantCreateError', 'Failed to create tenant: {{message}}', {
-          message: formatApiError(createError),
+          message: formatApiError(createError, createResponse),
         }),
       );
     }
@@ -192,5 +183,23 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
 
     const oauthStrategy = this.getOAuthStrategy();
     return createSlasClient({shortCode}, oauthStrategy);
+  }
+
+  /**
+   * Get the tenant ID from resolved config, throwing if not available.
+   * @throws Error if tenant ID is not provided through any source
+   */
+  protected requireTenantId(): string {
+    const tenantId = this.resolvedConfig.values.tenantId;
+
+    if (!tenantId) {
+      this.error(
+        t(
+          'error.tenantIdRequired',
+          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
+        ),
+      );
+    }
+    return tenantId;
   }
 }

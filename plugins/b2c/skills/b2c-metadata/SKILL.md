@@ -1,6 +1,6 @@
 ---
 name: b2c-metadata
-description: Guide for working with site metadata XML in Salesforce B2C Commerce
+description: Work with B2C Commerce site metadata XML for custom attributes and object types. Use when defining custom attributes on products/orders/customers, creating custom object types, or setting site preferences via XML import. Covers system-objecttype-extensions.xml and custom-objecttype-definitions.xml.
 ---
 
 # Metadata Skill

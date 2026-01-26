@@ -174,13 +174,13 @@ describe('operations/mrt/push', () => {
       );
 
       const auth = new MockAuthStrategy();
-      const client = createMrtClient({}, auth);
 
-      const bundles = await listBundles(client, 'my-project');
+      const result = await listBundles({projectSlug: 'my-project'}, auth);
 
-      expect(bundles).to.have.length(2);
-      expect(bundles[0]).to.deep.include({id: 123, message: 'Bundle 1'});
-      expect(bundles[1]).to.deep.include({id: 124, message: 'Bundle 2'});
+      expect(result.bundles).to.have.length(2);
+      expect(result.bundles[0]).to.deep.include({id: 123, message: 'Bundle 1'});
+      expect(result.bundles[1]).to.deep.include({id: 124, message: 'Bundle 2'});
+      expect(result.count).to.equal(2);
     });
 
     it('passes pagination options', async () => {
@@ -189,14 +189,13 @@ describe('operations/mrt/push', () => {
       server.use(
         http.get(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/bundles/`, ({request}) => {
           queryParams = new URL(request.url).searchParams;
-          return HttpResponse.json({results: []});
+          return HttpResponse.json({count: 0, results: []});
         }),
       );
 
       const auth = new MockAuthStrategy();
-      const client = createMrtClient({}, auth);
 
-      await listBundles(client, 'my-project', {limit: 10, offset: 20});
+      await listBundles({projectSlug: 'my-project', limit: 10, offset: 20}, auth);
 
       expect(queryParams?.get('limit')).to.equal('10');
       expect(queryParams?.get('offset')).to.equal('20');
@@ -213,11 +212,11 @@ describe('operations/mrt/push', () => {
       );
 
       const auth = new MockAuthStrategy();
-      const client = createMrtClient({}, auth);
 
-      const bundles = await listBundles(client, 'my-project');
+      const result = await listBundles({projectSlug: 'my-project'}, auth);
 
-      expect(bundles).to.have.length(0);
+      expect(result.bundles).to.have.length(0);
+      expect(result.count).to.equal(0);
     });
 
     it('throws error on API failure', async () => {
@@ -228,10 +227,9 @@ describe('operations/mrt/push', () => {
       );
 
       const auth = new MockAuthStrategy();
-      const client = createMrtClient({}, auth);
 
       try {
-        await listBundles(client, 'my-project');
+        await listBundles({projectSlug: 'my-project'}, auth);
         expect.fail('Should have thrown');
       } catch (error) {
         expect((error as Error).message).to.include('Failed to list bundles');

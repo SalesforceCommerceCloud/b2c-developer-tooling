@@ -77,7 +77,6 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     this.requireOAuthCredentials();
 
     const {
-      'tenant-id': tenantId,
       name,
       secret,
       channels,
@@ -87,6 +86,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
       replace,
     } = this.flags;
     const {clientId} = this.args;
+    const tenantId = this.requireTenantId();
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.update.fetching', 'Fetching SLAS client {{clientId}}...', {clientId}));
@@ -95,7 +95,11 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     const slasClient = this.getSlasClient();
 
     // First, fetch the existing client
-    const {data: existingData, error: getError} = await slasClient.GET('/tenants/{tenantId}/clients/{clientId}', {
+    const {
+      data: existingData,
+      error: getError,
+      response: getResponse,
+    } = await slasClient.GET('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},
       },
@@ -104,7 +108,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     if (getError) {
       this.error(
         t('commands.slas.client.update.fetchError', 'Failed to fetch SLAS client: {{message}}', {
-          message: formatApiError(getError),
+          message: formatApiError(getError, getResponse),
         }),
       );
     }
@@ -128,7 +132,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     });
 
     // Update the client
-    const {data, error} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
+    const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},
       },
@@ -138,7 +142,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     if (error) {
       this.error(
         t('commands.slas.client.update.error', 'Failed to update SLAS client: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }

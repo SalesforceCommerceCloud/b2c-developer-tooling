@@ -205,6 +205,41 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
  * }));
  * ```
  */
+/**
+ * Configuration for User-Agent middleware.
+ */
+export interface UserAgentConfig {
+  /**
+   * The User-Agent string to set on requests.
+   */
+  userAgent: string;
+}
+
+/**
+ * Creates middleware that sets the User-Agent header on requests.
+ *
+ * Sets both the standard `User-Agent` header and a custom `sfdc_user_agent` header
+ * with the same value.
+ *
+ * @param config - Configuration with the User-Agent string
+ * @returns Middleware that sets the User-Agent headers
+ *
+ * @example
+ * ```typescript
+ * const client = createOcapiClient(config, auth);
+ * client.use(createUserAgentMiddleware({ userAgent: 'b2c-cli/0.1.0' }));
+ * ```
+ */
+export function createUserAgentMiddleware(config: UserAgentConfig): Middleware {
+  return {
+    async onRequest({request}) {
+      request.headers.set('User-Agent', config.userAgent);
+      request.headers.set('sfdc_user_agent', config.userAgent);
+      return request;
+    },
+  };
+}
+
 export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middleware {
   const logger = getLogger();
 

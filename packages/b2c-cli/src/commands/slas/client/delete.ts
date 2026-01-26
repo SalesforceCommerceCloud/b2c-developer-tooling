@@ -36,7 +36,7 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
   async run(): Promise<DeleteOutput> {
     this.requireOAuthCredentials();
 
-    const {'tenant-id': tenantId} = this.flags;
+    const tenantId = this.requireTenantId();
     const {clientId} = this.args;
 
     if (!this.jsonEnabled()) {
@@ -45,7 +45,7 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
 
     const slasClient = this.getSlasClient();
 
-    const {error} = await slasClient.DELETE('/tenants/{tenantId}/clients/{clientId}', {
+    const {error, response} = await slasClient.DELETE('/tenants/{tenantId}/clients/{clientId}', {
       params: {
         path: {tenantId, clientId},
       },
@@ -54,7 +54,7 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
     if (error) {
       this.error(
         t('commands.slas.client.delete.error', 'Failed to delete SLAS client: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }

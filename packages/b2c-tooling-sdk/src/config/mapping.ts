@@ -49,11 +49,13 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     scopes: json['oauth-scopes'],
     // Support multiple field names for short code (priority order)
     shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
+    tenantId: json['tenant-id'],
     instanceName: json.name,
     authMethods: json['auth-methods'],
     accountManagerHost: json['account-manager-host'],
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
+    mrtOrigin: json.mrtOrigin || json.cloudOrigin,
   };
 }
 
@@ -152,6 +154,7 @@ export function mergeConfigsWithProtection(
       authMethods: overrides.authMethods ?? base.authMethods,
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
       shortCode: overrides.shortCode ?? base.shortCode,
+      tenantId: overrides.tenantId ?? base.tenantId,
       instanceName: overrides.instanceName ?? base.instanceName,
       mrtProject: overrides.mrtProject ?? base.mrtProject,
       mrtEnvironment: overrides.mrtEnvironment ?? base.mrtEnvironment,

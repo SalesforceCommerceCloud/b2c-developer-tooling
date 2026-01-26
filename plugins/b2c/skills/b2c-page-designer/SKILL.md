@@ -1,6 +1,6 @@
 ---
 name: b2c-page-designer
-description: Guide for creating Page Designer pages and components in Salesforce B2C Commerce
+description: Create Page Designer pages and components in B2C Commerce. Use when building visual merchandising tools, content slots, or experience API integrations. Covers page types, component types, regions, and attribute definitions.
 ---
 
 # Page Designer Skill

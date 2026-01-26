@@ -1,6 +1,6 @@
 ---
 name: b2c-controllers
-description: Guide for creating storefront controllers in Salesforce B2C Commerce (SFRA and classic patterns)
+description: Create storefront controllers in SFRA or classic B2C Commerce patterns. Use when building pages, handling form submissions, creating AJAX endpoints, or working with server.get/server.post, res.render, res.json, and middleware chains. Also covers URLUtils for URL generation.
 ---
 
 # Controllers Skill

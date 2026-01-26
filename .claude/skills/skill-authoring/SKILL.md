@@ -31,7 +31,43 @@ description: Brief description of what the skill does
 ```
 
 - **name**: Unique identifier (lowercase, hyphens)
-- **description**: One-line summary (loaded at startup for all skills)
+- **description**: Rich description for skill discovery (1-1024 characters)
+
+### Writing Effective Descriptions
+
+The description field is **critical for skill discovery** by coding agents. It should include:
+
+1. **What the skill does** - Core functionality
+2. **When to use it** - Trigger scenarios
+3. **Keywords** - Task-oriented phrases that help agents connect questions to skills
+
+**Format:**
+```yaml
+description: "[What it does]. Use when [scenarios]. Keywords/phrases."
+```
+
+**Good examples:**
+```yaml
+# Task-oriented phrases help agents connect "how do I" questions
+description: Search and read B2C Commerce Script API documentation and XSD schemas. Use when writing B2C scripts, looking up classes like URLUtils/ProductMgr/CustomerMgr, or answering "how do I" questions about generating URLs, querying products, processing orders, or any dw.* API task.
+
+# Include common error scenarios
+description: View and debug B2C CLI configuration. Use when authentication fails, connection errors occur, wrong instance is used, or you need to verify dw.json settings, environment variables, or OAuth credentials.
+
+# Disambiguation helps agents choose the right skill
+description: Run and monitor existing jobs, import/export site archives. Use when executing batch jobs, importing site data, or checking job status. For creating new job code, use b2c-custom-job-steps instead.
+```
+
+**Bad examples:**
+```yaml
+# Too brief - no discovery keywords
+description: Using the b2c CLI for documentation
+
+# Action-oriented instead of problem-oriented
+description: Using the b2c CLI to search and read Script API documentation
+```
+
+**Key insight:** Include **task-oriented phrases** ("generating URLs", "querying products") not just class names, since users ask about tasks they want to accomplish.
 
 ### Instructions Body
 
@@ -40,20 +76,12 @@ The body contains markdown instructions that tell the agent how to perform the t
 ```markdown
 ---
 name: my-skill
-description: Does something useful
+description: Does something useful. Use when [scenarios]. Keywords: [task phrases].
 ---
 
 # Skill Title
 
 Brief overview of what this skill helps accomplish.
-
-## When to Use
-
-Describe scenarios when this skill applies.
-
-## How to Use
-
-Step-by-step instructions or patterns.
 
 ## Examples
 
@@ -63,6 +91,8 @@ Concrete examples demonstrating usage.
 
 - [Detailed Reference](references/REFERENCE.md) - Link to additional docs
 ```
+
+Note: The description frontmatter is the **only** discovery mechanism. "When to Use" sections in the body are not used for discovery. Put all discovery-relevant information in the description.
 
 ## Progressive Disclosure
 

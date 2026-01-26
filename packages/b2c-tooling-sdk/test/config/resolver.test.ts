@@ -55,6 +55,30 @@ describe('config/resolver', () => {
         expect(sources[0].name).to.equal('test');
       });
 
+      it('resolves tenantId from source', () => {
+        const source = new MockSource('test', {
+          hostname: 'example.demandware.net',
+          tenantId: 'test_prd',
+        });
+        const resolver = new ConfigResolver([source]);
+
+        const {config} = resolver.resolve();
+
+        expect(config.tenantId).to.equal('test_prd');
+      });
+
+      it('allows overrides to take precedence for tenantId', () => {
+        const source = new MockSource('test', {
+          hostname: 'example.demandware.net',
+          tenantId: 'source_prd',
+        });
+        const resolver = new ConfigResolver([source]);
+
+        const {config} = resolver.resolve({tenantId: 'override_prd'});
+
+        expect(config.tenantId).to.equal('override_prd');
+      });
+
       it('applies overrides with highest priority', () => {
         const source = new MockSource('test', {
           hostname: 'source.demandware.net',

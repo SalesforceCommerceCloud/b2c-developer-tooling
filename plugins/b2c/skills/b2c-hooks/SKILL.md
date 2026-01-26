@@ -1,6 +1,6 @@
 ---
 name: b2c-hooks
-description: Hook registration, HookMgr, OCAPI/SCAPI hooks, and system extension points
+description: Implement hooks using HookMgr and extension points in B2C Commerce. Use when extending OCAPI/SCAPI behavior, handling system events like order calculation, or registering custom hook implementations. Covers hooks.json, dw.ocapi hooks, and custom extension points.
 ---
 
 # B2C Commerce Hooks

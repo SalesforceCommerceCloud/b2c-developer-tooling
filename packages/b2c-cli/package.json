@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -102,12 +102,37 @@
         "description": "WebDAV file operations (ls, get, put, rm, zip, unzip)"
       },
       "mrt": {
-        "description": "Manage Managed Runtime projects and deployments",
-        "subtopics": {
-          "env-var": {
-            "description": "Manage environment variables on MRT projects"
-          }
-        }
+        "description": "Manage Managed Runtime (MRT) projects, environments, bundles, and deployments"
+      },
+      "mrt:env": {
+        "description": "Create, update, delete, and configure MRT environments (targets)"
+      },
+      "mrt:env:var": {
+        "description": "Set and delete environment variables for MRT environments"
+      },
+      "mrt:env:redirect": {
+        "description": "Configure URL redirects and clone redirect rules between environments"
+      },
+      "mrt:org": {
+        "description": "List organizations and view B2C Commerce instance connections"
+      },
+      "mrt:project": {
+        "description": "Create, update, delete, and configure MRT projects"
+      },
+      "mrt:project:member": {
+        "description": "Add, remove, and update project member roles and permissions"
+      },
+      "mrt:project:notification": {
+        "description": "Configure email notifications for deployment events (start, success, failure)"
+      },
+      "mrt:env:access-control": {
+        "description": "Configure access control headers for environment security"
+      },
+      "mrt:bundle": {
+        "description": "Push builds, deploy bundles, view deployment history, and download artifacts"
+      },
+      "mrt:user": {
+        "description": "View profile, reset API keys, and configure email preferences"
       },
       "ods": {
         "description": "Manage On-Demand Sandboxes"
@@ -131,6 +156,91 @@
           },
           "schemas": {
             "description": "Browse and retrieve SCAPI schema specifications"
+          }
+        }
+      },
+      "ecdn": {
+        "description": "Manage eCDN zones, certificates, WAF, and security settings",
+        "subtopics": {
+          "zones": {
+            "description": "List and create CDN zones"
+          },
+          "cache": {
+            "description": "Manage CDN cache operations"
+          },
+          "certificates": {
+            "description": "Manage SSL certificates"
+          },
+          "security": {
+            "description": "Manage security settings"
+          },
+          "speed": {
+            "description": "Manage speed optimization settings"
+          },
+          "waf": {
+            "description": "Manage Web Application Firewall",
+            "subtopics": {
+              "groups": {
+                "description": "WAF v1 rule groups"
+              },
+              "rules": {
+                "description": "WAF v1 rules"
+              },
+              "rulesets": {
+                "description": "WAF v2 rulesets"
+              },
+              "managed-rules": {
+                "description": "WAF v2 managed rules"
+              },
+              "owasp": {
+                "description": "OWASP ModSecurity package"
+              }
+            }
+          },
+          "firewall": {
+            "description": "Manage custom firewall rules"
+          },
+          "rate-limit": {
+            "description": "Manage rate limiting rules"
+          },
+          "logpush": {
+            "description": "Manage log export configuration",
+            "subtopics": {
+              "jobs": {
+                "description": "Logpush job management"
+              }
+            }
+          },
+          "page-shield": {
+            "description": "Manage Page Shield security",
+            "subtopics": {
+              "notifications": {
+                "description": "Page Shield notification webhooks"
+              },
+              "policies": {
+                "description": "Content Security Policy rules"
+              },
+              "scripts": {
+                "description": "Detected script monitoring"
+              }
+            }
+          },
+          "mrt-rules": {
+            "description": "Manage MRT routing rules",
+            "subtopics": {
+              "rules": {
+                "description": "Individual MRT rules"
+              }
+            }
+          },
+          "mtls": {
+            "description": "Manage mTLS certificates"
+          },
+          "cipher-suites": {
+            "description": "Manage TLS cipher configuration"
+          },
+          "origin-headers": {
+            "description": "Manage origin header modifications"
           }
         }
       },

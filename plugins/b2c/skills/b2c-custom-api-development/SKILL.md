@@ -1,6 +1,6 @@
 ---
 name: b2c-custom-api-development
-description: Guide for developing SCAPI Custom APIs on Salesforce B2C Commerce
+description: Develop Custom SCAPI endpoints for B2C Commerce. Use when creating REST APIs, defining api.json routes, writing schema.yaml (OAS 3.0), or building headless commerce integrations. Covers cartridge structure, endpoint implementation, and OAuth scope configuration.
 ---
 
 # Custom API Development Skill
@@ -371,11 +371,11 @@ Using a private SLAS client with client credentials grant:
 
 ```bash
 # Set your credentials
-SHORTCODE="your-short-code"
+SHORTCODE="your-short-code" # see b2c-cli:b2c-config (b2c setup config) skill to find this value; this it NOT the instance realm ID
 ORG="f_ecom_xxxx_xxx"
 SLAS_CLIENT_ID="your-client-id"
 SLAS_CLIENT_SECRET="your-client-secret"
-SITE="RefArch"
+SITE="RefArch" # b2c-cli:b2c-sites skill to find site IDs
 
 # Get access token
 TOKEN=$(curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/$ORG/oauth2/token" \

@@ -51,7 +51,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
   async run(): Promise<ClientListOutput> {
     this.requireOAuthCredentials();
 
-    const {'tenant-id': tenantId} = this.flags;
+    const tenantId = this.requireTenantId();
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.list.fetching', 'Fetching SLAS clients for tenant {{tenantId}}...', {tenantId}));
@@ -59,7 +59,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
 
     const slasClient = this.getSlasClient();
 
-    const {data, error} = await slasClient.GET('/tenants/{tenantId}/clients', {
+    const {data, error, response} = await slasClient.GET('/tenants/{tenantId}/clients', {
       params: {
         path: {tenantId},
       },
@@ -68,7 +68,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
     if (error) {
       this.error(
         t('commands.slas.client.list.error', 'Failed to list SLAS clients: {{message}}', {
-          message: formatApiError(error),
+          message: formatApiError(error, response),
         }),
       );
     }
