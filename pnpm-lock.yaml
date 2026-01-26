@@ -65,6 +65,9 @@ importers:
       cliui:
         specifier: ^9.0.1
         version: 9.0.1
+      glob:
+        specifier: ^13.0.0
+        version: 13.0.0
       marked:
         specifier: ^15.0.0
         version: 15.0.12
