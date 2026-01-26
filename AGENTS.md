@@ -123,13 +123,6 @@ Use `createTable` from `@salesforce/b2c-tooling-sdk/cli` for tabular output. See
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
 
-Quick commands:
-```bash
-pnpm run test                                    # Run all tests
-pnpm --filter @salesforce/b2c-tooling-sdk run test  # Test specific package
-pnpm mocha "test/clients/webdav.test.ts"         # Single file (no coverage)
-```
-
 ## Changesets
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management. When making changes that affect users, create a changeset:
