@@ -88,6 +88,8 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 
 ## Documentation
 
+- Update docs in `./docs/` folder and relevant skills in `./plugins/b2c-cli/skills/` when updating or adding CLI commands.
+
 See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
 ```bash
@@ -104,9 +106,9 @@ pnpm run docs:build
 - CLI commands have access to this logger via `this.log` method from oclif Command class
 - CLI commands can write directly to stdout/stderr if their primary purpose is to output or stream data
 
-## Table Output
+## CLI Command Development
 
-Use `createTable` from `@salesforce/b2c-tooling-sdk/cli` for tabular output. See [CLI command development skill](./.claude/skills/cli-command-development/SKILL.md) for patterns.
+See [CLI command development skill](./.claude/skills/cli-command-development/SKILL.md) for patterns.
 
 ## Claude Code Skills
 
