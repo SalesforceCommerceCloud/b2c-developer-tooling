@@ -55,20 +55,19 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --prefix error customerror',
+    '<%= config.bin %> <%= command.id %> --filter error --filter customerror',
     '<%= config.bin %> <%= command.id %> --sort size --order asc',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
   static flags = {
     ...InstanceCommand.baseFlags,
-    prefix: Flags.string({
-      char: 'p',
+    filter: Flags.string({
+      char: 'f',
       description: 'Filter by log prefix (can specify multiple)',
       multiple: true,
     }),
     sort: Flags.string({
-      char: 's',
       description: 'Sort field',
       options: ['name', 'date', 'size'],
       default: 'date',
@@ -90,7 +89,7 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
     this.log(t('commands.logs.list.fetching', 'Fetching log files from {{hostname}}...', {hostname}));
 
     const files = await listLogFiles(this.instance, {
-      prefixes: this.flags.prefix,
+      prefixes: this.flags.filter,
       sortBy: this.flags.sort as 'date' | 'name' | 'size',
       sortOrder: this.flags.order as 'asc' | 'desc',
     });

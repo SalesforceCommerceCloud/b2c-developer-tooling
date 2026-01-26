@@ -88,37 +88,37 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --prefix error customerror debug',
+    '<%= config.bin %> <%= command.id %> --filter error --filter customerror --filter debug',
     '<%= config.bin %> <%= command.id %> --interval 5000',
     '<%= config.bin %> <%= command.id %> --cartridge-path ./cartridges',
-    '<%= config.bin %> <%= command.id %> --include-existing',
+    '<%= config.bin %> <%= command.id %> --last 5',
+    '<%= config.bin %> <%= command.id %> --last 0',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
   static flags = {
     ...InstanceCommand.baseFlags,
-    prefix: Flags.string({
-      char: 'p',
+    filter: Flags.string({
+      char: 'f',
       description: 'Log prefixes to filter (can specify multiple)',
       multiple: true,
       default: DEFAULT_PREFIXES,
     }),
     interval: Flags.integer({
-      char: 'i',
       description: 'Polling interval in milliseconds',
       default: DEFAULT_INTERVAL,
     }),
     'cartridge-path': Flags.string({
-      char: 'c',
       description: 'Override cartridge path for path normalization (auto-discovered by default)',
     }),
     'no-normalize': Flags.boolean({
       description: 'Disable automatic path normalization',
       default: false,
     }),
-    'include-existing': Flags.boolean({
-      description: 'Include existing log content when starting (instead of only new entries)',
-      default: false,
+    last: Flags.integer({
+      char: 'l',
+      description: 'Show last N entries per file on startup (0 to skip)',
+      default: 1,
     }),
     'no-color': Flags.boolean({
       description: 'Disable colored output',
@@ -137,19 +137,15 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
     // Priority: 1) explicit --cartridge-path, 2) auto-discover cartridges, 3) none
     let pathNormalizer: ((msg: string) => string) | undefined;
     if (!this.flags['no-normalize']) {
-      if (this.flags['cartridge-path']) {
-        // Explicit path provided
-        pathNormalizer = createPathNormalizer({cartridgePath: this.flags['cartridge-path']});
-      } else {
-        // Auto-discover cartridges from current directory
-        pathNormalizer = discoverAndCreateNormalizer();
-      }
+      pathNormalizer = this.flags['cartridge-path']
+        ? createPathNormalizer({cartridgePath: this.flags['cartridge-path']})
+        : discoverAndCreateNormalizer();
     }
 
     this.log(
       t('commands.logs.tail.starting', 'Tailing logs from {{hostname}} (prefixes: {{prefixes}})...', {
         hostname,
-        prefixes: this.flags.prefix.join(', '),
+        prefixes: this.flags.filter.join(', '),
       }),
     );
     this.log(t('commands.logs.tail.interrupt', 'Press Ctrl+C to stop.\n'));
@@ -159,9 +155,9 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
     const collectedEntries: LogEntry[] = [];
 
     const {stop, done} = await tailLogs(this.instance, {
-      prefixes: this.flags.prefix,
+      prefixes: this.flags.filter,
       pollInterval: this.flags.interval,
-      includeExisting: this.flags['include-existing'],
+      lastEntries: this.flags.last,
       pathNormalizer,
       onEntry: (entry) => {
         if (this.jsonEnabled()) {

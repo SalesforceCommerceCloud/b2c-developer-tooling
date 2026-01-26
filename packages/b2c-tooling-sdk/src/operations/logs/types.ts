@@ -86,10 +86,11 @@ export interface TailLogsOptions extends TailLogsCallbacks {
    */
   pollInterval?: number;
   /**
-   * Include existing content when starting (tail from beginning).
-   * @default false
+   * Number of recent entries to show per file on startup.
+   * Set to 0 to skip initial entries and only show new ones.
+   * @default 1
    */
-  includeExisting?: boolean;
+  lastEntries?: number;
   /**
    * Maximum number of entries to collect before stopping.
    * When set, the tail operation will automatically stop after collecting

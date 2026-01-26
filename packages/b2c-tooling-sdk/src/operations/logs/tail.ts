@@ -201,7 +201,7 @@ export async function tailLogs(instance: B2CInstance, options: TailLogsOptions =
   const {
     prefixes = DEFAULT_PREFIXES,
     pollInterval = DEFAULT_POLL_INTERVAL,
-    includeExisting = false,
+    lastEntries = 1,
     maxEntries,
     pathNormalizer,
     onEntry,
@@ -251,6 +251,82 @@ export async function tailLogs(instance: B2CInstance, options: TailLogsOptions =
   };
 
   /**
+   * Fetch the last N entries from a file's tail.
+   */
+  const fetchLastEntries = async (file: LogFile, count: number): Promise<LogEntry[]> => {
+    if (count <= 0 || file.size === 0) {
+      return [];
+    }
+
+    try {
+      // Read last ~64KB of the file to find recent entries
+      const tailBytes = Math.min(file.size, DEFAULT_TAIL_BYTES);
+      const startByte = Math.max(0, file.size - tailBytes);
+
+      let content: ArrayBuffer;
+      if (startByte === 0) {
+        // Read entire file
+        content = await instance.webdav.get(file.path);
+      } else {
+        // Use Range request for tail
+        const response = await instance.webdav.request(file.path, {
+          method: 'GET',
+          headers: {
+            Range: `bytes=${startByte}-`,
+          },
+        });
+
+        if (response.status === 416) {
+          // File might be smaller than expected, read entire file
+          content = await instance.webdav.get(file.path);
+        } else if (!response.ok && response.status !== 206) {
+          throw new Error(`Failed to read ${file.name}: ${response.status}`);
+        } else {
+          content = await response.arrayBuffer();
+        }
+      }
+
+      // Parse lines and aggregate into multi-line entries
+      const decoder = new TextDecoder('utf-8', {fatal: false});
+      const lines = splitLines(content, decoder, true);
+
+      // If we started mid-file, skip lines until we find an entry start
+      let startIndex = 0;
+      if (startByte > 0) {
+        for (let i = 0; i < lines.length; i++) {
+          if (LOG_ENTRY_START.test(lines[i])) {
+            startIndex = i;
+            break;
+          }
+        }
+      }
+
+      // Aggregate lines into entries
+      const {entries: rawEntries, pending} = aggregateLogEntries(lines.slice(startIndex), []);
+
+      // Include pending as the last entry if it has content
+      const allRawEntries = pending.length > 0 ? [...rawEntries, pending] : rawEntries;
+
+      const entries: LogEntry[] = [];
+      for (const entryLines of allRawEntries) {
+        const firstLine = entryLines[0];
+        const fullMessage = entryLines.join('\n');
+        const entry = parseLogEntry(firstLine, file.name, fullMessage, pathNormalizer);
+        entries.push(entry);
+      }
+
+      // Return only the last N entries (most recent)
+      return entries.slice(-count);
+    } catch (error) {
+      logger.error({error, file: file.name}, `Error fetching last entries from ${file.name}`);
+      if (onError) {
+        onError(error instanceof Error ? error : new Error(String(error)));
+      }
+      return [];
+    }
+  };
+
+  /**
    * Discover and track log files matching the prefix filters.
    */
   const discoverFiles = async (): Promise<void> => {
@@ -265,16 +341,30 @@ export async function tailLogs(instance: B2CInstance, options: TailLogsOptions =
           trackedFiles.push(file);
           fileSizes.set(file.name, file.size);
 
-          // Set initial position
-          if (includeExisting) {
-            filePositions.set(file.name, 0);
-          } else {
-            filePositions.set(file.name, file.size);
-          }
-
+          // Notify about discovery first
           if (onFileDiscovered) {
             onFileDiscovered(file);
           }
+
+          // Fetch and emit last N entries if requested
+          if (lastEntries > 0) {
+            const recentEntries = await fetchLastEntries(file, lastEntries);
+            for (const entry of recentEntries) {
+              if (onEntry) {
+                onEntry(entry);
+              }
+              if (maxEntries !== undefined) {
+                collectedEntries.push(entry);
+                if (collectedEntries.length >= maxEntries) {
+                  running = false;
+                  return;
+                }
+              }
+            }
+          }
+
+          // Set position to end of file to only tail new content
+          filePositions.set(file.name, file.size);
         } else {
           // Check for file rotation (size decreased)
           const previousSize = fileSizes.get(file.name) || 0;

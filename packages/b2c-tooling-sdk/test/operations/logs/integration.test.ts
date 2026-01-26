@@ -153,7 +153,7 @@ describe('operations/logs integration', function () {
       const result = await tailLogs(instance, {
         prefixes: ['error', 'customerror'],
         pollInterval: 1000,
-        includeExisting: true,
+        lastEntries: 5, // Show last 5 entries per file on startup
         maxEntries: 5,
         onFileDiscovered: (file) => discoveredFiles.push(file.name),
         onEntry: (entry) => collectedEntries.push(entry),

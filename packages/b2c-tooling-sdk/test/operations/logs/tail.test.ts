@@ -314,7 +314,7 @@ Stack trace line 2
       const result = await tailLogs(instance as never, {
         prefixes: ['error'],
         pollInterval: 100,
-        includeExisting: true,
+        lastEntries: 100, // Fetch up to 100 entries per file on startup
         maxEntries: 2,
         onEntry: (entry) => entries.push(entry),
         onFileDiscovered: (file) => discoveredFiles.push(file),
@@ -386,7 +386,7 @@ Stack trace line 2
       const result = await tailLogs(instance as never, {
         prefixes: ['error'],
         pollInterval: 100,
-        includeExisting: true,
+        lastEntries: 100, // Fetch existing entries to trigger file read
         onError: (err) => errors.push(err),
       });
 

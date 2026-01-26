@@ -10,7 +10,7 @@ import {createPathNormalizer, extractPaths} from '@salesforce/b2c-tooling-sdk/op
 describe('operations/logs/path-normalizer', () => {
   describe('createPathNormalizer', () => {
     it('normalizes paths in parentheses', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges'})!;
       const input = 'Error occurred (app_storefront/cartridge/controllers/Home.js:45)';
       const expected = 'Error occurred (./cartridges/app_storefront/cartridge/controllers/Home.js:45)';
 
@@ -18,7 +18,7 @@ describe('operations/logs/path-normalizer', () => {
     });
 
     it('normalizes paths in single quotes', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges'})!;
       const input = "Loading module 'app_site/cartridge/scripts/utils.js'";
       const expected = "Loading module './cartridges/app_site/cartridge/scripts/utils.js'";
 
@@ -26,7 +26,7 @@ describe('operations/logs/path-normalizer', () => {
     });
 
     it('normalizes paths in double quotes', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges'})!;
       const input = 'Loading module "app_site/cartridge/scripts/utils.js"';
       const expected = 'Loading module "./cartridges/app_site/cartridge/scripts/utils.js"';
 
@@ -34,7 +34,7 @@ describe('operations/logs/path-normalizer', () => {
     });
 
     it('normalizes stack trace paths', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges'})!;
       const input = 'Stack trace: at app_storefront/cartridge/controllers/Home.js:45:12';
       const expected = 'Stack trace: at ./cartridges/app_storefront/cartridge/controllers/Home.js:45:12';
 
@@ -42,7 +42,7 @@ describe('operations/logs/path-normalizer', () => {
     });
 
     it('handles multiple paths in one message', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges'})!;
       const input =
         "Error in (app_storefront/cartridge/controllers/Home.js:45) called from 'app_site/cartridge/scripts/helpers.js:10'";
       const expected =
@@ -52,7 +52,7 @@ describe('operations/logs/path-normalizer', () => {
     });
 
     it('handles absolute cartridge paths', () => {
-      const normalize = createPathNormalizer({cartridgePath: '/Users/dev/project/cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: '/Users/dev/project/cartridges'})!;
       const input = 'Error occurred (app_storefront/cartridge/controllers/Home.js:45)';
       const expected = 'Error occurred (/Users/dev/project/cartridges/app_storefront/cartridge/controllers/Home.js:45)';
 
@@ -60,7 +60,7 @@ describe('operations/logs/path-normalizer', () => {
     });
 
     it('strips trailing slashes from cartridge path', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges/'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges/'})!;
       const input = 'Error occurred (app_storefront/cartridge/controllers/Home.js:45)';
       const expected = 'Error occurred (./cartridges/app_storefront/cartridge/controllers/Home.js:45)';
 
@@ -68,14 +68,14 @@ describe('operations/logs/path-normalizer', () => {
     });
 
     it('does not modify messages without cartridge paths', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges'})!;
       const input = 'This is a regular error message without paths';
 
       expect(normalize(input)).to.equal(input);
     });
 
     it('handles paths with hyphens and underscores in cartridge names', () => {
-      const normalize = createPathNormalizer({cartridgePath: './cartridges'});
+      const normalize = createPathNormalizer({cartridgePath: './cartridges'})!;
       const input = 'Error in (app_storefront-base_v2/cartridge/controllers/Home.js:45)';
       const expected = 'Error in (./cartridges/app_storefront-base_v2/cartridge/controllers/Home.js:45)';
 
