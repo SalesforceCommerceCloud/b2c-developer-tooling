@@ -295,7 +295,7 @@ describe('registry', () => {
       expect(server.registeredTools).to.include('cartridge_deploy');
     });
 
-    it('should register no tools when all toolsets are invalid', async () => {
+    it('should trigger auto-discovery when all toolsets are invalid', async () => {
       const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
@@ -303,11 +303,30 @@ describe('registry', () => {
         allowNonGaTools: true,
       };
 
-      // Should not throw
+      // Should not throw - triggers auto-discovery as fallback
       await registerToolsets(flags, server, services);
 
-      // No tools should be registered
-      expect(server.registeredTools).to.have.lengthOf(0);
+      // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
+      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
+      expect(server.registeredTools).to.include('scapi_custom_api_discovery');
+    });
+
+    it('should trigger auto-discovery when all individual tools are invalid', async () => {
+      const services = createMockServices();
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        tools: ['nonexistent_tool', 'another_fake_tool'],
+        allowNonGaTools: true,
+      };
+
+      // Should not throw - triggers auto-discovery as fallback
+      await registerToolsets(flags, server, services);
+
+      // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
+      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
+      expect(server.registeredTools).to.include('scapi_custom_api_discovery');
     });
 
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
