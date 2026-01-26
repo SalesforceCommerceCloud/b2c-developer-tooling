@@ -18,13 +18,41 @@ pnpm run build
 pnpm --filter @salesforce/b2c-cli run build
 pnpm --filter @salesforce/b2c-tooling-sdk run build
 
-# Run tests (includes linting)
-pnpm run test
-
 # Dev mode for CLI (uses source files directly)
 pnpm --filter @salesforce/b2c-cli run dev
 # or using convenience script
 ./cli
+```
+
+## Commands for Coding Agents
+
+These commands produce condensed output optimized for AI coding agents:
+
+```bash
+# Run tests (minimal output - only failures + summary)
+pnpm run test:agent
+
+# Run tests for specific package
+pnpm --filter @salesforce/b2c-cli run test:agent
+pnpm --filter @salesforce/b2c-tooling-sdk run test:agent
+
+# Lint (errors only, no warnings)
+pnpm run lint:agent
+
+# Type-check (single-line errors, no color)
+pnpm run typecheck:agent
+
+# Format check (lists only files needing formatting)
+pnpm run -r format:check
+```
+
+## Verbose Commands (Debugging/CI)
+
+Use these for detailed output during debugging or in CI pipelines:
+
+```bash
+# Run tests with full output and coverage
+pnpm run test
 
 # Run tests for specific package
 pnpm --filter @salesforce/b2c-cli run test
@@ -33,7 +61,7 @@ pnpm --filter @salesforce/b2c-tooling-sdk run test
 # Format code with prettier
 pnpm run -r format
 
-# Lint only (without tests)
+# Lint with full output
 pnpm run -r lint
 ```
 

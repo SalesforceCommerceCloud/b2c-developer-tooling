@@ -9,7 +9,7 @@ import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import DocsSearch from '../../../src/commands/docs/search.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../helpers/test-setup.js';
 
 describe('docs search', () => {
   const hooks = createIsolatedConfigHooks();
@@ -43,7 +43,7 @@ describe('docs search', () => {
     const listStub = sinon.stub().returns([{id: 'a', title: 'A', filePath: 'a.md'}]);
     command.operations = {...command.operations, listDocs: listStub};
 
-    const result = await command.run();
+    const result = await runSilent(() => command.run());
 
     expect(result.entries).to.have.length(1);
   });
@@ -69,7 +69,7 @@ describe('docs search', () => {
     const searchStub = sinon.stub().returns([{entry: {id: 'a', title: 'A', filePath: 'a.md'}, score: 0.1}]);
     command.operations = {...command.operations, searchDocs: searchStub};
 
-    const result = await command.run();
+    const result = await runSilent(() => command.run());
 
     expect(result.results).to.have.length(1);
   });
