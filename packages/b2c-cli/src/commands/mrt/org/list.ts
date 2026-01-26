@@ -10,7 +10,7 @@ import {
   type ListOrganizationsResult,
   type MrtOrganization,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtOrganization>> = {
   name: {
@@ -37,7 +37,10 @@ const DEFAULT_COLUMNS = ['name', 'slug', 'status', 'created'];
  * List MRT organizations accessible to the authenticated user.
  */
 export default class MrtOrgList extends MrtCommand<typeof MrtOrgList> {
-  static description = t('commands.mrt.org.list.description', 'List Managed Runtime organizations');
+  static description = withDocs(
+    t('commands.mrt.org.list.description', 'List Managed Runtime organizations'),
+    '/cli/mrt.html#b2c-mrt-org-list',
+  );
 
   static enableJsonFlag = true;
 

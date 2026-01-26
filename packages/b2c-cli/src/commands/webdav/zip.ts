@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 const ZIP_BODY = new URLSearchParams({method: 'ZIP'}).toString();
 
@@ -22,7 +22,10 @@ export default class WebDavZip extends WebDavCommand<typeof WebDavZip> {
     }),
   };
 
-  static description = t('commands.webdav.zip.description', 'Create a zip archive of a remote file or directory');
+  static description = withDocs(
+    t('commands.webdav.zip.description', 'Create a zip archive of a remote file or directory'),
+    '/cli/webdav.html#b2c-webdav-zip',
+  );
 
   static enableJsonFlag = true;
 

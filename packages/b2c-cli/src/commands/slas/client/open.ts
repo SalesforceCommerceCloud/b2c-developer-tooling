@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 async function openBrowser(url: string): Promise<void> {
   try {
@@ -24,7 +24,10 @@ export default class SlasClientOpen extends BaseCommand<typeof SlasClientOpen> {
     }),
   };
 
-  static description = t('commands.slas.client.open.description', 'Open the SLAS Admin UI for a client');
+  static description = withDocs(
+    t('commands.slas.client.open.description', 'Open the SLAS Admin UI for a client'),
+    '/cli/slas.html#b2c-slas-client-open',
+  );
 
   static examples = [
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123',

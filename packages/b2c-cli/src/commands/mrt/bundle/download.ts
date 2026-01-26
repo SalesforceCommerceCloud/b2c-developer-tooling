@@ -9,7 +9,7 @@ import {pipeline} from 'node:stream/promises';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {downloadBundle, type DownloadBundleResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type BundleDownloadResult = DownloadBundleResult & {filePath?: string};
 
@@ -24,7 +24,10 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
     }),
   };
 
-  static description = t('commands.mrt.bundle.download.description', 'Download a Managed Runtime bundle artifact');
+  static description = withDocs(
+    t('commands.mrt.bundle.download.description', 'Download a Managed Runtime bundle artifact'),
+    '/cli/mrt.html#b2c-mrt-bundle-download',
+  );
 
   static enableJsonFlag = true;
 

@@ -6,7 +6,7 @@
 import {Args, Flags} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {activateCodeVersion, reloadCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
   static args = {
@@ -16,7 +16,10 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
     }),
   };
 
-  static description = t('commands.code.activate.description', 'Activate or reload a code version');
+  static description = withDocs(
+    t('commands.code.activate.description', 'Activate or reload a code version'),
+    '/cli/code.html#b2c-code-activate',
+  );
 
   static examples = [
     '<%= config.bin %> <%= command.id %> v1',

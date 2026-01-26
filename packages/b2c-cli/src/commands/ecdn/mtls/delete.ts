@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {EcdnCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the delete command.
@@ -19,7 +19,10 @@ interface DeleteOutput {
  * Command to delete an mTLS certificate.
  */
 export default class EcdnMtlsDelete extends EcdnCommand<typeof EcdnMtlsDelete> {
-  static description = t('commands.ecdn.mtls.delete.description', 'Delete an mTLS certificate');
+  static description = withDocs(
+    t('commands.ecdn.mtls.delete.description', 'Delete an mTLS certificate'),
+    '/cli/ecdn.html#b2c-ecdn-mtls-delete',
+  );
 
   static enableJsonFlag = true;
 

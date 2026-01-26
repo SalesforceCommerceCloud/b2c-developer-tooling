@@ -7,7 +7,7 @@ import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * Simple confirmation prompt.
@@ -34,7 +34,10 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
     }),
   };
 
-  static description = t('commands.code.delete.description', 'Delete a code version');
+  static description = withDocs(
+    t('commands.code.delete.description', 'Delete a code version'),
+    '/cli/code.html#b2c-code-delete',
+  );
 
   static examples = [
     '<%= config.bin %> <%= command.id %> old-version',

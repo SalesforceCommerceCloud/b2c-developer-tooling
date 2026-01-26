@@ -11,7 +11,7 @@ import {
   toOrganizationId,
   type CustomApisComponents,
 } from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type CustomApiEndpoint = CustomApisComponents['schemas']['CustomApiEndpoint'];
 
@@ -183,7 +183,10 @@ abstract class ScapiCustomCommand<T extends typeof Command> extends OAuthCommand
  * Command to get the status of Custom API endpoints.
  */
 export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCustomStatus> {
-  static description = t('commands.scapi.custom.status.description', 'Get the status of Custom API endpoints');
+  static description = withDocs(
+    t('commands.scapi.custom.status.description', 'Get the status of Custom API endpoints'),
+    '/cli/custom-apis.html#b2c-scapi-custom-status',
+  );
 
   static enableJsonFlag = true;
 

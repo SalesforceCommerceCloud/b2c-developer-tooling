@@ -5,14 +5,17 @@
  */
 import {watchCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
   static args = {
     ...CartridgeCommand.baseArgs,
   };
 
-  static description = t('commands.code.watch.description', 'Watch cartridges and upload changes to an instance');
+  static description = withDocs(
+    t('commands.code.watch.description', 'Watch cartridges and upload changes to an instance'),
+    '/cli/code.html#b2c-code-watch',
+  );
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',

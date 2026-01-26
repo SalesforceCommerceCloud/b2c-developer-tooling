@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
 import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the list command.
@@ -55,7 +55,10 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list available SCAPI schemas.
  */
 export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSchemasList> {
-  static description = t('commands.scapi.schemas.list.description', 'List available SCAPI schemas');
+  static description = withDocs(
+    t('commands.scapi.schemas.list.description', 'List available SCAPI schemas'),
+    '/cli/scapi-schemas.html#b2c-scapi-schemas-list',
+  );
 
   static enableJsonFlag = true;
 
