@@ -19,7 +19,11 @@
  * | `--toolsets` | `SFCC_TOOLSETS` | Comma-separated toolsets to enable (case-insensitive) |
  * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
- * | `--no-telemetry` | `SFCC_NO_TELEMETRY` | Disable telemetry collection |
+ *
+ * ### Environment Variables (no flag equivalent)
+ * | Env Variable | Description |
+ * |--------------|-------------|
+ * | `SFCC_TELEMETRY` | Set to `false` to disable telemetry collection |
  *
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
@@ -211,11 +215,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       env: 'SFCC_ALLOW_NON_GA_TOOLS',
       default: false,
     }),
-    'no-telemetry': Flags.boolean({
-      description: 'Disable telemetry collection',
-      env: 'SFCC_NO_TELEMETRY',
-      default: false,
-    }),
   };
 
   /**
@@ -288,9 +287,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       workingDirectory: this.flags['working-directory'],
     };
 
-    // Initialize telemetry unless disabled
+    // Initialize telemetry unless disabled via SFCC_TELEMETRY=false
     let telemetry: Telemetry | undefined;
-    if (!this.flags['no-telemetry']) {
+    if (process.env.SFCC_TELEMETRY !== 'false') {
       telemetry = createTelemetry({
         project: 'b2c-dx-mcp',
         appInsightsKey: loadAppInsightsKey(),
