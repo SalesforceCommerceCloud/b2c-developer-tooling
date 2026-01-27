@@ -125,16 +125,10 @@ describe('Sites Operations E2E Tests', function () {
     });
   });
 
-  describe('Step 3: Verify Site Object Structure', function () {
-    it('should be skipped because sites get is not implemented', function () {
-      this.skip();
-    });
-  });
 
   describe('Sequential Multiple Site Imports', function () {
     it('should import multiple archives without conflict', async function () {
       for (let i = 1; i <= 2; i++) {
-        // eslint-disable-next-line no-await-in-loop
         const result = await runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]);
         expect(result.exitCode).to.equal(0, `Import ${i} failed: ${result.stderr}`);
       }

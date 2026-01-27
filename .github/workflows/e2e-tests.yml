@@ -53,7 +53,7 @@ jobs:
           SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
           SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
         run: |
-          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ]; then
+          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ] && [ -n "$SFCC_SHORTCODE" ]; then
             echo "has-secrets=true" >> $GITHUB_OUTPUT
           else
             echo "has-secrets=false" >> $GITHUB_OUTPUT
@@ -62,6 +62,7 @@ jobs:
             echo "  - TEST_REALM (var): ${TEST_REALM:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_ACCOUNT_MANAGER_HOST (var): ${SFCC_ACCOUNT_MANAGER_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_SANDBOX_API_HOST (var): ${SFCC_SANDBOX_API_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
+            echo "  - SFCC_SHORTCODE (var): ${SFCC_SHORTCODE:+✓}" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -98,6 +99,7 @@ jobs:
           SFCC_ACCOUNT_MANAGER_HOST: ${{ inputs.sfcc_account_manager_host || vars.SFCC_ACCOUNT_MANAGER_HOST }}
           SFCC_SANDBOX_API_HOST: ${{ inputs.sfcc_sandbox_api_host || vars.SFCC_SANDBOX_API_HOST }}
           TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
           # Test configuration
           NODE_ENV: test
           SFCC_LOG_LEVEL: silent
