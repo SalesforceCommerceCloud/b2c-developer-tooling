@@ -151,12 +151,11 @@ describe('config/dw-json', () => {
       expect(result?.config.hostname).to.equal('root.demandware.net');
     });
 
-    it('returns undefined for invalid JSON', () => {
+    it('throws for invalid JSON', () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(dwJsonPath, 'invalid json');
 
-      const result = loadDwJson();
-      expect(result).to.be.undefined;
+      expect(() => loadDwJson()).to.throw(SyntaxError);
     });
 
     it('returns undefined for non-existent explicit path', () => {

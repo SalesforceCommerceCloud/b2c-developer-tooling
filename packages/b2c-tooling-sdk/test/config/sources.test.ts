@@ -300,7 +300,7 @@ describe('config/sources', () => {
       }
     });
 
-    it('returns undefined for invalid JSON in ~/.mobify', function () {
+    it('creates SOURCE_ERROR warning for invalid JSON in ~/.mobify', function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -320,9 +320,14 @@ describe('config/sources', () => {
         fs.writeFileSync(mobifyPath, 'invalid json');
 
         const resolver = new ConfigResolver();
-        const {config} = resolver.resolve();
+        const {config, warnings} = resolver.resolve();
 
+        // Config should not have the API key
         expect(config.mrtApiKey).to.be.undefined;
+        // Should have a SOURCE_ERROR warning for MobifySource
+        const sourceError = warnings.find((w) => w.code === 'SOURCE_ERROR' && w.message.includes('MobifySource'));
+        expect(sourceError).to.not.be.undefined;
+        expect(sourceError?.message).to.include('Failed to load configuration');
 
         // Restore
         Object.defineProperty(os, 'homedir', {

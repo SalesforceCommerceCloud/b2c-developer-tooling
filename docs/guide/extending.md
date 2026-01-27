@@ -205,6 +205,31 @@ export class MyCustomSource implements ConfigSource {
 }
 ```
 
+### Error Handling
+
+If your `ConfigSource` encounters an error (e.g., malformed config file, network failure), you can:
+
+1. **Return `undefined`** - Source is silently skipped (use for "source not available")
+2. **Throw an exception** - Error is surfaced as a warning to the user
+
+```typescript
+load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+  const configPath = '/path/to/config';
+
+  if (!fs.existsSync(configPath)) {
+    return undefined; // Source not available - skip silently
+  }
+
+  // Let JSON.parse errors propagate - they'll become warnings
+  const content = fs.readFileSync(configPath, 'utf8');
+  const config = JSON.parse(content); // Throws if malformed
+
+  return { config, location: configPath };
+}
+```
+
+When a source throws, the CLI displays a warning and continues with other sources. This helps users identify configuration problems without blocking execution.
+
 ### Plugin Configuration
 
 Plugins cannot add flags to commands they don't own (this is an oclif limitation). Instead, plugins should accept configuration via environment variables:

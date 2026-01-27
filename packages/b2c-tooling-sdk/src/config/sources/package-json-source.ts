@@ -108,9 +108,11 @@ export class PackageJsonSource implements ConfigSource {
 
       return {config, location: packageJsonPath};
     } catch (error) {
+      // Invalid JSON or read error - log at trace level and re-throw
+      // The resolver will catch this and create a SOURCE_ERROR warning
       const message = error instanceof Error ? error.message : String(error);
       logger.trace({location: packageJsonPath, error: message}, '[PackageJsonSource] Failed to parse package.json');
-      return undefined;
+      throw error;
     }
   }
 }

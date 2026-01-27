@@ -239,9 +239,10 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | 
       path: dwJsonPath,
     };
   } catch (error) {
-    // Invalid JSON or read error
+    // Invalid JSON or read error - log at trace level and re-throw
+    // The resolver will catch this and create a SOURCE_ERROR warning
     const message = error instanceof Error ? error.message : String(error);
     logger.trace({path: dwJsonPath, error: message}, '[DwJsonSource] Failed to parse config file');
-    return undefined;
+    throw error;
   }
 }
