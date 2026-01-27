@@ -55,6 +55,12 @@ describe('sandbox-lookup', () => {
       expect(isFriendlySandboxId('a1b2_c3d')).to.be.true;
     });
 
+    it('should return true for friendly IDs with f_ecom_ prefix', () => {
+      expect(isFriendlySandboxId('f_ecom_zzpq_013')).to.be.true;
+      expect(isFriendlySandboxId('f_ecom_abcd_123')).to.be.true;
+      expect(isFriendlySandboxId('F_ECOM_ZZZV_456')).to.be.true;
+    });
+
     it('should return false for invalid friendly IDs', () => {
       expect(isFriendlySandboxId('abc-123')).to.be.false; // realm too short
       expect(isFriendlySandboxId('abcde-123')).to.be.false; // realm too long
@@ -80,6 +86,12 @@ describe('sandbox-lookup', () => {
     it('should lowercase the realm and instance', () => {
       const result = parseFriendlySandboxId('ABCD-XYZ');
       expect(result).to.deep.equal({realm: 'abcd', instance: 'xyz'});
+    });
+
+    it('should strip f_ecom_ prefix and parse', () => {
+      expect(parseFriendlySandboxId('f_ecom_zzpq_013')).to.deep.equal({realm: 'zzpq', instance: '013'});
+      expect(parseFriendlySandboxId('f_ecom_abcd_123')).to.deep.equal({realm: 'abcd', instance: '123'});
+      expect(parseFriendlySandboxId('F_ECOM_ZZZV_456')).to.deep.equal({realm: 'zzzv', instance: '456'});
     });
 
     it('should return null for invalid formats', () => {
@@ -170,6 +182,23 @@ describe('sandbox-lookup', () => {
       );
 
       const result = await resolveSandboxId(odsClient, 'ZZZV-ABC');
+      expect(result).to.equal(expectedUuid);
+    });
+
+    it('should look up sandbox by friendly ID with f_ecom_ prefix', async () => {
+      const expectedUuid = 'found-uuid-1234-1234-abc123456789';
+
+      server.use(
+        http.get(`${BASE_URL}/sandboxes`, ({request}) => {
+          const url = new URL(request.url);
+          expect(url.searchParams.get('filter_params')).to.equal('realm=zzpq');
+          return HttpResponse.json({
+            data: [{id: expectedUuid, realm: 'zzpq', instance: '013', state: 'started'}],
+          });
+        }),
+      );
+
+      const result = await resolveSandboxId(odsClient, 'f_ecom_zzpq_013');
       expect(result).to.equal(expectedUuid);
     });
 

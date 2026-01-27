@@ -24,6 +24,21 @@ const UUID_REGEX = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
 const FRIENDLY_ID_REGEX = /^([a-z\d]{4})[-_]([a-z\d]+)$/i;
 
 /**
+ * Prefix used in organization ID format (e.g., f_ecom_zzpq_013).
+ */
+const ECOM_PREFIX = 'f_ecom_';
+
+/**
+ * Strips the f_ecom_ prefix if present.
+ */
+function normalizeIdentifier(value: string): string {
+  if (value.toLowerCase().startsWith(ECOM_PREFIX)) {
+    return value.slice(ECOM_PREFIX.length);
+  }
+  return value;
+}
+
+/**
  * Error thrown when a sandbox cannot be found by its friendly identifier.
  */
 export class SandboxNotFoundError extends Error {
@@ -58,7 +73,7 @@ export function isUuid(value: string): boolean {
  * @returns true if the value matches the friendly format
  */
 export function isFriendlySandboxId(value: string): boolean {
-  return FRIENDLY_ID_REGEX.test(value);
+  return FRIENDLY_ID_REGEX.test(normalizeIdentifier(value));
 }
 
 /**
@@ -68,7 +83,8 @@ export function isFriendlySandboxId(value: string): boolean {
  * @returns Object with realm and instance, or null if not a valid friendly ID
  */
 export function parseFriendlySandboxId(value: string): {realm: string; instance: string} | null {
-  const match = value.match(FRIENDLY_ID_REGEX);
+  const normalized = normalizeIdentifier(value);
+  const match = normalized.match(FRIENDLY_ID_REGEX);
   if (!match) {
     return null;
   }
