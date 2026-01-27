@@ -223,6 +223,26 @@ Storefront Next development tools for building modern storefronts.
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_discovery`). When using multiple toolsets, tools are automatically deduplicated.
 
+## Telemetry
+
+The MCP server collects anonymous usage telemetry to help improve the developer experience.
+
+**Development mode**: Telemetry is automatically disabled when `NODE_ENV=development` (set by `bin/dev.js`), so local development and testing won't pollute production data.
+
+**Production**: Telemetry is enabled by default for published releases. To disable, set `SFCC_TELEMETRY=false`.
+
+### What We Collect
+
+- **Server lifecycle events**: When the server starts, stops, or encounters errors
+- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
+- **Environment info**: Platform, architecture, Node.js version, and package version
+
+### What We Don't Collect
+
+- **No credentials**: No API keys, passwords, or secrets
+- **No business data**: No product data, customer information, or site content
+- **No tool arguments**: No input parameters or output results from tool calls
+- **No file contents**: No source code, configuration files, or project data
 
 ## Development
 
@@ -331,215 +351,6 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/dev.js --toolse
 # Call a specific tool
 echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/dev.js --toolsets all --allow-non-ga-tools
 ```
-
-### Configuration
-
-> **Note:** Configuration is not currently required as all tools are placeholder implementations. This section will be relevant once tools are fully implemented.
-
-Different tools require different types of configuration:
-
-| Tool Type | Configuration Required |
-|-----------|----------------------|
-| **MRT tools** (e.g., `mrt_bundle_push`) | API key + project |
-| **B2C instance tools** (e.g., `cartridge_deploy`) | dw.json or instance flags |
-| **Local tools** (e.g., scaffolding) | None |
-
-#### MRT Configuration
-
-MRT tools require an **API key** and **project**. The **environment** is optional (for deployments).
-
-| Setting | Flag | Env Variable | Fallback |
-|---------|------|--------------|----------|
-| API key | `--api-key` | `SFCC_MRT_API_KEY` | `~/.mobify` |
-| Project | `--project` | `SFCC_MRT_PROJECT` | — |
-| Environment | `--environment` | `SFCC_MRT_ENVIRONMENT` | — |
-
-> Priority: Flag > Env variable > `~/.mobify` file
-
-**Example:**
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": [
-        "--toolsets", "MRT",
-        "--project", "my-project",
-        "--environment", "staging",
-        "--api-key", "your-api-key"
-      ]
-    }
-  }
-}
-```
-
-Or use environment variables instead of flags:
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "MRT"],
-      "env": {
-        "SFCC_MRT_API_KEY": "your-api-key",
-        "SFCC_MRT_PROJECT": "my-project",
-        "SFCC_MRT_ENVIRONMENT": "staging"
-      }
-    }
-  }
-}
-```
-
-> **Note:** Make sure the script is executable: `chmod +x /path/to/packages/b2c-dx-mcp/bin/dev.js`
-
-#### Environment-Specific Config
-
-If you have a `~/.mobify` file from the `b2c` CLI, the MCP server will use it as a fallback for API key:
-
-```json
-{
-  "api_key": "your-api-key"
-}
-```
-
-For non-production environments, use `--cloud-origin` to select an environment-specific config file:
-
-| `--cloud-origin` | Config File |
-|------------------|-------------|
-| (not set) | `~/.mobify` |
-| `https://cloud-staging.mobify.com` | `~/.mobify--cloud-staging.mobify.com` |
-| `https://cloud-dev.mobify.com` | `~/.mobify--cloud-dev.mobify.com` |
-
-#### B2C Instance Config (dw.json)
-
-Tools that interact with B2C Commerce instances (e.g., `cartridge_deploy`, SCAPI tools) require instance credentials.
-
-**Authentication Methods:**
-
-| Method | Credentials | Used By |
-|--------|-------------|---------|
-| **Basic auth** | `--username` + `--password` | WebDAV tools (`cartridge_deploy`) |
-| **OAuth** | `--client-id` + `--client-secret` | OCAPI tools, SCAPI tools |
-
-> **Recommendation:** Use Basic auth (username/password) for WebDAV tools like `cartridge_deploy`. OAuth credentials (client-id/client-secret) are required for OCAPI/SCAPI tools. If you need both WebDAV and OCAPI tools, configure all four credentials.
-
-**Priority order** (highest to lowest):
-
-1. Flags (`--server`, `--username`, `--password`, `--client-id`, `--client-secret`)
-2. Environment variables (`SFCC_*`)
-3. `dw.json` file (via `--config` flag or auto-discovery)
-
-**Option A: Flags with Basic auth (for WebDAV tools like cartridge_deploy)**
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": [
-        "--toolsets", "CARTRIDGES",
-        "--server", "your-sandbox.demandware.net",
-        "--username", "your.username",
-        "--password", "your-access-key"
-      ]
-    }
-  }
-}
-```
-
-**Option B: Flags with OAuth (for OCAPI/SCAPI tools, or WebDAV fallback)**
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": [
-        "--toolsets", "SCAPI",
-        "--server", "your-sandbox.demandware.net",
-        "--client-id", "your-client-id",
-        "--client-secret", "your-client-secret"
-      ]
-    }
-  }
-}
-```
-
-**Option C: Environment variables (all credentials)**
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "CARTRIDGES"],
-      "env": {
-        "SFCC_SERVER": "your-sandbox.demandware.net",
-        "SFCC_USERNAME": "your.username",
-        "SFCC_PASSWORD": "your-access-key",
-        "SFCC_CLIENT_ID": "your-client-id",
-        "SFCC_CLIENT_SECRET": "your-client-secret",
-        "SFCC_CODE_VERSION": "version1"
-      }
-    }
-  }
-}
-```
-
-**Option D: dw.json with explicit path**
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json"]
-    }
-  }
-}
-```
-
-**Option E: dw.json with auto-discovery**
-
-When `--config` is not provided, the MCP server searches upward from `~/` for a `dw.json` file.
-
-> **Note:** Auto-discovery starts from the home directory, so it won't find project-level `dw.json` files. Use `--config` with an explicit path instead.
-
-```json
-{
-  "hostname": "your-sandbox.demandware.net",
-  "username": "your.username",
-  "password": "your-access-key",
-  "client-id": "your-client-id",
-  "client-secret": "your-client-secret",
-  "code-version": "version1"
-}
-```
-
-> **Note:** Flags override environment variables, and environment variables override `dw.json`. You can mix sources (e.g., secrets via env vars, other settings via dw.json).
-
-## Telemetry
-
-The MCP server collects anonymous usage telemetry to help improve the developer experience.
-
-**Development mode**: Telemetry is automatically disabled when `NODE_ENV=development` (set by `bin/dev.js`), so local development and testing won't pollute production data.
-
-**Production**: Telemetry is enabled by default for published releases. To disable, set `SFCC_TELEMETRY=false`.
-
-### What We Collect
-
-- **Server lifecycle events**: When the server starts, stops, or encounters errors
-- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
-- **Environment info**: Platform, architecture, Node.js version, and package version
-
-### What We Don't Collect
-
-- **No credentials**: No API keys, passwords, or secrets
-- **No business data**: No product data, customer information, or site content
-- **No tool arguments**: No input parameters or output results from tool calls
-- **No file contents**: No source code, configuration files, or project data
 
 ## License
 
