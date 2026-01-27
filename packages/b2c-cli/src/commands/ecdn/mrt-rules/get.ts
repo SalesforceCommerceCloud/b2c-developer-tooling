@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type MRTRulesResponse = CdnZonesComponents['schemas']['MRTRulesResponse'];
 type MRTRules = CdnZonesComponents['schemas']['MRTRules'];
@@ -48,7 +48,10 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to get MRT ruleset for a zone.
  */
 export default class EcdnMrtRulesGet extends EcdnZoneCommand<typeof EcdnMrtRulesGet> {
-  static description = t('commands.ecdn.mrt-rules.get.description', 'Get MRT ruleset for a zone');
+  static description = withDocs(
+    t('commands.ecdn.mrt-rules.get.description', 'Get MRT ruleset for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-mrt-rules-get',
+  );
 
   static enableJsonFlag = true;
 

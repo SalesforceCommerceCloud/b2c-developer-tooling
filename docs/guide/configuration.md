@@ -7,14 +7,14 @@ description: Configure the B2C CLI with environment variables, dw.json files, an
 The B2C CLI automatically detects and uses available credentials. You can provide credentials via CLI flags, environment variables, or configuration files.
 
 ::: tip
-For detailed setup instructions including Account Manager API client creation and OCAPI configuration, see the [Authentication Setup](./authentication) guide.
+For detailed setup instructions including Account Manager API client creation, role configuration, and OCAPI setup, see the [Authentication Setup](./authentication) guide.
 :::
 
 ## CLI Flags
 
 ### OAuth (SCAPI/OCAPI)
 
-OAuth is required for SCAPI and OCAPI operations (jobs, sites, SLAS, etc.) and can also be used for WebDAV operations when basic auth credentials are not provided.
+OAuth is required for API operations (code list/activate/delete, jobs, sites, SCAPI commands, SLAS, ODS) and can also be used for WebDAV file operations when basic auth credentials are not provided.
 
 #### Client Credentials (Recommended)
 

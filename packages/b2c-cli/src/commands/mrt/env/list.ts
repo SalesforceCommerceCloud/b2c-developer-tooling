@@ -5,7 +5,7 @@
  */
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {listEnvs, type ListEnvsResult, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtEnvironment>> = {
   name: {
@@ -36,7 +36,10 @@ const DEFAULT_COLUMNS = ['name', 'slug', 'state', 'region', 'production'];
  * List environments (targets) for an MRT project.
  */
 export default class MrtEnvList extends MrtCommand<typeof MrtEnvList> {
-  static description = t('commands.mrt.env.list.description', 'List Managed Runtime environments');
+  static description = withDocs(
+    t('commands.mrt.env.list.description', 'List Managed Runtime environments'),
+    '/cli/mrt.html#b2c-mrt-env-list',
+  );
 
   static enableJsonFlag = true;
 

@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type SecuritySetting = CdnZonesComponents['schemas']['SecuritySetting'];
 
@@ -22,7 +22,10 @@ interface GetOutput {
  * Command to get security settings for a zone.
  */
 export default class EcdnSecurityGet extends EcdnZoneCommand<typeof EcdnSecurityGet> {
-  static description = t('commands.ecdn.security.get.description', 'Get security settings for a zone');
+  static description = withDocs(
+    t('commands.ecdn.security.get.description', 'Get security settings for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-security-get',
+  );
 
   static enableJsonFlag = true;
 

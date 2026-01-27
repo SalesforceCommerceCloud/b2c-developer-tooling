@@ -18,13 +18,41 @@ pnpm run build
 pnpm --filter @salesforce/b2c-cli run build
 pnpm --filter @salesforce/b2c-tooling-sdk run build
 
-# Run tests (includes linting)
-pnpm run test
-
 # Dev mode for CLI (uses source files directly)
 pnpm --filter @salesforce/b2c-cli run dev
 # or using convenience script
 ./cli
+```
+
+## Commands for Coding Agents
+
+These commands produce condensed output optimized for AI coding agents:
+
+```bash
+# Run tests (minimal output - only failures + summary)
+pnpm run test:agent
+
+# Run tests for specific package
+pnpm --filter @salesforce/b2c-cli run test:agent
+pnpm --filter @salesforce/b2c-tooling-sdk run test:agent
+
+# Lint (errors only, no warnings)
+pnpm run lint:agent
+
+# Type-check (single-line errors, no color)
+pnpm run typecheck:agent
+
+# Format check (lists only files needing formatting)
+pnpm run -r format:check
+```
+
+## Verbose Commands (Debugging/CI)
+
+Use these for detailed output during debugging or in CI pipelines:
+
+```bash
+# Run tests with full output and coverage
+pnpm run test
 
 # Run tests for specific package
 pnpm --filter @salesforce/b2c-cli run test
@@ -33,7 +61,7 @@ pnpm --filter @salesforce/b2c-tooling-sdk run test
 # Format code with prettier
 pnpm run -r format
 
-# Lint only (without tests)
+# Lint with full output
 pnpm run -r lint
 ```
 
@@ -60,6 +88,8 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 
 ## Documentation
 
+- Update docs in `./docs/` folder and relevant skills in `./plugins/b2c-cli/skills/` when updating or adding CLI commands.
+
 See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
 ```bash
@@ -76,9 +106,9 @@ pnpm run docs:build
 - CLI commands have access to this logger via `this.log` method from oclif Command class
 - CLI commands can write directly to stdout/stderr if their primary purpose is to output or stream data
 
-## Table Output
+## CLI Command Development
 
-Use `createTable` from `@salesforce/b2c-tooling-sdk/cli` for tabular output. See [CLI command development skill](./.claude/skills/cli-command-development/SKILL.md) for patterns.
+See [CLI command development skill](./.claude/skills/cli-command-development/SKILL.md) for patterns.
 
 ## Claude Code Skills
 
@@ -95,27 +125,20 @@ Use `createTable` from `@salesforce/b2c-tooling-sdk/cli` for tabular output. See
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
 
-Quick commands:
-```bash
-pnpm run test                                    # Run all tests
-pnpm --filter @salesforce/b2c-tooling-sdk run test  # Test specific package
-pnpm mocha "test/clients/webdav.test.ts"         # Single file (no coverage)
-```
-
 ## Changesets
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management. When making changes that affect users, create a changeset:
 
 Changeset guidelines:
 - Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; 
-- a pull request can have multiple changesets
+- a pull request can have multiple changesets; separate files for separate changes
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - This is a pre-1.0 preview release, so there are no `major` breaking change bumps yet
 - Good changesets explain:
   - WHAT the change is
   - WHY the change was made
   - HOW a consumer should update their code
-- Good changesets are brief and user-focused (not contributor); they are generally 1 line or a short paragraph for detailed changes; The content of the changeset is used in CHANGELOG and release notes.
+- Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
 create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 

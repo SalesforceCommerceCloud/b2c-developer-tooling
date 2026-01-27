@@ -5,14 +5,17 @@
  */
 import {watchCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
   static args = {
     ...CartridgeCommand.baseArgs,
   };
 
-  static description = t('commands.code.watch.description', 'Watch cartridges and upload changes to an instance');
+  static description = withDocs(
+    t('commands.code.watch.description', 'Watch cartridges and upload changes to an instance'),
+    '/cli/code.html#b2c-code-watch',
+  );
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -33,10 +36,19 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
 
   async run(): Promise<void> {
     this.requireWebDavCredentials();
-    this.requireOAuthCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
     const version = this.resolvedConfig.values.codeVersion;
+
+    // OAuth is only required if no code version specified (need to auto-discover via OCAPI)
+    if (!version && !this.hasOAuthCredentials()) {
+      this.error(
+        t(
+          'commands.code.watch.oauthRequired',
+          'No code version specified. OAuth credentials are required to auto-discover the active code version.\n\nProvide --code-version to use basic auth only, or configure OAuth credentials.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
+        ),
+      );
+    }
 
     this.log(t('commands.code.watch.starting', 'Starting watcher for {{path}}', {path: this.cartridgePath}));
     this.log(t('commands.code.watch.target', 'Target: {{hostname}}', {hostname}));

@@ -7,7 +7,7 @@ import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * Simple confirmation prompt.
@@ -37,7 +37,10 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
     }),
   };
 
-  static description = t('commands.ods.delete.description', 'Delete an on-demand sandbox');
+  static description = withDocs(
+    t('commands.ods.delete.description', 'Delete an on-demand sandbox'),
+    '/cli/ods.html#b2c-ods-delete',
+  );
 
   static examples = [
     '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',

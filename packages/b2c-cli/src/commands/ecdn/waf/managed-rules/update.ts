@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type WAFManagedRule = CdnZonesComponents['schemas']['WAFManagedRule'];
 type WAFManagedRuleRequest = CdnZonesComponents['schemas']['WAFManagedRuleRequest'];
@@ -23,9 +23,9 @@ interface UpdateOutput {
  * Command to update a WAF v2 managed rule within a ruleset.
  */
 export default class EcdnWafManagedRulesUpdate extends EcdnZoneCommand<typeof EcdnWafManagedRulesUpdate> {
-  static description = t(
-    'commands.ecdn.waf.managed-rules.update.description',
-    'Update a WAF v2 managed rule in a ruleset',
+  static description = withDocs(
+    t('commands.ecdn.waf.managed-rules.update.description', 'Update a WAF v2 managed rule in a ruleset'),
+    '/cli/ecdn.html#b2c-ecdn-waf-managed-rules-update',
   );
 
   static enableJsonFlag = true;

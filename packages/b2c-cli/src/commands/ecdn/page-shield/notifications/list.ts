@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type PageShieldNotificationWebhookResponse = CdnZonesComponents['schemas']['PageShieldNotificationWebhookResponse'];
 
@@ -56,9 +56,9 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list Page Shield notification webhooks.
  */
 export default class EcdnPageShieldNotificationsList extends EcdnCommand<typeof EcdnPageShieldNotificationsList> {
-  static description = t(
-    'commands.ecdn.page-shield.notifications.list.description',
-    'List Page Shield notification webhooks',
+  static description = withDocs(
+    t('commands.ecdn.page-shield.notifications.list.description', 'List Page Shield notification webhooks'),
+    '/cli/ecdn.html#b2c-ecdn-page-shield-notifications-list',
   );
 
   static enableJsonFlag = true;

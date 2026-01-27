@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -87,64 +87,64 @@
     "topicSeparator": " ",
     "topics": {
       "auth": {
-        "description": "Manage authentication credentials and tokens"
+        "description": "Manage authentication credentials and tokens\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/auth.html"
       },
       "code": {
-        "description": "Deploy and manage code versions on instances"
+        "description": "Deploy and manage code versions on instances\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html"
       },
       "docs": {
         "description": "Search and read Script API documentation"
       },
       "job": {
-        "description": "Run jobs and import/export site archives"
+        "description": "Run jobs and import/export site archives\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.html"
       },
       "webdav": {
-        "description": "WebDAV file operations (ls, get, put, rm, zip, unzip)"
+        "description": "WebDAV file operations (ls, get, put, rm, zip, unzip)\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav.html"
       },
       "mrt": {
-        "description": "Manage Managed Runtime (MRT) projects, environments, bundles, and deployments"
+        "description": "Manage Managed Runtime (MRT) projects, environments, bundles, and deployments\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html"
       },
       "mrt:env": {
-        "description": "Create, update, delete, and configure MRT environments (targets)"
+        "description": "Create, update, delete, and configure MRT environments (targets)\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#environment-commands"
       },
       "mrt:env:var": {
-        "description": "Set and delete environment variables for MRT environments"
+        "description": "Set and delete environment variables for MRT environments\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#environment-variable-commands"
       },
       "mrt:env:redirect": {
-        "description": "Configure URL redirects and clone redirect rules between environments"
+        "description": "Configure URL redirects and clone redirect rules between environments\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#url-redirect-commands"
       },
       "mrt:org": {
-        "description": "List organizations and view B2C Commerce instance connections"
+        "description": "List organizations and view B2C Commerce instance connections\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#organization-commands"
       },
       "mrt:project": {
-        "description": "Create, update, delete, and configure MRT projects"
+        "description": "Create, update, delete, and configure MRT projects\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-commands"
       },
       "mrt:project:member": {
-        "description": "Add, remove, and update project member roles and permissions"
+        "description": "Add, remove, and update project member roles and permissions\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-member-commands"
       },
       "mrt:project:notification": {
-        "description": "Configure email notifications for deployment events (start, success, failure)"
+        "description": "Configure email notifications for deployment events (start, success, failure)\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-notification-commands"
       },
       "mrt:env:access-control": {
-        "description": "Configure access control headers for environment security"
+        "description": "Configure access control headers for environment security\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#access-control-commands"
       },
       "mrt:bundle": {
-        "description": "Push builds, deploy bundles, view deployment history, and download artifacts"
+        "description": "Push builds, deploy bundles, view deployment history, and download artifacts\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#bundle-commands"
       },
       "mrt:user": {
-        "description": "View profile, reset API keys, and configure email preferences"
+        "description": "View profile, reset API keys, and configure email preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#user-commands"
       },
       "ods": {
-        "description": "Manage On-Demand Sandboxes"
+        "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ods.html"
       },
       "sites": {
-        "description": "List and inspect storefront sites"
+        "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
       },
       "slas": {
-        "description": "Manage SLAS API clients and credentials",
+        "description": "Manage SLAS API clients and credentials\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
         "subtopics": {
           "client": {
-            "description": "Manage SLAS client configurations"
+            "description": "Manage SLAS client configurations\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html"
           }
         }
       },
@@ -152,100 +152,100 @@
         "description": "Manage Salesforce Commerce APIs (SCAPI)",
         "subtopics": {
           "custom": {
-            "description": "Manage Custom API endpoints"
+            "description": "Manage Custom API endpoints\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.html"
           },
           "schemas": {
-            "description": "Browse and retrieve SCAPI schema specifications"
+            "description": "Browse and retrieve SCAPI schema specifications\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.html"
           }
         }
       },
       "ecdn": {
-        "description": "Manage eCDN zones, certificates, WAF, and security settings",
+        "description": "Manage eCDN zones, certificates, WAF, and security settings\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
         "subtopics": {
           "zones": {
-            "description": "List and create CDN zones"
+            "description": "List and create CDN zones\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "cache": {
-            "description": "Manage CDN cache operations"
+            "description": "Manage CDN cache operations\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "certificates": {
-            "description": "Manage SSL certificates"
+            "description": "Manage SSL certificates\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "security": {
-            "description": "Manage security settings"
+            "description": "Manage security settings\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "speed": {
-            "description": "Manage speed optimization settings"
+            "description": "Manage speed optimization settings\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "waf": {
-            "description": "Manage Web Application Firewall",
+            "description": "Manage Web Application Firewall\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
             "subtopics": {
               "groups": {
-                "description": "WAF v1 rule groups"
+                "description": "WAF v1 rule groups\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               },
               "rules": {
-                "description": "WAF v1 rules"
+                "description": "WAF v1 rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               },
               "rulesets": {
-                "description": "WAF v2 rulesets"
+                "description": "WAF v2 rulesets\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               },
               "managed-rules": {
-                "description": "WAF v2 managed rules"
+                "description": "WAF v2 managed rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               },
               "owasp": {
-                "description": "OWASP ModSecurity package"
+                "description": "OWASP ModSecurity package\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               }
             }
           },
           "firewall": {
-            "description": "Manage custom firewall rules"
+            "description": "Manage custom firewall rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "rate-limit": {
-            "description": "Manage rate limiting rules"
+            "description": "Manage rate limiting rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "logpush": {
-            "description": "Manage log export configuration",
+            "description": "Manage log export configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
             "subtopics": {
               "jobs": {
-                "description": "Logpush job management"
+                "description": "Logpush job management\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               }
             }
           },
           "page-shield": {
-            "description": "Manage Page Shield security",
+            "description": "Manage Page Shield security\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
             "subtopics": {
               "notifications": {
-                "description": "Page Shield notification webhooks"
+                "description": "Page Shield notification webhooks\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               },
               "policies": {
-                "description": "Content Security Policy rules"
+                "description": "Content Security Policy rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               },
               "scripts": {
-                "description": "Detected script monitoring"
+                "description": "Detected script monitoring\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               }
             }
           },
           "mrt-rules": {
-            "description": "Manage MRT routing rules",
+            "description": "Manage MRT routing rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
             "subtopics": {
               "rules": {
-                "description": "Individual MRT rules"
+                "description": "Individual MRT rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               }
             }
           },
           "mtls": {
-            "description": "Manage mTLS certificates"
+            "description": "Manage mTLS certificates\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "cipher-suites": {
-            "description": "Manage TLS cipher configuration"
+            "description": "Manage TLS cipher configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "origin-headers": {
-            "description": "Manage origin header modifications"
+            "description": "Manage origin header modifications\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           }
         }
       },
       "setup": {
-        "description": "Setup commands for development environment"
+        "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html"
       }
     }
   },
@@ -253,6 +253,8 @@
   "scripts": {
     "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
     "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "postpack": "shx rm -f oclif.manifest.json",
@@ -262,6 +264,7 @@
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
+    "test:agent": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter min --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:e2e": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "version": "oclif readme && git add README.md",

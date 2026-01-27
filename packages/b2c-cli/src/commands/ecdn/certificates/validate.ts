@@ -6,7 +6,7 @@
 import {Flags} from '@oclif/core';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type CustomHostnameValidation = CdnZonesComponents['schemas']['CustomHostnameValidationEnvelope']['data'];
 
@@ -21,9 +21,9 @@ interface ValidateOutput {
  * Command to trigger validation of a custom hostname.
  */
 export default class EcdnCertificatesValidate extends EcdnZoneCommand<typeof EcdnCertificatesValidate> {
-  static description = t(
-    'commands.ecdn.certificates.validate.description',
-    'Trigger DNS validation for a custom hostname',
+  static description = withDocs(
+    t('commands.ecdn.certificates.validate.description', 'Trigger DNS validation for a custom hostname'),
+    '/cli/ecdn.html#b2c-ecdn-certificates-validate',
   );
 
   static enableJsonFlag = true;

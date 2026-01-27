@@ -7,7 +7,7 @@ import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteProject} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Simple confirmation prompt.
@@ -45,7 +45,10 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
     }),
   };
 
-  static description = t('commands.mrt.project.delete.description', 'Delete a Managed Runtime project');
+  static description = withDocs(
+    t('commands.mrt.project.delete.description', 'Delete a Managed Runtime project'),
+    '/cli/mrt.html#b2c-mrt-project-delete',
+  );
 
   static enableJsonFlag = true;
 

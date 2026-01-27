@@ -37,6 +37,8 @@ export SFCC_SHORTCODE=kv7kzm78
 b2c scapi schemas list --client-id xxx --client-secret xxx --tenant-id zzxy_prd
 ```
 
+For complete setup instructions, see the [Authentication Guide](/guide/authentication#scapi-authentication).
+
 ---
 
 ## b2c scapi schemas list

@@ -9,6 +9,7 @@ import sinon from 'sinon';
 
 import OdsInfo from '../../../src/commands/ods/info.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {runSilent} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -146,7 +147,7 @@ describe('ods info', () => {
         throw new Error(`Unexpected path: ${path}`);
       });
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       expect(result).to.have.property('user');
       expect(result).to.have.property('system');

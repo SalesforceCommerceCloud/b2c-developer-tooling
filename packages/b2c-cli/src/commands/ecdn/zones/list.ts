@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {Zone} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the list command.
@@ -42,7 +42,10 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list eCDN zones.
  */
 export default class EcdnZonesList extends EcdnCommand<typeof EcdnZonesList> {
-  static description = t('commands.ecdn.zones.list.description', 'List all eCDN zones for the organization');
+  static description = withDocs(
+    t('commands.ecdn.zones.list.description', 'List all eCDN zones for the organization'),
+    '/cli/ecdn.html#b2c-ecdn-zones-list',
+  );
 
   static enableJsonFlag = true;
 

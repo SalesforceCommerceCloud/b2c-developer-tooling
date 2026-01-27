@@ -6,7 +6,7 @@
 import {Args} from '@oclif/core';
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2COrgInfo, type B2COrgInfo} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type InfoEntry = {field: string; value: string};
 
@@ -34,9 +34,9 @@ export default class MrtB2COrgInfo extends MrtCommand<typeof MrtB2COrgInfo> {
     }),
   };
 
-  static description = t(
-    'commands.mrt.b2c.org-info.description',
-    'Get B2C Commerce instances connected to an organization',
+  static description = withDocs(
+    t('commands.mrt.b2c.org-info.description', 'Get B2C Commerce instances connected to an organization'),
+    '/cli/mrt.html#b2c-mrt-org-b2c',
   );
 
   static enableJsonFlag = true;

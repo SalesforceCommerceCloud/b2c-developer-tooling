@@ -7,7 +7,7 @@ import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteEnv} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Simple confirmation prompt.
@@ -37,7 +37,10 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
     }),
   };
 
-  static description = t('commands.mrt.env.delete.description', 'Delete a Managed Runtime environment');
+  static description = withDocs(
+    t('commands.mrt.env.delete.description', 'Delete a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-delete',
+  );
 
   static enableJsonFlag = true;
 

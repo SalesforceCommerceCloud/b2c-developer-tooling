@@ -5,7 +5,7 @@
  */
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {getProfile, type MrtUserProfile as UserProfileType} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type ProfileEntry = {field: string; value: string};
 
@@ -26,7 +26,10 @@ const DEFAULT_COLUMNS = ['field', 'value'];
  * Get the current user's profile information.
  */
 export default class MrtUserProfile extends MrtCommand<typeof MrtUserProfile> {
-  static description = t('commands.mrt.user.profile.description', 'Display profile information for the current user');
+  static description = withDocs(
+    t('commands.mrt.user.profile.description', 'Display profile information for the current user'),
+    '/cli/mrt.html#b2c-mrt-user-profile',
+  );
 
   static enableJsonFlag = true;
 

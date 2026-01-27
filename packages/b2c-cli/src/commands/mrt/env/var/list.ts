@@ -9,7 +9,7 @@ import {
   type ListEnvVarsResult,
   type EnvironmentVariable,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<EnvironmentVariable>> = {
   name: {
@@ -36,9 +36,9 @@ const DEFAULT_COLUMNS = ['name', 'value', 'status', 'updated'];
  * List environment variables on an MRT project environment.
  */
 export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
-  static description = t(
-    'commands.mrt.env.var.list.description',
-    'List environment variables on a Managed Runtime environment',
+  static description = withDocs(
+    t('commands.mrt.env.var.list.description', 'List environment variables on a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-var-list',
   );
 
   static enableJsonFlag = true;

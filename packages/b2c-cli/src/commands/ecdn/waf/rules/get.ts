@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type WafRule = CdnZonesComponents['schemas']['WafRule'];
 
@@ -23,9 +23,9 @@ interface GetOutput {
  * Note: This is for WAF v1. For zones created after 24.5, use waf managed-rules commands.
  */
 export default class EcdnWafRulesGet extends EcdnZoneCommand<typeof EcdnWafRulesGet> {
-  static description = t(
-    'commands.ecdn.waf.rules.get.description',
-    'Get a WAF v1 rule for a zone (not applicable for WAFv2 zones)',
+  static description = withDocs(
+    t('commands.ecdn.waf.rules.get.description', 'Get a WAF v1 rule for a zone (not applicable for WAFv2 zones)'),
+    '/cli/ecdn.html#b2c-ecdn-waf-rules-get',
   );
 
   static enableJsonFlag = true;

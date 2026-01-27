@@ -12,14 +12,17 @@ import {
   type DeployResult,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
   static args = {
     ...CartridgeCommand.baseArgs,
   };
 
-  static description = t('commands.code.deploy.description', 'Deploy cartridges to a B2C Commerce instance');
+  static description = withDocs(
+    t('commands.code.deploy.description', 'Deploy cartridges to a B2C Commerce instance'),
+    '/cli/code.html#b2c-code-deploy',
+  );
 
   static enableJsonFlag = true;
 
@@ -56,10 +59,32 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
 
   async run(): Promise<DeployResult> {
     this.requireWebDavCredentials();
-    this.requireOAuthCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
     let version = this.resolvedConfig.values.codeVersion;
+
+    // OAuth is only required if:
+    // 1. No code version specified (need to auto-discover via OCAPI)
+    // 2. --reload flag is set (need to call OCAPI to reload)
+    const needsOAuth = !version || this.flags.reload;
+    if (needsOAuth && !this.hasOAuthCredentials()) {
+      const reason = version
+        ? t(
+            'commands.code.deploy.oauthRequiredForReload',
+            'The --reload flag requires OAuth credentials to reload the code version via OCAPI.',
+          )
+        : t(
+            'commands.code.deploy.oauthRequiredForDiscovery',
+            'No code version specified. OAuth credentials are required to auto-discover the active code version.',
+          );
+      this.error(
+        t(
+          'commands.code.deploy.oauthRequired',
+          '{{reason}}\n\nProvide --code-version to use basic auth only, or configure OAuth credentials.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
+          {reason},
+        ),
+      );
+    }
 
     // If no code version specified, discover the active one
     if (!version) {

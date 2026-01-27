@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
 import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 type Sites = OcapiComponents['schemas']['sites'];
 type Site = OcapiComponents['schemas']['site'];
@@ -30,7 +30,10 @@ const COLUMNS: Record<string, ColumnDef<Site>> = {
 const DEFAULT_COLUMNS = ['id', 'displayName', 'status'];
 
 export default class SitesList extends InstanceCommand<typeof SitesList> {
-  static description = t('commands.sites.list.description', 'List sites on a B2C Commerce instance');
+  static description = withDocs(
+    t('commands.sites.list.description', 'List sites on a B2C Commerce instance'),
+    '/cli/sites.html#b2c-sites-list',
+  );
 
   static enableJsonFlag = true;
 

@@ -6,7 +6,7 @@
 import {Args} from '@oclif/core';
 import {WebDavCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {PropfindEntry} from '@salesforce/b2c-tooling-sdk/clients';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * Formats bytes into human-readable sizes.
@@ -76,7 +76,10 @@ export default class WebDavLs extends WebDavCommand<typeof WebDavLs> {
     }),
   };
 
-  static description = t('commands.webdav.ls.description', 'List files and directories in a WebDAV location');
+  static description = withDocs(
+    t('commands.webdav.ls.description', 'List files and directories in a WebDAV location'),
+    '/cli/webdav.html#b2c-webdav-ls',
+  );
 
   static enableJsonFlag = true;
 

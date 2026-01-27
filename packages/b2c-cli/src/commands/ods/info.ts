@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 type UserInfoSpec = OdsComponents['schemas']['UserInfoSpec'];
 type SystemInfoSpec = OdsComponents['schemas']['SystemInfoSpec'];
@@ -25,7 +25,10 @@ interface OdsInfoResponse {
  * Combines data from getUserInfo and getSystemInfo API endpoints.
  */
 export default class OdsInfo extends OdsCommand<typeof OdsInfo> {
-  static description = t('commands.ods.info.description', 'Display ODS user and system information');
+  static description = withDocs(
+    t('commands.ods.info.description', 'Display ODS user and system information'),
+    '/cli/ods.html#b2c-ods-info',
+  );
 
   static enableJsonFlag = true;
 

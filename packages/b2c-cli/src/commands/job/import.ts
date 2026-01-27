@@ -10,7 +10,7 @@ import {
   JobExecutionError,
   type SiteArchiveImportResult,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobImport extends JobCommand<typeof JobImport> {
   static args = {
@@ -20,9 +20,12 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     }),
   };
 
-  static description = t(
-    'commands.job.import.description',
-    'Import a site archive to a B2C Commerce instance using sfcc-site-archive-import job',
+  static description = withDocs(
+    t(
+      'commands.job.import.description',
+      'Import a site archive to a B2C Commerce instance using sfcc-site-archive-import job',
+    ),
+    '/cli/jobs.html#b2c-job-import',
   );
 
   static enableJsonFlag = true;
