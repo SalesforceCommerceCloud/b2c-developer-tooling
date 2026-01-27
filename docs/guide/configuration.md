@@ -69,6 +69,21 @@ You can configure the CLI using environment variables:
 | `SFCC_OAUTH_SCOPES` | OAuth scopes to request |
 | `SFCC_CODE_VERSION` | Code version for deployments |
 
+## .env File
+
+The CLI automatically loads a `.env` file from the current working directory if present. Use the same `SFCC_*` variable names as environment variables.
+
+```bash
+# .env
+SFCC_SERVER=abcd-123.dx.commercecloud.salesforce.com
+SFCC_CLIENT_ID=your-client-id
+SFCC_CLIENT_SECRET=your-client-secret
+```
+
+::: warning
+Add `.env` to your `.gitignore` to avoid committing credentials.
+:::
+
 ## Configuration File
 
 You can create a `dw.json` file to store instance settings. The CLI searches for this file starting from the current directory and walking up the directory tree.
@@ -189,7 +204,7 @@ Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `m
 
 Configuration is resolved with the following precedence (highest to lowest):
 
-1. **CLI flags and environment variables** - Explicit values always take priority
+1. **CLI flags and environment variables** - Explicit values always take priority (includes `.env` file)
 2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'` (or priority < 0)
 3. **dw.json** - Project configuration file (priority 0)
 4. **~/.mobify** - Home directory file for MRT API key (priority 0)
