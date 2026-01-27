@@ -32,7 +32,7 @@ async function confirm(message: string): Promise<boolean> {
 export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
   static args = {
     sandboxId: Args.string({
-      description: 'Sandbox ID (UUID)',
+      description: 'Sandbox ID (UUID or realm-instance, e.g., abcd-123)',
       required: true,
     }),
   };
@@ -44,7 +44,8 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',
-    '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789 --force',
+    '<%= config.bin %> <%= command.id %> zzzv-123',
+    '<%= config.bin %> <%= command.id %> zzzv_123 --force',
   ];
 
   static flags = {
@@ -56,7 +57,7 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
   };
 
   async run(): Promise<void> {
-    const sandboxId = this.args.sandboxId;
+    const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
 
     // Get sandbox details first to show in confirmation
     const getResult = await this.odsClient.GET('/sandboxes/{sandboxId}', {

@@ -7,6 +7,7 @@ import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {createOdsClient, type OdsClient} from '../clients/ods.js';
 import {DEFAULT_ODS_HOST} from '../defaults.js';
+import {resolveSandboxId, SandboxNotFoundError} from '../operations/ods/sandbox-lookup.js';
 
 /**
  * Base command for ODS (On-Demand Sandbox) operations.
@@ -81,5 +82,33 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
    */
   protected get odsHost(): string {
     return this.flags['sandbox-api-host'] ?? DEFAULT_ODS_HOST;
+  }
+
+  /**
+   * Resolves a sandbox identifier to a UUID.
+   *
+   * Supports both UUID format and friendly format (realm-instance, e.g., "abcd-123" or "abcd_123").
+   * If given a UUID, returns it directly. If given a friendly format, queries the API to find
+   * the matching sandbox.
+   *
+   * @param identifier - Sandbox identifier (UUID or friendly format)
+   * @returns The sandbox UUID
+   * @throws Error if the sandbox cannot be found (friendly ID not resolved)
+   *
+   * @example
+   * ```typescript
+   * // In a command's run() method:
+   * const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
+   * ```
+   */
+  protected async resolveSandboxId(identifier: string): Promise<string> {
+    try {
+      return await resolveSandboxId(this.odsClient, identifier);
+    } catch (error) {
+      if (error instanceof SandboxNotFoundError) {
+        this.error(error.message);
+      }
+      throw error;
+    }
   }
 }
