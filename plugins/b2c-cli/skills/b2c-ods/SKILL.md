@@ -12,9 +12,9 @@ Use the `b2c` CLI plugin to manage Salesforce B2C Commerce On-demand sandboxes (
 Commands that operate on a specific sandbox accept two ID formats:
 
 - **UUID**: The full sandbox UUID (e.g., `abc12345-1234-1234-1234-abc123456789`)
-- **Friendly ID**: The realm-instance format (e.g., `zzzv-123` or `zzzv_123`)
+- **Realm-instance**: The realm-instance format (e.g., `zzzv-123` or `zzzv_123`)
 
-The friendly ID format uses the 4-character realm code followed by a dash or underscore and the instance number. When using a friendly ID, the CLI will automatically look up the corresponding UUID.
+The realm-instance format uses the 4-character realm code followed by a dash or underscore and the instance number. When using a realm-instance format, the CLI will automatically look up the corresponding UUID.
 
 ## Examples
 
@@ -47,7 +47,7 @@ b2c ods create --realm zzpq --log-level trace
 
 ### Get/Start/Stop/Restart/Delete Sandbox
 
-Commands that operate on a specific sandbox support both UUID and friendly ID formats:
+Commands that operate on a specific sandbox support both UUID and realm-instance formats:
 
 ```bash
 # Using UUID
@@ -55,7 +55,7 @@ b2c ods get abc12345-1234-1234-1234-abc123456789
 b2c ods start abc12345-1234-1234-1234-abc123456789
 b2c ods stop abc12345-1234-1234-1234-abc123456789
 
-# Using friendly ID (realm-instance)
+# Using realm-instance format
 b2c ods get zzzv-123
 b2c ods start zzzv_123
 b2c ods stop zzzv-123

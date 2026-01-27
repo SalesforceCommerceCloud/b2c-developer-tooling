@@ -13,9 +13,9 @@ Commands that operate on a specific sandbox (`get`, `start`, `stop`, `restart`, 
 | Format | Example | Description |
 |--------|---------|-------------|
 | UUID | `abc12345-1234-1234-1234-abc123456789` | Full sandbox UUID |
-| Friendly ID | `zzzv-123` or `zzzv_123` | Realm-instance format |
+| Realm-instance | `zzzv-123` or `zzzv_123` | Realm-instance format |
 
-The friendly ID format uses the 4-character realm code followed by a dash (`-`) or underscore (`_`) and the instance identifier. When using a friendly ID, the CLI automatically looks up the corresponding sandbox UUID.
+The realm-instance format uses the 4-character realm code followed by a dash (`-`) or underscore (`_`) and the instance identifier. When using the realm-instance format, the CLI automatically looks up the corresponding sandbox UUID.
 
 ```bash
 # These are equivalent (assuming zzzv-123 resolves to the UUID)
@@ -201,7 +201,7 @@ b2c ods get <SANDBOXID>
 # Get sandbox details using UUID
 b2c ods get abc12345-1234-1234-1234-abc123456789
 
-# Get sandbox details using friendly ID
+# Get sandbox details using realm-instance format
 b2c ods get zzzv-123
 
 # Output as JSON
@@ -272,7 +272,7 @@ b2c ods start <SANDBOXID>
 # Start a sandbox using UUID
 b2c ods start abc12345-1234-1234-1234-abc123456789
 
-# Start a sandbox using friendly ID
+# Start a sandbox using realm-instance format
 b2c ods start zzzv-123
 
 # Output as JSON
@@ -303,7 +303,7 @@ b2c ods stop <SANDBOXID>
 # Stop a sandbox using UUID
 b2c ods stop abc12345-1234-1234-1234-abc123456789
 
-# Stop a sandbox using friendly ID
+# Stop a sandbox using realm-instance format
 b2c ods stop zzzv-123
 
 # Output as JSON
@@ -334,7 +334,7 @@ b2c ods restart <SANDBOXID>
 # Restart a sandbox using UUID
 b2c ods restart abc12345-1234-1234-1234-abc123456789
 
-# Restart a sandbox using friendly ID
+# Restart a sandbox using realm-instance format
 b2c ods restart zzzv-123
 
 # Output as JSON
@@ -371,7 +371,7 @@ b2c ods delete <SANDBOXID>
 # Delete a sandbox using UUID (with confirmation prompt)
 b2c ods delete abc12345-1234-1234-1234-abc123456789
 
-# Delete a sandbox using friendly ID
+# Delete a sandbox using realm-instance format
 b2c ods delete zzzv-123
 
 # Delete without confirmation
