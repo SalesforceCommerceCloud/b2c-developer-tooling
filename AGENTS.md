@@ -131,14 +131,14 @@ This project uses [Changesets](https://github.com/changesets/changesets) for ver
 
 Changeset guidelines:
 - Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; 
-- a pull request can have multiple changesets
+- a pull request can have multiple changesets; separate files for separate changes
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - This is a pre-1.0 preview release, so there are no `major` breaking change bumps yet
 - Good changesets explain:
   - WHAT the change is
   - WHY the change was made
   - HOW a consumer should update their code
-- Good changesets are brief and user-focused (not contributor); they are generally 1 line or a short paragraph for detailed changes; The content of the changeset is used in CHANGELOG and release notes.
+- Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
 create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 
