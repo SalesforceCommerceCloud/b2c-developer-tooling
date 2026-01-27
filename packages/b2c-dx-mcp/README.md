@@ -525,7 +525,11 @@ When `--config` is not provided, the MCP server searches upward from `~/` for a 
 
 ## Telemetry
 
-The MCP server collects anonymous usage telemetry to help improve the developer experience. Telemetry is enabled by default and can be disabled by setting the `SFCC_TELEMETRY` environment variable to `false`.
+The MCP server collects anonymous usage telemetry to help improve the developer experience.
+
+**Development mode**: Telemetry is automatically disabled when `NODE_ENV=development` (set by `bin/dev.js`), so local development and testing won't pollute production data.
+
+**Production**: Telemetry is enabled by default for published releases. To disable, set `SFCC_TELEMETRY=false`.
 
 ### What We Collect
 
@@ -539,22 +543,6 @@ The MCP server collects anonymous usage telemetry to help improve the developer 
 - **No business data**: No product data, customer information, or site content
 - **No tool arguments**: No input parameters or output results from tool calls
 - **No file contents**: No source code, configuration files, or project data
-
-### Disabling Telemetry
-
-Set the `SFCC_TELEMETRY` environment variable to `false`:
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "/path/to/packages/b2c-dx-mcp/bin/dev.js",
-      "args": ["--toolsets", "all"],
-      "env": { "SFCC_TELEMETRY": "false" }
-    }
-  }
-}
-```
 
 ## License
 

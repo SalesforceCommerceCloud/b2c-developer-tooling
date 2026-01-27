@@ -9,21 +9,32 @@ import {loadAppInsightsKey} from '../../src/utils/index.js';
 
 describe('utils', () => {
   describe('loadAppInsightsKey', () => {
-    it('should return a connection string', () => {
+    // In development mode (NODE_ENV=development), returns undefined to disable telemetry
+    // In production mode, returns the connection string
+
+    it('should return undefined in development mode or a valid connection string in production', () => {
       const key = loadAppInsightsKey();
-      expect(key).to.be.a('string');
+
+      if (process.env.NODE_ENV === 'development') {
+        expect(key).to.be.undefined;
+      } else {
+        expect(key).to.be.a('string');
+        expect(key).to.include('InstrumentationKey=');
+        expect(key).to.include('IngestionEndpoint=');
+      }
     });
 
-    it('should return a string containing InstrumentationKey', () => {
+    it('should gate telemetry based on NODE_ENV', () => {
       const key = loadAppInsightsKey();
-      expect(key).to.include('InstrumentationKey=');
-    });
+      const isDevelopment = process.env.NODE_ENV === 'development';
 
-    it('should return a valid Application Insights connection string format', () => {
-      const key = loadAppInsightsKey();
-      // Connection string should have key=value pairs separated by semicolons
-      expect(key).to.match(/InstrumentationKey=[^;]+/);
-      expect(key).to.match(/IngestionEndpoint=[^;]+/);
+      if (isDevelopment) {
+        // Development mode: telemetry disabled
+        expect(key).to.be.undefined;
+      } else {
+        // Production mode: telemetry enabled
+        expect(key).to.not.be.undefined;
+      }
     });
   });
 });
