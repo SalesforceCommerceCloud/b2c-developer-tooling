@@ -18,7 +18,7 @@ import {
   findUserByLogin,
   mapToInternalRole,
   mapFromInternalRole,
-} from '../../src/clients/am-users-api.js';
+} from '../../src/clients/am-api.js';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const TEST_HOST = 'account.test.demandware.com';

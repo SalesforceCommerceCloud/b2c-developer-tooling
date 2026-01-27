@@ -61,12 +61,7 @@
  *
  * @module operations/users
  */
-import type {
-  AccountManagerUsersClient,
-  AccountManagerUser,
-  UserCreate,
-  UserUpdate,
-} from '../../clients/am-users-api.js';
+import type {AccountManagerUsersClient, AccountManagerUser, UserCreate, UserUpdate} from '../../clients/am-api.js';
 import {
   getUser,
   listUsers,
@@ -76,7 +71,7 @@ import {
   purgeUser,
   resetUser,
   findUserByLogin,
-} from '../../clients/am-users-api.js';
+} from '../../clients/am-api.js';
 
 /**
  * Options for creating a user.
@@ -283,4 +278,4 @@ export async function revokeRole(
 }
 
 // Re-export types for convenience
-export type {AccountManagerUser, UserCreate, UserUpdate, UserCollection} from '../../clients/am-users-api.js';
+export type {AccountManagerUser, UserCreate, UserUpdate, UserCollection} from '../../clients/am-api.js';

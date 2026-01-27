@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {getUserByLogin, createUser, updateUser, grantRole, revokeRole} from '../../../src/operations/users/index.js';
-import {createAccountManagerUsersClient} from '../../../src/clients/am-users-api.js';
+import {createAccountManagerUsersClient} from '../../../src/clients/am-api.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const TEST_HOST = 'account.test.demandware.com';

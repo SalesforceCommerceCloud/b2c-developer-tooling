@@ -205,6 +205,7 @@ export type {
 } from './scapi-schemas.js';
 
 export {
+  createAccountManagerClient,
   createAccountManagerUsersClient,
   getUser,
   listUsers,
@@ -218,45 +219,37 @@ export {
   mapFromInternalRole,
   ROLE_NAMES_MAP,
   ROLE_NAMES_MAP_REVERSE,
-} from './am-users-api.js';
+  createAccountManagerRolesClient,
+  getRole,
+  listRoles,
+  createAccountManagerOrgsClient,
+} from './am-api.js';
 export type {
+  AccountManagerClient,
+  AccountManagerClientConfig,
   AccountManagerUsersClient,
-  AccountManagerUsersClientConfig,
   AccountManagerUser,
   AccountManagerResponse,
   AccountManagerError,
+  UserExpandOption,
   UserCreate,
   UserUpdate,
   UserCollection,
   UserState,
   ListUsersOptions,
-  paths as AccountManagerPaths,
-  components as AccountManagerComponents,
-} from './am-users-api.js';
-
-export {createAccountManagerRolesClient, getRole, listRoles} from './am-roles-api.js';
-export type {
   AccountManagerRolesClient,
-  AccountManagerRolesClientConfig,
   AccountManagerRole,
   AccountManagerRolesResponse,
   AccountManagerRolesError,
   RoleCollection,
   ListRolesOptions,
-  paths as AccountManagerRolesPaths,
-  components as AccountManagerRolesComponents,
-} from './am-roles-api.js';
-
-export {createAccountManagerOrgsClient} from './am-orgs-api.js';
-export type {
   AccountManagerOrgsClient,
-  AccountManagerOrgsClientConfig,
   AccountManagerOrganization,
   OrganizationCollection,
   AuditLogRecord,
   AuditLogCollection,
   ListOrgsOptions,
-} from './am-orgs-api.js';
+} from './am-api.js';
 
 export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
 export type {

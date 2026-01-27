@@ -141,14 +141,19 @@
       "sites": {
         "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
       },
-      "user": {
-        "description": "Manage Account Manager users"
-      },
-      "role": {
-        "description": "Manage roles for Account Manager users"
-      },
-      "org": {
-        "description": "Manage Account Manager organizations"
+      "am": {
+        "description": "Manage Account Manager resources",
+        "subtopics": {
+          "users": {
+            "description": "Manage Account Manager users"
+          },
+          "roles": {
+            "description": "Manage roles for Account Manager users"
+          },
+          "orgs": {
+            "description": "Manage Account Manager organizations"
+          }
+        }
       },
       "slas": {
         "description": "Manage SLAS API clients and credentials\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
