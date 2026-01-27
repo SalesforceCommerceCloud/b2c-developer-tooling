@@ -1,5 +1,24 @@
 # @salesforce/b2c-cli
 
+## 0.3.0
+
+### Minor Changes
+
+- [`d772003`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d772003c7614f4e5ec2fe95fe7ed7f7ec6559a9c) Thanks [@clavery](https://github.com/clavery)! - consistent command doc structure; better auth page; online links in examples for all topics/cmds
+
+- [#83](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/83) [`ddee52e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ddee52e2c61991dbcc4d3aeed00ee802530a0e7c) Thanks [@clavery](https://github.com/clavery)! - Add support for realm-instance format in ODS commands. You can now use `zzzv-123` or `zzzv_123` instead of full UUIDs for `ods get`, `ods start`, `ods stop`, `ods restart`, and `ods delete` commands.
+
+- [#77](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/77) [`6859880`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6859880195d2da4cd6363451c79224878917abb7) Thanks [@clavery](https://github.com/clavery)! - Add log tailing, listing, and retrieval commands for viewing B2C Commerce instance logs. See `b2c logs` topic.
+
+### Patch Changes
+
+- [`d772003`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d772003c7614f4e5ec2fe95fe7ed7f7ec6559a9c) Thanks [@clavery](https://github.com/clavery)! - bugfix code deploy to not require oauth unless needed
+
+- [`d772003`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d772003c7614f4e5ec2fe95fe7ed7f7ec6559a9c) Thanks [@clavery](https://github.com/clavery)! - mrt bundle commands now relay warnings from the bundle such as out of date node versions
+
+- Updated dependencies [[`ddee52e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ddee52e2c61991dbcc4d3aeed00ee802530a0e7c), [`6859880`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6859880195d2da4cd6363451c79224878917abb7)]:
+  - @salesforce/b2c-tooling-sdk@0.3.0
+
 ## 0.2.1
 
 ### Patch Changes
