@@ -242,151 +242,207 @@ const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version
 
 ## Account Manager Operations
 
-The SDK provides operations for managing users, roles, and organizations.
+The SDK provides a unified client for managing users, roles, and organizations through the Account Manager API.
 
-### User Management
+### Authentication
+
+Account Manager operations use **OAuth implicit flow** by default, which opens a browser for interactive authentication. This is ideal for development and manual operations where you want to use roles assigned to your user account.
+
+For CI/CD and automation, you can also use **OAuth client credentials flow** (requires both client ID and secret).
+
+### Unified Client (Recommended)
+
+The recommended approach is to use the unified `createAccountManagerClient` which provides access to all Account Manager APIs (users, roles, and organizations):
 
 ```typescript
-import {
-  listUsers,
-  getUserByLogin,
-  createUser,
-  updateUser,
-  deleteUser,
-  resetUser,
-  grantRole,
-  revokeRole,
-} from '@salesforce/b2c-tooling-sdk/operations/users';
-import {createAccountManagerUsersClient} from '@salesforce/b2c-tooling-sdk/clients';
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager client with implicit OAuth (opens browser for login)
+const auth = new ImplicitOAuthStrategy({
+  clientId: 'your-client-id',
+  // No clientSecret needed for implicit flow
+});
+
+const client = createAccountManagerClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Users API
+const users = await client.listUsers({ size: 25, page: 0 });
+const user = await client.getUser('user-id');
+const userByLogin = await client.findUserByLogin('user@example.com');
+await client.createUser({
+  mail: 'newuser@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  organizations: ['org-id'],
+  primaryOrganization: 'org-id',
+});
+await client.updateUser('user-id', { firstName: 'Jane' });
+await client.grantRole('user-id', 'bm-admin', 'tenant1,tenant2');
+await client.revokeRole('user-id', 'bm-admin', 'tenant1');
+await client.resetUser('user-id');
+await client.deleteUser('user-id');
+
+// Roles API
+const roles = await client.listRoles({ size: 20, page: 0 });
+const role = await client.getRole('bm-admin');
+
+// Organizations API
+const orgs = await client.listOrgs({ size: 25, page: 0 });
+const org = await client.getOrg('org-id');
+const orgByName = await client.getOrgByName('My Organization');
+const auditLogs = await client.getOrgAuditLogs('org-id');
+```
+
+### Client Credentials Flow (Alternative)
+
+For automation and CI/CD, you can use client credentials flow:
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
 import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
 
-// Create Account Manager client
+// Create Account Manager client with client credentials OAuth
 const auth = new OAuthStrategy({
   clientId: 'your-client-id',
   clientSecret: 'your-client-secret',
 });
 
-const client = createAccountManagerUsersClient(
+const client = createAccountManagerClient(
   { accountManagerHost: 'account.demandware.com' },
   auth,
 );
 
-// List users with pagination
-const users = await listUsers(client, { size: 25, page: 0 });
+// Use the unified client as shown above
+```
 
-// Get user by email
-const user = await getUserByLogin(client, 'user@example.com');
+### Individual Clients
+
+If you only need access to a specific API, you can create individual clients:
+
+```typescript
+import {
+  createAccountManagerUsersClient,
+  createAccountManagerRolesClient,
+  createAccountManagerOrgsClient,
+} from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({
+  clientId: 'your-client-id',
+});
+
+// Users client
+const usersClient = createAccountManagerUsersClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Roles client
+const rolesClient = createAccountManagerRolesClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Organizations client
+const orgsClient = createAccountManagerOrgsClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+```
+
+### User Operations
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// List users with pagination
+const users = await client.listUsers({ size: 25, page: 0 });
+
+// Get user by email/login
+const user = await client.findUserByLogin('user@example.com');
+
+// Get user with expanded organizations and roles
+const userExpanded = await client.getUser('user-id', ['organizations', 'roles']);
 
 // Create a new user
-const newUser = await createUser(client, {
-  user: {
-    mail: 'newuser@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    organizations: ['org-id'],
-    primaryOrganization: 'org-id',
-  },
+const newUser = await client.createUser({
+  mail: 'newuser@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  organizations: ['org-id'],
+  primaryOrganization: 'org-id',
 });
 
 // Update a user
-await updateUser(client, {
-  userId: user.id!,
-  changes: { firstName: 'Jane' },
-});
+await client.updateUser('user-id', { firstName: 'Jane' });
 
 // Grant a role to a user
-await grantRole(client, {
-  userId: user.id!,
-  role: 'bm-admin',
-  scope: 'tenant1,tenant2', // Optional tenant filter
-});
+await client.grantRole('user-id', 'bm-admin', 'tenant1,tenant2'); // Optional tenant filter
 
 // Revoke a role from a user
-await revokeRole(client, {
-  userId: user.id!,
-  role: 'bm-admin',
-  scope: 'tenant1', // Optional: remove specific scope
-});
+await client.revokeRole('user-id', 'bm-admin', 'tenant1'); // Optional: remove specific scope
 
 // Reset user to INITIAL state
-await resetUser(client, user.id!);
+await client.resetUser('user-id');
 
 // Delete (disable) a user
-await deleteUser(client, user.id!);
+await client.deleteUser('user-id');
 ```
 
-### Role Management
+### Role Operations
 
 ```typescript
-import {
-  createAccountManagerRolesClient,
-  getRole,
-  listRoles,
-} from '@salesforce/b2c-tooling-sdk/operations/roles';
-import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
 
-// Create Account Manager Roles client
-const auth = new OAuthStrategy({
-  clientId: 'your-client-id',
-  clientSecret: 'your-client-secret',
-});
-
-const client = createAccountManagerRolesClient(
-  { accountManagerHost: 'account.demandware.com' },
-  auth,
-);
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
 
 // Get role details by ID
-const role = await getRole(client, 'bm-admin');
+const role = await client.getRole('bm-admin');
 
 // List all roles with pagination
-const roles = await listRoles(client, { size: 25, page: 0 });
+const roles = await client.listRoles({ size: 25, page: 0 });
 
 // List roles filtered by target type
-const userRoles = await listRoles(client, {
+const userRoles = await client.listRoles({
   size: 25,
   page: 0,
   roleTargetType: 'User',
 });
 ```
 
-### Organization Management
+### Organization Operations
 
 ```typescript
-import {
-  createAccountManagerOrgsClient,
-  getOrg,
-  getOrgByName,
-  listOrgs,
-  getOrgAuditLogs,
-} from '@salesforce/b2c-tooling-sdk/operations/orgs';
-import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
 
-// Create Account Manager Organizations client
-const auth = new OAuthStrategy({
-  clientId: 'your-client-id',
-  clientSecret: 'your-client-secret',
-});
-
-const client = createAccountManagerOrgsClient(
-  { accountManagerHost: 'account.demandware.com' },
-  auth,
-);
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
 
 // Get organization by ID
-const org = await getOrg(client, 'org-123');
+const org = await client.getOrg('org-123');
 
 // Get organization by name
-const orgByName = await getOrgByName(client, 'My Organization');
+const orgByName = await client.getOrgByName('My Organization');
 
 // List organizations with pagination
-const orgs = await listOrgs(client, { size: 25, page: 0 });
+const orgs = await client.listOrgs({ size: 25, page: 0 });
 
 // List all organizations (uses max page size of 5000)
-const allOrgs = await listOrgs(client, { all: true });
+const allOrgs = await client.listOrgs({ all: true });
 
 // Get audit logs for an organization
-const auditLogs = await getOrgAuditLogs(client, 'org-123');
+const auditLogs = await client.getOrgAuditLogs('org-123');
 ```
 
 ### Required Permissions
@@ -394,6 +450,8 @@ const auditLogs = await getOrgAuditLogs(client, 'org-123');
 Account Manager operations require:
 - OAuth client with `sfcc.accountmanager.user.manage` scope
 - Account Manager hostname configuration
+- For implicit flow: roles configured on your **user account**
+- For client credentials flow: roles configured on the **API client**
 
 ## Logging
 
