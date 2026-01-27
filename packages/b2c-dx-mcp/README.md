@@ -16,17 +16,14 @@ The server automatically detects your project type and enables relevant tools. S
 
 The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_DIRECTORY`). It tells the server where your project is located, enabling:
 
-<<<<<<< HEAD
 1. **Auto-discovery** - Detects your project type and enables appropriate toolsets
 2. **Configuration loading** - Reads [`dw.json`](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html#configuration-file) from your project for credentials
 3. **Scaffolding** - Creates new files in the correct location
-=======
 | Flag | Env Variable | Description |
 |------|--------------|-------------|
 | `--toolsets` | `SFCC_TOOLSETS` | Comma-separated toolsets to enable (case-insensitive) |
 | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
 | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental (non-GA) tools |
->>>>>>> 1ca55c6 (Remove no telemetry flag, add unit tests)
 
 > **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
 
