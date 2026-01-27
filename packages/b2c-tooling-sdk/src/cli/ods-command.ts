@@ -7,6 +7,7 @@ import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {createOdsClient, type OdsClient} from '../clients/ods.js';
 import {DEFAULT_ODS_HOST} from '../defaults.js';
+import {isUuid, parseFriendlySandboxId, SandboxNotFoundError} from '../operations/ods/sandbox-lookup.js';
 
 /**
  * Base command for ODS (On-Demand Sandbox) operations.
@@ -81,5 +82,63 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
    */
   protected get odsHost(): string {
     return this.flags['sandbox-api-host'] ?? DEFAULT_ODS_HOST;
+  }
+
+  /**
+   * Resolves a sandbox identifier to a UUID.
+   *
+   * Supports both UUID format and friendly format (realm-instance, e.g., "abcd-123" or "abcd_123").
+   * If given a UUID, returns it directly. If given a friendly format, queries the API to find
+   * the matching sandbox and logs the resolution.
+   *
+   * @param identifier - Sandbox identifier (UUID or friendly format)
+   * @returns The sandbox UUID
+   * @throws Error if the sandbox cannot be found (friendly ID not resolved)
+   *
+   * @example
+   * ```typescript
+   * // In a command's run() method:
+   * const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
+   * ```
+   */
+  protected async resolveSandboxId(identifier: string): Promise<string> {
+    // If already a UUID, return directly
+    if (isUuid(identifier)) {
+      return identifier;
+    }
+
+    // Try to parse as friendly ID
+    const parsed = parseFriendlySandboxId(identifier);
+    if (!parsed) {
+      // Not a UUID and not a friendly ID - pass through as-is
+      // (let the API return an appropriate error)
+      return identifier;
+    }
+
+    // Log that we're looking up the sandbox
+    this.log(`Looking up sandbox ${identifier}...`);
+
+    // Query sandboxes filtered by realm
+    const {data, error} = await this.odsClient.GET('/sandboxes', {
+      params: {
+        query: {
+          filter_params: `realm=${parsed.realm}`,
+        },
+      },
+    });
+
+    if (error || !data?.data) {
+      this.error(new SandboxNotFoundError(identifier, parsed.realm, parsed.instance).message);
+    }
+
+    // Find sandbox with matching instance
+    const sandbox = data.data.find((s) => s.instance?.toLowerCase() === parsed.instance);
+
+    if (!sandbox?.id) {
+      this.error(new SandboxNotFoundError(identifier, parsed.realm, parsed.instance).message);
+    }
+
+    this.log(`Resolved ${identifier} to sandbox ${sandbox.id}`);
+    return sandbox.id;
   }
 }
