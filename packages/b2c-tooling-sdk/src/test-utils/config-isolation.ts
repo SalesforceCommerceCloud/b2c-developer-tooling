@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {resetLogger} from '../logging/index.js';
 
 const ADDITIONAL_ENV_VARS = ['LANGUAGE', 'NO_COLOR'];
 
@@ -31,6 +32,10 @@ export function isolateConfig(): void {
 
   process.env.SFCC_CONFIG = '/dev/null';
   process.env.MRT_CREDENTIALS_FILE = '/dev/null';
+  process.env.SFCC_LOG_LEVEL = 'silent';
+
+  // Reset global logger so it picks up the new SFCC_LOG_LEVEL
+  resetLogger();
 
   state = {savedEnvVars};
 }
@@ -38,8 +43,12 @@ export function isolateConfig(): void {
 export function restoreConfig(): void {
   if (!state) return;
 
+  // Reset logger before restoring env vars
+  resetLogger();
+
   delete process.env.SFCC_CONFIG;
   delete process.env.MRT_CREDENTIALS_FILE;
+  delete process.env.SFCC_LOG_LEVEL;
 
   for (const [key, value] of Object.entries(state.savedEnvVars)) {
     if (value === undefined) {

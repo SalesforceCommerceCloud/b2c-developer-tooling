@@ -10,7 +10,7 @@ import {
   type ListAccessControlHeadersResult,
   type MrtAccessControlHeader,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtAccessControlHeader>> = {
   id: {
@@ -37,9 +37,9 @@ const DEFAULT_COLUMNS = ['id', 'value', 'status', 'created'];
  * List access control headers for an MRT environment.
  */
 export default class MrtAccessControlList extends MrtCommand<typeof MrtAccessControlList> {
-  static description = t(
-    'commands.mrt.access-control.list.description',
-    'List access control headers for a Managed Runtime environment',
+  static description = withDocs(
+    t('commands.mrt.access-control.list.description', 'List access control headers for a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-access-control-list',
   );
 
   static enableJsonFlag = true;

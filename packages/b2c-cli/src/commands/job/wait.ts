@@ -6,7 +6,7 @@
 import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {waitForJob, JobExecutionError, type JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobWait extends JobCommand<typeof JobWait> {
   static args = {
@@ -20,7 +20,10 @@ export default class JobWait extends JobCommand<typeof JobWait> {
     }),
   };
 
-  static description = t('commands.job.wait.description', 'Wait for a job execution to complete');
+  static description = withDocs(
+    t('commands.job.wait.description', 'Wait for a job execution to complete'),
+    '/cli/jobs.html#b2c-job-wait',
+  );
 
   static enableJsonFlag = true;
 

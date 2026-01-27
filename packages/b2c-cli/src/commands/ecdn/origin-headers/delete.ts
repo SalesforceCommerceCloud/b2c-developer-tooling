@@ -5,7 +5,7 @@
  */
 import {ux} from '@oclif/core';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the delete command.
@@ -18,9 +18,9 @@ interface DeleteOutput {
  * Command to delete origin header modification for a zone.
  */
 export default class EcdnOriginHeadersDelete extends EcdnZoneCommand<typeof EcdnOriginHeadersDelete> {
-  static description = t(
-    'commands.ecdn.origin-headers.delete.description',
-    'Delete origin header modification for a zone (MRT type)',
+  static description = withDocs(
+    t('commands.ecdn.origin-headers.delete.description', 'Delete origin header modification for a zone (MRT type)'),
+    '/cli/ecdn.html#b2c-ecdn-origin-headers-delete',
   );
 
   static enableJsonFlag = true;

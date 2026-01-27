@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Response type for the delete command.
@@ -19,7 +19,10 @@ interface DeleteOutput {
  * Command to delete a Page Shield policy for a zone.
  */
 export default class EcdnPageShieldPoliciesDelete extends EcdnZoneCommand<typeof EcdnPageShieldPoliciesDelete> {
-  static description = t('commands.ecdn.page-shield.policies.delete.description', 'Delete a Page Shield policy');
+  static description = withDocs(
+    t('commands.ecdn.page-shield.policies.delete.description', 'Delete a Page Shield policy'),
+    '/cli/ecdn.html#b2c-ecdn-page-shield-policies-delete',
+  );
 
   static enableJsonFlag = true;
 

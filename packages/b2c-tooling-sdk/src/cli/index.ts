@@ -103,8 +103,15 @@ export {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS} from './webdav-command.js';
 export type {WebDavRootKey} from './webdav-command.js';
 
 // Config utilities
-export {loadConfig, findDwJson} from './config.js';
-export type {LoadConfigOptions, PluginSources} from './config.js';
+export {
+  loadConfig,
+  findDwJson,
+  // Flag extraction helpers for composable configuration
+  extractOAuthFlags,
+  extractInstanceFlags,
+  extractMrtFlags,
+} from './config.js';
+export type {LoadConfigOptions, PluginSources, ParsedFlags, ExtractedMrtFlags} from './config.js';
 
 // Hook types for plugin extensibility
 export type {

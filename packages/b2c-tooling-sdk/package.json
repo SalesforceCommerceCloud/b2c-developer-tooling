@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Core tooling library for Salesforce Commerce Cloud B2C CLI",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
@@ -90,17 +90,6 @@
         "default": "./dist/cjs/operations/jobs/index.js"
       }
     },
-    "./operations/sites": {
-      "development": "./src/operations/sites/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/sites/index.d.ts",
-        "default": "./dist/esm/operations/sites/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/sites/index.d.ts",
-        "default": "./dist/cjs/operations/sites/index.js"
-      }
-    },
     "./operations/mrt": {
       "development": "./src/operations/mrt/index.ts",
       "import": {
@@ -132,6 +121,17 @@
       "require": {
         "types": "./dist/cjs/operations/scapi-schemas/index.d.ts",
         "default": "./dist/cjs/operations/scapi-schemas/index.js"
+      }
+    },
+    "./operations/logs": {
+      "development": "./src/operations/logs/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/logs/index.d.ts",
+        "default": "./dist/esm/operations/logs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/logs/index.d.ts",
+        "default": "./dist/cjs/operations/logs/index.js"
       }
     },
     "./cli": {
@@ -238,12 +238,15 @@
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc --noEmit --pretty false",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
     "test:watch": "mocha --watch \"test/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",

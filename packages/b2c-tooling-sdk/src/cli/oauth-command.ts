@@ -5,9 +5,9 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
-import {loadConfig, ALL_AUTH_METHODS} from './config.js';
-import type {LoadConfigOptions, AuthMethod, PluginSources} from './config.js';
-import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
+import {loadConfig, extractOAuthFlags, ALL_AUTH_METHODS} from './config.js';
+import type {AuthMethod} from './config.js';
+import type {ResolvedB2CConfig} from '../config/index.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {t} from '../i18n/index.js';
@@ -73,6 +73,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   /**
    * Parses auth methods from flags.
    * Returns methods in the order specified (priority order).
+   * @deprecated Use extractOAuthFlags() instead which handles this internally
    */
   protected parseAuthMethods(): AuthMethod[] | undefined {
     const flagValues = this.flags['auth-methods'] as string[] | undefined;
@@ -80,7 +81,6 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       return undefined;
     }
 
-    // Filter to valid auth methods (oclif handles comma splitting via delimiter)
     const methods = flagValues
       .map((s) => s.trim())
       .filter((s): s is AuthMethod => ALL_AUTH_METHODS.includes(s as AuthMethod));
@@ -89,28 +89,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   protected override loadConfiguration(): ResolvedB2CConfig {
-    const options: LoadConfigOptions = {
-      instance: this.flags.instance,
-      configPath: this.flags.config,
-    };
-
-    const flagConfig: Partial<NormalizedConfig> = {
-      clientId: this.flags['client-id'],
-      clientSecret: this.flags['client-secret'],
-      shortCode: this.flags['short-code'],
-      tenantId: this.flags['tenant-id'],
-      authMethods: this.parseAuthMethods(),
-      accountManagerHost: this.flags['account-manager-host'],
-      // Merge scopes from flags (if provided)
-      scopes: this.flags.scope && this.flags.scope.length > 0 ? this.flags.scope : undefined,
-    };
-
-    const pluginSources: PluginSources = {
-      before: this.pluginSourcesBefore,
-      after: this.pluginSourcesAfter,
-    };
-
-    return loadConfig(flagConfig, options, pluginSources);
+    return loadConfig(
+      extractOAuthFlags(this.flags as Record<string, unknown>),
+      this.getBaseConfigOptions(),
+      this.getPluginSources(),
+    );
   }
 
   /**

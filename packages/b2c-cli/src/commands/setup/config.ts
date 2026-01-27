@@ -7,6 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
+import {withDocs} from '../../i18n/index.js';
 
 /**
  * Sensitive fields that should be masked by default.
@@ -65,7 +66,7 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
  * Command to display resolved configuration.
  */
 export default class SetupConfig extends BaseCommand<typeof SetupConfig> {
-  static description = 'Display resolved configuration';
+  static description = withDocs('Display resolved configuration', '/cli/setup.html#b2c-setup-config');
 
   static enableJsonFlag = true;
 

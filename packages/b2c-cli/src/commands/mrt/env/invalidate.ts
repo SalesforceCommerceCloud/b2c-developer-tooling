@@ -6,15 +6,18 @@
 import {Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {invalidateCache, type InvalidateCacheResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Invalidate cached objects in the CDN.
  */
 export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvalidate> {
-  static description = t(
-    'commands.mrt.cache.invalidate.description',
-    'Invalidate cached objects in the CDN for a Managed Runtime environment',
+  static description = withDocs(
+    t(
+      'commands.mrt.cache.invalidate.description',
+      'Invalidate cached objects in the CDN for a Managed Runtime environment',
+    ),
+    '/cli/mrt.html#b2c-mrt-env-invalidate',
   );
 
   static enableJsonFlag = true;

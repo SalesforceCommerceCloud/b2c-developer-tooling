@@ -1,5 +1,14 @@
 # @salesforce/b2c-cli
 
+## 0.2.1
+
+### Patch Changes
+
+- [`4e90f16`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4e90f161f8456ff89c4e99522ae83ae6a7352a44) Thanks [@clavery](https://github.com/clavery)! - dw.json format bug fix
+
+- Updated dependencies [[`4e90f16`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4e90f161f8456ff89c4e99522ae83ae6a7352a44)]:
+  - @salesforce/b2c-tooling-sdk@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes

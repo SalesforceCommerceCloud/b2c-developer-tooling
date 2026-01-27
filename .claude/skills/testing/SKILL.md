@@ -18,6 +18,19 @@ This skill covers project-specific testing patterns for the B2C CLI project.
 
 ## Running Tests
 
+For coding agents (minimal output - only failures shown):
+
+```bash
+# Run tests - only failures + summary
+pnpm run test:agent
+
+# Run tests for specific package
+pnpm --filter @salesforce/b2c-tooling-sdk run test:agent
+pnpm --filter @salesforce/b2c-cli run test:agent
+```
+
+For debugging (full output with coverage):
+
 ```bash
 # Run all tests with coverage
 pnpm run test
@@ -307,6 +320,59 @@ const client = new WebDavClient(TEST_HOST, mockAuth);
 const customAuth = new MockAuthStrategy('custom-token');
 ```
 
+## Silencing Test Output
+
+Commands may produce console output (tables, formatted displays) even in tests. Use these helpers to keep test output clean.
+
+### Using runSilent for Output Capture
+
+The `runSilent` helper uses oclif's `captureOutput` to suppress stdout/stderr:
+
+```typescript
+import { runSilent } from '../../helpers/test-setup.js';
+
+it('returns data in non-JSON mode', async () => {
+  const command = new MyCommand([], {} as any);
+  // ... setup ...
+
+  // Silences any console output from the command
+  const result = await runSilent(() => command.run());
+
+  expect(result.data).to.exist;
+});
+```
+
+Use `runSilent` when:
+- Testing non-JSON output modes (tables, formatted displays)
+- The test doesn't need to verify console output content
+- You want clean test output with only pass/fail summary
+
+### When Output Verification is Needed
+
+If you need to verify console output, stub `ux.stdout` directly:
+
+```typescript
+import { ux } from '@oclif/core';
+
+it('prints table in non-JSON mode', async () => {
+  const stdoutStub = sinon.stub(ux, 'stdout');
+
+  await command.run();
+
+  expect(stdoutStub.called).to.be.true;
+});
+```
+
+### stubParse Sets Silent Logging
+
+The `stubParse` helper automatically sets `'log-level': 'silent'` to reduce pino logger output:
+
+```typescript
+// stubParse includes silent log level by default
+stubParse(command, {server: 'test.demandware.net'});
+// Equivalent to: {server: 'test.demandware.net', 'log-level': 'silent'}
+```
+
 ## Command Test Guidelines
 
 Command tests should focus on **command-specific logic**, not trivial flag verification.
@@ -445,6 +511,33 @@ pnpm run test
 open coverage/index.html
 ```
 
+## Test Helpers Reference
+
+### CLI Package (`packages/b2c-cli/test/helpers/`)
+
+| Helper | Purpose |
+|--------|---------|
+| `runSilent(fn)` | Capture and suppress stdout/stderr from command execution |
+| `stubParse(command, flags, args)` | Stub oclif's parse method with flags (includes silent log level) |
+| `createTestCommand(CommandClass, config, flags, args)` | Create command instance with stubbed parse |
+| `createIsolatedConfigHooks()` | Mocha hooks for config isolation |
+| `createIsolatedEnvHooks()` | Mocha hooks for env var isolation |
+
+### SDK Package (`packages/b2c-tooling-sdk/test/helpers/`)
+
+| Helper | Purpose |
+|--------|---------|
+| `MockAuthStrategy` | Mock authentication for API clients |
+| `stubParse(command, flags, args)` | Stub oclif's parse method (includes silent log level) |
+| `createNullStream()` | Create a writable stream that discards output |
+| `CapturingStream` | Writable stream that captures output for assertions |
+
+### SDK Test Utils (exported from package)
+
+```typescript
+import { isolateConfig, restoreConfig } from '@salesforce/b2c-tooling-sdk/test-utils';
+```
+
 ## Writing Tests Checklist
 
 1. Create test file in `test/` mirroring source structure
@@ -452,8 +545,9 @@ open coverage/index.html
 3. Import from package names, not relative paths
 4. Set up MSW server for HTTP tests (avoid fake timers)
 5. Use `isolateConfig()`/`restoreConfig()` for config-dependent tests
-6. Use `pollInterval` option for polling operations
-7. Use MockAuthStrategy for authenticated clients
-8. Test both success and error paths
-9. Focus on command-specific logic, not trivial delegation
-10. Run tests: `pnpm --filter <package> run test`
+6. Use `runSilent()` for commands that produce console output
+7. Use `pollInterval` option for polling operations
+8. Use MockAuthStrategy for authenticated clients
+9. Test both success and error paths
+10. Focus on command-specific logic, not trivial delegation
+11. Run tests: `pnpm --filter <package> run test`

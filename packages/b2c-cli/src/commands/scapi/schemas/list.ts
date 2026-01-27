@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
 import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the list command.
@@ -55,14 +55,17 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list available SCAPI schemas.
  */
 export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSchemasList> {
-  static description = t('commands.scapi.schemas.list.description', 'List available SCAPI schemas');
+  static description = withDocs(
+    t('commands.scapi.schemas.list.description', 'List available SCAPI schemas'),
+    '/cli/scapi-schemas.html#b2c-scapi-schemas-list',
+  );
 
   static enableJsonFlag = true;
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd',
-    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-family shopper',
-    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-name products',
+    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-family product',
+    '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --api-name shopper-products',
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --status current',
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --extended',
     '<%= config.bin %> <%= command.id %> --tenant-id f_ecom_zzxy_prd --json',
@@ -71,10 +74,10 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
   static flags = {
     ...ScapiSchemasCommand.baseFlags,
     'api-family': Flags.string({
-      description: t('flags.apiFamily.description', 'Filter by API family (e.g., shopper, admin)'),
+      description: t('flags.apiFamily.description', 'Filter by API family (e.g., product, checkout, search)'),
     }),
     'api-name': Flags.string({
-      description: t('flags.apiName.description', 'Filter by API name (e.g., products, orders)'),
+      description: t('flags.apiName.description', 'Filter by API name (e.g., shopper-products, shopper-baskets)'),
     }),
     'api-version': Flags.string({
       description: t('flags.apiVersion.description', 'Filter by API version (e.g., v1)'),

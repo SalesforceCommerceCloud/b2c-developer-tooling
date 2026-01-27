@@ -205,18 +205,43 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return input;
   }
 
-  protected loadConfiguration(): ResolvedB2CConfig {
-    const options: LoadConfigOptions = {
+  /**
+   * Gets base configuration options from common flags.
+   *
+   * Subclasses should spread these options when overriding loadConfiguration()
+   * to ensure common options like startDir are always included.
+   *
+   * @example
+   * ```typescript
+   * protected override loadConfiguration(): ResolvedB2CConfig {
+   *   const options: LoadConfigOptions = {
+   *     ...this.getBaseConfigOptions(),
+   *     // Add subclass-specific options here
+   *   };
+   *   return loadConfig(extractMyFlags(this.flags), options, this.getPluginSources());
+   * }
+   * ```
+   */
+  protected getBaseConfigOptions(): LoadConfigOptions {
+    return {
       instance: this.flags.instance,
       configPath: this.flags.config,
+      startDir: this.flags['working-directory'],
     };
+  }
 
-    const pluginSources: PluginSources = {
+  /**
+   * Gets plugin sources for configuration resolution.
+   */
+  protected getPluginSources(): PluginSources {
+    return {
       before: this.pluginSourcesBefore,
       after: this.pluginSourcesAfter,
     };
+  }
 
-    return loadConfig({}, options, pluginSources);
+  protected loadConfiguration(): ResolvedB2CConfig {
+    return loadConfig({}, this.getBaseConfigOptions(), this.getPluginSources());
   }
 
   /**

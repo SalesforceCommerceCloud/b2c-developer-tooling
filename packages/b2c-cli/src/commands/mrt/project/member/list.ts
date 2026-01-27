@@ -11,7 +11,7 @@ import {
   type MrtMember,
   type MemberRoleValue,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtMember>> = {
   email: {
@@ -34,7 +34,10 @@ const DEFAULT_COLUMNS = ['email', 'role'];
  * List members for an MRT project.
  */
 export default class MrtMemberList extends MrtCommand<typeof MrtMemberList> {
-  static description = t('commands.mrt.member.list.description', 'List members for a Managed Runtime project');
+  static description = withDocs(
+    t('commands.mrt.member.list.description', 'List members for a Managed Runtime project'),
+    '/cli/mrt.html#b2c-mrt-project-member-list',
+  );
 
   static enableJsonFlag = true;
 

@@ -12,6 +12,7 @@ import {
   createSilentLogger,
   type Logger,
 } from '@salesforce/b2c-tooling-sdk/logging';
+import {createNullStream, CapturingStream} from '../helpers/null-stream.js';
 
 describe('logging/logger', () => {
   beforeEach(() => {
@@ -179,7 +180,9 @@ describe('logging/logger', () => {
     let logger: Logger;
 
     beforeEach(() => {
-      logger = createLogger({level: 'trace'});
+      // Use createNullStream() to prevent console output during tests
+      // Fresh stream each time to avoid listener accumulation
+      logger = createLogger({level: 'trace', destination: createNullStream()});
     });
 
     it('supports trace method with message first', () => {
@@ -233,21 +236,21 @@ describe('logging/logger', () => {
 
   describe('child logger', () => {
     it('creates child logger with context', () => {
-      const parent = createLogger({level: 'info'});
+      const parent = createLogger({level: 'info', destination: createNullStream()});
       const child = parent.child({operation: 'deploy'});
       expect(child).to.exist;
       expect(child.info).to.be.a('function');
     });
 
     it('child logger inherits parent configuration', () => {
-      const parent = createLogger({level: 'debug'});
+      const parent = createLogger({level: 'debug', destination: createNullStream()});
       const child = parent.child({operation: 'deploy'});
       expect(child).to.exist;
       expect(child.info).to.be.a('function');
     });
 
     it('child logger can create nested children', () => {
-      const parent = createLogger({level: 'info'});
+      const parent = createLogger({level: 'info', destination: createNullStream()});
       const child1 = parent.child({operation: 'deploy'});
       const child2 = child1.child({file: 'app.zip'});
       expect(child2).to.exist;
@@ -257,38 +260,38 @@ describe('logging/logger', () => {
 
   describe('log levels', () => {
     it('respects trace level', () => {
-      const logger = createLogger({level: 'trace'});
+      const logger = createLogger({level: 'trace', destination: createNullStream()});
       logger.trace('trace message');
       logger.debug('debug message');
       logger.info('info message');
     });
 
     it('respects debug level', () => {
-      const logger = createLogger({level: 'debug'});
+      const logger = createLogger({level: 'debug', destination: createNullStream()});
       logger.debug('debug message');
       logger.info('info message');
     });
 
     it('respects info level', () => {
-      const logger = createLogger({level: 'info'});
+      const logger = createLogger({level: 'info', destination: createNullStream()});
       logger.info('info message');
       logger.warn('warn message');
     });
 
     it('respects warn level', () => {
-      const logger = createLogger({level: 'warn'});
+      const logger = createLogger({level: 'warn', destination: createNullStream()});
       logger.warn('warn message');
       logger.error('error message');
     });
 
     it('respects error level', () => {
-      const logger = createLogger({level: 'error'});
+      const logger = createLogger({level: 'error', destination: createNullStream()});
       logger.error('error message');
       logger.fatal('fatal message');
     });
 
     it('respects fatal level', () => {
-      const logger = createLogger({level: 'fatal'});
+      const logger = createLogger({level: 'fatal', destination: createNullStream()});
       logger.fatal('fatal message');
     });
 
@@ -301,73 +304,123 @@ describe('logging/logger', () => {
 
   describe('secret redaction', () => {
     it('redacts password field', () => {
-      const logger = createLogger({level: 'info', json: true});
-      // Capture output to verify redaction
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, destination: stream});
       logger.info({username: 'user', password: 'secret123'}, 'Auth attempt');
+      const output = stream.getOutput();
+      expect(output).to.include('username');
+      expect(output).to.include('REDACTED');
+      expect(output).not.to.include('secret123');
     });
 
     it('redacts clientSecret field', () => {
-      const logger = createLogger({level: 'info', json: true});
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, destination: stream});
       logger.info({clientId: 'client', clientSecret: 'secret123'}, 'OAuth config');
+      expect(stream.getOutput()).to.include('REDACTED');
     });
 
     it('redacts apiKey field', () => {
-      const logger = createLogger({level: 'info', json: true});
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, destination: stream});
       logger.info({apiKey: 'key123456789'}, 'API key config');
+      expect(stream.getOutput()).to.include('REDACTED');
     });
 
     it('redacts token field', () => {
-      const logger = createLogger({level: 'info', json: true});
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, destination: stream});
       logger.info({token: 'token123456789'}, 'Token config');
+      expect(stream.getOutput()).to.include('REDACTED');
     });
 
-    it('redacts nested fields', () => {
-      const logger = createLogger({level: 'info', json: true});
-      logger.info({config: {auth: {password: 'secret123'}}}, 'Nested config');
+    it('redacts nested fields one level deep', () => {
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, destination: stream});
+      // Note: *.password pattern only matches one level deep (e.g., auth.password)
+      logger.info({auth: {password: 'secret123'}}, 'Nested config');
+      expect(stream.getOutput()).to.include('REDACTED');
     });
 
     it('redacts authorization header with Basic auth', () => {
-      const logger = createLogger({level: 'info', json: true});
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, destination: stream});
       logger.info({authorization: 'Basic dXNlcjpwYXNz'}, 'Auth header');
+      const output = stream.getOutput();
+      expect(output).to.include('Basic');
+      expect(output).not.to.include('dXNlcjpwYXNz');
     });
 
     it('redacts authorization header with Bearer token', () => {
-      const logger = createLogger({level: 'info', json: true});
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, destination: stream});
       logger.info({authorization: 'Bearer token123456789'}, 'Auth header');
+      const output = stream.getOutput();
+      expect(output).to.include('Bearer');
+      expect(output).to.include('REDACTED');
     });
 
     it('does not redact when redact is disabled', () => {
-      const logger = createLogger({level: 'info', json: true, redact: false});
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', json: true, redact: false, destination: stream});
       logger.info({password: 'secret123'}, 'No redaction');
+      expect(stream.getOutput()).to.include('secret123');
     });
   });
 
   describe('JSON output mode', () => {
     it('outputs JSON when json option is true', () => {
-      const logger = createLogger({json: true, level: 'info'});
+      const stream = new CapturingStream();
+      const logger = createLogger({json: true, level: 'info', destination: stream});
       logger.info('test message');
+      const output = stream.getOutput();
+      // JSON output should be parseable
+      expect(() => JSON.parse(output)).not.to.throw();
+      expect(output).to.include('test message');
     });
 
     it('outputs pretty print when json option is false', () => {
-      const logger = createLogger({json: false, level: 'info'});
+      const stream = new CapturingStream();
+      const logger = createLogger({json: false, level: 'info', destination: stream});
       logger.info('test message');
+      expect(stream.getOutput()).to.include('test message');
     });
 
     it('outputs pretty print by default', () => {
-      const logger = createLogger({level: 'info'});
+      const stream = new CapturingStream();
+      const logger = createLogger({level: 'info', destination: stream});
       logger.info('test message');
+      expect(stream.getOutput()).to.include('test message');
     });
   });
 
   describe('baseContext', () => {
     it('includes baseContext in all log entries', () => {
-      const logger = createLogger({baseContext: {app: 'test-app', version: '1.0.0'}});
+      const stream = new CapturingStream();
+      const logger = createLogger({
+        baseContext: {app: 'test-app', version: '1.0.0'},
+        level: 'info',
+        json: true,
+        destination: stream,
+      });
       logger.info('test message');
+      const output = stream.getOutput();
+      expect(output).to.include('test-app');
+      expect(output).to.include('1.0.0');
     });
 
     it('merges baseContext with inline context', () => {
-      const logger = createLogger({baseContext: {app: 'test-app'}});
+      const stream = new CapturingStream();
+      const logger = createLogger({
+        baseContext: {app: 'test-app'},
+        level: 'info',
+        json: true,
+        destination: stream,
+      });
       logger.info({operation: 'deploy'}, 'test message');
+      const output = stream.getOutput();
+      expect(output).to.include('test-app');
+      expect(output).to.include('deploy');
     });
   });
 });

@@ -7,7 +7,7 @@ import {Args, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createEnv, waitForEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Print environment details in a formatted table.
@@ -135,7 +135,10 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     }),
   };
 
-  static description = t('commands.mrt.env.create.description', 'Create a new Managed Runtime environment');
+  static description = withDocs(
+    t('commands.mrt.env.create.description', 'Create a new Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-create',
+  );
 
   static enableJsonFlag = true;
 

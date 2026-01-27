@@ -12,11 +12,17 @@ The CLI uses different authentication mechanisms depending on the operation:
 
 | Operation | Auth Method | Setup Required |
 |-----------|-------------|----------------|
-| Code management, Jobs, Sites | Account Manager API Client | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
-| WebDAV file operations | Business Manager credentials | [WebDAV permissions](#webdav-permissions) |
-| On-Demand Sandboxes (ODS) | Account Manager API Client | [API Client](#account-manager-api-client) with `Sandbox API User` role |
-| SLAS client management | Account Manager API Client | [API Client](#account-manager-api-client) with SLAS roles |
-| Managed Runtime (MRT) | MRT API Key | [MRT API Key](#managed-runtime-api-key) |
+| [Code](/cli/code) deploy, watch (file upload) | WebDAV (Basic Auth or OAuth) | [WebDAV Access](#webdav-access) |
+| [Code](/cli/code) list, activate, delete | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
+| [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
+| SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) |
+| [SLAS](/cli/slas) client management | OAuth | [API Client](#account-manager-api-client) with appropriate roles |
+| [ODS](/cli/ods) management | OAuth | [API Client](#account-manager-api-client) with `Sandbox API User` role |
+| [MRT](/cli/mrt) commands | MRT API Key | [MRT API Key](#managed-runtime-api-key) |
+
+::: tip
+Each CLI command page documents its specific authentication requirements. See the [CLI Reference](/cli/) for details.
+:::
 
 ## Account Manager API Client
 
@@ -45,54 +51,88 @@ The CLI supports two authentication methods:
    - **Password**: A strong client secret (save this securely for Client Credentials auth)
 5. Configure the **Token Endpoint Auth Method**:
    - `client_secret_post` for client credentials flow
-6. Set **Access Token Format** to `JWT`
 
 ### Assigning Roles
 
-Roles grant permission to perform specific operations. Where you configure roles depends on your authentication method:
+Roles grant permission to perform specific operations. Roles are configured differently depending on your authentication method.
+
+#### Understanding Roles and Tenant Filters
+
+Most roles require a **tenant filter** that specifies which tenants/realms the role applies to. This is configured alongside the role assignment.
+
+| Role | Operations | Notes |
+|------|------------|-------|
+| `Salesforce Commerce API` | SCAPI commands (eCDN, schemas, custom-apis) | API Clients only. Requires tenant filter. |
+| `Sandbox API User` | ODS management, SLAS client management | Requires tenant filter with realm/org IDs. |
+| `SLAS Organization Administrator` | SLAS client management (user auth only) | User accounts only. Requires tenant filter. |
 
 #### For Client Credentials (roles on API Client)
 
-Under the API Client's **Roles** section, add:
+Under the API Client's **Roles** section:
 
-| Role | Operations |
-|------|------------|
-| `Sandbox API User` | ODS management, SLAS client management |
+1. Add roles needed for your operations
+2. For each role, configure the **tenant filter** with the tenant IDs (e.g., `zzxy_prd`) or realm IDs you need to access
+
+**Important:** The `Salesforce Commerce API` role is currently only available for API Clients, not user accounts.
 
 #### For User Authentication (roles on User)
 
-In Account Manager, navigate to your user account and add roles:
-
-| Role | Operations |
-|------|------------|
-| `Sandbox API User` | ODS management |
-| `SLAS Organization Administrator` | SLAS client management |
+In Account Manager, navigate to your user account and add roles. Note that some operations require Client Credentials authentication.
 
 ### Configuring Scopes
 
-Under **Allowed Scopes**, add:
+Under **Allowed Scopes**, add the following scopes based on your needs:
 
-- `SALESFORCE_COMMERCE_API` - Required for OCAPI/SCAPI operations
-- `mail` - Required for some user authentication flows
-- `openid` - Required for OpenID Connect
+| Scope | Purpose |
+|-------|---------|
+| `mail` | Required for user info in authentication flows |
+| `roles` | Critical - returns role information in the token |
+| `tenantFilter` | Critical - returns tenant access information in the token |
+| `openid` | Required for OpenID Connect |
 
-You can also add specific SCAPI scopes as needed (e.g., `sfcc.products`, `sfcc.orders`).
+For SCAPI commands, also add the relevant API scopes:
 
-### Setting Tenant Scope
+| Scope | Commands | Reference |
+|-------|----------|-----------|
+| `sfcc.cdn-zones` | eCDN read operations | [eCDN Commands](/cli/ecdn) |
+| `sfcc.cdn-zones.rw` | eCDN write operations | [eCDN Commands](/cli/ecdn) |
+| `sfcc.scapi-schemas` | SCAPI schema browsing | [SCAPI Schemas](/cli/scapi-schemas) |
+| `sfcc.custom-apis` | Custom API status | [Custom APIs](/cli/custom-apis) |
 
-For ODS and SLAS operations, you must configure tenant access:
+**Note:** Do NOT add `SALESFORCE_COMMERCE_API` as a scope. This is a role, not a scope.
 
-1. In the API Client settings, find **Organizations**
-2. Add the organization/tenant IDs you need to access
-3. This grants the API client permission to manage resources in those tenants
+See the individual CLI command pages for complete scope requirements.
+
+### Configuring Tenant Filter
+
+For ODS, SLAS, and SCAPI operations, your API client's roles must have a tenant filter configured:
+
+1. In Account Manager, go to the API Client settings
+2. Under each role (e.g., `Salesforce Commerce API`, `Sandbox API User`), find the **Tenant Filter**
+3. Add the tenant IDs (e.g., `zzxy_prd`) or organization IDs you need to access
+
+The tenant filter restricts which tenants/realms the role applies to.
 
 ### Default Scopes
 
-Under **Default Scopes**, you can set scopes that are automatically requested. A common configuration:
+Under **Default Scopes**, set scopes that are automatically requested. Recommended configuration:
 
 ```
-SALESFORCE_COMMERCE_API openid
+mail roles tenantFilter openid
 ```
+
+These scopes ensure proper authentication and authorization for CLI operations.
+
+### Redirect URLs
+
+For **User Authentication** (implicit flow), configure redirect URLs in your API client:
+
+| Redirect URL | Purpose |
+|-------------|---------|
+| `http://localhost:8080` | Required for B2C CLI user authentication |
+| `https://admin.dx.commercecloud.salesforce.com/oauth2-redirect.html` | Optional - enables ODS Swagger interface with same client |
+
+**Note:** Redirect URLs are not required for API clients using only Client Credentials authentication.
 
 ## OCAPI Configuration
 
@@ -204,39 +244,96 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 }
 ```
 
-## WebDAV Permissions
+## SCAPI Authentication
 
-WebDAV access is required for file upload operations (`code deploy`, `code watch`, `webdav` commands).
+SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication with specific roles and scopes.
 
-### Creating a WebDAV Access Key
+### Required Setup
 
-1. Log in to Business Manager
-2. Navigate to **Administration** > **Organization** > **WebDAV Client Permissions**
-3. Add your client ID with appropriate permissions
+1. **Role:** Assign the `Salesforce Commerce API` role to your API client with appropriate tenant filter
+2. **Scopes:** Add required SCAPI scopes to your API client's Allowed Scopes
 
-### WebDAV Client Permissions Configuration
+### Scopes by Command
 
-Add your API client with access to the required folders:
+| Command | Required Scope | Reference |
+|---------|---------------|-----------|
+| `b2c scapi schemas list/get` | `sfcc.scapi-schemas` | [SCAPI Schemas](/cli/scapi-schemas) |
+| `b2c scapi custom status` | `sfcc.custom-apis` | [Custom APIs](/cli/custom-apis) |
+| `b2c ecdn` (read operations) | `sfcc.cdn-zones` | [eCDN](/cli/ecdn) |
+| `b2c ecdn` (write operations) | `sfcc.cdn-zones.rw` | [eCDN](/cli/ecdn) |
 
-| Folder | Operations |
-|--------|------------|
-| `/cartridges` | Code deployment |
-| `/impex` | Site import/export |
-| `/temp` | Temporary files |
-| `/logs` | Log file access |
+The CLI automatically requests these scopes. Your API client must have them in the Allowed Scopes list.
 
-### Using Business Manager Credentials
+::: tip
+For detailed authentication requirements including specific scopes for each command, see the individual [CLI command reference pages](/cli/).
+:::
 
-Alternatively, you can use your Business Manager username and a WebDAV access key:
+### Configuration
+
+```bash
+# Set credentials
+export SFCC_CLIENT_ID=my-client
+export SFCC_CLIENT_SECRET=my-secret
+export SFCC_TENANT_ID=zzxy_prd
+export SFCC_SHORTCODE=kv7kzm78
+
+# Example: List SCAPI schemas
+b2c scapi schemas list
+```
+
+## WebDAV Access
+
+WebDAV is required for file upload operations (`code deploy`, `code watch`, `webdav` commands).
+
+### Option A: Basic Authentication (Recommended)
+
+Use your Business Manager username and a WebDAV access key. This provides better performance for file operations.
 
 1. In Business Manager, go to **Administration** > **Organization** > **Users**
 2. Select your user
 3. Generate or view your **WebDAV Access Key**
 
+See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5) for detailed instructions.
+
 ```bash
 export SFCC_USERNAME=your-bm-username
 export SFCC_PASSWORD=your-webdav-access-key
 ```
+
+### Option B: OAuth-based WebDAV
+
+If you prefer to use OAuth credentials for WebDAV (instead of basic auth), you must configure WebDAV Client Permissions:
+
+1. Log in to Business Manager
+2. Navigate to **Administration** > **Organization** > **WebDAV Client Permissions**
+3. Add a JSON configuration for your API client ID:
+
+```json
+{
+  "clients": [
+    {
+      "client_id": "your-client-id",
+      "permissions": [
+        { "path": "/cartridges", "operations": ["read_write"] },
+        { "path": "/impex", "operations": ["read_write"] },
+        { "path": "/logs", "operations": ["read_write"] }
+      ]
+    }
+  ]
+}
+```
+
+Common paths for CLI operations:
+
+| Path | Operations |
+|------|------------|
+| `/cartridges` | Code deployment |
+| `/impex` | Site import/export |
+| `/logs` | Log file access |
+| `/catalogs/<catalog-id>` | Catalog file access |
+| `/libraries/<library-id>` | Content library access |
+
+**Note:** This configuration is only needed when using OAuth for WebDAV. It is not required when using basic authentication with username/access key.
 
 ## Managed Runtime API Key
 
@@ -261,24 +358,31 @@ echo '{"api_key": "your-mrt-api-key"}' > ~/.mobify
 
 ## Quick Start Example
 
-Here's a complete example for setting up CLI access to deploy code:
+Here's a complete example for setting up CLI access:
 
 ### 1. Create API Client in Account Manager
 
-- Display Name: `B2C CLI`
-- Password: (generate a strong secret)
-- Roles: `Sandbox API User` (if using ODS)
-- Scopes: `SALESFORCE_COMMERCE_API`
+1. Log in to [Account Manager](https://account.demandware.com)
+2. Navigate to **API Client** > **Add API Client**
+3. Configure:
+   - **Display Name**: `B2C CLI`
+   - **Password**: Generate a strong secret (save securely)
+   - **Roles**:
+     - `Salesforce Commerce API` - add tenant filter with your tenant IDs
+     - `Sandbox API User` - if using ODS (add tenant filter)
+   - **Allowed Scopes**: `mail roles tenantFilter openid sfcc.cdn-zones`
+   - **Default Scopes**: `mail roles tenantFilter openid`
+   - **Redirect URLs**: `http://localhost:8080` (for user authentication)
 
-### 2. Configure OCAPI in Business Manager
+### 2. Configure OCAPI (for code list/activate/delete, jobs, sites)
 
-Add the JSON configuration shown above to enable code version and job APIs.
+Add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration) to enable code version and job APIs.
 
-### 3. Configure WebDAV (optional, for file uploads)
+### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
 
 Either:
-- Add your API client to WebDAV Client Permissions, or
-- Use your BM username + WebDAV access key
+- Use your BM username + WebDAV access key (recommended), or
+- Configure WebDAV Client Permissions for OAuth
 
 ### 4. Set Environment Variables
 
@@ -287,8 +391,12 @@ Either:
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 
-# Instance
+# Instance (for OCAPI commands)
 export SFCC_SERVER=your-instance.demandware.net
+
+# SCAPI (for eCDN, schemas, custom-apis)
+export SFCC_TENANT_ID=zzxy_prd
+export SFCC_SHORTCODE=kv7kzm78
 
 # WebDAV (if using BM credentials)
 export SFCC_USERNAME=your-bm-username
@@ -303,6 +411,9 @@ b2c code list
 
 # Test WebDAV
 b2c webdav ls --root=cartridges
+
+# Test SCAPI
+b2c scapi schemas list
 ```
 
 ## Troubleshooting
@@ -322,7 +433,8 @@ b2c webdav ls --root=cartridges
 ### "Invalid scope" errors
 
 - Add the required scopes to your API client's Allowed Scopes
-- Check that Default Scopes includes `SALESFORCE_COMMERCE_API`
+- For SCAPI commands, ensure the relevant `sfcc.*` scopes are in Allowed Scopes
+- Verify Default Scopes includes `mail roles tenantFilter openid`
 
 ## Next Steps
 

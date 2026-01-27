@@ -37,6 +37,8 @@ export SFCC_SHORTCODE=kv7kzm78
 b2c scapi schemas list --client-id xxx --client-secret xxx --tenant-id zzxy_prd
 ```
 
+For complete setup instructions, see the [Authentication Guide](/guide/authentication#scapi-authentication).
+
 ---
 
 ## b2c scapi schemas list
@@ -54,8 +56,8 @@ b2c scapi schemas list --tenant-id <TENANT_ID>
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--tenant-id` | (Required) Organization/tenant ID | |
-| `--api-family` | Filter by API family (e.g., shopper, admin) | |
-| `--api-name` | Filter by API name (e.g., products, orders) | |
+| `--api-family` | Filter by API family (e.g., product, checkout, search) | |
+| `--api-name` | Filter by API name (e.g., shopper-products, shopper-baskets) | |
 | `--api-version` | Filter by API version (e.g., v1) | |
 | `--status`, `-s` | Filter by schema status (`current`, `deprecated`) | |
 | `--columns`, `-c` | Columns to display (comma-separated) | |
@@ -75,10 +77,10 @@ Extended columns (shown with `--extended`): `schemaVersion`, `link`
 b2c scapi schemas list --tenant-id zzxy_prd
 
 # Filter by API family
-b2c scapi schemas list --tenant-id zzxy_prd --api-family shopper
+b2c scapi schemas list --tenant-id zzxy_prd --api-family product
 
 # Filter by API name
-b2c scapi schemas list --tenant-id zzxy_prd --api-name products
+b2c scapi schemas list --tenant-id zzxy_prd --api-name shopper-products
 
 # Filter by status
 b2c scapi schemas list --tenant-id zzxy_prd --status current
@@ -98,12 +100,12 @@ Default table output:
 ```
 Found 15 schema(s):
 
-API Family  API Name    Version  Status
-──────────────────────────────────────────
-shopper     products    v1       current
-shopper     orders      v1       current
-shopper     customers   v1       current
-admin       inventory   v1       current
+API Family  API Name          Version  Status
+───────────────────────────────────────────────
+product     shopper-products  v1       current
+checkout    shopper-baskets   v2       current
+search      shopper-search    v1       current
+customer    shopper-customers v1       current
 ...
 ```
 
@@ -123,8 +125,8 @@ b2c scapi schemas get <apiFamily> <apiName> <apiVersion> --tenant-id <TENANT_ID>
 
 | Argument | Description |
 |----------|-------------|
-| `apiFamily` | API family (e.g., shopper, admin) |
-| `apiName` | API name (e.g., products, orders) |
+| `apiFamily` | API family (e.g., product, checkout, search) |
+| `apiName` | API name (e.g., shopper-products, shopper-baskets) |
 | `apiVersion` | API version (e.g., v1) |
 
 ### Flags
@@ -148,9 +150,9 @@ b2c scapi schemas get <apiFamily> <apiName> <apiVersion> --tenant-id <TENANT_ID>
 
 By default, schemas are output in a collapsed/outline format optimized for context efficiency (ideal for agentic use cases and LLM consumption):
 
-- **Paths**: Show only HTTP methods available: `{"/products": ["get", "post"]}`
-- **Schemas**: Show only schema names: `{"Product": {}, "Order": {}}`
-- **Examples**: Show only example names: `{"ProductExample": {}}`
+- **Paths**: Show only HTTP methods available: `{"/products": ["get"], "/products/{id}": ["get"]}`
+- **Schemas**: Show only schema names: `{"Product": {}, "ProductResult": {}}`
+- **Examples**: Show only example names: `{"product-example": {}}`
 
 Use the `--expand-*` flags for selective expansion or `--expand-all` for the full, unmodified schema.
 
@@ -158,40 +160,40 @@ Use the `--expand-*` flags for selective expansion or `--expand-all` for the ful
 
 ```bash
 # Get collapsed/outline schema (default - context efficient)
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd
 
 # Get full schema without collapsing
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-all
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-all
 
 # Expand specific paths only
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-paths /products,/products/{id}
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-paths /products,/products/{productId}
 
 # Expand specific schemas only
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-schemas Product,SearchResult
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-schemas Product,ProductResult
 
 # Expand specific examples only
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-examples ProductExample
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-examples product-example
 
 # Combine selective expansions
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --expand-paths /products --expand-schemas Product
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-paths /products --expand-schemas Product
 
 # List available paths in the schema
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --list-paths
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-paths
 
 # List available schema names
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --list-schemas
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-schemas
 
 # List available examples
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --list-examples
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-examples
 
 # Output as YAML
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --yaml
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --yaml
 
 # Output wrapped JSON with metadata
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --json
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --json
 
 # Disable custom properties expansion
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --no-expand-custom-properties
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --no-expand-custom-properties
 ```
 
 ### Output Formats
@@ -199,21 +201,21 @@ b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --no-expand-custo
 **Default (raw JSON to stdout)**: The schema is output directly to stdout as JSON. Use shell redirection to save to a file:
 
 ```bash
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd > schema.json
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd > schema.json
 ```
 
 **YAML format (`--yaml`)**: Output as YAML for readability:
 
 ```bash
-b2c scapi schemas get shopper products v1 --tenant-id zzxy_prd --yaml > schema.yaml
+b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --yaml > schema.yaml
 ```
 
 **Wrapped JSON (`--json`)**: Output includes metadata wrapper:
 
 ```json
 {
-  "apiFamily": "shopper",
-  "apiName": "products",
+  "apiFamily": "product",
+  "apiName": "shopper-products",
   "apiVersion": "v1",
   "schema": { ... }
 }

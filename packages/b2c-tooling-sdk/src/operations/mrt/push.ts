@@ -196,6 +196,10 @@ export async function uploadBundle(
 
     const buildData = data as unknown as BuildPushResponse;
 
+    buildData.warnings.forEach((warning: string) => {
+      logger.warn(warning);
+    });
+
     return {
       bundleId: buildData.bundle_id,
       projectSlug,
