@@ -7,16 +7,18 @@ import {Command} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {createAccountManagerClient} from '../clients/am-api.js';
 import type {AccountManagerClient} from '../clients/am-api.js';
+import type {AuthMethod} from './config.js';
 
 /**
  * Base command for Account Manager operations.
  *
  * Extends OAuthCommand with Account Manager client setup for users, roles, and organizations.
+ * Overrides default auth methods to prioritize implicit flow for Account Manager operations.
  *
  * @example
  * export default class UserList extends AmCommand<typeof UserList> {
  *   async run(): Promise<void> {
- *     const users = await listUsers(this.accountManagerUsersClient, {});
+ *     const users = await this.accountManagerClient.listUsers({});
  *     // ...
  *   }
  * }
@@ -24,12 +26,37 @@ import type {AccountManagerClient} from '../clients/am-api.js';
  * @example
  * export default class OrgList extends AmCommand<typeof OrgList> {
  *   async run(): Promise<void> {
- *     const orgs = await this.accountManagerOrgsClient.listOrgs();
+ *     const orgs = await this.accountManagerClient.listOrgs();
  *     // ...
  *   }
  * }
  */
 export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T> {
+  /**
+   * Override default auth methods to prioritize implicit flow for Account Manager.
+   * Gets the default methods from parent class, then ensures 'implicit' is first.
+   * If 'implicit' is already present, moves it to first position.
+   * If 'implicit' is not present, prepends it to the beginning.
+   */
+  protected override getDefaultAuthMethods(): AuthMethod[] {
+    const defaultMethods = super.getDefaultAuthMethods();
+    const implicitIndex = defaultMethods.indexOf('implicit');
+
+    if (implicitIndex === 0) {
+      // Already first, return as-is
+      return defaultMethods;
+    }
+
+    if (implicitIndex > 0) {
+      // Implicit exists but not first - move it to first
+      const methods = [...defaultMethods];
+      methods.splice(implicitIndex, 1);
+      return ['implicit', ...methods];
+    }
+
+    // Implicit not present - prepend it
+    return ['implicit', ...defaultMethods];
+  }
   private _accountManagerClient?: AccountManagerClient;
 
   /**

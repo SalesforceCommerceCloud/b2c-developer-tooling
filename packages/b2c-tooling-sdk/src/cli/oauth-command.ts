@@ -14,6 +14,12 @@ import {t} from '../i18n/index.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
 /**
+ * Default OAuth authentication methods array used by getOAuthStrategy.
+ * Extracted from getOAuthStrategy() to ensure getDefaultAuthMethods() returns the same array.
+ */
+const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'implicit'];
+
+/**
  * Base command for operations requiring OAuth authentication.
  * Use this for platform-level operations like ODS, APIs.
  *
@@ -86,6 +92,17 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
+   * Gets the default authentication methods in priority order.
+   * This method is used by getOAuthStrategy() when no auth methods are specified in config.
+   * Subclasses can override this to change the default priority.
+   *
+   * @returns Array of auth methods in priority order (first is highest priority)
+   */
+  protected getDefaultAuthMethods(): AuthMethod[] {
+    return DEFAULT_OAUTH_AUTH_METHODS;
+  }
+
+  /**
    * Gets an OAuth auth strategy based on allowed auth methods and available credentials.
    *
    * Iterates through allowed methods (in priority order) and returns the first
@@ -96,8 +113,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy {
     const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
-    // Default to client-credentials and implicit if no methods specified
-    const allowedMethods = config.authMethods || (['client-credentials', 'implicit'] as AuthMethod[]);
+    // Use getDefaultAuthMethods() to get default array, allowing subclasses to override
+    const allowedMethods = config.authMethods || this.getDefaultAuthMethods();
 
     for (const method of allowedMethods) {
       switch (method) {

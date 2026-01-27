@@ -8,7 +8,18 @@ import type {Config} from '@oclif/core';
 import {captureOutput} from '@oclif/test';
 import sinon from 'sinon';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {stubParse} from './stub-parse.js';
+
+type TokenResponse = {
+  accessToken: string;
+  expires: Date;
+  scopes: string[];
+};
+
+function futureDate(minutes: number): Date {
+  return new Date(Date.now() + minutes * 60 * 1000);
+}
 
 /**
  * Run a command silently, capturing stdout/stderr.
@@ -136,4 +147,30 @@ export function makeCommandThrowOnError(command: any): void {
   command.error = (msg: string) => {
     throw new Error(msg);
   };
+}
+
+/**
+ * Mocks getOAuthStrategy to return ImplicitOAuthStrategy with mocked implicitFlowLogin.
+ * This follows the pattern from oauth-implicit.test.ts to avoid browser-based OAuth flow.
+ * Use this for AM command tests that need to test implicit flow behavior without triggering
+ * the interactive browser-based authentication.
+ *
+ * @param command - The command instance to stub
+ * @param accountManagerHost - Account Manager hostname (default: 'account.test.demandware.com')
+ */
+export function stubImplicitOAuthStrategy(command: any, accountManagerHost = 'account.test.demandware.com'): void {
+  const strategy = new ImplicitOAuthStrategy({
+    clientId: 'test-client-id',
+    accountManagerHost,
+  });
+
+  // Mock implicitFlowLogin to avoid browser-based OAuth flow (following oauth-implicit.test.ts pattern)
+  (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => ({
+    accessToken: 'test-token',
+    expires: futureDate(30),
+    scopes: [],
+  });
+
+  // Stub getOAuthStrategy to return our mocked strategy
+  sinon.stub(command as {getOAuthStrategy: () => typeof strategy}, 'getOAuthStrategy').returns(strategy);
 }

@@ -10,19 +10,15 @@ import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import OrgAudit from '../../../../src/commands/am/orgs/audit.js';
-import {stubCommandConfigAndLogger, stubJsonEnabled, makeCommandThrowOnError} from '../../../helpers/test-setup.js';
+import {
+  stubCommandConfigAndLogger,
+  stubJsonEnabled,
+  makeCommandThrowOnError,
+  stubImplicitOAuthStrategy,
+} from '../../../helpers/test-setup.js';
 
 const TEST_HOST = 'account.test.demandware.com';
 const BASE_URL = `https://${TEST_HOST}/dw/rest/v1`;
-const OAUTH_URL = `https://${TEST_HOST}/dwsso/oauth2/access_token`;
-
-function createMockJWT(payload: Record<string, unknown> = {}): string {
-  const header = {alg: 'HS256', typ: 'JWT'};
-  const defaultPayload = {sub: 'test-client', iat: Math.floor(Date.now() / 1000), ...payload};
-  const headerB64 = Buffer.from(JSON.stringify(header)).toString('base64url');
-  const payloadB64 = Buffer.from(JSON.stringify(defaultPayload)).toString('base64url');
-  return `${headerB64}.${payloadB64}.signature`;
-}
 
 /**
  * Unit tests for org audit command CLI logic.
@@ -103,15 +99,10 @@ describe('org audit', () => {
 
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
 
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
           return HttpResponse.json(mockOrg);
         }),
@@ -140,15 +131,10 @@ describe('org audit', () => {
       (command as any).flags = {};
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, false);
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
 
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
           return HttpResponse.json(mockOrg);
         }),
@@ -173,15 +159,10 @@ describe('org audit', () => {
 
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
 
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
           return HttpResponse.json(mockOrg);
         }),
@@ -206,14 +187,10 @@ describe('org audit', () => {
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
 
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
+
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/Test%20Organization`, () => {
           return HttpResponse.json({error: {message: 'Not found'}}, {status: 404});
         }),
@@ -241,15 +218,10 @@ describe('org audit', () => {
 
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
 
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/nonexistent-org`, () => {
           return HttpResponse.json({error: {message: 'Not found'}}, {status: 404});
         }),
@@ -278,15 +250,10 @@ describe('org audit', () => {
       (command as any).flags = {columns: 'timestamp,authorDisplayName,eventType'};
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, false);
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
 
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
           return HttpResponse.json(mockOrg);
         }),
@@ -312,15 +279,10 @@ describe('org audit', () => {
       (command as any).flags = {extended: true};
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, false);
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
 
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
           return HttpResponse.json(mockOrg);
         }),
@@ -345,6 +307,8 @@ describe('org audit', () => {
 
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
+      // Mock implicit OAuth strategy to avoid browser-based flow
+      stubImplicitOAuthStrategy(command);
 
       const logsWithTimestamps = [
         {
@@ -357,13 +321,6 @@ describe('org audit', () => {
       ];
 
       server.use(
-        http.post(OAUTH_URL, () => {
-          return HttpResponse.json({
-            access_token: createMockJWT({sub: 'test-client'}),
-            expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
-          });
-        }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
           return HttpResponse.json(mockOrg);
         }),
