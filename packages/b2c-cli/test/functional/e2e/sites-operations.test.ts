@@ -125,12 +125,15 @@ describe('Sites Operations E2E Tests', function () {
     });
   });
 
-
   describe('Sequential Multiple Site Imports', function () {
     it('should import multiple archives without conflict', async function () {
-      for (let i = 1; i <= 2; i++) {
-        const result = await runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]);
-        expect(result.exitCode).to.equal(0, `Import ${i} failed: ${result.stderr}`);
+      const results = await Promise.all([
+        runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]),
+        runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]),
+      ]);
+
+      for (const [index, result] of results.entries()) {
+        expect(result.exitCode).to.equal(0, `Import ${index + 1} failed: ${result.stderr}`);
       }
     });
   });
