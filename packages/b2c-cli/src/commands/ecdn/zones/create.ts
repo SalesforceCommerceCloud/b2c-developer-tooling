@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {EcdnCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the create command.
@@ -21,7 +21,10 @@ interface CreateOutput {
  * Command to create a new storefront zone.
  */
 export default class EcdnZonesCreate extends EcdnCommand<typeof EcdnZonesCreate> {
-  static description = t('commands.ecdn.zones.create.description', 'Create a new storefront CDN zone');
+  static description = withDocs(
+    t('commands.ecdn.zones.create.description', 'Create a new storefront CDN zone'),
+    '/cli/ecdn.html#b2c-ecdn-zones-create',
+  );
 
   static enableJsonFlag = true;
 

@@ -10,7 +10,7 @@ import {
   type JobExecutionSearchResult,
   type JobExecution,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<JobExecution>> = {
   id: {
@@ -34,7 +34,10 @@ const COLUMNS: Record<string, ColumnDef<JobExecution>> = {
 const DEFAULT_COLUMNS = ['id', 'jobId', 'status', 'startTime'];
 
 export default class JobSearch extends InstanceCommand<typeof JobSearch> {
-  static description = t('commands.job.search.description', 'Search for job executions on a B2C Commerce instance');
+  static description = withDocs(
+    t('commands.job.search.description', 'Search for job executions on a B2C Commerce instance'),
+    '/cli/jobs.html#b2c-job-search',
+  );
 
   static enableJsonFlag = true;
 

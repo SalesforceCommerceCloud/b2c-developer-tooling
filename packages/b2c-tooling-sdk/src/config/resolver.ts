@@ -166,7 +166,7 @@ export class ConfigResolver {
     // Earlier sources have higher priority - later sources only fill in missing values
     for (const source of this.sources) {
       const result = source.load(enrichedOptions);
-      if (result) {
+      if (result && result.config) {
         const {config: sourceConfig, location} = result;
         const fields = getPopulatedFields(sourceConfig);
         if (fields.length > 0) {

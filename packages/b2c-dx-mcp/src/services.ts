@@ -16,20 +16,11 @@
  *
  * ## Creating Services
  *
- * Use {@link Services.create} to create an instance with all configuration
- * resolved eagerly at startup:
+ * Use {@link Services.fromResolvedConfig} with an already-resolved configuration:
  *
  * ```typescript
- * const services = Services.create({
- *   b2cInstance: {
- *     configPath: flags.config,
- *     hostname: flags.server,
- *   },
- *   mrt: {
- *     apiKey: flags['api-key'],
- *     project: flags.project,
- *   },
- * });
+ * // In a command that extends BaseCommand
+ * const services = Services.fromResolvedConfig(this.resolvedConfig);
  * ```
  *
  * ## Resolution Pattern
@@ -52,7 +43,7 @@ import path from 'node:path';
 import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 
 /**
  * MRT (Managed Runtime) configuration.
@@ -68,50 +59,6 @@ export interface MrtConfig {
 }
 
 /**
- * B2C instance input options for Services.create().
- */
-export interface B2CInstanceCreateOptions {
-  /** B2C instance hostname from --server flag */
-  hostname?: string;
-  /** Code version from --code-version flag */
-  codeVersion?: string;
-  /** Username for Basic auth from --username flag */
-  username?: string;
-  /** Password for Basic auth from --password flag */
-  password?: string;
-  /** OAuth client ID from --client-id flag */
-  clientId?: string;
-  /** OAuth client secret from --client-secret flag */
-  clientSecret?: string;
-  /** Explicit path to dw.json config file */
-  configPath?: string;
-}
-
-/**
- * MRT input options for Services.create().
- */
-export interface MrtCreateOptions {
-  /** MRT API key from --api-key flag */
-  apiKey?: string;
-  /** MRT cloud origin URL for environment-specific config files */
-  cloudOrigin?: string;
-  /** MRT project slug from --project flag */
-  project?: string;
-  /** MRT environment from --environment flag */
-  environment?: string;
-}
-
-/**
- * Options for Services.create() factory method.
- */
-export interface ServicesCreateOptions {
-  /** B2C instance configuration (from InstanceCommand.baseFlags) */
-  b2cInstance?: B2CInstanceCreateOptions;
-  /** MRT configuration (from MrtCommand.baseFlags) */
-  mrt?: MrtCreateOptions;
-}
-
-/**
  * Options for Services constructor (internal).
  */
 export interface ServicesOptions {
@@ -124,15 +71,13 @@ export interface ServicesOptions {
 /**
  * Services class that provides utilities for MCP tools.
  *
- * Use the static `Services.create()` factory method to create an instance
- * with all configuration resolved eagerly at startup.
+ * Use the static `Services.fromResolvedConfig()` factory method to create
+ * an instance from an already-resolved configuration.
  *
  * @example
  * ```typescript
- * const services = Services.create({
- *   b2cInstance: { hostname: flags.server },
- *   mrt: { apiKey: flags['api-key'], project: flags.project },
- * });
+ * // In a command that extends BaseCommand
+ * const services = Services.fromResolvedConfig(this.resolvedConfig);
  *
  * // Access resolved config
  * services.b2cInstance;        // B2CInstance | undefined
@@ -160,47 +105,18 @@ export class Services {
   }
 
   /**
-   * Creates a Services instance with all configuration resolved eagerly.
+   * Creates a Services instance from an already-resolved configuration.
    *
-   * Uses the unified {@link resolveConfig} API from the SDK to resolve all
-   * configuration from multiple sources (flags, dw.json, ~/.mobify).
-   *
-   * **Resolution priority** (highest to lowest):
-   * 1. Explicit flag values (hostname, clientId, apiKey, etc.)
-   * 2. dw.json file (auto-discovered or via configPath)
-   * 3. ~/.mobify config file (or ~/.mobify--[hostname] if cloudOrigin is set)
-   *
-   * @param options - Configuration options
+   * @param config - Already-resolved configuration from BaseCommand.resolvedConfig
    * @returns Services instance with resolved config
    *
    * @example
    * ```typescript
-   * const services = Services.create({
-   *   b2cInstance: { configPath: flags.config, hostname: flags.server },
-   *   mrt: { apiKey: flags['api-key'], project: flags.project },
-   * });
+   * // In a command that extends BaseCommand
+   * const services = Services.fromResolvedConfig(this.resolvedConfig);
    * ```
    */
-  public static create(options: ServicesCreateOptions = {}): Services {
-    // Use unified config resolution from SDK
-    const config = resolveConfig(
-      {
-        hostname: options.b2cInstance?.hostname,
-        codeVersion: options.b2cInstance?.codeVersion,
-        username: options.b2cInstance?.username,
-        password: options.b2cInstance?.password,
-        clientId: options.b2cInstance?.clientId,
-        clientSecret: options.b2cInstance?.clientSecret,
-        mrtApiKey: options.mrt?.apiKey,
-        mrtProject: options.mrt?.project,
-        mrtEnvironment: options.mrt?.environment,
-      },
-      {
-        configPath: options.b2cInstance?.configPath,
-        cloudOrigin: options.mrt?.cloudOrigin,
-      },
-    );
-
+  public static fromResolvedConfig(config: ResolvedB2CConfig): Services {
     // Build MRT config using factory methods
     const mrtConfig: MrtConfig = {
       auth: config.hasMrtConfig() ? config.createMrtAuth() : undefined,

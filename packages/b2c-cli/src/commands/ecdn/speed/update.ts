@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type SpeedSetting = CdnZonesComponents['schemas']['SpeedSetting'];
 
@@ -22,7 +22,10 @@ interface UpdateOutput {
  * Command to update speed settings for a zone.
  */
 export default class EcdnSpeedUpdate extends EcdnZoneCommand<typeof EcdnSpeedUpdate> {
-  static description = t('commands.ecdn.speed.update.description', 'Update speed/performance settings for a zone');
+  static description = withDocs(
+    t('commands.ecdn.speed.update.description', 'Update speed/performance settings for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-speed-update',
+  );
 
   static enableJsonFlag = true;
 

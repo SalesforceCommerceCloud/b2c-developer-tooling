@@ -19,7 +19,7 @@ interface TestInstanceResult {
 
 describe('InstanceCommand integration', () => {
   it('runs test-instance command without errors', async () => {
-    const {error} = await runCommand(['test-instance'], {root: fixtureRoot});
+    const {error} = await runCommand(['test-instance', '--json'], {root: fixtureRoot});
     expect(error).to.be.undefined;
   });
 

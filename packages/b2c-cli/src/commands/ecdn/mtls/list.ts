@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type MtlsCertificateResponse = CdnZonesComponents['schemas']['MtlsCertificateResponse'];
 
@@ -56,7 +56,10 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list mTLS certificates for an organization.
  */
 export default class EcdnMtlsList extends EcdnCommand<typeof EcdnMtlsList> {
-  static description = t('commands.ecdn.mtls.list.description', 'List mTLS certificates for code upload');
+  static description = withDocs(
+    t('commands.ecdn.mtls.list.description', 'List mTLS certificates for code upload'),
+    '/cli/ecdn.html#b2c-ecdn-mtls-list',
+  );
 
   static enableJsonFlag = true;
 

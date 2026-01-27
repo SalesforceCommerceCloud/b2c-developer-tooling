@@ -1,6 +1,6 @@
 ---
 name: b2c-forms
-description: Guide for creating forms with validation in Salesforce B2C Commerce (SFRA patterns)
+description: Create forms with validation in SFRA patterns for B2C Commerce. Use when building checkout forms, account forms, or any form with field definitions, validation rules, and error handling. Covers form XML definitions, server-side validation, and template rendering.
 ---
 
 # Forms Skill

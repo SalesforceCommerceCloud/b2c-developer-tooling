@@ -6,7 +6,7 @@
 import {Args} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteEnvVar} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Delete an environment variable from an MRT project environment.
@@ -19,9 +19,9 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
     }),
   };
 
-  static description = t(
-    'commands.mrt.env.var.delete.description',
-    'Delete an environment variable from a Managed Runtime environment',
+  static description = withDocs(
+    t('commands.mrt.env.var.delete.description', 'Delete an environment variable from a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-var-delete',
   );
 
   static enableJsonFlag = true;

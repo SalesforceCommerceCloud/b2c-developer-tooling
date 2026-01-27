@@ -7,7 +7,7 @@ import {Args, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 
@@ -22,7 +22,10 @@ export default class OdsGet extends OdsCommand<typeof OdsGet> {
     }),
   };
 
-  static description = t('commands.ods.get.description', 'Get details of a specific sandbox');
+  static description = withDocs(
+    t('commands.ods.get.description', 'Get details of a specific sandbox'),
+    '/cli/ods.html#b2c-ods-get',
+  );
 
   static enableJsonFlag = true;
 

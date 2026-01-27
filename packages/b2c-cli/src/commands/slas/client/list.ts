@@ -11,7 +11,7 @@ import {
   normalizeClientResponse,
   formatApiError,
 } from '../../../utils/slas/client.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 interface ClientListOutput {
   clients: ClientOutput[];
@@ -35,7 +35,10 @@ const COLUMNS: Record<string, ColumnDef<ClientOutput>> = {
 const DEFAULT_COLUMNS = ['clientId', 'name', 'isPrivate'];
 
 export default class SlasClientList extends SlasClientCommand<typeof SlasClientList> {
-  static description = t('commands.slas.client.list.description', 'List SLAS clients for a tenant');
+  static description = withDocs(
+    t('commands.slas.client.list.description', 'List SLAS clients for a tenant'),
+    '/cli/slas.html#b2c-slas-client-list',
+  );
 
   static enableJsonFlag = true;
 
@@ -51,7 +54,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
   async run(): Promise<ClientListOutput> {
     this.requireOAuthCredentials();
 
-    const {'tenant-id': tenantId} = this.flags;
+    const tenantId = this.requireTenantId();
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.list.fetching', 'Fetching SLAS clients for tenant {{tenantId}}...', {tenantId}));

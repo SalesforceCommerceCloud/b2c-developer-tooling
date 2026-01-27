@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Config} from '@oclif/core';
+import sinon from 'sinon';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
@@ -94,6 +95,9 @@ describe('cli/job-command', () => {
       await cmd.init();
       (cmd as Record<string, B2CInstance | undefined>)._instance = mockInstance;
 
+      // Stub warn to avoid noise in test output for expected warning
+      const warnStub = sinon.stub(command, 'warn');
+
       const execution: JobExecution = {
         id: 'test-job',
         execution_status: 'aborted',
@@ -108,6 +112,7 @@ describe('cli/job-command', () => {
         // Expected if getJobLog fails
       }
 
+      warnStub.restore();
       cmd.parse = originalParse;
     });
 

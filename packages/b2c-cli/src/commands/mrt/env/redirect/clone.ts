@@ -7,7 +7,7 @@ import * as readline from 'node:readline';
 import {Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {cloneRedirects, type CloneRedirectsResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Prompt for confirmation.
@@ -30,7 +30,10 @@ async function confirm(message: string): Promise<boolean> {
  * Clone redirects from one environment to another.
  */
 export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone> {
-  static description = t('commands.mrt.redirect.clone.description', 'Clone redirects from one environment to another');
+  static description = withDocs(
+    t('commands.mrt.redirect.clone.description', 'Clone redirects from one environment to another'),
+    '/cli/mrt.html#b2c-mrt-env-redirect-clone',
+  );
 
   static enableJsonFlag = true;
 

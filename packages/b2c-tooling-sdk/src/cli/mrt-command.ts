@@ -5,9 +5,9 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand} from './base-command.js';
-import {loadConfig} from './config.js';
-import type {LoadConfigOptions, PluginSources} from './config.js';
-import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
+import {loadConfig, extractMrtFlags} from './config.js';
+import type {LoadConfigOptions} from './config.js';
+import type {ResolvedB2CConfig} from '../config/index.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {MrtClient} from '../platform/mrt.js';
 import type {MrtProject} from '../platform/mrt.js';
@@ -63,32 +63,13 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
   };
 
   protected override loadConfiguration(): ResolvedB2CConfig {
-    const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
-    const credentialsFile = this.flags['credentials-file'] as string | undefined;
-
+    const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
     const options: LoadConfigOptions = {
-      instance: this.flags.instance,
-      configPath: this.flags.config,
-      cloudOrigin, // MobifySource uses this to load ~/.mobify--[hostname] if set
-      credentialsFile, // Override path to MRT credentials file
+      ...this.getBaseConfigOptions(),
+      ...mrt.options,
     };
 
-    const flagConfig: Partial<NormalizedConfig> = {
-      // Flag/env takes precedence, ConfigResolver handles ~/.mobify fallback
-      mrtApiKey: this.flags['api-key'],
-      // Project/environment from flags
-      mrtProject: this.flags.project as string | undefined,
-      mrtEnvironment: this.flags.environment as string | undefined,
-      // Cloud origin override
-      mrtOrigin: cloudOrigin,
-    };
-
-    const pluginSources: PluginSources = {
-      before: this.pluginSourcesBefore,
-      after: this.pluginSourcesAfter,
-    };
-
-    return loadConfig(flagConfig, options, pluginSources);
+    return loadConfig(mrt.config, options, this.getPluginSources());
   }
 
   /**

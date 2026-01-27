@@ -7,7 +7,7 @@ import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {removeMember} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Prompt for confirmation.
@@ -37,7 +37,10 @@ export default class MrtMemberRemove extends MrtCommand<typeof MrtMemberRemove> 
     }),
   };
 
-  static description = t('commands.mrt.member.remove.description', 'Remove a member from a Managed Runtime project');
+  static description = withDocs(
+    t('commands.mrt.member.remove.description', 'Remove a member from a Managed Runtime project'),
+    '/cli/mrt.html#b2c-mrt-project-member-remove',
+  );
 
   static enableJsonFlag = true;
 

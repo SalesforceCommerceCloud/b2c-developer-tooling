@@ -1,6 +1,6 @@
 ---
 name: b2c-webservices
-description: Guide for implementing web service integrations in Salesforce B2C Commerce
+description: Implement web service integrations in B2C Commerce using LocalServiceRegistry. Use when calling external APIs, configuring service credentials in services.xml, handling HTTP requests/responses, or implementing circuit breakers. Covers HTTP, SOAP, FTP, and SFTP services.
 ---
 
 # Web Services Skill

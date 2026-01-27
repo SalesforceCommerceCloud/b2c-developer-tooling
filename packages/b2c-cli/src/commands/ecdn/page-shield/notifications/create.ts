@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type PageShieldNotificationWebhookResponse = CdnZonesComponents['schemas']['PageShieldNotificationWebhookResponse'];
 type PageShieldNotificationWebhookRequest = CdnZonesComponents['schemas']['PageShieldNotificationWebhookRequest'];
@@ -23,9 +23,9 @@ interface CreateOutput {
  * Command to create a Page Shield notification webhook.
  */
 export default class EcdnPageShieldNotificationsCreate extends EcdnCommand<typeof EcdnPageShieldNotificationsCreate> {
-  static description = t(
-    'commands.ecdn.page-shield.notifications.create.description',
-    'Create a Page Shield notification webhook',
+  static description = withDocs(
+    t('commands.ecdn.page-shield.notifications.create.description', 'Create a Page Shield notification webhook'),
+    '/cli/ecdn.html#b2c-ecdn-page-shield-notifications-create',
   );
 
   static enableJsonFlag = true;

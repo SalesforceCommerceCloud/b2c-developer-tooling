@@ -9,6 +9,7 @@ import sinon from 'sinon';
 
 import SetupConfig from '../../../src/commands/setup/config.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {runSilent} from '../../helpers/test-setup.js';
 import type {ConfigSourceInfo, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
 
 function stubCommandConfigAndLogger(command: any): void {
@@ -339,7 +340,7 @@ describe('setup config', () => {
         ],
       );
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       expect(result).to.have.property('config');
       expect(result.config.hostname).to.equal('test.example.com');
@@ -358,7 +359,7 @@ describe('setup config', () => {
 
       stubResolvedConfig(command, {hostname: 'test.example.com'});
 
-      await command.run();
+      await runSilent(() => command.run());
 
       expect(warnings).to.include('Sensitive values are displayed unmasked.');
     });

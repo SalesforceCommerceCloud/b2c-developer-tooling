@@ -11,7 +11,7 @@ import {
   JobExecutionError,
   type JobExecution,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {
   static args = {
@@ -21,7 +21,10 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     }),
   };
 
-  static description = t('commands.job.run.description', 'Execute a job on a B2C Commerce instance');
+  static description = withDocs(
+    t('commands.job.run.description', 'Execute a job on a B2C Commerce instance'),
+    '/cli/jobs.html#b2c-job-run',
+  );
 
   static enableJsonFlag = true;
 

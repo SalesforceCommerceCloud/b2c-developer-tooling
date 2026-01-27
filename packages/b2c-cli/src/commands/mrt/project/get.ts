@@ -7,7 +7,7 @@ import {Args, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getProject, type MrtProjectUpdate} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Print project details in a formatted display.
@@ -53,7 +53,10 @@ export default class MrtProjectGet extends MrtCommand<typeof MrtProjectGet> {
     }),
   };
 
-  static description = t('commands.mrt.project.get.description', 'Get details of a Managed Runtime project');
+  static description = withDocs(
+    t('commands.mrt.project.get.description', 'Get details of a Managed Runtime project'),
+    '/cli/mrt.html#b2c-mrt-project-get',
+  );
 
   static enableJsonFlag = true;
 

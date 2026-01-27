@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type MRTRulesResponse = CdnZonesComponents['schemas']['MRTRulesResponse'];
 type MRTRulesPostRequest = CdnZonesComponents['schemas']['MRTRulesPostRequest'];
@@ -23,9 +23,12 @@ interface CreateOutput {
  * Command to create MRT rules for a zone.
  */
 export default class EcdnMrtRulesCreate extends EcdnZoneCommand<typeof EcdnMrtRulesCreate> {
-  static description = t(
-    'commands.ecdn.mrt-rules.create.description',
-    'Create MRT rules to route requests to a Managed Runtime environment',
+  static description = withDocs(
+    t(
+      'commands.ecdn.mrt-rules.create.description',
+      'Create MRT rules to route requests to a Managed Runtime environment',
+    ),
+    '/cli/ecdn.html#b2c-ecdn-mrt-rules-create',
   );
 
   static enableJsonFlag = true;

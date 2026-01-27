@@ -31,6 +31,7 @@ const guideSidebar = [
       { text: 'Overview', link: '/cli/' },
       { text: 'Code Commands', link: '/cli/code' },
       { text: 'Job Commands', link: '/cli/jobs' },
+      { text: 'Logs Commands', link: '/cli/logs' },
       { text: 'Sites Commands', link: '/cli/sites' },
       { text: 'WebDAV Commands', link: '/cli/webdav' },
       { text: 'ODS Commands', link: '/cli/ods' },

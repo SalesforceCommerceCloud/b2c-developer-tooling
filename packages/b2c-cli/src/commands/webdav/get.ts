@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import {basename, resolve} from 'node:path';
 import {Args, Flags} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 interface GetResult {
   remotePath: string;
@@ -23,7 +23,10 @@ export default class WebDavGet extends WebDavCommand<typeof WebDavGet> {
     }),
   };
 
-  static description = t('commands.webdav.get.description', 'Download a file from WebDAV');
+  static description = withDocs(
+    t('commands.webdav.get.description', 'Download a file from WebDAV'),
+    '/cli/webdav.html#b2c-webdav-get',
+  );
 
   static enableJsonFlag = true;
 

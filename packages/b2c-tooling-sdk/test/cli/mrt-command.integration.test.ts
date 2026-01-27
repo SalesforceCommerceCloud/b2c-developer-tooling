@@ -22,7 +22,7 @@ interface TestMrtResult {
 
 describe('MrtCommand integration', () => {
   it('runs test-mrt command without errors', async () => {
-    const {error} = await runCommand(['test-mrt'], {root: fixtureRoot});
+    const {error} = await runCommand(['test-mrt', '--json'], {root: fixtureRoot});
     expect(error).to.be.undefined;
   });
 

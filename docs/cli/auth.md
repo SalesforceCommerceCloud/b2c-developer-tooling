@@ -88,85 +88,20 @@ b2c auth token | pbcopy  # macOS: copy to clipboard
 
 ## Authentication Overview
 
-The CLI supports multiple authentication methods depending on the operation.
+For complete authentication setup instructions, see the [Authentication Setup Guide](/guide/authentication).
 
-### Account Manager API Client (OAuth)
+### Quick Reference
 
-Most instance operations require an Account Manager API Client. The CLI supports two authentication methods:
+| Operation | Auth Required |
+|-----------|--------------|
+| [Code](/cli/code) deploy/watch | WebDAV credentials |
+| [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI configuration |
+| SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | OAuth + SCAPI scopes |
+| [ODS](/cli/ods), [SLAS](/cli/slas) | OAuth + appropriate roles |
+| [MRT](/cli/mrt) | API Key |
 
-| Auth Method | When Used | Role Configuration |
-|-------------|-----------|-------------------|
-| User Authentication | Only `--client-id` provided | Roles on your **user account** |
-| Client Credentials | Both `--client-id` and `--client-secret` provided | Roles on the **API client** |
+See [Configuration](/guide/configuration) for setting up credentials via environment variables or config files.
 
-```bash
-# User Authentication (opens browser for login)
-b2c ods list --client-id xxx
-
-# Client Credentials
-export SFCC_CLIENT_ID=my-client
-export SFCC_CLIENT_SECRET=my-secret
-b2c ods list
-```
-
-Used by:
-- Code management (`code list`, `code activate`, `code delete`)
-- Job operations (`job run`, `job search`, `job import`, `job export`)
-- Site operations (`sites list`)
-- ODS operations (requires `Sandbox API User` role)
-- SLAS operations (requires `SLAS Organization Administrator` or `Sandbox API User` role depending on auth method)
-
-### Basic Auth (WebDAV)
-
-WebDAV operations support Basic Auth using your Business Manager username and WebDAV access key:
-
-```bash
-export SFCC_USERNAME=my-user
-export SFCC_PASSWORD=my-webdav-access-key
-```
-
-Used by:
-- `code deploy` (file upload)
-- `code watch` (file upload)
-- `webdav` commands
-
-### MRT API Key
-
-Managed Runtime commands use a separate API key obtained from the MRT dashboard:
-
-```bash
-export SFCC_MRT_API_KEY=your-mrt-api-key
-```
-
-See [MRT Commands](./mrt#authentication) for details.
-
-### Mixed Authentication
-
-Some commands (like `code deploy` with `--reload`) require both OAuth and WebDAV access:
-
-```bash
-export SFCC_CLIENT_ID=my-client
-export SFCC_CLIENT_SECRET=my-secret
-export SFCC_USERNAME=my-user
-export SFCC_PASSWORD=my-access-key
-b2c code deploy --reload
-```
-
-### Configuration File
-
-Credentials can be stored in a `dw.json` file:
-
-```json
-{
-  "client-id": "my-client",
-  "client-secret": "my-secret",
-  "username": "my-user",
-  "password": "my-access-key"
-}
-```
-
-Use `--config` to specify a custom config file path, or `--instance` to select a named instance configuration.
-
-### Tenant Scope
-
-For ODS and SLAS operations, your API client must have tenant scope configured for the realm/organization you wish to manage. This is set up in Account Manager when creating or editing the API client.
+::: tip
+Each command page below documents its specific authentication requirements including required scopes.
+:::

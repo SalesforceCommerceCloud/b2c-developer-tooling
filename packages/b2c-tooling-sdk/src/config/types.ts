@@ -52,6 +52,8 @@ export interface NormalizedConfig {
   // SCAPI
   /** SCAPI short code */
   shortCode?: string;
+  /** Tenant/Organization ID for SCAPI */
+  tenantId?: string;
 
   // MRT fields
   /** MRT project slug */

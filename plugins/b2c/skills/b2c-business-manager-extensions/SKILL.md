@@ -1,6 +1,6 @@
 ---
 name: b2c-business-manager-extensions
-description: Guide for creating Business Manager extension cartridges in Salesforce B2C Commerce
+description: Create Business Manager extension cartridges for B2C Commerce. Use when building admin tools, BM menu items, or custom BM pages (bm_* cartridges). Covers bm_extensions.xml, menu items, dialog actions, and form extensions.
 ---
 
 # Business Manager Extensions Skill

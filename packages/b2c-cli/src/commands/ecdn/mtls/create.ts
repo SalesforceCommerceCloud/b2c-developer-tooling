@@ -8,7 +8,7 @@ import cliui from 'cliui';
 import * as fs from 'node:fs';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type MtlsCertificateResponse = CdnZonesComponents['schemas']['MtlsCertificateResponse'];
 type MtlsCertificateRequest = CdnZonesComponents['schemas']['MtlsCertificateRequest'];
@@ -24,9 +24,9 @@ interface CreateOutput {
  * Command to create an mTLS certificate for code upload.
  */
 export default class EcdnMtlsCreate extends EcdnCommand<typeof EcdnMtlsCreate> {
-  static description = t(
-    'commands.ecdn.mtls.create.description',
-    'Create an mTLS certificate for code upload authentication',
+  static description = withDocs(
+    t('commands.ecdn.mtls.create.description', 'Create an mTLS certificate for code upload authentication'),
+    '/cli/ecdn.html#b2c-ecdn-mtls-create',
   );
 
   static enableJsonFlag = true;

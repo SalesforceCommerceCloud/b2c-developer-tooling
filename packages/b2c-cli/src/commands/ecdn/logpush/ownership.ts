@@ -6,7 +6,7 @@
 import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the ownership command.
@@ -20,9 +20,12 @@ interface OwnershipOutput {
  * Command to create a Logpush ownership challenge token.
  */
 export default class EcdnLogpushOwnership extends EcdnZoneCommand<typeof EcdnLogpushOwnership> {
-  static description = t(
-    'commands.ecdn.logpush.ownership.description',
-    'Create a Logpush ownership challenge token for destination verification',
+  static description = withDocs(
+    t(
+      'commands.ecdn.logpush.ownership.description',
+      'Create a Logpush ownership challenge token for destination verification',
+    ),
+    '/cli/ecdn.html#b2c-ecdn-logpush-ownership',
   );
 
   static enableJsonFlag = true;

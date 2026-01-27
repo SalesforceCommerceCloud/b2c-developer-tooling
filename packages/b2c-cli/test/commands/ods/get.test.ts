@@ -9,6 +9,7 @@ import sinon from 'sinon';
 
 import OdsGet from '../../../src/commands/ods/get.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {runSilent} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -134,7 +135,7 @@ describe('ods get', () => {
         }),
       });
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       // Command returns the sandbox data regardless of JSON mode
       expect(result.id).to.equal('sandbox-123');

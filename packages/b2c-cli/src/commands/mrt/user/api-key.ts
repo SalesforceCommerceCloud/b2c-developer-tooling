@@ -7,15 +7,15 @@ import {Flags} from '@oclif/core';
 import * as readline from 'node:readline';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {resetApiKey, type ApiKeyResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Reset the current user's API key.
  */
 export default class MrtUserApiKey extends MrtCommand<typeof MrtUserApiKey> {
-  static description = t(
-    'commands.mrt.user.api-key.description',
-    'Reset the API key for the current user (invalidates current key)',
+  static description = withDocs(
+    t('commands.mrt.user.api-key.description', 'Reset the API key for the current user (invalidates current key)'),
+    '/cli/mrt.html#b2c-mrt-user-api-key',
   );
 
   static enableJsonFlag = true;

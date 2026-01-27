@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the delete command.
@@ -20,9 +20,12 @@ interface DeleteOutput {
  * WARNING: Deleting a certificate in use can cause site downtime.
  */
 export default class EcdnCertificatesDelete extends EcdnZoneCommand<typeof EcdnCertificatesDelete> {
-  static description = t(
-    'commands.ecdn.certificates.delete.description',
-    'Delete a certificate from a zone (WARNING: can cause downtime if in use)',
+  static description = withDocs(
+    t(
+      'commands.ecdn.certificates.delete.description',
+      'Delete a certificate from a zone (WARNING: can cause downtime if in use)',
+    ),
+    '/cli/ecdn.html#b2c-ecdn-certificates-delete',
   );
 
   static enableJsonFlag = true;

@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {EcdnCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Response type for the delete command.
@@ -19,9 +19,9 @@ interface DeleteOutput {
  * Command to delete a Page Shield notification webhook.
  */
 export default class EcdnPageShieldNotificationsDelete extends EcdnCommand<typeof EcdnPageShieldNotificationsDelete> {
-  static description = t(
-    'commands.ecdn.page-shield.notifications.delete.description',
-    'Delete a Page Shield notification webhook',
+  static description = withDocs(
+    t('commands.ecdn.page-shield.notifications.delete.description', 'Delete a Page Shield notification webhook'),
+    '/cli/ecdn.html#b2c-ecdn-page-shield-notifications-delete',
   );
 
   static enableJsonFlag = true;

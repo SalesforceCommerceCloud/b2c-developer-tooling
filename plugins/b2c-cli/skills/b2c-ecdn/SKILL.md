@@ -1,6 +1,6 @@
 ---
 name: b2c-ecdn
-description: Using the b2c CLI for eCDN (embedded Content Delivery Network) management
+description: Manage eCDN (embedded Content Delivery Network) settings. Use when purging cache, configuring WAF rules, managing SSL certificates, setting rate limits, or creating CDN zones for storefronts.
 ---
 
 # B2C eCDN Skill

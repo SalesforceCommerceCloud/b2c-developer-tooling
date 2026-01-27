@@ -118,5 +118,5 @@
  * @module logging
  */
 
-export type {Logger, LoggerOptions, LogLevel, LogContext} from './types.js';
+export type {Logger, LoggerOptions, LogLevel, LogContext, LogDestination} from './types.js';
 export {createLogger, configureLogger, getLogger, resetLogger, createSilentLogger} from './logger.js';

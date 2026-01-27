@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type PageShieldPolicyResponse = CdnZonesComponents['schemas']['PageShieldPolicyResponse'];
 
@@ -22,7 +22,10 @@ interface GetOutput {
  * Command to get a Page Shield policy for a zone.
  */
 export default class EcdnPageShieldPoliciesGet extends EcdnZoneCommand<typeof EcdnPageShieldPoliciesGet> {
-  static description = t('commands.ecdn.page-shield.policies.get.description', 'Get a Page Shield policy');
+  static description = withDocs(
+    t('commands.ecdn.page-shield.policies.get.description', 'Get a Page Shield policy'),
+    '/cli/ecdn.html#b2c-ecdn-page-shield-policies-get',
+  );
 
   static enableJsonFlag = true;
 

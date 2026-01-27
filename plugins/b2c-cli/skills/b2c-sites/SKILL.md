@@ -1,6 +1,6 @@
 ---
 name: b2c-sites
-description: Using the b2c CLI for storefront sites listing and inspection
+description: List and inspect storefront sites on B2C Commerce instances. Use when finding site IDs, checking site configuration, or listing available sites. Helpful for determining site context when running other commands.
 ---
 
 # B2C Sites Skill

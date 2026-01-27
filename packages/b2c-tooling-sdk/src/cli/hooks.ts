@@ -35,6 +35,7 @@
 import type {Hook} from '@oclif/core';
 import type {ConfigSource, ResolveConfigOptions} from '../config/types.js';
 import type {HttpMiddlewareProvider} from '../clients/middleware-registry.js';
+import type {AuthMiddlewareProvider} from '../auth/middleware.js';
 
 /**
  * Options passed to the `b2c:config-sources` hook.
@@ -229,6 +230,93 @@ export interface HttpMiddlewareHookResult {
  */
 export type HttpMiddlewareHook = Hook<'b2c:http-middleware'>;
 
+// ============================================================================
+// Auth Middleware Hook
+// ============================================================================
+
+/**
+ * Options passed to the `b2c:auth-middleware` hook.
+ */
+export interface AuthMiddlewareHookOptions {
+  /**
+   * All parsed CLI flags from the current command.
+   *
+   * Plugins can inspect flags but cannot add new flags to commands.
+   * For plugin-specific configuration, use environment variables instead.
+   */
+  flags?: Record<string, unknown>;
+  /** Index signature for oclif hook compatibility */
+  [key: string]: unknown;
+}
+
+/**
+ * Result returned by the `b2c:auth-middleware` hook.
+ *
+ * Plugins return one or more AuthMiddlewareProvider instances that will be
+ * registered with the global auth middleware registry.
+ */
+export interface AuthMiddlewareHookResult {
+  /** Middleware providers to register */
+  providers: AuthMiddlewareProvider[];
+}
+
+/**
+ * Hook type for `b2c:auth-middleware`.
+ *
+ * Implement this hook in your oclif plugin to provide custom middleware
+ * that will be applied to OAuth token requests.
+ *
+ * The hook is called during command initialization, after flags are parsed
+ * but before any authentication is performed.
+ *
+ * ## Plugin Registration
+ *
+ * Register the hook in your plugin's package.json:
+ *
+ * ```json
+ * {
+ *   "oclif": {
+ *     "hooks": {
+ *       "b2c:auth-middleware": "./dist/hooks/auth-middleware.js"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * ## Hook Context
+ *
+ * Inside the hook function, you have access to:
+ * - `this.config` - oclif Config object
+ * - `this.debug()`, `this.log()`, `this.warn()`, `this.error()` - logging methods
+ *
+ * @example
+ * ```typescript
+ * import type { AuthMiddlewareHook } from '@salesforce/b2c-tooling-sdk/cli';
+ * import type { AuthMiddlewareProvider } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const hook: AuthMiddlewareHook = async function(options) {
+ *   this.debug('Registering auth middleware');
+ *
+ *   const userAgentProvider: AuthMiddlewareProvider = {
+ *     name: 'custom-user-agent',
+ *     getMiddleware() {
+ *       return {
+ *         onRequest({ request }) {
+ *           request.headers.set('User-Agent', 'my-app/1.0');
+ *           return request;
+ *         },
+ *       };
+ *     },
+ *   };
+ *
+ *   return { providers: [userAgentProvider] };
+ * };
+ *
+ * export default hook;
+ * ```
+ */
+export type AuthMiddlewareHook = Hook<'b2c:auth-middleware'>;
+
 // Re-export B2C lifecycle types for convenience
 export type {
   B2COperationType,
@@ -264,6 +352,10 @@ declare module '@oclif/core' {
     'b2c:http-middleware': {
       options: HttpMiddlewareHookOptions;
       return: HttpMiddlewareHookResult;
+    };
+    'b2c:auth-middleware': {
+      options: AuthMiddlewareHookOptions;
+      return: AuthMiddlewareHookResult;
     };
     'b2c:operation-lifecycle': {
       options: import('./lifecycle.js').B2COperationLifecycleHookOptions;

@@ -1,6 +1,6 @@
 ---
 name: b2c-site-import-export
-description: Using the B2C CLI for site archive import/export with metadata XML patterns
+description: Work with site archive structure and metadata XML patterns. Use when adding custom attributes, system object extensions, site preferences, or understanding import/export XML schemas. Covers directory structure and XML file formats for site archives.
 ---
 
 # Site Import/Export Skill

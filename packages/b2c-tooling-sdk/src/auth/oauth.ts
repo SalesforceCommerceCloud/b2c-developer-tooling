@@ -6,6 +6,7 @@
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
+import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
 
 // Module-level token cache to support multiple instances with same clientId
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
@@ -165,10 +166,26 @@ export class OAuthStrategy implements AuthStrategy {
     }
 
     const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64');
-    const requestHeaders = {
-      Authorization: `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
+
+    // Build request object for middleware
+    let request = new Request(url, {
+      method,
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+
+    // Apply auth middleware (e.g., User-Agent)
+    const middleware = globalAuthMiddlewareRegistry.getMiddleware();
+    request = await applyAuthRequestMiddleware(request, middleware);
+
+    // Convert headers to object for logging
+    const requestHeaders: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      requestHeaders[key] = value;
+    });
 
     logger.debug(
       {clientId: this.config.clientId},
@@ -181,11 +198,11 @@ export class OAuthStrategy implements AuthStrategy {
     logger.trace({method, url, headers: requestHeaders, body: params.toString()}, `[Auth REQ BODY] ${method} ${url}`);
 
     const startTime = Date.now();
-    const response = await fetch(url, {
-      method,
-      headers: requestHeaders,
-      body: params.toString(),
-    });
+    let response = await fetch(request);
+
+    // Apply response middleware
+    response = await applyAuthResponseMiddleware(request, response, middleware);
+
     const duration = Date.now() - startTime;
 
     // Debug: Log response summary

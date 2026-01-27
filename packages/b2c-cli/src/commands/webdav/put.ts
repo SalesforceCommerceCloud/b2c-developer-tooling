@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import {basename, extname, resolve} from 'node:path';
 import {Args} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * Common content type mappings by file extension.
@@ -56,7 +56,10 @@ export default class WebDavPut extends WebDavCommand<typeof WebDavPut> {
     }),
   };
 
-  static description = t('commands.webdav.put.description', 'Upload a file to WebDAV');
+  static description = withDocs(
+    t('commands.webdav.put.description', 'Upload a file to WebDAV'),
+    '/cli/webdav.html#b2c-webdav-put',
+  );
 
   static enableJsonFlag = true;
 

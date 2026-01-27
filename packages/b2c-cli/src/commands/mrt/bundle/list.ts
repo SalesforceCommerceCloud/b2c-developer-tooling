@@ -6,7 +6,7 @@
 import {Flags} from '@oclif/core';
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {listBundles, type ListBundlesResult, type MrtBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtBundle>> = {
   id: {
@@ -37,7 +37,10 @@ const DEFAULT_COLUMNS = ['id', 'message', 'status', 'user', 'created'];
  * List bundles for an MRT project.
  */
 export default class MrtBundleList extends MrtCommand<typeof MrtBundleList> {
-  static description = t('commands.mrt.bundle.list.description', 'List bundles for a Managed Runtime project');
+  static description = withDocs(
+    t('commands.mrt.bundle.list.description', 'List bundles for a Managed Runtime project'),
+    '/cli/mrt.html#b2c-mrt-bundle-list',
+  );
 
   static enableJsonFlag = true;
 

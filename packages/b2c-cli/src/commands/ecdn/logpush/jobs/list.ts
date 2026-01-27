@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type LogpushResponse = CdnZonesComponents['schemas']['LogpushResponse'];
 
@@ -61,7 +61,10 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list Logpush jobs for a zone.
  */
 export default class EcdnLogpushJobsList extends EcdnZoneCommand<typeof EcdnLogpushJobsList> {
-  static description = t('commands.ecdn.logpush.jobs.list.description', 'List Logpush jobs for a zone');
+  static description = withDocs(
+    t('commands.ecdn.logpush.jobs.list.description', 'List Logpush jobs for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-logpush-jobs-list',
+  );
 
   static enableJsonFlag = true;
 

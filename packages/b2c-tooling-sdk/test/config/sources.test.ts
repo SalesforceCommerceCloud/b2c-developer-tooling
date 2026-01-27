@@ -87,6 +87,22 @@ describe('config/sources', () => {
       expect(config.scopes).to.deep.equal(['mail', 'roles']);
     });
 
+    it('loads tenant-id from dw.json', () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          'tenant-id': 'abcd_prd',
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = resolver.resolve();
+
+      expect(config.tenantId).to.equal('abcd_prd');
+    });
+
     it('returns undefined when dw.json does not exist', () => {
       const resolver = new ConfigResolver();
       const {config} = resolver.resolve();

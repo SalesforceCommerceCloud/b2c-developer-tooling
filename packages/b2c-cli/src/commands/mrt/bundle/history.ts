@@ -10,7 +10,7 @@ import {
   type ListDeploymentsResult,
   type MrtDeployment,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtDeployment>> = {
   bundleId: {
@@ -45,9 +45,9 @@ const DEFAULT_COLUMNS = ['bundleId', 'bundleMessage', 'status', 'type', 'created
  * List deployment history for an MRT environment.
  */
 export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory> {
-  static description = t(
-    'commands.mrt.bundle.history.description',
-    'List deployment history for a Managed Runtime environment',
+  static description = withDocs(
+    t('commands.mrt.bundle.history.description', 'List deployment history for a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-bundle-history',
   );
 
   static enableJsonFlag = true;

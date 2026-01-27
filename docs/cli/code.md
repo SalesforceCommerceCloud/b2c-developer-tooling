@@ -6,6 +6,37 @@ description: Commands for deploying cartridges, activating code versions, and wa
 
 Commands for managing cartridge code on B2C Commerce instances.
 
+## Authentication
+
+Code commands use different authentication depending on the operation:
+
+| Operation | Auth Required |
+|-----------|--------------|
+| `code deploy`, `code watch` | WebDAV (Basic Auth or OAuth) |
+| `code list`, `code activate`, `code delete` | OAuth + OCAPI |
+
+### WebDAV Operations (deploy, watch)
+
+File upload operations require WebDAV access. Basic authentication is recommended:
+
+```bash
+export SFCC_USERNAME=your-bm-username
+export SFCC_PASSWORD=your-webdav-access-key
+```
+
+### OCAPI Operations (list, activate, delete)
+
+These commands require OAuth authentication with OCAPI permissions for the `/code_versions` resource configured in Business Manager.
+
+```bash
+export SFCC_CLIENT_ID=your-client-id
+export SFCC_CLIENT_SECRET=your-client-secret
+```
+
+For complete setup instructions including OCAPI configuration, see the [Authentication Guide](/guide/authentication).
+
+---
+
 ## b2c code list
 
 List all code versions on a B2C Commerce instance.
@@ -55,10 +86,6 @@ version1                  Yes       No        11/29/2024, 2:30:00 PM    15
 version2                  No        Yes       11/28/2024, 10:15:00 AM   15
 staging                   No        No        11/25/2024, 9:00:00 AM    12
 ```
-
-### Authentication
-
-This command requires OAuth authentication. Provide `--client-id` and `--client-secret` or set the corresponding `SFCC_CLIENT_ID` and `SFCC_CLIENT_SECRET` environment variables.
 
 ---
 
@@ -127,15 +154,6 @@ b2c code deploy
 
 Cartridges are discovered by searching for `.project` files (Eclipse project markers commonly used in SFCC development). The directory containing the `.project` file is considered a cartridge.
 
-### Authentication
-
-This command requires both WebDAV and OAuth authentication:
-
-- **WebDAV** (for file upload): Basic Auth (`--username`/`--password`) or OAuth
-- **OAuth** (for code version reload): `--client-id` and `--client-secret`
-
-Basic authentication is recommended for WebDAV operations due to better performance.
-
 ---
 
 ## b2c code activate
@@ -185,10 +203,6 @@ b2c code activate --code-version v2
 
 Use `--reload` when you've made changes via WebDAV and need the instance to pick up the changes without deploying again.
 
-### Authentication
-
-This command requires OAuth authentication. Provide `--client-id` and `--client-secret` or set the corresponding environment variables.
-
 ---
 
 ## b2c code delete
@@ -229,10 +243,6 @@ b2c code delete old-version --force
 
 - You cannot delete the currently active code version
 - The command will prompt for confirmation unless `--force` is used
-
-### Authentication
-
-This command requires OAuth authentication. Provide `--client-id` and `--client-secret` or set the corresponding environment variables.
 
 ---
 
@@ -301,11 +311,3 @@ Press `Ctrl+C` to stop watching.
 |----------|-------------|
 | `SFCC_UPLOAD_DEBOUNCE_TIME` | Debounce time in milliseconds (default: 100) |
 
-### Authentication
-
-This command requires both WebDAV and OAuth authentication:
-
-- **WebDAV** (for file upload): Basic Auth (`--username`/`--password`) or OAuth
-- **OAuth** (for determining active code version): `--client-id` and `--client-secret`
-
-Basic authentication is recommended for WebDAV operations due to better performance.

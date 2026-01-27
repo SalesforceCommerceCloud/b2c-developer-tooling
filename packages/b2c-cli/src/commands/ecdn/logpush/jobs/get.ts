@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type LogpushResponse = CdnZonesComponents['schemas']['LogpushResponse'];
 
@@ -22,7 +22,10 @@ interface GetOutput {
  * Command to get a Logpush job for a zone.
  */
 export default class EcdnLogpushJobsGet extends EcdnZoneCommand<typeof EcdnLogpushJobsGet> {
-  static description = t('commands.ecdn.logpush.jobs.get.description', 'Get details of a Logpush job');
+  static description = withDocs(
+    t('commands.ecdn.logpush.jobs.get.description', 'Get details of a Logpush job'),
+    '/cli/ecdn.html#b2c-ecdn-logpush-jobs-get',
+  );
 
   static enableJsonFlag = true;
 

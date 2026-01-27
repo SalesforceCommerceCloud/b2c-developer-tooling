@@ -45,3 +45,21 @@ export function t(key: string, defaultValue: string, options?: TOptions): string
 
 // Re-export for convenience
 export {setLanguage, getLanguage, getI18nInstance} from '@salesforce/b2c-tooling-sdk';
+
+/** Base URL for online documentation */
+const DOCS_BASE_URL = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling';
+
+/**
+ * Append documentation URL to a description string.
+ *
+ * @param description - The description text
+ * @param docsPath - Path relative to DOCS_BASE_URL (e.g., '/cli/code.html#b2c-code-activate')
+ * @returns Description with appended docs URL
+ *
+ * @example
+ * withDocs('Activate or reload a code version', '/cli/code.html#b2c-code-activate')
+ * // Returns: "Activate or reload a code version\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html#b2c-code-activate"
+ */
+export function withDocs(description: string, docsPath: string): string {
+  return `${description}\n\nDocs: ${DOCS_BASE_URL}${docsPath}`;
+}

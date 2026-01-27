@@ -6,7 +6,7 @@
 import {Flags} from '@oclif/core';
 import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {listProjects, type ListProjectsResult, type MrtProject} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtProject>> = {
   name: {
@@ -37,7 +37,10 @@ const DEFAULT_COLUMNS = ['name', 'slug', 'organization', 'region'];
  * List MRT projects accessible to the authenticated user.
  */
 export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
-  static description = t('commands.mrt.project.list.description', 'List Managed Runtime projects');
+  static description = withDocs(
+    t('commands.mrt.project.list.description', 'List Managed Runtime projects'),
+    '/cli/mrt.html#b2c-mrt-project-list',
+  );
 
   static enableJsonFlag = true;
 

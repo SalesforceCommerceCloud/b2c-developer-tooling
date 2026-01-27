@@ -29,7 +29,7 @@ const BASE_TOOLSET: Toolset = 'SCAPI';
 const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
   cartridges: ['CARTRIDGES'],
   'pwa-kit-v3': ['PWAV3', 'MRT'],
-  'storefront-next': ['STOREFRONTNEXT', 'MRT'],
+  'storefront-next': ['STOREFRONTNEXT', 'MRT', 'CARTRIDGES'],
 };
 
 /**
@@ -108,12 +108,58 @@ export function createToolRegistry(services: Services): ToolRegistry {
 }
 
 /**
+ * Performs workspace auto-discovery and returns appropriate toolsets.
+ * Always includes BASE_TOOLSET even if no project types are detected.
+ *
+ * @param flags - Startup flags containing workingDirectory
+ * @param reason - Reason for triggering auto-discovery (for logging)
+ * @returns Array of toolsets to enable
+ */
+async function performAutoDiscovery(flags: StartupFlags, reason: string): Promise<Toolset[]> {
+  const logger = getLogger();
+
+  // Working directory from --working-directory flag or SFCC_WORKING_DIRECTORY env var
+  const workingDirectory = flags.workingDirectory ?? process.cwd();
+
+  // Warn if working directory wasn't explicitly configured
+  if (!flags.workingDirectory) {
+    logger.warn(
+      {cwd: workingDirectory},
+      'No --working-directory flag or SFCC_WORKING_DIRECTORY env var provided. ' +
+        'MCP clients like Cursor and Claude Desktop often spawn servers from ~ instead of the project directory. ' +
+        'Set --working-directory or SFCC_WORKING_DIRECTORY for reliable auto-discovery.',
+    );
+  }
+
+  const detectionResult = await detectWorkspaceType(workingDirectory);
+
+  // Map all detected project types to MCP toolsets (union)
+  // Note: getToolsetsForProjectTypes always includes BASE_TOOLSET
+  const mappedToolsets = getToolsetsForProjectTypes(detectionResult.projectTypes);
+
+  logger.info(
+    {
+      reason,
+      projectTypes: detectionResult.projectTypes,
+      matchedPatterns: detectionResult.matchedPatterns,
+      enabledToolsets: mappedToolsets,
+    },
+    `Auto-discovery (${reason}): project types: ${detectionResult.projectTypes.join(', ') || 'none'}`,
+  );
+
+  return mappedToolsets;
+}
+
+/**
  * Register tools with the MCP server based on startup flags.
  *
  * Tool selection logic:
- * 1. If neither --toolsets nor --tools are provided, perform auto-discovery
+ * 1. If no valid tools result from --toolsets and --tools, perform auto-discovery
  * 2. Start with all tools from --toolsets (or auto-discovered toolsets)
  * 3. Add individual tools from --tools (can be from any toolset)
+ *
+ * Auto-discovery always enables at least the BASE_TOOLSET (SCAPI), even if no
+ * project types are detected in the workspace.
  *
  * Example:
  *   --toolsets STOREFRONTNEXT,MRT --tools cartridge_deploy
@@ -124,43 +170,10 @@ export function createToolRegistry(services: Services): ToolRegistry {
  * @param services - Services instance
  */
 export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServer, services: Services): Promise<void> {
-  let toolsets = flags.toolsets ?? [];
+  const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];
   const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
-
-  // Auto-discovery: When no --toolsets or --tools flags are provided,
-  // detect project type and enable appropriate toolsets automatically.
-  if (toolsets.length === 0 && individualTools.length === 0) {
-    // Working directory from --working-directory flag or SFCC_WORKING_DIRECTORY env var
-    const workingDirectory = flags.workingDirectory ?? process.cwd();
-
-    // Warn if working directory wasn't explicitly configured
-    if (!flags.workingDirectory) {
-      logger.warn(
-        {cwd: workingDirectory},
-        'No --working-directory flag or SFCC_WORKING_DIRECTORY env var provided. ' +
-          'MCP clients like Cursor and Claude Desktop often spawn servers from ~ instead of the project directory. ' +
-          'Set --working-directory or SFCC_WORKING_DIRECTORY for reliable auto-discovery.',
-      );
-    }
-
-    const detectionResult = await detectWorkspaceType(workingDirectory);
-
-    // Map all detected project types to MCP toolsets (union)
-    const mappedToolsets = getToolsetsForProjectTypes(detectionResult.projectTypes);
-
-    logger.info(
-      {
-        projectTypes: detectionResult.projectTypes,
-        matchedPatterns: detectionResult.matchedPatterns,
-        enabledToolsets: mappedToolsets,
-      },
-      `Auto-discovered project types: ${detectionResult.projectTypes.join(', ') || 'none'}`,
-    );
-
-    toolsets = mappedToolsets;
-  }
 
   // Create the tool registry (all available tools)
   const toolRegistry = createToolRegistry(services);
@@ -170,8 +183,11 @@ export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServ
   const allToolsByName = new Map(allTools.map((tool) => [tool.name, tool]));
   const existingToolNames = new Set(allToolsByName.keys());
 
-  // Warn about invalid --tools names (but continue with valid ones)
+  // Determine valid individual tools
   const invalidTools = individualTools.filter((name) => !existingToolNames.has(name));
+  const validIndividualTools = individualTools.filter((name) => existingToolNames.has(name));
+
+  // Warn about invalid --tools names (but continue with valid ones)
   if (invalidTools.length > 0) {
     logger.warn(
       {invalidTools, validTools: [...existingToolNames]},
@@ -194,6 +210,17 @@ export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServ
   const validToolsets = toolsets.filter((t): t is Toolset => TOOLSETS.includes(t as Toolset));
   const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? TOOLSETS : validToolsets);
 
+  // Auto-discovery: If no valid toolsets AND no valid individual tools, detect workspace type.
+  // This handles both: (1) no flags provided, and (2) all provided flags are invalid.
+  // Auto-discovery enables appropriate toolsets based on workspace type,
+  // or at minimum BASE_TOOLSET if no project types are detected.
+  if (toolsetsToEnable.size === 0 && validIndividualTools.length === 0) {
+    const discoveredToolsets = await performAutoDiscovery(flags, 'no valid toolsets or tools');
+    for (const toolset of discoveredToolsets) {
+      toolsetsToEnable.add(toolset);
+    }
+  }
+
   // Build the set of tools to register:
   // 1. Start with tools from enabled toolsets
   // 2. Add individual tools from --tools
@@ -211,7 +238,7 @@ export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServ
   }
 
   // Step 2: Add individual tools from --tools (can be from any toolset)
-  for (const toolName of individualTools) {
+  for (const toolName of validIndividualTools) {
     const tool = allToolsByName.get(toolName);
     if (tool && !registeredToolNames.has(toolName)) {
       toolsToRegister.push(tool);

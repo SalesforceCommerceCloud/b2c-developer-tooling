@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: Using the b2c CLI to view and debug current configuration for instance, SCAPI, oauth and MRT settings.
+description: View and debug B2C CLI configuration and understand where credentials come from. Use when authentication fails, connection errors occur, wrong instance is used, or you need to verify dw.json settings, environment variables (SFCC_*), or OAuth credentials are loaded correctly.
 ---
 
 # B2C Config Skill

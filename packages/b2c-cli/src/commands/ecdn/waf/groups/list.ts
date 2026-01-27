@@ -7,7 +7,7 @@ import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 type WafGroup = CdnZonesComponents['schemas']['WafGroup'];
 
@@ -47,9 +47,9 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Note: This is for WAF v1. For zones created after 24.5, use waf rulesets commands.
  */
 export default class EcdnWafGroupsList extends EcdnZoneCommand<typeof EcdnWafGroupsList> {
-  static description = t(
-    'commands.ecdn.waf.groups.list.description',
-    'List WAF v1 groups for a zone (not applicable for WAFv2 zones)',
+  static description = withDocs(
+    t('commands.ecdn.waf.groups.list.description', 'List WAF v1 groups for a zone (not applicable for WAFv2 zones)'),
+    '/cli/ecdn.html#b2c-ecdn-waf-groups-list',
   );
 
   static enableJsonFlag = true;

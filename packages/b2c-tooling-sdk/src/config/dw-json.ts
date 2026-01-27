@@ -63,6 +63,8 @@ export interface DwJsonConfig {
   mrtOrigin?: string;
   /** MRT cloud origin URL (alias) */
   cloudOrigin?: string;
+  /** Tenant/Organization ID for SCAPI */
+  'tenant-id'?: string;
 }
 
 /**

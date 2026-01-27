@@ -48,7 +48,7 @@ MRT commands use API key authentication. The API key is configured in the Manage
 
 1. Log in to the [Managed Runtime dashboard](https://runtime.commercecloud.com/)
 2. Navigate to **Account Settings** > **API Keys**
-3. Create a new API key or use an existing one
+3. Copy your API key (or generate one if you haven't already)
 
 ### Configuration
 
@@ -63,6 +63,8 @@ Provide the API key via one of these methods:
   "api_key": "your-mrt-api-key"
 }
 ```
+
+For complete setup instructions, see the [Authentication Guide](/guide/authentication#managed-runtime-api-key).
 
 ---
 

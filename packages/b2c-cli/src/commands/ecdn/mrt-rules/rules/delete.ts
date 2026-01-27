@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Response type for the delete command.
@@ -19,7 +19,10 @@ interface DeleteOutput {
  * Command to delete an individual MRT rule.
  */
 export default class EcdnMrtRulesRulesDelete extends EcdnZoneCommand<typeof EcdnMrtRulesRulesDelete> {
-  static description = t('commands.ecdn.mrt-rules.rules.delete.description', 'Delete an individual MRT rule');
+  static description = withDocs(
+    t('commands.ecdn.mrt-rules.rules.delete.description', 'Delete an individual MRT rule'),
+    '/cli/ecdn.html#b2c-ecdn-mrt-rules-rules-delete',
+  );
 
   static enableJsonFlag = true;
 

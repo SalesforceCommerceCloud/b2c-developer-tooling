@@ -13,11 +13,21 @@ export interface LogContext {
   [key: string]: unknown;
 }
 
+/** Writable stream interface for custom log destinations (Node.js Writable compatible) */
+export interface LogDestination {
+  write(chunk: string | Buffer, encoding?: BufferEncoding, callback?: (error?: Error | null) => void): boolean;
+  on?(event: string, listener: (...args: unknown[]) => void): this;
+  once?(event: string, listener: (...args: unknown[]) => void): this;
+  emit?(event: string, ...args: unknown[]): boolean;
+}
+
 export interface LoggerOptions {
   /** Log level. Default: 'info' */
   level?: LogLevel;
   /** File descriptor to write to (1=stdout, 2=stderr). Default: 2 */
   fd?: number;
+  /** Custom destination stream. Overrides fd when provided. Useful for testing. */
+  destination?: LogDestination;
   /** Base context included in all log entries */
   baseContext?: LogContext;
   /** Enable secret redaction. Default: true */

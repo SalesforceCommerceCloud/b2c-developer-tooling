@@ -6,7 +6,7 @@
 import {Flags} from '@oclif/core';
 import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 
@@ -73,7 +73,10 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * Command to list all on-demand sandboxes.
  */
 export default class OdsList extends OdsCommand<typeof OdsList> {
-  static description = t('commands.ods.list.description', 'List all on-demand sandboxes');
+  static description = withDocs(
+    t('commands.ods.list.description', 'List all on-demand sandboxes'),
+    '/cli/ods.html#b2c-ods-list',
+  );
 
   static enableJsonFlag = true;
 

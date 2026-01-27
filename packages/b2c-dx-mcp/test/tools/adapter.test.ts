@@ -11,6 +11,7 @@ import {Services} from '../../src/services.js';
 import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 
 // Create a mock services instance for testing
 function createMockServices(options?: {mrtAuth?: AuthStrategy}): Services {
@@ -532,8 +533,9 @@ describe('tools/adapter', () => {
       });
 
       it('should provide mrtConfig in context when auth is configured', async () => {
-        // Use Services.create() to resolve auth (simulating what mcp.ts does at startup)
-        const services = Services.create({mrt: {apiKey: 'test-api-key-12345'}});
+        // Use resolveConfig + Services.fromResolvedConfig (simulating what mcp.ts does at startup)
+        const config = resolveConfig({mrtApiKey: 'test-api-key-12345'});
+        const services = Services.fromResolvedConfig(config);
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -560,12 +562,11 @@ describe('tools/adapter', () => {
         expect(contextReceived?.mrtConfig?.auth).to.have.property('fetch');
       });
 
-      it('should support mrtCloudOrigin option in Services.create()', async () => {
-        // Services.create() accepts cloudOrigin for environment-specific config
-        // Note: oclif handles env var fallback for --api-key flag, so we pass apiKey explicitly here
-        const services = Services.create({
-          mrt: {apiKey: 'staging-api-key', cloudOrigin: 'https://cloud-staging.mobify.com'},
-        });
+      it('should support cloudOrigin option in resolveConfig()', async () => {
+        // resolveConfig() accepts cloudOrigin for environment-specific config
+        // Note: oclif handles env var fallback for --api-key flag, so we pass mrtApiKey explicitly here
+        const config = resolveConfig({mrtApiKey: 'staging-api-key'}, {cloudOrigin: 'https://cloud-staging.mobify.com'});
+        const services = Services.fromResolvedConfig(config);
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(

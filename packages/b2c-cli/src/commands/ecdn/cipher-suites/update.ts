@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type CipherSuitesResponse = CdnZonesComponents['schemas']['CipherSuitesResponse'];
 type CipherSuitesRequest = CdnZonesComponents['schemas']['CipherSuitesRequest'];
@@ -23,7 +23,10 @@ interface UpdateOutput {
  * Command to update cipher suites settings for a zone.
  */
 export default class EcdnCipherSuitesUpdate extends EcdnZoneCommand<typeof EcdnCipherSuitesUpdate> {
-  static description = t('commands.ecdn.cipher-suites.update.description', 'Update cipher suites settings for a zone');
+  static description = withDocs(
+    t('commands.ecdn.cipher-suites.update.description', 'Update cipher suites settings for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-cipher-suites-update',
+  );
 
   static enableJsonFlag = true;
 

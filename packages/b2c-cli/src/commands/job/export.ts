@@ -11,10 +11,13 @@ import {
   type SiteArchiveExportResult,
   type ExportDataUnitsConfiguration,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobExport extends JobCommand<typeof JobExport> {
-  static description = t('commands.job.export.description', 'Job execution and site archive import/export (IMPEX)');
+  static description = withDocs(
+    t('commands.job.export.description', 'Job execution and site archive import/export (IMPEX)'),
+    '/cli/jobs.html#b2c-job-export',
+  );
 
   static enableJsonFlag = true;
 

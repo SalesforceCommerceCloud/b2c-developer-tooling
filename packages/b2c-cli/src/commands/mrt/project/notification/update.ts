@@ -6,7 +6,7 @@
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {updateNotification, type MrtNotification} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Update a notification in an MRT project.
@@ -19,7 +19,10 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
     }),
   };
 
-  static description = t('commands.mrt.notification.update.description', 'Update a Managed Runtime notification');
+  static description = withDocs(
+    t('commands.mrt.notification.update.description', 'Update a Managed Runtime notification'),
+    '/cli/mrt.html#b2c-mrt-project-notification-update',
+  );
 
   static enableJsonFlag = true;
 

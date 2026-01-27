@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import OdsCreate from '../../../src/commands/ods/create.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {runSilent} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -199,7 +200,7 @@ describe('ods create', () => {
         }),
       });
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       expect(result.id).to.equal('sb-123');
     });
@@ -257,7 +258,7 @@ describe('ods create', () => {
         },
       });
 
-      await command.run();
+      await runSilent(() => command.run());
 
       expect(requestBody.settings).to.be.undefined;
     });

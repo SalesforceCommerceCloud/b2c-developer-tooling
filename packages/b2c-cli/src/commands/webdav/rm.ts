@@ -6,7 +6,7 @@
 import readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * Simple confirmation prompt.
@@ -38,7 +38,10 @@ export default class WebDavRm extends WebDavCommand<typeof WebDavRm> {
     }),
   };
 
-  static description = t('commands.webdav.rm.description', 'Delete a file or directory from WebDAV');
+  static description = withDocs(
+    t('commands.webdav.rm.description', 'Delete a file or directory from WebDAV'),
+    '/cli/webdav.html#b2c-webdav-rm',
+  );
 
   static enableJsonFlag = true;
 

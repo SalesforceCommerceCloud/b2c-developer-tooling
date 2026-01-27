@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type MRTRulesResponse = CdnZonesComponents['schemas']['MRTRulesResponse'];
 type MRTRulesetPatchRequest = CdnZonesComponents['schemas']['MRTRulesetPatchRequest'];
@@ -23,7 +23,10 @@ interface UpdateOutput {
  * Command to update an MRT ruleset for a zone.
  */
 export default class EcdnMrtRulesUpdate extends EcdnZoneCommand<typeof EcdnMrtRulesUpdate> {
-  static description = t('commands.ecdn.mrt-rules.update.description', 'Update MRT ruleset hostname or add new rules');
+  static description = withDocs(
+    t('commands.ecdn.mrt-rules.update.description', 'Update MRT ruleset hostname or add new rules'),
+    '/cli/ecdn.html#b2c-ecdn-mrt-rules-update',
+  );
 
   static enableJsonFlag = true;
 

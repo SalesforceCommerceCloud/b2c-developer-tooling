@@ -7,7 +7,7 @@ import {readFile} from 'node:fs/promises';
 import {Flags} from '@oclif/core';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type Certificate = CdnZonesComponents['schemas']['Certificate'];
 
@@ -22,7 +22,10 @@ interface UpdateOutput {
  * Command to update a certificate for a zone.
  */
 export default class EcdnCertificatesUpdate extends EcdnZoneCommand<typeof EcdnCertificatesUpdate> {
-  static description = t('commands.ecdn.certificates.update.description', 'Update a certificate for a zone');
+  static description = withDocs(
+    t('commands.ecdn.certificates.update.description', 'Update a certificate for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-certificates-update',
+  );
 
   static enableJsonFlag = true;
 

@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import OdsList from '../../../src/commands/ods/list.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {runSilent} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -179,7 +180,7 @@ describe('ods list', () => {
         }),
       });
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       // Command returns data regardless of JSON mode
       expect(result).to.have.property('count', 1);
@@ -241,7 +242,7 @@ describe('ods list', () => {
         }),
       });
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       expect(result.count).to.equal(0);
       expect(result.data).to.deep.equal([]);

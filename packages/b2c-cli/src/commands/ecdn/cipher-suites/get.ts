@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type CipherSuitesResponse = CdnZonesComponents['schemas']['CipherSuitesResponse'];
 
@@ -22,7 +22,10 @@ interface GetOutput {
  * Command to get cipher suites settings for a zone.
  */
 export default class EcdnCipherSuitesGet extends EcdnZoneCommand<typeof EcdnCipherSuitesGet> {
-  static description = t('commands.ecdn.cipher-suites.get.description', 'Get cipher suites settings for a zone');
+  static description = withDocs(
+    t('commands.ecdn.cipher-suites.get.description', 'Get cipher suites settings for a zone'),
+    '/cli/ecdn.html#b2c-ecdn-cipher-suites-get',
+  );
 
   static enableJsonFlag = true;
 

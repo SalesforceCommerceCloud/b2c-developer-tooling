@@ -84,6 +84,22 @@ function createPinoLogger(options: LoggerOptions): Logger {
     };
   }
 
+  // Custom destination stream (for testing)
+  if (options.destination) {
+    if (options.json) {
+      return pino(pinoOptions, options.destination) as unknown as Logger;
+    }
+    const isVerbose = level === 'debug' || level === 'trace';
+    const prettyStream = pretty({
+      destination: options.destination,
+      sync: true,
+      colorize,
+      ignore: 'pid,hostname' + (isVerbose ? '' : ',time'),
+      hideObject: !isVerbose,
+    });
+    return pino(pinoOptions, prettyStream);
+  }
+
   // JSON output
   if (options.json) {
     return pino(pinoOptions, pino.destination({fd, sync: true})) as unknown as Logger;

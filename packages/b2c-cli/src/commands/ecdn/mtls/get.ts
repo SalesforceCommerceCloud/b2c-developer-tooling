@@ -7,7 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type MtlsCertificateResponse = CdnZonesComponents['schemas']['MtlsCertificateResponse'];
 
@@ -22,7 +22,10 @@ interface GetOutput {
  * Command to get an mTLS certificate.
  */
 export default class EcdnMtlsGet extends EcdnCommand<typeof EcdnMtlsGet> {
-  static description = t('commands.ecdn.mtls.get.description', 'Get details of an mTLS certificate');
+  static description = withDocs(
+    t('commands.ecdn.mtls.get.description', 'Get details of an mTLS certificate'),
+    '/cli/ecdn.html#b2c-ecdn-mtls-get',
+  );
 
   static enableJsonFlag = true;
 

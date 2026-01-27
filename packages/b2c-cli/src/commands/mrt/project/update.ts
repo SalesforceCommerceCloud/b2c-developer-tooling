@@ -7,7 +7,7 @@ import {Args, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {updateProject, type MrtProjectUpdate as MrtProjectUpdateType} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Valid AWS regions for MRT projects.
@@ -78,7 +78,10 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
     }),
   };
 
-  static description = t('commands.mrt.project.update.description', 'Update a Managed Runtime project');
+  static description = withDocs(
+    t('commands.mrt.project.update.description', 'Update a Managed Runtime project'),
+    '/cli/mrt.html#b2c-mrt-project-update',
+  );
 
   static enableJsonFlag = true;
 

@@ -13,7 +13,7 @@ const fixtureRoot = path.join(__dirname, '../fixtures/test-cli');
 
 describe('BaseCommand integration', () => {
   it('runs test-base command without errors', async () => {
-    const {error} = await runCommand(['test-base'], {root: fixtureRoot});
+    const {error} = await runCommand(['test-base', '--json'], {root: fixtureRoot});
     expect(error).to.be.undefined;
   });
 

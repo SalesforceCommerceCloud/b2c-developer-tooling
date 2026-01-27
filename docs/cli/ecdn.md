@@ -35,6 +35,8 @@ eCDN commands require OAuth authentication with these scopes:
 | Read operations | `sfcc.cdn-zones` |
 | Write operations | `sfcc.cdn-zones.rw` |
 
+For complete setup instructions, see the [Authentication Guide](/guide/authentication#scapi-authentication).
+
 ---
 
 ## Zone Management

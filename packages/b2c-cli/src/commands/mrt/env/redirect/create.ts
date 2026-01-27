@@ -10,15 +10,15 @@ import {
   type MrtRedirect,
   type RedirectHttpStatusCode,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Create a redirect for an MRT environment.
  */
 export default class MrtRedirectCreate extends MrtCommand<typeof MrtRedirectCreate> {
-  static description = t(
-    'commands.mrt.redirect.create.description',
-    'Create a redirect for a Managed Runtime environment',
+  static description = withDocs(
+    t('commands.mrt.redirect.create.description', 'Create a redirect for a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-redirect-create',
   );
 
   static enableJsonFlag = true;

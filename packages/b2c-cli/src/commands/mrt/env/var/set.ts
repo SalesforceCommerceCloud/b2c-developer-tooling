@@ -6,7 +6,7 @@
 import {Args} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {setEnvVars} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
  * Set environment variables on an MRT project environment.
@@ -19,9 +19,9 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
     }),
   };
 
-  static description = t(
-    'commands.mrt.env.var.set.description',
-    'Set environment variables on a Managed Runtime environment',
+  static description = withDocs(
+    t('commands.mrt.env.var.set.description', 'Set environment variables on a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-var-set',
   );
 
   static enableJsonFlag = true;

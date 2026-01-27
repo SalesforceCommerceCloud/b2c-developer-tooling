@@ -1,6 +1,6 @@
 ---
 name: b2c-localization
-description: Guide for localizing templates, forms, and content in Salesforce B2C Commerce
+description: Localize templates, forms, and content in B2C Commerce. Use when adding translations, working with resource bundles (*.properties files), using Resource.msg, or implementing multi-locale support. Covers locale folders, string externalization, and date/currency formatting.
 ---
 
 # Localization Skill

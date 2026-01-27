@@ -20,7 +20,7 @@ import {
   getIdeDocsUrl,
   findSkillsByName,
 } from '@salesforce/b2c-tooling-sdk/skills';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * Table columns for skill listing.
@@ -64,7 +64,10 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     }),
   };
 
-  static description = t('commands.setup.skills.description', 'Install agent skills for AI-powered IDEs');
+  static description = withDocs(
+    t('commands.setup.skills.description', 'Install agent skills for AI-powered IDEs'),
+    '/cli/setup.html#b2c-setup-skills',
+  );
 
   static enableJsonFlag = true;
 

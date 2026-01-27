@@ -1,6 +1,6 @@
 ---
 name: b2c-code
-description: Using the b2c CLI for code version deployment and management
+description: Deploy and manage code versions on B2C Commerce instances. Use when uploading cartridges, activating code versions, watching for file changes during development, or syncing local code to sandbox.
 ---
 
 # B2C Code Skill

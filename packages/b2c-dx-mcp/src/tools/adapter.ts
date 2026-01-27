@@ -16,7 +16,7 @@
  * ## Configuration Resolution
  *
  * Both B2C instance and MRT auth are resolved once at server startup via
- * {@link Services.create} and reused for all tool calls:
+ * {@link Services.fromResolvedConfig} and reused for all tool calls:
  *
  * - **B2CInstance**: Resolved from flags + dw.json. Available when `requiresInstance: true`.
  * - **MRT Auth**: Resolved from --api-key → SFCC_MRT_API_KEY → ~/.mobify. Available when `requiresMrtAuth: true`.
@@ -48,11 +48,8 @@
  *
  * @example MRT tool (MRT API)
  * ```typescript
- * // Services created with auth resolved at startup
- * const services = Services.create({
- *   mrtApiKey: flags['api-key'],
- *   mrtCloudOrigin: flags['cloud-origin'],
- * });
+ * // Services created from already-resolved config at startup
+ * const services = Services.fromResolvedConfig(this.resolvedConfig);
  *
  * const mrtTool = createToolAdapter({
  *   name: 'mrt_bundle_push',

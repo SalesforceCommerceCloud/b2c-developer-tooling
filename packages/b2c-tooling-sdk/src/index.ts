@@ -205,10 +205,6 @@ export type {
   ExportGlobalDataConfiguration,
 } from './operations/jobs/index.js';
 
-// Operations - Sites
-export {listSites, getSite} from './operations/sites/index.js';
-export type {Site} from './operations/sites/index.js';
-
 // Operations - Docs
 export {
   searchDocs,
@@ -255,3 +251,6 @@ export {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from './operations/orgs
 
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';
+
+// Version info
+export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';

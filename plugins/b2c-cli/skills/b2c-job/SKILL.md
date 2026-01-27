@@ -1,7 +1,6 @@
 ---
 name: b2c-job
-description: Using the b2c CLI to run and monitor existing jobs, import/export site archives (IMPEX). Use this for executing jobs, not creating new job step code.
-keywords: [run job, execute job, import data, export data, site archive, IMPEX, job status, job log]
+description: Run and monitor existing jobs, import/export site archives (IMPEX). Use when executing batch jobs, importing site data, running search indexing, checking job status, or viewing job logs. For creating new job code, use b2c-custom-job-steps instead.
 ---
 
 # B2C Job Skill

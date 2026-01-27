@@ -10,7 +10,7 @@ import {
   updateEmailPreferences,
   type MrtEmailPreferences,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type PrefsEntry = {field: string; value: string};
 
@@ -31,7 +31,10 @@ const DEFAULT_COLUMNS = ['field', 'value'];
  * View or update email notification preferences.
  */
 export default class MrtUserEmailPrefs extends MrtCommand<typeof MrtUserEmailPrefs> {
-  static description = t('commands.mrt.user.email-prefs.description', 'View or update email notification preferences');
+  static description = withDocs(
+    t('commands.mrt.user.email-prefs.description', 'View or update email notification preferences'),
+    '/cli/mrt.html#b2c-mrt-user-email-prefs',
+  );
 
   static enableJsonFlag = true;
 

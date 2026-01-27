@@ -6,7 +6,7 @@
 import {Args} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 type SandboxOperationModel = OdsComponents['schemas']['SandboxOperationModel'];
 
@@ -21,7 +21,10 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
     }),
   };
 
-  static description = t('commands.ods.stop.description', 'Stop an on-demand sandbox');
+  static description = withDocs(
+    t('commands.ods.stop.description', 'Stop an on-demand sandbox'),
+    '/cli/ods.html#b2c-ods-stop',
+  );
 
   static enableJsonFlag = true;
 

@@ -11,7 +11,7 @@ import {
   updateB2CTargetInfo,
   type B2CTargetInfo,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type InfoEntry = {field: string; value: string};
 
@@ -32,9 +32,9 @@ const DEFAULT_COLUMNS = ['field', 'value'];
  * Get or update B2C Commerce info for a target/environment.
  */
 export default class MrtB2CTargetInfo extends MrtCommand<typeof MrtB2CTargetInfo> {
-  static description = t(
-    'commands.mrt.b2c.target-info.description',
-    'Get or update B2C Commerce connection for a target/environment',
+  static description = withDocs(
+    t('commands.mrt.b2c.target-info.description', 'Get or update B2C Commerce connection for a target/environment'),
+    '/cli/mrt.html#b2c-mrt-env-b2c',
   );
 
   static enableJsonFlag = true;

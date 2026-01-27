@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 interface MkdirResult {
   path: string;
@@ -20,7 +20,10 @@ export default class WebDavMkdir extends WebDavCommand<typeof WebDavMkdir> {
     }),
   };
 
-  static description = t('commands.webdav.mkdir.description', 'Create a directory on WebDAV');
+  static description = withDocs(
+    t('commands.webdav.mkdir.description', 'Create a directory on WebDAV'),
+    '/cli/webdav.html#b2c-webdav-mkdir',
+  );
 
   static enableJsonFlag = true;
 

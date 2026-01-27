@@ -5,15 +5,23 @@
  */
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
+import {createIsolatedEnvHooks} from '../../../helpers/test-setup.js';
 
 describe('scapi schemas list', () => {
+  const hooks = createIsolatedEnvHooks();
+
+  beforeEach(hooks.beforeEach);
+
+  afterEach(hooks.afterEach);
+
   it('shows help without errors', async () => {
     const {error} = await runCommand('scapi schemas list --help');
     expect(error).to.be.undefined;
   });
 
   it('requires tenant-id flag', async () => {
-    const {error} = await runCommand('scapi schemas list');
+    // Provide mock OAuth credentials so we get past OAuth validation to tenant-id validation
+    const {error} = await runCommand('scapi schemas list --client-id test-client --short-code testcode');
     expect(error).to.not.be.undefined;
     expect(error?.message).to.include('tenant-id');
   });

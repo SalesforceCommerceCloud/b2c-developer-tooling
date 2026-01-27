@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Response type for the purge command.
@@ -22,7 +22,10 @@ interface PurgeOutput {
  * Command to purge cache for a zone.
  */
 export default class EcdnCachePurge extends EcdnZoneCommand<typeof EcdnCachePurge> {
-  static description = t('commands.ecdn.cache.purge.description', 'Purge cached content for a zone by path or tags');
+  static description = withDocs(
+    t('commands.ecdn.cache.purge.description', 'Purge cached content for a zone by path or tags'),
+    '/cli/ecdn.html#b2c-ecdn-cache-purge',
+  );
 
   static enableJsonFlag = true;
 

@@ -8,13 +8,14 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import sinon from 'sinon';
 import {
   createAuthMiddleware,
   createExtraParamsMiddleware,
   createLoggingMiddleware,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {configureLogger, getLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 describe('clients/middleware', () => {
   describe('createAuthMiddleware', () => {
@@ -120,6 +121,9 @@ describe('clients/middleware', () => {
     });
 
     it('does not throw if body is invalid JSON (skips merge)', async () => {
+      // Stub logger.warn to avoid noise in test output for expected warning
+      const warnStub = sinon.stub(getLogger(), 'warn');
+
       const middleware = createExtraParamsMiddleware({body: {forced: true}});
 
       const request = new Request('https://example.com/items', {
@@ -138,6 +142,9 @@ describe('clients/middleware', () => {
 
       expect(text).to.equal('not-json');
       expect(text).to.not.include('forced');
+      expect(warnStub.calledOnce).to.be.true;
+
+      warnStub.restore();
     });
 
     it('does not merge extra body when request is not JSON', async () => {

@@ -7,7 +7,7 @@ import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
-import {t} from '../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 type OriginHeaderModification = CdnZonesComponents['schemas']['OriginHeaderModification'];
 
@@ -22,9 +22,9 @@ interface GetOutput {
  * Command to get origin header modification for a zone.
  */
 export default class EcdnOriginHeadersGet extends EcdnZoneCommand<typeof EcdnOriginHeadersGet> {
-  static description = t(
-    'commands.ecdn.origin-headers.get.description',
-    'Get origin header modification settings for a zone (MRT type)',
+  static description = withDocs(
+    t('commands.ecdn.origin-headers.get.description', 'Get origin header modification settings for a zone (MRT type)'),
+    '/cli/ecdn.html#b2c-ecdn-origin-headers-get',
   );
 
   static enableJsonFlag = true;

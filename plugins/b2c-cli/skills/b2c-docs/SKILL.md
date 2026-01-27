@@ -1,6 +1,6 @@
 ---
 name: b2c-docs
-description: Using the b2c CLI to search and read Script API documentation and XSD schemas
+description: Search and read B2C Commerce Script API documentation and XSD schemas. Use when writing B2C scripts, looking up classes for the SFCC/Demandware/B2C Commerce script API, answering "how do I" questions about generating URLs, querying products, processing orders, services, or any dw.* API task. Also use for import/export XML format reference. Use to verify class methods, properties, and usage.
 ---
 
 # B2C Docs Skill

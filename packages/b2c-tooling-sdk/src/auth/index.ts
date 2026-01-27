@@ -84,3 +84,12 @@ export {ApiKeyStrategy} from './api-key.js';
 // Resolution helpers
 export {resolveAuthStrategy, checkAvailableAuthMethods} from './resolve.js';
 export type {ResolveAuthStrategyOptions, AvailableAuthMethods} from './resolve.js';
+
+// Auth middleware
+export {
+  globalAuthMiddlewareRegistry,
+  AuthMiddlewareRegistry,
+  applyAuthRequestMiddleware,
+  applyAuthResponseMiddleware,
+} from './middleware.js';
+export type {AuthMiddleware, AuthMiddlewareProvider} from './middleware.js';

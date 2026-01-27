@@ -70,6 +70,8 @@ export SFCC_CLIENT_SECRET=my-secret
 b2c code deploy
 ```
 
+For complete setup instructions, see the [Authentication Guide](/guide/authentication#webdav-access).
+
 ---
 
 ## b2c webdav ls

@@ -1,6 +1,6 @@
 ---
 name: b2c-custom-caches
-description: Custom cache definition and usage with CacheMgr and Cache classes
+description: Implement custom caching with CacheMgr in B2C Commerce. Use when adding application-level caching, cache invalidation, or optimizing performance with custom cache regions. Covers cache definition JSON, CacheMgr API, and cache entry lifecycle.
 ---
 
 # B2C Custom Caches

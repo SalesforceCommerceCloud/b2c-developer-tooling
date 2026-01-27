@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {t} from '../../i18n/index.js';
+import {t, withDocs} from '../../i18n/index.js';
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 
@@ -22,7 +22,10 @@ export default class WebDavUnzip extends WebDavCommand<typeof WebDavUnzip> {
     }),
   };
 
-  static description = t('commands.webdav.unzip.description', 'Extract a remote zip archive');
+  static description = withDocs(
+    t('commands.webdav.unzip.description', 'Extract a remote zip archive'),
+    '/cli/webdav.html#b2c-webdav-unzip',
+  );
 
   static enableJsonFlag = true;
 

@@ -10,7 +10,7 @@ import {
   type ListNotificationsResult,
   type MrtNotification,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import {t} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<MrtNotification>> = {
   id: {
@@ -43,9 +43,9 @@ const DEFAULT_COLUMNS = ['id', 'targets', 'recipients', 'events'];
  * List notifications for an MRT project.
  */
 export default class MrtNotificationList extends MrtCommand<typeof MrtNotificationList> {
-  static description = t(
-    'commands.mrt.notification.list.description',
-    'List notifications for a Managed Runtime project',
+  static description = withDocs(
+    t('commands.mrt.notification.list.description', 'List notifications for a Managed Runtime project'),
+    '/cli/mrt.html#b2c-mrt-project-notification-list',
   );
 
   static enableJsonFlag = true;

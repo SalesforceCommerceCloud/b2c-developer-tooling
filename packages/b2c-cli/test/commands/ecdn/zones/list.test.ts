@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import EcdnZonesList from '../../../../src/commands/ecdn/zones/list.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../../helpers/test-setup.js';
 
 /**
  * Unit tests for eCDN zones list command CLI logic.
@@ -129,7 +129,7 @@ describe('ecdn zones list', () => {
         }),
       });
 
-      const result = await command.run();
+      const result = await runSilent(() => command.run());
 
       expect(result).to.have.property('total', 1);
       expect(result.zones).to.have.lengthOf(1);

@@ -19,9 +19,11 @@ export function stubParse(
   flags: Record<string, unknown> = {},
   args: Record<string, unknown> = {},
 ): SinonStub {
+  // Include silent log level by default to reduce test output noise
+  const defaultFlags = {'log-level': 'silent'};
   return sinon.stub(command as {parse: unknown}, 'parse').resolves({
     args,
-    flags,
+    flags: {...defaultFlags, ...flags},
     metadata: {},
     argv: [],
     raw: [],
