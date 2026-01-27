@@ -245,9 +245,9 @@ export function loadConfig(
     );
   }
 
-  // Log warnings
+  // Log warnings (at warn level so users can see configuration issues)
   for (const warning of resolved.warnings) {
-    logger.trace({warning}, `[Config] ${warning.message}`);
+    logger.warn({warning}, `[Config] ${warning.message}`);
   }
 
   return resolved;
