@@ -60,7 +60,7 @@ import type {
   OrganizationCollection,
   AuditLogCollection,
   ListOrgsOptions,
-} from '../../clients/am-orgs-api.js';
+} from '../../clients/am-api.js';
 
 // Re-export types
 export type {
@@ -68,7 +68,7 @@ export type {
   OrganizationCollection,
   AuditLogCollection,
   ListOrgsOptions,
-} from '../../clients/am-orgs-api.js';
+} from '../../clients/am-api.js';
 
 /**
  * Gets an organization by ID.

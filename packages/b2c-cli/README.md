@@ -192,22 +192,22 @@ Manage users in Account Manager.
 
 ```sh
 # List users with pagination
-b2c user list --page 0 --size 20
+b2c am users list --page 0 --size 20
 
 # Get user details by email
-b2c user get user@example.com
+b2c am users get user@example.com
 
 # Create a new user
-b2c user create --org org-id --mail user@example.com --first-name John --last-name Doe
+b2c am users create --org org-id --mail user@example.com --first-name John --last-name Doe
 
 # Update a user
-b2c user update user@example.com --first-name Jane
+b2c am users update user@example.com --first-name Jane
 
 # Reset a user to INITIAL state
-b2c user reset user@example.com
+b2c am users reset user@example.com
 
 # Delete (disable) a user
-b2c user delete user@example.com
+b2c am users delete user@example.com
 ```
 
 ### Role Management (Account Manager)
@@ -216,19 +216,19 @@ Manage roles and role assignments in Account Manager.
 
 ```sh
 # List roles with pagination
-b2c role list --page 0 --size 20 --target-type User
+b2c am roles list --page 0 --size 20 --target-type User
 
 # Get role details
-b2c role get bm-admin
+b2c am roles get bm-admin
 
 # Grant a role to a user
-b2c role grant user@example.com --role bm-admin
+b2c am roles grant user@example.com --role bm-admin
 
 # Grant a role with tenant scope
-b2c role grant user@example.com --role bm-admin --scope "tenant1,tenant2"
+b2c am roles grant user@example.com --role bm-admin --scope "tenant1,tenant2"
 
 # Revoke a role from a user
-b2c role revoke user@example.com --role bm-admin
+b2c am roles revoke user@example.com --role bm-admin
 ```
 
 ### Organization Management (Account Manager)
@@ -237,22 +237,22 @@ Manage organizations in Account Manager.
 
 ```sh
 # List organizations with pagination
-b2c org list --page 0 --size 25
+b2c am orgs list --page 0 --size 25
 
 # List all organizations
-b2c org list --all
+b2c am orgs list --all
 
 # Get organization details by ID
-b2c org get org-123
+b2c am orgs get org-123
 
 # Get organization details by name
-b2c org get "My Organization"
+b2c am orgs get "My Organization"
 
 # Get audit logs for an organization
-b2c org audit org-123
+b2c am orgs audit org-123
 
 # Get audit logs with extended columns
-b2c org audit org-123 --extended
+b2c am orgs audit org-123 --extended
 ```
 
 ### Authentication
