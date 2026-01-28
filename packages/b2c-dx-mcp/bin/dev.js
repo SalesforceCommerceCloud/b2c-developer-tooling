@@ -5,6 +5,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// Set NODE_ENV to development if not already set (disables production telemetry)
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
 // Load .env file if present (Node.js native support)
 try {
   process.loadEnvFile();

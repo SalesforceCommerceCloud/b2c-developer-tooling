@@ -51,6 +51,13 @@
         "default": "./dist/commands/mcp.js"
       }
     },
+    "./config": {
+      "development": "./src/config.ts",
+      "import": {
+        "types": "./dist/config.d.ts",
+        "default": "./dist/config.js"
+      }
+    },
     "./tools": {
       "development": "./src/tools/index.ts",
       "import": {

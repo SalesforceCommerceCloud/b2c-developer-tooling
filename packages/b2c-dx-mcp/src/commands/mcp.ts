@@ -20,6 +20,11 @@
  * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
  *
+ * ### Environment Variables (no flag equivalent)
+ * | Env Variable | Description |
+ * |--------------|-------------|
+ * | `SFCC_TELEMETRY` | Set to `false` to disable telemetry collection |
+ *
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
  * |------|--------------|-------------|
@@ -138,10 +143,12 @@ import {
 } from '@salesforce/b2c-tooling-sdk/cli';
 import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {createTelemetry, type Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
 import {registerToolsets} from '../registry.js';
+import {APPLICATION_INSIGHTS_CONNECTION_STRING} from '../config.js';
 import {TOOLSETS, type StartupFlags} from '../utils/index.js';
 
 /**
@@ -281,21 +288,25 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       workingDirectory: this.flags['working-directory'],
     };
 
-    // TODO: Telemetry - Initialize telemetry unless disabled
-    // if (!flags["no-telemetry"]) {
-    //   telemetry = new Telemetry({
-    //     toolsets: (startupFlags.toolsets ?? []).join(", "),
-    //     configDir,
-    //     version: this.config.version,
-    //   });
-    //   await telemetry.start();
-    //   process.stdin.on("close", (err) => {
-    //     telemetry?.sendEvent(err ? "SERVER_STOPPED_ERROR" : "SERVER_STOPPED_SUCCESS");
-    //     telemetry?.stop();
-    //   });
-    // }
+    // Initialize telemetry unless disabled via SFCC_TELEMETRY=false
+    let telemetry: Telemetry | undefined;
+    if (process.env.SFCC_TELEMETRY !== 'false') {
+      telemetry = createTelemetry({
+        project: 'b2c-dx-mcp',
+        appInsightsKey: APPLICATION_INSIGHTS_CONNECTION_STRING,
+        version: this.config.version,
+        initialAttributes: {
+          toolsets: (startupFlags.toolsets ?? []).join(', '),
+        },
+      });
+      await telemetry.start();
+      process.stdin.on('close', (err) => {
+        telemetry?.sendEvent(err ? 'SERVER_STOPPED_ERROR' : 'SERVER_STOPPED_SUCCESS');
+        telemetry?.stop();
+      });
+    }
 
-    // Create MCP server
+    // Create MCP server with telemetry
     const server = new B2CDxMcpServer(
       {
         name: this.config.name,
@@ -306,6 +317,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
           resources: {},
           tools: {},
         },
+        telemetry,
       },
     );
 

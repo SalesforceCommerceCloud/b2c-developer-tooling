@@ -218,6 +218,26 @@ Storefront Next development tools for building modern storefronts.
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_discovery`). When using multiple toolsets, tools are automatically deduplicated.
 
+## Telemetry
+
+The MCP server collects anonymous usage telemetry to help improve the developer experience.
+
+**Development mode**: Telemetry is automatically disabled when `NODE_ENV=development` (set by `bin/dev.js`), so local development and testing won't pollute production data.
+
+**Production**: Telemetry is enabled by default for published releases. To disable, set `SFCC_TELEMETRY=false`.
+
+### What We Collect
+
+- **Server lifecycle events**: When the server starts, stops, or encounters errors
+- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
+- **Environment info**: Platform, architecture, Node.js version, and package version
+
+### What We Don't Collect
+
+- **No credentials**: No API keys, passwords, or secrets
+- **No business data**: No product data, customer information, or site content
+- **No tool arguments**: No input parameters or output results from tool calls
+- **No file contents**: No source code, configuration files, or project data
 
 ## Development
 

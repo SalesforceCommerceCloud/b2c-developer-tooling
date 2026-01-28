@@ -35,6 +35,13 @@ describe('McpServerCommand', () => {
       expect(flag.default).to.equal(false);
     });
 
+    it('should not have a no-telemetry flag (telemetry controlled via SFCC_TELEMETRY env var only)', () => {
+      // Telemetry is disabled via SFCC_TELEMETRY=false env var, not a CLI flag
+      // This keeps the CLI cleaner and prevents accidental disabling
+      const flags = McpServerCommand.flags as Record<string, unknown>;
+      expect(flags['no-telemetry']).to.be.undefined;
+    });
+
     it('should inherit config flag from BaseCommand', () => {
       // config flag is inherited from BaseCommand.baseFlags
       const flag = McpServerCommand.baseFlags.config;
