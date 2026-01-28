@@ -71,6 +71,9 @@ export {
   createSlasClient,
   createOdsClient,
   createCustomApisClient,
+  createAccountManagerUsersClient,
+  createAccountManagerRolesClient,
+  createAccountManagerOrgsClient,
   createCdnZonesClient,
   toOrganizationId,
   toTenantId,
@@ -108,6 +111,28 @@ export type {
   CustomApisResponse,
   CustomApisPaths,
   CustomApisComponents,
+  AccountManagerUsersClient,
+  AccountManagerClientConfig,
+  AccountManagerUser,
+  AccountManagerResponse,
+  AccountManagerError,
+  UserCreate,
+  UserUpdate,
+  UserCollection,
+  UserState,
+  UserExpandOption,
+  AccountManagerRolesClient,
+  AccountManagerRole,
+  AccountManagerRolesResponse,
+  AccountManagerRolesError,
+  RoleCollection,
+  ListRolesOptions,
+  AccountManagerOrgsClient,
+  AccountManagerOrganization,
+  OrganizationCollection,
+  AuditLogRecord,
+  AuditLogCollection,
+  ListOrgsOptions,
   CdnZonesClient,
   CdnZonesClientConfig,
   CdnZonesClientOptions,
@@ -203,6 +228,26 @@ export type {
   DownloadDocsOptions,
   DownloadDocsResult,
 } from './operations/docs/index.js';
+
+// Operations - Users
+export {
+  getUser,
+  getUserByLogin,
+  listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  purgeUser,
+  resetUser,
+  grantRole,
+  revokeRole,
+} from './operations/users/index.js';
+
+// Operations - Roles
+export {getRole, listRoles} from './operations/roles/index.js';
+
+// Operations - Organizations
+export {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from './operations/orgs/index.js';
 
 // Operations - ODS
 export {

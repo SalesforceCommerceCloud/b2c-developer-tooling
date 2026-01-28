@@ -8,7 +8,18 @@ import type {Config} from '@oclif/core';
 import {captureOutput} from '@oclif/test';
 import sinon from 'sinon';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {stubParse} from './stub-parse.js';
+
+type TokenResponse = {
+  accessToken: string;
+  expires: Date;
+  scopes: string[];
+};
+
+function futureDate(minutes: number): Date {
+  return new Date(Date.now() + minutes * 60 * 1000);
+}
 
 /**
  * Run a command silently, capturing stdout/stderr.
@@ -69,4 +80,97 @@ export async function createTestCommand<T extends {init: () => Promise<void>}>(
   stubParse(command, flags, args);
   await command.init();
   return command as T;
+}
+
+/**
+ * Stubs command config and logger for testing.
+ * @param command - The command instance to stub
+ * @param accountManagerHost - Account Manager hostname (default: 'account.test.demandware.com')
+ */
+export function stubCommandConfigAndLogger(command: any, accountManagerHost = 'account.test.demandware.com'): void {
+  Object.defineProperty(command, 'config', {
+    value: {
+      findConfigFile: () => ({
+        read: () => ({}),
+      }),
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'logger', {
+    value: {info() {}, debug() {}, warn() {}, error() {}},
+    configurable: true,
+  });
+
+  Object.defineProperty(command, 'resolvedConfig', {
+    value: {
+      values: {
+        accountManagerHost,
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+      },
+      hasOAuthConfig() {
+        return Boolean(this.values.clientId);
+      },
+    },
+    configurable: true,
+  });
+}
+
+/**
+ * Stubs the JSON enabled flag for a command.
+ * @param command - The command instance to stub
+ * @param enabled - Whether JSON mode is enabled
+ */
+export function stubJsonEnabled(command: any, enabled: boolean): void {
+  command.jsonEnabled = () => enabled;
+}
+
+/**
+ * Stubs a client property on a command.
+ * @param command - The command instance to stub
+ * @param propertyName - The name of the client property (e.g., 'accountManagerUsersClient', 'accountManagerRolesClient', 'accountManagerOrgsClient')
+ * @param client - The client instance to stub
+ */
+export function stubClient(command: any, propertyName: string, client: any): void {
+  Object.defineProperty(command, propertyName, {
+    get: () => client,
+    configurable: true,
+  });
+}
+
+/**
+ * Makes a command throw on error instead of using oclif's error handling.
+ * @param command - The command instance to modify
+ */
+export function makeCommandThrowOnError(command: any): void {
+  command.error = (msg: string) => {
+    throw new Error(msg);
+  };
+}
+
+/**
+ * Mocks getOAuthStrategy to return ImplicitOAuthStrategy with mocked implicitFlowLogin.
+ * This follows the pattern from oauth-implicit.test.ts to avoid browser-based OAuth flow.
+ * Use this for AM command tests that need to test implicit flow behavior without triggering
+ * the interactive browser-based authentication.
+ *
+ * @param command - The command instance to stub
+ * @param accountManagerHost - Account Manager hostname (default: 'account.test.demandware.com')
+ */
+export function stubImplicitOAuthStrategy(command: any, accountManagerHost = 'account.test.demandware.com'): void {
+  const strategy = new ImplicitOAuthStrategy({
+    clientId: 'test-client-id',
+    accountManagerHost,
+  });
+
+  // Mock implicitFlowLogin to avoid browser-based OAuth flow (following oauth-implicit.test.ts pattern)
+  (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => ({
+    accessToken: 'test-token',
+    expires: futureDate(30),
+    scopes: [],
+  });
+
+  // Stub getOAuthStrategy to return our mocked strategy
+  sinon.stub(command as {getOAuthStrategy: () => typeof strategy}, 'getOAuthStrategy').returns(strategy);
 }
