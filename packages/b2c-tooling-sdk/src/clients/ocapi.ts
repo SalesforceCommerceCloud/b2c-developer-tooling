@@ -56,9 +56,6 @@ export type OcapiResponse<T> = T extends {content: {'application/json': infer R}
  */
 export type OcapiError = components['schemas']['fault'];
 
-// Re-export middleware for backwards compatibility
-export {createAuthMiddleware, createLoggingMiddleware};
-
 /**
  * Options for creating an OCAPI client.
  */

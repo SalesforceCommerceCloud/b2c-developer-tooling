@@ -57,17 +57,6 @@
         "default": "./dist/cjs/instance/index.js"
       }
     },
-    "./platform": {
-      "development": "./src/platform/index.ts",
-      "import": {
-        "types": "./dist/esm/platform/index.d.ts",
-        "default": "./dist/esm/platform/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/platform/index.d.ts",
-        "default": "./dist/cjs/platform/index.js"
-      }
-    },
     "./operations/code": {
       "development": "./src/operations/code/index.ts",
       "import": {
@@ -101,26 +90,26 @@
         "default": "./dist/cjs/operations/mrt/index.js"
       }
     },
-    "./operations/docs": {
-      "development": "./src/operations/docs/index.ts",
+    "./docs": {
+      "development": "./src/docs/index.ts",
       "import": {
-        "types": "./dist/esm/operations/docs/index.d.ts",
-        "default": "./dist/esm/operations/docs/index.js"
+        "types": "./dist/esm/docs/index.d.ts",
+        "default": "./dist/esm/docs/index.js"
       },
       "require": {
-        "types": "./dist/cjs/operations/docs/index.d.ts",
-        "default": "./dist/cjs/operations/docs/index.js"
+        "types": "./dist/cjs/docs/index.d.ts",
+        "default": "./dist/cjs/docs/index.js"
       }
     },
-    "./operations/scapi-schemas": {
-      "development": "./src/operations/scapi-schemas/index.ts",
+    "./schemas": {
+      "development": "./src/schemas/index.ts",
       "import": {
-        "types": "./dist/esm/operations/scapi-schemas/index.d.ts",
-        "default": "./dist/esm/operations/scapi-schemas/index.js"
+        "types": "./dist/esm/schemas/index.d.ts",
+        "default": "./dist/esm/schemas/index.js"
       },
       "require": {
-        "types": "./dist/cjs/operations/scapi-schemas/index.d.ts",
-        "default": "./dist/cjs/operations/scapi-schemas/index.js"
+        "types": "./dist/cjs/schemas/index.d.ts",
+        "default": "./dist/cjs/schemas/index.js"
       }
     },
     "./operations/logs": {

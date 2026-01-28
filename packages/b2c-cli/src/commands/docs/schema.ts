@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {readSchemaByQuery, listSchemas, type SchemaEntry} from '@salesforce/b2c-tooling-sdk/operations/docs';
+import {readSchemaByQuery, listSchemas, type SchemaEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import {t} from '../../i18n/index.js';
 
 interface SchemaResult {

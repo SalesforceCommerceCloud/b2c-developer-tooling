@@ -4,7 +4,7 @@ description: API reference for the B2C Tooling SDK with typed WebDAV and OCAPI c
 
 # API Reference
 
-The `@salesforce/b2c-tooling-sdk` package provides a programmatic API for interacting with Salesforce B2C Commerce instances.
+The `@salesforce/b2c-tooling-sdk` package provides TypeScript APIs for B2C Commerce development, including instance clients (WebDAV, OCAPI), platform service clients (SCAPI, SLAS, MRT, ODS), high-level operations, and developer utilities.
 
 ## Installation
 
@@ -12,60 +12,91 @@ The `@salesforce/b2c-tooling-sdk` package provides a programmatic API for intera
 npm install @salesforce/b2c-tooling-sdk
 ```
 
-## Quick Start
+## Package Structure
 
-### From Configuration (Recommended)
+The SDK is organized into focused submodules that can be imported individually:
 
-Use `resolveConfig()` to load configuration from project files (dw.json) and create a B2C instance:
+```
+@salesforce/b2c-tooling-sdk
+├── /config          # Configuration resolution (dw.json, env vars)
+├── /auth            # Authentication strategies (OAuth, Basic, API Key)
+├── /clients         # Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT)
+├── /logging         # Pino-based logging configuration
+│
+├── /operations/code # Code deployment, cartridge management
+├── /operations/jobs # Job execution, site archive import/export
+├── /operations/logs # Log tailing and retrieval
+├── /operations/mrt  # Managed Runtime bundle operations
+├── /operations/ods  # On-demand sandbox utilities
+│
+├── /docs            # B2C Script API documentation search
+└── /schemas         # OpenAPI schema utilities
+```
+
+Import from specific submodules to access their functionality:
 
 ```typescript
 import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
-
-// Load configuration, override secrets from environment
-const config = resolveConfig({
-  clientId: process.env.SFCC_CLIENT_ID,
-  clientSecret: process.env.SFCC_CLIENT_SECRET,
-});
-
-// Validate configuration before use
-if (!config.hasB2CInstanceConfig()) {
-  throw new Error('Missing B2C instance configuration');
-}
-
-// Create instance from validated config
-const instance = config.createB2CInstance();
-
-// Use typed WebDAV client
-await instance.webdav.mkcol('Cartridges/v1');
-await instance.webdav.put('Cartridges/v1/app.zip', zipBuffer);
-
-// Use typed OCAPI client (openapi-fetch)
-const { data, error } = await instance.ocapi.GET('/sites', {
-  params: { query: { select: '(**)' } },
-});
-
-// Check for configuration warnings
-for (const warning of config.warnings) {
-  console.warn(warning.message);
-}
+import { findAndDeployCartridges } from '@salesforce/b2c-tooling-sdk/operations/code';
+import { tailLogs } from '@salesforce/b2c-tooling-sdk/operations/logs';
 ```
 
-### Direct Construction
+## Quick Start
 
-For advanced use cases, you can construct a B2CInstance directly:
+### B2C Instance Operations
 
 ```typescript
 import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
 
 const instance = new B2CInstance(
   { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
-  {
-    oauth: {
-      clientId: 'your-client-id',
-      clientSecret: 'your-client-secret'
-    }
-  }
+  { oauth: { clientId: 'your-client-id', clientSecret: 'your-client-secret' } }
 );
+
+// Typed WebDAV client
+await instance.webdav.put('Cartridges/v1/app.zip', zipBuffer);
+
+// Typed OCAPI client (openapi-fetch)
+const { data } = await instance.ocapi.GET('/sites');
+```
+
+### Job Execution
+
+```typescript
+import { executeJob, waitForJob } from '@salesforce/b2c-tooling-sdk/operations/jobs';
+
+const execution = await executeJob(instance, 'MyCustomJob');
+const result = await waitForJob(instance, 'MyCustomJob', execution.id!);
+```
+
+### Platform Service Clients
+
+```typescript
+import { createSlasClient, OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+  scopes: ['SLAS_ORGANIZATION_ADMIN'],
+});
+
+const slasClient = createSlasClient({ shortCode: 'kv7kzm78' }, auth);
+const { data } = await slasClient.GET('/tenants/{tenantId}/clients', {
+  params: { path: { tenantId: 'your-tenant' } },
+});
+```
+
+### MRT Operations
+
+```typescript
+import { pushBundle, ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk';
+
+const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!);
+const result = await pushBundle({
+  projectSlug: 'my-storefront',
+  buildDirectory: './build',
+  target: 'staging',
+}, auth);
 ```
 
 ## Configuration Resolution
@@ -105,32 +136,13 @@ if (config.hasB2CInstanceConfig()) {
 
 // Check for MRT configuration
 if (config.hasMrtConfig()) {
-  const mrtClient = config.createMrtClient({ project: 'my-project' });
+  const mrtAuth = config.createMrtAuth();
 }
 
 // Other validation methods
 config.hasOAuthConfig();      // OAuth credentials available?
 config.hasBasicAuthConfig();  // Basic auth credentials available?
 ```
-
-### Configuration Warnings
-
-The config system detects potential issues and provides warnings:
-
-```typescript
-const config = resolveConfig({
-  hostname: 'staging.demandware.net', // Different from dw.json
-});
-
-// Check warnings
-for (const warning of config.warnings) {
-  console.warn(`[${warning.code}] ${warning.message}`);
-}
-```
-
-### Hostname Protection
-
-When you explicitly override the hostname with a value that differs from dw.json, the system protects against credential leakage by ignoring the dw.json credentials. This prevents accidentally using production credentials against a staging server.
 
 ## Authentication
 
@@ -172,23 +184,16 @@ When both are configured, WebDAV uses Basic auth and OCAPI uses OAuth.
 ### WebDAV Client
 
 ```typescript
-// Create directories
-await instance.webdav.mkcol('Cartridges/v1');
-
 // Upload files
 await instance.webdav.put('Cartridges/v1/app.zip', buffer, 'application/zip');
+
+// List directory contents
+const entries = await instance.webdav.propfind('Cartridges');
 
 // Download files
 const content = await instance.webdav.get('Cartridges/v1/app.zip');
 
-// List directory
-const entries = await instance.webdav.propfind('Cartridges');
-
-// Check existence
-const exists = await instance.webdav.exists('Cartridges/v1');
-
-// Delete
-await instance.webdav.delete('Cartridges/v1/old-file.zip');
+// Also supports: mkcol, exists, delete, unzip, request
 ```
 
 ### OCAPI Client

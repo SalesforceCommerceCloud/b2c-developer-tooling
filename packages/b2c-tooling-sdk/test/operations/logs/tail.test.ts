@@ -11,7 +11,6 @@ import {WebDavClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {
   aggregateLogEntries,
   parseLogEntry,
-  parseLogLine,
   splitLines,
   tailLogs,
   getRecentLogs,
@@ -50,10 +49,10 @@ function generatePropfindXml(entries: {name: string; size: number; date: Date}[]
 }
 
 describe('operations/logs/tail', () => {
-  describe('parseLogLine', () => {
+  describe('parseLogEntry (single-line)', () => {
     it('parses standard B2C log format', () => {
       const line = '[2025-01-25 10:30:45.123 GMT] ERROR Some error message';
-      const entry = parseLogLine(line, 'error-blade1-20250125.log');
+      const entry = parseLogEntry(line, 'error-blade1-20250125.log', line);
 
       expect(entry.file).to.equal('error-blade1-20250125.log');
       expect(entry.timestamp).to.equal('2025-01-25 10:30:45.123 GMT');
@@ -65,7 +64,7 @@ describe('operations/logs/tail', () => {
 
     it('parses INFO level', () => {
       const line = '[2025-01-25 10:30:45.123 GMT] INFO Application started';
-      const entry = parseLogLine(line, 'info.log');
+      const entry = parseLogEntry(line, 'info.log', line);
 
       expect(entry.level).to.equal('INFO');
       expect(entry.message).to.include('Application started');
@@ -73,28 +72,28 @@ describe('operations/logs/tail', () => {
 
     it('parses WARN level', () => {
       const line = '[2025-01-25 10:30:45.123 GMT] WARN Deprecated feature used';
-      const entry = parseLogLine(line, 'warn.log');
+      const entry = parseLogEntry(line, 'warn.log', line);
 
       expect(entry.level).to.equal('WARN');
     });
 
     it('parses DEBUG level', () => {
       const line = '[2025-01-25 10:30:45.123 GMT] DEBUG Variable value: 42';
-      const entry = parseLogLine(line, 'debug.log');
+      const entry = parseLogEntry(line, 'debug.log', line);
 
       expect(entry.level).to.equal('DEBUG');
     });
 
     it('parses FATAL level', () => {
       const line = '[2025-01-25 10:30:45.123 GMT] FATAL Critical failure';
-      const entry = parseLogLine(line, 'fatal.log');
+      const entry = parseLogEntry(line, 'fatal.log', line);
 
       expect(entry.level).to.equal('FATAL');
     });
 
     it('handles unparseable lines', () => {
       const line = 'This is just a plain message without proper format';
-      const entry = parseLogLine(line, 'error.log');
+      const entry = parseLogEntry(line, 'error.log', line);
 
       expect(entry.file).to.equal('error.log');
       expect(entry.level).to.be.undefined;
@@ -106,7 +105,7 @@ describe('operations/logs/tail', () => {
     it('applies path normalizer to message', () => {
       const line = '[2025-01-25 10:30:45.123 GMT] ERROR Error in (app_storefront/cartridge/controllers/Home.js:45)';
       const normalizer = (msg: string) => msg.replace(/app_storefront/g, 'normalized');
-      const entry = parseLogLine(line, 'error.log', normalizer);
+      const entry = parseLogEntry(line, 'error.log', line, normalizer);
 
       expect(entry.message).to.include('normalized');
     });
