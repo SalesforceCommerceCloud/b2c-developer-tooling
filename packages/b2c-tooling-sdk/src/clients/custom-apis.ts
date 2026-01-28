@@ -25,9 +25,38 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-re
 export type {paths, components};
 
 /**
- * The typed Custom APIs client - this is the openapi-fetch Client with full type safety.
+ * The typed Custom APIs client for Custom SCAPI endpoint management.
+ *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/organizations/{organizationId}/endpoints` | List all custom API endpoints |
+ * | GET | `/organizations/{organizationId}/endpoints/{apiName}` | Get specific API info |
+ *
+ * @example
+ * ```typescript
+ * import { createCustomApisClient, toOrganizationId } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ * });
+ *
+ * const client = createCustomApisClient(
+ *   { shortCode: 'kv7kzm78', tenantId: 'zzxy_prd' },
+ *   auth
+ * );
+ *
+ * // List all custom API endpoints
+ * const { data, error } = await client.GET('/organizations/{organizationId}/endpoints', {
+ *   params: { path: { organizationId: toOrganizationId('zzxy_prd') } }
+ * });
+ * ```
  *
  * @see {@link createCustomApisClient} for instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/commerce-api/references/custom-apis?meta=Summary | Custom APIs Reference}
  */
 export type CustomApisClient = Client<paths>;
 

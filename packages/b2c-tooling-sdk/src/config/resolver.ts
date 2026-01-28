@@ -347,7 +347,7 @@ export function createConfigResolver(): ConfigResolver {
  * }
  *
  * if (config.hasMrtConfig()) {
- *   const mrtClient = config.createMrtClient({ project: 'my-project' });
+ *   const mrtAuth = config.createMrtAuth();
  * }
  * ```
  *

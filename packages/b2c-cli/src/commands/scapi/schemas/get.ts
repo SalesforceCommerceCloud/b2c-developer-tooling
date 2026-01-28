@@ -10,7 +10,7 @@ import {
   getSchemaNames,
   getExampleNames,
   type OpenApiSchemaInput,
-} from '@salesforce/b2c-tooling-sdk/operations/scapi-schemas';
+} from '@salesforce/b2c-tooling-sdk/schemas';
 import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
 import {t, withDocs} from '../../../i18n/index.js';
 

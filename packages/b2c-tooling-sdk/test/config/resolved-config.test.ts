@@ -153,31 +153,6 @@ describe('config/resolved-config', () => {
       });
     });
 
-    describe('createMrtClient', () => {
-      it('creates MrtClient when mrtApiKey is present', () => {
-        const config = resolveConfig({mrtApiKey: 'test-api-key'});
-        const client = config.createMrtClient({org: 'test-org', project: 'test-project', env: 'staging'});
-        expect(client).to.be.an('object');
-      });
-
-      it('uses config values when options not provided', () => {
-        const config = resolveConfig({
-          mrtApiKey: 'test-api-key',
-          mrtProject: 'config-project',
-          mrtEnvironment: 'production',
-        });
-        const client = config.createMrtClient({org: 'test-org'});
-        expect(client).to.be.an('object');
-      });
-
-      it('throws error when mrtApiKey is missing', () => {
-        const config = resolveConfig({}, {replaceDefaultSources: true});
-        expect(() => config.createMrtClient({org: 'test-org', project: 'test-project'})).to.throw(
-          'MRT auth requires mrtApiKey',
-        );
-      });
-    });
-
     describe('warnings and sources', () => {
       it('exposes warnings from resolution', () => {
         const config = resolveConfig({hostname: 'override.demandware.net'});

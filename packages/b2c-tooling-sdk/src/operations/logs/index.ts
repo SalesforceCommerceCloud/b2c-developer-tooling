@@ -80,7 +80,7 @@ export type {
 export {extractPrefix, listLogFiles} from './list.js';
 
 // Tail operations
-export {aggregateLogEntries, getRecentLogs, parseLogEntry, parseLogLine, splitLines, tailLogs} from './tail.js';
+export {aggregateLogEntries, getRecentLogs, parseLogEntry, splitLines, tailLogs} from './tail.js';
 
 // Path normalization
 export {

@@ -11,9 +11,9 @@ import {
   getSchemaNames,
   getExampleNames,
   type OpenApiSchemaInput,
-} from '@salesforce/b2c-tooling-sdk/operations/scapi-schemas';
+} from '@salesforce/b2c-tooling-sdk/schemas';
 
-describe('operations/scapi-schemas', () => {
+describe('schemas', () => {
   // Sample OpenAPI schema for testing
   const sampleSchema: OpenApiSchemaInput = {
     openapi: '3.0.3',

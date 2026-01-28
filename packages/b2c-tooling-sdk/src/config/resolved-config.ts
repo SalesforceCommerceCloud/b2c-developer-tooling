@@ -13,7 +13,6 @@ import {BasicAuthStrategy} from '../auth/basic.js';
 import {ApiKeyStrategy} from '../auth/api-key.js';
 import {resolveAuthStrategy} from '../auth/resolve.js';
 import type {B2CInstance} from '../instance/index.js';
-import {MrtClient} from '../platform/mrt.js';
 import {createInstanceFromConfig} from './mapping.js';
 import type {
   NormalizedConfig,
@@ -21,7 +20,6 @@ import type {
   ConfigSourceInfo,
   ResolvedB2CConfig,
   CreateOAuthOptions,
-  CreateMrtClientOptions,
 } from './types.js';
 
 /**
@@ -101,16 +99,5 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
       return this.createOAuth();
     }
     throw new Error('WebDAV auth requires basic auth (username/password) or OAuth (clientId)');
-  }
-
-  createMrtClient(options?: CreateMrtClientOptions): MrtClient {
-    return new MrtClient(
-      {
-        org: options?.org ?? '',
-        project: options?.project ?? this.values.mrtProject ?? '',
-        env: options?.env ?? this.values.mrtEnvironment ?? '',
-      },
-      this.createMrtAuth(),
-    );
   }
 }

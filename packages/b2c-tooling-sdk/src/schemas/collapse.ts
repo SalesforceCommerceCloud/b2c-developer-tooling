@@ -15,7 +15,7 @@
  * This approach addresses context length concerns when working with large OpenAPI
  * schemas in agentic/LLM contexts.
  *
- * @module operations/scapi-schemas/collapse
+ * @module schemas/collapse
  */
 
 /**

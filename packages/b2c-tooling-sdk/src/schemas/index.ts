@@ -5,9 +5,9 @@
  */
 
 /**
- * SCAPI Schemas operations for B2C Commerce.
+ * OpenAPI Schema utilities for B2C Commerce.
  *
- * Provides utilities for working with SCAPI OpenAPI schemas, including
+ * Provides utilities for working with OpenAPI schemas, including
  * collapsing large schemas for context-efficient representation in
  * agentic/LLM scenarios.
  *
@@ -17,7 +17,7 @@
  * while preserving structure for discovery:
  *
  * ```typescript
- * import { collapseOpenApiSchema } from '@salesforce/b2c-tooling-sdk/operations/scapi-schemas';
+ * import { collapseOpenApiSchema } from '@salesforce/b2c-tooling-sdk/schemas';
  *
  * // Collapse to outline form (default)
  * const collapsed = collapseOpenApiSchema(fullSchema);
@@ -39,7 +39,7 @@
  *   getPathKeys,
  *   getSchemaNames,
  *   isCollapsedSchema
- * } from '@salesforce/b2c-tooling-sdk/operations/scapi-schemas';
+ * } from '@salesforce/b2c-tooling-sdk/schemas';
  *
  * // Get available paths
  * const paths = getPathKeys(schema); // ["/products", "/orders", ...]
@@ -53,7 +53,7 @@
  * }
  * ```
  *
- * @module operations/scapi-schemas
+ * @module schemas
  */
 
 // Collapse utilities

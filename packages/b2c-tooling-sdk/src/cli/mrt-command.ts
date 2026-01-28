@@ -9,8 +9,6 @@ import {loadConfig, extractMrtFlags} from './config.js';
 import type {LoadConfigOptions} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {AuthStrategy} from '../auth/types.js';
-import {MrtClient} from '../platform/mrt.js';
-import type {MrtProject} from '../platform/mrt.js';
 import {t} from '../i18n/index.js';
 import {DEFAULT_MRT_ORIGIN} from '../clients/mrt.js';
 
@@ -107,14 +105,5 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
         ),
       );
     }
-  }
-
-  /**
-   * Creates an MRT client for the given project.
-   */
-  protected createMrtClient(project: MrtProject): MrtClient {
-    this.requireMrtCredentials();
-
-    return new MrtClient(project, this.getMrtAuth());
   }
 }

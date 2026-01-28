@@ -70,24 +70,6 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     }),
   };
 
-  /**
-   * Parses auth methods from flags.
-   * Returns methods in the order specified (priority order).
-   * @deprecated Use extractOAuthFlags() instead which handles this internally
-   */
-  protected parseAuthMethods(): AuthMethod[] | undefined {
-    const flagValues = this.flags['auth-methods'] as string[] | undefined;
-    if (!flagValues || flagValues.length === 0) {
-      return undefined;
-    }
-
-    const methods = flagValues
-      .map((s) => s.trim())
-      .filter((s): s is AuthMethod => ALL_AUTH_METHODS.includes(s as AuthMethod));
-
-    return methods.length > 0 ? methods : undefined;
-  }
-
   protected override loadConfiguration(): ResolvedB2CConfig {
     return loadConfig(
       extractOAuthFlags(this.flags as Record<string, unknown>),

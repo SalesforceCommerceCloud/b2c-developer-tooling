@@ -23,9 +23,33 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-re
 export type {paths, components};
 
 /**
- * The typed MRT B2C client - openapi-fetch Client with full type safety.
+ * The typed MRT B2C client for B2C Commerce integration with Managed Runtime.
+ *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/b2c-organization-info/{organization_slug}/` | Get B2C org info |
+ * | GET | `/projects/{project_slug}/b2c-target-info/{target_slug}/` | Get B2C target info |
+ * | PUT | `/projects/{project_slug}/b2c-target-info/{target_slug}/` | Update B2C target |
+ * | PATCH | `/projects/{project_slug}/b2c-target-info/{target_slug}/` | Partial update target |
+ *
+ * @example
+ * ```typescript
+ * import { createMrtB2CClient } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const auth = new ApiKeyStrategy(apiKey, 'Authorization');
+ * const client = createMrtB2CClient({}, auth);
+ *
+ * // Get B2C target info
+ * const { data, error } = await client.GET('/projects/{project_slug}/b2c-target-info/{target_slug}/', {
+ *   params: { path: { project_slug: 'my-project', target_slug: 'staging' } }
+ * });
+ * ```
  *
  * @see {@link createMrtB2CClient} for instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-b2c-config?meta=Summary | MRT B2C Config API Reference}
  */
 export type MrtB2CClient = Client<paths>;
 

@@ -97,14 +97,6 @@ export function parseLogEntry(
 }
 
 /**
- * Parses a log line into a structured entry.
- * @deprecated Use parseLogEntry for multi-line support
- */
-export function parseLogLine(line: string, file: string, pathNormalizer?: (msg: string) => string): LogEntry {
-  return parseLogEntry(line, file, line, pathNormalizer);
-}
-
-/**
  * Splits content into lines, handling incomplete lines at boundaries.
  * Uses TextDecoder with stream mode for proper UTF-8 multi-byte character handling.
  *

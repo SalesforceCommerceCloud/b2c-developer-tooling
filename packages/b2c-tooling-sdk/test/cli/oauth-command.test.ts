@@ -20,10 +20,6 @@ class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
   }
 
   // Expose protected methods for testing
-  public testParseAuthMethods() {
-    return this.parseAuthMethods();
-  }
-
   public testRequireOAuthCredentials() {
     return this.requireOAuthCredentials();
   }
@@ -42,34 +38,6 @@ describe('cli/oauth-command', () => {
   afterEach(() => {
     sinon.restore();
     restoreConfig();
-  });
-
-  describe('parseAuthMethods', () => {
-    it('returns undefined when no auth methods specified', async () => {
-      stubParse(command);
-
-      await command.init();
-      const methods = command.testParseAuthMethods();
-      expect(methods).to.be.undefined;
-    });
-
-    it('parses valid auth methods', async () => {
-      stubParse(command, {'auth-methods': ['client-credentials', 'implicit']});
-
-      await command.init();
-      const methods = command.testParseAuthMethods();
-      expect(methods).to.include('client-credentials');
-      expect(methods).to.include('implicit');
-    });
-
-    it('filters out invalid auth methods', async () => {
-      stubParse(command, {'auth-methods': ['client-credentials', 'invalid', 'basic']});
-
-      await command.init();
-      const methods = command.testParseAuthMethods();
-      expect(methods).to.include('client-credentials');
-      expect(methods).to.not.include('invalid');
-    });
   });
 
   describe('requireOAuthCredentials', () => {

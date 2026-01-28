@@ -1,18 +1,20 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
-    "./packages/b2c-tooling-sdk/src/auth/index.ts",
-    "./packages/b2c-tooling-sdk/src/cli/index.ts",
-    "./packages/b2c-tooling-sdk/src/clients/index.ts",
     "./packages/b2c-tooling-sdk/src/config/index.ts",
-    "./packages/b2c-tooling-sdk/src/i18n/index.ts",
+    "./packages/b2c-tooling-sdk/src/auth/index.ts",
+    "./packages/b2c-tooling-sdk/src/clients/index.ts",
     "./packages/b2c-tooling-sdk/src/instance/index.ts",
     "./packages/b2c-tooling-sdk/src/logging/index.ts",
     "./packages/b2c-tooling-sdk/src/operations/code/index.ts",
     "./packages/b2c-tooling-sdk/src/operations/jobs/index.ts",
+    "./packages/b2c-tooling-sdk/src/operations/logs/index.ts",
     "./packages/b2c-tooling-sdk/src/operations/mrt/index.ts",
-    "./packages/b2c-tooling-sdk/src/operations/sites/index.ts",
-    "./packages/b2c-tooling-sdk/src/platform/index.ts"
+    "./packages/b2c-tooling-sdk/src/operations/ods/index.ts",
+    "./packages/b2c-tooling-sdk/src/docs/index.ts",
+    "./packages/b2c-tooling-sdk/src/schemas/index.ts",
+    "./packages/b2c-tooling-sdk/src/cli/index.ts",
+    "./packages/b2c-tooling-sdk/src/i18n/index.ts"
   ],
   "exclude": ["**/*.generated.ts"],
   "out": "./docs/api",

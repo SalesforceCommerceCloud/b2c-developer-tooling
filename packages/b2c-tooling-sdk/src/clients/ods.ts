@@ -31,9 +31,36 @@ const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 export type {paths, components};
 
 /**
- * The typed ODS client - this is the openapi-fetch Client with full type safety.
+ * The typed ODS client for On-Demand Sandbox management.
+ *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/sandboxes` | List all sandboxes |
+ * | POST | `/sandboxes` | Create a new sandbox |
+ * | GET | `/sandboxes/{sandboxId}` | Get sandbox details |
+ * | DELETE | `/sandboxes/{sandboxId}` | Delete a sandbox |
+ * | POST | `/sandboxes/{sandboxId}/operations` | Start/stop a sandbox |
+ *
+ * @example
+ * ```typescript
+ * import { createOdsClient } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ * });
+ *
+ * const client = createOdsClient({}, auth);
+ *
+ * // List all sandboxes
+ * const { data, error } = await client.GET('/sandboxes', {});
+ * ```
  *
  * @see {@link createOdsClient} for instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/b2c-commerce/references/ods-rest-api?meta=Summary | ODS REST API Reference}
  */
 export type OdsClient = Client<paths>;
 
