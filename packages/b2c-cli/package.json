@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
