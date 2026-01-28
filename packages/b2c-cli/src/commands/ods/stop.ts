@@ -16,7 +16,7 @@ type SandboxOperationModel = OdsComponents['schemas']['SandboxOperationModel'];
 export default class OdsStop extends OdsCommand<typeof OdsStop> {
   static args = {
     sandboxId: Args.string({
-      description: 'Sandbox ID (UUID)',
+      description: 'Sandbox ID (UUID or realm-instance, e.g., abcd-123)',
       required: true,
     }),
   };
@@ -30,11 +30,12 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',
-    '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789 --json',
+    '<%= config.bin %> <%= command.id %> zzzv-123',
+    '<%= config.bin %> <%= command.id %> zzzv_123 --json',
   ];
 
   async run(): Promise<SandboxOperationModel> {
-    const sandboxId = this.args.sandboxId;
+    const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
 
     this.log(t('commands.ods.stop.stopping', 'Stopping sandbox {{sandboxId}}...', {sandboxId}));
 

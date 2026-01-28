@@ -6,6 +6,23 @@ description: Commands for creating, managing, starting, stopping, and deleting O
 
 Commands for managing On-Demand Sandboxes (ODS).
 
+## Sandbox ID Formats
+
+Commands that operate on a specific sandbox (`get`, `start`, `stop`, `restart`, `delete`) accept two ID formats:
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| UUID | `abc12345-1234-1234-1234-abc123456789` | Full sandbox UUID |
+| Realm-instance | `zzzv-123` or `zzzv_123` | Realm-instance format |
+
+The realm-instance format uses the 4-character realm code followed by a dash (`-`) or underscore (`_`) and the instance identifier. When using the realm-instance format, the CLI automatically looks up the corresponding sandbox UUID.
+
+```bash
+# These are equivalent (assuming zzzv-123 resolves to the UUID)
+b2c ods get abc12345-1234-1234-1234-abc123456789
+b2c ods get zzzv-123
+```
+
 ## Global ODS Flags
 
 These flags are available on all ODS commands:
@@ -176,16 +193,19 @@ b2c ods get <SANDBOXID>
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID) | Yes |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
 
 ### Examples
 
 ```bash
-# Get sandbox details
+# Get sandbox details using UUID
 b2c ods get abc12345-1234-1234-1234-abc123456789
 
+# Get sandbox details using realm-instance format
+b2c ods get zzzv-123
+
 # Output as JSON
-b2c ods get abc12345-1234-1234-1234-abc123456789 --json
+b2c ods get zzzv_123 --json
 ```
 
 ### Output
@@ -244,16 +264,19 @@ b2c ods start <SANDBOXID>
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID) | Yes |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
 
 ### Examples
 
 ```bash
-# Start a sandbox
+# Start a sandbox using UUID
 b2c ods start abc12345-1234-1234-1234-abc123456789
 
+# Start a sandbox using realm-instance format
+b2c ods start zzzv-123
+
 # Output as JSON
-b2c ods start abc12345-1234-1234-1234-abc123456789 --json
+b2c ods start zzzv_123 --json
 ```
 
 ---
@@ -272,16 +295,19 @@ b2c ods stop <SANDBOXID>
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID) | Yes |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
 
 ### Examples
 
 ```bash
-# Stop a sandbox
+# Stop a sandbox using UUID
 b2c ods stop abc12345-1234-1234-1234-abc123456789
 
+# Stop a sandbox using realm-instance format
+b2c ods stop zzzv-123
+
 # Output as JSON
-b2c ods stop abc12345-1234-1234-1234-abc123456789 --json
+b2c ods stop zzzv_123 --json
 ```
 
 ---
@@ -300,16 +326,19 @@ b2c ods restart <SANDBOXID>
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID) | Yes |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
 
 ### Examples
 
 ```bash
-# Restart a sandbox
+# Restart a sandbox using UUID
 b2c ods restart abc12345-1234-1234-1234-abc123456789
 
+# Restart a sandbox using realm-instance format
+b2c ods restart zzzv-123
+
 # Output as JSON
-b2c ods restart abc12345-1234-1234-1234-abc123456789 --json
+b2c ods restart zzzv_123 --json
 ```
 
 ---
@@ -328,7 +357,7 @@ b2c ods delete <SANDBOXID>
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID) | Yes |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
 
 ### Flags
 
@@ -339,11 +368,14 @@ b2c ods delete <SANDBOXID>
 ### Examples
 
 ```bash
-# Delete a sandbox (with confirmation prompt)
+# Delete a sandbox using UUID (with confirmation prompt)
 b2c ods delete abc12345-1234-1234-1234-abc123456789
 
+# Delete a sandbox using realm-instance format
+b2c ods delete zzzv-123
+
 # Delete without confirmation
-b2c ods delete abc12345-1234-1234-1234-abc123456789 --force
+b2c ods delete zzzv_123 --force
 ```
 
 ### Notes

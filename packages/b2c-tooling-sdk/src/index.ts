@@ -249,6 +249,15 @@ export {getRole, listRoles} from './operations/roles/index.js';
 // Operations - Organizations
 export {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from './operations/orgs/index.js';
 
+// Operations - ODS
+export {
+  isUuid,
+  isFriendlySandboxId,
+  parseFriendlySandboxId,
+  resolveSandboxId,
+  SandboxNotFoundError,
+} from './operations/ods/index.js';
+
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';
 
