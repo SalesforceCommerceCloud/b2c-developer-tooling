@@ -148,7 +148,8 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
 import {registerToolsets} from '../registry.js';
-import {TOOLSETS, type StartupFlags, loadAppInsightsKey} from '../utils/index.js';
+import {APPLICATION_INSIGHTS_CONNECTION_STRING} from '../config.js';
+import {TOOLSETS, type StartupFlags} from '../utils/index.js';
 
 /**
  * oclif Command that starts the B2C DX MCP server.
@@ -292,7 +293,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     if (process.env.SFCC_TELEMETRY !== 'false') {
       telemetry = createTelemetry({
         project: 'b2c-dx-mcp',
-        appInsightsKey: loadAppInsightsKey(),
+        appInsightsKey: APPLICATION_INSIGHTS_CONNECTION_STRING,
         version: this.config.version,
         initialAttributes: {
           toolsets: (startupFlags.toolsets ?? []).join(', '),

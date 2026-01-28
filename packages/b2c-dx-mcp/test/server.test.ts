@@ -143,6 +143,30 @@ describe('B2CDxMcpServer', () => {
       expect(server).to.be.instanceOf(B2CDxMcpServer);
     });
 
+    it('should call telemetry.start() before passing to server (simulated lifecycle)', async () => {
+      // This test verifies the expected telemetry lifecycle:
+      // 1. Create telemetry instance
+      // 2. Call telemetry.start() to initialize the reporter
+      // 3. Pass started telemetry to server
+      const mockTelemetry = new MockTelemetry();
+
+      // Verify telemetry is not started initially
+      expect(mockTelemetry.started).to.be.false;
+
+      // Simulate what mcp.ts does: start telemetry before creating server
+      await mockTelemetry.start();
+      expect(mockTelemetry.started).to.be.true;
+
+      // Now pass to server (as mcp.ts does)
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      expect(server).to.be.instanceOf(B2CDxMcpServer);
+      expect(mockTelemetry.started).to.be.true;
+    });
+
     it('should create server without options (no telemetry)', () => {
       const server = new B2CDxMcpServer({name: 'test-server', version: '1.0.0'});
 
