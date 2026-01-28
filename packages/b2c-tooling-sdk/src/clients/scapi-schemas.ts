@@ -31,9 +31,38 @@ export type {paths, components};
 export {toOrganizationId, toTenantId, buildTenantScope};
 
 /**
- * The typed SCAPI Schemas client - this is the openapi-fetch Client with full type safety.
+ * The typed SCAPI Schemas client for discovering available SCAPI APIs.
+ *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/organizations/{organizationId}/schemas` | List available schemas |
+ * | GET | `/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}` | Get specific schema |
+ *
+ * @example
+ * ```typescript
+ * import { createScapiSchemasClient, toOrganizationId } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ * });
+ *
+ * const client = createScapiSchemasClient(
+ *   { shortCode: 'kv7kzm78', tenantId: 'zzxy_prd' },
+ *   auth
+ * );
+ *
+ * // List all available SCAPI schemas
+ * const { data, error } = await client.GET('/organizations/{organizationId}/schemas', {
+ *   params: { path: { organizationId: toOrganizationId('zzxy_prd') } }
+ * });
+ * ```
  *
  * @see {@link createScapiSchemasClient} for instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/commerce-api/references/scapi-schemas?meta=Summary | SCAPI Schemas API Reference}
  */
 export type ScapiSchemasClient = Client<paths>;
 

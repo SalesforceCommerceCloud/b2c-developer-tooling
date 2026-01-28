@@ -77,7 +77,6 @@ import { createSlasClient, OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
 const auth = new OAuthStrategy({
   clientId: 'your-client-id',
   clientSecret: 'your-client-secret',
-  scopes: ['SLAS_ORGANIZATION_ADMIN'],
 });
 
 const slasClient = createSlasClient({ shortCode: 'kv7kzm78' }, auth);
@@ -181,6 +180,31 @@ When both are configured, WebDAV uses Basic auth and OCAPI uses OAuth.
 
 ## Typed Clients
 
+The SDK provides typed clients for B2C Commerce APIs. All clients use [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) for full TypeScript support with type-safe paths, parameters, and responses.
+
+### Instance Clients
+
+These clients are accessed via `B2CInstance` for operations on a specific B2C Commerce instance:
+
+| Client | Description | API Reference |
+|--------|-------------|---------------|
+| [WebDavClient](./clients/classes/WebDavClient.md) | File operations (upload, download, list) | WebDAV |
+| [OcapiClient](./clients/type-aliases/OcapiClient.md) | Data API operations (sites, jobs, code versions) | [OCAPI Data API](https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/b2c-api-doc.html) |
+
+### Platform Service Clients
+
+These clients are created directly for platform-wide services:
+
+| Client | Description | API Reference |
+|--------|-------------|---------------|
+| [SlasClient](./clients/type-aliases/SlasClient.md) | SLAS tenant and client management | [SLAS Admin API](https://developer.salesforce.com/docs/commerce/commerce-api/references/slas-admin?meta=Summary) |
+| [OdsClient](./clients/type-aliases/OdsClient.md) | On-demand sandbox management | [ODS REST API](https://developer.salesforce.com/docs/commerce/b2c-commerce/references/ods-rest-api?meta=Summary) |
+| [MrtClient](./clients/type-aliases/MrtClient.md) | Managed Runtime projects and deployments | [MRT Admin API](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=Summary) |
+| [MrtB2CClient](./clients/type-aliases/MrtB2CClient.md) | MRT B2C Commerce integration | [MRT B2C Config API](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-b2c-config?meta=Summary) |
+| [CdnZonesClient](./clients/type-aliases/CdnZonesClient.md) | eCDN zone and cache management | [CDN Zones API](https://developer.salesforce.com/docs/commerce/commerce-api/references/cdn-api-process-apis?meta=Summary) |
+| [ScapiSchemasClient](./clients/type-aliases/ScapiSchemasClient.md) | SCAPI schema discovery | [SCAPI Schemas API](https://developer.salesforce.com/docs/commerce/commerce-api/references/scapi-schemas?meta=Summary) |
+| [CustomApisClient](./clients/type-aliases/CustomApisClient.md) | Custom SCAPI endpoint status | [Custom APIs](https://developer.salesforce.com/docs/commerce/commerce-api/references/custom-apis?meta=Summary) |
+
 ### WebDAV Client
 
 ```typescript
@@ -197,8 +221,6 @@ const content = await instance.webdav.get('Cartridges/v1/app.zip');
 ```
 
 ### OCAPI Client
-
-The OCAPI client uses [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) with full TypeScript support:
 
 ```typescript
 // List sites

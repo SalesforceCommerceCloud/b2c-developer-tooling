@@ -30,7 +30,29 @@ export type {paths, components};
  * **Note:** This client is typically accessed via `B2CInstance.ocapi` rather
  * than created directly. The `B2CInstance` class handles authentication setup.
  *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/sites` | List all sites |
+ * | GET | `/code_versions` | List code versions |
+ * | PATCH | `/code_versions/{code_version_id}` | Activate a code version |
+ * | GET | `/jobs/{job_id}/executions` | Get job execution history |
+ * | POST | `/jobs/{job_id}/executions` | Start a job execution |
+ *
+ * @example
+ * ```typescript
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ *
+ * const config = resolveConfig();
+ * const instance = config.createB2CInstance();
+ *
+ * // List all sites
+ * const { data, error } = await instance.ocapi.GET('/sites', {});
+ * ```
+ *
  * @see {@link createOcapiClient} for direct instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/b2c-api-doc.html | OCAPI Data API Reference}
  */
 export type OcapiClient = Client<paths>;
 
