@@ -1,9 +1,12 @@
 name: e2e tests
 
 on:
-  # Nightly workflow - Run at 2 AM UTC daily
+  # Scheduled workflow
+  # 13:00 UTC ~= 8:00 AM ET (EST)
+  # 01:00 UTC ~= 8:00 PM ET (EST)
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 13 * * *'
+    - cron: '0 1 * * *'
   # Manual trigger - Support workflow_dispatch for on-demand runs
   workflow_dispatch:
     inputs:
