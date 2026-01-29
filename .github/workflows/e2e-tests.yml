@@ -4,9 +4,6 @@ on:
   # Nightly workflow - Run at 2 AM UTC daily
   schedule:
     - cron: '0 2 * * *'
-  # Post-merge - Run after changes are merged to main
-  push:
-    branches: [main]
   # Manual trigger - Support workflow_dispatch for on-demand runs
   workflow_dispatch:
     inputs:
@@ -130,7 +127,7 @@ jobs:
           retention-days: 30
 
       - name: Notify on Failure
-        if: failure() && (github.event_name == 'schedule' || github.event_name == 'push') && steps.check-secrets.outputs.has-secrets == 'true'
+        if: failure() && github.event_name == 'schedule' && steps.check-secrets.outputs.has-secrets == 'true'
         uses: actions/github-script@v7
         with:
           script: |
