@@ -32,9 +32,10 @@ on:
         type: string
 jobs:
   e2e-tests:
+    # E2E tests run only on the current LTS Node version for stability and speed.
     strategy:
       matrix:
-        node-version: [22.x, 24.x]
+        node-version: [22.x]
     runs-on: ubuntu-latest
     environment: e2e-dev
     timeout-minutes: 25
