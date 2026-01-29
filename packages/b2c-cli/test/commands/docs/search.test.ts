@@ -43,7 +43,7 @@ describe('docs search', () => {
     const listStub = sinon.stub().returns([{id: 'a', title: 'A', filePath: 'a.md'}]);
     command.operations = {...command.operations, listDocs: listStub};
 
-    const result = await runSilent(() => command.run());
+    const result = (await runSilent(() => command.run())) as {entries: unknown[]};
 
     expect(result.entries).to.have.length(1);
   });
@@ -69,7 +69,7 @@ describe('docs search', () => {
     const searchStub = sinon.stub().returns([{entry: {id: 'a', title: 'A', filePath: 'a.md'}, score: 0.1}]);
     command.operations = {...command.operations, searchDocs: searchStub};
 
-    const result = await runSilent(() => command.run());
+    const result = (await runSilent(() => command.run())) as {results: unknown[]};
 
     expect(result.results).to.have.length(1);
   });
