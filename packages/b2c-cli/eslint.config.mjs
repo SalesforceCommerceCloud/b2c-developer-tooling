@@ -19,7 +19,12 @@ export default [
   // node_modules must be explicitly ignored because the .gitignore pattern only covers
   // packages/b2c-cli/node_modules, not the monorepo root node_modules
   {
-    ignores: ['**/node_modules/**', 'test/functional/fixtures/**/*.js', '**/node_modules/marked-terminal/**'],
+    ignores: [
+      '**/node_modules/**',
+      'test/functional/fixtures/**/*.js',
+      '**/node_modules/marked-terminal/**',
+      'test/functional/fixtures/**/*.js',
+    ],
   },
   includeIgnoreFile(gitignorePath),
   ...oclif,
@@ -35,6 +40,10 @@ export default [
     },
     rules: {
       'header/header': ['error', 'block', copyrightHeader],
+      // Avoid eslint-plugin-import parsing dependency entrypoints (can stack overflow on CJS bundles)
+      'import/namespace': 'off',
+      'import/no-named-as-default-member': 'off',
+      'import/no-named-as-default': 'off',
       ...sharedRules,
       ...oclifRules,
     },
