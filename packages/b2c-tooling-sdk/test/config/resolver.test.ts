@@ -217,6 +217,72 @@ describe('config/resolver', () => {
         expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
       });
 
+      it('creates SOURCE_ERROR warning when source throws', () => {
+        // Create a source that throws an error
+        const throwingSource: ConfigSource = {
+          name: 'throwing-source',
+          load() {
+            throw new Error('Malformed config file');
+          },
+        };
+        const validSource = new MockSource('valid', {
+          hostname: 'example.demandware.net',
+          clientId: 'valid-client',
+        });
+        const resolver = new ConfigResolver([throwingSource, validSource]);
+
+        const {config, warnings, sources} = resolver.resolve();
+
+        // Should have one SOURCE_ERROR warning
+        expect(warnings).to.have.length(1);
+        expect(warnings[0].code).to.equal('SOURCE_ERROR');
+        expect(warnings[0].message).to.include('throwing-source');
+        expect(warnings[0].message).to.include('Malformed config file');
+        expect(warnings[0].details).to.deep.equal({
+          source: 'throwing-source',
+          error: 'Malformed config file',
+        });
+
+        // Valid source should still contribute config
+        expect(config.hostname).to.equal('example.demandware.net');
+        expect(config.clientId).to.equal('valid-client');
+        expect(sources).to.have.length(1);
+        expect(sources[0].name).to.equal('valid');
+      });
+
+      it('continues with remaining sources after SOURCE_ERROR', () => {
+        // First source throws, second succeeds, third also throws
+        const throwingSource1: ConfigSource = {
+          name: 'bad-source-1',
+          priority: -1,
+          load() {
+            throw new Error('Error 1');
+          },
+        };
+        const validSource = new MockSource('valid', {hostname: 'example.com'}, undefined, 0);
+        const throwingSource2: ConfigSource = {
+          name: 'bad-source-2',
+          priority: 1,
+          load() {
+            throw new Error('Error 2');
+          },
+        };
+        const resolver = new ConfigResolver([throwingSource1, validSource, throwingSource2]);
+
+        const {config, warnings, sources} = resolver.resolve();
+
+        // Should have two SOURCE_ERROR warnings
+        expect(warnings).to.have.length(2);
+        expect(warnings[0].code).to.equal('SOURCE_ERROR');
+        expect(warnings[0].message).to.include('bad-source-1');
+        expect(warnings[1].code).to.equal('SOURCE_ERROR');
+        expect(warnings[1].message).to.include('bad-source-2');
+
+        // Valid source contributes config
+        expect(config.hostname).to.equal('example.com');
+        expect(sources).to.have.length(1);
+      });
+
       it('returns empty config when no sources have data', () => {
         const resolver = new ConfigResolver([]);
 

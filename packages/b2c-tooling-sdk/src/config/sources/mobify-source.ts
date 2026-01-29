@@ -70,10 +70,11 @@ export class MobifySource implements ConfigSource {
         location: mobifyPath,
       };
     } catch (error) {
-      // Invalid JSON or read error
+      // Invalid JSON or read error - log at trace level and re-throw
+      // The resolver will catch this and create a SOURCE_ERROR warning
       const message = error instanceof Error ? error.message : String(error);
       logger.trace({location: mobifyPath, error: message}, '[MobifySource] Failed to parse credentials file');
-      return undefined;
+      throw error;
     }
   }
 

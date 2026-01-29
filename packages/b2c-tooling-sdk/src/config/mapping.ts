@@ -125,7 +125,7 @@ export function mergeConfigsWithProtection(
   if (hostnameMismatch && hostnameProtection) {
     warnings.push({
       code: 'HOSTNAME_MISMATCH',
-      message: `Hostname override "${overrides.hostname}" differs from config file "${base.hostname}". Config file values ignored.`,
+      message: `Server override "${overrides.hostname}" differs from config file "${base.hostname}". Config file values ignored.`,
       details: {
         providedHostname: overrides.hostname,
         configHostname: base.hostname,
