@@ -354,6 +354,7 @@ describe('WebDAV Operations E2E Tests', function () {
 
   describe('Step 11: Verify Extracted Files', function () {
     it('should find extracted files in directory', async function () {
+      // Unzip propagation can be slower in CI; allow a longer timeout here.
       await waitFor(async () => {
         const result = await runCLI([
           'webdav',
@@ -368,7 +369,7 @@ describe('WebDAV Operations E2E Tests', function () {
         if (result.exitCode !== 0) return false;
         const response = JSON.parse(result.stdout);
         return response.entries?.some((e: any) => entryName(e) === testFileName);
-      });
+      }, 120_000);
     });
   });
 });
