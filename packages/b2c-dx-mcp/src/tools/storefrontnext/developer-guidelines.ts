@@ -14,17 +14,19 @@
  */
 
 import {readFileSync} from 'node:fs';
-import {fileURLToPath} from 'node:url';
-import {dirname, join} from 'node:path';
+import {createRequire} from 'node:module';
+import path from 'node:path';
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, textResult} from '../adapter.js';
 
-// Get current file's directory for loading markdown files
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const CONTENT_DIR = join(__dirname, 'content');
+// Resolve the content directory from the package root
+// Uses createRequire to find the package.json location, which is robust
+// regardless of where this module is located in the build output
+const require = createRequire(import.meta.url);
+const packageRoot = path.dirname(require.resolve('@salesforce/b2c-dx-mcp/package.json'));
+const CONTENT_DIR = path.join(packageRoot, 'content');
 
 /**
  * Section metadata with key and optional description.
@@ -81,7 +83,7 @@ interface DeveloperGuidelinesInput {
 const SECTION_CONTENT: Record<SectionKey, string> = Object.fromEntries(
   SECTIONS_METADATA.map((section) => {
     const filename = `${section.key}.md`;
-    const filePath = join(CONTENT_DIR, filename);
+    const filePath = path.join(CONTENT_DIR, filename);
     const content = readFileSync(filePath, 'utf8');
     return [section.key, content];
   }),

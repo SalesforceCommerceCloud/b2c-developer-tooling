@@ -64,7 +64,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       expect(desc).to.match(/comprehensive|quick reference/i);
 
       // Should be reasonably short (optimized for LLM consumption)
-      expect(desc.length).to.be.lessThan(500);
+      // Note: Description includes critical instructions, so slightly longer than ideal
+      expect(desc.length).to.be.lessThan(650);
     });
 
     it('should list all sections in inputSchema description', () => {
@@ -103,7 +104,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       const desc = tool.description;
 
       // Main description should be concise, not list all topics
-      expect(desc.length).to.be.lessThan(500);
+      // Note: Description includes critical instructions, so slightly longer than ideal
+      expect(desc.length).to.be.lessThan(650);
 
       // Main description focuses on WHEN and WHY
       expect(desc).to.include('ESSENTIAL FIRST STEP');
@@ -400,9 +402,10 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       // Should contain content
       expect(text).to.not.be.empty;
 
-      // Should have exactly 2 separators for 3 sections
+      // Should have exactly 2 separators between the 3 content sections
+      // Plus 2 more from prefix and footer instructions = 4 total
       const separators = text.match(/\n\n---\n\n/g);
-      expect(separators).to.have.lengthOf(2);
+      expect(separators).to.have.lengthOf(4);
     });
 
     it('should maintain order of sections as requested', async () => {
@@ -419,18 +422,18 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       // Should contain the separator
       expect(text).to.include('\n\n---\n\n');
 
-      // Find the position of the separator to check order
-      const separatorIndex = text.indexOf('\n\n---\n\n');
-      const beforeSeparator = text.slice(0, separatorIndex);
-      const afterSeparator = text.slice(separatorIndex + 8); // length of '\n\n---\n\n'
+      // Split on separator - will include prefix and footer
+      const allParts = text.split('\n\n---\n\n');
 
-      // Both parts should have content
-      expect(beforeSeparator).to.not.be.empty;
-      expect(afterSeparator).to.not.be.empty;
+      // Filter out prefix (starts with warning emoji) and footer (contains "END OF CONTENT")
+      const contentSections = allParts.filter((part) => !part.includes('⚠️') && !part.includes('END OF CONTENT'));
 
-      // Verify content is from the expected sections
-      expect(beforeSeparator).to.include('Authentication');
-      expect(afterSeparator).to.include('Configuration');
+      // Should have two content sections
+      expect(contentSections).to.have.lengthOf(2);
+
+      // Verify content is from the expected sections in the correct order
+      expect(contentSections[0]).to.include('Authentication');
+      expect(contentSections[1]).to.include('Configuration');
     });
 
     it('should handle all sections at once', async () => {
@@ -623,11 +626,18 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       // Should return content with one separator
       expect(text).to.include('\n\n---\n\n');
 
+      // Split on separator - will include prefix and footer, so we need to filter
+      // The prefix ends with '---\n\n' and footer starts with '\n\n---\n\n'
+      // So we get: [prefix, section1, section2, footer]
+      const allParts = text.split('\n\n---\n\n');
+
+      // Filter out prefix (starts with warning emoji) and footer (contains "END OF CONTENT")
+      const contentSections = allParts.filter((part) => !part.includes('⚠️') && !part.includes('END OF CONTENT'));
+
       // Should have duplicated content (same section twice)
-      const sections = text.split('\n\n---\n\n');
-      expect(sections).to.have.lengthOf(2);
+      expect(contentSections).to.have.lengthOf(2);
       // Content should be the same (both are the auth section)
-      expect(sections[0].trim()).to.equal(sections[1].trim());
+      expect(contentSections[0].trim()).to.equal(contentSections[1].trim());
     });
   });
 });
