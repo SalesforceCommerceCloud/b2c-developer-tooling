@@ -100,7 +100,11 @@ function createPlaceholderTool(name: string, description: string, services: Serv
 export function createStorefrontNextTools(services: Services): McpTool[] {
   return [
     createDeveloperGuidelinesTool(services),
-    createPlaceholderTool('storefront_next_site_theming', 'Configure and manage site theming for Storefront Next', services),
+    createPlaceholderTool(
+      'storefront_next_site_theming',
+      'Configure and manage site theming for Storefront Next',
+      services,
+    ),
     createPlaceholderTool(
       'storefront_next_figma_to_component_workflow',
       'Convert Figma designs to Storefront Next components',
@@ -112,7 +116,11 @@ export function createStorefrontNextTools(services: Services): McpTool[] {
       'Map design tokens to Storefront Next theme configuration',
       services,
     ),
-    createPlaceholderTool('storefront_next_design_decorator', 'Apply design decorators to Storefront Next components', services),
+    createPlaceholderTool(
+      'storefront_next_design_decorator',
+      'Apply design decorators to Storefront Next components',
+      services,
+    ),
     createPlaceholderTool(
       'storefront_next_generate_page_designer_metadata',
       'Generate Page Designer metadata for Storefront Next components',

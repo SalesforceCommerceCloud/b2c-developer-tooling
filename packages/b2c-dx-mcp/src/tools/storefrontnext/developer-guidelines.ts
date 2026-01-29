@@ -27,24 +27,45 @@ const __dirname = dirname(__filename);
 const CONTENT_DIR = join(__dirname, 'content');
 
 /**
- * Available guideline sections.
+ * Section metadata with key and optional description.
+ * Single source of truth for all available sections.
  */
-const _SECTIONS = [
-  'quick-reference',
-  'data-fetching',
-  'state-management',
-  'auth',
-  'config',
-  'i18n',
-  'components',
-  'page-designer',
-  'performance',
-  'testing',
-  'extensions',
-  'pitfalls',
+const SECTIONS_METADATA = [
+  {key: 'quick-reference', description: null}, // Meta-section, excluded from topics list
+  {
+    key: 'data-fetching',
+    description:
+      'server-only data loading (no client loaders), synchronous loaders for streaming, data fetching patterns',
+  },
+  {key: 'state-management', description: 'state management patterns'},
+  {key: 'auth', description: 'authentication and session management'},
+  {key: 'config', description: 'configuration'},
+  {key: 'i18n', description: 'i18n patterns and internationalization'},
+  {key: 'components', description: 'component best practices'},
+  {key: 'page-designer', description: 'Page Designer integration'},
+  {key: 'performance', description: 'performance optimization'},
+  {key: 'testing', description: 'testing strategies'},
+  {key: 'extensions', description: 'framework extensions'},
+  {key: 'pitfalls', description: 'common pitfalls'},
 ] as const;
 
-type SectionKey = (typeof _SECTIONS)[number];
+/**
+ * Derived: array of section keys for validation.
+ */
+const _SECTIONS = SECTIONS_METADATA.map((s) => s.key);
+
+type SectionKey = (typeof SECTIONS_METADATA)[number]['key'];
+
+/**
+ * Generates the topics list for the tool description.
+ * Excludes meta-sections (like quick-reference) that don't have descriptions.
+ * @returns Comma-separated list of topics
+ */
+function generateTopicsList(): string {
+  return SECTIONS_METADATA.filter((s) => s.description !== null)
+    .map((s) => s.description)
+    .join(', ');
+}
 
 /**
  * Input schema for the developer guidelines tool.
@@ -54,33 +75,24 @@ interface DeveloperGuidelinesInput {
 }
 
 /**
- * Helper function to load markdown content from file.
- * @param section - The section key
- * @returns The markdown content as a string
+ * Detailed section content loaded from markdown files.
+ * Built dynamically from SECTIONS_METADATA to avoid duplication.
  */
-function loadSectionContent(section: SectionKey): string {
-  const filename = `${section}.md`;
-  const filePath = join(CONTENT_DIR, filename);
-  return readFileSync(filePath, 'utf8');
-}
+const SECTION_CONTENT: Record<SectionKey, string> = Object.fromEntries(
+  SECTIONS_METADATA.map((section) => {
+    const filename = `${section.key}.md`;
+    const filePath = join(CONTENT_DIR, filename);
+    const content = readFileSync(filePath, 'utf8');
+    return [section.key, content];
+  }),
+) as Record<SectionKey, string>;
 
 /**
- * Detailed section content loaded from markdown files.
+ * Default sections to return when no sections are specified.
+ * Includes quick-reference plus the most critical detailed sections
+ * to provide comprehensive guidelines by default.
  */
-const SECTION_CONTENT: Record<SectionKey, string> = {
-  'quick-reference': loadSectionContent('quick-reference'),
-  'data-fetching': loadSectionContent('data-fetching'),
-  'state-management': loadSectionContent('state-management'),
-  auth: loadSectionContent('auth'),
-  config: loadSectionContent('config'),
-  i18n: loadSectionContent('i18n'),
-  components: loadSectionContent('components'),
-  'page-designer': loadSectionContent('page-designer'),
-  performance: loadSectionContent('performance'),
-  testing: loadSectionContent('testing'),
-  extensions: loadSectionContent('extensions'),
-  pitfalls: loadSectionContent('pitfalls'),
-};
+const DEFAULT_SECTIONS: SectionKey[] = ['quick-reference', 'data-fetching', 'components', 'testing'];
 
 /**
  * Creates the developer guidelines tool for Storefront Next.
@@ -93,13 +105,12 @@ export function createDeveloperGuidelinesTool(services: Services): McpTool {
     {
       name: 'storefront_next_development_guidelines',
       description:
-        'ESSENTIAL FIRST STEP: Critical rules and guidelines for Storefront Next developers. ' +
-        'Use this tool FIRST when new to Storefront Next, before writing any code, or when learning critical rules and architectural patterns. ' +
-        'Provides the official quick reference with non-negotiable architecture rules, coding standards, and best practices. ' +
-        'Covers critical topics: server-only data loading (no client loaders), synchronous loaders for streaming, TypeScript-only, ' +
-        'authentication, i18n patterns, component best practices, data fetching patterns, performance optimization, testing, and common pitfalls. ' +
-        'Returns quick reference by default (critical rules) or specific section(s) when requested. ' +
-        'Supports selecting multiple sections in a single call for contextual learning.',
+        'ESSENTIAL FIRST STEP for Storefront Next development. Returns critical architecture rules, coding standards, and best practices. ' +
+        'Use this tool FIRST before writing any Storefront Next code to understand non-negotiable patterns for React Server Components, ' +
+        'data loading, and framework constraints. Returns comprehensive guidelines by default (quick-reference + key sections); ' +
+        'supports retrieving specific topic sections. ' +
+        'CRITICAL INSTRUCTION: ALWAYS present ALL returned content in FULL - DO NOT SUMMARIZE, DO NOT ADD SUMMARIES, ' +
+        'DO NOT ADD OVERVIEWS. The returned content IS the complete answer - display it exactly as provided.',
       toolsets: ['STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false,
@@ -108,23 +119,51 @@ export function createDeveloperGuidelinesTool(services: Services): McpTool {
           .array(z.enum([..._SECTIONS] as [string, ...string[]]))
           .optional()
           .describe(
-            'One or more sections to retrieve. If not specified, returns quick-reference. ' +
-              `Available sections: ${_SECTIONS.join(', ')}`,
+            'Optional array of specific sections to retrieve. If not specified, returns comprehensive guidelines ' +
+              '(quick-reference, data-fetching, components, testing). ' +
+              'CRITICAL: Present ALL returned content in FULL - DO NOT SUMMARIZE. ' +
+              'Available sections: quick-reference, data-fetching, state-management, auth, config, i18n, ' +
+              'components, page-designer, performance, testing, extensions, pitfalls. ' +
+              `Topics covered: ${generateTopicsList()}. ` +
+              'Content is complete - present exactly as provided, no summaries.',
           ),
       },
       async execute(args) {
-        // Default to quick-reference if no sections specified
-        const sections = args.sections || ['quick-reference'];
-
-        // If single section, return it directly (backward compatible)
-        if (sections.length === 1) {
-          return SECTION_CONTENT[sections[0]];
+        // Handle empty array case explicitly
+        if (args.sections && args.sections.length === 0) {
+          return '';
         }
+
+        // Default to comprehensive set of key sections if no sections specified
+        const sections = args.sections || DEFAULT_SECTIONS;
 
         // Multiple sections: combine with separators
         const combinedContent = sections.map((section) => SECTION_CONTENT[section]).join('\n\n---\n\n');
 
-        return combinedContent;
+        // Apply instructions for all multi-section responses to ensure full content display
+        // Single sections are typically smaller and don't need heavy instructions
+        const isMultiSection = sections.length > 1;
+
+        // Prepend explicit instruction to present full content (not summarized)
+        // This helps AI assistants understand they should show the complete guidelines without summarization
+        const fullContentInstruction = isMultiSection
+          ? '⚠️ CRITICAL: Display the FULL content below. DO NOT summarize, condense, or add overviews.\n\n' +
+            '📋 STOREFRONT NEXT DEVELOPMENT GUIDELINES\n\n' +
+            '---\n\n'
+          : '';
+
+        // Add footer instruction to reinforce the message for multi-section responses
+        const footerInstruction = isMultiSection
+          ? '\n\n---\n\n⚠️ END OF CONTENT - Full content displayed above. Do not add summaries.\n'
+          : '';
+
+        // For single sections, return directly (backward compatible)
+        // For multiple sections, wrap with instructions
+        if (sections.length === 1) {
+          return SECTION_CONTENT[sections[0]];
+        }
+
+        return fullContentInstruction + combinedContent + footerInstruction;
       },
       formatOutput: (output) => textResult(output),
     },
