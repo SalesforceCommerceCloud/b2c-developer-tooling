@@ -52,6 +52,7 @@ jobs:
           SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
           SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
           SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
         run: |
           if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ] && [ -n "$SFCC_SHORTCODE" ]; then
             echo "has-secrets=true" >> $GITHUB_OUTPUT
@@ -100,6 +101,7 @@ jobs:
           SFCC_SANDBOX_API_HOST: ${{ inputs.sfcc_sandbox_api_host || vars.SFCC_SANDBOX_API_HOST }}
           TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
           SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
           # Test configuration
           NODE_ENV: test
           SFCC_LOG_LEVEL: silent
