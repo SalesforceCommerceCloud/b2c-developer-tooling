@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?metadataRepository version='1.1.0'?>
+<repository name='${p2.metadata.repo.name}' type='org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository' version='1'>
+  <properties size='1'>
+    <property name='p2.timestamp' value='1621266856717'/>
+  </properties>
+  <references size='2'>
+    <repository uri='http://www.commercecloud.com/updates' url='http://www.commercecloud.com/updates' type='0' options='0'/>
+    <repository uri='http://www.commercecloud.com/updates' url='http://www.commercecloud.com/updates' type='1' options='0'/>
+  </references>
+  <units size='4'>
+    <unit id='com.demandware.studio.java.feature.feature.group' version='21.6.0.202105171554' singleton='false'>
+      <update id='com.demandware.studio.java.feature.feature.group' range='[0.0.0,21.6.0.202105171554)' severity='0'/>
+      <properties size='10'>
+        <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+        <property name='org.eclipse.equinox.p2.description' value='%description'/>
+        <property name='org.eclipse.equinox.p2.description.url' value='http://www.commercecloud.com'/>
+        <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+        <property name='org.eclipse.equinox.p2.type.group' value='true'/>
+        <property name='df_LT.license' value='SALESFORCE COMMERCE CLOUD(R) UX STUDIO SOFTWARE LICENSE AGREEMENT&#xA;&#xA;IMPORTANT - READ CAREFULLY BEFORE INSTALLING SOFTWARE&#xA;&#xA;YOU MAY USE THE ENCLOSED SOFTWARE ONLY IN ACCORDANCE WITH THIS LICENSE AGREEMENT&#xA;(&quot;AGREEMENT&quot;) (UNLESS A SIGNED LICENSE AGREEMENT WITH DEMANDWARE, INC., A SALESFORCE COMPANY,&#xA;(&quot;DEMANDWARE&quot;) EXPRESSLY SUPERSEDES THE TERMS OF THIS AGREEMENT). THIS IS A&#xA;LICENSE AND NOT A SALE.  USE OF THIS SOFTWARE IS EXPRESSLY CONDITIONED ON YOUR&#xA;AGREEMENT TO THE TERMS AND CONDITIONS SET FORTH HEREIN.  YOU INDICATE YOUR&#xA;ACCEPTANCE OF THIS AGREEMENT BY CLICKING ON THE &quot;YES&quot; BUTTON DURING INSTALLATION&#xA;OF THE SOFTWARE.  IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT INSTALL THE&#xA;SOFTWARE. BY CLICKING &quot;YES&quot; YOU WARRANT THAT YOU ARE DULY AUTHORIZED TO LEGALLY&#xA;BIND YOUR EMPLOYER TO THE TERMS OF THIS AGREEMENT.&#xA;&#xA;DEFINITIONS.&#xA;&#xA;For purposes of this Agreement, the following definitions shall apply:&#xA;&quot;Customer&quot; means the entity that is licensed to use the Software and is party to&#xA;a Demandware Master Subscription Agreement (the &quot;Subscription Agreement&quot;) or&#xA;Demandware Evaluation Subscription Agreement (&quot;Evaluation Agreement&quot;);&#xA;&quot;Developer&quot; means an employee, consultant and/or implementation partner of&#xA;Customer; &quot;Development&quot; means use of the Software by Developers  solely to the&#xA;extent necessary to customize the &quot;Service&quot; provided under the Subscription&#xA;Agreement or Evaluation Agreement, as applicable;  &quot;Documentation&quot; means the&#xA;printed materials and &quot;online&quot; or electronic materials prepared by Demandware&#xA;and delivered to Customer by Demandware (or an authorized distributor) for use&#xA;with the Software, such as reference, user, installation, systems administrator&#xA;and technical guides; &quot;Software&quot; means the Demandware Studio software and&#xA;Documentation obtained by Customer via download from the Demandware website,&#xA;and any patch, update, upgrade, modification or other enhancement to such&#xA;Software or Documentation delivered by Demandware (or an authorized&#xA;distributor); &quot;You&quot; means your employer and you.&#xA;&#xA;1.  LICENSE TERMS.&#xA;&#xA;Subject to the terms and conditions of this Agreement, Demandware grants&#xA;Customer a limited, non-exclusive, non-transferable (except as otherwise&#xA;expressly stated in this Agreement), royalty-free, fully paid up, right and&#xA;license to use the Software solely for Development purposes and to make a&#xA;reasonable number of copies of the Software provided such copies are used&#xA;solely for such Development purposes and as backup, and are not published or&#xA;distributed to any third party.  All rights not specifically granted in this&#xA;Agreement are retained by Demandware and its licensors.&#xA;&#xA;2.  CERTAIN RESTRICTIONS AND OTHER CONDITIONS.&#xA;&#xA;(a) Customer may not modify, enhance, reverse engineer, alter, decompile,&#xA;disassemble, supplement, create derivative work from, adapt, translate or&#xA;otherwise reduce the Software to human readable form, except as specifically&#xA;permitted in the Documentation or expressly permitted by applicable law&#xA;notwithstanding this limitation.&#xA;&#xA;(b) Customer may not host, rent, lease or lend the Software nor allow use of the&#xA;Software for service bureau, timesharing or any other form of shared use;&#xA;(c) except as otherwise expressly permitted in this Agreement, Customer may not&#xA;cause or permit the disclosure, copying, renting, licensing, sublicensing,&#xA;leasing, dissemination or other distribution of the Software or its&#xA;Documentation by any means or in any form to any third party (including, without&#xA;limitation, any form of distributor or reseller), without a signed agreement&#xA;granting such right(s).&#xA;&#xA;(d) The Software may not be transferred, sold, assigned or otherwise conveyed&#xA;(whether by operation of law or otherwise) to another party or outside the&#xA;country in which it was originally delivered to Customer without Demandware&apos;s&#xA;prior written consent and subject to Customer compliance with all applicable&#xA;export and re-export regulations and restrictions; provided, however, that if&#xA;expressly permitted by applicable law, Customer may transfer Customer&apos;s copy of&#xA;the Software together with its Documentation on a permanent basis (without&#xA;retaining rights thereto), so long as Customer notifies Demandware in advance as&#xA;to the name and address of the recipient of such Software and Documentation,&#xA;and such recipient agrees in writing to the terms and conditions of this&#xA;Agreement.&#xA;&#xA;(e) The Software contains software programs written in Java.  The Software is&#xA;not designed, manufactured or intended for use or resale in the design,&#xA;construction, operation or maintenance of any nuclear facilities, aircraft&#xA;navigation or communication systems, air traffic control, direct life support&#xA;machines, weapons systems or any other system, in which the failure of the&#xA;Software could lead directly to death, personal injury, or severe physical or&#xA;environmental damage (&quot;High Risk Activities&quot;).  All implied and express&#xA;warranties with respect to High Risk Activities are hereby specifically&#xA;disclaimed. Customer acknowledges that Customer is not licensed to use the&#xA;Software for High Risk Activities and Customer warrants that it shall not do so.&#xA;&#xA;(f) If the Software or its Documentation is acquired by or on behalf of the'/>
+        <property name='df_LT.copyright' value='(c) 2017 salesforce.com, inc., http://www.commercecloud.com'/>
+        <property name='df_LT.featureName' value='Salesforce Commerce Cloud Java Studio'/>
+        <property name='df_LT.description' value='Salesforce Commerce Cloud Java Studio'/>
+        <property name='df_LT.providerName' value='salesforce.com, inc.'/>
+      </properties>
+      <provides size='2'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='com.demandware.studio.java.feature.feature.group' version='21.6.0.202105171554'/>
+        <provided namespace='org.eclipse.equinox.p2.localization' name='df_LT' version='1.0.0'/>
+      </provides>
+      <requires size='4'>
+        <required namespace='org.eclipse.equinox.p2.iu' name='com.demandware.studio.core' range='0.0.0'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='org.eclipse.core.variables' range='0.0.0'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='com.demandware.studio.java' range='[21.6.0.202105171554,21.6.0.202105171554]'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='com.demandware.studio.java.feature.feature.jar' range='[21.6.0.202105171554,21.6.0.202105171554]'>
+          <filter>
+            (org.eclipse.update.install.features=true)
+          </filter>
+        </required>
+      </requires>
+      <touchpoint id='null' version='0.0.0'/>
+      <licenses size='1'>
+        <license uri='http://www.commercecloud.com' url='http://www.commercecloud.com'>
+          %license
+        </license>
+      </licenses>
+      <copyright uri='http://www.commercecloud.com' url='http://www.commercecloud.com'>
+        %copyright
+      </copyright>
+    </unit>
+    <unit id='com.demandware.studio.java.feature.feature.jar' version='21.6.0.202105171554'>
+      <properties size='10'>
+        <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+        <property name='org.eclipse.equinox.p2.description' value='%description'/>
+        <property name='org.eclipse.equinox.p2.description.url' value='http://www.commercecloud.com'/>
+        <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+        <property name='org.eclipse.update.feature.plugin' value='com.demandware.studio'/>
+        <property name='df_LT.license' value='SALESFORCE COMMERCE CLOUD(R) UX STUDIO SOFTWARE LICENSE AGREEMENT&#xA;&#xA;IMPORTANT - READ CAREFULLY BEFORE INSTALLING SOFTWARE&#xA;&#xA;YOU MAY USE THE ENCLOSED SOFTWARE ONLY IN ACCORDANCE WITH THIS LICENSE AGREEMENT&#xA;(&quot;AGREEMENT&quot;) (UNLESS A SIGNED LICENSE AGREEMENT WITH DEMANDWARE, INC., A SALESFORCE COMPANY,&#xA;(&quot;DEMANDWARE&quot;) EXPRESSLY SUPERSEDES THE TERMS OF THIS AGREEMENT). THIS IS A&#xA;LICENSE AND NOT A SALE.  USE OF THIS SOFTWARE IS EXPRESSLY CONDITIONED ON YOUR&#xA;AGREEMENT TO THE TERMS AND CONDITIONS SET FORTH HEREIN.  YOU INDICATE YOUR&#xA;ACCEPTANCE OF THIS AGREEMENT BY CLICKING ON THE &quot;YES&quot; BUTTON DURING INSTALLATION&#xA;OF THE SOFTWARE.  IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT INSTALL THE&#xA;SOFTWARE. BY CLICKING &quot;YES&quot; YOU WARRANT THAT YOU ARE DULY AUTHORIZED TO LEGALLY&#xA;BIND YOUR EMPLOYER TO THE TERMS OF THIS AGREEMENT.&#xA;&#xA;DEFINITIONS.&#xA;&#xA;For purposes of this Agreement, the following definitions shall apply:&#xA;&quot;Customer&quot; means the entity that is licensed to use the Software and is party to&#xA;a Demandware Master Subscription Agreement (the &quot;Subscription Agreement&quot;) or&#xA;Demandware Evaluation Subscription Agreement (&quot;Evaluation Agreement&quot;);&#xA;&quot;Developer&quot; means an employee, consultant and/or implementation partner of&#xA;Customer; &quot;Development&quot; means use of the Software by Developers  solely to the&#xA;extent necessary to customize the &quot;Service&quot; provided under the Subscription&#xA;Agreement or Evaluation Agreement, as applicable;  &quot;Documentation&quot; means the&#xA;printed materials and &quot;online&quot; or electronic materials prepared by Demandware&#xA;and delivered to Customer by Demandware (or an authorized distributor) for use&#xA;with the Software, such as reference, user, installation, systems administrator&#xA;and technical guides; &quot;Software&quot; means the Demandware Studio software and&#xA;Documentation obtained by Customer via download from the Demandware website,&#xA;and any patch, update, upgrade, modification or other enhancement to such&#xA;Software or Documentation delivered by Demandware (or an authorized&#xA;distributor); &quot;You&quot; means your employer and you.&#xA;&#xA;1.  LICENSE TERMS.&#xA;&#xA;Subject to the terms and conditions of this Agreement, Demandware grants&#xA;Customer a limited, non-exclusive, non-transferable (except as otherwise&#xA;expressly stated in this Agreement), royalty-free, fully paid up, right and&#xA;license to use the Software solely for Development purposes and to make a&#xA;reasonable number of copies of the Software provided such copies are used&#xA;solely for such Development purposes and as backup, and are not published or&#xA;distributed to any third party.  All rights not specifically granted in this&#xA;Agreement are retained by Demandware and its licensors.&#xA;&#xA;2.  CERTAIN RESTRICTIONS AND OTHER CONDITIONS.&#xA;&#xA;(a) Customer may not modify, enhance, reverse engineer, alter, decompile,&#xA;disassemble, supplement, create derivative work from, adapt, translate or&#xA;otherwise reduce the Software to human readable form, except as specifically&#xA;permitted in the Documentation or expressly permitted by applicable law&#xA;notwithstanding this limitation.&#xA;&#xA;(b) Customer may not host, rent, lease or lend the Software nor allow use of the&#xA;Software for service bureau, timesharing or any other form of shared use;&#xA;(c) except as otherwise expressly permitted in this Agreement, Customer may not&#xA;cause or permit the disclosure, copying, renting, licensing, sublicensing,&#xA;leasing, dissemination or other distribution of the Software or its&#xA;Documentation by any means or in any form to any third party (including, without&#xA;limitation, any form of distributor or reseller), without a signed agreement&#xA;granting such right(s).&#xA;&#xA;(d) The Software may not be transferred, sold, assigned or otherwise conveyed&#xA;(whether by operation of law or otherwise) to another party or outside the&#xA;country in which it was originally delivered to Customer without Demandware&apos;s&#xA;prior written consent and subject to Customer compliance with all applicable&#xA;export and re-export regulations and restrictions; provided, however, that if&#xA;expressly permitted by applicable law, Customer may transfer Customer&apos;s copy of&#xA;the Software together with its Documentation on a permanent basis (without&#xA;retaining rights thereto), so long as Customer notifies Demandware in advance as&#xA;to the name and address of the recipient of such Software and Documentation,&#xA;and such recipient agrees in writing to the terms and conditions of this&#xA;Agreement.&#xA;&#xA;(e) The Software contains software programs written in Java.  The Software is&#xA;not designed, manufactured or intended for use or resale in the design,&#xA;construction, operation or maintenance of any nuclear facilities, aircraft&#xA;navigation or communication systems, air traffic control, direct life support&#xA;machines, weapons systems or any other system, in which the failure of the&#xA;Software could lead directly to death, personal injury, or severe physical or&#xA;environmental damage (&quot;High Risk Activities&quot;).  All implied and express&#xA;warranties with respect to High Risk Activities are hereby specifically&#xA;disclaimed. Customer acknowledges that Customer is not licensed to use the&#xA;Software for High Risk Activities and Customer warrants that it shall not do so.&#xA;&#xA;(f) If the Software or its Documentation is acquired by or on behalf of the'/>
+        <property name='df_LT.copyright' value='(c) 2017 salesforce.com, inc., http://www.commercecloud.com'/>
+        <property name='df_LT.featureName' value='Salesforce Commerce Cloud Java Studio'/>
+        <property name='df_LT.description' value='Salesforce Commerce Cloud Java Studio'/>
+        <property name='df_LT.providerName' value='salesforce.com, inc.'/>
+      </properties>
+      <provides size='3'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='com.demandware.studio.java.feature.feature.jar' version='21.6.0.202105171554'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='feature' version='1.0.0'/>
+        <provided namespace='org.eclipse.update.feature' name='com.demandware.studio.java.feature' version='21.6.0.202105171554'/>
+      </provides>
+      <filter>
+        (org.eclipse.update.install.features=true)
+      </filter>
+      <artifacts size='1'>
+        <artifact classifier='org.eclipse.update.feature' id='com.demandware.studio.java.feature' version='21.6.0.202105171554'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='1'>
+          <instruction key='zipped'>
+            true
+          </instruction>
+        </instructions>
+      </touchpointData>
+      <licenses size='1'>
+        <license uri='http://www.commercecloud.com' url='http://www.commercecloud.com'>
+          %license
+        </license>
+      </licenses>
+      <copyright uri='http://www.commercecloud.com' url='http://www.commercecloud.com'>
+        %copyright
+      </copyright>
+    </unit>
+    <unit id='demandware_ux_studio_java' version='1.0.0.7f7A-cMApM6773753C5G5CCA'>
+      <properties size='2'>
+        <property name='org.eclipse.equinox.p2.name' value='Salesforce Commerce Cloud StudioJ'/>
+        <property name='org.eclipse.equinox.p2.type.category' value='true'/>
+      </properties>
+      <provides size='1'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='demandware_ux_studio_java' version='1.0.0.7f7A-cMApM6773753C5G5CCA'/>
+      </provides>
+      <requires size='1'>
+        <required namespace='org.eclipse.equinox.p2.iu' name='com.demandware.studio.java.feature.feature.group' range='[21.6.0.202105171554,21.6.0.202105171554]'/>
+      </requires>
+      <touchpoint id='null' version='0.0.0'/>
+    </unit>
+    <unit id='com.demandware.studio.java' version='21.6.0.202105171554'>
+      <update id='com.demandware.studio.java' range='[0.0.0,21.6.0.202105171554)' severity='0'/>
+      <properties size='3'>
+        <property name='org.eclipse.equinox.p2.name' value='UX Studio J'/>
+        <property name='org.eclipse.equinox.p2.provider' value='salesforce.com, inc.'/>
+        <property name='org.eclipse.equinox.p2.bundle.localization' value='plugin'/>
+      </properties>
+      <provides size='3'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='com.demandware.studio.java' version='21.6.0.202105171554'/>
+        <provided namespace='osgi.bundle' name='com.demandware.studio.java' version='21.6.0.202105171554'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+      </provides>
+      <requires size='2'>
+        <required namespace='osgi.bundle' name='com.demandware.studio.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.variables' range='0.0.0'/>
+      </requires>
+      <artifacts size='1'>
+        <artifact classifier='osgi.bundle' id='com.demandware.studio.java' version='21.6.0.202105171554'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='1'>
+          <instruction key='manifest'>
+            Bundle-SymbolicName: com.demandware.studio.java; singleton:=true&#xA;Bundle-Version: 21.6.0.202105171554
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+  </units>
+</repository>
