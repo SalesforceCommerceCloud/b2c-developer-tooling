@@ -29,6 +29,14 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
 
   static enableJsonFlag = true;
 
+  static examples = [
+    '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',
+    '<%= config.bin %> <%= command.id %> zzzv-123',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --wait',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --wait --poll-interval 15',
+    '<%= config.bin %> <%= command.id %> zzzv_123 --json',
+  ];
+
   static flags = {
     wait: Flags.boolean({
       char: 'w',
@@ -46,14 +54,6 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
       dependsOn: ['wait'],
     }),
   };
-
-  static examples = [
-    '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',
-    '<%= config.bin %> <%= command.id %> zzzv-123',
-    '<%= config.bin %> <%= command.id %> zzzv-123 --wait',
-    '<%= config.bin %> <%= command.id %> zzzv-123 --wait --poll-interval 15',
-    '<%= config.bin %> <%= command.id %> zzzv_123 --json',
-  ];
 
   async run(): Promise<SandboxOperationModel> {
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);

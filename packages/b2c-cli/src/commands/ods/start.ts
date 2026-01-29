@@ -29,6 +29,14 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
 
   static enableJsonFlag = true;
 
+  static examples = [
+    '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',
+    '<%= config.bin %> <%= command.id %> zzzv-123',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --wait',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --wait --poll-interval 15',
+    '<%= config.bin %> <%= command.id %> zzzv_123 --json',
+  ];
+
   static flags = {
     wait: Flags.boolean({
       char: 'w',
@@ -46,14 +54,6 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
       dependsOn: ['wait'],
     }),
   };
-
-  static examples = [
-    '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',
-    '<%= config.bin %> <%= command.id %> zzzv-123',
-    '<%= config.bin %> <%= command.id %> zzzv-123 --wait',
-    '<%= config.bin %> <%= command.id %> zzzv-123 --wait --poll-interval 15',
-    '<%= config.bin %> <%= command.id %> zzzv_123 --json',
-  ];
 
   async run(): Promise<SandboxOperationModel> {
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
@@ -89,9 +89,7 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
       }),
     );
     if (wait) {
-      this.log(
-        t('commands.ods.start.waiting', 'Waiting for sandbox to reach state {{state}}...', {state: 'started'}),
-      );
+      this.log(t('commands.ods.start.waiting', 'Waiting for sandbox to reach state {{state}}...', {state: 'started'}));
 
       await waitForSandboxStateCommon({
         sandboxId,

@@ -126,11 +126,9 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
 
     if (wait) {
       this.log(
-        t(
-          'commands.ods.delete.waiting',
-          'Waiting for sandbox to reach state {{state}}...',
-          {state: 'deleted' satisfies SandboxState},
-        ),
+        t('commands.ods.delete.waiting', 'Waiting for sandbox to reach state {{state}}...', {
+          state: 'deleted' satisfies SandboxState,
+        }),
       );
 
       await waitForSandboxStateCommon({

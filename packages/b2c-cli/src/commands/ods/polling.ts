@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
@@ -11,7 +11,12 @@ import {Command} from '@oclif/core';
  *
  * Kept as a simple string union here to avoid depending on internal SDK types.
  */
-export type SandboxState = 'started' | 'stopped' | 'failed' | 'deleted' | (string & {});
+export type SandboxState = 'deleted' | 'failed' | 'started' | 'stopped' | (string & {});
+
+interface LoggerLike {
+  info(message: string, context?: unknown): void;
+  info(context: unknown, message: string): void;
+}
 
 interface OdsPollResult {
   data?: {data?: {state?: string}};
@@ -28,7 +33,7 @@ export interface WaitForSandboxStateOptions {
   pollIntervalSeconds: number;
   timeoutSeconds: number;
   odsClient: OdsPollingClient;
-  logger: any;
+  logger: LoggerLike;
   onPollError: (message: string) => never;
   onTimeout: (seconds: number) => never;
   onFailure: (state: SandboxState | undefined) => never;
@@ -57,7 +62,6 @@ export async function waitForSandboxStateCommon(options: WaitForSandboxStateOpti
   // Initial delay before first poll to give the operation time to start
   await sleepFn(pollIntervalMs);
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (timeoutSeconds > 0 && Date.now() - startTime > timeoutMs) {
       options.onTimeout(timeoutSeconds);
