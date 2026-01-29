@@ -41,7 +41,7 @@ const COLUMNS: Record<string, ColumnDef<SandboxModel>> = {
   },
   eol: {
     header: 'EOL',
-    get: (s) => (s.eol ? new Date(s.eol).toISOString().slice(0, 10) : '-'),
+    get: (s) => (s.eol ? new Date(s.eol).toISOString() : '-'),
   },
   id: {
     header: 'ID',

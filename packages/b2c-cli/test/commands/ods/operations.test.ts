@@ -75,6 +75,11 @@ describe('ods operations', () => {
         configurable: true,
       });
 
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
+        configurable: true,
+      });
+
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
 
@@ -103,6 +108,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -141,6 +151,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -189,6 +204,11 @@ describe('ods operations', () => {
         configurable: true,
       });
 
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
+        configurable: true,
+      });
+
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
 
@@ -217,6 +237,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -255,6 +280,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -303,6 +333,11 @@ describe('ods operations', () => {
         configurable: true,
       });
 
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
+        configurable: true,
+      });
+
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
 
@@ -331,6 +366,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -369,6 +409,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
