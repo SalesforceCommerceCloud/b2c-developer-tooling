@@ -91,12 +91,30 @@ describe('SLAS Lifecycle E2E Tests', function () {
     });
   }
 
-  function expectFailure(result: {exitCode?: number; stdout: string; stderr: string}, stderrPatterns: RegExp[]): void {
+  function expectFailure(
+    result: {exitCode?: number; stdout: string; stderr: string},
+    options: {messagePatterns?: RegExp[]; status?: number} = {},
+  ): void {
     const exitCode = result.exitCode ?? -1;
     expect(exitCode).to.not.equal(0, `Expected command to fail but it succeeded: ${result.stdout}`);
-    expect(result.stderr).to.not.be.empty;
-    for (const pattern of stderrPatterns) {
-      expect(result.stderr).to.match(pattern);
+
+    const errorText = result.stderr || result.stdout;
+    expect(errorText).to.not.be.empty;
+
+    const parsed = JSON.parse(errorText) as {
+      error?: {message?: string; detail?: string; status?: number; code?: string};
+    };
+    expect(parsed.error, 'Expected JSON error object').to.exist;
+
+    if (typeof options.status === 'number') {
+      expect(parsed.error?.status, 'Expected error.status to match').to.equal(options.status);
+    }
+
+    if (options.messagePatterns && options.messagePatterns.length > 0) {
+      const msg = `${parsed.error?.message ?? ''} ${parsed.error?.detail ?? ''}`;
+      for (const pattern of options.messagePatterns) {
+        expect(msg).to.match(pattern);
+      }
     }
   }
 
@@ -274,7 +292,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expectFailure(result, [/not\s*found|404/i]);
+      expectFailure(result, {messagePatterns: [/failed\s+to\s+get/i]});
     });
   });
 
@@ -353,7 +371,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expectFailure(result, [/not\s*found|404/i]);
+      expectFailure(result, {messagePatterns: [/failed\s+to\s+get/i]});
     });
 
     it('should fail to update deleted client', async function () {
@@ -371,7 +389,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expectFailure(result, [/not\s*found|404/i]);
+      expectFailure(result, {messagePatterns: [/failed\s+to\s+fetch/i]});
     });
   });
 });
