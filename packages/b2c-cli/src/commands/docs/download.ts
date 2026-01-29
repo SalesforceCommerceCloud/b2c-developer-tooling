@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {downloadDocs, type DownloadDocsResult} from '@salesforce/b2c-tooling-sdk/operations/docs';
+import {downloadDocs, type DownloadDocsResult} from '@salesforce/b2c-tooling-sdk/docs';
 import {t} from '../../i18n/index.js';
 
 export default class DocsDownload extends InstanceCommand<typeof DocsDownload> {

@@ -7,9 +7,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import JSZip from 'jszip';
-import type {B2CInstance} from '../../instance/index.js';
-import {BasicAuthStrategy} from '../../auth/basic.js';
-import {getLogger} from '../../logging/logger.js';
+import type {B2CInstance} from '../instance/index.js';
+import {BasicAuthStrategy} from '../auth/basic.js';
+import {getLogger} from '../logging/logger.js';
 
 /**
  * Options for downloading documentation.

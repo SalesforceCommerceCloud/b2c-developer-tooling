@@ -5,7 +5,7 @@
  */
 
 /**
- * Documentation operations for B2C Commerce Script API.
+ * Documentation search for B2C Commerce Script API.
  *
  * Provides functions for downloading documentation from B2C instances
  * and searching bundled documentation locally.
@@ -15,7 +15,7 @@
  * Use {@link downloadDocs} to download documentation from a B2C instance:
  *
  * ```typescript
- * import { downloadDocs } from '@salesforce/b2c-tooling-sdk/operations/docs';
+ * import { downloadDocs } from '@salesforce/b2c-tooling-sdk/docs';
  * import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
  *
  * const instance = B2CInstance.fromEnvironment();
@@ -28,7 +28,7 @@
  * Use {@link searchDocs} and {@link readDocByQuery} to search and read bundled documentation:
  *
  * ```typescript
- * import { searchDocs, readDocByQuery } from '@salesforce/b2c-tooling-sdk/operations/docs';
+ * import { searchDocs, readDocByQuery } from '@salesforce/b2c-tooling-sdk/docs';
  *
  * // Search for documentation
  * const results = searchDocs('ProductMgr');
@@ -41,7 +41,7 @@
  * }
  * ```
  *
- * @module operations/docs
+ * @module docs
  */
 
 // Types
