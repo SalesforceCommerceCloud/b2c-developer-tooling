@@ -51,7 +51,7 @@ describe('scapi custom status', () => {
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
 
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
@@ -95,7 +95,7 @@ describe('scapi custom status', () => {
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
 
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
@@ -123,7 +123,7 @@ describe('scapi custom status', () => {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(false);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
 
     sinon.stub(command, 'renderEndpoints').returns(void 0);
 

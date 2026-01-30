@@ -168,16 +168,7 @@ const tableRenderer = new TableRenderer(COLUMNS);
 /**
  * Base command for SCAPI Custom API operations.
  */
-abstract class ScapiCustomCommand<T extends typeof Command> extends OAuthCommand<T> {
-  static baseFlags = {
-    ...OAuthCommand.baseFlags,
-    'tenant-id': Flags.string({
-      description: 'Organization/tenant ID',
-      env: 'SFCC_TENANT_ID',
-      required: true,
-    }),
-  };
-}
+abstract class ScapiCustomCommand<T extends typeof Command> extends OAuthCommand<T> {}
 
 /**
  * Command to get the status of Custom API endpoints.
@@ -226,7 +217,8 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
   async run(): Promise<CustomApiStatusResponse> {
     this.requireOAuthCredentials();
 
-    const {'tenant-id': tenantId, status, 'group-by': groupBy} = this.flags;
+    const {status, 'group-by': groupBy} = this.flags;
+    const tenantId = this.requireTenantId();
     const {shortCode} = this.resolvedConfig.values;
 
     if (!shortCode) {
