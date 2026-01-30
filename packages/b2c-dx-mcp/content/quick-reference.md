@@ -73,6 +73,28 @@ const ProductPage = createPage({
 export default ProductPage;
 ```
 
+### 5. Tailwind CSS 4 Only
+
+✅ **REQUIRED**: Use Tailwind utility classes only  
+❌ **BLOCKED**: No inline styles (`style={{...}}`), no CSS modules, no separate CSS files
+
+```typescript
+// ✅ CORRECT - Tailwind utilities
+<div className="rounded-lg border border-border bg-card p-4">
+    <h2 className="text-lg font-semibold text-card-foreground">
+        {product.name}
+    </h2>
+</div>
+
+// ❌ AVOID - Inline styles
+<div style={{ padding: '1rem' }}>
+
+// ❌ AVOID - CSS modules
+import styles from './product-card.module.css';
+```
+
+**Why?** Consistent styling approach, better performance, automatic dark mode support via theme variables.
+
 ---
 
 ## 📋 Quick Patterns
@@ -140,9 +162,6 @@ const { t } = getTranslation(context);
 ### Components
 
 ```typescript
-// shadcn/ui: Add via npx shadcn@latest add <component-name>
-// DO NOT modify src/components/ui/ directly
-
 // Suspense boundaries
 import { Suspense } from 'react';
 import { Await } from 'react-router';
@@ -155,6 +174,23 @@ import { Await } from 'react-router';
 ```
 
 **See `components` section for:** createPage HOC, file organization, best practices
+
+### Styling
+
+```typescript
+// Tailwind utility classes
+<div className="bg-background text-foreground border-border">
+    <button className="bg-primary text-primary-foreground rounded-md px-4 py-2">
+        Click me
+    </button>
+</div>
+
+// shadcn/ui: Add via npx shadcn@latest add <component-name>
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+```
+
+**See `styling` section for:** Tailwind CSS 4 rules, Shadcn/ui components, dark mode, responsive design
 
 ---
 
@@ -171,6 +207,7 @@ Use the `storefront_next_development_guidelines` MCP tool with specific sections
 **Available sections:**
 - `data-fetching` - Loaders, actions, useScapiFetcher, data flow
 - `components` - createPage HOC, Suspense, file organization
+- `styling` - Tailwind CSS 4, Shadcn/ui, styling guidelines
 - `testing` - Vitest, Storybook, coverage requirements
 - `auth` - Authentication and session management
 - `config` - Configuration system

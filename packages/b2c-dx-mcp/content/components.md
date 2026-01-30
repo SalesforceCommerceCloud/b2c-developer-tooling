@@ -101,6 +101,18 @@ src/components/product-skeleton/
     └── index.stories.tsx
 ```
 
+## Styling
+
+**Tailwind CSS 4** is the only styling approach allowed. Use utility classes directly in components.
+
+**Key rules:**
+
+- ✅ Use Tailwind utility classes
+- ✅ Use `cn()` utility for conditional classes
+- ❌ NO inline styles, NO CSS modules, NO separate CSS files
+
+**See `styling` section for:** Tailwind CSS 4, Shadcn/ui components, icons, responsive design, theme configuration, dark mode, best practices
+
 ## Best Practices
 
 1. **Extract view components** - Separate data handling from presentation
@@ -108,3 +120,4 @@ src/components/product-skeleton/
 3. **Consistent fallbacks** - Reusable skeleton components
 4. **Colocate tests** - Keep tests next to components
 5. **Story coverage** - Create stories for all reusable components
+6. **Tailwind utilities only** - Use Tailwind CSS classes, avoid inline styles or CSS modules

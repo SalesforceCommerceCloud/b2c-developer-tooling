@@ -105,6 +105,7 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 - `state-management` - Client-side state management
 - `auth` - Authentication and session management
 - `components` - Component patterns and best practices
+- `styling` - Tailwind CSS 4, Shadcn/ui, styling guidelines
 - `page-designer` - Page Designer integration
 - `performance` - Performance optimization
 - `testing` - Testing strategies

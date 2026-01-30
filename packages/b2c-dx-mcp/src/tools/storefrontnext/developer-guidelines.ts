@@ -44,6 +44,7 @@ const SECTIONS_METADATA = [
   {key: 'config', description: 'configuration'},
   {key: 'i18n', description: 'i18n patterns and internationalization'},
   {key: 'components', description: 'component best practices'},
+  {key: 'styling', description: 'Tailwind CSS 4, Shadcn/ui, styling guidelines'},
   {key: 'page-designer', description: 'Page Designer integration'},
   {key: 'performance', description: 'performance optimization'},
   {key: 'testing', description: 'testing strategies'},

@@ -33,6 +33,7 @@ MCP tools for Storefront Next development with React Server Components.
     - `config` - Configuration system
     - `i18n` - Internationalization patterns
     - `components` - Component best practices
+    - `styling` - Tailwind CSS 4, Shadcn/ui, styling guidelines
     - `page-designer` - Page Designer integration and component registry
     - `performance` - Optimization techniques
     - `testing` - Testing strategy
@@ -74,7 +75,7 @@ MCP tools for Storefront Next development with React Server Components.
 {
   "name": "storefront_next_development_guidelines",
   "arguments": {
-    "sections": ["quick-reference", "data-fetching", "state-management", "auth", "config", "i18n", "components", "page-designer", "performance", "testing", "extensions", "pitfalls"]
+    "sections": ["quick-reference", "data-fetching", "state-management", "auth", "config", "i18n", "components", "styling", "page-designer", "performance", "testing", "extensions", "pitfalls"]
   }
 }
 ```
