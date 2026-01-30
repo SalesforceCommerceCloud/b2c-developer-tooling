@@ -47,6 +47,7 @@ import {BasicAuthStrategy} from '../auth/basic.js';
 import {resolveAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
+import {createTlsDispatcher, type TlsOptions} from '../clients/tls-dispatcher.js';
 
 /**
  * Instance configuration (hostname, code version, etc.)
@@ -58,6 +59,8 @@ export interface InstanceConfig {
   codeVersion?: string;
   /** Separate hostname for WebDAV (if different from main hostname) */
   webdavHostname?: string;
+  /** TLS options for mTLS/self-signed certificate support */
+  tlsOptions?: TlsOptions;
 }
 
 /**
@@ -118,7 +121,11 @@ export class B2CInstance {
    */
   get webdav(): WebDavClient {
     if (!this._webdav) {
-      this._webdav = new WebDavClient(this.webdavHostname, this.getWebDavAuthStrategy());
+      // Create TLS dispatcher if TLS options are configured
+      const dispatcher = this.config.tlsOptions ? createTlsDispatcher(this.config.tlsOptions) : undefined;
+      this._webdav = new WebDavClient(this.webdavHostname, this.getWebDavAuthStrategy(), {
+        dispatcher,
+      });
     }
     return this._webdav;
   }
@@ -194,3 +201,4 @@ export class B2CInstance {
 
 // Re-export types for convenience
 export type {AuthConfig};
+export type {TlsOptions};

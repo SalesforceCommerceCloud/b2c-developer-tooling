@@ -129,7 +129,7 @@ describe('ecdn zones list', () => {
         }),
       });
 
-      const result = await runSilent(() => command.run());
+      const result = (await runSilent(() => command.run())) as {total: number; zones: Array<{name: string}>};
 
       expect(result).to.have.property('total', 1);
       expect(result.zones).to.have.lengthOf(1);

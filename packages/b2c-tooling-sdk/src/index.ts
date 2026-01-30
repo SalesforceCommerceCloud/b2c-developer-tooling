@@ -6,10 +6,6 @@
 export {createLogger, configureLogger, getLogger, resetLogger, createSilentLogger} from './logging/index.js';
 export type {Logger, LoggerOptions, LogLevel, LogContext} from './logging/index.js';
 
-// Legacy logger exports (deprecated - use logging module instead)
-export {noopLogger, consoleLogger, setLogger, getLogger as getLegacyLogger} from './logger.js';
-export type {Logger as LegacyLogger} from './logger.js';
-
 // i18n
 export {t, setLanguage, getLanguage, getI18nInstance, registerTranslations, B2C_NAMESPACE} from './i18n/index.js';
 export type {TOptions} from './i18n/index.js';
@@ -28,7 +24,6 @@ export type {
   ConfigSource,
   ResolveConfigOptions,
   CreateOAuthOptions,
-  CreateMrtClientOptions,
 } from './config/index.js';
 
 // Auth Layer - Strategies and Resolution
@@ -96,7 +91,7 @@ export type {
   SlasResponse,
   SlasPaths,
   SlasComponents,
-  OdsClient as OdsApiClient,
+  OdsClient,
   OdsClientConfig,
   OdsError,
   OdsResponse,
@@ -118,10 +113,6 @@ export type {
   CdnZonesPaths,
   CdnZonesComponents,
 } from './clients/index.js';
-
-// Context Layer - Platform
-export {MrtClient, OdsClient} from './platform/index.js';
-export type {MrtProject, OdsConfig} from './platform/index.js';
 
 // Operations - Code
 export {
@@ -180,7 +171,7 @@ export type {
   ExportGlobalDataConfiguration,
 } from './operations/jobs/index.js';
 
-// Operations - Docs
+// Docs - Documentation search
 export {
   searchDocs,
   readDoc,
@@ -192,7 +183,7 @@ export {
   readSchemaByQuery,
   searchSchemas,
   downloadDocs,
-} from './operations/docs/index.js';
+} from './docs/index.js';
 export type {
   DocEntry,
   SearchIndex,
@@ -202,7 +193,16 @@ export type {
   SchemaSearchResult,
   DownloadDocsOptions,
   DownloadDocsResult,
-} from './operations/docs/index.js';
+} from './docs/index.js';
+
+// Operations - ODS
+export {
+  isUuid,
+  isFriendlySandboxId,
+  parseFriendlySandboxId,
+  resolveSandboxId,
+  SandboxNotFoundError,
+} from './operations/ods/index.js';
 
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';

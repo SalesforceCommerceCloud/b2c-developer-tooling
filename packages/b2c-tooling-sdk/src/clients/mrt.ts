@@ -24,9 +24,32 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-re
 export type {paths, components};
 
 /**
- * The typed MRT client - this is the openapi-fetch Client with full type safety.
+ * The typed MRT client for Managed Runtime operations.
+ *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/api/projects/` | List all projects |
+ * | GET | `/api/projects/{projectSlug}/` | Get project details |
+ * | POST | `/api/projects/{projectSlug}/builds/` | Push a bundle |
+ * | GET | `/api/projects/{projectSlug}/target/{targetId}/` | Get target/environment |
+ * | POST | `/api/projects/{projectSlug}/target/{targetId}/deploy/` | Deploy to target |
+ *
+ * @example
+ * ```typescript
+ * import { createMrtClient } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const auth = new ApiKeyStrategy(apiKey, 'Authorization');
+ * const client = createMrtClient({}, auth);
+ *
+ * // List all projects
+ * const { data, error } = await client.GET('/api/projects/', {});
+ * ```
  *
  * @see {@link createMrtClient} for instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=Summary | MRT Admin API Reference}
  */
 export type MrtClient = Client<paths>;
 

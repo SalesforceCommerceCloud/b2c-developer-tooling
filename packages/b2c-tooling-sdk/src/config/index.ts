@@ -28,7 +28,7 @@
  * }
  *
  * if (config.hasMrtConfig()) {
- *   const mrtClient = config.createMrtClient({ project: 'my-project' });
+ *   const mrtAuth = config.createMrtAuth();
  * }
  * ```
  *
@@ -110,7 +110,6 @@ export type {
   ResolveConfigOptions,
   ResolvedB2CConfig,
   CreateOAuthOptions,
-  CreateMrtClientOptions,
 } from './types.js';
 
 // Instance creation utility (public API for CLI commands)

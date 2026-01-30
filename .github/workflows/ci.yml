@@ -57,13 +57,13 @@ jobs:
       - name: Run SDK tests
         id: sdk-test
         working-directory: packages/b2c-tooling-sdk
-        run: pnpm run test:ci && pnpm run lint
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
 
       - name: Run CLI tests
         id: cli-test
         if: always() && steps.sdk-test.conclusion != 'cancelled'
         working-directory: packages/b2c-cli
-        run: pnpm run test:ci && pnpm run lint
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
 
       - name: Test Report
         uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0

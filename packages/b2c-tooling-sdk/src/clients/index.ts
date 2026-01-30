@@ -234,3 +234,6 @@ export type {
 } from './mrt-b2c.js';
 
 export {getApiErrorMessage} from './error-utils.js';
+
+export {createTlsDispatcher} from './tls-dispatcher.js';
+export type {TlsOptions} from './tls-dispatcher.js';

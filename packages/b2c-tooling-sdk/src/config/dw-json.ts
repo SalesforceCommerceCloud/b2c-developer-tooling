@@ -27,6 +27,8 @@ export interface DwJsonConfig {
   active?: boolean;
   /** B2C instance hostname */
   hostname?: string;
+  /** B2C instance hostname (alias for CLI flag consistency) */
+  server?: string;
   /** Code version for deployments */
   'code-version'?: string;
   /** Username for Basic auth (WebDAV) */
@@ -47,6 +49,8 @@ export interface DwJsonConfig {
   'scapi-shortcode'?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
   'webdav-hostname'?: string;
+  /** Alternate hostname for WebDAV (matches CLI flag name) */
+  'webdav-server'?: string;
   /** Alternate hostname for WebDAV (legacy camelCase format) */
   secureHostname?: string;
   /** Alternate hostname for WebDAV (legacy kebab-case format) */
@@ -65,6 +69,16 @@ export interface DwJsonConfig {
   cloudOrigin?: string;
   /** Tenant/Organization ID for SCAPI */
   'tenant-id'?: string;
+  /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
+  certificate?: string;
+  /** Passphrase for the certificate (kebab-case) */
+  'certificate-passphrase'?: string;
+  /** Passphrase for the certificate (legacy) */
+  passphrase?: string;
+  /** Allow self-signed certificates (kebab-case) */
+  'self-signed'?: boolean;
+  /** Allow self-signed certificates (legacy) */
+  selfsigned?: boolean;
 }
 
 /**
@@ -239,9 +253,10 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | 
       path: dwJsonPath,
     };
   } catch (error) {
-    // Invalid JSON or read error
+    // Invalid JSON or read error - log at trace level and re-throw
+    // The resolver will catch this and create a SOURCE_ERROR warning
     const message = error instanceof Error ? error.message : String(error);
     logger.trace({path: dwJsonPath, error: message}, '[DwJsonSource] Failed to parse config file');
-    return undefined;
+    throw error;
   }
 }

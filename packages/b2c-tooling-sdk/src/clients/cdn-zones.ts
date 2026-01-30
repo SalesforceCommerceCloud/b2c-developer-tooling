@@ -32,9 +32,41 @@ export type {paths, components};
 export {toOrganizationId, toTenantId, buildTenantScope};
 
 /**
- * The typed CDN Zones client - this is the openapi-fetch Client with full type safety.
+ * The typed CDN Zones client for eCDN management.
+ *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/organizations/{organizationId}/zones/info` | List all zones |
+ * | GET | `/organizations/{organizationId}/zones/{zoneId}/certificates` | Get zone certificates |
+ * | POST | `/organizations/{organizationId}/zones/{zoneId}/cachepurge` | Purge cache |
+ * | GET | `/organizations/{organizationId}/zones/{zoneId}/firewall/waf` | Get WAF settings |
+ * | GET | `/organizations/{organizationId}/zones/{zoneId}/speed` | Get speed settings |
+ *
+ * @example
+ * ```typescript
+ * import { createCdnZonesClient, toOrganizationId } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ * });
+ *
+ * const client = createCdnZonesClient(
+ *   { shortCode: 'kv7kzm78', tenantId: 'zzxy_prd' },
+ *   auth
+ * );
+ *
+ * // List all zones
+ * const { data, error } = await client.GET('/organizations/{organizationId}/zones/info', {
+ *   params: { path: { organizationId: toOrganizationId('zzxy_prd') } }
+ * });
+ * ```
  *
  * @see {@link createCdnZonesClient} for instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/commerce-api/references/cdn-api-process-apis?meta=Summary | CDN Zones API Reference}
  */
 export type CdnZonesClient = Client<paths>;
 

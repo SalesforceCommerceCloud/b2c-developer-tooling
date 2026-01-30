@@ -41,7 +41,11 @@ describe('ODS Lifecycle E2E Tests', function () {
   let serverHostname: string;
 
   before(function () {
-    // Check required environment variables
+    // ODS tests always create their own dedicated sandbox
+    // to test the full lifecycle (create, stop, start, restart, delete)
+    // even when other test suites share a common sandbox
+    console.log('\n📝 ODS tests will create dedicated sandbox for comprehensive lifecycle testing\n');
+
     if (!process.env.SFCC_CLIENT_ID || !process.env.SFCC_CLIENT_SECRET || !process.env.TEST_REALM) {
       this.skip();
     }

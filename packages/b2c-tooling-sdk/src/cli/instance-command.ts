@@ -79,6 +79,28 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       env: 'SFCC_PASSWORD',
       helpGroup: 'AUTH',
     }),
+    certificate: Flags.string({
+      description: 'Path to PKCS12 certificate for two-factor auth',
+      env: 'SFCC_CERTIFICATE',
+      helpGroup: 'AUTH',
+    }),
+    passphrase: Flags.string({
+      description: 'Passphrase for the certificate',
+      env: 'SFCC_CERTIFICATE_PASSPHRASE',
+      helpGroup: 'AUTH',
+    }),
+    selfsigned: Flags.boolean({
+      description: 'Allow self-signed server certificates',
+      env: 'SFCC_SELFSIGNED',
+      helpGroup: 'AUTH',
+      default: false,
+    }),
+    verify: Flags.boolean({
+      description: 'Verify SSL certificates',
+      default: true,
+      allowNo: true,
+      helpGroup: 'AUTH',
+    }),
   };
 
   private _instance?: B2CInstance;

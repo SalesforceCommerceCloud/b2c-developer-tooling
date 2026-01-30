@@ -52,6 +52,9 @@ export default defineConfig({
   description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
   base: '/b2c-developer-tooling/',
 
+  // Ignore dead links in api-readme.md (links are valid after TypeDoc generates the API docs)
+  ignoreDeadLinks: [/^\.\/clients\//],
+
   // Show deeper heading levels in the outline
   markdown: {
     toc: { level: [2, 3, 4] },
