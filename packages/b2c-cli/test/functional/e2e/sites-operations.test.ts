@@ -5,13 +5,12 @@
  */
 
 import {expect} from 'chai';
-import {execa} from 'execa';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
+import {runCLI, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * E2E Tests for Sites Operations
@@ -20,18 +19,11 @@ describe('Sites Operations E2E Tests', function () {
   this.timeout(600_000);
   this.retries(2);
 
-  const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
   const SITE_ARCHIVE_PATH = path.resolve(__dirname, '../fixtures/site_archive');
   const SITE_ID = 'TestSite';
 
   let serverHostname: string;
   let ownSandboxId: null | string = null;
-
-  async function sleep(ms: number): Promise<void> {
-    await new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
 
   before(async function () {
     if (!process.env.SFCC_CLIENT_ID || !process.env.SFCC_CLIENT_SECRET) {
@@ -53,63 +45,39 @@ describe('Sites Operations E2E Tests', function () {
         throw new Error('TEST_REALM required to create sandbox');
       }
 
-      const result = await runCLI([
-        'ods',
-        'create',
-        '--realm',
-        process.env.TEST_REALM,
-        '--ttl',
-        '4',
-        '--wait',
-        '--set-permissions',
-        '--json',
-      ]);
+      const result = await runCLIWithRetry(
+        ['ods', 'create', '--realm', process.env.TEST_REALM, '--ttl', '4', '--wait', '--set-permissions', '--json'],
+        {timeout: TIMEOUTS.ODS_OPERATION, maxRetries: 2, verbose: true},
+      );
 
-      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${result.stderr}`);
-      const sandbox = JSON.parse(result.stdout);
+      expect(
+        result.exitCode,
+        `Failed to create sandbox: ${toString(result.stderr) || toString(result.stdout)}`,
+      ).to.equal(0);
+      const sandbox = JSON.parse(toString(result.stdout));
       ownSandboxId = sandbox.id;
       serverHostname = sandbox.hostName;
-      console.log(`Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
+      console.log(`  ✓ Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
     }
 
-    async function runImportWithRetry(remainingRetries: number) {
-      const importResult = await runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]);
-      if (importResult.exitCode === 0) return importResult;
-
-      const msg = importResult.stderr || importResult.stdout;
-      const isTransient = /fetch failed|ECONNRESET|ETIMEDOUT/i.test(msg);
-
-      if (!isTransient || remainingRetries <= 0) return importResult;
-
-      console.warn(
-        `Sites E2E: transient import error, retrying after delay (remaining retries: ${remainingRetries}):`,
-        msg,
-      );
-      await sleep(2000);
-      return runImportWithRetry(remainingRetries - 1);
-    }
-
-    const importResult = await runImportWithRetry(2);
+    // Import site archive with retry logic for transient network errors
+    const importResult = await runCLIWithRetry(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname], {
+      maxRetries: 4,
+      initialDelay: 2000,
+      maxDelay: 8000,
+      verbose: true,
+    });
 
     if (importResult.exitCode !== 0) {
-      const msg = importResult.stderr || importResult.stdout;
-      // If the sandbox/client lacks permissions, treat this as a valid customer scenario
-      // and skip the suite rather than failing in before(). Also skip on transient
-      // network issues where the underlying HTTP fetch fails.
-      if (/not\s+allowed|unauthorized|forbidden|401|403|fetch failed/i.test(msg)) {
-        console.warn('Sites E2E: skipping suite due to import error:', msg);
+      const msg = toString(importResult.stderr) || toString(importResult.stdout);
+      // If the sandbox/client lacks permissions, skip suite
+      if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
         this.skip();
       }
-      expect(importResult.exitCode).to.equal(0, msg);
+      // Fail with clear error after retries
+      expect(importResult.exitCode, `Import failed after retries: ${msg.slice(0, 500)}`).to.equal(0);
     }
   });
-
-  async function runCLI(args: string[]) {
-    return execa('node', [CLI_BIN, ...args], {
-      env: {...process.env, SFCC_LOG_LEVEL: 'silent'},
-      reject: false,
-    });
-  }
 
   after(async function () {
     this.timeout(180_000); // 3 minutes for cleanup
@@ -130,10 +98,10 @@ describe('Sites Operations E2E Tests', function () {
       expect(result.exitCode).to.be.oneOf([0, 1]);
 
       if (result.exitCode === 0) {
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         expect(response.data).to.be.an('array');
       } else {
-        const errorText = result.stderr || result.stdout;
+        const errorText = toString(result.stderr) || toString(result.stdout);
         expect(errorText).to.not.equal('');
         const error = JSON.parse(errorText);
         expect(error.error).to.exist;
@@ -146,20 +114,28 @@ describe('Sites Operations E2E Tests', function () {
       const result = await runCLI(['sites', 'get', SITE_ID, '--server', serverHostname]);
 
       expect(result.exitCode).to.not.equal(0);
-      expect(result.stderr).to.include('not a b2c command');
+      expect(toString(result.stderr) || toString(result.stdout)).to.include('not a b2c command');
     });
   });
 
   describe('Sequential Multiple Site Imports', function () {
     it('should import multiple archives without conflict', async function () {
-      const results = await Promise.all([
-        runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]),
-        runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]),
-      ]);
+      this.timeout(600_000); // 10 minutes for sequential imports
 
-      for (const [index, result] of results.entries()) {
-        expect(result.exitCode).to.equal(0, `Import ${index + 1} failed: ${result.stderr}`);
-      }
+      // Run imports sequentially, not in parallel
+      const result1 = await runCLIWithRetry(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname], {
+        timeout: 300_000,
+        maxRetries: 3,
+        verbose: true,
+      });
+      expect(result1.exitCode, `Import 1 failed: ${toString(result1.stderr) || toString(result1.stdout)}`).to.equal(0);
+
+      const result2 = await runCLIWithRetry(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname], {
+        timeout: 300_000,
+        maxRetries: 3,
+        verbose: true,
+      });
+      expect(result2.exitCode, `Import 2 failed: ${toString(result2.stderr) || toString(result2.stdout)}`).to.equal(0);
     });
   });
 });
