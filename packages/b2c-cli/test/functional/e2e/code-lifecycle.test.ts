@@ -10,12 +10,13 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
+import {getSandboxId, getHostname, parseJSONOutput, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Code Lifecycle E2E Tests', function () {
-  this.timeout(900_000);
+  this.timeout(TIMEOUTS.CODE_DEPLOY * 3); // 15 minutes
   this.retries(2);
 
   const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
@@ -42,32 +43,24 @@ describe('Code Lifecycle E2E Tests', function () {
     } else {
       // Fallback: Create own sandbox
       console.log('No shared sandbox available, creating dedicated sandbox for Code tests...');
-      this.timeout(720_000); // 12 minutes for sandbox creation
+      this.timeout(TIMEOUTS.ODS_OPERATION);
 
       if (!process.env.TEST_REALM) {
         throw new Error('TEST_REALM required to create sandbox');
       }
 
-      const result = await runCLI(
+      const result = await runCLIWithRetry(
         ['ods', 'create', '--realm', process.env.TEST_REALM, '--ttl', '4', '--wait', '--set-permissions', '--json'],
-        {timeout: 720_000},
+        {timeout: TIMEOUTS.ODS_OPERATION, verbose: true},
       );
 
-      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${result.stderr}`);
-      const sandbox = JSON.parse(result.stdout);
-      ownSandboxId = sandbox.id;
-      serverHostname = sandbox.hostName;
-      console.log(`Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
+      expect(result.exitCode, `Failed to create sandbox: ${result.stderr}`).to.equal(0);
+      const sandbox = parseJSONOutput(result);
+      ownSandboxId = getSandboxId(sandbox);
+      serverHostname = getHostname(sandbox);
+      console.log(`  ✓ Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
     }
   });
-
-  async function runCLI(args: string[], options: {timeout?: number} = {}) {
-    return execa('node', [CLI_BIN, ...args], {
-      env: {...process.env, SFCC_LOG_LEVEL: 'silent'},
-      reject: false,
-      timeout: options.timeout,
-    });
-  }
 
   after(async function () {
     this.timeout(180_000); // 3 minutes for cleanup
@@ -78,13 +71,13 @@ describe('Code Lifecycle E2E Tests', function () {
 
     // Delete remaining code versions
     if (codeVersionB && serverHostname) {
-      await runCLI(['code', 'delete', codeVersionB, '--server', serverHostname, '--force']);
+      await runCLIWithRetry(['code', 'delete', codeVersionB, '--server', serverHostname, '--force']);
     }
 
     // Delete own sandbox if we created one
     if (ownSandboxId) {
       console.log(`Cleaning up dedicated sandbox ${ownSandboxId}...`);
-      await runCLI(['ods', 'delete', ownSandboxId, '--force']);
+      await runCLIWithRetry(['ods', 'delete', ownSandboxId, '--force']);
       console.log('Dedicated sandbox deleted');
     }
   });
@@ -94,7 +87,7 @@ describe('Code Lifecycle E2E Tests', function () {
     it('should deploy first code version', async function () {
       codeVersionA = `e2e-a-${Date.now()}`;
 
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'code',
         'deploy',
         CARTRIDGES_DIR,
@@ -111,10 +104,10 @@ describe('Code Lifecycle E2E Tests', function () {
 
   describe('Step 2: Verify Code Version A in List', function () {
     it('should find code version A in list', async function () {
-      const result = await runCLI(['code', 'list', '--server', serverHostname, '--json']);
+      const result = await runCLIWithRetry(['code', 'list', '--server', serverHostname, '--json']);
       expect(result.exitCode).to.equal(0);
 
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       const found = response.data.find((v: any) => v.id === codeVersionA);
       expect(found).to.exist;
     });
@@ -122,7 +115,7 @@ describe('Code Lifecycle E2E Tests', function () {
 
   describe('Step 3: Activate Code Version A', function () {
     it('should activate version A', async function () {
-      const result = await runCLI(['code', 'activate', codeVersionA, '--server', serverHostname, '--json']);
+      const result = await runCLIWithRetry(['code', 'activate', codeVersionA, '--server', serverHostname, '--json']);
 
       expect(result.exitCode).to.equal(0);
     });
@@ -132,7 +125,7 @@ describe('Code Lifecycle E2E Tests', function () {
     it('should deploy second code version', async function () {
       codeVersionB = `e2e-b-${Date.now()}`;
 
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'code',
         'deploy',
         CARTRIDGES_DIR,
@@ -149,10 +142,10 @@ describe('Code Lifecycle E2E Tests', function () {
 
   describe('Step 5: Verify Code Version B in List', function () {
     it('should find code version B in list', async function () {
-      const result = await runCLI(['code', 'list', '--server', serverHostname, '--json']);
+      const result = await runCLIWithRetry(['code', 'list', '--server', serverHostname, '--json']);
       expect(result.exitCode).to.equal(0);
 
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       const found = response.data.find((v: any) => v.id === codeVersionB);
       expect(found).to.exist;
     });
@@ -160,7 +153,7 @@ describe('Code Lifecycle E2E Tests', function () {
 
   describe('Step 6: Activate Code Version B', function () {
     it('should activate version B (A becomes inactive)', async function () {
-      const result = await runCLI(['code', 'activate', codeVersionB, '--server', serverHostname, '--json']);
+      const result = await runCLIWithRetry(['code', 'activate', codeVersionB, '--server', serverHostname, '--json']);
 
       expect(result.exitCode).to.equal(0);
     });
@@ -168,8 +161,8 @@ describe('Code Lifecycle E2E Tests', function () {
 
   describe('Step 7: Verify Active Code Version', function () {
     it('should show version B as active', async function () {
-      const result = await runCLI(['code', 'list', '--server', serverHostname, '--json']);
-      const response = JSON.parse(result.stdout);
+      const result = await runCLIWithRetry(['code', 'list', '--server', serverHostname, '--json']);
+      const response = parseJSONOutput(result);
 
       const active = response.data.find((v: any) => v.active === true);
       expect(active.id).to.equal(codeVersionB);
@@ -208,9 +201,12 @@ describe('Code Lifecycle E2E Tests', function () {
     it('should delete inactive version A', async function () {
       console.log(`Starting deletion of code version: ${codeVersionA}`);
 
-      const result = await runCLI(['code', 'delete', codeVersionA, '--server', serverHostname, '--force', '--json'], {
-        timeout: 120_000,
-      }); // 2 minutes timeout
+      const result = await runCLIWithRetry(
+        ['code', 'delete', codeVersionA, '--server', serverHostname, '--force', '--json'],
+        {
+          timeout: 120_000,
+        },
+      ); // 2 minutes timeout
 
       console.log(`Deletion finished with exit code: ${result.exitCode}`);
 
@@ -221,8 +217,8 @@ describe('Code Lifecycle E2E Tests', function () {
 
   describe('Step 10: Verify Code Version A Removed', function () {
     it('should not find deleted version A', async function () {
-      const result = await runCLI(['code', 'list', '--server', serverHostname, '--json']);
-      const response = JSON.parse(result.stdout);
+      const result = await runCLIWithRetry(['code', 'list', '--server', serverHostname, '--json']);
+      const response = parseJSONOutput(result);
 
       const found = response.data.find((v: any) => v.id === codeVersionA);
       expect(found).to.not.exist;

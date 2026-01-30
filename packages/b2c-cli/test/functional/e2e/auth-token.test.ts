@@ -5,9 +5,9 @@
  */
 
 import {expect} from 'chai';
-import {execa} from 'execa';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {parseJSONOutput, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,28 +16,14 @@ const __dirname = path.dirname(__filename);
  * E2E Tests for Authentication Token Generation
  */
 describe('Auth Token E2E Tests', function () {
-  this.timeout(120_000); // 2 minutes
+  this.timeout(TIMEOUTS.AUTH * 8); // 2 minutes
   this.retries(2);
-
-  const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
 
   before(function () {
     if (!process.env.SFCC_CLIENT_ID || !process.env.SFCC_CLIENT_SECRET) {
       this.skip();
     }
   });
-
-  async function runCLI(args: string[], env?: Record<string, string>) {
-    const result = await execa('node', [CLI_BIN, ...args], {
-      env: {
-        ...process.env,
-        ...env,
-        SFCC_LOG_LEVEL: 'silent',
-      },
-      reject: false,
-    });
-    return result;
-  }
 
   function decodeJWT(token: string): Record<string, unknown> {
     const parts = token.split('.');
@@ -49,11 +35,11 @@ describe('Auth Token E2E Tests', function () {
   }
 
   it('should generate a valid OAuth token with correct format, scopes, and expiration', async function () {
-    const result = await runCLI(['auth:token', '--json']);
-    expect(result.exitCode).to.equal(0, `Token generation failed: ${result.stderr}`);
+    const result = await runCLIWithRetry(['auth:token', '--json'], {timeout: TIMEOUTS.AUTH, verbose: true});
+    expect(result.exitCode, `Token generation failed: ${result.stderr}`).to.equal(0);
     expect(result.stdout).to.not.be.empty;
 
-    const response = JSON.parse(result.stdout);
+    const response = parseJSONOutput(result);
     expect(response).to.be.an('object');
     expect(response.accessToken).to.be.a('string').and.not.be.empty;
     expect(response.expires).to.be.a('string');
@@ -86,11 +72,13 @@ describe('Auth Token E2E Tests', function () {
       // Use only scopes your client actually has
       const extraScopes = ['profile', 'roles'];
 
-      const result = await runCLI(['auth:token', '--scope', extraScopes.join(','), '--json']);
+      const result = await runCLIWithRetry(['auth:token', '--scope', extraScopes.join(','), '--json'], {
+        timeout: TIMEOUTS.AUTH,
+      });
 
-      expect(result.exitCode).to.equal(0, `Token generation with extra scopes failed: ${result.stderr}`);
+      expect(result.exitCode, `Token generation with extra scopes failed: ${result.stderr}`).to.equal(0);
 
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       const accessToken = response.accessToken as string;
       expect(accessToken).to.be.a('string').and.not.be.empty;
       expect(response.scopes).to.include.members(extraScopes);
@@ -110,9 +98,12 @@ describe('Auth Token E2E Tests', function () {
 
   describe('Invalid Credentials', function () {
     it('should fail with invalid client credentials', async function () {
-      const result = await runCLI(['auth:token', '--json'], {
-        SFCC_CLIENT_ID: 'invalid-client-id',
-        SFCC_CLIENT_SECRET: 'invalid-client-secret',
+      const result = await runCLIWithRetry(['auth:token', '--json'], {
+        timeout: TIMEOUTS.AUTH,
+        env: {
+          SFCC_CLIENT_ID: 'invalid-client-id',
+          SFCC_CLIENT_SECRET: 'invalid-client-secret',
+        },
       });
 
       expect(result.exitCode).to.not.equal(0);
@@ -123,23 +114,23 @@ describe('Auth Token E2E Tests', function () {
 
   describe('JSON Output Structure', function () {
     it('should return correct JSON keys', async function () {
-      const result = await runCLI(['auth:token', '--json']);
-      const response = JSON.parse(result.stdout);
+      const result = await runCLIWithRetry(['auth:token', '--json'], {timeout: TIMEOUTS.AUTH});
+      const response = parseJSONOutput(result);
       expect(response).to.have.all.keys('accessToken', 'expires', 'scopes');
     });
   });
 
   describe('Default Scopes', function () {
     it('should return default scopes when no scopes are requested', async function () {
-      const result = await runCLI(['auth:token', '--json']);
-      const response = JSON.parse(result.stdout);
+      const result = await runCLIWithRetry(['auth:token', '--json'], {timeout: TIMEOUTS.AUTH});
+      const response = parseJSONOutput(result);
       expect(response.scopes.length).to.be.greaterThan(0);
     });
   });
 
   describe('Non-JSON Output', function () {
     it('should output raw token in non-JSON mode', async function () {
-      const result = await runCLI(['auth:token']);
+      const result = await runCLIWithRetry(['auth:token'], {timeout: TIMEOUTS.AUTH});
       expect(result.exitCode).to.equal(0);
       expect(result.stdout).to.match(/^ey[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/); // JWT regex
     });

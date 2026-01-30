@@ -5,9 +5,9 @@
  */
 
 import {expect} from 'chai';
-import {execa} from 'execa';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {getHostname, getSandboxId, parseJSONOutput, runCLI, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,13 +27,12 @@ const __dirname = path.dirname(__filename);
  */
 describe('ODS Lifecycle E2E Tests', function () {
   // Timeout for entire test suite
-  this.timeout(900_000); // 15 minutes
+  this.timeout(TIMEOUTS.ODS_OPERATION * 2); // 24 minutes for full lifecycle
 
   // Retry transient failures up to 2 times
   this.retries(2);
 
   // Test configuration (paths)
-  const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
   const CARTRIDGES_DIR = path.resolve(__dirname, '../fixtures/cartridges');
 
   // Test state
@@ -51,57 +50,22 @@ describe('ODS Lifecycle E2E Tests', function () {
     }
   });
 
-  /**
-   * Helper function to run CLI commands with proper environment.
-   * Uses process.env directly to get credentials from GitHub secrets.
-   */
-  async function runCLI(args: string[]) {
-    const result = await execa('node', [CLI_BIN, ...args], {
-      env: {
-        ...process.env,
-        SFCC_LOG_LEVEL: 'silent',
-      },
-      reject: false,
-    });
-
-    return result;
-  }
-
-  /**
-   * Helper function to get current sandbox state (for verification only)
-   */
-  async function getSandboxState(sandboxId: string): Promise<null | string> {
-    const result = await runCLI(['ods', 'get', sandboxId, '--json']);
-    if (result.exitCode === 0) {
-      const sandbox = JSON.parse(result.stdout);
-      return sandbox.state as null | string;
-    }
-    return null;
-  }
-
   describe('Step 1: Create Sandbox', function () {
     it('should create a new sandbox with permissions and wait for readiness', async function () {
-      this.timeout(720_000); // 12 minutes
+      this.timeout(TIMEOUTS.ODS_OPERATION);
 
       // Retry up to 3 times for transient failures (API timing issues, rate limits, etc.)
       this.retries(3);
 
-      const result = await runCLI([
-        'ods',
-        'create',
-        '--realm',
-        process.env.TEST_REALM!,
-        '--ttl',
-        '24',
-        '--wait',
-        '--set-permissions',
-        '--json',
-      ]);
+      const result = await runCLIWithRetry(
+        ['ods', 'create', '--realm', process.env.TEST_REALM!, '--ttl', '24', '--wait', '--set-permissions', '--json'],
+        {timeout: TIMEOUTS.ODS_OPERATION, maxRetries: 2, verbose: true},
+      );
 
-      expect(result.exitCode).to.equal(0, `Create command failed: ${result.stderr}`);
+      expect(result.exitCode, `Create failed: ${result.stderr}`).to.equal(0);
       expect(result.stdout, 'Create command should return JSON output').to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       expect(response, 'Create response should be a valid object').to.be.an('object');
       expect(response.id, 'Create response should contain a sandbox ID').to.be.a('string').and.not.be.empty;
       expect(response.hostName, 'Create response should contain a hostname').to.be.a('string').and.not.be.empty;
@@ -110,11 +74,11 @@ describe('ODS Lifecycle E2E Tests', function () {
       );
 
       // Store for subsequent tests
-      sandboxId = response.id as string;
-      serverHostname = response.hostName as string;
+      sandboxId = getSandboxId(response);
+      serverHostname = getHostname(response);
 
       // Debug output to verify values are set
-      console.log(`Created sandbox: ${sandboxId} on ${serverHostname}`);
+      console.log(`  ✓ Created sandbox: ${sandboxId} on ${serverHostname}`);
     });
   });
 
@@ -125,12 +89,14 @@ describe('ODS Lifecycle E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLI(['ods', 'list', '--realm', process.env.TEST_REALM!, '--json']);
+      const result = await runCLIWithRetry(['ods', 'list', '--realm', process.env.TEST_REALM!, '--json'], {
+        verbose: true,
+      });
 
-      expect(result.exitCode).to.equal(0, `List command failed: ${result.stderr}`);
+      expect(result.exitCode, `List failed: ${result.stderr}`).to.equal(0);
       expect(result.stdout, 'List command should return JSON output').to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       expect(response, 'List response should be a valid object').to.be.an('object');
       expect(response.data, 'List response should contain data array').to.be.an('array');
 
@@ -145,6 +111,7 @@ describe('ODS Lifecycle E2E Tests', function () {
 
   describe('Step 3: Deploy Code', function () {
     it('should deploy test cartridge to the sandbox', async function () {
+      this.timeout(TIMEOUTS.CODE_DEPLOY);
       // Retry for transient network/deployment issues
       this.retries(2);
 
@@ -153,23 +120,26 @@ describe('ODS Lifecycle E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLI([
-        'code',
-        'deploy',
-        CARTRIDGES_DIR,
-        '--cartridge',
-        'plugin_example',
-        '--server',
-        serverHostname,
-        '--account-manager-host',
-        process.env.SFCC_ACCOUNT_MANAGER_HOST!,
-        '--json',
-      ]);
+      const result = await runCLIWithRetry(
+        [
+          'code',
+          'deploy',
+          CARTRIDGES_DIR,
+          '--cartridge',
+          'plugin_example',
+          '--server',
+          serverHostname,
+          '--account-manager-host',
+          process.env.SFCC_ACCOUNT_MANAGER_HOST!,
+          '--json',
+        ],
+        {timeout: TIMEOUTS.CODE_DEPLOY, maxRetries: 3, verbose: true},
+      );
 
-      expect(result.exitCode).to.equal(0, `Deploy command failed: ${result.stderr}`);
+      expect(result.exitCode, `Deploy failed: ${result.stderr}`).to.equal(0);
       expect(result.stdout, 'Deploy command should return JSON output').to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       expect(response, 'Deploy response should be a valid object').to.be.an('object');
       expect(response.cartridges, 'Deploy response should contain cartridges array')
         .to.be.an('array')
@@ -180,59 +150,66 @@ describe('ODS Lifecycle E2E Tests', function () {
 
   describe('Step 4: Stop Sandbox', function () {
     it('should stop the sandbox', async function () {
+      this.timeout(TIMEOUTS.DEFAULT * 2);
       // Skip if we don't have a valid sandbox ID
       if (!sandboxId) {
         this.skip();
       }
 
-      const result = await runCLI(['ods', 'stop', sandboxId, '--json']);
+      const result = await runCLIWithRetry(['ods', 'stop', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode).to.equal(0, `Stop command failed: ${result.stderr}`);
+      expect(result.exitCode, `Stop failed: ${result.stderr}`).to.equal(0);
 
-      const state = await getSandboxState(sandboxId);
-      if (state) {
-        expect(
-          ['stopped', 'stopping'],
-          `Sandbox state should be 'stopped' or 'stopping' after stop command`,
-        ).to.include(state);
+      // Verify state
+      const statusResult = await runCLIWithRetry(['ods', 'get', sandboxId, '--json']);
+      if (statusResult.exitCode === 0) {
+        const sandbox = parseJSONOutput(statusResult);
+        expect(['stopped', 'stopping'], 'Sandbox should be stopped or stopping').to.include(sandbox.state);
       }
     });
   });
 
   describe('Step 5: Start Sandbox', function () {
     it('should start the sandbox', async function () {
+      this.timeout(TIMEOUTS.DEFAULT * 2);
       // Skip if we don't have a valid sandbox ID
       if (!sandboxId) {
         this.skip();
       }
 
-      const result = await runCLI(['ods', 'start', sandboxId, '--json']);
+      const result = await runCLIWithRetry(['ods', 'start', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode).to.equal(0, `Start command failed: ${result.stderr}`);
-      const state = await getSandboxState(sandboxId);
-      if (state) {
-        expect(['started', 'starting']).to.include(state);
+      expect(result.exitCode, `Start failed: ${result.stderr}`).to.equal(0);
+
+      // Verify state
+      const statusResult = await runCLIWithRetry(['ods', 'get', sandboxId, '--json']);
+      if (statusResult.exitCode === 0) {
+        const sandbox = parseJSONOutput(statusResult);
+        expect(['started', 'starting'], 'Sandbox should be started or starting').to.include(sandbox.state);
       }
     });
   });
 
   describe('Step 6: Restart Sandbox', function () {
     it('should restart the sandbox', async function () {
+      this.timeout(TIMEOUTS.DEFAULT * 2);
       // Skip if we don't have a valid sandbox ID
       if (!sandboxId) {
         this.skip();
       }
 
-      const result = await runCLI(['ods', 'restart', sandboxId, '--json']);
+      const result = await runCLIWithRetry(['ods', 'restart', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode).to.equal(0, `Restart command failed: ${result.stderr}`);
+      expect(result.exitCode, `Restart failed: ${result.stderr}`).to.equal(0);
 
-      const state = await getSandboxState(sandboxId);
-      if (state) {
+      // Verify state
+      const statusResult = await runCLIWithRetry(['ods', 'get', sandboxId, '--json']);
+      if (statusResult.exitCode === 0) {
+        const sandbox = parseJSONOutput(statusResult);
         expect(
           ['started', 'starting', 'restarting'],
-          `Sandbox state should be 'started', 'starting', or 'restarting' after restart command, but got '${state}'`,
-        ).to.include(state);
+          `Sandbox should be started/starting/restarting, but got '${sandbox.state}'`,
+        ).to.include(sandbox.state);
       }
     });
   });
@@ -244,12 +221,12 @@ describe('ODS Lifecycle E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLI(['ods', 'get', sandboxId, '--json']);
+      const result = await runCLIWithRetry(['ods', 'get', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode).to.equal(0, `Get command failed: ${result.stderr}`);
+      expect(result.exitCode, `Get failed: ${result.stderr}`).to.equal(0);
       expect(result.stdout, 'Get command should return JSON output').to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       expect(response, 'Get response should be a valid object').to.be.an('object');
       expect(response.id, `Get response ID '${response.id}' should match requested sandbox '${sandboxId}'`).to.equal(
         sandboxId,
@@ -265,9 +242,10 @@ describe('ODS Lifecycle E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLI(['ods', 'delete', sandboxId, '--force', '--json']);
+      const result = await runCLIWithRetry(['ods', 'delete', sandboxId, '--force', '--json'], {verbose: true});
 
-      expect(result.exitCode).to.equal(0, `Delete command failed: ${result.stderr}`);
+      expect(result.exitCode, `Delete failed: ${result.stderr}`).to.equal(0);
+      console.log('  ✓ Sandbox deleted successfully');
     });
   });
 
@@ -296,14 +274,11 @@ describe('ODS Lifecycle E2E Tests', function () {
 
     describe('Authentication', function () {
       it('should fail with invalid credentials', async function () {
-        const result = await execa('node', [CLI_BIN, 'ods', 'list', '--realm', process.env.TEST_REALM!, '--json'], {
+        const result = await runCLI(['ods', 'list', '--realm', process.env.TEST_REALM!, '--json'], {
           env: {
-            ...process.env,
             SFCC_CLIENT_ID: 'invalid-client-id',
             SFCC_CLIENT_SECRET: 'invalid-client-secret',
-            SFCC_LOG_LEVEL: 'silent',
           },
-          reject: false,
         });
 
         expect(result.exitCode, `Invalid credentials should fail, but got exit code ${result.exitCode}`).to.not.equal(

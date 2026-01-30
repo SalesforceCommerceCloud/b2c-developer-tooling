@@ -2,8 +2,12 @@
   "node-option": ["import=tsx"],
   "timeout": 30000,
   "slow": 5000,
-  "reporter": "spec",
-  "color": true,
+  "retries": 2,
+  "reporter": "json",
+  "reporter-option": [
+    "output=test-results.json"
+  ],
+  "color": false,
   "bail": false,
   "require": [
     "./test/functional/e2e/hooks.ts"

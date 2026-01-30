@@ -5,11 +5,11 @@
  */
 
 import {expect} from 'chai';
-import {execa} from 'execa';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
+import {parseJSONOutput, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,10 +26,8 @@ const __dirname = path.dirname(__filename);
  * 6. Negative scenarios (missing scopes, non-existent clients)
  */
 describe('SLAS Lifecycle E2E Tests', function () {
-  this.timeout(600_000); // 10 minutes
+  this.timeout(TIMEOUTS.DEFAULT * 20); // 10 minutes
   this.retries(2);
-
-  const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
 
   let clientId: string;
   let publicClientId: string;
@@ -66,30 +64,23 @@ describe('SLAS Lifecycle E2E Tests', function () {
     } else {
       // Create own sandbox
       console.log('No shared sandbox, creating dedicated sandbox for SLAS tests...');
-      this.timeout(720_000); // 12 minutes for sandbox creation
+      this.timeout(TIMEOUTS.ODS_OPERATION);
 
-      const odsCreate = await runCLI(['ods', 'create', '--realm', realm, '--ttl', '4', '--wait', '--json']);
+      const odsCreate = await runCLIWithRetry(['ods', 'create', '--realm', realm, '--ttl', '4', '--wait', '--json'], {
+        timeout: TIMEOUTS.ODS_OPERATION,
+        verbose: true,
+      });
 
-      expect(odsCreate.exitCode).to.equal(0, odsCreate.stderr);
+      expect(odsCreate.exitCode, `ODS create failed: ${odsCreate.stderr}`).to.equal(0);
 
-      const ods = JSON.parse(odsCreate.stdout);
+      const ods = parseJSONOutput(odsCreate);
       odsId = ods.id;
       instanceNum = ods.instance;
       tenantId = `${realm}_${instanceNum}`;
 
-      console.log(`Created sandbox ${odsId} (Tenant: ${tenantId})`);
+      console.log(`  ✓ Created sandbox ${odsId} (Tenant: ${tenantId})`);
     }
   });
-
-  async function runCLI(args: string[]) {
-    return execa('node', [CLI_BIN, ...args], {
-      env: {
-        ...process.env,
-        SFCC_LOG_LEVEL: 'silent',
-      },
-      reject: false,
-    });
-  }
 
   function expectFailure(
     result: {exitCode?: number; stdout: string; stderr: string},
@@ -121,7 +112,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
   after(async function () {
     // Cleanup SLAS clients
     if (clientId) {
-      await runCLI([
+      await runCLIWithRetry([
         'slas',
         'client',
         'delete',
@@ -135,7 +126,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
     }
 
     if (publicClientId) {
-      await runCLI([
+      await runCLIWithRetry([
         'slas',
         'client',
         'delete',
@@ -151,13 +142,13 @@ describe('SLAS Lifecycle E2E Tests', function () {
     // Only delete sandbox if we created it (not using shared)
     if (odsId) {
       console.log(`Cleaning up dedicated sandbox ${odsId}...`);
-      await runCLI(['ods', 'delete', odsId, '--force']);
+      await runCLIWithRetry(['ods', 'delete', odsId, '--force']);
     }
   });
 
   describe('Step 1: Create SLAS Client', function () {
     it('should create a new private SLAS client', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'create',
@@ -176,7 +167,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
       ]);
 
       expect(result.exitCode).to.equal(0, `Create failed: ${result.stderr}`);
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       clientId = response.clientId;
 
       expect(clientId).to.be.a('string').and.not.be.empty;
@@ -186,7 +177,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
     });
 
     it('should create a public client', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'create',
@@ -207,7 +198,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
       ]);
 
       expect(result.exitCode).to.equal(0, `Create public client failed: ${result.stderr}`);
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
 
       publicClientId = response.clientId;
 
@@ -217,7 +208,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
     });
 
     it('should fail to create when neither --scopes nor --default-scopes is provided', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'create',
@@ -240,7 +231,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
 
   describe('Step 2: List SLAS Clients', function () {
     it('should list clients and find created one', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'list',
@@ -252,7 +243,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
       ]);
 
       expect(result.exitCode).to.equal(0, `List failed: ${result.stderr}`);
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
 
       expect(response.clients).to.be.an('array');
       const found = response.clients.find((c: {clientId: string}) => c.clientId === clientId);
@@ -262,7 +253,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
 
   describe('Step 3: Get SLAS Client Details', function () {
     it('should retrieve client by ID', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'get',
@@ -275,12 +266,12 @@ describe('SLAS Lifecycle E2E Tests', function () {
       ]);
 
       expect(result.exitCode).to.equal(0, `Get failed: ${result.stderr}`);
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       expect(response.clientId).to.equal(clientId);
     });
 
     it('should fail for non-existent client', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'get',
@@ -298,7 +289,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
 
   describe('Step 4: Update SLAS Client', function () {
     it('should update client name', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'update',
@@ -313,14 +304,14 @@ describe('SLAS Lifecycle E2E Tests', function () {
       ]);
 
       expect(result.exitCode).to.equal(0, `Update failed: ${result.stderr}`);
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       expect(response.name).to.equal(`${clientName}-updated`);
     });
   });
 
   describe('Step 5: Delete SLAS Client', function () {
     it('should delete client', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'delete',
@@ -341,7 +332,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
 
   describe('Step 6: Verify Client Deleted', function () {
     it('should not appear in list', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'list',
@@ -353,13 +344,13 @@ describe('SLAS Lifecycle E2E Tests', function () {
       ]);
 
       expect(result.exitCode).to.equal(0);
-      const response = JSON.parse(result.stdout);
+      const response = parseJSONOutput(result);
       const found = response.clients.find((c: {clientId: string}) => c.clientId === deletedClientId);
       expect(found, `Deleted client ${deletedClientId} should not exist`).to.not.exist;
     });
 
     it('should fail to get deleted client', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'get',
@@ -375,7 +366,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
     });
 
     it('should fail to update deleted client', async function () {
-      const result = await runCLI([
+      const result = await runCLIWithRetry([
         'slas',
         'client',
         'update',

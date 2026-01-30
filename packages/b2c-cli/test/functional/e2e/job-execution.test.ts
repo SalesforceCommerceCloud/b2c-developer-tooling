@@ -5,14 +5,13 @@
  */
 
 import {expect} from 'chai';
-import {execa} from 'execa';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
+import {runCLI, runCLIWithRetry, sleep, TIMEOUTS} from './test-utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * E2E Tests for Job Execution
@@ -34,7 +33,6 @@ describe('Job Execution E2E Tests', function () {
   this.timeout(1_800_000); // 30 minutes
   this.retries(2);
 
-  const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
   const TEST_OUTPUT_DIR = path.resolve(__dirname, '../test-output');
 
   let serverHostname: string;
@@ -85,18 +83,6 @@ describe('Job Execution E2E Tests', function () {
     await fs.mkdir(TEST_OUTPUT_DIR, {recursive: true});
   });
 
-  async function runCLI(args: string[], options: {timeout?: number} = {}) {
-    const result = await execa('node', [CLI_BIN, ...args], {
-      env: {
-        ...process.env,
-        SFCC_LOG_LEVEL: 'silent',
-      },
-      reject: false,
-      timeout: options.timeout || 600_000,
-    });
-    return result;
-  }
-
   after(async function () {
     this.timeout(180_000); // 3 minutes for cleanup
 
@@ -142,7 +128,8 @@ describe('Job Execution E2E Tests', function () {
 
   describe('Step 2: Run Job With Wait', function () {
     it('should run job and wait for completion', async function () {
-      this.timeout(600_000); // 10 minutes
+      this.timeout(720_000); // 12 minutes
+      this.retries(3); // Retry if job is already running
 
       const exportFile = `e2e_export_${Date.now()}.zip`;
 
@@ -161,37 +148,42 @@ describe('Job Execution E2E Tests', function () {
         {timeout: 600_000},
       );
 
-      expect(result.exitCode).to.equal(0, `Run job with wait failed: ${result.stderr}`);
+      // Handle "job already running" error with retry + delay
+      if (result.exitCode !== 0) {
+        const errorMsg = result.stderr || result.stdout;
+        if (/already running|is currently running/i.test(errorMsg)) {
+          console.log('  ⚠ Job already running, waiting 45s before Mocha retry...');
+          await sleep(45_000);
+          throw new Error('Job already running, retrying...');
+        }
+      }
+
+      expect(result.exitCode).to.equal(0, `Run job with wait failed: ${result.stderr || result.stdout}`);
       expect(result.stdout).to.not.be.empty;
 
       const response = JSON.parse(result.stdout);
       expect(response).to.be.an('object');
       expect(String(response.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
+      console.log('  ✓ Job executed successfully');
     });
   });
 
   describe('Step 3: Search Job Executions', function () {
     it('should search job executions by job ID', async function () {
-      const result = await runCLI([
-        'job',
-        'search',
-        '--job-id',
-        EXPORT_JOB_ID,
-        '--server',
-        serverHostname,
-        '--count',
-        '5',
-        '--json',
-      ]);
+      const result = await runCLIWithRetry(
+        ['job', 'search', '--job-id', EXPORT_JOB_ID, '--server', serverHostname, '--count', '5', '--json'],
+        {timeout: TIMEOUTS.DEFAULT, maxRetries: 3, verbose: true},
+      );
 
       // Some sandboxes/clients may not have /job_execution_search permission.
       // In that case, ensure we fail gracefully rather than failing the whole E2E run.
       if (result.exitCode !== 0) {
         const msg = result.stderr || result.stdout;
-        if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
+        if (/isn't allowed|not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
-        this.skip();
+        // Otherwise fail the test with the error message
+        expect(result.exitCode, `Search failed: ${msg.slice(0, 300)}`).to.equal(0);
       }
 
       expect(result.stdout).to.not.be.empty;
@@ -205,26 +197,30 @@ describe('Job Execution E2E Tests', function () {
 
   describe('Step 4: Search With Filters', function () {
     it('should search with status filter', async function () {
-      const result = await runCLI([
-        'job',
-        'search',
-        '--job-id',
-        EXPORT_JOB_ID,
-        '--server',
-        serverHostname,
-        '--status',
-        'OK',
-        '--count',
-        '5',
-        '--json',
-      ]);
+      const result = await runCLIWithRetry(
+        [
+          'job',
+          'search',
+          '--job-id',
+          EXPORT_JOB_ID,
+          '--server',
+          serverHostname,
+          '--status',
+          'OK',
+          '--count',
+          '5',
+          '--json',
+        ],
+        {timeout: TIMEOUTS.DEFAULT, maxRetries: 3, verbose: true},
+      );
 
       if (result.exitCode !== 0) {
         const msg = result.stderr || result.stdout;
-        if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
+        if (/isn't allowed|not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
-        this.skip();
+        // Otherwise fail the test with the error message
+        expect(result.exitCode, `Search with filter failed: ${msg.slice(0, 300)}`).to.equal(0);
       }
 
       const response = JSON.parse(result.stdout);
@@ -336,26 +332,30 @@ describe('Job Execution E2E Tests', function () {
 
   describe('Step 10: Verify Import Completed', function () {
     it('should search for completed import jobs', async function () {
-      const result = await runCLI([
-        'job',
-        'search',
-        '--job-id',
-        IMPORT_JOB_ID,
-        '--server',
-        serverHostname,
-        '--status',
-        'OK',
-        '--count',
-        '5',
-        '--json',
-      ]);
+      const result = await runCLIWithRetry(
+        [
+          'job',
+          'search',
+          '--job-id',
+          IMPORT_JOB_ID,
+          '--server',
+          serverHostname,
+          '--status',
+          'OK',
+          '--count',
+          '5',
+          '--json',
+        ],
+        {timeout: TIMEOUTS.DEFAULT, maxRetries: 3, verbose: true},
+      );
 
       if (result.exitCode !== 0) {
         const msg = result.stderr || result.stdout;
-        if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
+        if (/isn't allowed|not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
-        this.skip();
+        // Otherwise fail the test with the error message
+        expect(result.exitCode, `Search for import jobs failed: ${msg.slice(0, 300)}`).to.equal(0);
       }
 
       const response = JSON.parse(result.stdout);
