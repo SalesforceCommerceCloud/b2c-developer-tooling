@@ -152,7 +152,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     this.logger.info({sandboxId: sandbox.id}, t('commands.ods.create.success', 'Sandbox created successfully'));
 
     if (wait && sandbox.id) {
-      this.log('');
+      this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to get started..'));
       sandbox = await this.waitForSandbox(sandbox.id, pollInterval, timeout);
     }
 
