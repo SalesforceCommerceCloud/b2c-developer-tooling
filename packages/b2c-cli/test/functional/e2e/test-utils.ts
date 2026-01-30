@@ -224,7 +224,7 @@ export async function runCLIWithRetry(args: string[], options: RetryOptions = {}
     // If not retryable or last attempt, return result
     if (!isRetryable || attempt === maxRetries) {
       if (verbose && !isRetryable) {
-        console.log(`  ✗ Non-retryable error, not retrying`);
+        console.log(`  ✗ This looks non-transient; not retrying`);
       }
       return result;
     }
@@ -233,8 +233,8 @@ export async function runCLIWithRetry(args: string[], options: RetryOptions = {}
     const delay = Math.min(initialDelay * 2 ** attempt, maxDelay);
 
     if (verbose) {
-      console.log(`  ⚠ Retryable error (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`);
-      console.log(`    Error: ${errorMsg.slice(0, 200)}${errorMsg.length > 200 ? '...' : ''}`);
+      console.log(`  ⚠ Temporary issue (attempt ${attempt + 1}/${maxRetries + 1}); trying again in ${delay}ms...`);
+      console.log(`    Details: ${errorMsg.slice(0, 200)}${errorMsg.length > 200 ? '...' : ''}`);
     }
 
     // eslint-disable-next-line no-await-in-loop
@@ -302,7 +302,7 @@ export function getErrorDetails(result: ExecaReturnValue): string {
  * @param result CLI execution result
  * @returns Parsed JSON object
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export function parseJSONOutput(result: ExecaReturnValue): any {
   if (result.exitCode !== 0) {
     throw new Error(`Command failed:\n${getErrorDetails(result)}`);

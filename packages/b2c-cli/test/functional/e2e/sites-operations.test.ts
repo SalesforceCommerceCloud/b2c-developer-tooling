@@ -61,7 +61,6 @@ describe('Sites Operations E2E Tests', function () {
     }
 
     // Import site archive with retry logic for transient network errors
-    console.log('  ⏳ Importing site archive (may take 2-3 minutes)...');
     const importResult = await runCLIWithRetry(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname], {
       maxRetries: 4,
       initialDelay: 2000,
@@ -73,13 +72,11 @@ describe('Sites Operations E2E Tests', function () {
       const msg = toString(importResult.stderr) || toString(importResult.stdout);
       // If the sandbox/client lacks permissions, skip suite
       if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
-        console.warn('  ⚠ Sites E2E: skipping suite due to permissions error');
         this.skip();
       }
       // Fail with clear error after retries
       expect(importResult.exitCode, `Import failed after retries: ${msg.slice(0, 500)}`).to.equal(0);
     }
-    console.log('  ✓ Site archive imported successfully');
   });
 
   after(async function () {

@@ -122,7 +122,6 @@ describe('Job Execution E2E Tests', function () {
       expect(response.id).to.be.a('string');
 
       executionId = response.id as string;
-      console.log(`Started job execution: ${executionId}`);
     });
   });
 
@@ -152,7 +151,6 @@ describe('Job Execution E2E Tests', function () {
       if (result.exitCode !== 0) {
         const errorMsg = toString(result.stderr) || toString(result.stdout);
         if (/already running|is currently running/i.test(errorMsg)) {
-          console.log('  ⚠ Job already running, waiting 45s before Mocha retry...');
           await sleep(45_000);
           throw new Error('Job already running, retrying...');
         }
@@ -167,7 +165,6 @@ describe('Job Execution E2E Tests', function () {
       const response = JSON.parse(toString(result.stdout));
       expect(response).to.be.an('object');
       expect(String(response.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
-      console.log('  ✓ Job executed successfully');
     });
   });
 
@@ -258,9 +255,9 @@ describe('Job Execution E2E Tests', function () {
       const exportDir = path.join(TEST_OUTPUT_DIR, 'export');
       await fs.mkdir(exportDir, {recursive: true});
 
-      const result = await runCLI(
+      const result = await runCLIWithRetry(
         ['job', 'export', '--global-data', 'meta_data', '--output', exportDir, '--server', serverHostname, '--json'],
-        {timeout: 900_000},
+        {timeout: 900_000, maxRetries: 2, verbose: true},
       );
 
       expect(result.exitCode).to.equal(0, `Export failed: ${toString(result.stderr)}`);
@@ -296,13 +293,16 @@ describe('Job Execution E2E Tests', function () {
   describe('Step 8: Import Site Data From File', function () {
     it('should import site data from local file', async function () {
       if (!exportFilePath) {
+        console.log('  ⚠ Export file path not set, skipping import test');
         this.skip();
       }
 
       this.timeout(900_000); // 15 minutes
 
-      const result = await runCLI(['job', 'import', exportFilePath, '--server', serverHostname, '--json'], {
+      const result = await runCLIWithRetry(['job', 'import', exportFilePath, '--server', serverHostname, '--json'], {
         timeout: 900_000,
+        maxRetries: 3,
+        verbose: true,
       });
 
       expect(result.exitCode).to.equal(0, `Import from file failed: ${toString(result.stderr)}`);
@@ -315,15 +315,25 @@ describe('Job Execution E2E Tests', function () {
 
   describe('Step 9: Import With Merge Mode', function () {
     it('should import with keep-archive option', async function () {
+      // Skip if export test failed or didn't run
       if (!exportFilePath) {
+        console.log('  ⚠ Export file path not set, skipping import test');
+        this.skip();
+      }
+
+      // Verify exported file exists before attempting import
+      try {
+        await fs.access(exportFilePath);
+      } catch {
+        console.log(`  ⚠ Export file not found: ${exportFilePath}, skipping import test`);
         this.skip();
       }
 
       this.timeout(900_000); // 15 minutes
 
-      const result = await runCLI(
+      const result = await runCLIWithRetry(
         ['job', 'import', exportFilePath, '--server', serverHostname, '--keep-archive', '--json'],
-        {timeout: 900_000},
+        {timeout: 900_000, maxRetries: 3, verbose: true},
       );
 
       expect(result.exitCode).to.equal(0, `Import with keep-archive failed: ${toString(result.stderr)}`);
