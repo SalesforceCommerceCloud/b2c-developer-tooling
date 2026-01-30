@@ -110,11 +110,8 @@ jobs:
           echo "Running E2E tests with realm: ${TEST_REALM}"
           echo "Node version: $(node --version)"
           
-          # Run E2E tests (uses .mocharc.json with JSON reporter)
-          cd packages/b2c-cli
-          env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --config test/functional/e2e/.mocharc.json "test/functional/e2e/**/*.test.ts"
-          cd ../..
-          pnpm run lint
+          # Run E2E tests
+          pnpm run test:e2e && pnpm run lint
 
       - name: E2E Test Report
         uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0
