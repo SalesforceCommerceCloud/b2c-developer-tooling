@@ -234,7 +234,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expectFailure(result, [/scopes/i]);
+      expectFailure(result, {messagePatterns: [/scopes/i]});
     });
   });
 
