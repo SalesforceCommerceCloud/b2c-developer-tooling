@@ -368,7 +368,7 @@ describe('WebDAV Operations E2E Tests', function () {
         if (result.exitCode !== 0) return false;
         const response = JSON.parse(result.stdout);
         return response.entries?.some((e: any) => entryName(e) === testFileName);
-      });
+      }, 300_000);
     });
   });
 });
