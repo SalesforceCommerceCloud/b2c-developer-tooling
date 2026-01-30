@@ -10,7 +10,7 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
-import {getSandboxId, getHostname, parseJSONOutput, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
+import {getSandboxId, getHostname, parseJSONOutput, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,7 +54,7 @@ describe('Code Lifecycle E2E Tests', function () {
         {timeout: TIMEOUTS.ODS_OPERATION, verbose: true},
       );
 
-      expect(result.exitCode, `Failed to create sandbox: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Failed to create sandbox: ${toString(result.stderr)}`).to.equal(0);
       const sandbox = parseJSONOutput(result);
       ownSandboxId = getSandboxId(sandbox);
       serverHostname = getHostname(sandbox);
@@ -98,7 +98,7 @@ describe('Code Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, result.stderr);
+      expect(result.exitCode).to.equal(0, toString(result.stderr));
     });
   });
 
@@ -210,7 +210,7 @@ describe('Code Lifecycle E2E Tests', function () {
 
       console.log(`Deletion finished with exit code: ${result.exitCode}`);
 
-      expect(result.exitCode).to.equal(0, `Delete failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Delete failed: ${toString(result.stderr)}`);
       codeVersionA = '';
     });
   });

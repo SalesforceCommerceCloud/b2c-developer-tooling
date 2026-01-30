@@ -6,13 +6,9 @@
 
 import {expect} from 'chai';
 import crypto from 'node:crypto';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
-import {parseJSONOutput, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import {parseJSONOutput, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
+import type {Result as ExecaReturnValue} from 'execa';
 
 /**
  * E2E Tests for SLAS (Shopper Login & API Service) Lifecycle
@@ -71,7 +67,10 @@ describe('SLAS Lifecycle E2E Tests', function () {
         verbose: true,
       });
 
-      expect(odsCreate.exitCode, `ODS create failed: ${odsCreate.stderr}`).to.equal(0);
+      expect(
+        odsCreate.exitCode,
+        `ODS create failed: ${toString(odsCreate.stderr) || toString(odsCreate.stdout)}`,
+      ).to.equal(0);
 
       const ods = parseJSONOutput(odsCreate);
       odsId = ods.id;
@@ -82,14 +81,11 @@ describe('SLAS Lifecycle E2E Tests', function () {
     }
   });
 
-  function expectFailure(
-    result: {exitCode?: number; stdout: string; stderr: string},
-    options: {messagePatterns?: RegExp[]; status?: number} = {},
-  ): void {
+  function expectFailure(result: ExecaReturnValue, options: {messagePatterns?: RegExp[]; status?: number} = {}): void {
     const exitCode = result.exitCode ?? -1;
-    expect(exitCode).to.not.equal(0, `Expected command to fail but it succeeded: ${result.stdout}`);
+    expect(exitCode).to.not.equal(0, `Expected command to fail but it succeeded: ${toString(result.stdout)}`);
 
-    const errorText = result.stderr || result.stdout;
+    const errorText = toString(result.stderr) || toString(result.stdout);
     expect(errorText).to.not.be.empty;
 
     const parsed = JSON.parse(errorText) as {
@@ -166,7 +162,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Create failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Create failed: ${toString(result.stderr)}`);
       const response = parseJSONOutput(result);
       clientId = response.clientId;
 
@@ -197,7 +193,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Create public client failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Create public client failed: ${toString(result.stderr)}`);
       const response = parseJSONOutput(result);
 
       publicClientId = response.clientId;
@@ -242,7 +238,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `List failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `List failed: ${toString(result.stderr)}`);
       const response = parseJSONOutput(result);
 
       expect(response.clients).to.be.an('array');
@@ -265,7 +261,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Get failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Get failed: ${toString(result.stderr)}`);
       const response = parseJSONOutput(result);
       expect(response.clientId).to.equal(clientId);
     });
@@ -303,7 +299,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Update failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Update failed: ${toString(result.stderr)}`);
       const response = parseJSONOutput(result);
       expect(response.name).to.equal(`${clientName}-updated`);
     });
@@ -323,7 +319,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Delete failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Delete failed: ${toString(result.stderr)}`);
 
       deletedClientId = clientId;
       clientId = '';

@@ -59,7 +59,7 @@ export const mochaHooks = {
         throw new Error(`Failed to create sandbox: ${result.stderr || result.stdout}`);
       }
 
-      const sandbox = parseJSONOutput(result);
+      const sandbox = parseJSONOutput(result) as {id: string; hostName: string; instance: string};
       createdSandboxId = sandbox.id;
 
       // Derive tenant ID from realm + instance

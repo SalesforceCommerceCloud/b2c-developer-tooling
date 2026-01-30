@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
-import {runCLI, runCLIWithRetry} from './test-utils.js';
+import {runCLI, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,11 +47,14 @@ describe('Sites Operations E2E Tests', function () {
 
       const result = await runCLIWithRetry(
         ['ods', 'create', '--realm', process.env.TEST_REALM, '--ttl', '4', '--wait', '--set-permissions', '--json'],
-        {maxRetries: 2, verbose: true},
+        {timeout: TIMEOUTS.ODS_OPERATION, maxRetries: 2, verbose: true},
       );
 
-      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${result.stderr}`);
-      const sandbox = JSON.parse(result.stdout);
+      expect(
+        result.exitCode,
+        `Failed to create sandbox: ${toString(result.stderr) || toString(result.stdout)}`,
+      ).to.equal(0);
+      const sandbox = JSON.parse(toString(result.stdout));
       ownSandboxId = sandbox.id;
       serverHostname = sandbox.hostName;
       console.log(`  ✓ Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
@@ -67,7 +70,7 @@ describe('Sites Operations E2E Tests', function () {
     });
 
     if (importResult.exitCode !== 0) {
-      const msg = importResult.stderr || importResult.stdout;
+      const msg = toString(importResult.stderr) || toString(importResult.stdout);
       // If the sandbox/client lacks permissions, skip suite
       if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
         console.warn('  ⚠ Sites E2E: skipping suite due to permissions error');
@@ -98,10 +101,10 @@ describe('Sites Operations E2E Tests', function () {
       expect(result.exitCode).to.be.oneOf([0, 1]);
 
       if (result.exitCode === 0) {
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         expect(response.data).to.be.an('array');
       } else {
-        const errorText = result.stderr || result.stdout;
+        const errorText = toString(result.stderr) || toString(result.stdout);
         expect(errorText).to.not.equal('');
         const error = JSON.parse(errorText);
         expect(error.error).to.exist;
@@ -114,7 +117,7 @@ describe('Sites Operations E2E Tests', function () {
       const result = await runCLI(['sites', 'get', SITE_ID, '--server', serverHostname]);
 
       expect(result.exitCode).to.not.equal(0);
-      expect(result.stderr).to.include('not a b2c command');
+      expect(toString(result.stderr) || toString(result.stdout)).to.include('not a b2c command');
     });
   });
 
@@ -128,14 +131,14 @@ describe('Sites Operations E2E Tests', function () {
         maxRetries: 3,
         verbose: true,
       });
-      expect(result1.exitCode, `Import 1 failed: ${result1.stderr || result1.stdout}`).to.equal(0);
+      expect(result1.exitCode, `Import 1 failed: ${toString(result1.stderr) || toString(result1.stdout)}`).to.equal(0);
 
       const result2 = await runCLIWithRetry(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname], {
         timeout: 300_000,
         maxRetries: 3,
         verbose: true,
       });
-      expect(result2.exitCode, `Import 2 failed: ${result2.stderr || result2.stdout}`).to.equal(0);
+      expect(result2.exitCode, `Import 2 failed: ${toString(result2.stderr) || toString(result2.stdout)}`).to.equal(0);
     });
   });
 });

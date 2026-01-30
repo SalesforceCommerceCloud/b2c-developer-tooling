@@ -18,7 +18,7 @@
  * - Provide verbose logging for CI debugging
  */
 
-import {execa, type ExecaReturnValue} from 'execa';
+import {execa, type Result as ExecaReturnValue} from 'execa';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -116,6 +116,16 @@ export function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Convert stdout/stderr to string (handles arrays and undefined)
+ */
+export function toString(value: string | string[] | Uint8Array | undefined | unknown[]): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.join('\n');
+  return String(value);
+}
+
+/**
  * Run CLI command with basic execution (no retry)
  * Use this for simple operations that don't need retry logic.
  * For operations that may fail due to network issues, use runCLIWithRetry().
@@ -208,7 +218,7 @@ export async function runCLIWithRetry(args: string[], options: RetryOptions = {}
     lastResult = result;
 
     // Check if error is retryable
-    const errorMsg = result.stderr || result.stdout;
+    const errorMsg = toString(result.stderr) || toString(result.stdout);
     const isRetryable = retryableErrors.some((pattern) => pattern.test(errorMsg));
 
     // If not retryable or last attempt, return result
@@ -238,7 +248,7 @@ export async function runCLIWithRetry(args: string[], options: RetryOptions = {}
  * Check if error indicates "job already running" condition
  */
 export function isJobAlreadyRunning(result: ExecaReturnValue): boolean {
-  const errorMsg = result.stderr || result.stdout;
+  const errorMsg = toString(result.stderr) || toString(result.stdout);
   return SPECIAL_ERROR_PATTERNS.JOB_ALREADY_RUNNING.test(errorMsg);
 }
 
@@ -246,7 +256,7 @@ export function isJobAlreadyRunning(result: ExecaReturnValue): boolean {
  * Check if error indicates permissions issue
  */
 export function isPermissionsError(result: ExecaReturnValue): boolean {
-  const errorMsg = result.stderr || result.stdout;
+  const errorMsg = toString(result.stderr) || toString(result.stdout);
   return SPECIAL_ERROR_PATTERNS.PERMISSIONS.test(errorMsg);
 }
 
@@ -254,7 +264,7 @@ export function isPermissionsError(result: ExecaReturnValue): boolean {
  * Check if error is retryable network error
  */
 export function isRetryableError(result: ExecaReturnValue): boolean {
-  const errorMsg = result.stderr || result.stdout;
+  const errorMsg = toString(result.stderr) || toString(result.stdout);
   return RETRYABLE_ERROR_PATTERNS.some((pattern) => pattern.test(errorMsg));
 }
 
@@ -269,11 +279,11 @@ export function getErrorDetails(result: ExecaReturnValue): string {
   parts.push(`Exit code: ${result.exitCode ?? 'unknown'}`);
 
   if (result.stderr) {
-    parts.push(`STDERR: ${result.stderr}`);
+    parts.push(`STDERR: ${toString(result.stderr)}`);
   }
 
   if (result.stdout) {
-    parts.push(`STDOUT: ${result.stdout}`);
+    parts.push(`STDOUT: ${toString(result.stdout)}`);
   }
 
   if (result.signal) {
@@ -292,21 +302,21 @@ export function getErrorDetails(result: ExecaReturnValue): string {
  * @param result CLI execution result
  * @returns Parsed JSON object
  */
-export function parseJSONOutput(result: ExecaReturnValue): Record<string, unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseJSONOutput(result: ExecaReturnValue): any {
   if (result.exitCode !== 0) {
     throw new Error(`Command failed:\n${getErrorDetails(result)}`);
   }
 
-  if (!result.stdout || result.stdout.trim() === '') {
+  const stdout = toString(result.stdout);
+  if (!stdout || stdout.trim() === '') {
     throw new Error('Command returned empty output');
   }
 
   try {
-    return JSON.parse(result.stdout) as Record<string, unknown>;
+    return JSON.parse(stdout);
   } catch {
-    throw new Error(
-      `Failed to parse JSON output:\n${result.stdout.slice(0, 500)}${result.stdout.length > 500 ? '...' : ''}`,
-    );
+    throw new Error(`Failed to parse JSON output:\n${stdout.slice(0, 500)}${stdout.length > 500 ? '...' : ''}`);
   }
 }
 

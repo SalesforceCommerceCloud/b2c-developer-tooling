@@ -5,12 +5,7 @@
  */
 
 import {expect} from 'chai';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
-import {parseJSONOutput, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import {parseJSONOutput, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
 
 /**
  * E2E Tests for Authentication Token Generation
@@ -36,7 +31,7 @@ describe('Auth Token E2E Tests', function () {
 
   it('should generate a valid OAuth token with correct format, scopes, and expiration', async function () {
     const result = await runCLIWithRetry(['auth:token', '--json'], {timeout: TIMEOUTS.AUTH, verbose: true});
-    expect(result.exitCode, `Token generation failed: ${result.stderr}`).to.equal(0);
+    expect(result.exitCode, `Token generation failed: ${toString(result.stderr)}`).to.equal(0);
     expect(result.stdout).to.not.be.empty;
 
     const response = parseJSONOutput(result);
@@ -76,7 +71,7 @@ describe('Auth Token E2E Tests', function () {
         timeout: TIMEOUTS.AUTH,
       });
 
-      expect(result.exitCode, `Token generation with extra scopes failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Token generation with extra scopes failed: ${toString(result.stderr)}`).to.equal(0);
 
       const response = parseJSONOutput(result);
       const accessToken = response.accessToken as string;
@@ -123,7 +118,7 @@ describe('Auth Token E2E Tests', function () {
   describe('Default Scopes', function () {
     it('should return default scopes when no scopes are requested', async function () {
       const result = await runCLIWithRetry(['auth:token', '--json'], {timeout: TIMEOUTS.AUTH});
-      const response = parseJSONOutput(result);
+      const response = parseJSONOutput(result) as {scopes: string[]};
       expect(response.scopes.length).to.be.greaterThan(0);
     });
   });

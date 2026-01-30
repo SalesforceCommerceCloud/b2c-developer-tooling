@@ -9,7 +9,7 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
-import {runCLI, runCLIWithRetry, sleep, TIMEOUTS} from './test-utils.js';
+import {runCLI, runCLIWithRetry, sleep, TIMEOUTS, toString} from './test-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -72,8 +72,8 @@ describe('Job Execution E2E Tests', function () {
         {timeout: 720_000},
       );
 
-      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${result.stderr}`);
-      const sandbox = JSON.parse(result.stdout);
+      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${toString(result.stderr)}`);
+      const sandbox = JSON.parse(toString(result.stdout));
       ownSandboxId = sandbox.id;
       serverHostname = sandbox.hostName;
       console.log(`Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
@@ -114,10 +114,10 @@ describe('Job Execution E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Run job failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Run job failed: ${toString(result.stderr)}`);
       expect(result.stdout).to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response).to.be.an('object');
       expect(response.id).to.be.a('string');
 
@@ -150,7 +150,7 @@ describe('Job Execution E2E Tests', function () {
 
       // Handle "job already running" error with retry + delay
       if (result.exitCode !== 0) {
-        const errorMsg = result.stderr || result.stdout;
+        const errorMsg = toString(result.stderr) || toString(result.stdout);
         if (/already running|is currently running/i.test(errorMsg)) {
           console.log('  ⚠ Job already running, waiting 45s before Mocha retry...');
           await sleep(45_000);
@@ -158,10 +158,13 @@ describe('Job Execution E2E Tests', function () {
         }
       }
 
-      expect(result.exitCode).to.equal(0, `Run job with wait failed: ${result.stderr || result.stdout}`);
+      expect(result.exitCode).to.equal(
+        0,
+        `Run job with wait failed: ${toString(result.stderr) || toString(result.stdout)}`,
+      );
       expect(result.stdout).to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response).to.be.an('object');
       expect(String(response.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
       console.log('  ✓ Job executed successfully');
@@ -178,7 +181,7 @@ describe('Job Execution E2E Tests', function () {
       // Some sandboxes/clients may not have /job_execution_search permission.
       // In that case, ensure we fail gracefully rather than failing the whole E2E run.
       if (result.exitCode !== 0) {
-        const msg = result.stderr || result.stdout;
+        const msg = toString(result.stderr) || toString(result.stdout);
         if (/isn't allowed|not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
@@ -188,7 +191,7 @@ describe('Job Execution E2E Tests', function () {
 
       expect(result.stdout).to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response).to.be.an('object');
       expect(response.hits).to.be.an('array');
       expect(response.total).to.be.a('number');
@@ -215,7 +218,7 @@ describe('Job Execution E2E Tests', function () {
       );
 
       if (result.exitCode !== 0) {
-        const msg = result.stderr || result.stdout;
+        const msg = toString(result.stderr) || toString(result.stdout);
         if (/isn't allowed|not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
@@ -223,7 +226,7 @@ describe('Job Execution E2E Tests', function () {
         expect(result.exitCode, `Search with filter failed: ${msg.slice(0, 300)}`).to.equal(0);
       }
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response.hits).to.be.an('array');
     });
   });
@@ -240,9 +243,9 @@ describe('Job Execution E2E Tests', function () {
         timeout: 600_000,
       });
 
-      expect(result.exitCode).to.equal(0, `Wait for job failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Wait for job failed: ${toString(result.stderr)}`);
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response.id).to.equal(executionId);
       expect(String(response.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
     });
@@ -260,10 +263,10 @@ describe('Job Execution E2E Tests', function () {
         {timeout: 900_000},
       );
 
-      expect(result.exitCode).to.equal(0, `Export failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Export failed: ${toString(result.stderr)}`);
       expect(result.stdout).to.not.be.empty;
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response.execution).to.be.an('object');
       expect(String(response.execution.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
       expect(response.localPath).to.be.a('string');
@@ -302,9 +305,9 @@ describe('Job Execution E2E Tests', function () {
         timeout: 900_000,
       });
 
-      expect(result.exitCode).to.equal(0, `Import from file failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Import from file failed: ${toString(result.stderr)}`);
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response.execution).to.be.an('object');
       expect(String(response.execution.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
     });
@@ -323,9 +326,9 @@ describe('Job Execution E2E Tests', function () {
         {timeout: 900_000},
       );
 
-      expect(result.exitCode).to.equal(0, `Import with keep-archive failed: ${result.stderr}`);
+      expect(result.exitCode).to.equal(0, `Import with keep-archive failed: ${toString(result.stderr)}`);
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(String(response.execution.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
     });
   });
@@ -350,7 +353,7 @@ describe('Job Execution E2E Tests', function () {
       );
 
       if (result.exitCode !== 0) {
-        const msg = result.stderr || result.stdout;
+        const msg = toString(result.stderr) || toString(result.stdout);
         if (/isn't allowed|not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
@@ -358,7 +361,7 @@ describe('Job Execution E2E Tests', function () {
         expect(result.exitCode, `Search for import jobs failed: ${msg.slice(0, 300)}`).to.equal(0);
       }
 
-      const response = JSON.parse(result.stdout);
+      const response = JSON.parse(toString(result.stdout));
       expect(response.hits).to.be.an('array');
     });
   });

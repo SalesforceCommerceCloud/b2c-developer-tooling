@@ -9,7 +9,7 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
-import {runCLI} from './test-utils.js';
+import {runCLI, toString} from './test-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -130,8 +130,8 @@ describe('WebDAV Operations E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${result.stderr}`);
-      const sandbox = JSON.parse(result.stdout);
+      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${toString(result.stderr)}`);
+      const sandbox = JSON.parse(toString(result.stdout));
       ownSandboxId = sandbox.id;
       serverHostname = sandbox.hostName;
       console.log(`Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
@@ -184,11 +184,11 @@ describe('WebDAV Operations E2E Tests', function () {
       ]);
 
       if (result.exitCode !== 0) {
-        const msg = result.stderr || result.stdout;
+        const msg = toString(result.stderr) || toString(result.stdout);
         if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
-        expect(result.exitCode).to.equal(0, msg);
+        expect(result.exitCode, msg).to.equal(0);
       }
     });
   });
@@ -207,7 +207,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === testFileName);
       });
     });
@@ -251,7 +251,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return !response.entries?.some((e: any) => entryName(e) === testFileName);
       });
     });
@@ -310,7 +310,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return !response.entries?.some((e: any) => entryName(e) === testDirName);
       });
     });
@@ -352,7 +352,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === `${testDirName}.zip`);
       });
     });
@@ -380,7 +380,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === testFileName);
       }, 300_000);
     });

@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {getHostname, getSandboxId, parseJSONOutput, runCLI, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
+import {getHostname, getSandboxId, parseJSONOutput, runCLI, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,7 +62,7 @@ describe('ODS Lifecycle E2E Tests', function () {
         {timeout: TIMEOUTS.ODS_OPERATION, maxRetries: 2, verbose: true},
       );
 
-      expect(result.exitCode, `Create failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Create failed: ${toString(result.stderr)}`).to.equal(0);
       expect(result.stdout, 'Create command should return JSON output').to.not.be.empty;
 
       const response = parseJSONOutput(result);
@@ -93,7 +93,7 @@ describe('ODS Lifecycle E2E Tests', function () {
         verbose: true,
       });
 
-      expect(result.exitCode, `List failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `List failed: ${toString(result.stderr)}`).to.equal(0);
       expect(result.stdout, 'List command should return JSON output').to.not.be.empty;
 
       const response = parseJSONOutput(result);
@@ -136,7 +136,7 @@ describe('ODS Lifecycle E2E Tests', function () {
         {timeout: TIMEOUTS.CODE_DEPLOY, maxRetries: 3, verbose: true},
       );
 
-      expect(result.exitCode, `Deploy failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Deploy failed: ${toString(result.stderr)}`).to.equal(0);
       expect(result.stdout, 'Deploy command should return JSON output').to.not.be.empty;
 
       const response = parseJSONOutput(result);
@@ -158,7 +158,7 @@ describe('ODS Lifecycle E2E Tests', function () {
 
       const result = await runCLIWithRetry(['ods', 'stop', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode, `Stop failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Stop failed: ${toString(result.stderr)}`).to.equal(0);
 
       // Verify state
       const statusResult = await runCLIWithRetry(['ods', 'get', sandboxId, '--json']);
@@ -179,7 +179,7 @@ describe('ODS Lifecycle E2E Tests', function () {
 
       const result = await runCLIWithRetry(['ods', 'start', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode, `Start failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Start failed: ${toString(result.stderr)}`).to.equal(0);
 
       // Verify state
       const statusResult = await runCLIWithRetry(['ods', 'get', sandboxId, '--json']);
@@ -200,7 +200,7 @@ describe('ODS Lifecycle E2E Tests', function () {
 
       const result = await runCLIWithRetry(['ods', 'restart', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode, `Restart failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Restart failed: ${toString(result.stderr)}`).to.equal(0);
 
       // Verify state
       const statusResult = await runCLIWithRetry(['ods', 'get', sandboxId, '--json']);
@@ -223,7 +223,7 @@ describe('ODS Lifecycle E2E Tests', function () {
 
       const result = await runCLIWithRetry(['ods', 'get', sandboxId, '--json'], {verbose: true});
 
-      expect(result.exitCode, `Get failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Get failed: ${toString(result.stderr)}`).to.equal(0);
       expect(result.stdout, 'Get command should return JSON output').to.not.be.empty;
 
       const response = parseJSONOutput(result);
@@ -244,7 +244,7 @@ describe('ODS Lifecycle E2E Tests', function () {
 
       const result = await runCLIWithRetry(['ods', 'delete', sandboxId, '--force', '--json'], {verbose: true});
 
-      expect(result.exitCode, `Delete failed: ${result.stderr}`).to.equal(0);
+      expect(result.exitCode, `Delete failed: ${toString(result.stderr)}`).to.equal(0);
       console.log('  ✓ Sandbox deleted successfully');
     });
   });
