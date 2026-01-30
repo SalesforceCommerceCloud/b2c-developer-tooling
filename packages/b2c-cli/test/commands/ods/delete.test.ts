@@ -69,6 +69,15 @@ describe('ods delete', () => {
       expect(OdsDelete.flags.force.char).to.equal('f');
     });
 
+    it('should expose wait/polling flags', () => {
+      expect(OdsDelete.flags).to.have.property('wait');
+      expect(OdsDelete.flags.wait.char).to.equal('w');
+      expect(OdsDelete.flags).to.have.property('poll-interval');
+      expect(OdsDelete.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(OdsDelete.flags).to.have.property('timeout');
+      expect(OdsDelete.flags.timeout.dependsOn).to.deep.equal(['wait']);
+    });
+
     it('should have correct description', () => {
       expect(OdsDelete.description).to.be.a('string');
       expect(OdsDelete.description.toLowerCase()).to.include('delete');
@@ -126,6 +135,46 @@ describe('ods delete', () => {
       await command.run();
 
       expect(logs.length).to.be.greaterThan(0);
+    });
+
+    it('should poll sandbox state when --wait is true', async () => {
+      const command = new OdsDelete([], {} as any);
+
+      Object.defineProperty(command, 'args', {
+        value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      (command as any).flags = {force: true, wait: true, 'poll-interval': 0, timeout: 1};
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
+
+      const getSpy = sinon.spy(async () => {
+        // First GET is for confirmation/details, subsequent GET is polling
+        if (getSpy.callCount === 0) {
+          return {
+            data: {data: {id: 'sandbox-123', realm: 'zzzv', instance: 'zzzv-001', state: 'started'}},
+            response: new Response(),
+          };
+        }
+
+        return {
+          data: {data: {state: 'deleted'}},
+          response: new Response(),
+        };
+      });
+
+      stubOdsClient(command, {
+        GET: getSpy,
+        DELETE: async () => ({
+          data: {data: {}},
+          response: new Response(null, {status: 202}),
+        }),
+      });
+
+      await command.run();
+
+      expect(getSpy.callCount, 'Expected GET to be called multiple times when --wait is true').to.be.greaterThan(1);
     });
 
     it('should log messages in non-JSON mode', async () => {
