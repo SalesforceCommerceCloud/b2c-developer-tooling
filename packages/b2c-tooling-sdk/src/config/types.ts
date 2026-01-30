@@ -67,6 +67,14 @@ export interface NormalizedConfig {
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
+
+  // TLS/mTLS
+  /** Path to PKCS12 certificate file for client mTLS (two-factor auth) */
+  certificate?: string;
+  /** Passphrase for the certificate */
+  certificatePassphrase?: string;
+  /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
+  selfSigned?: boolean;
 }
 
 /**

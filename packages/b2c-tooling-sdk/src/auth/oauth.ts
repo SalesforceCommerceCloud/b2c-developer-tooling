@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
+import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
@@ -38,14 +38,16 @@ export class OAuthStrategy implements AuthStrategy {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
   }
 
-  async fetch(url: string, init: RequestInit = {}): Promise<Response> {
+  async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     const token = await this.getAccessToken();
 
     const headers = new Headers(init.headers);
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    let res = await fetch(url, {...init, headers});
+    // Pass through dispatcher for TLS/mTLS support
+    // Node.js fetch accepts dispatcher as an undocumented option
+    let res = await fetch(url, {...init, headers} as RequestInit);
 
     // RESILIENCE: If the server says 401, the token might have expired or been revoked.
     // We retry exactly once after invalidating the cached token.
@@ -53,7 +55,7 @@ export class OAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {...init, headers});
+      res = await fetch(url, {...init, headers} as RequestInit);
     }
 
     return res;

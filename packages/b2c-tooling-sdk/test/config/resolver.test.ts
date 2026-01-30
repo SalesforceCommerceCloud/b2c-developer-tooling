@@ -530,4 +530,78 @@ describe('config/resolver', () => {
       expect(config.mrtProject).to.equal('after-project');
     });
   });
+
+  describe('TLS/mTLS configuration', () => {
+    it('resolves TLS options from source', () => {
+      const source = new MockSource('test', {
+        hostname: 'example.demandware.net',
+        certificate: '/path/to/cert.p12',
+        certificatePassphrase: 'secret',
+        selfSigned: true,
+      });
+      const resolver = new ConfigResolver([source]);
+
+      const {config} = resolver.resolve();
+
+      expect(config.certificate).to.equal('/path/to/cert.p12');
+      expect(config.certificatePassphrase).to.equal('secret');
+      expect(config.selfSigned).to.equal(true);
+    });
+
+    it('allows overrides to take precedence for TLS options', () => {
+      const source = new MockSource('test', {
+        hostname: 'example.demandware.net',
+        certificate: '/source/cert.p12',
+        selfSigned: false,
+      });
+      const resolver = new ConfigResolver([source]);
+
+      const {config} = resolver.resolve({
+        hostname: 'example.demandware.net',
+        certificate: '/override/cert.p12',
+        selfSigned: true,
+      });
+
+      expect(config.certificate).to.equal('/override/cert.p12');
+      expect(config.selfSigned).to.equal(true);
+    });
+
+    it('merges TLS options from multiple sources', () => {
+      const source1 = new MockSource('first', {
+        hostname: 'example.demandware.net',
+        certificate: '/path/to/cert.p12',
+      });
+      const source2 = new MockSource('second', {
+        certificatePassphrase: 'passphrase-from-second',
+        selfSigned: true,
+      });
+      const resolver = new ConfigResolver([source1, source2]);
+
+      const {config} = resolver.resolve();
+
+      expect(config.hostname).to.equal('example.demandware.net');
+      expect(config.certificate).to.equal('/path/to/cert.p12');
+      expect(config.certificatePassphrase).to.equal('passphrase-from-second');
+      expect(config.selfSigned).to.equal(true);
+    });
+
+    it('discards TLS options on hostname mismatch protection', () => {
+      const source = new MockSource('test', {
+        hostname: 'prod.demandware.net',
+        certificate: '/prod/cert.p12',
+        certificatePassphrase: 'prod-secret',
+        selfSigned: false,
+      });
+      const resolver = new ConfigResolver([source]);
+
+      const {config, warnings} = resolver.resolve({hostname: 'staging.demandware.net'}, {hostnameProtection: true});
+
+      expect(config.hostname).to.equal('staging.demandware.net');
+      expect(config.certificate).to.be.undefined;
+      expect(config.certificatePassphrase).to.be.undefined;
+      expect(config.selfSigned).to.be.undefined;
+      expect(warnings).to.have.length(1);
+      expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
+    });
+  });
 });

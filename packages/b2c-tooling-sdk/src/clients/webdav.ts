@@ -12,6 +12,7 @@
  * @module clients/webdav
  */
 import {parseStringPromise} from 'xml2js';
+import type {Dispatcher} from 'undici';
 import type {AuthStrategy} from '../auth/types.js';
 import {HTTPError} from '../errors/http-error.js';
 import {getLogger} from '../logging/logger.js';
@@ -61,18 +62,24 @@ export interface WebDavClientOptions {
    * If not specified, uses the global middleware registry.
    */
   middlewareRegistry?: MiddlewareRegistry;
+  /**
+   * undici dispatcher for custom TLS options (mTLS, self-signed certs).
+   * Use createTlsDispatcher() to create one with client certificates.
+   */
+  dispatcher?: Dispatcher;
 }
 
 export class WebDavClient {
   private baseUrl: string;
   private middlewareRegistry: MiddlewareRegistry;
+  private dispatcher?: Dispatcher;
 
   /**
    * Creates a new WebDAV client.
    *
    * @param hostname - WebDAV hostname (may differ from API hostname)
    * @param auth - Authentication strategy to use for requests
-   * @param options - Optional configuration including middleware registry
+   * @param options - Optional configuration including middleware registry and TLS dispatcher
    */
   constructor(
     hostname: string,
@@ -81,6 +88,7 @@ export class WebDavClient {
   ) {
     this.baseUrl = `https://${hostname}/on/demandware.servlet/webdav/Sites`;
     this.middlewareRegistry = options?.middlewareRegistry ?? globalMiddlewareRegistry;
+    this.dispatcher = options?.dispatcher;
   }
 
   /**
@@ -155,10 +163,12 @@ export class WebDavClient {
     const startTime = Date.now();
 
     // Use auth.fetch with the (potentially modified) request
+    // Pass dispatcher for TLS/mTLS support
     let response = await this.auth.fetch(request.url, {
       method: request.method,
       headers: request.headers,
       body: init?.body, // Use original body since Request body may have been consumed
+      dispatcher: this.dispatcher,
     });
 
     const duration = Date.now() - startTime;
