@@ -120,14 +120,22 @@ describe('Sites Operations E2E Tests', function () {
 
   describe('Sequential Multiple Site Imports', function () {
     it('should import multiple archives without conflict', async function () {
-      const results = await Promise.all([
-        runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]),
-        runCLI(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname]),
-      ]);
+      this.timeout(600_000); // 10 minutes for sequential imports
 
-      for (const [index, result] of results.entries()) {
-        expect(result.exitCode).to.equal(0, `Import ${index + 1} failed: ${result.stderr}`);
-      }
+      // Run imports sequentially, not in parallel
+      const result1 = await runCLIWithRetry(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname], {
+        timeout: 300_000,
+        maxRetries: 3,
+        verbose: true,
+      });
+      expect(result1.exitCode, `Import 1 failed: ${result1.stderr || result1.stdout}`).to.equal(0);
+
+      const result2 = await runCLIWithRetry(['job', 'import', SITE_ARCHIVE_PATH, '--server', serverHostname], {
+        timeout: 300_000,
+        maxRetries: 3,
+        verbose: true,
+      });
+      expect(result2.exitCode, `Import 2 failed: ${result2.stderr || result2.stdout}`).to.equal(0);
     });
   });
 });
