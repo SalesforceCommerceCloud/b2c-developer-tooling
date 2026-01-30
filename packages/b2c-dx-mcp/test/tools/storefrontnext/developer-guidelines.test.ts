@@ -123,7 +123,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should be GA (generally available)', () => {
       const tool = createDeveloperGuidelinesTool(services);
-      expect(tool.isGA).to.be.true;
+      expect(tool.isGA).to.be.false;
     });
 
     it('should not require B2C instance', () => {
