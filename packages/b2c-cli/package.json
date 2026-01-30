@@ -234,7 +234,7 @@
             }
           },
           "mtls": {
-            "description": "Manage mTLS certificates\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
+            "description": "Manage mTLS certificates for code deployment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "cipher-suites": {
             "description": "Manage TLS cipher configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
