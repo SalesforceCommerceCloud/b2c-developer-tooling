@@ -1,11 +1,11 @@
-# Salesforce Commerce Cloud B2C CLI
+# Salesforce Agentforce Commerce B2C CLI
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 
 > [!NOTE]
 > This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues.
 
-A command-line interface for Salesforce Commerce Cloud B2C instances and platform services.
+A command-line interface for Salesforce Agentforce Commerce (formerly Commerce Cloud) B2C instances and platform services.
 
 ## Installation
 
