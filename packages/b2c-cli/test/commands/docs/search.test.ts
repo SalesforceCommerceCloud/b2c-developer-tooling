@@ -8,18 +8,8 @@ import {ux} from '@oclif/core';
 import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import type {DocEntry, SearchResult} from '@salesforce/b2c-tooling-sdk/operations/docs';
 import DocsSearch from '../../../src/commands/docs/search.js';
 import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../helpers/test-setup.js';
-
-interface ListDocsResponse {
-  entries: DocEntry[];
-}
-
-interface SearchDocsResponse {
-  query?: string;
-  results: SearchResult[];
-}
 
 describe('docs search', () => {
   const hooks = createIsolatedConfigHooks();
@@ -53,7 +43,7 @@ describe('docs search', () => {
     const listStub = sinon.stub().returns([{id: 'a', title: 'A', filePath: 'a.md'}]);
     command.operations = {...command.operations, listDocs: listStub};
 
-    const result = await runSilent<ListDocsResponse>(() => command.run());
+    const result = (await runSilent(() => command.run())) as {entries: unknown[]};
 
     expect(result.entries).to.have.length(1);
   });
@@ -79,7 +69,7 @@ describe('docs search', () => {
     const searchStub = sinon.stub().returns([{entry: {id: 'a', title: 'A', filePath: 'a.md'}, score: 0.1}]);
     command.operations = {...command.operations, searchDocs: searchStub};
 
-    const result = await runSilent<SearchDocsResponse>(() => command.run());
+    const result = (await runSilent(() => command.run())) as {results: unknown[]};
 
     expect(result.results).to.have.length(1);
   });

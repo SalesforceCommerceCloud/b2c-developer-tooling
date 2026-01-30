@@ -6,14 +6,8 @@
 import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import type {Zone} from '@salesforce/b2c-tooling-sdk/clients';
 import EcdnZonesList from '../../../../src/commands/ecdn/zones/list.js';
 import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../../helpers/test-setup.js';
-
-interface ListOutput {
-  zones: Zone[];
-  total: number;
-}
 
 /**
  * Unit tests for eCDN zones list command CLI logic.
@@ -135,7 +129,7 @@ describe('ecdn zones list', () => {
         }),
       });
 
-      const result = await runSilent<ListOutput>(() => command.run());
+      const result = (await runSilent(() => command.run())) as {total: number; zones: Array<{name: string}>};
 
       expect(result).to.have.property('total', 1);
       expect(result.zones).to.have.lengthOf(1);
