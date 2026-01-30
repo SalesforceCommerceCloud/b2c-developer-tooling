@@ -3,12 +3,23 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+
+/**
+ * Extended RequestInit that supports undici dispatcher for TLS/mTLS.
+ * Uses `unknown` for dispatcher to avoid type conflicts between undici package
+ * and @types/node/undici-types.
+ */
+export type FetchInit = Omit<RequestInit, 'dispatcher'> & {
+  /** undici dispatcher for custom TLS options (mTLS, self-signed certs) */
+  dispatcher?: unknown;
+};
+
 export interface AuthStrategy {
   /**
    * Performs a fetch request with authentication.
    * Implementations MUST handle header injection and 401 retries (token refresh) internally.
    */
-  fetch(url: string, init?: RequestInit): Promise<Response>;
+  fetch(url: string, init?: FetchInit): Promise<Response>;
 
   /**
    * Optional: Helper for legacy clients (like a strict WebDAV lib) that need the raw header.

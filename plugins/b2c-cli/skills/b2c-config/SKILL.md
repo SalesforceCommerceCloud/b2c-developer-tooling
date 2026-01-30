@@ -60,6 +60,7 @@ The command displays configuration organized by category:
 - **Instance**: hostname, webdavHostname, codeVersion
 - **Authentication (Basic)**: username, password (for WebDAV)
 - **Authentication (OAuth)**: clientId, clientSecret, scopes, authMethods
+- **TLS/mTLS**: certificate, certificatePassphrase, selfSigned (for two-factor auth)
 - **SCAPI**: shortCode
 - **Managed Runtime (MRT)**: mrtProject, mrtEnvironment, mrtApiKey
 - **Metadata**: instanceName (from multi-instance configs)

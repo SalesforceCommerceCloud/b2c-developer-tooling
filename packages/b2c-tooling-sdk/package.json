@@ -293,6 +293,7 @@
     "openapi-fetch": "^0.15.0",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.2",
+    "undici": "^7.0.0",
     "xml2js": "^0.6.2"
   }
 }

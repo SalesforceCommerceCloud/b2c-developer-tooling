@@ -68,6 +68,9 @@ You can configure the CLI using environment variables:
 | `SFCC_AUTH_METHODS` | Comma-separated list of allowed auth methods |
 | `SFCC_OAUTH_SCOPES` | OAuth scopes to request |
 | `SFCC_CODE_VERSION` | Code version for deployments |
+| `SFCC_CERTIFICATE` | Path to PKCS12 certificate for two-factor auth (mTLS) |
+| `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate |
+| `SFCC_SELFSIGNED` | Allow self-signed server certificates |
 
 ## .env File
 
@@ -142,7 +145,7 @@ If no instance is specified, the config with `"active": true` is used.
 | Field | Description |
 |-------|-------------|
 | `hostname` | B2C instance hostname |
-| `webdav-hostname` | Separate hostname for WebDAV (if different from main hostname). Also accepts `secureHostname` or `secure-server`. |
+| `webdav-hostname` | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`. |
 | `code-version` | Code version for deployments |
 | `client-id` | OAuth client ID |
 | `client-secret` | OAuth client secret |
@@ -151,6 +154,27 @@ If no instance is specified, the config with `"active": true` is used.
 | `oauth-scopes` | OAuth scopes (array of strings) |
 | `auth-methods` | Authentication methods in priority order (array of strings) |
 | `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
+| `certificate` | Path to PKCS12 certificate for two-factor auth (mTLS) |
+| `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`. |
+| `self-signed` | Allow self-signed server certificates. Also accepts `selfsigned`. |
+
+### Two-Factor Authentication (mTLS)
+
+For instances that require client certificate authentication:
+
+```json
+{
+  "hostname": "cert.staging.example.demandware.net",
+  "code-version": "version1",
+  "username": "your-username",
+  "password": "your-access-key",
+  "certificate": "/path/to/client-cert.p12",
+  "certificate-passphrase": "cert-password",
+  "self-signed": true
+}
+```
+
+The certificate must be in PKCS12 format (`.p12` or `.pfx`). The `self-signed` option is often needed for staging environments with internal certificates.
 
 ::: tip MRT Configuration
 Managed Runtime API key is not stored in `dw.json`. It is loaded from `~/.mobify`. You can specify `mrtProject` and `mrtEnvironment` in `dw.json` for project/environment selection.

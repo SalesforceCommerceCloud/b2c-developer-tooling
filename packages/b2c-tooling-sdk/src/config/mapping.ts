@@ -21,7 +21,7 @@ import type {NormalizedConfig, ConfigWarning} from './types.js';
  *
  * This is the SINGLE place where dw.json field mapping happens.
  * Handles multiple field name variants for backward compatibility:
- * - WebDAV hostname: `webdav-hostname`, `secureHostname`, `secure-server`
+ * - WebDAV hostname: `webdav-hostname`, `webdav-server`, `secureHostname`, `secure-server`
  * - Short code: `shortCode`, `short-code`, `scapi-shortcode`
  *
  * @param json - The raw dw.json config
@@ -38,9 +38,9 @@ import type {NormalizedConfig, ConfigWarning} from './types.js';
  */
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
   return {
-    hostname: json.hostname,
+    hostname: json.hostname || json.server,
     // Support multiple field names for webdav hostname (priority order)
-    webdavHostname: json['webdav-hostname'] || json.secureHostname || json['secure-server'],
+    webdavHostname: json['webdav-hostname'] || json['webdav-server'] || json.secureHostname || json['secure-server'],
     codeVersion: json['code-version'],
     username: json.username,
     password: json.password,
@@ -56,6 +56,10 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
     mrtOrigin: json.mrtOrigin || json.cloudOrigin,
+    // TLS/mTLS options
+    certificate: json.certificate,
+    certificatePassphrase: json['certificate-passphrase'] || json.passphrase,
+    selfSigned: json['self-signed'] ?? json.selfsigned,
   };
 }
 
@@ -160,6 +164,10 @@ export function mergeConfigsWithProtection(
       mrtEnvironment: overrides.mrtEnvironment ?? base.mrtEnvironment,
       mrtApiKey: overrides.mrtApiKey ?? base.mrtApiKey,
       mrtOrigin: overrides.mrtOrigin ?? base.mrtOrigin,
+      // TLS/mTLS options
+      certificate: overrides.certificate ?? base.certificate,
+      certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
+      selfSigned: overrides.selfSigned ?? base.selfSigned,
     },
     warnings,
     hostnameMismatch: false,
@@ -266,6 +274,15 @@ export function createInstanceFromConfig(config: NormalizedConfig): B2CInstance 
     hostname: config.hostname,
     codeVersion: config.codeVersion,
     webdavHostname: config.webdavHostname,
+    // Include TLS options if certificate or self-signed mode is configured
+    tlsOptions:
+      config.certificate || config.selfSigned
+        ? {
+            certificate: config.certificate,
+            passphrase: config.certificatePassphrase,
+            rejectUnauthorized: config.selfSigned !== true,
+          }
+        : undefined,
   };
 
   const authConfig = buildAuthConfigFromNormalized(config);

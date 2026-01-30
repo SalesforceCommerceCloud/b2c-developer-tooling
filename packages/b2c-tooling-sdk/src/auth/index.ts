@@ -62,6 +62,7 @@
 // Types
 export type {
   AuthStrategy,
+  FetchInit,
   AccessTokenResponse,
   DecodedJWT,
   AuthConfig,

@@ -90,6 +90,10 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     codeVersion: flags['code-version'] as string | undefined,
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
+    // TLS/mTLS options
+    certificate: flags.certificate as string | undefined,
+    certificatePassphrase: flags.passphrase as string | undefined,
+    selfSigned: (flags.selfsigned as boolean) || !(flags.verify as boolean),
     // Include OAuth flags (instance operations often need OAuth too)
     ...extractOAuthFlags(flags),
   };
