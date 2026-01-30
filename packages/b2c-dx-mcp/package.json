@@ -39,11 +39,14 @@
   "files": [
     "bin",
     "dist",
+    "content",
     "oclif.manifest.json",
     "!dist/**/*.map",
-    "!dist/**/*.test.*"
+    "!dist/**/*.test.*",
+    "!bin/dev.*"
   ],
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "development": "./src/commands/mcp.ts",
       "import": {

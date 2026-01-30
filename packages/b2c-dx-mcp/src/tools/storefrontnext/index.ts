@@ -9,9 +9,16 @@
  *
  * This toolset provides MCP tools for Storefront Next development.
  *
- * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
- * > Tools in this module are placeholder implementations that return mock responses.
- * > Actual implementations are coming soon. Use `--allow-non-ga-tools` flag to enable.
+ * **Implemented Tools:**
+ * - `storefront_next_development_guidelines` - Get development guidelines and best practices (GA)
+ *
+ * **Placeholder Tools (Use `--allow-non-ga-tools` flag to enable):**
+ * - `storefront_next_site_theming` - Configure site theming
+ * - `storefront_next_figma_to_component_workflow` - Convert Figma to components
+ * - `storefront_next_generate_component` - Generate new components
+ * - `storefront_next_map_tokens_to_theme` - Map design tokens
+ * - `storefront_next_design_decorator` - Apply design decorators
+ * - `storefront_next_generate_page_designer_metadata` - Generate Page Designer metadata
  *
  * @module tools/storefrontnext
  */
@@ -20,6 +27,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {createDeveloperGuidelinesTool} from './developer-guidelines.js';
 
 /**
  * Common input type for placeholder tools.
@@ -91,26 +99,30 @@ function createPlaceholderTool(name: string, description: string, services: Serv
  */
 export function createStorefrontNextTools(services: Services): McpTool[] {
   return [
+    createDeveloperGuidelinesTool(services),
     createPlaceholderTool(
-      'sfnext_development_guidelines',
-      'Get Storefront Next development guidelines and best practices',
+      'storefront_next_site_theming',
+      'Configure and manage site theming for Storefront Next',
       services,
     ),
-    createPlaceholderTool('sfnext_site_theming', 'Configure and manage site theming for Storefront Next', services),
     createPlaceholderTool(
-      'sfnext_figma_to_component_workflow',
+      'storefront_next_figma_to_component_workflow',
       'Convert Figma designs to Storefront Next components',
       services,
     ),
-    createPlaceholderTool('sfnext_generate_component', 'Generate a new Storefront Next component', services),
+    createPlaceholderTool('storefront_next_generate_component', 'Generate a new Storefront Next component', services),
     createPlaceholderTool(
-      'sfnext_map_tokens_to_theme',
+      'storefront_next_map_tokens_to_theme',
       'Map design tokens to Storefront Next theme configuration',
       services,
     ),
-    createPlaceholderTool('sfnext_design_decorator', 'Apply design decorators to Storefront Next components', services),
     createPlaceholderTool(
-      'sfnext_generate_page_designer_metadata',
+      'storefront_next_design_decorator',
+      'Apply design decorators to Storefront Next components',
+      services,
+    ),
+    createPlaceholderTool(
+      'storefront_next_generate_page_designer_metadata',
       'Generate Page Designer metadata for Storefront Next components',
       services,
     ),
