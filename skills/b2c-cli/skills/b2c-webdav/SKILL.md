@@ -1,6 +1,6 @@
 ---
 name: b2c-webdav
-description: List, upload, download, and manage files on B2C Commerce (SFCC/Demandware) instances via WebDAV. Use when reading error logs (customerror, debug), downloading job logs, uploading to IMPEX directories, or managing files in cartridges/catalogs/static folders.
+description: List, upload, download, and manage files on B2C Commerce instances via WebDAV with the b2c cli. Use when reading error logs (customerror, debug), downloading job logs, uploading to IMPEX directories, or managing files in cartridges/catalogs/static folders.
 ---
 
 # B2C WebDAV Skill

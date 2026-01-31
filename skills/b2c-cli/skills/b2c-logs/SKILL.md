@@ -1,6 +1,6 @@
 ---
 name: b2c-logs
-description: Retrieve and monitor log files from B2C Commerce (SFCC/demandware) instances. Use when fetching recent errors, searching log entries, filtering by level/time, or real-time tailing. The `logs get` command is optimized for filtered retrieval with JSON output.
+description: Retrieve and monitor log files from B2C Commerce instances with the b2c cli. Use when fetching recent errors, searching log entries, filtering by level/time, or real-time tailing. The `logs get` command is optimized for filtered retrieval with JSON output.
 ---
 
 # B2C Logs Skill

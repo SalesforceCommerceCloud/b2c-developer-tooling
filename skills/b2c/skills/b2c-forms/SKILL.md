@@ -26,7 +26,6 @@ Forms are defined in the cartridge's `forms` directory:
             /default              # Default locale
                 profile.xml
                 contact.xml
-                address.xml
             /de_DE               # German-specific (optional)
                 address.xml
 ```
@@ -64,7 +63,7 @@ Forms are defined in the cartridge's `forms` directory:
 | `boolean` | Checkbox | `<input type="checkbox">` |
 | `date` | Date value | `<input type="date">` |
 
-### Field Attributes
+### Key Field Attributes
 
 | Attribute | Purpose | Example |
 |-----------|---------|---------|
@@ -75,21 +74,8 @@ Forms are defined in the cartridge's `forms` directory:
 | `max-length` | Max string length | `max-length="100"` |
 | `min-length` | Min string length | `min-length="8"` |
 | `regexp` | Validation pattern | `regexp="^\d{5}$"` |
-| `default` | Default value | `default="US"` |
-| `min` | Min numeric value | `min="0"` |
-| `max` | Max numeric value | `max="100"` |
-| `format` | Date format | `format="yyyy-MM-dd"` |
 
 ### Validation Error Messages
-
-```xml
-<field formid="email" type="string" mandatory="true"
-       regexp="^[\w.%+-]+@[\w.-]+\.\w{2,6}$"
-       missing-error="form.email.required"
-       parse-error="form.email.invalid"
-       range-error="form.email.toolong"
-       value-error="form.email.error"/>
-```
 
 | Attribute | When Triggered |
 |-----------|----------------|
@@ -98,28 +84,7 @@ Forms are defined in the cartridge's `forms` directory:
 | `range-error` | Value outside min/max range |
 | `value-error` | General validation failure |
 
-### Grouped Fields
-
-```xml
-<group formid="address">
-    <field formid="street" label="form.address.street" type="string" mandatory="true"/>
-    <field formid="city" label="form.address.city" type="string" mandatory="true"/>
-    <field formid="postalCode" label="form.address.zip" type="string" mandatory="true"/>
-</group>
-```
-
-Access in controller: `form.address.street.value`
-
-### Actions
-
-```xml
-<!-- Only validate if valid-form="true" -->
-<action formid="submit" valid-form="true"/>
-
-<!-- Skip validation -->
-<action formid="cancel" valid-form="false"/>
-<action formid="back" valid-form="false"/>
-```
+See [Form XML Reference](references/FORM-XML.md) for complete field attributes, groups, lists, and validation patterns.
 
 ## Controller Logic (SFRA)
 
@@ -156,7 +121,6 @@ server.post('Submit',
     function (req, res, next) {
         var form = server.forms.getForm('profile');
 
-        // Check validation
         if (!form.valid) {
             res.json({
                 success: false,
@@ -183,7 +147,6 @@ server.post('Submit',
     }
 );
 
-// Helper to extract form errors
 function getFormErrors(form) {
     var errors = {};
     Object.keys(form).forEach(function (key) {
@@ -202,28 +165,12 @@ server.get('Edit', function (req, res, next) {
     var form = server.forms.getForm('profile');
     form.clear();
 
-    // Prepopulate from existing data
     var profile = req.currentCustomer.profile;
     form.firstName.value = profile.firstName;
     form.lastName.value = profile.lastName;
     form.email.value = profile.email;
 
-    res.render('account/editProfile', {
-        profileForm: form
-    });
-    next();
-});
-```
-
-### Accessing Raw Form Data
-
-```javascript
-server.post('Submit', function (req, res, next) {
-    // Access raw POST data directly
-    var email = req.form.email;
-    var firstName = req.form.firstName;
-
-    // Useful when not using form definitions
+    res.render('account/editProfile', { profileForm: form });
     next();
 });
 ```
@@ -261,58 +208,6 @@ server.post('Submit', function (req, res, next) {
 </form>
 ```
 
-### Form with Groups
-
-```html
-<fieldset>
-    <legend>${Resource.msg('form.address.title', 'forms', null)}</legend>
-
-    <div class="form-group">
-        <label for="street">${Resource.msg('form.address.street', 'forms', null)}</label>
-        <input type="text" id="street" name="address_street"
-               value="${pdict.addressForm.address.street.value || ''}"/>
-    </div>
-
-    <div class="form-group">
-        <label for="city">${Resource.msg('form.address.city', 'forms', null)}</label>
-        <input type="text" id="city" name="address_city"
-               value="${pdict.addressForm.address.city.value || ''}"/>
-    </div>
-</fieldset>
-```
-
-### AJAX Form Submission
-
-```html
-<script>
-$('form[name="profile-form"]').on('submit', function(e) {
-    e.preventDefault();
-    var $form = $(this);
-
-    $.ajax({
-        url: $form.data('action'),
-        type: 'POST',
-        data: $form.serialize(),
-        success: function(response) {
-            if (response.success) {
-                window.location.href = response.redirectUrl;
-            } else {
-                displayErrors(response.fields);
-            }
-        }
-    });
-});
-
-function displayErrors(fields) {
-    Object.keys(fields).forEach(function(field) {
-        var $field = $('[name="' + field + '"]');
-        $field.addClass('is-invalid');
-        $field.siblings('.invalid-feedback').text(fields[field]);
-    });
-}
-</script>
-```
-
 ## Localization
 
 Form labels and errors use resource bundles:
@@ -322,44 +217,14 @@ Form labels and errors use resource bundles:
 form.email.label=Email Address
 form.email.required=Email is required
 form.email.invalid=Please enter a valid email address
-
 form.password.label=Password
-form.password.required=Password is required
-
 button.submit=Submit
-button.cancel=Cancel
 ```
 
 **forms_de_DE.properties:**
 ```properties
 form.email.label=E-Mail-Adresse
 form.email.required=E-Mail ist erforderlich
-```
-
-## Custom Validation
-
-### In Form Definition
-
-```xml
-<field formid="password" type="string"
-       validation="${require('*/cartridge/scripts/validation').validatePassword(formfield)}"
-       range-error="form.password.weak"/>
-```
-
-### Validation Script
-
-```javascript
-// scripts/validation.js
-exports.validatePassword = function (formfield) {
-    var value = formfield.value;
-    if (value && value.length < 8) {
-        return false;  // Triggers range-error
-    }
-    if (!/[A-Z]/.test(value) || !/[0-9]/.test(value)) {
-        return false;
-    }
-    return true;
-};
 ```
 
 ## Best Practices
@@ -374,4 +239,4 @@ exports.validatePassword = function (formfield) {
 ## Detailed Reference
 
 For comprehensive form patterns:
-- [Form XML Reference](references/FORM-XML.md) - Complete XML schema and validation patterns
+- [Form XML Reference](references/FORM-XML.md) - Complete XML schema, validation patterns, and examples
