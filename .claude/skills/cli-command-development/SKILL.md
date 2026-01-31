@@ -1,6 +1,8 @@
 ---
 name: cli-command-development
 description: Creating new CLI commands and topics for the B2C CLI using oclif
+metadata:
+  internal: true
 ---
 
 # CLI Command Development

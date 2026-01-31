@@ -1,6 +1,8 @@
 ---
 name: documentation
 description: Updating user guides, CLI reference, and API documentation for the B2C CLI project
+metadata:
+  internal: true
 ---
 
 # Documentation
