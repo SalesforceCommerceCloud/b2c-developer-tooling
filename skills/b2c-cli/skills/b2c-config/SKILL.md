@@ -107,6 +107,29 @@ If a value comes from an unexpected source:
 
 By default, passwords and secrets show partial values like `admi...REDACTED`. Use `--unmask` to see full values when debugging authentication issues.
 
+## Getting Admin OAuth Tokens
+
+Use `b2c auth token` to get an admin OAuth access token for Account Manager credentials (OCAPI and Admin APIs). This is useful for testing APIs, scripting, or CI/CD pipelines.
+
+```bash
+# Get access token (outputs raw token to stdout)
+b2c auth token
+
+# Get token with specific scopes
+b2c auth token --scope sfcc.orders --scope sfcc.products
+
+# Get token as JSON (includes expiration and scopes)
+b2c auth token --json
+
+# Use in curl for OCAPI calls
+curl -H "Authorization: Bearer $(b2c auth token)" \
+  "https://your-instance.dx.commercecloud.salesforce.com/s/-/dw/data/v24_1/sites"
+```
+
+The token is obtained using the `clientId` and `clientSecret` from your configuration (dw.json or environment variables). If only `clientId` is configured, an implicit OAuth flow is used (browser-based).
+
+**Note:** This command returns **admin** tokens for OCAPI/Admin APIs. For **shopper** tokens (SLAS), see the [b2c-slas skill](../b2c-slas/SKILL.md).
+
 ## More Commands
 
 See `b2c setup --help` for other setup commands including `b2c setup skills` for AI agent skill installation.
