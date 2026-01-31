@@ -1,4 +1,4 @@
-# B2C Commerce Script API 26.1
+# B2C Commerce Script API 26.2
 
 ## Packages
 | Package | Description |

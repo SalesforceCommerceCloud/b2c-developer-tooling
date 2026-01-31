@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-01-10T22:14:13.490Z",
+  "generatedAt": "2026-01-31T17:45:14.666Z",
   "entries": [
     {
       "id": "dw.alert",
@@ -2755,7 +2755,7 @@
     },
     {
       "id": "index",
-      "title": "B2C Commerce Script API 26.1",
+      "title": "B2C Commerce Script API 26.2",
       "filePath": "index.md"
     },
     {

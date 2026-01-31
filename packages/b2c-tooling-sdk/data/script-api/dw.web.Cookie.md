@@ -30,7 +30,7 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 
 | Property | Description |
 | --- | --- |
-| [comment](#comment): [String](TopLevel.String.md) | Returns the comment associated with the cookie. |
+| ~~[comment](#comment): [String](TopLevel.String.md)~~ | Returns the comment that was previously set for this cookie, or null if no comment was set. |
 | [domain](#domain): [String](TopLevel.String.md) | Returns the domain associated with the cookie. |
 | [httpOnly](#httponly): [Boolean](TopLevel.Boolean.md) | Identifies if the cookie is http-only. |
 | [maxAge](#maxage): [Number](TopLevel.Number.md) | Returns the maximum age of the cookie, specified in seconds. |
@@ -38,7 +38,7 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 | [path](#path): [String](TopLevel.String.md) | Returns the path for the cookie. |
 | [secure](#secure): [Boolean](TopLevel.Boolean.md) | Identifies if the cookie is secure. |
 | [value](#value): [String](TopLevel.String.md) | Returns the cookie's value. |
-| [version](#version): [Number](TopLevel.Number.md) | Returns the version for the cookie. |
+| ~~[version](#version): [Number](TopLevel.Number.md)~~ | Returns the version that was previously set for this cookie. |
 
 ## Constructor Summary
 
@@ -50,23 +50,23 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 
 | Method | Description |
 | --- | --- |
-| [getComment](dw.web.Cookie.md#getcomment)() | Returns the comment associated with the cookie. |
+| ~~[getComment](dw.web.Cookie.md#getcomment)()~~ | Returns the comment that was previously set for this cookie, or null if no comment was set. |
 | [getDomain](dw.web.Cookie.md#getdomain)() | Returns the domain associated with the cookie. |
 | [getMaxAge](dw.web.Cookie.md#getmaxage)() | Returns the maximum age of the cookie, specified in seconds. |
 | [getName](dw.web.Cookie.md#getname)() | Returns the cookie's name. |
 | [getPath](dw.web.Cookie.md#getpath)() | Returns the path for the cookie. |
 | [getSecure](dw.web.Cookie.md#getsecure)() | Identifies if the cookie is secure. |
 | [getValue](dw.web.Cookie.md#getvalue)() | Returns the cookie's value. |
-| [getVersion](dw.web.Cookie.md#getversion)() | Returns the version for the cookie. |
+| ~~[getVersion](dw.web.Cookie.md#getversion)()~~ | Returns the version that was previously set for this cookie. |
 | [isHttpOnly](dw.web.Cookie.md#ishttponly)() | Identifies if the cookie is http-only. |
-| [setComment](dw.web.Cookie.md#setcommentstring)([String](TopLevel.String.md)) | Sets the comment associated with the cookie. |
+| ~~[setComment](dw.web.Cookie.md#setcommentstring)([String](TopLevel.String.md))~~ | Sets a comment associated with this cookie. |
 | [setDomain](dw.web.Cookie.md#setdomainstring)([String](TopLevel.String.md)) | Sets the domain associated with the cookie. |
 | [setHttpOnly](dw.web.Cookie.md#sethttponlyboolean)([Boolean](TopLevel.Boolean.md)) | Sets the http-only state for the cookie. |
 | [setMaxAge](dw.web.Cookie.md#setmaxagenumber)([Number](TopLevel.Number.md)) | Sets the maximum age of the cookie in seconds. |
 | [setPath](dw.web.Cookie.md#setpathstring)([String](TopLevel.String.md)) | Sets the path for the cookie. |
 | [setSecure](dw.web.Cookie.md#setsecureboolean)([Boolean](TopLevel.Boolean.md)) | Sets the secure state for the cookie. |
 | [setValue](dw.web.Cookie.md#setvaluestring)([String](TopLevel.String.md)) | Sets the cookie's value. |
-| [setVersion](dw.web.Cookie.md#setversionnumber)([Number](TopLevel.Number.md)) | Sets the version for the cookie. |
+| ~~[setVersion](dw.web.Cookie.md#setversionnumber)([Number](TopLevel.Number.md))~~ | Returns the version that was previously set for this cookie. |
 
 ### Methods inherited from class Object
 
@@ -84,9 +84,24 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 ## Property Details
 
 ### comment
-- comment: [String](TopLevel.String.md)
-  - : Returns the comment associated with the cookie.
+- ~~comment: [String](TopLevel.String.md)~~
+  - : Returns the comment that was previously set for this cookie, or null if no comment was set. Note that comments
+      are no longer supported in RFC 6265 and will not be sent to clients. This method is maintained for backward
+      compatibility only.
 
+
+    **Deprecated:**
+:::warning
+This method is maintained for backward compatibility only. Cookie comments were removed in RFC 6265
+            and are no longer sent to clients. The returned value only reflects what was previously set using
+            [setComment(String)](dw.web.Cookie.md#setcommentstring).
+
+:::
+    **API Version:**
+:::note
+No longer available as of version 99.2.
+This method is deprecated and will be removed in the next API version.
+:::
 
 ---
 
@@ -142,11 +157,24 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 ---
 
 ### version
-- version: [Number](TopLevel.Number.md)
-  - : Returns the version for the cookie. 0 means original Netscape cookie and
-      1 means RFC 2109 compliant cookie.
+- ~~version: [Number](TopLevel.Number.md)~~
+  - : Returns the version that was previously set for this cookie. Note that the version is no longer used for
+      determining cookie compliance as the system now uses RFC 6265 by default. The returned value only reflects what
+      was previously set using [setVersion(Number)](dw.web.Cookie.md#setversionnumber).
 
 
+    **Deprecated:**
+:::warning
+This method is maintained for backward compatibility only. The version property is no longer used as
+            the system now uses RFC 6265 compliance by default. The returned value has no effect on cookie
+            behavior.
+
+:::
+    **API Version:**
+:::note
+No longer available as of version 99.2.
+This method is deprecated and will be removed in the next API version.
+:::
 
 ---
 
@@ -166,12 +194,27 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 ## Method Details
 
 ### getComment()
-- getComment(): [String](TopLevel.String.md)
-  - : Returns the comment associated with the cookie.
+- ~~getComment(): [String](TopLevel.String.md)~~
+  - : Returns the comment that was previously set for this cookie, or null if no comment was set. Note that comments
+      are no longer supported in RFC 6265 and will not be sent to clients. This method is maintained for backward
+      compatibility only.
+
 
     **Returns:**
-    - the comment associated with the cookie.
+    - the comment that was previously set, or null if no comment was set
 
+    **Deprecated:**
+:::warning
+This method is maintained for backward compatibility only. Cookie comments were removed in RFC 6265
+            and are no longer sent to clients. The returned value only reflects what was previously set using
+            [setComment(String)](dw.web.Cookie.md#setcommentstring).
+
+:::
+    **API Version:**
+:::note
+No longer available as of version 99.2.
+This method is deprecated and will be removed in the next API version.
+:::
 
 ---
 
@@ -240,14 +283,27 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 ---
 
 ### getVersion()
-- getVersion(): [Number](TopLevel.Number.md)
-  - : Returns the version for the cookie. 0 means original Netscape cookie and
-      1 means RFC 2109 compliant cookie.
+- ~~getVersion(): [Number](TopLevel.Number.md)~~
+  - : Returns the version that was previously set for this cookie. Note that the version is no longer used for
+      determining cookie compliance as the system now uses RFC 6265 by default. The returned value only reflects what
+      was previously set using [setVersion(Number)](dw.web.Cookie.md#setversionnumber).
 
 
     **Returns:**
-    - the version for the cookie.
+    - the version number that was set, or 0 if no version was explicitly set
 
+    **Deprecated:**
+:::warning
+This method is maintained for backward compatibility only. The version property is no longer used as
+            the system now uses RFC 6265 compliance by default. The returned value has no effect on cookie
+            behavior.
+
+:::
+    **API Version:**
+:::note
+No longer available as of version 99.2.
+This method is deprecated and will be removed in the next API version.
+:::
 
 ---
 
@@ -262,17 +318,25 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 ---
 
 ### setComment(String)
-- setComment(comment: [String](TopLevel.String.md)): void
-  - : Sets the comment associated with the cookie.
-      
-      Setting a comment automatically changes the cookie to be a RFC 2109
-      (set-cookie2) compliant cookie, because comments are only supported with
-      RFC cookies and not with Netscapes original cookie.
+- ~~setComment(comment: [String](TopLevel.String.md)): void~~
+  - : Sets a comment associated with this cookie. Note that comments are no longer sent to clients as they were removed
+      in RFC 6265. This method is maintained for backward compatibility but has no effect on the cookie's behavior.
 
 
     **Parameters:**
-    - comment - the comment associated with the cookie.
+    - comment - the comment to associate with the cookie (ignored)
 
+    **Deprecated:**
+:::warning
+This method is maintained for backward compatibility only. Cookie comments were removed in RFC 6265
+            and will not be sent to clients. The value will be stored but has no effect on cookie behavior.
+
+:::
+    **API Version:**
+:::note
+No longer available as of version 99.2.
+This method is deprecated and will be removed in the next API version.
+:::
 
 ---
 
@@ -346,14 +410,27 @@ See [Request.getHttpCookies()](dw.system.Request.md#gethttpcookies).
 ---
 
 ### setVersion(Number)
-- setVersion(version: [Number](TopLevel.Number.md)): void
-  - : Sets the version for the cookie. 0 means original Netscape cookie and
-      1 means RFC 2109 compliant cookie. The default is 0.
+- ~~setVersion(version: [Number](TopLevel.Number.md)): void~~
+  - : Returns the version that was previously set for this cookie. Note that the version is no longer used for
+      determining cookie compliance as the system now uses RFC 6265 by default. The returned value only reflects what
+      was previously set using [setVersion(Number)](dw.web.Cookie.md#setversionnumber).
 
 
-    **Parameters:**
-    - version - the version for the cookie.
+    **Returns:**
+    - the version number that was set, or 0 if no version was explicitly set
 
+    **Deprecated:**
+:::warning
+This method is maintained for backward compatibility only. The version property is no longer used as
+            the system now uses RFC 6265 compliance by default. The returned value has no effect on cookie
+            behavior.
+
+:::
+    **API Version:**
+:::note
+No longer available as of version 99.2.
+This method is deprecated and will be removed in the next API version.
+:::
 
 ---
 
