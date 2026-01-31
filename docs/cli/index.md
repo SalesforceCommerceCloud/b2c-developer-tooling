@@ -27,6 +27,12 @@ These flags are available on all commands that interact with B2C instances:
 | `--username`, `-u` | `SFCC_USERNAME` | Username for Basic Auth |
 | `--password`, `-p` | `SFCC_PASSWORD` | Password/access key for Basic Auth |
 
+### Other Environment Variables
+
+| Environment Variable | Description |
+|---------------------|-------------|
+| `B2C_SKIP_NEW_VERSION_CHECK` | Skip the new version availability check |
+
 ## Command Topics
 
 ### Instance Operations
