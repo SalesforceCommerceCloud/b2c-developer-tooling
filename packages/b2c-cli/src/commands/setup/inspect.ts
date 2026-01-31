@@ -15,9 +15,9 @@ import {withDocs} from '../../i18n/index.js';
 const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>(['clientSecret', 'mrtApiKey', 'password']);
 
 /**
- * JSON output structure for the config command.
+ * JSON output structure for the inspect command.
  */
-interface SetupConfigResponse {
+interface SetupInspectResponse {
   config: Record<string, unknown>;
   sources: ConfigSourceInfo[];
   warnings?: string[];
@@ -65,8 +65,8 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
 /**
  * Command to display resolved configuration.
  */
-export default class SetupConfig extends BaseCommand<typeof SetupConfig> {
-  static description = withDocs('Display resolved configuration', '/cli/setup.html#b2c-setup-config');
+export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
+  static description = withDocs('Display resolved configuration', '/cli/setup.html#b2c-setup-inspect');
 
   static enableJsonFlag = true;
 
@@ -84,7 +84,7 @@ export default class SetupConfig extends BaseCommand<typeof SetupConfig> {
     }),
   };
 
-  async run(): Promise<SetupConfigResponse> {
+  async run(): Promise<SetupInspectResponse> {
     const {values, sources, warnings} = this.resolvedConfig;
     const unmask = this.flags.unmask;
 
@@ -96,7 +96,7 @@ export default class SetupConfig extends BaseCommand<typeof SetupConfig> {
       }
     }
 
-    const result: SetupConfigResponse = {
+    const result: SetupInspectResponse = {
       config: outputConfig,
       sources,
       warnings: warnings.length > 0 ? warnings.map((w) => w.message) : undefined,

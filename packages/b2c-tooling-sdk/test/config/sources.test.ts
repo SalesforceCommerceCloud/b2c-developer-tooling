@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import {ConfigResolver} from '@salesforce/b2c-tooling-sdk/config';
+import {ConfigResolver, DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
 import {PackageJsonSource} from '../../src/config/sources/package-json-source.js';
 
 describe('config/sources', () => {
@@ -147,6 +147,128 @@ describe('config/sources', () => {
       const expectedPath = fs.realpathSync(dwJsonPath);
       const actualLocation = dwJsonSource?.location ? fs.realpathSync(dwJsonSource.location) : undefined;
       expect(actualLocation).to.equal(expectedPath);
+    });
+
+    describe('listInstances', () => {
+      it('returns empty array when no dw.json exists', () => {
+        const source = new DwJsonSource();
+        const instances = source.listInstances();
+        expect(instances).to.deep.equal([]);
+      });
+
+      it('returns instances from configs array', () => {
+        const dwJsonPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(
+          dwJsonPath,
+          JSON.stringify({
+            configs: [
+              {name: 'staging', hostname: 'staging.demandware.net'},
+              {name: 'production', hostname: 'prod.demandware.net', active: true},
+            ],
+          }),
+        );
+
+        const source = new DwJsonSource();
+        const instances = source.listInstances();
+
+        expect(instances).to.have.length(2);
+        expect(instances[0].name).to.equal('staging');
+        expect(instances[0].hostname).to.equal('staging.demandware.net');
+        expect(instances[1].name).to.equal('production');
+        expect(instances[1].active).to.be.true;
+      });
+
+      it('includes root config if it has a name', () => {
+        const dwJsonPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(
+          dwJsonPath,
+          JSON.stringify({
+            name: 'root',
+            hostname: 'root.demandware.net',
+            active: true,
+            configs: [{name: 'staging', hostname: 'staging.demandware.net'}],
+          }),
+        );
+
+        const source = new DwJsonSource();
+        const instances = source.listInstances();
+
+        expect(instances).to.have.length(2);
+        expect(instances[0].name).to.equal('root');
+        expect(instances[0].active).to.be.true;
+        expect(instances[1].name).to.equal('staging');
+      });
+    });
+
+    describe('createInstance', () => {
+      it('creates a new instance', () => {
+        const source = new DwJsonSource();
+        source.createInstance({
+          name: 'staging',
+          config: {hostname: 'staging.demandware.net'},
+        });
+
+        const instances = source.listInstances();
+        expect(instances).to.have.length(1);
+        expect(instances[0].name).to.equal('staging');
+        expect(instances[0].hostname).to.equal('staging.demandware.net');
+      });
+
+      it('creates instance with setActive', () => {
+        const source = new DwJsonSource();
+        source.createInstance({
+          name: 'staging',
+          config: {hostname: 'staging.demandware.net'},
+          setActive: true,
+        });
+
+        const instances = source.listInstances();
+        expect(instances[0].active).to.be.true;
+      });
+    });
+
+    describe('removeInstance', () => {
+      it('removes an instance', () => {
+        const dwJsonPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(
+          dwJsonPath,
+          JSON.stringify({
+            configs: [
+              {name: 'staging', hostname: 'staging.demandware.net'},
+              {name: 'production', hostname: 'prod.demandware.net'},
+            ],
+          }),
+        );
+
+        const source = new DwJsonSource();
+        source.removeInstance('staging');
+
+        const instances = source.listInstances();
+        expect(instances).to.have.length(1);
+        expect(instances[0].name).to.equal('production');
+      });
+    });
+
+    describe('setActiveInstance', () => {
+      it('sets an instance as active', () => {
+        const dwJsonPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(
+          dwJsonPath,
+          JSON.stringify({
+            configs: [
+              {name: 'staging', hostname: 'staging.demandware.net'},
+              {name: 'production', hostname: 'prod.demandware.net'},
+            ],
+          }),
+        );
+
+        const source = new DwJsonSource();
+        source.setActiveInstance('staging');
+
+        const instances = source.listInstances();
+        const staging = instances.find((i) => i.name === 'staging');
+        expect(staging?.active).to.be.true;
+      });
     });
   });
 

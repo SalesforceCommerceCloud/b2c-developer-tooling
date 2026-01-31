@@ -64,6 +64,87 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
 }
 
 /**
+ * Maps normalized config to dw.json format.
+ *
+ * This is the reverse of mapDwJsonToNormalizedConfig. It converts normalized
+ * config (camelCase) back to dw.json format (kebab-case).
+ *
+ * @param config - The normalized configuration
+ * @param name - Optional instance name to include
+ * @returns DwJsonConfig structure
+ *
+ * @example
+ * ```typescript
+ * const config = { hostname: 'example.com', codeVersion: 'v1', clientId: 'abc' };
+ * const dwJson = mapNormalizedConfigToDwJson(config, 'staging');
+ * // { name: 'staging', hostname: 'example.com', 'code-version': 'v1', 'client-id': 'abc' }
+ * ```
+ */
+export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, name?: string): DwJsonConfig {
+  const result: DwJsonConfig = {};
+
+  if (name !== undefined) {
+    result.name = name;
+  }
+  if (config.hostname !== undefined) {
+    result.hostname = config.hostname;
+  }
+  if (config.webdavHostname !== undefined) {
+    result['webdav-hostname'] = config.webdavHostname;
+  }
+  if (config.codeVersion !== undefined) {
+    result['code-version'] = config.codeVersion;
+  }
+  if (config.username !== undefined) {
+    result.username = config.username;
+  }
+  if (config.password !== undefined) {
+    result.password = config.password;
+  }
+  if (config.clientId !== undefined) {
+    result['client-id'] = config.clientId;
+  }
+  if (config.clientSecret !== undefined) {
+    result['client-secret'] = config.clientSecret;
+  }
+  if (config.scopes !== undefined) {
+    result['oauth-scopes'] = config.scopes;
+  }
+  if (config.shortCode !== undefined) {
+    result['short-code'] = config.shortCode;
+  }
+  if (config.tenantId !== undefined) {
+    result['tenant-id'] = config.tenantId;
+  }
+  if (config.authMethods !== undefined) {
+    result['auth-methods'] = config.authMethods;
+  }
+  if (config.accountManagerHost !== undefined) {
+    result['account-manager-host'] = config.accountManagerHost;
+  }
+  if (config.mrtProject !== undefined) {
+    result.mrtProject = config.mrtProject;
+  }
+  if (config.mrtEnvironment !== undefined) {
+    result.mrtEnvironment = config.mrtEnvironment;
+  }
+  if (config.mrtOrigin !== undefined) {
+    result.mrtOrigin = config.mrtOrigin;
+  }
+  if (config.certificate !== undefined) {
+    result.certificate = config.certificate;
+  }
+  if (config.certificatePassphrase !== undefined) {
+    result['certificate-passphrase'] = config.certificatePassphrase;
+  }
+  if (config.selfSigned !== undefined) {
+    result['self-signed'] = config.selfSigned;
+  }
+
+  return result;
+}
+
+/**
  * Options for merging configurations.
  */
 export interface MergeConfigOptions {

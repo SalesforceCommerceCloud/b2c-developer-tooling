@@ -212,6 +212,64 @@ export interface ConfigSource {
    * @returns Config and location from this source, or undefined if source not available
    */
   load(options: ResolveConfigOptions): ConfigLoadResult | undefined;
+
+  // === Instance Management (for dw.json-style sources) ===
+
+  /**
+   * List all instances from this source.
+   * @param options - Resolution options
+   * @returns Array of instance info objects
+   */
+  listInstances?(options?: ResolveConfigOptions): InstanceInfo[];
+
+  /**
+   * Create a new instance in this source.
+   * @param options - Creation options including name and config
+   */
+  createInstance?(options: CreateInstanceOptions & ResolveConfigOptions): void;
+
+  /**
+   * Remove an instance from this source.
+   * @param name - Instance name to remove
+   * @param options - Resolution options
+   */
+  removeInstance?(name: string, options?: ResolveConfigOptions): void;
+
+  /**
+   * Set an instance as active.
+   * @param name - Instance name to set as active
+   * @param options - Resolution options
+   */
+  setActiveInstance?(name: string, options?: ResolveConfigOptions): void;
+
+  // === Credential Storage (for keychain-style sources) ===
+
+  /**
+   * Fields this source can securely store (e.g., ['password', 'clientSecret']).
+   */
+  credentialFields?: (keyof NormalizedConfig)[];
+
+  /**
+   * Store a credential value for an instance.
+   * @param instanceName - Instance name
+   * @param field - Config field to store
+   * @param value - Value to store
+   * @param options - Resolution options
+   */
+  storeCredential?(
+    instanceName: string,
+    field: keyof NormalizedConfig,
+    value: string,
+    options?: ResolveConfigOptions,
+  ): void;
+
+  /**
+   * Remove a credential for an instance.
+   * @param instanceName - Instance name
+   * @param field - Config field to remove
+   * @param options - Resolution options
+   */
+  removeCredential?(instanceName: string, field: keyof NormalizedConfig, options?: ResolveConfigOptions): void;
 }
 
 /**
@@ -248,6 +306,34 @@ export interface CreateOAuthOptions {
  * }
  * ```
  */
+/**
+ * Information about a configured instance.
+ */
+export interface InstanceInfo {
+  /** Instance name */
+  name: string;
+  /** B2C instance hostname */
+  hostname?: string;
+  /** Whether this instance is currently active */
+  active?: boolean;
+  /** Source name for display */
+  source: string;
+  /** Location (file path, etc.) */
+  location?: string;
+}
+
+/**
+ * Options for creating an instance.
+ */
+export interface CreateInstanceOptions {
+  /** Instance name */
+  name: string;
+  /** Configuration values for the instance */
+  config: Partial<NormalizedConfig>;
+  /** Whether to set as active instance */
+  setActive?: boolean;
+}
+
 export interface ResolvedB2CConfig {
   /** Raw configuration values */
   readonly values: NormalizedConfig;
