@@ -77,7 +77,7 @@ var Status = require('dw/system/Status');
 
 exports.afterPOST = function(basket) {
     // Called after basket creation
-    return new Status(Status.OK);
+    // Returning a value would skip system implementation
 };
 
 exports.modifyPOSTResponse = function(basket, basketResponse) {
@@ -128,6 +128,46 @@ return status;
 | `Status.ERROR` | 400 Bad Request | Transaction rolled back, processing stops |
 | Uncaught exception | 500 Internal Error | Transaction rolled back |
 
+## Return Value Behavior (Important)
+
+**OCAPI/SCAPI hooks that return ANY value will SKIP the system implementation and all subsequent registered hooks for that extension point.**
+
+This is a common source of bugs. For example, if a hook returns `Status.OK`, the system's `dw.order.calculate` implementation won't run, causing cart totals to be incorrect.
+
+### When to Return a Value
+
+Return a `Status` object **only** when you want to:
+- **Stop processing** with an error (`Status.ERROR`)
+- **Skip the system implementation** intentionally
+
+### When NOT to Return a Value
+
+To ensure system implementations run (like cart calculation), **return nothing**:
+
+```javascript
+// Returning Status.OK skips system implementation
+exports.afterPOST = function(basket) {
+    doSomething(basket);
+    return new Status(Status.OK);  // Skips dw.order.calculate
+};
+
+// No return value - system implementation runs
+exports.afterPOST = function(basket) {
+    doSomething(basket);
+    // No return, or explicit: return;
+};
+```
+
+### Summary
+
+| Return Value | OCAPI/SCAPI Behavior | Custom Hook Behavior |
+|-------------|---------------------|---------------------|
+| `undefined` (no return) | System implementation runs, subsequent hooks run | All hooks run |
+| `Status.OK` | **Skips** system implementation and subsequent hooks | All hooks run |
+| `Status.ERROR` | Stops processing, returns error | All hooks run |
+
+**Debugging tip**: If cart totals are wrong or hooks aren't firing, check if an earlier hook is returning a value.
+
 ## OCAPI/SCAPI Hooks
 
 OCAPI and SCAPI share the same hooks. Enable in Business Manager:
@@ -157,7 +197,7 @@ exports.beforePUT = function(basket, addressDoc) {
 exports.afterPOST = function(basket, paymentDoc) {
     var result = callPaymentService(paymentDoc);
     request.custom.paymentResult = result; // Pass to modifyResponse
-    return new Status(Status.OK);
+    // Returning a Status would skip system implementation
 };
 
 // Modify response
@@ -305,20 +345,15 @@ exports.modifyGETResponse = function(product, doc) {
 
 ## Best Practices
 
-### Do
-
-- Return `Status` objects to control flow
+- Return `undefined` (no return) from OCAPI/SCAPI hooks to ensure system implementations run
+- Only return `Status.ERROR` when you need to stop processing
+- Returning `Status.OK` skips system implementation and subsequent hooks
 - Use `request.custom` to pass data between hooks
 - Check `request.isSCAPI()` when supporting both APIs
 - Keep hooks focused and performant
 - Use custom properties (`c_` prefix) in modifyResponse
-
-### Don't
-
-- Use transactions in calculate hooks (breaks SCAPI)
-- Modify standard response properties (only `c_` properties)
-- Rely on hook execution order across cartridges
-- Make slow external calls in beforeGET (affects caching)
+- Avoid transactions in calculate hooks (breaks SCAPI)
+- Avoid slow external calls in beforeGET (affects caching)
 
 ## Error Handling
 
