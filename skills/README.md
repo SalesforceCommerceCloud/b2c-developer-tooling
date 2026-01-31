@@ -59,7 +59,7 @@ The `b2c-cli` plugin provides skills that teach Claude about B2C Commerce CLI co
 Each skill is defined in the `b2c-cli/skills/` directory:
 
 ```
-plugins/b2c-cli/skills/
+skills/b2c-cli/skills/
 ├── b2c-code/SKILL.md      # Code deployment commands
 ├── b2c-job/SKILL.md       # Job execution commands
 ├── b2c-mrt/SKILL.md       # Managed Runtime commands
@@ -80,13 +80,13 @@ The `b2c` plugin provides skills for B2C Commerce development practices and patt
 Each skill is defined in the `b2c/skills/` directory:
 
 ```
-plugins/b2c/skills/
+skills/b2c/skills/
 └── b2c-custom-api-development/SKILL.md    # Custom API development guide
 ```
 
 ## For Contributors
 
-When modifying CLI commands, update the corresponding skill in `plugins/b2c-cli/skills/b2c-<topic>/SKILL.md` to keep documentation in sync.
+When modifying CLI commands, update the corresponding skill in `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` to keep documentation in sync.
 
 ## Using Skills with Other Agentic IDEs
 
@@ -106,7 +106,7 @@ b2c setup skills --ide copilot
 
 ### Option 2: Manual Setup
 
-Copy the skill files from [`plugins/b2c-cli/skills/`](./b2c-cli/skills/) to your IDE's rules or instructions directory:
+Copy the skill files from [`skills/b2c-cli/skills/`](./b2c-cli/skills/) to your IDE's rules or instructions directory:
 
 - **Cursor**: Copy to `.cursor/rules/` or configure in Cursor settings
 - **GitHub Copilot**: Add to `.github/copilot-instructions.md`

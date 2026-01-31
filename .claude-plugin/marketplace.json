@@ -14,7 +14,7 @@
         "name": "Salesforce"
       },
       "license": "Apache-2.0",
-      "source": "./plugins/b2c-cli",
+      "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false
     },
@@ -25,7 +25,7 @@
         "name": "Salesforce"
       },
       "license": "Apache-2.0",
-      "source": "./plugins/b2c",
+      "source": "./skills/b2c",
       "category": "productivity",
       "strict": false
     }

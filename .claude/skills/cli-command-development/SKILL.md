@@ -332,6 +332,6 @@ See [API Client Development](../api-client-development/SKILL.md#error-handling) 
 5. Implement `run()` method with proper return type
 6. Add topic to `package.json` if new
 7. Add i18n keys for all user-facing strings
-8. Update skill in `plugins/b2c-cli/skills/b2c-<topic>/SKILL.md` if exists
+8. Update skill in `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` if exists
 9. Update CLI reference docs in `docs/cli/<topic>.md`
 10. Build and test: `pnpm run build && pnpm --filter @salesforce/b2c-cli run test`
