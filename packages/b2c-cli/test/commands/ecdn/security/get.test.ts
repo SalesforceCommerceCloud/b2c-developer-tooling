@@ -98,7 +98,9 @@ describe('ecdn security get', () => {
         }),
       });
 
-      const result = (await runSilent(() => command.run())) as {settings: {securityLevel: string; wafEnabled: boolean}};
+      const result = (await runSilent(() => command.run())) as {
+        settings: {securityLevel: string; wafEnabled: boolean};
+      };
 
       expect(result.settings.securityLevel).to.equal('high');
       expect(result.settings.wafEnabled).to.be.true;
