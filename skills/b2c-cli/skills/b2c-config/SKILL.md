@@ -1,11 +1,13 @@
 ---
 name: b2c-config
-description: View and debug B2C CLI configuration and understand where credentials come from. Use when authentication fails, connection errors occur, wrong instance is used, or you need to verify dw.json settings, environment variables (SFCC_*), or OAuth credentials are loaded correctly.
+description: View and debug b2c CLI configuration and understand where credentials come from. Use when authentication fails, connection errors occur, wrong instance is used, or you need to verify dw.json settings, or OAuth credentials are loaded correctly.
 ---
 
 # B2C Config Skill
 
 Use the `b2c setup config` command to view the resolved configuration and understand where each value comes from. This is essential for debugging configuration issues and verifying that the CLI is using the correct settings.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli setup config`).
 
 ## When to Use
 

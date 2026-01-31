@@ -1,11 +1,13 @@
 ---
 name: b2c-docs
-description: Search and read B2C Commerce Script API documentation and XSD schemas. Use when writing B2C scripts, looking up classes for the SFCC/Demandware/B2C Commerce script API, answering "how do I" questions about generating URLs, querying products, processing orders, services, or any dw.* API task. Also use for import/export XML format reference. Use to verify class methods, properties, and usage.
+description: Search and read B2C Commerce (SFCC/Demandware) Script API documentation and XSD schemas with the b2c cli. Use when writing B2C scripts, looking up classes for the SFCC/Demandware/B2C Commerce script API, answering "how do I" questions about URLs, products, orders. Also use for import/export XML format (XSD) reference. Use to verify class methods, properties, and usage in the dw.* API namespace
 ---
 
 # B2C Docs Skill
 
 Use the `b2c` CLI to search and read bundled Script API documentation and XSD schemas for Salesforce B2C Commerce.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli docs search ProductMgr`).
 
 ## Examples
 

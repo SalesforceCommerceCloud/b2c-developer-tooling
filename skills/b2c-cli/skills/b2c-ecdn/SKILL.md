@@ -1,11 +1,13 @@
 ---
 name: b2c-ecdn
-description: Manage eCDN (embedded Content Delivery Network) settings. Use when purging cache, configuring WAF rules, managing SSL certificates, setting rate limits, or creating CDN zones for storefronts.
+description: Manage b2c/sfcc/demandware eCDN (embedded Content Delivery Network) settings
 ---
 
 # B2C eCDN Skill
 
 Use the `b2c` CLI plugin to manage eCDN (embedded Content Delivery Network) zones, certificates, security settings, and more.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli ecdn zones list`).
 
 ## Prerequisites
 

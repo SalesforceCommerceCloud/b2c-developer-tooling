@@ -1,11 +1,13 @@
 ---
 name: b2c-logs
-description: Retrieve and monitor log files from B2C Commerce instances. Use when fetching recent errors, searching log entries, filtering by level/time, or real-time tailing. The `logs get` command is optimized for coding agents with JSON output.
+description: Retrieve and monitor log files from B2C Commerce (SFCC/demandware) instances. Use when fetching recent errors, searching log entries, filtering by level/time, or real-time tailing. The `logs get` command is optimized for filtered retrieval with JSON output.
 ---
 
 # B2C Logs Skill
 
 Use the `b2c` CLI to retrieve and monitor log files on Salesforce B2C Commerce instances. The `logs get` command is designed for agent-friendly, non-interactive log retrieval with structured JSON output.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli logs get`).
 
 ## Agent-Friendly Log Retrieval
 

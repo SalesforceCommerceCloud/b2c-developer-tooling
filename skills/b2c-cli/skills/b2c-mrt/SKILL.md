@@ -1,11 +1,13 @@
 ---
 name: b2c-mrt
-description: Deploy and manage Managed Runtime (MRT) PWA storefronts. Use when deploying bundles, managing environments, setting environment variables, configuring redirects, or working with CDN for PWA Kit projects.
+description: Deploy and manage (B2C/SFCC/Demandware) Managed Runtime (MRT) storefronts using the b2c cli. Use when deploying bundles, managing environments, setting environment variables, configuring redirects, or working with MRT CDN
 ---
 
 # B2C MRT Skill
 
 Use the `b2c` CLI to manage Managed Runtime (MRT) projects, environments, bundles, and deployments for PWA Kit storefronts.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli mrt bundle deploy`).
 
 ## Command Structure
 

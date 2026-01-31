@@ -1,11 +1,13 @@
 ---
 name: b2c-site-import-export
-description: Work with site archive structure and metadata XML patterns. Use when adding custom attributes, system object extensions, site preferences, or understanding import/export XML schemas. Covers directory structure and XML file formats for site archives.
+description: Work with (B2C/SFCC/Demandware) site archive import archives and metadata XML patterns with the b2c cli. Use when adding custom attributes, system object extensions, site preferences, or understanding import/export XML schemas. Covers directory structure and XML file formats for site archives.
 ---
 
 # Site Import/Export Skill
 
 Use the `b2c` CLI plugin to import and export site archives on Salesforce B2C Commerce instances.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job import`).
 
 ## Import Commands
 

@@ -1,11 +1,13 @@
 ---
 name: b2c-webdav
-description: List, upload, download, and manage files on B2C Commerce instances via WebDAV. Use when reading error logs (customerror, debug), downloading job logs, uploading to IMPEX directories, or managing files in cartridges/catalogs/static folders.
+description: List, upload, download, and manage files on B2C Commerce (SFCC/Demandware) instances via WebDAV. Use when reading error logs (customerror, debug), downloading job logs, uploading to IMPEX directories, or managing files in cartridges/catalogs/static folders.
 ---
 
 # B2C WebDAV Skill
 
 Use the `b2c` CLI plugin to perform WebDAV file operations on Salesforce B2C Commerce instances. This includes listing files, uploading, downloading, and managing files across different WebDAV roots.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli webdav ls`).
 
 ## WebDAV Roots
 

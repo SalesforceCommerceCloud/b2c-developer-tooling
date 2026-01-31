@@ -1,11 +1,15 @@
 ---
 name: b2c-ods
-description: Create and manage on-demand sandboxes (ODS). Use when provisioning development instances, starting/stopping sandboxes, checking sandbox status, or managing sandbox lifecycle. Only create or delete sandboxes when explicitly requested.
+description: Create and manage (B2C/SFCC/Demandware) on-demand sandboxes (ODS) with the b2c cli. Use when provisioning development instances, starting/stopping sandboxes, checking sandbox status, or managing sandbox lifecycle.
 ---
 
 # B2C ODS Skill
 
+Only create or delete sandboxes when explicitly requested. Always confirm destructive actions.
+
 Use the `b2c` CLI plugin to manage Salesforce B2C Commerce On-demand sandboxes (ODS). Only create or delete a sandbox if explicitly asked as this may be a billable or destructible action.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli ods list`).
 
 ## Sandbox ID Formats
 

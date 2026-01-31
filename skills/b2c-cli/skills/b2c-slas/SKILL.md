@@ -1,11 +1,13 @@
 ---
 name: b2c-slas
-description: Manage SLAS (Shopper Login and API Access Service) clients. Use when configuring shopper authentication, creating API clients for PWA/headless, managing OAuth scopes (including custom scopes like c_loyalty), or debugging token issues.
+description: Manage SLAS (Shopper Login and API Access Service) clients for B2C Commerce (SFCC/Demandware) with the b2c cli. Use when configuring shopper authentication, creating API clients for PWA/headless, managing OAuth scopes (including custom scopes like c_loyalty), or debugging token issues.
 ---
 
 # B2C SLAS Skill
 
 Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) API clients and credentials.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli slas client list`).
 
 ## When to Use
 

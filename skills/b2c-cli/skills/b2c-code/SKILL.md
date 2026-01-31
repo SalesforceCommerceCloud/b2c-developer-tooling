@@ -1,11 +1,13 @@
 ---
 name: b2c-code
-description: Deploy and manage code versions on B2C Commerce instances. Use when uploading cartridges, activating code versions, watching for file changes during development, or syncing local code to sandbox.
+description: Deploy and manage code versions/cartridges on B2C Commerce instances/sandboxes with the b2c cli. Use when uploading cartridges, activating code versions, watching for file changes during development and CI/CD.
 ---
 
 # B2C Code Skill
 
-Use the `b2c` CLI plugin to deploy and manage code versions on Salesforce B2C Commerce instances.
+Use the `b2c` CLI to deploy and manage code versions on Salesforce B2C Commerce instances.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli code deploy`).
 
 ## Examples
 

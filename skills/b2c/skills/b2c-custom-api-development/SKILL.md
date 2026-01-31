@@ -7,6 +7,8 @@ description: Develop Custom SCAPI endpoints for B2C Commerce. Use when creating 
 
 This skill guides you through developing Custom APIs for Salesforce B2C Commerce. Custom APIs let you expose custom script code as REST endpoints under the SCAPI framework.
 
+> **Tip:** If `b2c` CLI is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli code deploy`).
+
 ## Overview
 
 A Custom API URL has this structure:

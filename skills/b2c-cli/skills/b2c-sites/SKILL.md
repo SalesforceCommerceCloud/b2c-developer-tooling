@@ -1,11 +1,13 @@
 ---
 name: b2c-sites
-description: List and inspect storefront sites on B2C Commerce instances. Use when finding site IDs, checking site configuration, or listing available sites. Helpful for determining site context when running other commands.
+description: List and inspect storefront sites on B2C Commerce (SFCC/Demandware) instances with the b2c cli. Use when finding site IDs, checking site configuration, or listing available sites. Helpful for determining site context when running other commands.
 ---
 
 # B2C Sites Skill
 
 Use the `b2c` CLI plugin to list and inspect storefront sites on Salesforce B2C Commerce instances.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli sites list`).
 
 ## Examples
 

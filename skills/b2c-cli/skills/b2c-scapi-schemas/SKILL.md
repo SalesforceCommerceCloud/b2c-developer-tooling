@@ -1,11 +1,13 @@
 ---
 name: b2c-scapi-schemas
-description: Browse and retrieve SCAPI OpenAPI schemas. Use when exploring available SCAPI endpoints, checking API request/response formats, understanding SCAPI data models, or finding the right API for a task.
+description: Browse and retrieve (B2C/SFCC/Demandware) SCAPI OpenAPI schemas with the b2c cli. Use when exploring available SCAPI endpoints, checking API request/response formats, understanding SCAPI data models, or finding the right API for a task.
 ---
 
 # B2C SCAPI Schemas Skill
 
 Use the `b2c` CLI plugin to browse and retrieve SCAPI OpenAPI schema specifications.
+
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli scapi schemas list`).
 
 ## Required: Tenant ID
 
