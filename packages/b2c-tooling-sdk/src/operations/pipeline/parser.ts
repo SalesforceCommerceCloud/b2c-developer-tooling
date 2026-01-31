@@ -160,7 +160,41 @@ function parseSegment(
 
   // Handle final transition in segment (to another segment or branch)
   if (previousNodeId && segment.node) {
-    const lastTransition = getTransitionAfterNode(segment, segment.node.length - 1);
+    let lastTransition = getTransitionAfterNode(segment, segment.node.length - 1);
+
+    // CRITICAL FIX: If no transition found at index, check for remaining transitions.
+    // This handles the case where xml2js puts transitions in separate arrays by tag name,
+    // so the transition array may have fewer items than the node array.
+    // For example: 3 nodes with 2 simple-transitions and 1 transition at the end.
+    // The transition for node[2] is at segment.transition[0], not segment.transition[2].
+    //
+    // The key insight: simple-transition elements are for BETWEEN nodes in a segment,
+    // while transition elements (with target-path) are for jumping OUT of the segment.
+    // For the final node, if there's an unmatched transition, it belongs to that node.
+    if (!lastTransition && segment.transition && segment.transition.length > 0) {
+      const simpleTransCount = segment['simple-transition']?.length ?? 0;
+      const nodeCount = segment.node.length;
+      const transitionCount = segment.transition.length;
+
+      // Calculate how many transitions we've already consumed by the indexed lookup.
+      // Within-segment transitions use simple-transition for nodes 0 to (nodeCount-2).
+      // If there are fewer simple-transitions than (nodeCount-1), the transition array
+      // may contain transitions for later nodes. The final node's transition is typically
+      // the last unmatched one.
+      if (simpleTransCount < nodeCount - 1) {
+        // Not enough simple-transitions to cover all internal nodes,
+        // so transition array has transitions for some nodes
+        const transitionsUsedByNodes = Math.max(0, nodeCount - 1 - simpleTransCount);
+        if (transitionCount > transitionsUsedByNodes) {
+          // There's an extra transition for the final node's outgoing path
+          lastTransition = segment.transition[transitionCount - 1];
+        }
+      } else {
+        // Enough simple-transitions for internal nodes, so any transition is for final node
+        lastTransition = segment.transition[transitionCount - 1];
+      }
+    }
+
     if (lastTransition && lastTransition.$?.['target-path']) {
       context.pendingTransitions.push({
         sourceNodeId: previousNodeId,
@@ -182,10 +216,14 @@ function getTransitionAfterNode(segment: RawSegment, nodeIndex: number): RawTran
 
   // In xml2js output, simple-transition and transition are parallel to node
   // A simple approach: transitions apply to the preceding node
-  if (segment['simple-transition'] && segment['simple-transition'][nodeIndex]) {
-    return segment['simple-transition'][nodeIndex];
+  // Note: empty <simple-transition/> elements are parsed as '' (empty string) by xml2js,
+  // so we check for array length rather than truthiness of the value
+  if (segment['simple-transition'] && nodeIndex < segment['simple-transition'].length) {
+    const trans = segment['simple-transition'][nodeIndex];
+    // Return the transition object, or an empty object for empty simple-transition elements
+    return typeof trans === 'object' && trans !== null ? trans : {};
   }
-  if (segment.transition && segment.transition[nodeIndex]) {
+  if (segment.transition && nodeIndex < segment.transition.length) {
     return segment.transition[nodeIndex];
   }
   return undefined;
@@ -334,8 +372,11 @@ function parseNodeWrapper(
       }
     }
 
-    // Check if there's an error branch in the wrapper
-    const hasErrorBranch = wrapper.branch?.some((b) => b.$?.['source-connector'] === 'error') ?? false;
+    // Check if there's an error branch - can be in the wrapper OR inside the pipelet-node itself
+    const hasErrorBranch =
+      wrapper.branch?.some((b) => b.$?.['source-connector'] === 'error') ||
+      raw.branch?.some((b) => b.$?.['source-connector'] === 'error') ||
+      false;
 
     node = {
       type: 'pipelet',
@@ -348,6 +389,15 @@ function parseNodeWrapper(
       hasErrorBranch,
       transitions: [],
     } satisfies PipeletNodeIR;
+
+    // Store pipelet-level branches in wrapper.branch for unified handling below
+    // This is needed because pipelet error branches can be inside the pipelet-node element
+    if (raw.branch && raw.branch.length > 0) {
+      if (!wrapper.branch) {
+        wrapper.branch = [];
+      }
+      wrapper.branch.push(...raw.branch);
+    }
   }
 
   // Call node
@@ -437,11 +487,13 @@ function parseNodeWrapper(
   if (wrapper['interaction-node']?.[0]) {
     const raw = wrapper['interaction-node'][0];
     const templateName = raw.template?.[0]?.$.name || '';
+    const dynamic = raw.template?.[0]?.$.dynamic === 'true';
 
     node = {
       type: 'interaction',
       id: generateNodeId(context),
       templateName,
+      dynamic,
       buffered: raw.template?.[0]?.$.buffered === 'true',
       transactionRequired: raw.$?.['transaction-required'] === 'true',
       transitions: [],
@@ -487,7 +539,14 @@ function parseNodeWrapper(
     context.pathToNodeId.set(nodePath, node.id);
 
     // Parse nested branches (for decision nodes, pipelet error branches, etc.)
-    if (wrapper.branch) {
+    // Note: pipelet-level branches are merged into wrapper.branch during pipelet parsing above
+    if (wrapper.branch && wrapper.branch.length > 0) {
+      // Extract the parent segment path from nodePath by removing the node index suffix.
+      // nodePath is like "/Show.1.4/b2.1.1" (segment path + ".nodeIndex")
+      // parentSegmentPath should be "/Show.1.4/b2.1" (just the segment path)
+      // This is needed because XML relative paths (../+N) navigate relative to segments.
+      const parentSegmentPath = nodePath.replace(/\.\d+$/, '');
+
       for (const nestedBranch of wrapper.branch) {
         const connector = nestedBranch.$?.['source-connector'];
 
@@ -502,9 +561,10 @@ function parseNodeWrapper(
               transactionControl: trans.$?.['transaction-control'],
             });
           } else if (nestedBranch.segment?.[0]) {
-            // Transition leads to nested segment
-            const branchPath = `${nodePath}/${nestedBranch.$?.basename || `b_${connector}`}`;
-            parseBranch(nestedBranch, nodes, startNodes, context, nodePath);
+            // Transition leads to nested segment - calculate path matching parseBranch logic
+            const branchName = nestedBranch.$?.basename || `branch_${context.nodeCounter}`;
+            const branchPath = `${parentSegmentPath}/${branchName}`;
+            parseBranch(nestedBranch, nodes, startNodes, context, parentSegmentPath);
 
             // After parsing the branch, link the first node of the first segment
             const firstSegmentPath = `${branchPath}.1`;
@@ -517,8 +577,20 @@ function parseNodeWrapper(
             }
           }
         } else if (nestedBranch.segment?.[0]) {
-          // Branch with segments but no explicit transition
-          parseBranch(nestedBranch, nodes, startNodes, context, nodePath);
+          // Branch with segments but no explicit transition - parse and link
+          // Calculate path matching parseBranch logic
+          const branchName = nestedBranch.$?.basename || `branch_${context.nodeCounter}`;
+          const branchPath = `${parentSegmentPath}/${branchName}`;
+          parseBranch(nestedBranch, nodes, startNodes, context, parentSegmentPath);
+
+          // Link the first node of the first segment to this node
+          const firstSegmentPath = `${branchPath}.1`;
+          if (context.pathToNodeId.has(`${firstSegmentPath}.1`)) {
+            node.transitions.push({
+              targetId: context.pathToNodeId.get(`${firstSegmentPath}.1`)!,
+              connector,
+            });
+          }
         }
       }
     }
@@ -553,7 +625,15 @@ function resolvePendingTransitions(nodes: Map<string, NodeIR>, context: ParseCon
     const sourceNode = nodes.get(pending.sourceNodeId);
     if (!sourceNode) continue;
 
-    const targetNodeId = context.pathToNodeId.get(pending.targetPath);
+    // First try exact match (for node paths)
+    let targetNodeId = context.pathToNodeId.get(pending.targetPath);
+
+    // If no exact match, the target might be a segment path.
+    // Try to find the first node in that segment (path + ".1").
+    if (!targetNodeId) {
+      targetNodeId = context.pathToNodeId.get(`${pending.targetPath}.1`);
+    }
+
     if (targetNodeId) {
       sourceNode.transitions.push({
         targetId: targetNodeId,

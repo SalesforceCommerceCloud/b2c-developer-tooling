@@ -90,11 +90,11 @@ export function generateController(pipeline: PipelineIR, analysis: AnalysisResul
 function generateFunction(func: AnalyzedFunction, context: GeneratorContext): string {
   const lines: string[] = [];
 
-  // Function declaration
-  lines.push(`function ${func.name}() {`);
+  // Function declaration - accept pdict parameter
+  lines.push(`function ${func.name}(pdict) {`);
 
-  // Initialize pdict
-  lines.push(`${indent(1)}var pdict = {};`);
+  // Initialize pdict if not provided
+  lines.push(`${indent(1)}pdict = pdict || {};`);
   context.declaredVars.add('pdict');
 
   // For form handlers, declare the action variable
@@ -109,6 +109,11 @@ function generateFunction(func: AnalyzedFunction, context: GeneratorContext): st
     lines.push(bodyCode);
   } else {
     lines.push(`${indent(1)}// TODO: Empty pipeline - no nodes to convert`);
+  }
+
+  // For non-interaction functions, return pdict so callers can access results
+  if (!func.endsWithInteraction) {
+    lines.push(`${indent(1)}return pdict;`);
   }
 
   lines.push('}');

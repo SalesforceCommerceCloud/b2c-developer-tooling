@@ -20,7 +20,7 @@ import type {
   NodeIR,
   PipeletNodeIR,
 } from '../types.js';
-import {type GeneratorContext, indent} from './helpers.js';
+import {type GeneratorContext, indent, transformExpression} from './helpers.js';
 
 // Import pipelet generators
 import {generateAssignPipelet, generateEvalPipelet, generateScriptPipelet} from './pipelets/common.js';
@@ -186,11 +186,11 @@ function generateCallNode(node: CallNodeIR, context: GeneratorContext): string {
   }
 
   if (node.pipelineName === context.pipelineName) {
-    // Same pipeline - direct function call
-    return `${ind}${node.startName}();`;
+    // Same pipeline - call with pdict, merge results
+    return `${ind}pdict = ${node.startName}(pdict) || pdict;`;
   } else {
-    // Different pipeline - require and call
-    return `${ind}require('./${node.pipelineName}').${node.startName}();`;
+    // Different pipeline - require, call with pdict, merge results
+    return `${ind}pdict = require('./${node.pipelineName}').${node.startName}(pdict) || pdict;`;
   }
 }
 
@@ -221,7 +221,14 @@ function generateInteractionNode(node: InteractionNodeIR, context: GeneratorCont
   const ind = indent(context.indent);
   const lines: string[] = [];
 
-  lines.push(`${ind}ISML.renderTemplate('${node.templateName}', pdict);`);
+  if (node.dynamic) {
+    // Dynamic template - name is a pdict expression
+    const templateExpr = transformExpression(node.templateName);
+    lines.push(`${ind}ISML.renderTemplate(${templateExpr}, pdict);`);
+  } else {
+    // Static template - name is a literal string
+    lines.push(`${ind}ISML.renderTemplate('${node.templateName}', pdict);`);
+  }
   lines.push(`${ind}return;`);
 
   return lines.join('\n');

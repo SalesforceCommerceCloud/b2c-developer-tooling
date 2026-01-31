@@ -47,10 +47,29 @@ export function generateAssignPipelet(node: PipeletNodeIR, context: GeneratorCon
 }
 
 /**
+ * Checks if a pipeline variable name refers to a session/request object
+ * that should not be written back as output.
+ */
+function isSessionOrRequestObject(varName: string): boolean {
+  const sessionPrefixes = [
+    'CurrentForms',
+    'CurrentSession',
+    'CurrentRequest',
+    'CurrentHttpParameterMap',
+    'CurrentCustomer',
+  ];
+  return sessionPrefixes.some((prefix) => varName.startsWith(prefix));
+}
+
+/**
  * Generates code for a Script pipelet.
+ * Script pipelets work by passing an args object to execute(), which mutates
+ * the args object to set output values. We need to read back those outputs
+ * after execution.
  */
 export function generateScriptPipelet(node: PipeletNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
+  const lines: string[] = [];
   const scriptFile = node.configProperties.find((p) => p.key === 'ScriptFile')?.value;
 
   if (!scriptFile) {
@@ -60,20 +79,46 @@ export function generateScriptPipelet(node: PipeletNodeIR, context: GeneratorCon
   // Convert script path: cartridge:path/to/script.ds -> cartridge/cartridge/scripts/path/to/script
   const scriptPath = convertScriptPath(scriptFile);
 
-  // Build parameter object from key bindings
+  // Build parameter object from key bindings and track output mappings
+  // Key bindings map: alias (pdict key) -> key (script arg name)
+  // Input: pdict.alias value is passed as args.key
+  // Output: after execution, args.key is read back to pdict.alias (but NOT for session objects)
   const params: string[] = [];
+  const outputMappings: Array<{pdictKey: string; argsKey: string}> = [];
+
   for (const kb of node.keyBindings) {
-    if (kb.key !== 'ScriptLog' && kb.value !== 'null') {
+    if (kb.key === 'ScriptLog') continue;
+
+    if (kb.value !== 'null') {
       const transformedValue = transformExpression(kb.value);
       params.push(`${ind}    ${kb.key}: ${transformedValue}`);
+
+      // Only track output mappings for pdict variables, not session/request objects
+      // Session objects like CurrentForms, CurrentSession, etc. are input-only
+      if (!isSessionOrRequestObject(kb.value)) {
+        outputMappings.push({pdictKey: kb.value, argsKey: kb.key});
+      }
     }
   }
 
+  // Create args object and call script
   if (params.length > 0) {
-    return `${ind}require('${scriptPath}').execute({\n${params.join(',\n')}\n${ind}});`;
+    lines.push(`${ind}var scriptArgs = {`);
+    lines.push(params.join(',\n'));
+    lines.push(`${ind}};`);
+    lines.push(`${ind}var scriptResult = require('${scriptPath}').execute(scriptArgs);`);
   } else {
-    return `${ind}require('${scriptPath}').execute();`;
+    lines.push(`${ind}var scriptResult = require('${scriptPath}').execute();`);
   }
+
+  // Read back outputs from the args object to pdict
+  // Scripts mutate the args object to set output values
+  for (const mapping of outputMappings) {
+    const transformedPdictKey = transformVariable(mapping.pdictKey);
+    lines.push(`${ind}${transformedPdictKey} = scriptArgs.${mapping.argsKey};`);
+  }
+
+  return lines.join('\n');
 }
 
 /**

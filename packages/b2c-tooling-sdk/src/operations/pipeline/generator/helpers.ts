@@ -126,10 +126,41 @@ export function transformExpression(expr: string): string {
     'dw',
   ]);
 
+  // Known DW manager/utility classes that should NOT be prefixed with pdict
+  const dwClasses = new Set([
+    'ProductMgr',
+    'CatalogMgr',
+    'CustomerMgr',
+    'BasketMgr',
+    'OrderMgr',
+    'TransactionMgr',
+    'ContentMgr',
+    'SiteMgr',
+    'SystemObjectMgr',
+    'CustomObjectMgr',
+    'SearchMgr',
+    'URLUtils',
+    'Resource',
+    'Logger',
+    'Transaction',
+    'Status',
+    'StringUtils',
+    'Calendar',
+    'Site',
+    'System',
+    'Mail',
+    'Encoding',
+    'Cipher',
+    'MessageDigest',
+    'SecureRandom',
+    'KeyRef',
+    'CSRFProtection',
+    'ISML',
+  ]);
+
   // Match capitalized identifiers that are NOT preceded by a dot (not property access)
-  // and NOT followed by a dot or open paren (not a namespace or function call)
   // Use word boundary \b to prevent backtracking from matching partial identifiers
-  result = result.replace(/(?<![.\w])([A-Z][a-zA-Z0-9_]*)\b(?!\s*[.(])/g, (match, name, offset) => {
+  result = result.replace(/(?<![.\w])([A-Z][a-zA-Z0-9_]*)\b/g, (match, name, offset) => {
     // Skip our placeholder tokens
     if (name.startsWith('___') && name.endsWith('___')) {
       return match;
@@ -138,12 +169,16 @@ export function transformExpression(expr: string): string {
     if (skipNames.has(name)) {
       return match;
     }
-    // Check if this is followed by a dot (meaning it's a namespace/object, not a simple var)
-    const afterMatch = result.substring(offset + match.length);
-    if (afterMatch.startsWith('.')) {
-      return match; // It's like Customer.profile - keep as-is for now
+    // Skip known DW classes
+    if (dwClasses.has(name)) {
+      return match;
     }
-    // This looks like a simple variable reference - prefix with pdict.
+    // Check if this is followed by an open paren (function call)
+    const afterMatch = result.substring(offset + match.length);
+    if (afterMatch.match(/^\s*\(/)) {
+      return match; // It's a function call - don't prefix
+    }
+    // This looks like a pdict variable reference - prefix with pdict.
     return `pdict.${name}`;
   });
 

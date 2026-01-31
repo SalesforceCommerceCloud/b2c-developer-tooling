@@ -111,6 +111,8 @@ export interface RawPipeletNode {
   };
   'config-property'?: RawConfigProperty[];
   'key-binding'?: RawKeyBinding[];
+  /** Nested branches for error handling. */
+  branch?: RawBranch[];
 }
 
 /**
@@ -411,8 +413,10 @@ export interface JoinNodeIR extends NodeIRBase {
  */
 export interface InteractionNodeIR extends NodeIRBase {
   type: 'interaction';
-  /** Template path. */
+  /** Template path (static) or expression (dynamic). */
   templateName: string;
+  /** Whether the template name is a pdict expression resolved at runtime. */
+  dynamic: boolean;
   /** Whether the response is buffered. */
   buffered: boolean;
   /** Whether a transaction is required. */
@@ -536,6 +540,8 @@ export interface AnalyzedFunction {
   body: ControlFlowBlock;
   /** Required imports (module paths). */
   requiredImports: Set<string>;
+  /** Whether this function ends with an interaction node (template render). */
+  endsWithInteraction: boolean;
 }
 
 /**

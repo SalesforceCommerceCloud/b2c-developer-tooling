@@ -37,11 +37,36 @@ describe('operations/pipeline/generator', () => {
 
       expect(code).to.include("'use strict';");
       expect(code).to.include("var ISML = require('dw/template/ISML');");
-      expect(code).to.include('function Show()');
-      expect(code).to.include('var pdict = {};');
+      expect(code).to.include('function Show(pdict)');
+      expect(code).to.include('pdict = pdict || {};');
       expect(code).to.include("ISML.renderTemplate('content/homepage', pdict);");
       expect(code).to.include('exports.Show = Show;');
       expect(code).to.include('exports.Show.public = true;');
+    });
+
+    it('generates dynamic template as expression', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Show">
+            <segment>
+              <node><start-node name="Show"/></node>
+              <simple-transition/>
+              <node>
+                <interaction-node transaction-required="false">
+                  <template name="Product.template" dynamic="true"/>
+                </interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Dynamic templates use pdict expression, not string literal
+      expect(code).to.include('ISML.renderTemplate(pdict.Product.template, pdict);');
+      expect(code).not.to.include("ISML.renderTemplate('Product.template', pdict);");
     });
 
     it('generates private functions without .public = true', async () => {
@@ -60,7 +85,7 @@ describe('operations/pipeline/generator', () => {
       const analysis = analyzePipeline(pipeline);
       const code = generateController(pipeline, analysis);
 
-      expect(code).to.include('function Helper()');
+      expect(code).to.include('function Helper(pdict)');
       expect(code).to.include('exports.Helper = Helper;');
       expect(code).not.to.include('exports.Helper.public');
     });
@@ -162,7 +187,7 @@ describe('operations/pipeline/generator', () => {
       expect(code).to.include('session.customer');
     });
 
-    it('generates Script pipelet as require().execute()', async () => {
+    it('generates Script pipelet with args variable for output capture', async () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
         <pipeline>
           <branch basename="Test">
@@ -184,9 +209,14 @@ describe('operations/pipeline/generator', () => {
       const analysis = analyzePipeline(pipeline);
       const code = generateController(pipeline, analysis);
 
-      expect(code).to.include("require('app_storefront/cartridge/scripts/checkout/Helper').execute({");
+      // Script pipelet uses a named args object so outputs can be read back
+      expect(code).to.include('var scriptArgs = {');
       expect(code).to.include('Form: session.forms.billing');
       expect(code).to.include('Customer: pdict.Customer');
+      expect(code).to.include("require('app_storefront/cartridge/scripts/checkout/Helper').execute(scriptArgs);");
+      // Only pdict variables are read back (not session objects like CurrentForms)
+      expect(code).not.to.include('session.forms.billing = scriptArgs.Form;');
+      expect(code).to.include('pdict.Customer = scriptArgs.Customer;');
     });
 
     it('generates jump node as redirect', async () => {
@@ -236,7 +266,7 @@ describe('operations/pipeline/generator', () => {
       const analysis = analyzePipeline(pipeline);
       const code = generateController(pipeline, analysis);
 
-      expect(code).to.include('Helper();');
+      expect(code).to.include('pdict = Helper(pdict) || pdict;');
     });
 
     it('generates call node to different pipeline as require', async () => {
@@ -255,7 +285,7 @@ describe('operations/pipeline/generator', () => {
       const analysis = analyzePipeline(pipeline);
       const code = generateController(pipeline, analysis);
 
-      expect(code).to.include("require('./Account').RequireLogin();");
+      expect(code).to.include("pdict = require('./Account').RequireLogin(pdict) || pdict;");
     });
   });
 
@@ -745,7 +775,7 @@ describe('operations/pipeline/generator', () => {
       const result = await convertPipelineContent(xml, 'Product');
 
       expect(result.pipelineName).to.equal('Product');
-      expect(result.code).to.include('function Show()');
+      expect(result.code).to.include('function Show(pdict)');
       expect(result.code).to.include("ISML.renderTemplate('catalog/product', pdict);");
       expect(result.warnings).to.be.an('array');
     });
@@ -775,10 +805,143 @@ describe('operations/pipeline/generator', () => {
 
       const result = await convertPipelineContent(xml, 'Page');
 
-      expect(result.code).to.include('function Show()');
-      expect(result.code).to.include('function Edit()');
+      expect(result.code).to.include('function Show(pdict)');
+      expect(result.code).to.include('function Edit(pdict)');
       expect(result.code).to.include('exports.Show.public = true;');
       expect(result.code).to.include('exports.Edit.public = true;');
+    });
+  });
+
+  describe('pipelet error branches', () => {
+    it('handles error path through join-node to interaction', async () => {
+      // When a pipelet error transition leads to a join-node that eventually
+      // reaches an interaction node (like error/notfound), the error handling
+      // should be included in the else block.
+      // Structure: pipelet error -> join-node -> error/notfound interaction
+      // Success path terminates at end-node before reaching join-node.
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="GetProduct">
+            <segment>
+              <node><start-node name="GetProduct" call-mode="private"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetProduct" pipelet-set-identifier="bc_api">
+                  <key-binding alias="ProductID" key="ProductID"/>
+                  <key-binding alias="Product" key="Product"/>
+                  <branch source-connector="error" target-connector="in">
+                    <segment>
+                      <node><join-node/></node>
+                      <simple-transition target-connector="in"/>
+                      <node>
+                        <interaction-node>
+                          <template name="error/notfound"/>
+                        </interaction-node>
+                      </node>
+                    </segment>
+                  </branch>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node name="ok"/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Product');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Should have if block checking Product
+      expect(code).to.include('if (pdict.Product)');
+      // Success path returns 'ok'
+      expect(code).to.include("return 'ok';");
+      // Error path should render error/notfound
+      expect(code).to.include('} else {');
+      expect(code).to.include("ISML.renderTemplate('error/notfound', pdict);");
+    });
+
+    it('handles pipelet with error branch to simple error handling', async () => {
+      // Direct error transition to interaction node (no join-node)
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetProduct" pipelet-set-identifier="bc_api">
+                  <key-binding alias="pid" key="ProductID"/>
+                  <key-binding alias="Product" key="Product"/>
+                  <branch source-connector="error">
+                    <segment>
+                      <node>
+                        <interaction-node>
+                          <template name="error/productnotfound"/>
+                        </interaction-node>
+                      </node>
+                    </segment>
+                  </branch>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node>
+                <interaction-node><template name="product/show"/></interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Should have if-else structure
+      expect(code).to.include('if (pdict.Product)');
+      expect(code).to.include("ISML.renderTemplate('product/show', pdict);");
+      expect(code).to.include('} else {');
+      expect(code).to.include("ISML.renderTemplate('error/productnotfound', pdict);");
+    });
+  });
+
+  describe('decision nodes', () => {
+    it('handles implicit no branch via simple-transition', async () => {
+      // When a decision node has an explicit "yes" branch but no explicit "no" branch,
+      // the simple-transition after the decision represents the "no" path
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <decision-node condition-key="Product.template == null" condition-operator="expr"/>
+                <branch source-connector="yes">
+                  <segment>
+                    <node>
+                      <interaction-node><template name="product/default"/></interaction-node>
+                    </node>
+                  </segment>
+                </branch>
+              </node>
+              <simple-transition/>
+              <node>
+                <interaction-node><template name="Product.template" dynamic="true"/></interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Should generate if with then block and else block
+      expect(code).to.include('if (pdict.Product.template == null)');
+      expect(code).to.include("ISML.renderTemplate('product/default', pdict);");
+      // The else block should render the dynamic template
+      expect(code).to.include('} else {');
+      expect(code).to.include('ISML.renderTemplate(pdict.Product.template, pdict);');
     });
   });
 

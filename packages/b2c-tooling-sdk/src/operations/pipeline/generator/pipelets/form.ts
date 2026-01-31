@@ -83,7 +83,7 @@ export function generateUpdateObjectWithFormPipelet(node: PipeletNodeIR, context
 
 /**
  * Generates code for AcceptForm pipelet.
- * Validates and accepts form submission.
+ * Validates and accepts form submission. Captures valid state for error branch handling.
  */
 export function generateAcceptFormPipelet(node: PipeletNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
@@ -91,5 +91,6 @@ export function generateAcceptFormPipelet(node: PipeletNodeIR, context: Generato
   if (!form) {
     return `${ind}// AcceptForm: missing Form parameter`;
   }
-  return `${ind}${transformExpression(form)}.accept();`;
+  // accept() returns true if form is valid, capture for error branch handling
+  return `${ind}pdict.FormValid = ${transformExpression(form)}.accept();`;
 }

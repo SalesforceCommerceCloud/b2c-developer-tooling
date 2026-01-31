@@ -55,19 +55,12 @@ export function generateGenerateCSRFTokenPipelet(node: PipeletNodeIR, context: G
 
 /**
  * Generates code for ValidateCSRFToken pipelet.
+ * Sets CSRFTokenValid flag for error branch handling.
  */
 export function generateValidateCSRFTokenPipelet(node: PipeletNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
-  const lines: string[] = [];
-
   context.requires.set('CSRFProtection', 'dw/web/CSRFProtection');
-
-  lines.push(`${ind}if (!CSRFProtection.validateRequest()) {`);
-  lines.push(`${ind}    // CSRF validation failed`);
-  lines.push(`${ind}    return 'error';`);
-  lines.push(`${ind}}`);
-
-  return lines.join('\n');
+  return `${ind}pdict.CSRFTokenValid = CSRFProtection.validateRequest();`;
 }
 
 /**

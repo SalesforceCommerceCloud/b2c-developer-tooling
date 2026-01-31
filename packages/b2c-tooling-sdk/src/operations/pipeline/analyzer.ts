@@ -28,7 +28,6 @@ import type {
   SequenceBlock,
   StartNodeIR,
   StatementBlock,
-  TryCatchBlock,
 } from './types.js';
 
 /**
@@ -77,6 +76,7 @@ export function analyzePipeline(pipeline: PipelineIR): AnalysisResult {
       isFormHandler: false,
       body,
       requiredImports: context.requiredImports,
+      endsWithInteraction: checkEndsWithInteraction(body, context.pipeline),
     });
 
     warnings.push(...context.warnings);
@@ -103,6 +103,7 @@ export function analyzePipeline(pipeline: PipelineIR): AnalysisResult {
         isFormHandler: true,
         body: handlerBody,
         requiredImports: context.requiredImports,
+        endsWithInteraction: checkEndsWithInteraction(handlerBody, context.pipeline),
       });
 
       warnings.push(...context.warnings);
@@ -170,9 +171,9 @@ function analyzeFromNode(nodeId: string, context: AnalysisContext): ControlFlowB
 
       case 'pipelet': {
         if (node.hasErrorBranch) {
-          const tryCatchBlock = analyzePipeletWithError(node, context);
-          blocks.push(tryCatchBlock);
-          // Continue after try-catch
+          const pipeletBlock = analyzePipeletWithError(node, context);
+          blocks.push(pipeletBlock);
+          // Continue from the convergence point (join node) after the if-else
           currentId = findConvergencePoint(node, context);
         } else {
           blocks.push(createStatement(node.id));
@@ -215,6 +216,17 @@ function analyzeDecisionNode(node: DecisionNodeIR, context: AnalysisContext): If
   const yesTransition = node.transitions.find((t) => t.connector === 'yes');
   const noTransition = node.transitions.find((t) => t.connector === 'no');
 
+  // If no explicit "no" connector, look for implicit path (any non-"yes" transition)
+  // In pipelines, transitions can have various target-connector values (like "in1")
+  // that represent the destination connector, not the source connector.
+  // For decision nodes, only "yes" and "no" are valid source connectors,
+  // so any other transition is effectively the "no" path.
+  const implicitNoTransition = !noTransition
+    ? node.transitions.find((t) => t.connector !== 'yes' && t.connector !== 'error')
+    : undefined;
+
+  const effectiveNoTransition = noTransition || implicitNoTransition;
+
   // Find convergence point to limit branch analysis
   const convergencePoint = findConvergencePoint(node, context);
 
@@ -228,11 +240,39 @@ function analyzeDecisionNode(node: DecisionNodeIR, context: AnalysisContext): If
     mergeImports(context, branchContext);
   }
 
-  if (noTransition) {
+  if (effectiveNoTransition) {
     const branchContext = createBranchContext(context, convergencePoint);
-    elseBlock = analyzeFromNode(noTransition.targetId, branchContext);
+    elseBlock = analyzeFromNode(effectiveNoTransition.targetId, branchContext);
     context.warnings.push(...branchContext.warnings);
     mergeImports(context, branchContext);
+    // If else block is empty (just led to convergence), check if we need to include post-convergence content
+    if (elseBlock.type === 'sequence' && elseBlock.blocks.length === 0) {
+      elseBlock = undefined;
+    }
+  }
+
+  // If the else path was empty (led directly to convergence) but the yes path doesn't reach convergence,
+  // what's after convergence is the else block's content (like error/notfound).
+  // This mirrors the fix in analyzePipeletWithError for error branches through join-nodes.
+  if (convergencePoint && !elseBlock && effectiveNoTransition) {
+    const yesReachesConvergence = yesTransition
+      ? pathReachesNode(yesTransition.targetId, convergencePoint, context.pipeline)
+      : false;
+
+    if (!yesReachesConvergence) {
+      // Yes path terminates before convergence, so what's after convergence is error handling
+      const afterConvergenceContext = createBranchContext(context);
+      const afterConvergence = analyzeFromNode(convergencePoint, afterConvergenceContext);
+      if (hasContent(afterConvergence)) {
+        elseBlock = afterConvergence;
+        context.warnings.push(...afterConvergenceContext.warnings);
+        mergeImports(context, afterConvergenceContext);
+        // Mark these nodes as visited so they won't be re-analyzed
+        for (const id of afterConvergenceContext.visited) {
+          context.visited.add(id);
+        }
+      }
+    }
   }
 
   return {
@@ -300,42 +340,216 @@ function analyzeLoopBody(startId: string, loopNodeId: string, context: AnalysisC
 }
 
 /**
- * Analyzes a pipelet with error handling into a try-catch block.
+ * Gets the success condition expression for a pipelet with error handling.
+ * This determines what to check after the pipelet executes to know if it succeeded.
  */
-function analyzePipeletWithError(node: PipeletNodeIR, context: AnalysisContext): TryCatchBlock {
+function getPipeletSuccessCondition(node: PipeletNodeIR): string {
+  // Common output variable keys - check if this pipelet assigns one of these
+  const commonOutputKeys = [
+    'Product',
+    'Category',
+    'Customer',
+    'Address',
+    'Basket',
+    'Order',
+    'Content',
+    'ProductList',
+    'GiftCertificate',
+    'SearchResult',
+    'ProductLineItem',
+    'PaymentInstrument',
+  ];
+
+  // Check for common output key bindings
+  for (const key of commonOutputKeys) {
+    const binding = node.keyBindings.find((kb) => kb.key === key);
+    if (binding && binding.value && binding.value !== 'null') {
+      // Transform the output variable and check it
+      const varName = binding.value.startsWith('pdict.') ? binding.value : `pdict.${binding.value}`;
+      return varName;
+    }
+  }
+
+  // Map pipelet names to their success conditions for special cases
+  const conditions: Record<string, string> = {
+    // LoginCustomer returns AuthenticationStatus
+    LoginCustomer: 'pdict.AuthenticationStatus && pdict.AuthenticationStatus.isAuthenticated()',
+
+    // Form pipelets - AcceptForm returns boolean via accept()
+    AcceptForm: 'pdict.FormValid',
+
+    // CSRF validation - set by ValidateCSRFToken
+    ValidateCSRFToken: 'pdict.CSRFTokenValid',
+
+    // ValidateResetPasswordToken returns Customer (null if invalid)
+    ValidateResetPasswordToken: 'pdict.Customer',
+
+    // Script pipelet - uses scriptResult variable
+    Script: 'scriptResult !== PIPELET_ERROR',
+  };
+
+  // Check if this pipelet has a known condition
+  const condition = conditions[node.pipeletName];
+  if (condition) {
+    return condition;
+  }
+
+  // For pipelets with output bindings, check the first output variable
+  // Look for common output parameter patterns
+  const outputBinding = node.keyBindings.find(
+    (kb) =>
+      kb.key === node.pipeletName ||
+      kb.key === 'Output' ||
+      kb.key === 'Result' ||
+      (kb.key.endsWith('_out') && kb.value !== 'null'),
+  );
+
+  if (outputBinding && outputBinding.value !== 'null') {
+    return `pdict.${outputBinding.value.replace(/^pdict\./, '')}`;
+  }
+
+  // Default: check for a truthy result
+  return 'true';
+}
+
+/**
+ * Analyzes a pipelet with error handling into a sequence with if-else block.
+ * This creates: [pipelet statement] + [if (success) { successPath } else { errorPath }]
+ */
+function analyzePipeletWithError(node: PipeletNodeIR, context: AnalysisContext): ControlFlowBlock {
   const errorTransition = node.transitions.find((t) => t.connector === 'error');
   const successTransition = node.transitions.find((t) => !t.connector || t.connector === 'next');
 
   // Find convergence point to limit branch analysis
   const convergencePoint = findConvergencePoint(node, context);
 
-  // Try block: the pipelet only (success path analyzed separately after try-catch)
-  const tryBlocks: ControlFlowBlock[] = [createStatement(node.id)];
+  // 1. Create the pipelet statement
+  const pipeletStatement = createStatement(node.id);
+  collectPipeletImports(node, context);
+
+  // 2. Analyze success path (up to convergence, NOT including convergence)
+  let thenBlock: ControlFlowBlock = {type: 'sequence', blocks: []};
   if (successTransition && convergencePoint) {
-    // Only analyze the success path up to convergence point
     const successContext = createBranchContext(context, convergencePoint);
-    const successBlock = analyzeFromNode(successTransition.targetId, successContext);
-    tryBlocks.push(successBlock);
+    thenBlock = analyzeFromNode(successTransition.targetId, successContext);
+    context.warnings.push(...successContext.warnings);
+    mergeImports(context, successContext);
+  } else if (successTransition && !convergencePoint) {
+    // No convergence point - analyze success path fully
+    const successContext = createBranchContext(context);
+    thenBlock = analyzeFromNode(successTransition.targetId, successContext);
     context.warnings.push(...successContext.warnings);
     mergeImports(context, successContext);
   }
 
-  // Catch block: error path up to convergence point
-  let catchBlock: ControlFlowBlock = {type: 'sequence', blocks: []};
+  // 3. Analyze error path (up to convergence)
+  let elseBlock: ControlFlowBlock | undefined;
   if (errorTransition) {
     const errorContext = createBranchContext(context, convergencePoint);
-    catchBlock = analyzeFromNode(errorTransition.targetId, errorContext);
+    elseBlock = analyzeFromNode(errorTransition.targetId, errorContext);
     context.warnings.push(...errorContext.warnings);
     mergeImports(context, errorContext);
+    // Only include else block if it has content
+    if (elseBlock.type === 'sequence' && elseBlock.blocks.length === 0) {
+      elseBlock = undefined;
+    }
   }
 
-  collectPipeletImports(node, context);
+  // 4. If error path was empty (led directly to convergence), check what comes after.
+  // This handles cases where error transitions go through join-nodes to error handling
+  // (e.g., error -> join-node -> error/notfound interaction).
+  // Only use this if the success path doesn't also reach the convergence point
+  // (i.e., success terminates at end-node or interaction before convergence).
+  if (convergencePoint && !elseBlock && errorTransition) {
+    const successReachesConvergence = successTransition
+      ? pathReachesNode(successTransition.targetId, convergencePoint, context.pipeline)
+      : false;
 
-  return {
-    type: 'try-catch',
-    tryBlock: simplifySequence({type: 'sequence', blocks: tryBlocks}),
-    catchBlock,
+    if (!successReachesConvergence) {
+      // Success path terminates before convergence, so what's after convergence is error handling
+      const afterConvergenceContext = createBranchContext(context);
+      const afterConvergence = analyzeFromNode(convergencePoint, afterConvergenceContext);
+      if (hasContent(afterConvergence)) {
+        elseBlock = afterConvergence;
+        context.warnings.push(...afterConvergenceContext.warnings);
+        mergeImports(context, afterConvergenceContext);
+        // Mark these nodes as visited in the parent context so the main loop
+        // won't re-analyze them when continuing from the convergence point
+        for (const id of afterConvergenceContext.visited) {
+          context.visited.add(id);
+        }
+      }
+    }
+  }
+
+  // 5. Build if-else block with success condition
+  const ifElseBlock: IfElseBlock = {
+    type: 'if-else',
+    condition: getPipeletSuccessCondition(node),
+    thenBlock,
+    elseBlock,
   };
+
+  // 6. Return sequence: pipelet, then if-else
+  return simplifySequence({
+    type: 'sequence',
+    blocks: [pipeletStatement, ifElseBlock],
+  });
+}
+
+/**
+ * Checks if the SUCCESS path from startId would reach targetId without terminating.
+ * Used to determine if both branches of a decision converge or if one terminates early.
+ * Only follows non-error transitions to check the main success path.
+ */
+function pathReachesNode(startId: string, targetId: string, pipeline: PipelineIR): boolean {
+  const visited = new Set<string>();
+  const queue = [startId];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current === targetId) return true;
+    if (visited.has(current)) continue;
+    visited.add(current);
+
+    const node = pipeline.nodes.get(current);
+    if (!node) continue;
+
+    // End nodes and interaction nodes are terminal - path doesn't continue
+    if (node.type === 'end' || node.type === 'interaction' || node.type === 'interaction-continue') {
+      continue;
+    }
+
+    // Only follow success transitions (non-error paths)
+    // This ensures we're checking if the main success path reaches the target,
+    // not whether any path (including error handling) reaches it.
+    for (const t of node.transitions) {
+      if (t.connector !== 'error') {
+        queue.push(t.targetId);
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Checks if a control flow block has any content.
+ */
+function hasContent(block: ControlFlowBlock): boolean {
+  if (block.type === 'statement') {
+    return true;
+  }
+  if (block.type === 'sequence') {
+    return block.blocks.length > 0 && block.blocks.some(hasContent);
+  }
+  if (block.type === 'if-else') {
+    return hasContent(block.thenBlock) || (block.elseBlock ? hasContent(block.elseBlock) : false);
+  }
+  if (block.type === 'loop') {
+    return hasContent(block.body);
+  }
+  return false;
 }
 
 /**
@@ -488,4 +702,37 @@ function simplifySequence(seq: SequenceBlock): ControlFlowBlock {
     return seq.blocks[0];
   }
   return seq;
+}
+
+/**
+ * Checks if a control flow block ends with an interaction node.
+ * Used to determine if a function should return pdict or render a template.
+ */
+function checkEndsWithInteraction(block: ControlFlowBlock, pipeline: PipelineIR): boolean {
+  switch (block.type) {
+    case 'statement': {
+      const node = pipeline.nodes.get(block.nodeId);
+      return node?.type === 'interaction' || node?.type === 'interaction-continue';
+    }
+    case 'sequence': {
+      // Check if the last non-empty block ends with interaction
+      for (let i = block.blocks.length - 1; i >= 0; i--) {
+        if (checkEndsWithInteraction(block.blocks[i], pipeline)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    case 'if-else': {
+      // Both branches should end with interaction for consistent behavior
+      const thenEnds = checkEndsWithInteraction(block.thenBlock, pipeline);
+      const elseEnds = block.elseBlock ? checkEndsWithInteraction(block.elseBlock, pipeline) : false;
+      return thenEnds || elseEnds;
+    }
+    case 'loop': {
+      return checkEndsWithInteraction(block.body, pipeline);
+    }
+    default:
+      return false;
+  }
 }

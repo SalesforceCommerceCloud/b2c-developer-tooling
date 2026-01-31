@@ -82,18 +82,26 @@ export function generateCreateCustomerPipelet(node: PipeletNodeIR, context: Gene
 
 /**
  * Generates code for LoginCustomer pipelet.
+ * Returns AuthenticationStatus to pdict for error checking.
  */
 export function generateLoginCustomerPipelet(node: PipeletNodeIR, context: GeneratorContext): string {
   const ind = indent(context.indent);
   const login = node.keyBindings.find((kb) => kb.key === 'Login' || kb.key === 'AuthenticationProviderID')?.value;
   const password = node.keyBindings.find((kb) => kb.key === 'Password')?.value;
   const rememberMe = node.keyBindings.find((kb) => kb.key === 'RememberMe')?.value;
+  const outputVar = node.keyBindings.find((kb) => kb.key === 'AuthenticationStatus')?.value;
 
   context.requires.set('CustomerMgr', 'dw/customer/CustomerMgr');
 
   if (login && password) {
     const rememberMeArg = rememberMe ? `, ${transformExpression(rememberMe)}` : '';
-    return `${ind}CustomerMgr.loginCustomer(${transformExpression(login)}, ${transformExpression(password)}${rememberMeArg});`;
+    const loginExpr = `CustomerMgr.loginCustomer(${transformExpression(login)}, ${transformExpression(password)}${rememberMeArg})`;
+
+    if (outputVar) {
+      return `${ind}${transformVariable(outputVar)} = ${loginExpr};`;
+    }
+    // Always capture to pdict.AuthenticationStatus for error checking
+    return `${ind}pdict.AuthenticationStatus = ${loginExpr};`;
   }
 
   return `${ind}// LoginCustomer: missing Login or Password parameter`;
