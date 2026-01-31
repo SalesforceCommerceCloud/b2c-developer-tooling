@@ -16,6 +16,7 @@ Advanced authentication patterns for SLAS (Shopper Login and API Access Service)
 | SMS OTP | Passwordless SMS | Code sent to phone |
 | Passkeys | FIDO2/WebAuthn | Biometric or device PIN |
 | Session Bridge | Hybrid storefronts | Seamless PWA ↔ SFRA |
+| Hybrid Auth | B2C 25.3+ | Built-in platform auth sync |
 | TSOB | System integration | Backend service calls |
 
 ## Passwordless Email OTP
@@ -24,18 +25,18 @@ Send one-time passwords via email for passwordless login.
 
 ### Flow Overview
 
-1. User enters email
-2. System sends OTP via SLAS
-3. User enters OTP
-4. System exchanges OTP for tokens
+1. Call `/oauth2/passwordless/login` with callback URI
+2. SLAS POSTs `pwdless_login_token` to your callback
+3. Your app sends OTP to shopper via email
+4. Shopper enters OTP, app exchanges for tokens
 
-### Request OTP
+### Step 1: Initiate Passwordless Login
 
 ```javascript
-// POST /shopper/auth/v1/organizations/{org}/oauth2/passwordless/start
-async function requestEmailOTP(email, siteId) {
+// POST /shopper/auth/v1/organizations/{org}/oauth2/passwordless/login
+async function initiatePasswordlessLogin(email, siteId) {
     const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/passwordless/start`,
+        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/passwordless/login`,
         {
             method: 'POST',
             headers: {
@@ -43,23 +44,52 @@ async function requestEmailOTP(email, siteId) {
             },
             body: new URLSearchParams({
                 user_id: email,
-                channel_id: siteId,
                 mode: 'callback',
-                callback_uri: 'https://yoursite.com/verify'
+                channel_id: siteId,
+                callback_uri: 'https://yoursite.com/api/passwordless/callback'
             })
         }
     );
 
-    // Returns: { passwordless_token: "...", ...}
+    // SLAS will POST to your callback_uri with pwdless_login_token
     return response.json();
 }
 ```
 
-### Verify OTP and Get Token
+### Step 2: Handle Callback and Send OTP
+
+Your callback endpoint receives `pwdless_login_token`. Generate an OTP and send it to the user:
+
+```javascript
+// Your callback endpoint (receives POST from SLAS)
+app.post('/api/passwordless/callback', async (req, res) => {
+    const { pwdless_login_token, user_id } = req.body;
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store token + OTP mapping (e.g., Redis with 10 min TTL)
+    await redis.setex(`pwdless:${otp}`, 600, JSON.stringify({
+        token: pwdless_login_token,
+        email: user_id
+    }));
+
+    // Send OTP via email (configure in SLAS Admin UI)
+    await sendOTPEmail(user_id, otp);
+
+    res.status(200).send('OK');
+});
+```
+
+### Step 3: Exchange OTP for Tokens
 
 ```javascript
 // POST /shopper/auth/v1/organizations/{org}/oauth2/passwordless/token
-async function verifyEmailOTP(passwordlessToken, otp, clientId) {
+async function exchangeOTPForToken(otp, clientId, clientSecret, siteId) {
+    // Retrieve stored token
+    const stored = JSON.parse(await redis.get(`pwdless:${otp}`));
+    if (!stored) throw new Error('Invalid or expired OTP');
+
     const response = await fetch(
         `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/passwordless/token`,
         {
@@ -71,8 +101,7 @@ async function verifyEmailOTP(passwordlessToken, otp, clientId) {
             body: new URLSearchParams({
                 grant_type: 'client_credentials',
                 hint: 'pwdless_login',
-                pwdless_token: passwordlessToken,
-                code_verifier: otp,
+                pwdless_login_token: stored.token,
                 channel_id: siteId
             })
         }
@@ -83,29 +112,14 @@ async function verifyEmailOTP(passwordlessToken, otp, clientId) {
 }
 ```
 
-### Email Template Configuration
+### Rate Limits
 
-Configure the OTP email template in Business Manager:
-
-**Merchant Tools > Content > Email Templates**
-
-Create template `passwordless_login_otp`:
-
-```html
-<!DOCTYPE html>
-<html>
-<head><title>Your Login Code</title></head>
-<body>
-    <h1>Your verification code</h1>
-    <p>Use this code to log in: <strong>${otp}</strong></p>
-    <p>This code expires in 10 minutes.</p>
-</body>
-</html>
-```
+- 6 requests per user per 10 minutes
+- 1,000 requests/month per endpoint on non-production tenants
 
 ## Passwordless SMS OTP
 
-Send OTP via SMS using Marketing Cloud or custom integration (e.g., AWS SNS, Twilio).
+Send OTP via SMS using Marketing Cloud or custom integration.
 
 ### Using Marketing Cloud
 
@@ -113,44 +127,41 @@ Configure SMS through Salesforce Marketing Cloud:
 
 1. Set up Marketing Cloud connector
 2. Configure SMS journey with OTP template
-3. Trigger via SLAS callback
+3. Trigger via SLAS callback (same flow as email OTP)
 
-### Using Custom SMS Provider
+### Custom SMS Provider
 
-Implement a custom hook to send SMS:
+Use the same callback flow as email, but send via SMS provider:
 
 ```javascript
-// hooks/passwordless.js
-var HTTPClient = require('dw/net/HTTPClient');
+// In your callback handler
+const twilio = require('twilio')(accountSid, authToken);
 
-exports.sendSMS = function(phoneNumber, otp) {
-    // Example: AWS SNS
-    var client = new HTTPClient();
-    client.open('POST', 'https://sns.us-east-1.amazonaws.com');
-    client.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-    var params = [
-        'Action=Publish',
-        'PhoneNumber=' + encodeURIComponent(phoneNumber),
-        'Message=' + encodeURIComponent('Your code: ' + otp)
-    ].join('&');
-
-    client.send(params);
-    return client.statusCode === 200;
-};
+async function sendOTPSMS(phoneNumber, otp) {
+    await twilio.messages.create({
+        body: `Your login code is: ${otp}`,
+        from: '+1234567890',
+        to: phoneNumber
+    });
+}
 ```
 
 ## Passkeys (FIDO2/WebAuthn)
 
 Enable biometric authentication using passkeys.
 
-### Registration Flow
+**Important:** Passkey registration requires **prior identity verification via OTP**. Users must first verify their email before registering a passkey.
+
+### Registration Flow (3 Steps)
 
 ```javascript
-// Step 1: Get registration options from SLAS
-async function getPasskeyRegistrationOptions(accessToken) {
+// Step 1: Verify identity via OTP first
+// Use the Email OTP flow above to verify the user
+
+// Step 2: Start passkey registration (requires valid access token)
+async function startPasskeyRegistration(accessToken) {
     const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/passkeys/registration-options`,
+        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/register/start`,
         {
             method: 'POST',
             headers: {
@@ -165,7 +176,7 @@ async function getPasskeyRegistrationOptions(accessToken) {
     return response.json();
 }
 
-// Step 2: Create credential using WebAuthn API
+// Step 3: Create credential using WebAuthn API
 async function createPasskey(options) {
     const credential = await navigator.credentials.create({
         publicKey: {
@@ -186,10 +197,10 @@ async function createPasskey(options) {
     return credential;
 }
 
-// Step 3: Register credential with SLAS
-async function registerPasskey(accessToken, credential) {
+// Step 4: Complete registration with SLAS
+async function finishPasskeyRegistration(accessToken, credential) {
     const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/passkeys/registration`,
+        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/register/finish`,
         {
             method: 'POST',
             headers: {
@@ -212,9 +223,9 @@ async function registerPasskey(accessToken, credential) {
 
 ```javascript
 // Step 1: Get authentication options
-async function getPasskeyAuthOptions() {
+async function startPasskeyAuth() {
     const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/passkeys/authentication-options`,
+        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/authenticate/start`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -240,16 +251,14 @@ async function authenticateWithPasskey(options) {
     return assertion;
 }
 
-// Step 3: Exchange assertion for tokens
-async function exchangePasskeyForToken(assertion) {
+// Step 3: Complete authentication and get tokens
+async function finishPasskeyAuth(assertion) {
     const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/token`,
+        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/authenticate/finish`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
-                grant_type: 'client_credentials',
-                hint: 'passkey',
                 credential_id: bufferToBase64(assertion.rawId),
                 client_data_json: bufferToBase64(assertion.response.clientDataJSON),
                 authenticator_data: bufferToBase64(assertion.response.authenticatorData),
@@ -266,12 +275,14 @@ async function exchangePasskeyForToken(assertion) {
 
 Maintain session continuity between PWA Kit and SFRA storefronts.
 
-### Concept
+### Token Types
 
-Session bridge uses special tokens to synchronize authentication state:
+Session bridge uses signed tokens generated from SFRA script APIs:
 
-- `dwsgst` - Guest session token
-- `dwsrst` - Registered session token
+- `dwsgst` - Guest session token (from `Session.generateGuestSessionSignature()`)
+- `dwsrst` - Registered session token (from `Session.generateRegisteredSessionSignature()`)
+
+**Note:** DWSID is deprecated for registered shoppers.
 
 ### PWA to SFRA Bridge
 
@@ -312,15 +323,17 @@ function redirectToSFRA(dwsgst, dwsrst) {
 
 ```javascript
 // In SFRA controller: Generate bridge tokens
-var SLASAuthHelper = require('*/cartridge/scripts/helpers/slasAuthHelper');
+var Session = require('dw/system/Session');
 
 function bridgeToPWA() {
-    var bridgeTokens = SLASAuthHelper.getSessionBridgeTokens();
+    var dwsgst = Session.generateGuestSessionSignature();
+    var dwsrst = customer.authenticated ?
+        Session.generateRegisteredSessionSignature() : null;
 
     response.redirect(
         'https://pwa.yoursite.com/callback' +
-        '?dwsgst=' + bridgeTokens.dwsgst +
-        (bridgeTokens.dwsrst ? '&dwsrst=' + bridgeTokens.dwsrst : '')
+        '?dwsgst=' + dwsgst +
+        (dwsrst ? '&dwsrst=' + dwsrst : '')
     );
 }
 ```
@@ -334,6 +347,9 @@ async function handleBridgeCallback(searchParams) {
     const dwsrst = searchParams.get('dwsrst');
 
     // Exchange bridge tokens for access token
+    // Use hint=sb-guest for guest, hint=sb-user for registered
+    const hint = dwsrst ? 'sb-user' : 'sb-guest';
+
     const response = await fetch(
         `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/session-bridge/token`,
         {
@@ -341,6 +357,7 @@ async function handleBridgeCallback(searchParams) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 grant_type: 'session_bridge',
+                hint: hint,
                 channel_id: siteId,
                 dwsgst: dwsgst,
                 ...(dwsrst && { dwsrst: dwsrst })
@@ -353,58 +370,36 @@ async function handleBridgeCallback(searchParams) {
 }
 ```
 
-## Hybrid Authentication
+## Hybrid Authentication (B2C 25.3+)
 
-Support both PWA Kit and SFRA with unified authentication.
+**Hybrid Auth replaces Plugin SLAS** for hybrid PWA/SFRA storefronts. It's built directly into the B2C platform and provides automatic session synchronization.
 
-### Four Lifecycle Events
+### Benefits
 
-| Event | Trigger | Action |
-|-------|---------|--------|
-| Login | User authenticates | Sync session to both platforms |
-| Logout | User logs out | Clear sessions on both platforms |
-| Session Start | New visitor | Create bridge tokens |
-| Session Refresh | Token expiry | Refresh and re-sync |
+- No manual session bridge implementation needed
+- Automatic sync between PWA and SFRA
+- Simplified token management
+- Built-in platform support
 
-### Implementation Pattern
+### Migration from Plugin SLAS
 
-```javascript
-// Shared auth service
-class HybridAuthService {
-    async login(credentials) {
-        // 1. Authenticate with SLAS
-        const tokens = await this.slasLogin(credentials);
+If using Plugin SLAS, migrate to Hybrid Auth:
 
-        // 2. Get session bridge tokens
-        const bridgeTokens = await this.getSessionBridge(tokens.access_token);
-
-        // 3. Sync to SFRA (set cookies or redirect)
-        await this.syncToSFRA(bridgeTokens);
-
-        return tokens;
-    }
-
-    async logout() {
-        // 1. Revoke SLAS tokens
-        await this.revokeTokens();
-
-        // 2. Clear SFRA session
-        await this.clearSFRASession();
-
-        // 3. Clear local state
-        this.clearLocalTokens();
-    }
-}
-```
+1. Upgrade to B2C Commerce 25.3+
+2. Enable Hybrid Auth in Business Manager
+3. Remove Plugin SLAS cartridge
+4. Update storefront to use platform auth
 
 ## Token Refresh
+
+**Important:** The `channel_id` parameter is **required** for guest token refresh.
 
 ### Public Clients (Single-Use Refresh)
 
 Public clients (no secret) receive single-use refresh tokens:
 
 ```javascript
-async function refreshTokenPublic(refreshToken, clientId) {
+async function refreshTokenPublic(refreshToken, clientId, siteId) {
     const response = await fetch(
         `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/token`,
         {
@@ -414,7 +409,7 @@ async function refreshTokenPublic(refreshToken, clientId) {
                 grant_type: 'refresh_token',
                 refresh_token: refreshToken,
                 client_id: clientId,
-                channel_id: siteId
+                channel_id: siteId  // REQUIRED
             })
         }
     );
@@ -429,7 +424,7 @@ async function refreshTokenPublic(refreshToken, clientId) {
 Private clients can reuse refresh tokens:
 
 ```javascript
-async function refreshTokenPrivate(refreshToken, clientId, clientSecret) {
+async function refreshTokenPrivate(refreshToken, clientId, clientSecret, siteId) {
     const response = await fetch(
         `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/token`,
         {
@@ -441,7 +436,7 @@ async function refreshTokenPrivate(refreshToken, clientId, clientSecret) {
             body: new URLSearchParams({
                 grant_type: 'refresh_token',
                 refresh_token: refreshToken,
-                channel_id: siteId
+                channel_id: siteId  // REQUIRED
             })
         }
     );
@@ -487,11 +482,38 @@ async function getTSOBToken(shopperLoginId) {
 }
 ```
 
+### Important Constraints
+
+**3-Second Protection Window:** Multiple TSOB calls for the same shopper within 3 seconds return HTTP 409:
+
+```
+"Tenant id <id> has already performed a login operation for user id <user_id> in the last 3 seconds."
+```
+
+Handle this in your code:
+
+```javascript
+async function getTSOBTokenWithRetry(shopperLoginId, maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            return await getTSOBToken(shopperLoginId);
+        } catch (error) {
+            if (error.status === 409 && i < maxRetries - 1) {
+                await new Promise(r => setTimeout(r, 3000));
+                continue;
+            }
+            throw error;
+        }
+    }
+}
+```
+
 ### Required Configuration
 
-1. SLAS client must have TSOB enabled
+1. SLAS client must have TSOB enabled (`sfcc.ts_ext_on_behalf_of` scope)
 2. Configure in SLAS Admin API or Business Manager
 3. Secure the client secret (server-side only)
+4. Keep `login_id` length under 60 characters
 
 ## JWT Validation
 
@@ -539,6 +561,7 @@ async function validateToken(accessToken) {
 | `exp` | Expiration time |
 | `iat` | Issued at time |
 | `scope` | Granted scopes |
+| `tsob` | TSOB token type (for trusted system tokens) |
 
 ## Best Practices
 
@@ -556,6 +579,7 @@ async function validateToken(accessToken) {
 - Handle refresh token rotation for public clients
 - Clear tokens on logout from all storage locations
 - Use short-lived access tokens where possible
+- Always include `channel_id` in refresh requests
 
 ### User Experience
 

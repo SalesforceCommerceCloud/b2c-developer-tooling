@@ -246,7 +246,14 @@ await fetch(
 
 ### Inventory IMPEX API
 
-High-performance bulk inventory import.
+High-performance bulk inventory import. Use for 1000+ SKU updates.
+
+**Critical Requirements:**
+- Files > 100MB **MUST** be gzip compressed
+- Use newline-delimited JSON (NDJSON), not comma-separated arrays
+- Don't run imports during location graph changes
+- Use delta imports (changed data only) for best performance
+- Future quantity values must be > 0
 
 ```javascript
 // Step 1: Initiate import
@@ -262,20 +269,33 @@ const importJob = await fetch(
     }
 ).then(r => r.json());
 
-// Step 2: Upload data to the uploadLink
+// Step 2: Prepare newline-delimited JSON
+const ndjsonData = inventoryRecords
+    .map(r => JSON.stringify({
+        recordId: r.recordId || crypto.randomUUID(),
+        sku: r.sku,
+        locationId: r.locationId,
+        onHand: r.quantity,
+        effectiveDate: new Date().toISOString()
+    }))
+    .join('\n');
+
+// Step 3: Upload data to the uploadLink
 await fetch(importJob.uploadLink, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: inventoryData  // Newline-delimited JSON
+    body: ndjsonData
 });
 
-// Step 3: Monitor status
+// Step 4: Monitor status
 const status = await fetch(importJob.importStatusLink, {
     headers: { 'Authorization': `Bearer ${adminToken}` }
 }).then(r => r.json());
 ```
 
 **Required Scope:** `sfcc.inventory.impex-inventory`
+
+**Note:** Inventory IMPEX logs don't appear in Log Center. Use correlation IDs and monitor import status directly.
 
 See [Integration Patterns Reference](references/INTEGRATION-PATTERNS.md) for bulk import best practices.
 

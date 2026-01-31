@@ -29,6 +29,8 @@ Example:
 https://kv7kzm78.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/f_ecom_zzte_053/products/25518823M?siteId=RefArchGlobal
 ```
 
+**Note:** Shopper Baskets API supports both `v1` and `v2`. Use `v2` for newer features.
+
 ### Configuration Values
 
 | Value | Description | Example |
@@ -207,7 +209,7 @@ const customer = await fetch(
 
 ## Shopper Context API
 
-Maintain personalization state across requests using the Shopper Context API.
+Maintain personalization state across requests using the Shopper Context API. The `siteId` query parameter is **required** for all Shopper Context operations.
 
 ```javascript
 // Set shopper context
@@ -228,12 +230,32 @@ await fetch(
 );
 ```
 
+### When to Set Context
+
+- **Initial visit/login**: Immediately after obtaining SLAS token
+- **Token refresh**: Reuse existing USID for session continuity
+- **Login transitions**: When shopper changes from guest to registered (or vice versa)
+- **Logout**: Clear context explicitly
+
+### Quota Limits
+
+| Environment | Limit |
+|-------------|-------|
+| Non-production | 5,000 records |
+| Production | 1,000,000 records |
+
+**Strategies to manage quota:**
+- Use lower TTL (1-2 days for registered shoppers)
+- Reuse USIDs for the same shopper
+- Explicitly log out shoppers to delete context
+
 ### Best Practices
 
 - Set context immediately after obtaining SLAS token
 - Use the USID from the SLAS token response
 - Context TTL: 1 day (guest), 7 days (registered)
-- **Security**: Use private SLAS clients only, call from BFF
+- **Security**: Use private SLAS clients only, call from BFF (not browser)
+- Don't use Shopper Context for data that's automatically set (like geolocation)
 
 ## Performance Optimization
 

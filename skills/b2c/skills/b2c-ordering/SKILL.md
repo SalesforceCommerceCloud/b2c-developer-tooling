@@ -21,8 +21,10 @@ Basket → CREATED → NEW → (COMPLETED or CANCELLED or FAILED)
 | `NEW` | Order placed, awaiting fulfillment | `OPEN`, `COMPLETED`, `CANCELLED`, `FAILED` |
 | `OPEN` | Order in processing | `COMPLETED`, `CANCELLED` |
 | `COMPLETED` | Order fulfilled | - |
-| `CANCELLED` | Order cancelled | - |
-| `FAILED` | Order failed (payment, validation) | - |
+| `CANCELLED` | Order cancelled | `NEW` (via `undoCancel`) |
+| `FAILED` | Order failed (payment, validation) | - (cannot be reopened) |
+
+**Important:** Once an order reaches `FAILED` status, it cannot be reopened or cancelled. Use `failOrder(order, true)` to reopen the basket for retry instead.
 
 ## Creating Orders
 
@@ -129,7 +131,9 @@ function failOrderAfterPayment(order) {
 | `placeOrder(order)` | Place order (CREATED → NEW) |
 | `failOrder(order, reopenBasket)` | Fail order (set to FAILED status) |
 | `cancelOrder(order)` | Cancel order (set to CANCELLED status) |
-| `undoFailOrder(order)` | Revert failed order to CREATED |
+| `undoCancelOrder(order)` | Revert cancelled order to NEW |
+
+**Note:** There is no `undoFailOrder()` method. Failed orders cannot be reopened. Use `failOrder(order, true)` to reopen the basket for retry.
 
 ### Order Queries
 
@@ -245,27 +249,64 @@ function failOrder(order, reopenBasket) {
 }
 ```
 
-### Undo Failed Order
+### Handling Failed Orders
+
+**Failed orders cannot be reopened.** Instead, use `failOrder(order, true)` to reopen the basket:
+
+```javascript
+var OrderMgr = require('dw/order/OrderMgr');
+var Transaction = require('dw/system/Transaction');
+
+// When payment fails, fail the order and reopen basket
+function handlePaymentFailure(order) {
+    Transaction.wrap(function() {
+        // reopenBasket=true allows customer to retry checkout
+        OrderMgr.failOrder(order, true);
+    });
+
+    // Basket is now available again for the customer
+    return { error: true, message: 'Payment failed. Please try again.' };
+}
+```
+
+### SCAPI: Fail with Reopen (B2C 24.3+)
+
+For SCAPI integrations, use the `failed_with_reopen` status to fail an order while reopening the basket:
+
+```http
+PATCH /checkout/orders/v1/organizations/{orgId}/orders/{orderNo}?siteId={siteId}
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "status": "failed_with_reopen"
+}
+```
+
+This is equivalent to `OrderMgr.failOrder(order, true)` in Script API.
+
+### Undo Cancelled Order
+
+Cancelled orders can be reopened using `undoCancelOrder()`:
 
 ```javascript
 var OrderMgr = require('dw/order/OrderMgr');
 var Transaction = require('dw/system/Transaction');
 var Order = require('dw/order/Order');
 
-function retryFailedOrder(orderNo) {
+function reopenCancelledOrder(orderNo) {
     var order = OrderMgr.getOrder(orderNo);
 
-    if (order.status.value !== Order.ORDER_STATUS_FAILED) {
-        return { error: true, message: 'Order is not failed' };
+    if (order.status.value !== Order.ORDER_STATUS_CANCELLED) {
+        return { error: true, message: 'Order is not cancelled' };
     }
 
     Transaction.wrap(function() {
-        // Revert to CREATED status
-        OrderMgr.undoFailOrder(order);
+        // Revert to NEW status
+        OrderMgr.undoCancelOrder(order);
     });
 
-    // Now retry payment and place order
-    return placeOrder(order);
+    return { error: false, order: order };
 }
 ```
 

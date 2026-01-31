@@ -119,14 +119,16 @@ allConfigs.close();
 ### Get Custom Object
 
 ```http
-GET /s/-/dw/data/v24_1/custom_objects/{object_type}/{key}
+GET /s/-/dw/data/v25_6/custom_objects/{object_type}/{key}
 Authorization: Bearer {token}
 ```
+
+**Note:** Use `/s/{site_id}/dw/data/v25_6/custom_objects/...` for site-scoped objects, or `/s/-/dw/data/v25_6/custom_objects/...` for organization-scoped (global) objects.
 
 ### Create Custom Object
 
 ```http
-PUT /s/-/dw/data/v24_1/custom_objects/{object_type}/{key}
+PUT /s/-/dw/data/v25_6/custom_objects/{object_type}/{key}
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -140,7 +142,7 @@ Content-Type: application/json
 ### Update Custom Object
 
 ```http
-PATCH /s/-/dw/data/v24_1/custom_objects/{object_type}/{key}
+PATCH /s/-/dw/data/v25_6/custom_objects/{object_type}/{key}
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -152,14 +154,14 @@ Content-Type: application/json
 ### Delete Custom Object
 
 ```http
-DELETE /s/-/dw/data/v24_1/custom_objects/{object_type}/{key}
+DELETE /s/-/dw/data/v25_6/custom_objects/{object_type}/{key}
 Authorization: Bearer {token}
 ```
 
 ### Search Custom Objects
 
 ```http
-POST /s/-/dw/data/v24_1/custom_object_search/{object_type}
+POST /s/-/dw/data/v25_6/custom_object_search/{object_type}
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -195,8 +197,7 @@ For read-only access from storefronts, use the Shopper Custom Objects API. This 
 ### Get Custom Object (Shopper)
 
 ```http
-GET /custom-objects/shopper-custom-objects/v1/organizations/{org}/custom-objects/{object_type}/{key}
-    ?siteId={siteId}
+GET https://{shortCode}.api.commercecloud.salesforce.com/custom-object/shopper-custom-objects/v1/organizations/{organizationId}/custom-objects/{objectType}/{key}?siteId={siteId}
 Authorization: Bearer {shopper_token}
 ```
 
@@ -204,9 +205,22 @@ Authorization: Bearer {shopper_token}
 
 For the Shopper Custom Objects API, configure these scopes in your SLAS client:
 
-- `sfcc.shopper-custom-objects` - Read access to custom objects
+- `sfcc.shopper-custom-objects` - Global read access to all custom object types
+- `sfcc.shopper-custom-objects.{objectType}` - Type-specific read access
+
+**Note:** SLAS clients can have a maximum of 20 custom object scopes.
 
 The custom object type must also be enabled for shopper access in Business Manager.
+
+### Searchable System Fields
+
+All custom objects have these system fields available for OCAPI search queries:
+
+- `creation_date` - When the object was created (Date)
+- `last_modified` - When the object was last modified (Date)
+- `key_value_string` - String key value
+- `key_value_integer` - Integer key value
+- `site_id` - Site identifier (for site-scoped objects)
 
 ## Best Practices
 

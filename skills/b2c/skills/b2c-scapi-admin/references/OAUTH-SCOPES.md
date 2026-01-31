@@ -72,18 +72,6 @@ curl "https://account.demandware.com/dwsso/oauth2/access_token" \
 - Order status updates from fulfillment
 - Order analytics and reporting
 
-## Customer API Scopes
-
-| Scope | API Family | Access Level |
-|-------|------------|--------------|
-| `sfcc.shopper-customers` | Customers | Read customer data |
-| `sfcc.shopper-customers.rw` | Customers | Create/update customer profiles |
-
-**Use Cases:**
-- Customer data sync to CRM
-- Customer profile enrichment
-- Consent management integration
-
 ## Inventory API Scopes
 
 | Scope | API Family | Access Level |
@@ -92,12 +80,15 @@ curl "https://account.demandware.com/dwsso/oauth2/access_token" \
 | `sfcc.inventory.availability.rw` | Availability | Update inventory |
 | `sfcc.inventory.reservations` | Reservations | Read reservations |
 | `sfcc.inventory.reservations.rw` | Reservations | Create/update reservations |
-| `sfcc.inventory.impex-inventory` | IMPEX | Bulk inventory import |
+| `sfcc.inventory.impex-inventory` | IMPEX | Bulk inventory import (read) |
+| `sfcc.inventory.impex-inventory.rw` | IMPEX | Bulk inventory import (write) |
+| `sfcc.inventory.impex-graphs` | IMPEX | Location graph exports |
 
 **Use Cases:**
 - Real-time inventory sync from WMS
 - Bulk inventory file imports
 - Stock allocation across channels
+- Location graph management
 
 ## Pricing API Scopes
 
@@ -105,11 +96,59 @@ curl "https://account.demandware.com/dwsso/oauth2/access_token" \
 |-------|------------|--------------|
 | `sfcc.promotions` | Promotions | Read promotions |
 | `sfcc.promotions.rw` | Promotions | Create/update promotions |
+| `sfcc.gift-certificates` | Gift Certificates | Read gift certificates |
+| `sfcc.gift-certificates.rw` | Gift Certificates | Manage gift certificates |
+| `sfcc.source-codes` | Source Codes | Read source code groups |
+| `sfcc.source-codes.rw` | Source Codes | Manage source code groups |
 
 **Use Cases:**
 - Promotion data export
 - Dynamic promotion creation
 - Campaign management integration
+- Gift certificate management
+
+## Customer Management Scopes
+
+| Scope | API Family | Access Level |
+|-------|------------|--------------|
+| `sfcc.shopper-customers` | Customers | Read customer data |
+| `sfcc.shopper-customers.rw` | Customers | Create/update customer profiles |
+| `sfcc.consents` | Consents | Read customer consent preferences |
+| `sfcc.consents.rw` | Consents | Manage consent preferences |
+| `sfcc.customergroups` | Customer Groups | Read customer groups |
+| `sfcc.customergroups.rw` | Customer Groups | Manage customer groups |
+| `sfcc.customerlists` | Customer Lists | Read customer lists |
+| `sfcc.customerlists.rw` | Customer Lists | Manage customer lists |
+
+**Use Cases:**
+- Customer data sync to CRM
+- Customer profile enrichment
+- Consent management (GDPR/CCPA)
+- Customer segmentation
+
+## Configuration Scopes
+
+| Scope | API Family | Access Level |
+|-------|------------|--------------|
+| `sfcc.cors-preferences` | CORS | Read CORS configuration |
+| `sfcc.cors-preferences.rw` | CORS | Manage CORS settings |
+| `sfcc.preferences` | Preferences | Read site preferences |
+| `sfcc.timeouts` | Timeouts | Read timeout configuration |
+| `sfcc.timeouts.rw` | Timeouts | Manage timeout settings |
+
+**Use Cases:**
+- Automated configuration management
+- CI/CD pipeline configuration
+
+## Experience Scopes
+
+| Scope | API Family | Access Level |
+|-------|------------|--------------|
+| `sfcc.experiences.rw` | Experiences | Manage merchandiser experiences |
+
+**Use Cases:**
+- Experience/campaign management
+- A/B testing automation
 
 ## CDN API Scopes
 
@@ -123,16 +162,18 @@ curl "https://account.demandware.com/dwsso/oauth2/access_token" \
 - Certificate management
 - WAF rule management
 
-## Custom API Scopes
+## Developer API Scopes
 
 | Scope | API Family | Access Level |
 |-------|------------|--------------|
 | `sfcc.custom-apis` | Custom APIs | Read custom API status |
 | `sfcc.custom-apis.rw` | Custom APIs | Manage custom API registration |
+| `sfcc.scapi-schemas` | SCAPI Schemas | Read SCAPI schema registry |
 
 **Use Cases:**
 - Check custom API deployment status
 - Automated deployment pipelines
+- Schema discovery and documentation
 
 ## SLAS Admin Scopes
 
