@@ -103,6 +103,18 @@ To remove the marketplace:
 claude plugin marketplace remove b2c-developer-tooling
 ```
 
+## Installation with Skills CLI
+
+The [Skills CLI](https://github.com/vercel-labs/skills) provides a universal way to install agent skills to any supported IDE.
+
+```bash
+# Interactive mode - select skills and IDEs
+npx skills add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Install to a specific agent
+npx skills add SalesforceCommerceCloud/b2c-developer-tooling -a claude-code
+```
+
 ## Installation with B2C CLI
 
 The B2C CLI provides a `setup skills` command that downloads and installs agent skills to any supported IDE.
