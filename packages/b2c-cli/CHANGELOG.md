@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 0.3.1
+
+### Patch Changes
+
+- [`e116ce4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e116ce4ac1f7de705207c6c91eee0979be0ace65) Thanks [@clavery](https://github.com/clavery)! - Add update notifications that warn users when a newer version of the CLI is available
+
 ## 0.3.0
 
 ### Minor Changes
