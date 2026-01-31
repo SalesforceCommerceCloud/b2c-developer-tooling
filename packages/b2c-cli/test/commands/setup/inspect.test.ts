@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 
-import SetupConfig from '../../../src/commands/setup/config.js';
+import SetupInspect from '../../../src/commands/setup/inspect.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {runSilent} from '../../helpers/test-setup.js';
 import type {ConfigSourceInfo, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
@@ -52,9 +52,9 @@ function stubResolvedConfig(
 }
 
 /**
- * Unit tests for setup config command.
+ * Unit tests for setup inspect command.
  */
-describe('setup config', () => {
+describe('setup inspect', () => {
   beforeEach(() => {
     isolateConfig();
   });
@@ -66,22 +66,22 @@ describe('setup config', () => {
 
   describe('command structure', () => {
     it('should have correct description', () => {
-      expect(SetupConfig.description).to.be.a('string');
-      expect(SetupConfig.description).to.include('configuration');
+      expect(SetupInspect.description).to.be.a('string');
+      expect(SetupInspect.description).to.include('configuration');
     });
 
     it('should enable JSON flag', () => {
-      expect(SetupConfig.enableJsonFlag).to.be.true;
+      expect(SetupInspect.enableJsonFlag).to.be.true;
     });
 
     it('should have unmask flag', () => {
-      expect(SetupConfig.flags).to.have.property('unmask');
+      expect(SetupInspect.flags).to.have.property('unmask');
     });
   });
 
   describe('masking', () => {
     it('should mask password by default', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -97,7 +97,7 @@ describe('setup config', () => {
     });
 
     it('should mask clientSecret by default', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -113,7 +113,7 @@ describe('setup config', () => {
     });
 
     it('should mask mrtApiKey by default', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -129,7 +129,7 @@ describe('setup config', () => {
     });
 
     it('should show REDACTED for short secrets', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -143,7 +143,7 @@ describe('setup config', () => {
     });
 
     it('should unmask values when --unmask flag is provided', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: true};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -170,7 +170,7 @@ describe('setup config', () => {
 
   describe('output formatting', () => {
     it('should return structured JSON in --json mode', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -199,7 +199,7 @@ describe('setup config', () => {
     });
 
     it('should display warnings if present', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -216,7 +216,7 @@ describe('setup config', () => {
     });
 
     it('should handle empty config gracefully', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -229,7 +229,7 @@ describe('setup config', () => {
     });
 
     it('should handle array values (scopes)', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -245,7 +245,7 @@ describe('setup config', () => {
 
   describe('source tracking', () => {
     it('should track which source provided each field', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -278,7 +278,7 @@ describe('setup config', () => {
     });
 
     it('should handle fieldsIgnored correctly', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -314,7 +314,7 @@ describe('setup config', () => {
 
   describe('human-readable output', () => {
     it('should display formatted info in non-JSON mode', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};
       stubJsonEnabled(command, false);
       stubCommandConfigAndLogger(command);
@@ -347,7 +347,7 @@ describe('setup config', () => {
     });
 
     it('should show unmask warning when --unmask is used', async () => {
-      const command = new SetupConfig([], {} as any);
+      const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: true};
       stubJsonEnabled(command, false);
       stubCommandConfigAndLogger(command);
