@@ -15,6 +15,7 @@ const guideSidebar = [
     text: 'Guides',
     items: [
       { text: 'Authentication Setup', link: '/guide/authentication' },
+      { text: 'IDE Support', link: '/guide/ide-support' },
       { text: 'Security', link: '/guide/security' },
     ],
   },
