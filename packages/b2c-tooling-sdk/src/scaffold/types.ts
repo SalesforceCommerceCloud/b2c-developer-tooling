@@ -140,6 +140,8 @@ export interface ScaffoldManifest {
   postInstructions?: string;
   /** Tags for search */
   tags?: string[];
+  /** Default output directory relative to cwd (created if needed) */
+  defaultOutputDir?: string;
 }
 
 /**

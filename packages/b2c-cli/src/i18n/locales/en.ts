@@ -157,7 +157,7 @@ export const en = {
         error: 'Failed to list scaffolds: {{message}}',
       },
       generate: {
-        description: 'Generate a new project from a scaffold',
+        description: 'Generate files from a scaffold template',
         scaffoldNotFound: 'Scaffold not found: {{id}}',
         generating: 'Generating {{scaffold}} scaffold...',
         dryRun: 'Dry run - no files will be written',
@@ -172,7 +172,7 @@ export const en = {
         error: 'Failed to get scaffold info: {{message}}',
       },
       index: {
-        description: 'Generate a project scaffold (shorthand for scaffold generate)',
+        description: 'Work with project scaffolds and templates',
       },
       search: {
         description: 'Search for scaffolds by name, description, or tags',

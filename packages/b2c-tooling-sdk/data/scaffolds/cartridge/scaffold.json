@@ -4,6 +4,7 @@
   "description": "Create a new B2C Commerce cartridge with standard structure",
   "category": "cartridge",
   "version": "1.0",
+  "defaultOutputDir": "cartridges",
   "tags": ["cartridge", "sfra", "b2c", "commerce"],
   "parameters": [
     {
@@ -13,13 +14,6 @@
       "required": true,
       "pattern": "^[a-z][a-z0-9_]*$",
       "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
-    },
-    {
-      "name": "cartridgeDescription",
-      "prompt": "Describe your cartridge:",
-      "type": "string",
-      "required": false,
-      "default": "A custom B2C Commerce cartridge"
     },
     {
       "name": "includeControllers",
