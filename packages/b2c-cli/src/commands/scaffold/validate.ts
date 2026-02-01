@@ -86,14 +86,6 @@ function validateManifestStructure(manifest: ScaffoldManifest): ValidationIssue[
     issues.push({severity: 'error', message: error, file: 'scaffold.json'});
   }
 
-  if (!manifest.tags || manifest.tags.length === 0) {
-    issues.push({
-      severity: 'warning',
-      message: 'Consider adding tags for better searchability',
-      file: 'scaffold.json',
-    });
-  }
-
   if (!manifest.postInstructions) {
     issues.push({
       severity: 'warning',

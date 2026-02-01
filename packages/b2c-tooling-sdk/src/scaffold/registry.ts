@@ -115,9 +115,7 @@ function filterScaffolds(scaffolds: Scaffold[], options: ScaffoldDiscoveryOption
   if (options.query) {
     const query = options.query.toLowerCase();
     filtered = filtered.filter((s) => {
-      const searchText = [s.manifest.name, s.manifest.displayName, s.manifest.description, ...(s.manifest.tags || [])]
-        .join(' ')
-        .toLowerCase();
+      const searchText = [s.manifest.name, s.manifest.displayName, s.manifest.description].join(' ').toLowerCase();
       return searchText.includes(query);
     });
   }

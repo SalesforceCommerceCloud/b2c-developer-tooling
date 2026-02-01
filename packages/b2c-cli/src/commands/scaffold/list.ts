@@ -27,7 +27,6 @@ interface ScaffoldListResponse {
     category: ScaffoldCategory;
     source: string;
     path: string;
-    tags?: string[];
   }>;
 }
 
@@ -51,11 +50,6 @@ const COLUMNS: Record<string, ColumnDef<Scaffold>> = {
   description: {
     header: 'Description',
     get: (s) => s.manifest.description,
-    extended: true,
-  },
-  tags: {
-    header: 'Tags',
-    get: (s) => s.manifest.tags?.join(', ') || '-',
     extended: true,
   },
   path: {
@@ -91,8 +85,7 @@ export default class ScaffoldList extends BaseCommand<typeof ScaffoldList> {
   static flags = {
     category: Flags.string({
       char: 'c',
-      description: 'Filter by category (cartridge, custom-api, page-designer, job, metadata)',
-      options: ['cartridge', 'custom-api', 'page-designer', 'job', 'metadata'],
+      description: 'Filter by category',
     }),
     source: Flags.string({
       char: 's',
@@ -136,7 +129,6 @@ export default class ScaffoldList extends BaseCommand<typeof ScaffoldList> {
         category: s.manifest.category,
         source: s.source,
         path: s.path,
-        tags: s.manifest.tags,
       })),
     };
 

@@ -40,7 +40,7 @@ describe('scaffold/registry', () => {
         const scaffolds = await registry.getScaffolds();
         const customApi = scaffolds.find((s) => s.id === 'custom-api');
         expect(customApi).to.exist;
-        expect(customApi?.manifest.category).to.equal('custom-api');
+        expect(customApi?.manifest.category).to.equal('cartridge');
       });
 
       it('should filter by category', async () => {
@@ -88,11 +88,6 @@ describe('scaffold/registry', () => {
         expect(results.length).to.be.greaterThan(0);
         expect(results.some((s) => s.id === 'custom-api')).to.be.true;
       });
-
-      it('should search by tags', async () => {
-        const results = await registry.searchScaffolds('scapi');
-        expect(results.some((s) => s.manifest.tags?.includes('scapi'))).to.be.true;
-      });
     });
 
     describe('providers', () => {
@@ -110,7 +105,6 @@ describe('scaffold/registry', () => {
                     displayName: 'Test Scaffold',
                     description: 'A test scaffold',
                     category: 'cartridge',
-                    version: '1.0',
                     parameters: [],
                   },
                   path: '/tmp/test',

@@ -3,8 +3,6 @@
   "displayName": "SFRA Controller",
   "description": "Create an SFRA controller with route handlers and middleware",
   "category": "cartridge",
-  "version": "1.0",
-  "tags": ["controller", "sfra", "route", "middleware", "cartridge"],
   "parameters": [
     {
       "name": "controllerName",

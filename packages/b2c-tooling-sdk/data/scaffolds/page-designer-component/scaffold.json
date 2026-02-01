@@ -2,9 +2,7 @@
   "name": "page-designer-component",
   "displayName": "Page Designer Component",
   "description": "Create a Page Designer component with meta JSON, script, and template",
-  "category": "page-designer",
-  "version": "1.0",
-  "tags": ["page-designer", "component", "cms", "content", "visual"],
+  "category": "cartridge",
   "parameters": [
     {
       "name": "componentId",

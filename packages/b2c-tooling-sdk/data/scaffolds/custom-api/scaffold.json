@@ -2,9 +2,7 @@
   "name": "custom-api",
   "displayName": "Custom SCAPI",
   "description": "Create a custom SCAPI endpoint with OAS 3.0 schema",
-  "category": "custom-api",
-  "version": "1.0",
-  "tags": ["api", "scapi", "custom-api", "rest", "openapi"],
+  "category": "cartridge",
   "parameters": [
     {
       "name": "apiName",

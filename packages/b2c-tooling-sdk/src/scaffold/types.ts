@@ -16,14 +16,10 @@ const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/pa
 export const SCAFFOLDS_DATA_DIR = path.join(packageRoot, 'data/scaffolds');
 
 /**
- * Valid scaffold categories
+ * Scaffold category. Built-in scaffolds use 'cartridge', but custom scaffolds
+ * can define their own categories.
  */
-export type ScaffoldCategory = 'cartridge' | 'custom-api' | 'page-designer' | 'job' | 'metadata';
-
-/**
- * Scaffold manifest version
- */
-export type ScaffoldManifestVersion = '1.0';
+export type ScaffoldCategory = string;
 
 /**
  * Parameter types supported by scaffold parameters
@@ -128,8 +124,6 @@ export interface ScaffoldManifest {
   description: string;
   /** Category for filtering and organization */
   category: ScaffoldCategory;
-  /** Manifest version */
-  version: ScaffoldManifestVersion;
   /** Parameters for user input (prompts/flags) */
   parameters: ScaffoldParameter[];
   /** File mappings (optional - defaults to all files in files/ directory) */
@@ -138,8 +132,6 @@ export interface ScaffoldManifest {
   modifications?: FileModification[];
   /** Instructions to show after generation */
   postInstructions?: string;
-  /** Tags for search */
-  tags?: string[];
   /** Default output directory relative to cwd (created if needed) */
   defaultOutputDir?: string;
 }
@@ -176,7 +168,7 @@ export type ScaffoldProviderPriority = 'before' | 'after';
 export interface ScaffoldDiscoveryOptions {
   /** Filter by category */
   category?: ScaffoldCategory;
-  /** Search query for name/description/tags */
+  /** Search query for name/description */
   query?: string;
   /** Include only scaffolds from specific sources */
   sources?: ScaffoldSource[];

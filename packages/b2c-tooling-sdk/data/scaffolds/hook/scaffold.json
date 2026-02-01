@@ -3,8 +3,6 @@
   "displayName": "Hook Implementation",
   "description": "Create a hook implementation with hooks.json registration",
   "category": "cartridge",
-  "version": "1.0",
-  "tags": ["hook", "extension", "ocapi", "scapi", "event", "cartridge"],
   "parameters": [
     {
       "name": "hookName",

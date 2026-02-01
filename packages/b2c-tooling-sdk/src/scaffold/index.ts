@@ -71,7 +71,6 @@ export type {
   ScaffoldChoice,
   ScaffoldParameterType,
   ScaffoldCategory,
-  ScaffoldManifestVersion,
   DynamicParameterSource,
   FileMapping,
   FileModification,

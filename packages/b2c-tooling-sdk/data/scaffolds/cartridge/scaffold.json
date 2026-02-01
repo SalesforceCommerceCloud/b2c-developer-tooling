@@ -3,9 +3,7 @@
   "displayName": "Cartridge",
   "description": "Create a new B2C Commerce cartridge with standard structure",
   "category": "cartridge",
-  "version": "1.0",
   "defaultOutputDir": "cartridges",
-  "tags": ["cartridge", "sfra", "b2c", "commerce"],
   "parameters": [
     {
       "name": "cartridgeName",

@@ -20,7 +20,6 @@ interface ScaffoldSearchResponse {
     description: string;
     category: ScaffoldCategory;
     source: string;
-    tags?: string[];
   }>;
 }
 
@@ -58,13 +57,13 @@ const tableRenderer = new TableRenderer(COLUMNS);
 export default class ScaffoldSearch extends BaseCommand<typeof ScaffoldSearch> {
   static args = {
     query: Args.string({
-      description: 'Search query (matches name, description, and tags)',
+      description: 'Search query (matches name and description)',
       required: true,
     }),
   };
 
   static description = withDocs(
-    t('commands.scaffold.search.description', 'Search for scaffolds by name, description, or tags'),
+    t('commands.scaffold.search.description', 'Search for scaffolds by name or description'),
     '/cli/scaffold.html#b2c-scaffold-search',
   );
 
@@ -81,7 +80,6 @@ export default class ScaffoldSearch extends BaseCommand<typeof ScaffoldSearch> {
     category: Flags.string({
       char: 'c',
       description: 'Filter results by category',
-      options: ['cartridge', 'custom-api', 'page-designer', 'job', 'metadata'],
     }),
   };
 
@@ -105,7 +103,6 @@ export default class ScaffoldSearch extends BaseCommand<typeof ScaffoldSearch> {
         description: s.manifest.description,
         category: s.manifest.category,
         source: s.source,
-        tags: s.manifest.tags,
       })),
     };
 

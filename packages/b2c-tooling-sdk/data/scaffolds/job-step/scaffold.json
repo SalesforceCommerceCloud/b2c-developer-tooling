@@ -2,9 +2,7 @@
   "name": "job-step",
   "displayName": "Custom Job Step",
   "description": "Create a custom job step with steptypes.json registration",
-  "category": "job",
-  "version": "1.0",
-  "tags": ["job", "step", "batch", "task", "chunk", "pipeline"],
+  "category": "cartridge",
   "parameters": [
     {
       "name": "stepId",

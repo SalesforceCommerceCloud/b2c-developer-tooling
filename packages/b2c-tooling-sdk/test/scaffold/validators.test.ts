@@ -20,7 +20,6 @@ describe('scaffold/validators', () => {
       displayName: 'Test Scaffold',
       description: 'A test scaffold',
       category: 'cartridge',
-      version: '1.0',
       parameters: [],
     };
 
@@ -52,16 +51,10 @@ describe('scaffold/validators', () => {
       expect(errors).to.include('Manifest must have a "category" field (string)');
     });
 
-    it('should reject invalid category', () => {
-      const manifest = {...validManifest, category: 'invalid'};
+    it('should accept any category string', () => {
+      const manifest = {...validManifest, category: 'custom-category'};
       const errors = validateScaffoldManifest(manifest);
-      expect(errors.some((e) => e.includes('must be one of'))).to.be.true;
-    });
-
-    it('should reject invalid version', () => {
-      const manifest = {...validManifest, version: '2.0'};
-      const errors = validateScaffoldManifest(manifest);
-      expect(errors).to.include('Manifest must have "version": "1.0"');
+      expect(errors).to.be.empty;
     });
 
     it('should validate parameter definitions', () => {
@@ -213,7 +206,6 @@ describe('scaffold/validators', () => {
       displayName: 'Test',
       description: 'Test',
       category: 'cartridge',
-      version: '1.0',
       parameters: [
         {
           name: 'requiredString',

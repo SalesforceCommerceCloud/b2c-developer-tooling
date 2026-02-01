@@ -79,10 +79,6 @@ export default class ScaffoldInfo extends BaseCommand<typeof ScaffoldInfo> {
     ui.div({text: 'Source:', width: 15, padding: [0, 2, 0, 0]}, {text: scaffold.source});
     ui.div({text: 'Description:', width: 15, padding: [0, 2, 0, 0]}, {text: scaffold.manifest.description});
 
-    if (scaffold.manifest.tags && scaffold.manifest.tags.length > 0) {
-      ui.div({text: 'Tags:', width: 15, padding: [0, 2, 0, 0]}, {text: scaffold.manifest.tags.join(', ')});
-    }
-
     // Parameters
     if (scaffold.manifest.parameters.length > 0) {
       ui.div({text: '\nParameters:', padding: [1, 0, 0, 0]});

@@ -8,12 +8,8 @@ import type {
   ScaffoldManifest,
   ParameterValidationError,
   ParameterValidationResult,
-  ScaffoldCategory,
   DynamicParameterSource,
 } from './types.js';
-
-/** Valid scaffold categories */
-const VALID_CATEGORIES: ScaffoldCategory[] = ['cartridge', 'custom-api', 'page-designer', 'job', 'metadata'];
 
 /** Valid parameter types */
 const VALID_PARAMETER_TYPES = ['string', 'boolean', 'choice', 'multi-choice'];
@@ -55,12 +51,6 @@ export function validateScaffoldManifest(manifest: unknown): string[] {
 
   if (!m.category || typeof m.category !== 'string') {
     errors.push('Manifest must have a "category" field (string)');
-  } else if (!VALID_CATEGORIES.includes(m.category as ScaffoldCategory)) {
-    errors.push(`Manifest "category" must be one of: ${VALID_CATEGORIES.join(', ')}`);
-  }
-
-  if (!m.version || m.version !== '1.0') {
-    errors.push('Manifest must have "version": "1.0"');
   }
 
   // Parameters validation
