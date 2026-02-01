@@ -120,7 +120,8 @@ export {
 export type {TemplateContext} from './engine.js';
 
 // Executor
-export {generateFromScaffold, previewScaffold} from './executor.js';
+export {generateFromScaffold, previewScaffold, resolveOutputDirectory} from './executor.js';
+export type {ResolveOutputDirectoryOptions} from './executor.js';
 
 // Validators
 export {
@@ -134,3 +135,21 @@ export {
 // Merge utilities
 export {mergeJson, insertAfter, insertBefore, appendContent, prependContent} from './merge.js';
 export type {JsonMergeOptions, TextInsertOptions} from './merge.js';
+
+// Parameter resolution
+export {resolveScaffoldParameters, parseParameterOptions, getParameterSchemas} from './parameter-resolver.js';
+export type {
+  ResolveParametersOptions,
+  ParameterResolutionError,
+  ResolvedParameters,
+  ResolvedParameterSchema,
+} from './parameter-resolver.js';
+
+// Validation
+export {validateEjsSyntax, checkTemplateFiles, checkOrphanedFiles, validateScaffoldDirectory} from './validation.js';
+export type {
+  ValidationIssueSeverity,
+  ValidationIssue,
+  ValidationResult,
+  ValidateScaffoldOptions,
+} from './validation.js';

@@ -3,25 +3,20 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import path from 'node:path';
 import {input, confirm, select, checkbox, search} from '@inquirer/prompts';
 import type {Logger} from '@salesforce/b2c-tooling-sdk';
 import {
   createScaffoldRegistry,
   generateFromScaffold,
   evaluateCondition,
-  type Scaffold,
+  resolveScaffoldParameters,
+  parseParameterOptions,
+  resolveOutputDirectory,
   type ScaffoldParameter,
   type ScaffoldGenerateResult,
   type ScaffoldChoice,
 } from '@salesforce/b2c-tooling-sdk/scaffold';
-import {
-  resolveLocalSource,
-  resolveRemoteSource,
-  isRemoteSource,
-  validateAgainstSource,
-  type SourceResult,
-} from './source-resolver.js';
+import {resolveLocalSource, resolveRemoteSource, isRemoteSource, type SourceResult} from './source-resolver.js';
 
 /**
  * Response type for scaffold generation.
@@ -88,35 +83,76 @@ export async function executeScaffoldGenerate(
   }
 
   // Parse option flags into variables
-  const variables = parseOptions(options.options || []);
+  const providedVariables = parseParameterOptions(options.options || [], scaffold);
 
   // Handle --name shorthand for the first string parameter
   if (options.name) {
     const firstStringParam = scaffold.manifest.parameters.find((p) => p.type === 'string');
     if (firstStringParam) {
-      variables[firstStringParam.name] = options.name;
+      providedVariables[firstStringParam.name] = options.name;
     }
   }
 
-  // Collect missing parameters interactively (unless --force)
-  const resolvedVariables = await collectParameters(scaffold, variables, force, projectRoot, ctx);
+  // Resolve parameters using SDK, then prompt for any missing
+  const isTTY = process.stdin.isTTY && process.stdout.isTTY;
+  const interactive = !force && isTTY;
 
-  // Determine output directory: explicit flag > scaffold default > projectRoot
-  let outputDir: string;
+  const resolved = await resolveScaffoldParameters(scaffold, {
+    providedVariables,
+    projectRoot,
+    useDefaults: !interactive,
+  });
+
+  // Report any validation errors
+  for (const error of resolved.errors) {
+    ctx.error(error.message);
+  }
+
+  // Check for missing required parameters in non-interactive mode
+  if (!interactive) {
+    const missingRequired = resolved.missingParameters.filter((p) => p.required);
+    if (missingRequired.length > 0) {
+      ctx.error(`Missing required parameter: ${missingRequired[0].name}`);
+    }
+  }
+
+  // Prompt for any missing parameters in interactive mode
+  const resolvedVariables = {...resolved.variables};
+  if (interactive && resolved.missingParameters.length > 0) {
+    for (const param of resolved.missingParameters) {
+      // Re-check condition since earlier params may have been filled in
+      if (param.when && !evaluateCondition(param.when, resolvedVariables)) {
+        continue;
+      }
+
+      // eslint-disable-next-line no-await-in-loop
+      const value = await promptForParameter(param, projectRoot, ctx);
+      if (value !== undefined) {
+        resolvedVariables[param.name] = value;
+
+        // Set companion path variable for cartridges source
+        if (param.source === 'cartridges' && typeof value === 'string') {
+          const result = resolveLocalSource('cartridges', projectRoot);
+          const cartridgePath = result.pathMap?.get(value);
+          if (cartridgePath) {
+            resolvedVariables[`${param.name}Path`] = cartridgePath;
+          }
+        }
+      }
+    }
+  }
+
+  // Resolve output directory using SDK function
   ctx.logger.trace(
     {flagOutput: options.output, defaultOutputDir: scaffold.manifest.defaultOutputDir},
     'Resolving output directory',
   );
-  if (options.output) {
-    outputDir = path.resolve(projectRoot, options.output);
-    ctx.logger.debug({outputDir, source: 'flag'}, 'Using output directory from --output flag');
-  } else if (scaffold.manifest.defaultOutputDir) {
-    outputDir = path.resolve(projectRoot, scaffold.manifest.defaultOutputDir);
-    ctx.logger.debug({outputDir, source: 'scaffold'}, 'Using output directory from scaffold defaultOutputDir');
-  } else {
-    outputDir = projectRoot;
-    ctx.logger.debug({outputDir, source: 'projectRoot'}, 'Using project root as output');
-  }
+  const outputDir = resolveOutputDirectory({
+    outputDir: options.output,
+    scaffold,
+    projectRoot,
+  });
+  ctx.logger.debug({outputDir}, 'Resolved output directory');
 
   if (dryRun) {
     ctx.log('Dry run - no files will be written');
@@ -177,115 +213,6 @@ export async function executeScaffoldGenerate(
   }
 
   return response;
-}
-
-/**
- * Parse --option flags into a variables object.
- */
-function parseOptions(options: string[]): Record<string, boolean | string | string[]> {
-  const variables: Record<string, boolean | string | string[]> = {};
-
-  for (const opt of options) {
-    const eqIndex = opt.indexOf('=');
-    if (eqIndex === -1) {
-      variables[opt] = true;
-    } else {
-      const key = opt.slice(0, Math.max(0, eqIndex));
-      const value = opt.slice(Math.max(0, eqIndex + 1));
-      if (value === 'true') {
-        variables[key] = true;
-      } else if (value === 'false') {
-        variables[key] = false;
-      } else {
-        variables[key] = value;
-      }
-    }
-  }
-
-  return variables;
-}
-
-/**
- * Collect missing parameters interactively.
- */
-async function collectParameters(
-  scaffold: Scaffold,
-  existingVariables: Record<string, boolean | string | string[]>,
-  force: boolean,
-  projectRoot: string,
-  ctx: CommandContext,
-): Promise<Record<string, boolean | string | string[]>> {
-  const variables = {...existingVariables};
-  const isTTY = process.stdin.isTTY && process.stdout.isTTY;
-  const interactive = !force && isTTY;
-
-  // Cache for cartridge paths (only resolved once if needed)
-  let cartridgePathMap: Map<string, string> | undefined;
-
-  for (const param of scaffold.manifest.parameters) {
-    // Check if conditional parameter should be evaluated
-    if (param.when && !evaluateCondition(param.when, variables)) {
-      continue;
-    }
-
-    // If value was already provided via --option, validate it against source
-    if (variables[param.name] !== undefined && param.source) {
-      const providedValue = String(variables[param.name]);
-      const validation = validateAgainstSource(param.source, providedValue, projectRoot);
-      if (!validation.valid) {
-        const availableList = validation.availableChoices?.join(', ') || 'none';
-        ctx.error(`Invalid value "${providedValue}" for ${param.name}. Available ${param.source}: ${availableList}`);
-      }
-      // Set companion path variable for cartridges source
-      if (param.source === 'cartridges') {
-        if (!cartridgePathMap) {
-          const result = resolveLocalSource('cartridges', projectRoot);
-          cartridgePathMap = result.pathMap;
-        }
-        const cartridgePath = cartridgePathMap?.get(providedValue);
-        if (cartridgePath) {
-          variables[`${param.name}Path`] = cartridgePath;
-        }
-      }
-      continue;
-    }
-
-    // Skip if already provided
-    if (variables[param.name] !== undefined) {
-      continue;
-    }
-
-    // Use default if not interactive
-    if (!interactive) {
-      if (param.default !== undefined) {
-        variables[param.name] = param.default;
-      } else if (param.required) {
-        ctx.error(`Missing required parameter: ${param.name}`);
-      }
-      continue;
-    }
-
-    // Prompt for value
-    // eslint-disable-next-line no-await-in-loop
-    const value = await promptForParameter(param, projectRoot, ctx);
-    if (value !== undefined) {
-      variables[param.name] = value;
-
-      // Set companion path variable for cartridges source
-      if (param.source === 'cartridges' && typeof value === 'string') {
-        if (!cartridgePathMap) {
-          const result = resolveLocalSource('cartridges', projectRoot);
-          cartridgePathMap = result.pathMap;
-        }
-        const cartridgePath = cartridgePathMap?.get(value);
-        if (cartridgePath) {
-          variables[`${param.name}Path`] = cartridgePath;
-        }
-      }
-    }
-  }
-
-  return variables;
 }
 
 /**

@@ -18,6 +18,7 @@ import type {
 } from './types.js';
 import {SCAFFOLDS_DATA_DIR} from './types.js';
 import {validateScaffoldManifest} from './validators.js';
+import {getLogger} from '../logging/logger.js';
 
 /**
  * Load a scaffold manifest from a directory
@@ -35,7 +36,8 @@ async function loadScaffold(scaffoldDir: string, source: ScaffoldSource): Promis
     // Validate manifest
     const errors = validateScaffoldManifest(manifest);
     if (errors.length > 0) {
-      console.warn(`Invalid scaffold manifest at ${manifestPath}:`, errors);
+      const logger = getLogger();
+      logger.warn({manifestPath, errors}, 'Invalid scaffold manifest');
       return null;
     }
 
@@ -45,7 +47,8 @@ async function loadScaffold(scaffoldDir: string, source: ScaffoldSource): Promis
     try {
       await fs.access(filesPath);
     } catch {
-      console.warn(`Scaffold at ${scaffoldDir} has no files/ directory`);
+      const logger = getLogger();
+      logger.warn({scaffoldDir}, 'Scaffold has no files/ directory');
       return null;
     }
 

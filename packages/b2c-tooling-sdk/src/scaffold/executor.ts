@@ -20,6 +20,44 @@ import {evaluateCondition, validateParameters} from './validators.js';
 import {mergeJson, insertAfter, insertBefore, appendContent, prependContent} from './merge.js';
 
 /**
+ * Options for resolving output directory.
+ */
+export interface ResolveOutputDirectoryOptions {
+  /** Explicit output directory override */
+  outputDir?: string;
+  /** Scaffold with potential defaultOutputDir */
+  scaffold?: Scaffold;
+  /** Project root directory (defaults to cwd) */
+  projectRoot?: string;
+}
+
+/**
+ * Resolve output directory with priority:
+ * 1. Explicit outputDir option
+ * 2. Scaffold's defaultOutputDir
+ * 3. Project root / cwd
+ *
+ * @param options - Resolution options
+ * @returns Resolved absolute output directory path
+ */
+export function resolveOutputDirectory(options: ResolveOutputDirectoryOptions): string {
+  const {outputDir, scaffold, projectRoot = process.cwd()} = options;
+
+  if (outputDir) {
+    // Explicit output directory takes priority
+    return path.resolve(projectRoot, outputDir);
+  }
+
+  if (scaffold?.manifest.defaultOutputDir) {
+    // Scaffold's default output directory
+    return path.resolve(projectRoot, scaffold.manifest.defaultOutputDir);
+  }
+
+  // Fall back to project root
+  return projectRoot;
+}
+
+/**
  * Check if a file exists
  */
 async function fileExists(filePath: string): Promise<boolean> {
