@@ -25,6 +25,12 @@ export interface AuthStrategy {
    * Optional: Helper for legacy clients (like a strict WebDAV lib) that need the raw header.
    */
   getAuthorizationHeader?(): Promise<string>;
+
+  /**
+   * Optional: Invalidates the cached token, forcing re-authentication on next request.
+   * Used by middleware to retry requests after receiving a 401 response.
+   */
+  invalidateToken?(): void;
 }
 
 /**
