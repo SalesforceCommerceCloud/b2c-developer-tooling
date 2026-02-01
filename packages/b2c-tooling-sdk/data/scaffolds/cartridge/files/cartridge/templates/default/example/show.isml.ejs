@@ -1,0 +1,11 @@
+<isdecorate template="common/layout/page">
+    <isscript>
+        var assets = require('*/cartridge/scripts/assets');
+        assets.addCss('/css/example.css');
+    </isscript>
+
+    <div class="container">
+        <h1>${pdict.message}</h1>
+        <p>This is an example page from the <%= cartridgeName %> cartridge.</p>
+    </div>
+</isdecorate>

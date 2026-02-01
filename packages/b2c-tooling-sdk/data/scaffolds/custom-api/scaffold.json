@@ -1,0 +1,62 @@
+{
+  "name": "custom-api",
+  "displayName": "Custom SCAPI",
+  "description": "Create a custom Shopper or Data API with OpenAPI schema",
+  "category": "custom-api",
+  "version": "1.0",
+  "tags": ["api", "scapi", "custom-api", "rest", "openapi"],
+  "parameters": [
+    {
+      "name": "apiName",
+      "prompt": "What is the API name?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "validationMessage": "API name must be kebab-case (lowercase letters, numbers, hyphens)"
+    },
+    {
+      "name": "apiType",
+      "prompt": "What type of API is this?",
+      "type": "choice",
+      "required": true,
+      "default": "shopper",
+      "choices": [
+        { "value": "shopper", "label": "Shopper API (c/shopper)" },
+        { "value": "data", "label": "Data API (c/data)" }
+      ]
+    },
+    {
+      "name": "apiDescription",
+      "prompt": "Describe your API:",
+      "type": "string",
+      "required": false,
+      "default": "A custom B2C Commerce API"
+    },
+    {
+      "name": "cartridgeName",
+      "prompt": "Which cartridge should contain this API?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    },
+    {
+      "name": "includeExampleEndpoints",
+      "prompt": "Include example endpoints?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    }
+  ],
+  "files": [
+    {
+      "template": "api.raml.ejs",
+      "destination": "{{cartridgeName}}/cartridge/experience/apis/{{apiName}}.raml"
+    },
+    {
+      "template": "api.js.ejs",
+      "destination": "{{cartridgeName}}/cartridge/controllers/api/{{pascalCase apiName}}.js"
+    }
+  ],
+  "postInstructions": "Custom API '<%= apiName %>' has been created in cartridge '<%= cartridgeName %>'.\n\nNext steps:\n1. Upload the cartridge: b2c code deploy <%= cartridgeName %>\n2. Activate the code version containing the API\n3. The API will be available at:\n   <%= apiType === 'shopper' ? '/s/{site}/dw/shop/v1/custom/' : '/s/-/dw/data/v1/custom/' %><%= apiName %>"
+}

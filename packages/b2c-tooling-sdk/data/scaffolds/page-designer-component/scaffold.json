@@ -1,0 +1,67 @@
+{
+  "name": "page-designer-component",
+  "displayName": "Page Designer Component",
+  "description": "Create a Page Designer component with meta JSON, script, and template",
+  "category": "page-designer",
+  "version": "1.0",
+  "tags": ["page-designer", "component", "cms", "content", "visual"],
+  "parameters": [
+    {
+      "name": "componentId",
+      "prompt": "What is the component ID?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-zA-Z0-9_]*$",
+      "validationMessage": "Component ID must start with a lowercase letter and contain only letters, numbers, and underscores"
+    },
+    {
+      "name": "componentName",
+      "prompt": "What is the display name for the component?",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "componentGroup",
+      "prompt": "Which group should the component appear in?",
+      "type": "choice",
+      "required": true,
+      "choices": [
+        { "value": "content", "label": "Content (text, images, banners)" },
+        { "value": "commerce", "label": "Commerce (products, categories)" },
+        { "value": "layouts", "label": "Layouts (grids, containers)" },
+        { "value": "custom", "label": "Custom" }
+      ],
+      "default": "content"
+    },
+    {
+      "name": "hasRegions",
+      "prompt": "Does this component have regions (nested components)?",
+      "type": "boolean",
+      "required": false,
+      "default": false
+    },
+    {
+      "name": "cartridgeName",
+      "prompt": "Which cartridge should contain this component?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    }
+  ],
+  "files": [
+    {
+      "template": "component.json.ejs",
+      "destination": "{{cartridgeName}}/cartridge/experience/components/{{componentGroup}}/{{componentId}}.json"
+    },
+    {
+      "template": "component.js.ejs",
+      "destination": "{{cartridgeName}}/cartridge/experience/components/{{componentGroup}}/{{componentId}}.js"
+    },
+    {
+      "template": "component.isml.ejs",
+      "destination": "{{cartridgeName}}/cartridge/templates/default/experience/components/{{componentGroup}}/{{componentId}}.isml"
+    }
+  ],
+  "postInstructions": "Page Designer component '<%= componentId %>' has been created in '<%= cartridgeName %>'.\n\nComponent files:\n- Meta: experience/components/<%= componentGroup %>/<%= componentId %>.json\n- Script: experience/components/<%= componentGroup %>/<%= componentId %>.js\n- Template: templates/default/experience/components/<%= componentGroup %>/<%= componentId %>.isml\n\nNext steps:\n1. Upload the cartridge: b2c code deploy <%= cartridgeName %>\n2. The component will appear in Page Designer under '<%= componentGroup.charAt(0).toUpperCase() + componentGroup.slice(1) %>'"
+}

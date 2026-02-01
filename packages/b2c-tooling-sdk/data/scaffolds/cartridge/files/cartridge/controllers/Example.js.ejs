@@ -1,0 +1,19 @@
+'use strict';
+
+/**
+ * Example controller for <%= cartridgeName %>
+ */
+
+var server = require('server');
+
+/**
+ * Example-Show: Renders an example page
+ */
+server.get('Show', function (req, res, next) {
+    res.render('example/show', {
+        message: 'Hello from <%= cartridgeName %>!'
+    });
+    next();
+});
+
+module.exports = server.exports();

@@ -1,0 +1,96 @@
+{
+  "name": "cartridge",
+  "displayName": "Cartridge",
+  "description": "Create a new B2C Commerce cartridge with standard structure",
+  "category": "cartridge",
+  "version": "1.0",
+  "tags": ["cartridge", "sfra", "b2c", "commerce"],
+  "parameters": [
+    {
+      "name": "cartridgeName",
+      "prompt": "What is the cartridge name?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    },
+    {
+      "name": "cartridgeDescription",
+      "prompt": "Describe your cartridge:",
+      "type": "string",
+      "required": false,
+      "default": "A custom B2C Commerce cartridge"
+    },
+    {
+      "name": "includeControllers",
+      "prompt": "Include controllers directory?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "includeModels",
+      "prompt": "Include models directory?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "includeScripts",
+      "prompt": "Include scripts directory?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "includeTemplates",
+      "prompt": "Include templates directory?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "includeStatic",
+      "prompt": "Include static assets directory?",
+      "type": "boolean",
+      "required": false,
+      "default": false
+    }
+  ],
+  "files": [
+    {
+      "template": ".project.ejs",
+      "destination": "{{cartridgeName}}/.project"
+    },
+    {
+      "template": "cartridge/cartridge.properties.ejs",
+      "destination": "{{cartridgeName}}/cartridge/{{cartridgeName}}.properties"
+    },
+    {
+      "template": "cartridge/controllers/Example.js.ejs",
+      "destination": "{{cartridgeName}}/cartridge/controllers/Example.js",
+      "condition": "includeControllers"
+    },
+    {
+      "template": "cartridge/models/example.js.ejs",
+      "destination": "{{cartridgeName}}/cartridge/models/example.js",
+      "condition": "includeModels"
+    },
+    {
+      "template": "cartridge/scripts/helpers/exampleHelpers.js.ejs",
+      "destination": "{{cartridgeName}}/cartridge/scripts/helpers/exampleHelpers.js",
+      "condition": "includeScripts"
+    },
+    {
+      "template": "cartridge/templates/default/example/show.isml.ejs",
+      "destination": "{{cartridgeName}}/cartridge/templates/default/example/show.isml",
+      "condition": "includeTemplates"
+    },
+    {
+      "template": "cartridge/static/default/css/example.css",
+      "destination": "{{cartridgeName}}/cartridge/static/default/css/example.css",
+      "condition": "includeStatic"
+    }
+  ],
+  "postInstructions": "Cartridge '<%= cartridgeName %>' has been created.\n\nNext steps:\n1. Add the cartridge to your cartridge path in Business Manager\n2. Upload the cartridge using: b2c code deploy <%= cartridgeName %>"
+}

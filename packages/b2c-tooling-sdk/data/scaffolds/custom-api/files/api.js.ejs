@@ -1,0 +1,72 @@
+'use strict';
+
+/**
+ * Custom API controller for <%= apiName %>
+ * Generated on <%= date %>
+ */
+
+var Response = require('dw/system/Response');
+
+<% if (includeExampleEndpoints) { %>
+/**
+ * GET /hello
+ * Returns a hello message
+ */
+exports.getHello = function () {
+    Response.renderJSON({
+        message: 'Hello from <%= apiName %>!'
+    });
+};
+
+/**
+ * GET /items
+ * Get a list of items
+ */
+exports.getItems = function () {
+    var limit = request.httpParameterMap.limit.intValue || 10;
+    var offset = request.httpParameterMap.offset.intValue || 0;
+
+    // TODO: Replace with actual data retrieval logic
+    var items = [
+        { id: 'item-1', name: 'Example Item' }
+    ];
+
+    Response.renderJSON({
+        count: items.length,
+        total: items.length,
+        data: items.slice(offset, offset + limit)
+    });
+};
+
+/**
+ * GET /items/{itemId}
+ * Get a specific item by ID
+ */
+exports.getItem = function () {
+    var itemId = request.httpParameterMap.itemId.stringValue;
+
+    // TODO: Replace with actual data retrieval logic
+    if (itemId === 'item-1') {
+        Response.renderJSON({
+            id: 'item-1',
+            name: 'Example Item',
+            description: 'An example item'
+        });
+    } else {
+        response.setStatus(404);
+        Response.renderJSON({
+            type: 'ItemNotFoundError',
+            message: 'Item not found'
+        });
+    }
+};
+<% } else { %>
+/**
+ * Example endpoint - replace with your implementation
+ */
+exports.example = function () {
+    Response.renderJSON({
+        message: 'Hello from <%= apiName %>!'
+    });
+};
+<% } %>

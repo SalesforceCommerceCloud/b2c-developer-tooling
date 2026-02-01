@@ -1,0 +1,65 @@
+{
+  "name": "job-step",
+  "displayName": "Custom Job Step",
+  "description": "Create a custom job step with steptypes.json registration",
+  "category": "job",
+  "version": "1.0",
+  "tags": ["job", "step", "batch", "task", "chunk", "pipeline"],
+  "parameters": [
+    {
+      "name": "stepId",
+      "prompt": "What is the step ID?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-zA-Z0-9.]*$",
+      "validationMessage": "Step ID must start with a lowercase letter (e.g., custom.MyStep)"
+    },
+    {
+      "name": "stepType",
+      "prompt": "What type of job step?",
+      "type": "choice",
+      "required": true,
+      "choices": [
+        { "value": "task", "label": "Task-oriented (simple, single execution)" },
+        { "value": "chunk", "label": "Chunk-oriented (batch processing with read/process/write)" }
+      ],
+      "default": "task"
+    },
+    {
+      "name": "stepDescription",
+      "prompt": "Describe what this step does:",
+      "type": "string",
+      "required": false,
+      "default": "A custom job step"
+    },
+    {
+      "name": "cartridgeName",
+      "prompt": "Which cartridge should contain this job step?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    }
+  ],
+  "files": [
+    {
+      "template": "step-task.js.ejs",
+      "destination": "{{cartridgeName}}/cartridge/scripts/jobsteps/{{camelCase stepId}}.js",
+      "condition": "stepType=task"
+    },
+    {
+      "template": "step-chunk.js.ejs",
+      "destination": "{{cartridgeName}}/cartridge/scripts/jobsteps/{{camelCase stepId}}.js",
+      "condition": "stepType=chunk"
+    }
+  ],
+  "modifications": [
+    {
+      "target": "{{cartridgeName}}/steptypes.json",
+      "type": "json-merge",
+      "contentTemplate": "steptypes-entry.json.ejs",
+      "jsonPath": "step-types"
+    }
+  ],
+  "postInstructions": "Job step '<%= stepId %>' has been created in '<%= cartridgeName %>'.\n\nStep type: <%= stepType %>\n\nNext steps:\n1. Implement the step logic in cartridge/scripts/jobsteps/<%= camelCase(stepId) %>.js\n2. Upload the cartridge: b2c code deploy <%= cartridgeName %>\n3. Create a job in Business Manager using step type '<%= stepId %>'"
+}

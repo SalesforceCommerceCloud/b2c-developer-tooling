@@ -1,0 +1,98 @@
+'use strict';
+
+/**
+ * <%= hookName %> Hook Implementation
+ *
+ * Hook point: <%= hookPoint %>
+ *
+ * @module scripts/hooks/<%= hookName %>
+ */
+
+var Logger = require('dw/system/Logger');
+
+var log = Logger.getLogger('<%= hookName %>', '<%= cartridgeName %>');
+
+<% if (hookType === 'ocapi') { %>
+/**
+ * OCAPI Hook - Called before/after OCAPI operations
+ *
+ * @param {dw.order.Basket|dw.order.Order|Object} object - The object being processed
+ * @param {Object} doc - The OCAPI document
+ * @returns {dw.system.Status} - Status object
+ */
+exports.<%= hookName %> = function (object, doc) {
+    log.info('<%= hookName %> hook called');
+
+    try {
+        // TODO: Implement hook logic
+        // - Modify doc to add/change response fields
+        // - Validate/modify object before processing
+
+    } catch (e) {
+        log.error('<%= hookName %> hook error: ' + e.message);
+        return new (require('dw/system/Status'))(
+            require('dw/system/Status').ERROR,
+            '<%= hookName.toUpperCase() %>_ERROR',
+            e.message
+        );
+    }
+
+    return new (require('dw/system/Status'))(require('dw/system/Status').OK);
+};
+<% } else if (hookType === 'scapi') { %>
+/**
+ * SCAPI Hook - Called for Shopper API extensions
+ *
+ * @param {dw.order.Basket|dw.order.Order|Object} object - The object being processed
+ * @param {Object} scriptResponse - Response object to populate
+ * @returns {dw.system.Status} - Status object
+ */
+exports.<%= hookName %> = function (object, scriptResponse) {
+    log.info('<%= hookName %> SCAPI hook called');
+
+    try {
+        // TODO: Implement hook logic
+        // - Add custom properties to scriptResponse
+        // - Validate/enrich the response
+
+    } catch (e) {
+        log.error('<%= hookName %> hook error: ' + e.message);
+        return new (require('dw/system/Status'))(
+            require('dw/system/Status').ERROR,
+            '<%= hookName.toUpperCase() %>_ERROR',
+            e.message
+        );
+    }
+
+    return new (require('dw/system/Status'))(require('dw/system/Status').OK);
+};
+<% } else { %>
+/**
+ * System Hook Implementation
+ *
+ * @param {dw.order.Basket|dw.order.Order|dw.customer.Customer|Object} object - The object being processed
+ * @returns {dw.system.Status} - Status object
+ */
+exports.<%= hookName %> = function (object) {
+    log.info('<%= hookName %> system hook called');
+
+    try {
+        // TODO: Implement hook logic based on extension point
+        // Common extension points:
+        // - dw.order.calculate: Basket/order calculation
+        // - dw.order.createOrder: Order creation
+        // - dw.customer.registration: Customer registration
+        // - dw.extensions.applepay: Apple Pay processing
+
+    } catch (e) {
+        log.error('<%= hookName %> hook error: ' + e.message);
+        return new (require('dw/system/Status'))(
+            require('dw/system/Status').ERROR,
+            '<%= hookName.toUpperCase() %>_ERROR',
+            e.message
+        );
+    }
+
+    return new (require('dw/system/Status'))(require('dw/system/Status').OK);
+};
+<% } %>
