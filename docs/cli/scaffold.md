@@ -260,8 +260,9 @@ b2c scaffold validate ./my-scaffold --strict
 | `cartridge` | cartridge | B2C cartridge with standard directory structure |
 | `controller` | cartridge | SFRA controller with route handlers and middleware |
 | `hook` | cartridge | Hook implementation with hooks.json registration |
-| `custom-api` | custom-api | Custom SCAPI endpoint with OAS 3.0 schema |
-| `job-step` | job | Custom job step with steptypes.json registration |
-| `page-designer-component` | page-designer | Page Designer component with meta/script/template |
+| `service` | cartridge | B2C web service using LocalServiceRegistry |
+| `custom-api` | cartridge | Custom SCAPI endpoint with OAS 3.0 schema |
+| `job-step` | cartridge | Custom job step with steptypes.json registration |
+| `page-designer-component` | cartridge | Page Designer component with meta/script/template |
 
 Use `b2c scaffold info <id>` to see the parameters for each scaffold.

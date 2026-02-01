@@ -28,9 +28,10 @@ The CLI includes scaffolds for common B2C development tasks:
 | `cartridge` | cartridge | Complete B2C cartridge with standard directory structure |
 | `controller` | cartridge | SFRA controller with route handlers and middleware |
 | `hook` | cartridge | Hook implementation with hooks.json registration |
-| `custom-api` | custom-api | Custom SCAPI endpoint with OAS 3.0 schema |
-| `job-step` | job | Custom job step with steptypes.json registration |
-| `page-designer-component` | page-designer | Page Designer component with meta/script/template |
+| `service` | cartridge | B2C web service using LocalServiceRegistry |
+| `custom-api` | cartridge | Custom SCAPI endpoint with OAS 3.0 schema |
+| `job-step` | cartridge | Custom job step with steptypes.json registration |
+| `page-designer-component` | cartridge | Page Designer component with meta/script/template |
 
 ## Using Scaffolds
 
@@ -144,6 +145,26 @@ b2c scaffold hook \
   --option hookType=ocapi \
   --option hookPoint=dw.ocapi.shop.basket.beforePOST \
   --option cartridgeName=app_custom
+```
+
+### service
+
+Creates a B2C Commerce web service using LocalServiceRegistry.
+
+**Parameters:**
+- `serviceName` (required) - Service name in PascalCase (e.g., `PaymentGateway`)
+- `cartridgeName` (required) - Target cartridge (auto-discovered from project)
+- `serviceType` (required) - Service type: HTTP, SOAP, SFTP (default: HTTP)
+- `authType` - Authentication method: NONE, BASIC, BEARER, API_KEY (default: NONE, HTTP only)
+- `includeErrorHandling` - Include robust error handling (default: true)
+- `includeMocking` - Include mock callback for testing (default: false)
+
+```bash
+b2c scaffold service \
+  --option serviceName=PaymentGateway \
+  --option cartridgeName=app_custom \
+  --option serviceType=HTTP \
+  --option authType=BASIC
 ```
 
 ### custom-api
@@ -469,3 +490,110 @@ When multiple scaffolds have the same ID, later sources take precedence:
 4. Project scaffolds (`.b2c/scaffolds/`) (highest priority)
 
 This allows you to override built-in scaffolds with project-specific versions.
+
+## Programmatic Usage (SDK)
+
+The scaffold functionality is also available as a programmatic API for IDE integrations, MCP servers, and custom tooling.
+
+### Discovery and Generation
+
+```typescript
+import {
+  createScaffoldRegistry,
+  generateFromScaffold,
+  resolveScaffoldParameters,
+  parseParameterOptions,
+  resolveOutputDirectory,
+} from '@salesforce/b2c-tooling-sdk/scaffold';
+
+// Create registry and discover scaffolds
+const registry = createScaffoldRegistry();
+const scaffolds = await registry.getScaffolds({ projectRoot: '/path/to/project' });
+const scaffold = await registry.getScaffold('service', { projectRoot: '/path/to/project' });
+
+// Parse command-line style options
+const providedVariables = parseParameterOptions(
+  ['serviceName=PaymentGateway', 'serviceType=HTTP'],
+  scaffold
+);
+
+// Resolve parameters (validate, apply defaults, resolve sources)
+const resolved = await resolveScaffoldParameters(scaffold, {
+  providedVariables,
+  projectRoot: '/path/to/project',
+  useDefaults: true,  // Apply defaults for missing optional params
+});
+
+// Check for errors or missing required parameters
+if (resolved.errors.length > 0) {
+  console.error('Validation errors:', resolved.errors);
+}
+if (resolved.missingParameters.length > 0) {
+  console.log('Missing parameters:', resolved.missingParameters.map(p => p.name));
+}
+
+// Resolve output directory
+const outputDir = resolveOutputDirectory({
+  outputDir: undefined,  // Optional explicit override
+  scaffold,
+  projectRoot: '/path/to/project',
+});
+
+// Generate files
+const result = await generateFromScaffold(scaffold, {
+  outputDir,
+  variables: resolved.variables,
+  dryRun: false,
+  force: false,
+});
+
+console.log('Generated files:', result.files);
+console.log('Post instructions:', result.postInstructions);
+```
+
+### Parameter Schema Discovery
+
+For building dynamic UIs or input schemas:
+
+```typescript
+import { getParameterSchemas } from '@salesforce/b2c-tooling-sdk/scaffold';
+
+// Get parameter schemas with resolved choices
+const schemas = await getParameterSchemas(scaffold, {
+  projectRoot: '/path/to/project',
+});
+
+for (const schema of schemas) {
+  console.log(`${schema.parameter.name}: ${schema.parameter.type}`);
+  if (schema.resolvedChoices) {
+    console.log('  Choices:', schema.resolvedChoices.map(c => c.value));
+  }
+  if (schema.warning) {
+    console.log('  Warning:', schema.warning);
+  }
+}
+```
+
+### Validation
+
+```typescript
+import {
+  validateScaffoldDirectory,
+  validateEjsSyntax,
+} from '@salesforce/b2c-tooling-sdk/scaffold';
+
+// Validate a scaffold directory
+const result = await validateScaffoldDirectory('/path/to/scaffold', {
+  strict: false,  // Set true to treat warnings as errors
+});
+
+console.log('Valid:', result.valid);
+console.log('Errors:', result.errors);
+console.log('Warnings:', result.warnings);
+for (const issue of result.issues) {
+  console.log(`${issue.severity}: ${issue.message} (${issue.file})`);
+}
+
+// Validate EJS template syntax directly
+const ejsIssues = validateEjsSyntax('<%= name %>', 'template.ejs');
+```

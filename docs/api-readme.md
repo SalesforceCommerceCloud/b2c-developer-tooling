@@ -29,6 +29,7 @@ The SDK is organized into focused submodules that can be imported individually:
 ├── /operations/mrt  # Managed Runtime bundle operations
 ├── /operations/ods  # On-demand sandbox utilities
 │
+├── /scaffold        # Scaffold discovery, generation, and validation
 ├── /docs            # B2C Script API documentation search
 └── /schemas         # OpenAPI schema utilities
 ```
