@@ -21,8 +21,8 @@ import {
   resolveRemoteSource,
   isRemoteSource,
   validateAgainstSource,
-  type LocalSourceResult,
-} from './source-resolver.js';
+  type SourceResult,
+} from '../../lib/scaffold/source-resolver.js';
 import {t, withDocs} from '../../i18n/index.js';
 
 /**
@@ -483,7 +483,7 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
     }
 
     // Handle local sources
-    const result: LocalSourceResult = resolveLocalSource(param.source, projectRoot);
+    const result: SourceResult = resolveLocalSource(param.source, projectRoot);
 
     return {
       choices: result.choices,

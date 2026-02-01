@@ -4,15 +4,15 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
-import {loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import type {ScaffoldChoice, DynamicParameterSource} from '@salesforce/b2c-tooling-sdk/scaffold';
-import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
+import {findCartridges} from '../operations/code/cartridges.js';
+import type {B2CInstance} from '../instance/index.js';
+import type {OcapiComponents} from '../clients/index.js';
+import type {ScaffoldChoice, DynamicParameterSource, SourceResult} from './types.js';
 
 /**
- * Common hook extension points for B2C Commerce.
+ * Common B2C Commerce hook extension points.
  */
-const HOOK_POINTS: ScaffoldChoice[] = [
+export const HOOK_POINTS: ScaffoldChoice[] = [
   {value: 'dw.order.calculate', label: 'Order Calculate'},
   {value: 'dw.order.calculateShipping', label: 'Calculate Shipping'},
   {value: 'dw.order.createOrder', label: 'Create Order'},
@@ -32,23 +32,14 @@ const HOOK_POINTS: ScaffoldChoice[] = [
 ];
 
 /**
- * Result of resolving a local source.
- */
-export interface LocalSourceResult {
-  /** Available choices */
-  choices: ScaffoldChoice[];
-  /** For cartridges: map of cartridge name to absolute path */
-  pathMap?: Map<string, string>;
-}
-
-/**
- * Resolves a local (non-remote) parameter source.
+ * Resolve a local (non-remote) parameter source.
+ * Does not require authentication.
  *
  * @param source - The source type to resolve
  * @param projectRoot - Project root directory for cartridge discovery
  * @returns Resolved choices and optional path mapping
  */
-export function resolveLocalSource(source: DynamicParameterSource, projectRoot: string): LocalSourceResult {
+export function resolveLocalSource(source: DynamicParameterSource, projectRoot: string): SourceResult {
   switch (source) {
     case 'cartridges': {
       const cartridges = findCartridges(projectRoot);
@@ -68,22 +59,20 @@ export function resolveLocalSource(source: DynamicParameterSource, projectRoot: 
 }
 
 /**
- * Resolves a remote parameter source (requires B2C instance connection).
+ * Resolve a remote parameter source.
+ * Requires authenticated B2CInstance (follows SDK operation pattern).
  *
- * @param source - The source type to resolve
+ * @param source - The source type
+ * @param instance - Authenticated B2C instance
  * @returns Promise resolving to choices array
- * @throws Error if authentication fails or API call fails
+ * @throws Error if API call fails
  */
-export async function resolveRemoteSource(source: DynamicParameterSource): Promise<ScaffoldChoice[]> {
+export async function resolveRemoteSource(
+  source: DynamicParameterSource,
+  instance: B2CInstance,
+): Promise<ScaffoldChoice[]> {
   switch (source) {
     case 'sites': {
-      const config = loadConfig({}, {configPath: undefined});
-
-      if (!config.hasB2CInstanceConfig() || !config.hasOAuthConfig()) {
-        throw new Error('B2C instance configuration with OAuth required for sites source');
-      }
-
-      const instance = config.createB2CInstance();
       const {data, error} = await instance.ocapi.GET('/sites', {
         params: {query: {select: '(**)'}},
       });
@@ -105,7 +94,7 @@ export async function resolveRemoteSource(source: DynamicParameterSource): Promi
 }
 
 /**
- * Checks if a source type requires remote API access.
+ * Check if a source requires remote API access.
  *
  * @param source - The source type to check
  * @returns True if the source requires remote access
@@ -115,7 +104,7 @@ export function isRemoteSource(source: DynamicParameterSource): boolean {
 }
 
 /**
- * Validates a value against a dynamic source.
+ * Validate a value against a dynamic source (local only).
  * Used for non-interactive validation of provided values.
  *
  * @param source - The source type

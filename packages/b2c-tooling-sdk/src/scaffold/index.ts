@@ -89,9 +89,19 @@ export type {
   ParameterValidationError,
   ParameterValidationResult,
   TemplateHelpers,
+  SourceResult,
 } from './types.js';
 
 export {SCAFFOLDS_DATA_DIR} from './types.js';
+
+// Source resolution
+export {
+  HOOK_POINTS,
+  resolveLocalSource,
+  resolveRemoteSource,
+  isRemoteSource,
+  validateAgainstSource,
+} from './sources.js';
 
 // Registry
 export {ScaffoldRegistry, createScaffoldRegistry} from './registry.js';

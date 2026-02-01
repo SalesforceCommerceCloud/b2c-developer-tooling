@@ -309,3 +309,13 @@ export interface TemplateHelpers {
   /** Generate a UUID v4 */
   uuid: () => string;
 }
+
+/**
+ * Result of resolving a dynamic parameter source.
+ */
+export interface SourceResult {
+  /** Available choices */
+  choices: ScaffoldChoice[];
+  /** For cartridges: map of name to absolute path */
+  pathMap?: Map<string, string>;
+}
