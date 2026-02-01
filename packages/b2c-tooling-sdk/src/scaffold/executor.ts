@@ -85,8 +85,11 @@ export async function generateFromScaffold(
     }
 
     const templatePath = path.join(scaffold.filesPath, mapping.template);
-    const destRelative = engine.renderPath(mapping.destination);
-    const destAbsolute = path.join(outputDir, destRelative);
+    const destRendered = engine.renderPath(mapping.destination);
+    // If destination is absolute path, use it directly; otherwise join with outputDir
+    const destAbsolute = path.isAbsolute(destRendered) ? destRendered : path.join(outputDir, destRendered);
+    // For display purposes, show path relative to cwd
+    const destRelative = path.relative(process.cwd(), destAbsolute) || destAbsolute;
 
     // Check if destination exists
     const exists = await fileExists(destAbsolute);
@@ -156,8 +159,9 @@ export async function generateFromScaffold(
         continue;
       }
 
-      const targetRelative = engine.renderPath(modification.target);
-      const targetAbsolute = path.join(outputDir, targetRelative);
+      const targetRendered = engine.renderPath(modification.target);
+      const targetAbsolute = path.isAbsolute(targetRendered) ? targetRendered : path.join(outputDir, targetRendered);
+      const targetRelative = path.relative(process.cwd(), targetAbsolute) || targetAbsolute;
 
       // Get modification content
       let modContent: string;

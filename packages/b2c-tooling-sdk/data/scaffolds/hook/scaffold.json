@@ -47,16 +47,16 @@
   "files": [
     {
       "template": "hook.js.ejs",
-      "destination": "{{cartridgeName}}/cartridge/scripts/hooks/{{hookName}}.js"
+      "destination": "{{cartridgeNamePath}}/cartridge/scripts/hooks/{{hookName}}.js"
     }
   ],
   "modifications": [
     {
-      "target": "{{cartridgeName}}/cartridge/hooks.json",
+      "target": "{{cartridgeNamePath}}/cartridge/hooks.json",
       "type": "json-merge",
       "contentTemplate": "hooks-entry.json.ejs",
       "jsonPath": "hooks"
     }
   ],
-  "postInstructions": "Hook '<%= hookName %>' has been created in '<%= cartridgeName %>'.\n\nHook point: <%= hookPoint %>\n\nNext steps:\n1. Implement the hook logic in cartridge/scripts/hooks/<%= hookName %>.js\n2. Upload the cartridge: b2c code deploy <%= cartridgeName %>\n3. Ensure <%= cartridgeName %> is in your cartridge path"
+  "postInstructions": "Hook '<%= hookName %>' has been created in '<%= cartridgeName %>'.\n\nHook point: <%= hookPoint %>\n\nNext steps:\n1. Implement the hook logic in cartridge/scripts/hooks/<%= hookName %>.js\n2. Upload the cartridge: b2c code deploy\n3. Ensure <%= cartridgeName %> is in your cartridge path"
 }

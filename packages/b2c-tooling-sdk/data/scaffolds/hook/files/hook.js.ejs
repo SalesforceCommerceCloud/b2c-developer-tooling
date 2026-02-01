@@ -9,6 +9,7 @@
  */
 
 var Logger = require('dw/system/Logger');
+var Status = require('dw/system/Status');
 
 var log = Logger.getLogger('<%= hookName %>', '<%= cartridgeName %>');
 
@@ -30,14 +31,14 @@ exports.<%= hookName %> = function (object, doc) {
 
     } catch (e) {
         log.error('<%= hookName %> hook error: ' + e.message);
-        return new (require('dw/system/Status'))(
-            require('dw/system/Status').ERROR,
+        return new Status(
+            Status.ERROR,
             '<%= hookName.toUpperCase() %>_ERROR',
             e.message
         );
     }
 
-    return new (require('dw/system/Status'))(require('dw/system/Status').OK);
+    return new Status(Status.OK);
 };
 <% } else if (hookType === 'scapi') { %>
 /**
@@ -57,14 +58,14 @@ exports.<%= hookName %> = function (object, scriptResponse) {
 
     } catch (e) {
         log.error('<%= hookName %> hook error: ' + e.message);
-        return new (require('dw/system/Status'))(
-            require('dw/system/Status').ERROR,
+        return new Status(
+            Status.ERROR,
             '<%= hookName.toUpperCase() %>_ERROR',
             e.message
         );
     }
 
-    return new (require('dw/system/Status'))(require('dw/system/Status').OK);
+    return new Status(Status.OK);
 };
 <% } else { %>
 /**
@@ -86,13 +87,13 @@ exports.<%= hookName %> = function (object) {
 
     } catch (e) {
         log.error('<%= hookName %> hook error: ' + e.message);
-        return new (require('dw/system/Status'))(
-            require('dw/system/Status').ERROR,
+        return new Status(
+            Status.ERROR,
             '<%= hookName.toUpperCase() %>_ERROR',
             e.message
         );
     }
 
-    return new (require('dw/system/Status'))(require('dw/system/Status').OK);
+    return new Status(Status.OK);
 };
 <% } %>

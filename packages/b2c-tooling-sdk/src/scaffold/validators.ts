@@ -348,6 +348,15 @@ export function validateParameters(
     }
   }
 
+  // Preserve any extra variables that aren't manifest parameters
+  // (e.g., cartridgeNamePath set by CLI for cartridge source parameters)
+  const manifestParamNames = new Set(manifest.parameters.map((p) => p.name));
+  for (const [key, value] of Object.entries(values)) {
+    if (!manifestParamNames.has(key) && value !== undefined) {
+      resolvedValues[key] = value;
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,

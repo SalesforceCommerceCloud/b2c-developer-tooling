@@ -45,22 +45,22 @@
   "files": [
     {
       "template": "step-task.js.ejs",
-      "destination": "{{cartridgeName}}/cartridge/scripts/jobsteps/{{camelCase stepId}}.js",
+      "destination": "{{cartridgeNamePath}}/cartridge/scripts/jobsteps/{{camelCase stepId}}.js",
       "condition": "stepType=task"
     },
     {
       "template": "step-chunk.js.ejs",
-      "destination": "{{cartridgeName}}/cartridge/scripts/jobsteps/{{camelCase stepId}}.js",
+      "destination": "{{cartridgeNamePath}}/cartridge/scripts/jobsteps/{{camelCase stepId}}.js",
       "condition": "stepType=chunk"
     }
   ],
   "modifications": [
     {
-      "target": "{{cartridgeName}}/steptypes.json",
+      "target": "{{cartridgeNamePath}}/steptypes.json",
       "type": "json-merge",
       "contentTemplate": "steptypes-entry.json.ejs",
       "jsonPath": "step-types"
     }
   ],
-  "postInstructions": "Job step '<%= stepId %>' has been created in '<%= cartridgeName %>'.\n\nStep type: <%= stepType %>\n\nNext steps:\n1. Implement the step logic in cartridge/scripts/jobsteps/<%= camelCase(stepId) %>.js\n2. Upload the cartridge: b2c code deploy <%= cartridgeName %>\n3. Create a job in Business Manager using step type '<%= stepId %>'"
+  "postInstructions": "Job step '<%= stepId %>' has been created in '<%= cartridgeName %>'.\n\nStep type: <%= stepType %>\n\nNext steps:\n1. Implement the step logic in cartridge/scripts/jobsteps/<%= camelCase(stepId) %>.js\n2. Upload the cartridge: b2c code deploy\n3. Create a job in Business Manager using step type '<%= stepId %>'"
 }

@@ -120,8 +120,6 @@ export async function executeScaffoldGenerate(
     ctx.log('Dry run - no files will be written');
   }
 
-  // Show output directory relative to cwd for clarity
-  const relativeOutputDir = path.relative(process.cwd(), outputDir) || '.';
   ctx.log(`Generating ${scaffold.manifest.displayName} scaffold...`);
 
   // Generate the scaffold
@@ -157,8 +155,8 @@ export async function executeScaffoldGenerate(
     ctx.log('');
     ctx.log(`Successfully generated ${created.length} file(s):`);
     for (const file of created) {
-      const displayPath = relativeOutputDir === '.' ? file.path : path.join(relativeOutputDir, file.path);
-      ctx.log(`  ${file.action === 'overwritten' ? '(overwritten)' : '+'} ${displayPath}`);
+      // file.path is already relative to cwd from the executor
+      ctx.log(`  ${file.action === 'overwritten' ? '(overwritten)' : '+'} ${file.path}`);
     }
   }
 
@@ -166,8 +164,7 @@ export async function executeScaffoldGenerate(
     ctx.log('');
     ctx.log(`Skipped ${skipped.length} file(s):`);
     for (const file of skipped) {
-      const displayPath = relativeOutputDir === '.' ? file.path : path.join(relativeOutputDir, file.path);
-      ctx.log(`  - ${displayPath}${file.skipReason ? ` (${file.skipReason})` : ''}`);
+      ctx.log(`  - ${file.path}${file.skipReason ? ` (${file.skipReason})` : ''}`);
     }
   }
 
@@ -220,6 +217,9 @@ async function collectParameters(
   const interactive = !force && isTTY;
   const projectRoot = process.cwd();
 
+  // Cache for cartridge paths (only resolved once if needed)
+  let cartridgePathMap: Map<string, string> | undefined;
+
   for (const param of scaffold.manifest.parameters) {
     // Check if conditional parameter should be evaluated
     if (param.when && !evaluateCondition(param.when, variables)) {
@@ -233,6 +233,17 @@ async function collectParameters(
       if (!validation.valid) {
         const availableList = validation.availableChoices?.join(', ') || 'none';
         ctx.error(`Invalid value "${providedValue}" for ${param.name}. Available ${param.source}: ${availableList}`);
+      }
+      // Set companion path variable for cartridges source
+      if (param.source === 'cartridges') {
+        if (!cartridgePathMap) {
+          const result = resolveLocalSource('cartridges', projectRoot);
+          cartridgePathMap = result.pathMap;
+        }
+        const cartridgePath = cartridgePathMap?.get(providedValue);
+        if (cartridgePath) {
+          variables[`${param.name}Path`] = cartridgePath;
+        }
       }
       continue;
     }
@@ -257,6 +268,18 @@ async function collectParameters(
     const value = await promptForParameter(param, ctx);
     if (value !== undefined) {
       variables[param.name] = value;
+
+      // Set companion path variable for cartridges source
+      if (param.source === 'cartridges' && typeof value === 'string') {
+        if (!cartridgePathMap) {
+          const result = resolveLocalSource('cartridges', projectRoot);
+          cartridgePathMap = result.pathMap;
+        }
+        const cartridgePath = cartridgePathMap?.get(value);
+        if (cartridgePath) {
+          variables[`${param.name}Path`] = cartridgePath;
+        }
+      }
     }
   }
 
@@ -306,9 +329,15 @@ async function promptForParameter(
       if (warning) ctx.warn(warning);
       if (choices.length === 0) return [];
 
+      // Pre-select default values if specified
+      const defaults = Array.isArray(param.default) ? param.default : [];
       return checkbox({
         message: param.prompt,
-        choices: choices.map((c) => ({name: c.label, value: c.value})),
+        choices: choices.map((c) => ({
+          name: c.label,
+          value: c.value,
+          checked: defaults.includes(c.value),
+        })),
       });
     }
 

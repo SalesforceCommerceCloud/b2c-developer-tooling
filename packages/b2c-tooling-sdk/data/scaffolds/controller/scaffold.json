@@ -54,13 +54,13 @@
   "files": [
     {
       "template": "controller.js.ejs",
-      "destination": "{{cartridgeName}}/cartridge/controllers/{{controllerName}}.js"
+      "destination": "{{cartridgeNamePath}}/cartridge/controllers/{{controllerName}}.js"
     },
     {
       "template": "template.isml.ejs",
-      "destination": "{{cartridgeName}}/cartridge/templates/default/{{kebabCase controllerName}}/show.isml",
+      "destination": "{{cartridgeNamePath}}/cartridge/templates/default/{{kebabCase controllerName}}/show.isml",
       "condition": "includeTemplate"
     }
   ],
-  "postInstructions": "Controller '<%= controllerName %>' has been created in '<%= cartridgeName %>'.\n\nRoutes created:\n<% routes.forEach(function(route) { %>\n- <%= controllerName %>-<%= route %>: /<%= controllerName %>-<%= route %>\n<% }); %>\n\nNext steps:\n1. Upload the cartridge: b2c code deploy <%= cartridgeName %>\n2. Ensure <%= cartridgeName %> is in your cartridge path"
+  "postInstructions": "Controller '<%= controllerName %>' has been created in '<%= cartridgeName %>'.\n\nRoutes created:\n<% routes.forEach(function(route) { %>\n- <%= controllerName %>-<%= route %>: /<%= controllerName %>-<%= route %>\n<% }); %>\n\nNext steps:\n1. Upload the cartridge: b2c code deploy\n2. Ensure <%= cartridgeName %> is in your cartridge path"
 }

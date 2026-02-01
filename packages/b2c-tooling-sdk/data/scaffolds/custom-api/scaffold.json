@@ -1,7 +1,7 @@
 {
   "name": "custom-api",
   "displayName": "Custom SCAPI",
-  "description": "Create a custom Shopper or Data API with OpenAPI schema",
+  "description": "Create a custom SCAPI endpoint with OAS 3.0 schema",
   "category": "custom-api",
   "version": "1.0",
   "tags": ["api", "scapi", "custom-api", "rest", "openapi"],
@@ -21,8 +21,8 @@
       "required": true,
       "default": "shopper",
       "choices": [
-        { "value": "shopper", "label": "Shopper API (c/shopper)" },
-        { "value": "data", "label": "Data API (c/data)" }
+        { "value": "shopper", "label": "Shopper API (requires siteId, customer-facing)" },
+        { "value": "admin", "label": "Admin API (no siteId, administrative)" }
       ]
     },
     {
@@ -51,13 +51,17 @@
   ],
   "files": [
     {
-      "template": "api.raml.ejs",
-      "destination": "{{cartridgeName}}/cartridge/experience/apis/{{apiName}}.raml"
+      "template": "schema.yaml.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/rest-apis/{{apiName}}/schema.yaml"
     },
     {
-      "template": "api.js.ejs",
-      "destination": "{{cartridgeName}}/cartridge/controllers/api/{{pascalCase apiName}}.js"
+      "template": "api.json.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/rest-apis/{{apiName}}/api.json"
+    },
+    {
+      "template": "script.js.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/rest-apis/{{apiName}}/script.js"
     }
   ],
-  "postInstructions": "Custom API '<%= apiName %>' has been created in cartridge '<%= cartridgeName %>'.\n\nNext steps:\n1. Upload the cartridge: b2c code deploy <%= cartridgeName %>\n2. Activate the code version containing the API\n3. The API will be available at:\n   <%= apiType === 'shopper' ? '/s/{site}/dw/shop/v1/custom/' : '/s/-/dw/data/v1/custom/' %><%= apiName %>"
+  "postInstructions": "Custom API '<%= apiName %>' has been created in cartridge '<%= cartridgeName %>'.\n\nFiles created:\n- rest-apis/<%= apiName %>/schema.yaml (OAS 3.0 contract)\n- rest-apis/<%= apiName %>/api.json (endpoint mapping)\n- rest-apis/<%= apiName %>/script.js (implementation)\n\nNext steps:\n1. Upload the cartridge: b2c code deploy\n2. Activate the code version to register the API\n3. The API will be available at:\n   https://{shortCode}.api.commercecloud.salesforce.com/custom/<%= apiName %>/v1/organizations/{organizationId}/...\n<% if (apiType === 'shopper') { %>\nNote: Shopper APIs require the siteId query parameter and ShopperToken authentication.\n<% } else { %>\nNote: Admin APIs use AmOAuth2 authentication. Add cartridge to Business Manager site's cartridge path.\n<% } %>"
 }
