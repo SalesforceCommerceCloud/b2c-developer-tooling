@@ -4,15 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {execa} from 'execa';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import type {Context} from 'mocha';
 import {setSharedContext, clearSharedContext, isSharedSandboxEnabled} from './shared-context.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
+import {runCLIWithRetry, parseJSONOutput, sleep, TIMEOUTS} from './test-utils.js';
 
 /**
  * Mocha Root Hooks - Run once before/after ALL test files
@@ -51,24 +45,21 @@ export const mochaHooks = {
     const shortCode = process.env.SFCC_SHORTCODE!;
 
     try {
-      // Create sandbox with long TTL (4 hours to cover all tests)
-      const result = await execa(
-        'node',
-        [CLI_BIN, 'ods', 'create', '--realm', realm, '--ttl', '24', '--wait', '--set-permissions', '--json'],
+      // Create sandbox with long TTL (24 hours to cover all tests) + retry for transient errors
+      const result = await runCLIWithRetry(
+        ['ods', 'create', '--realm', realm, '--ttl', '24', '--wait', '--set-permissions', '--json'],
         {
-          env: {
-            ...process.env,
-            SFCC_LOG_LEVEL: 'silent',
-          },
-          timeout: 720_000, // 12 minutes
+          timeout: TIMEOUTS.ODS_OPERATION,
+          maxRetries: 3,
+          verbose: true,
         },
       );
 
       if (result.exitCode !== 0) {
-        throw new Error(`Failed to create sandbox: ${result.stderr}`);
+        throw new Error(`Failed to create sandbox: ${result.stderr || result.stdout}`);
       }
 
-      const sandbox = JSON.parse(result.stdout);
+      const sandbox = parseJSONOutput(result) as {id: string; hostName: string; instance: string};
       createdSandboxId = sandbox.id;
 
       // Derive tenant ID from realm + instance
@@ -94,9 +85,7 @@ export const mochaHooks = {
 
       // Wait a bit for sandbox to fully stabilize
       console.log('⏳ Waiting for sandbox services to stabilize...');
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, 30_000);
-      }); // 30 seconds
+      await sleep(30_000); // 30 seconds
       console.log('Sandbox ready for testing\n');
     } catch (error) {
       console.error('Failed to create shared sandbox:', error);
@@ -119,19 +108,16 @@ export const mochaHooks = {
     console.log('\n🧹 Cleaning up shared sandbox...\n');
 
     try {
-      const result = await execa('node', [CLI_BIN, 'ods', 'delete', createdSandboxId, '--force'], {
-        env: {
-          ...process.env,
-          SFCC_LOG_LEVEL: 'silent',
-        },
+      const result = await runCLIWithRetry(['ods', 'delete', createdSandboxId, '--force'], {
         timeout: 120_000, // 2 minutes
-        reject: false, // Don't throw on error
+        maxRetries: 2,
+        verbose: true,
       });
 
       if (result.exitCode === 0) {
         console.log(`Shared sandbox ${createdSandboxId} deleted successfully\n`);
       } else {
-        console.warn(`Failed to delete sandbox ${createdSandboxId}: ${result.stderr}`);
+        console.warn(`Failed to delete sandbox ${createdSandboxId}: ${result.stderr || result.stdout}`);
         console.warn('You may need to manually delete it via the CLI or UI\n');
       }
     } catch (error) {

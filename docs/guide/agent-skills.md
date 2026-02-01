@@ -28,13 +28,13 @@ When installed, the skills teach AI assistants about B2C Commerce development, C
 
 Skills for using the B2C CLI to manage your Commerce Cloud instances. Covers code deployment, job execution, site archive import/export, WebDAV file operations, On-Demand Sandbox management, and more.
 
-Browse skills: [plugins/b2c-cli/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c-cli/skills)
+Browse skills: [skills/b2c-cli/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-cli/skills)
 
 ### Plugin: b2c
 
 Skills for B2C Commerce development patterns and practices. Covers controllers, ISML templates, forms, localization, logging, metadata, web services, custom job steps, Page Designer, Business Manager extensions, and Custom API development.
 
-Browse skills: [plugins/b2c/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/plugins/b2c/skills)
+Browse skills: [skills/b2c/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c/skills)
 
 ## Installation with Claude Code
 
@@ -101,6 +101,18 @@ To remove the marketplace:
 
 ```bash
 claude plugin marketplace remove b2c-developer-tooling
+```
+
+## Installation with Skills CLI
+
+The [Skills CLI](https://github.com/vercel-labs/skills) provides a universal way to install agent skills to any supported IDE.
+
+```bash
+# Interactive mode - select skills and IDEs
+npx skills add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Install to a specific agent
+npx skills add SalesforceCommerceCloud/b2c-developer-tooling -a claude-code
 ```
 
 ## Installation with B2C CLI

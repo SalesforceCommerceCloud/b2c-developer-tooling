@@ -1,6 +1,8 @@
 ---
 name: sdk-module-development
 description: Adding new modules and exports to the @salesforce/b2c-tooling-sdk package
+metadata:
+  internal: true
 ---
 
 # SDK Module Development

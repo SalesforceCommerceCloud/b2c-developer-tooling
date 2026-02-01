@@ -5,14 +5,13 @@
  */
 
 import {expect} from 'chai';
-import {execa} from 'execa';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
+import {runCLI, toString} from './test-utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * E2E Tests for WebDAV File Operations
@@ -34,7 +33,6 @@ describe('WebDAV Operations E2E Tests', function () {
   this.timeout(600_000); // 10 minutes
   this.retries(2);
 
-  const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
   const TEST_FIXTURES_DIR = path.resolve(__dirname, '../fixtures');
   const TEST_OUTPUT_DIR = path.resolve(__dirname, '../test-output');
 
@@ -56,18 +54,44 @@ describe('WebDAV Operations E2E Tests', function () {
     return '';
   }
 
-  // WebDAV is eventually consistent — poll instead of asserting immediately
-  async function waitFor(fn: () => Promise<boolean>, timeoutMs = 60_000, intervalMs = 2000) {
+  // WebDAV is eventually consistent — poll with retry for transient errors
+  async function waitFor(fn: () => Promise<boolean>, timeoutMs = 90_000, intervalMs = 2000) {
     const start = Date.now();
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 5;
+    let lastError: Error | null = null;
+
     while (Date.now() - start < timeoutMs) {
-      // eslint-disable-next-line no-await-in-loop
-      if (await fn()) return;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        if (await fn()) {
+          if (consecutiveErrors > 0) {
+            console.log(
+              `  ✓ Condition met after ${consecutiveErrors} transient ${consecutiveErrors === 1 ? 'error' : 'errors'}`,
+            );
+          }
+          return; // Success
+        }
+        consecutiveErrors = 0; // Reset on successful poll
+      } catch (error) {
+        lastError = error as Error;
+        consecutiveErrors++;
+
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          throw new Error(`Failed after ${maxConsecutiveErrors} consecutive errors. Last error: ${lastError.message}`);
+        }
+        // Log transient error but continue polling
+        console.log(`  ⚠ Transient error (${consecutiveErrors}/${maxConsecutiveErrors}), continuing...`);
+      }
+
       // eslint-disable-next-line no-await-in-loop
       await new Promise<void>((resolve) => {
         setTimeout(resolve, intervalMs);
       });
     }
-    throw new Error('Timed out waiting for WebDAV visibility');
+
+    const errorSuffix = lastError ? `. Last error: ${lastError.message}` : '';
+    throw new Error(`Timed out after ${timeoutMs}ms waiting for WebDAV visibility${errorSuffix}`);
   }
 
   before(async function () {
@@ -106,8 +130,8 @@ describe('WebDAV Operations E2E Tests', function () {
         '--json',
       ]);
 
-      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${result.stderr}`);
-      const sandbox = JSON.parse(result.stdout);
+      expect(result.exitCode).to.equal(0, `Failed to create sandbox: ${toString(result.stderr)}`);
+      const sandbox = JSON.parse(toString(result.stdout));
       ownSandboxId = sandbox.id;
       serverHostname = sandbox.hostName;
       console.log(`Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
@@ -119,16 +143,6 @@ describe('WebDAV Operations E2E Tests', function () {
     // Create test file
     await fs.writeFile(path.join(TEST_FIXTURES_DIR, testFileName), `E2E Test Content - ${Date.now()}`);
   });
-
-  async function runCLI(args: string[]) {
-    return execa('node', [CLI_BIN, ...args], {
-      env: {
-        ...process.env,
-        SFCC_LOG_LEVEL: 'silent',
-      },
-      reject: false,
-    });
-  }
 
   after(async function () {
     this.timeout(180_000); // 3 minutes for cleanup
@@ -170,11 +184,11 @@ describe('WebDAV Operations E2E Tests', function () {
       ]);
 
       if (result.exitCode !== 0) {
-        const msg = result.stderr || result.stdout;
+        const msg = toString(result.stderr) || toString(result.stdout);
         if (/not\s+allowed|unauthorized|forbidden|401|403/i.test(msg)) {
           this.skip();
         }
-        expect(result.exitCode).to.equal(0, msg);
+        expect(result.exitCode, msg).to.equal(0);
       }
     });
   });
@@ -193,7 +207,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === testFileName);
       });
     });
@@ -237,7 +251,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return !response.entries?.some((e: any) => entryName(e) === testFileName);
       });
     });
@@ -296,7 +310,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return !response.entries?.some((e: any) => entryName(e) === testDirName);
       });
     });
@@ -338,7 +352,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === `${testDirName}.zip`);
       });
     });
@@ -366,7 +380,7 @@ describe('WebDAV Operations E2E Tests', function () {
           '--json',
         ]);
         if (result.exitCode !== 0) return false;
-        const response = JSON.parse(result.stdout);
+        const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === testFileName);
       }, 300_000);
     });

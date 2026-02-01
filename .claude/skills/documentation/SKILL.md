@@ -1,6 +1,8 @@
 ---
 name: documentation
 description: Updating user guides, CLI reference, and API documentation for the B2C CLI project
+metadata:
+  internal: true
 ---
 
 # Documentation
@@ -323,7 +325,7 @@ When adding new CLI commands or guide pages, update the sidebar config.
 
 ## Claude Code Skills (Plugin)
 
-The `plugins/b2c-cli/skills/` directory contains skills that teach Claude about using the CLI commands. These are distributed via the plugin.
+The `skills/b2c-cli/skills/` directory contains skills that teach Claude about using the CLI commands. These are distributed via the plugin.
 
 When to update:
 - New CLI commands added
@@ -364,7 +366,7 @@ b2c <topic> <command> --flag value
 
 1. Update `docs/cli/<topic>.md` with command documentation
 2. Update `docs/.vitepress/config.mts` sidebar if new topic
-3. Update `plugins/b2c-cli/skills/b2c-<topic>/SKILL.md` with examples
+3. Update `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` with examples
 
 ### When Adding an SDK Module
 
@@ -376,7 +378,7 @@ b2c <topic> <command> --flag value
 ### When Changing CLI Behavior
 
 1. Update affected examples in `docs/cli/*.md`
-2. Update affected examples in `plugins/b2c-cli/skills/*/SKILL.md`
+2. Update affected examples in `skills/b2c-cli/skills/*/SKILL.md`
 3. Update guide pages if conceptual changes
 
 ### When Adding Configuration Options

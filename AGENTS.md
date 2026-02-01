@@ -88,7 +88,7 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 
 ## Documentation
 
-- Update docs in `./docs/` folder and relevant skills in `./plugins/b2c-cli/skills/` when updating or adding CLI commands.
+- Update docs in `./docs/` folder and relevant skills in `./skills/b2c-cli/skills/` when updating or adding CLI commands.
 
 See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
@@ -112,7 +112,7 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 
 ## Claude Code Skills
 
-**User-facing skills** (for CLI users): `./plugins/b2c-cli/skills/` - update when modifying CLI commands.
+**User-facing skills** (for CLI users): `./skills/b2c-cli/skills/` - update when modifying CLI commands.
 
 **Developer skills** (for contributors): `./.claude/skills/` - covers:
 - [CLI command development](./.claude/skills/cli-command-development/SKILL.md) - oclif commands, flags, table output

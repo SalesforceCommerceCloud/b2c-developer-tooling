@@ -1,6 +1,8 @@
 ---
 name: skill-authoring
 description: Guide for creating and maintaining user-facing agent skills
+metadata:
+  internal: true
 ---
 
 # Skill Authoring Guide

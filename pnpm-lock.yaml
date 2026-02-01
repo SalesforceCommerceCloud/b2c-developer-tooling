@@ -59,6 +59,9 @@ importers:
       '@oclif/plugin-version':
         specifier: ^2
         version: 2.2.36
+      '@oclif/plugin-warn-if-update-available':
+        specifier: ^3
+        version: 3.1.52
       '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk

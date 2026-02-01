@@ -100,9 +100,9 @@ describe('registry', () => {
       expect(registry.STOREFRONTNEXT.length).to.be.greaterThan(0);
 
       const toolNames = registry.STOREFRONTNEXT.map((t) => t.name);
-      expect(toolNames).to.include('sfnext_development_guidelines');
-      expect(toolNames).to.include('sfnext_site_theming');
-      expect(toolNames).to.include('sfnext_generate_component');
+      expect(toolNames).to.include('storefront_next_development_guidelines');
+      expect(toolNames).to.include('storefront_next_site_theming');
+      expect(toolNames).to.include('storefront_next_generate_component');
       // mrt_bundle_push should also appear in STOREFRONTNEXT (multi-toolset)
       expect(toolNames).to.include('mrt_bundle_push');
     });
@@ -210,7 +210,7 @@ describe('registry', () => {
       expect(server.registeredTools).to.include('mrt_bundle_push');
       expect(server.registeredTools).to.include('pwakit_create_storefront');
       expect(server.registeredTools).to.include('scapi_discovery');
-      expect(server.registeredTools).to.include('sfnext_development_guidelines');
+      expect(server.registeredTools).to.include('storefront_next_development_guidelines');
     });
 
     it('should register individual tools via --tools flag', async () => {
