@@ -45,6 +45,7 @@
       "prompt": "Which cartridge should contain this component?",
       "type": "string",
       "required": true,
+      "source": "cartridges",
       "pattern": "^[a-z][a-z0-9_]*$",
       "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
     }

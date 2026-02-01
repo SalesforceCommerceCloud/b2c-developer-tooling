@@ -72,6 +72,7 @@ export type {
   ScaffoldParameterType,
   ScaffoldCategory,
   ScaffoldManifestVersion,
+  DynamicParameterSource,
   FileMapping,
   FileModification,
   OverwriteBehavior,

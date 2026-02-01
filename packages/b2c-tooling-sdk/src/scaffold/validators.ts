@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import type {ScaffoldManifest, ParameterValidationError, ParameterValidationResult, ScaffoldCategory} from './types.js';
+import type {
+  ScaffoldManifest,
+  ParameterValidationError,
+  ParameterValidationResult,
+  ScaffoldCategory,
+  DynamicParameterSource,
+} from './types.js';
 
 /** Valid scaffold categories */
 const VALID_CATEGORIES: ScaffoldCategory[] = ['cartridge', 'custom-api', 'page-designer', 'job', 'metadata'];
@@ -14,6 +20,9 @@ const VALID_PARAMETER_TYPES = ['string', 'boolean', 'choice', 'multi-choice'];
 
 /** Reserved variable names that cannot be used as parameter names */
 const RESERVED_NAMES = ['kebabCase', 'camelCase', 'pascalCase', 'snakeCase', 'year', 'date', 'uuid'];
+
+/** Valid dynamic parameter sources */
+const VALID_SOURCES: DynamicParameterSource[] = ['cartridges', 'hook-points', 'sites'];
 
 /**
  * Validate a scaffold manifest
@@ -99,9 +108,18 @@ export function validateScaffoldManifest(manifest: unknown): string[] {
         errors.push(`${prefix}: must have a "required" field (boolean)`);
       }
 
-      // Choice validation
-      if ((p.type === 'choice' || p.type === 'multi-choice') && !Array.isArray(p.choices)) {
-        errors.push(`${prefix}: choice/multi-choice types must have a "choices" array`);
+      // Source validation
+      if (p.source !== undefined) {
+        if (typeof p.source !== 'string') {
+          errors.push(`${prefix}: "source" must be a string`);
+        } else if (!VALID_SOURCES.includes(p.source as DynamicParameterSource)) {
+          errors.push(`${prefix}: "source" must be one of: ${VALID_SOURCES.join(', ')}`);
+        }
+      }
+
+      // Choice validation (choices are optional if source is provided)
+      if ((p.type === 'choice' || p.type === 'multi-choice') && !Array.isArray(p.choices) && !p.source) {
+        errors.push(`${prefix}: choice/multi-choice types must have a "choices" array or a "source" field`);
       } else if (Array.isArray(p.choices)) {
         for (let j = 0; j < p.choices.length; j++) {
           const choice = p.choices[j] as Record<string, unknown>;

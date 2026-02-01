@@ -5,7 +5,7 @@
  */
 import path from 'node:path';
 import {Args, Flags} from '@oclif/core';
-import {input, confirm, select, checkbox} from '@inquirer/prompts';
+import {input, confirm, select, checkbox, search} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   createScaffoldRegistry,
@@ -14,7 +14,15 @@ import {
   type Scaffold,
   type ScaffoldParameter,
   type ScaffoldGenerateResult,
+  type ScaffoldChoice,
 } from '@salesforce/b2c-tooling-sdk/scaffold';
+import {
+  resolveLocalSource,
+  resolveRemoteSource,
+  isRemoteSource,
+  validateAgainstSource,
+  type LocalSourceResult,
+} from './source-resolver.js';
 import {t, withDocs} from '../../i18n/index.js';
 
 /**
@@ -202,6 +210,7 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
     const force = this.flags.force;
     const isTTY = process.stdin.isTTY && process.stdout.isTTY;
     const interactive = !force && isTTY;
+    const projectRoot = process.cwd();
 
     for (const param of scaffold.manifest.parameters) {
       // Check if conditional parameter should be evaluated
@@ -209,7 +218,18 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
         continue;
       }
 
-      // Skip if already provided
+      // If value was already provided via --option, validate it against source
+      if (variables[param.name] !== undefined && param.source) {
+        const providedValue = String(variables[param.name]);
+        const validation = validateAgainstSource(param.source, providedValue, projectRoot);
+        if (!validation.valid) {
+          const availableList = validation.availableChoices?.join(', ') || 'none';
+          this.error(`Invalid value "${providedValue}" for ${param.name}. Available ${param.source}: ${availableList}`);
+        }
+        continue;
+      }
+
+      // Skip if already provided (without source validation)
       if (variables[param.name] !== undefined) {
         continue;
       }
@@ -278,12 +298,59 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
       }
 
       case 'choice': {
-        if (!param.choices || param.choices.length === 0) {
-          return undefined;
+        // Resolve dynamic source if specified
+        const {choices, warning} = await this.resolveSourceChoices(param);
+
+        // Show warning if remote source failed
+        if (warning) {
+          this.warn(warning);
         }
+
+        // Fall back to text input if no choices available
+        if (choices.length === 0) {
+          if (param.source) {
+            this.warn(`No ${param.source} found. Please enter a value manually.`);
+          }
+          const value = await input({
+            message: param.prompt,
+            default: param.default as string | undefined,
+            required: param.required,
+            validate(val) {
+              if (param.required && !val) {
+                return 'This field is required';
+              }
+              if (param.pattern && val) {
+                const regex = new RegExp(param.pattern);
+                if (!regex.test(val)) {
+                  return param.validationMessage || `Value does not match pattern: ${param.pattern}`;
+                }
+              }
+              return true;
+            },
+          });
+          return value || undefined;
+        }
+
+        // Use search prompt for large lists (e.g., hook-points), select for small lists
+        if (choices.length > 10) {
+          const value = await search({
+            message: param.prompt,
+            async source(term) {
+              if (!term) {
+                return choices.map((c) => ({name: c.label, value: c.value}));
+              }
+              const lowerTerm = term.toLowerCase();
+              return choices
+                .filter((c) => c.label.toLowerCase().includes(lowerTerm) || c.value.toLowerCase().includes(lowerTerm))
+                .map((c) => ({name: c.label, value: c.value}));
+            },
+          });
+          return value;
+        }
+
         const value = await select({
           message: param.prompt,
-          choices: param.choices.map((c) => ({
+          choices: choices.map((c) => ({
             name: c.label,
             value: c.value,
           })),
@@ -293,12 +360,21 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
       }
 
       case 'multi-choice': {
-        if (!param.choices || param.choices.length === 0) {
+        // Resolve dynamic source if specified
+        const {choices, warning} = await this.resolveSourceChoices(param);
+
+        // Show warning if remote source failed
+        if (warning) {
+          this.warn(warning);
+        }
+
+        if (choices.length === 0) {
           return [];
         }
+
         const values = await checkbox({
           message: param.prompt,
-          choices: param.choices.map((c) => ({
+          choices: choices.map((c) => ({
             name: c.label,
             value: c.value,
           })),
@@ -307,6 +383,51 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
       }
 
       case 'string': {
+        // Handle string type with source (convert to choice-like behavior)
+        if (param.source) {
+          const {choices, warning} = await this.resolveSourceChoices(param);
+
+          if (warning) {
+            this.warn(warning);
+          }
+
+          // If we have choices from source, show them as a select/search
+          if (choices.length > 0) {
+            if (choices.length > 10) {
+              const value = await search({
+                message: param.prompt,
+                async source(term) {
+                  if (!term) {
+                    return choices.map((c) => ({name: c.label, value: c.value}));
+                  }
+                  const lowerTerm = term.toLowerCase();
+                  return choices
+                    .filter(
+                      (c) => c.label.toLowerCase().includes(lowerTerm) || c.value.toLowerCase().includes(lowerTerm),
+                    )
+                    .map((c) => ({name: c.label, value: c.value}));
+                },
+              });
+              return value;
+            }
+
+            const value = await select({
+              message: param.prompt,
+              choices: choices.map((c) => ({
+                name: c.label,
+                value: c.value,
+              })),
+              default: param.default as string | undefined,
+            });
+            return value;
+          }
+
+          // Fall back to text input
+          if (param.source) {
+            this.warn(`No ${param.source} found. Please enter a value manually.`);
+          }
+        }
+
         const value = await input({
           message: param.prompt,
           default: param.default as string | undefined,
@@ -331,5 +452,42 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
         return undefined;
       }
     }
+  }
+
+  /**
+   * Resolve choices for a parameter with dynamic source.
+   * Returns the resolved choices and optional path map for cartridges.
+   */
+  private async resolveSourceChoices(param: ScaffoldParameter): Promise<{
+    choices: ScaffoldChoice[];
+    pathMap?: Map<string, string>;
+    warning?: string;
+  }> {
+    if (!param.source) {
+      return {choices: param.choices || []};
+    }
+
+    const projectRoot = process.cwd();
+
+    // Handle remote sources
+    if (isRemoteSource(param.source)) {
+      try {
+        const choices = await resolveRemoteSource(param.source);
+        return {choices};
+      } catch (error) {
+        return {
+          choices: [],
+          warning: `Could not fetch ${param.source}: ${(error as Error).message}`,
+        };
+      }
+    }
+
+    // Handle local sources
+    const result: LocalSourceResult = resolveLocalSource(param.source, projectRoot);
+
+    return {
+      choices: result.choices,
+      pathMap: result.pathMap,
+    };
   }
 }

@@ -31,6 +31,15 @@ export type ScaffoldManifestVersion = '1.0';
 export type ScaffoldParameterType = 'string' | 'boolean' | 'choice' | 'multi-choice';
 
 /**
+ * Dynamic sources for populating parameter choices at runtime.
+ *
+ * - `cartridges`: Discovers cartridges in project via .project files
+ * - `hook-points`: Static list of common hook extension points
+ * - `sites`: Remote - fetches sites from connected B2C instance
+ */
+export type DynamicParameterSource = 'cartridges' | 'hook-points' | 'sites';
+
+/**
  * Overwrite behavior for generated files
  */
 export type OverwriteBehavior = 'never' | 'always' | 'prompt' | 'merge';
@@ -69,6 +78,8 @@ export interface ScaffoldParameter {
   flag?: string;
   /** Conditional expression: only prompt if condition is met (e.g., "otherParam=value") */
   when?: string;
+  /** Dynamic source for populating choices at runtime */
+  source?: DynamicParameterSource;
 }
 
 /**

@@ -31,6 +31,7 @@
       "prompt": "What is the hook extension point?",
       "type": "string",
       "required": true,
+      "source": "hook-points",
       "validationMessage": "Hook point is required (e.g., dw.order.calculate, dw.ocapi.shop.order.beforePOST)"
     },
     {
@@ -38,6 +39,7 @@
       "prompt": "Which cartridge should contain this hook?",
       "type": "string",
       "required": true,
+      "source": "cartridges",
       "pattern": "^[a-z][a-z0-9_]*$",
       "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
     }

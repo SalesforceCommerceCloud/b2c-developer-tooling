@@ -96,7 +96,7 @@ describe('scaffold/validators', () => {
       expect(errors.some((e) => e.includes('reserved name'))).to.be.true;
     });
 
-    it('should reject choice parameters without choices', () => {
+    it('should reject choice parameters without choices or source', () => {
       const manifest = {
         ...validManifest,
         parameters: [
@@ -109,7 +109,72 @@ describe('scaffold/validators', () => {
         ],
       };
       const errors = validateScaffoldManifest(manifest);
-      expect(errors.some((e) => e.includes('must have a "choices" array'))).to.be.true;
+      expect(errors.some((e) => e.includes('must have a "choices" array or a "source" field'))).to.be.true;
+    });
+
+    it('should accept choice parameters with source instead of choices', () => {
+      const manifest = {
+        ...validManifest,
+        parameters: [
+          {
+            name: 'testChoice',
+            prompt: 'Select an option',
+            type: 'choice',
+            required: true,
+            source: 'cartridges',
+          },
+        ],
+      };
+      const errors = validateScaffoldManifest(manifest);
+      expect(errors).to.be.empty;
+    });
+
+    it('should accept valid source values', () => {
+      const manifest = {
+        ...validManifest,
+        parameters: [
+          {
+            name: 'cartridgeName',
+            prompt: 'Select cartridge',
+            type: 'string',
+            required: true,
+            source: 'cartridges',
+          },
+          {
+            name: 'hookPoint',
+            prompt: 'Select hook',
+            type: 'string',
+            required: true,
+            source: 'hook-points',
+          },
+          {
+            name: 'siteId',
+            prompt: 'Select site',
+            type: 'choice',
+            required: true,
+            source: 'sites',
+          },
+        ],
+      };
+      const errors = validateScaffoldManifest(manifest);
+      expect(errors).to.be.empty;
+    });
+
+    it('should reject invalid source values', () => {
+      const manifest = {
+        ...validManifest,
+        parameters: [
+          {
+            name: 'testParam',
+            prompt: 'Select something',
+            type: 'string',
+            required: true,
+            source: 'invalid-source',
+          },
+        ],
+      };
+      const errors = validateScaffoldManifest(manifest);
+      expect(errors.some((e) => e.includes('"source" must be one of'))).to.be.true;
     });
   });
 
