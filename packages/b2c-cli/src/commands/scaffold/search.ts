@@ -89,10 +89,11 @@ export default class ScaffoldSearch extends BaseCommand<typeof ScaffoldSearch> {
     const {query} = this.args;
     const registry = createScaffoldRegistry();
     const category = this.flags.category as ScaffoldCategory | undefined;
+    const projectRoot = this.flags['working-directory'] || process.cwd();
 
     const scaffolds = await registry.searchScaffolds(query, {
       category,
-      projectRoot: process.cwd(),
+      projectRoot,
     });
 
     const response: ScaffoldSearchResponse = {

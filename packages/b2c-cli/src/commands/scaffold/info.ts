@@ -45,9 +45,10 @@ export default class ScaffoldInfo extends BaseCommand<typeof ScaffoldInfo> {
   async run(): Promise<ScaffoldInfoResponse> {
     const {scaffoldId} = this.args;
     const registry = createScaffoldRegistry();
+    const projectRoot = this.flags['working-directory'] || process.cwd();
 
     const scaffold = await registry.getScaffold(scaffoldId, {
-      projectRoot: process.cwd(),
+      projectRoot,
     });
 
     if (!scaffold) {

@@ -15,6 +15,7 @@ const guideSidebar = [
     text: 'Guides',
     items: [
       { text: 'Authentication Setup', link: '/guide/authentication' },
+      { text: 'Scaffolding', link: '/guide/scaffolding' },
       { text: 'Security', link: '/guide/security' },
     ],
   },
@@ -41,6 +42,7 @@ const guideSidebar = [
       { text: 'Custom APIs', link: '/cli/custom-apis' },
       { text: 'SCAPI Schemas', link: '/cli/scapi-schemas' },
       { text: 'Setup Commands', link: '/cli/setup' },
+      { text: 'Scaffold Commands', link: '/cli/scaffold' },
       { text: 'Auth Commands', link: '/cli/auth' },
       { text: 'Logging', link: '/cli/logging' },
     ],

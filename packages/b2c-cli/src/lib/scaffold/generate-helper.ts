@@ -54,6 +54,8 @@ export interface GenerateOptions {
   dryRun?: boolean;
   /** Skip prompts, use defaults */
   force?: boolean;
+  /** Project root directory (defaults to process.cwd()) */
+  projectRoot?: string;
 }
 
 /**
@@ -73,12 +75,12 @@ export async function executeScaffoldGenerate(
   options: GenerateOptions,
   ctx: CommandContext,
 ): Promise<GenerateResponse> {
-  const {scaffoldId, dryRun = false, force = false} = options;
+  const {scaffoldId, dryRun = false, force = false, projectRoot = process.cwd()} = options;
   const registry = createScaffoldRegistry();
 
   // Find the scaffold
   const scaffold = await registry.getScaffold(scaffoldId, {
-    projectRoot: process.cwd(),
+    projectRoot,
   });
 
   if (!scaffold) {
@@ -97,23 +99,23 @@ export async function executeScaffoldGenerate(
   }
 
   // Collect missing parameters interactively (unless --force)
-  const resolvedVariables = await collectParameters(scaffold, variables, force, ctx);
+  const resolvedVariables = await collectParameters(scaffold, variables, force, projectRoot, ctx);
 
-  // Determine output directory: explicit flag > scaffold default > cwd
+  // Determine output directory: explicit flag > scaffold default > projectRoot
   let outputDir: string;
   ctx.logger.trace(
     {flagOutput: options.output, defaultOutputDir: scaffold.manifest.defaultOutputDir},
     'Resolving output directory',
   );
   if (options.output) {
-    outputDir = path.resolve(options.output);
+    outputDir = path.resolve(projectRoot, options.output);
     ctx.logger.debug({outputDir, source: 'flag'}, 'Using output directory from --output flag');
   } else if (scaffold.manifest.defaultOutputDir) {
-    outputDir = path.resolve(scaffold.manifest.defaultOutputDir);
+    outputDir = path.resolve(projectRoot, scaffold.manifest.defaultOutputDir);
     ctx.logger.debug({outputDir, source: 'scaffold'}, 'Using output directory from scaffold defaultOutputDir');
   } else {
-    outputDir = process.cwd();
-    ctx.logger.debug({outputDir, source: 'cwd'}, 'Using current directory as output');
+    outputDir = projectRoot;
+    ctx.logger.debug({outputDir, source: 'projectRoot'}, 'Using project root as output');
   }
 
   if (dryRun) {
@@ -210,12 +212,12 @@ async function collectParameters(
   scaffold: Scaffold,
   existingVariables: Record<string, boolean | string | string[]>,
   force: boolean,
+  projectRoot: string,
   ctx: CommandContext,
 ): Promise<Record<string, boolean | string | string[]>> {
   const variables = {...existingVariables};
   const isTTY = process.stdin.isTTY && process.stdout.isTTY;
   const interactive = !force && isTTY;
-  const projectRoot = process.cwd();
 
   // Cache for cartridge paths (only resolved once if needed)
   let cartridgePathMap: Map<string, string> | undefined;
@@ -265,7 +267,7 @@ async function collectParameters(
 
     // Prompt for value
     // eslint-disable-next-line no-await-in-loop
-    const value = await promptForParameter(param, ctx);
+    const value = await promptForParameter(param, projectRoot, ctx);
     if (value !== undefined) {
       variables[param.name] = value;
 
@@ -291,6 +293,7 @@ async function collectParameters(
  */
 async function promptForParameter(
   param: ScaffoldParameter,
+  projectRoot: string,
   ctx: CommandContext,
 ): Promise<boolean | string | string[] | undefined> {
   switch (param.type) {
@@ -302,7 +305,7 @@ async function promptForParameter(
     }
 
     case 'choice': {
-      const {choices, warning} = await resolveSourceChoices(param);
+      const {choices, warning} = await resolveSourceChoices(param, projectRoot);
       if (warning) ctx.warn(warning);
 
       if (choices.length === 0) {
@@ -325,7 +328,7 @@ async function promptForParameter(
     }
 
     case 'multi-choice': {
-      const {choices, warning} = await resolveSourceChoices(param);
+      const {choices, warning} = await resolveSourceChoices(param, projectRoot);
       if (warning) ctx.warn(warning);
       if (choices.length === 0) return [];
 
@@ -343,7 +346,7 @@ async function promptForParameter(
 
     case 'string': {
       if (param.source) {
-        const {choices, warning} = await resolveSourceChoices(param);
+        const {choices, warning} = await resolveSourceChoices(param, projectRoot);
         if (warning) ctx.warn(warning);
 
         if (choices.length > 0) {
@@ -366,8 +369,9 @@ async function promptForParameter(
       return promptTextInput(param);
     }
 
-    default:
+    default: {
       return undefined;
+    }
   }
 }
 
@@ -411,7 +415,10 @@ function createSearchSource(choices: ScaffoldChoice[]) {
 /**
  * Resolve choices for a parameter with dynamic source.
  */
-async function resolveSourceChoices(param: ScaffoldParameter): Promise<{
+async function resolveSourceChoices(
+  param: ScaffoldParameter,
+  projectRoot: string,
+): Promise<{
   choices: ScaffoldChoice[];
   pathMap?: Map<string, string>;
   warning?: string;
@@ -419,8 +426,6 @@ async function resolveSourceChoices(param: ScaffoldParameter): Promise<{
   if (!param.source) {
     return {choices: param.choices || []};
   }
-
-  const projectRoot = process.cwd();
 
   if (isRemoteSource(param.source)) {
     try {
