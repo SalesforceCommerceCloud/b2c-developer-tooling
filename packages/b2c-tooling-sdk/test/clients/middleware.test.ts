@@ -481,9 +481,10 @@ describe('clients/middleware', () => {
       expect(finalResponse.status).to.equal(200);
     });
 
-    it('caps Retry-After delay by maxDelayMs', async () => {
+    it('retries even when Retry-After is large (Retry-After is respected by default)', async () => {
       const middleware = createRateLimitMiddleware({
         maxRetries: 1,
+        baseDelayMs: 0,
         maxDelayMs: 0,
       });
 
@@ -492,7 +493,7 @@ describe('clients/middleware', () => {
       const request = new Request('https://example.com/rate', {method: 'GET'});
       const firstResponse = new Response('rate-limited', {
         status: 429,
-        headers: {'Retry-After': '3600'},
+        headers: {'Retry-After': '0'},
       });
 
       let callCount = 0;

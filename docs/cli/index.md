@@ -27,6 +27,12 @@ These flags are available on all commands that interact with B2C instances:
 | `--username`, `-u` | `SFCC_USERNAME` | Username for Basic Auth |
 | `--password`, `-p` | `SFCC_PASSWORD` | Password/access key for Basic Auth |
 
+### Other Environment Variables
+
+| Environment Variable | Description |
+|---------------------|-------------|
+| `B2C_SKIP_NEW_VERSION_CHECK` | Skip the new version availability check |
+
 ## Command Topics
 
 ### Instance Operations
@@ -42,6 +48,15 @@ These flags are available on all commands that interact with B2C instances:
 - [MRT Commands](./mrt) - Manage Managed Runtime (MRT) projects and deployments
 - [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
 - [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
+
+### Account Management
+
+- [Account Manager Commands](./account-manager) - Manage Account Manager users, roles, and organizations
+
+All Account Manager commands are under the `am` topic:
+- `b2c am users ...` - User management commands
+- `b2c am roles ...` - Role management commands
+- `b2c am orgs ...` - Organization management commands
 
 ### Utilities
 

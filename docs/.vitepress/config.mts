@@ -15,6 +15,7 @@ const guideSidebar = [
     text: 'Guides',
     items: [
       { text: 'Authentication Setup', link: '/guide/authentication' },
+      { text: 'IDE Support', link: '/guide/ide-support' },
       { text: 'Security', link: '/guide/security' },
     ],
   },
@@ -51,6 +52,9 @@ export default defineConfig({
   title: 'B2C DX',
   description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
   base: '/b2c-developer-tooling/',
+
+  // Ignore dead links in api-readme.md (links are valid after TypeDoc generates the API docs)
+  ignoreDeadLinks: [/^\.\/clients\//],
 
   // Show deeper heading levels in the outline
   markdown: {

@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -19,6 +19,7 @@
     "@oclif/plugin-not-found": "^3",
     "@oclif/plugin-plugins": "^5",
     "@oclif/plugin-version": "^2",
+    "@oclif/plugin-warn-if-update-available": "^3",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "^9.0.1",
     "marked": "^15.0.0",
@@ -42,6 +43,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "execa": "^9.6.1",
     "mocha": "^10",
+    "msw": "^2.0.0",
     "oclif": "^4",
     "prettier": "^3.6.2",
     "shx": "^0.3.3",
@@ -77,13 +79,22 @@
     "bin": "b2c",
     "dirname": "b2c",
     "commands": "./dist/commands",
+    "telemetry": {
+      "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
+    },
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins",
       "@oclif/plugin-not-found",
       "@oclif/plugin-version",
-      "@oclif/plugin-autocomplete"
+      "@oclif/plugin-autocomplete",
+      "@oclif/plugin-warn-if-update-available"
     ],
+    "warn-if-update-available": {
+      "timeoutInDays": 1,
+      "frequency": 1,
+      "frequencyUnit": "minutes"
+    },
     "topicSeparator": " ",
     "topics": {
       "auth": {
@@ -139,6 +150,20 @@
       },
       "sites": {
         "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
+      },
+      "am": {
+        "description": "Manage Account Manager resources",
+        "subtopics": {
+          "users": {
+            "description": "Manage Account Manager users"
+          },
+          "roles": {
+            "description": "Manage roles for Account Manager users"
+          },
+          "orgs": {
+            "description": "Manage Account Manager organizations"
+          }
+        }
       },
       "slas": {
         "description": "Manage SLAS API clients and credentials\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
@@ -234,7 +259,7 @@
             }
           },
           "mtls": {
-            "description": "Manage mTLS certificates\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
+            "description": "Manage mTLS certificates for code deployment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "cipher-suites": {
             "description": "Manage TLS cipher configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
@@ -265,7 +290,15 @@
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:agent": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter min --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
-    "test:e2e": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
+    "test:e2e": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx --timeout 30000 --retries 2 --reporter spec \"test/functional/e2e/**/*.test.ts\"",
+    "test:e2e:ci": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx --timeout 30000 --retries 2 --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
+    "test:e2e:auth": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/auth-token.test.ts\"",
+    "test:e2e:code": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/code-lifecycle.test.ts\"",
+    "test:e2e:jobs": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/job-execution.test.ts\"",
+    "test:e2e:ods": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/ods-lifecycle.test.ts\"",
+    "test:e2e:sites": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/sites-operations.test.ts\"",
+    "test:e2e:slas": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/slas-lifecycle.test.ts\"",
+    "test:e2e:webdav": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/webdav-operations.test.ts\"",
     "coverage": "c8 report",
     "version": "oclif readme && git add README.md",
     "dev": "node ./bin/dev.js"

@@ -8,7 +8,7 @@ import {marked} from 'marked';
 
 import {markedTerminal} from 'marked-terminal';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/operations/docs';
+import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import {t} from '../../i18n/index.js';
 
 interface ReadDocsResult {

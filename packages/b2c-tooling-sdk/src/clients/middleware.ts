@@ -229,8 +229,6 @@ export function createRateLimitMiddleware(config: RateLimitMiddlewareConfig = {}
 
         if (delayMs === undefined) {
           delayMs = computeBackoffDelayMs(startingAttempt, baseDelayMs, maxDelayMs);
-        } else {
-          delayMs = Math.min(delayMs, maxDelayMs);
         }
 
         logger.warn(
@@ -274,8 +272,6 @@ export function createRateLimitMiddleware(config: RateLimitMiddlewareConfig = {}
 
         if (delayMs === undefined) {
           delayMs = computeBackoffDelayMs(attempt, baseDelayMs, maxDelayMs);
-        } else {
-          delayMs = Math.min(delayMs, maxDelayMs);
         }
 
         logger.warn(

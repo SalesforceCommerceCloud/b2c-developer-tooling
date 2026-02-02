@@ -5,6 +5,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// Disable telemetry in development mode to avoid polluting production data
+process.env.SFCC_DISABLE_TELEMETRY = process.env.SFCC_DISABLE_TELEMETRY || 'true';
+
 // Load .env file if present (Node.js native support)
 try {
   process.loadEnvFile();

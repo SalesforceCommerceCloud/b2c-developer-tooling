@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {AuthStrategy} from './types.js';
+import type {AuthStrategy, FetchInit} from './types.js';
 import {getLogger} from '../logging/logger.js';
 
 export class BasicAuthStrategy implements AuthStrategy {
@@ -16,10 +16,12 @@ export class BasicAuthStrategy implements AuthStrategy {
     logger.debug({username: user}, `[Auth] Using Basic authentication for user: ${user}`);
   }
 
-  async fetch(url: string, init: RequestInit = {}): Promise<Response> {
+  async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     const headers = new Headers(init.headers);
     headers.set('Authorization', `Basic ${this.encoded}`);
-    return fetch(url, {...init, headers});
+    // Pass through dispatcher for TLS/mTLS support
+    // Node.js fetch accepts dispatcher as an undocumented option
+    return fetch(url, {...init, headers} as RequestInit);
   }
 
   async getAuthorizationHeader(): Promise<string> {

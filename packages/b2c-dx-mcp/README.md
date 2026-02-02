@@ -71,6 +71,86 @@ Override auto-discovery by specifying toolsets explicitly:
 "args": ["--working-directory", "${workspaceFolder}", "--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"]
 ```
 
+### Prompting Tips and Examples
+
+AI assistants (like Cursor, Claude Desktop) automatically decide which MCP tools to use based on your prompts. To get the best results, use clear, specific prompts that describe what you want to accomplish.
+
+> ⚠️ **IMPORTANT**: **Explicitly mention "Use the MCP tool"** in your prompts for reliable tool usage. While AI assistants (like Cursor's Composer) can automatically select MCP tools based on context, explicit instructions ensure the assistant prioritizes MCP tools over general knowledge, especially when multiple approaches are possible. This is particularly important for getting project-specific, up-to-date information rather than generic responses.
+
+#### Best Practices
+
+1. **Always explicitly request MCP tool usage** (see warning above): Start prompts with "Use the MCP tool to..." or include "Use the MCP tool" in your request.
+2. **Be specific about your goal**: Instead of "help me with Storefront Next", say "Use the MCP tool to show me how to build a product detail page with authentication"
+3. **Mention the tool or domain explicitly**: Reference the framework (Storefront Next, PWA Kit), operation (deploy, discover), or domain (SCAPI, cartridges)
+4. **Use natural language**: Describe what you want to achieve, not the tool name
+5. **Provide context**: Mention your project type, what you're building, or what you need to learn
+6. **Ask for guidelines first**: When starting a new project or learning a framework, ask for development guidelines before writing code
+
+#### Examples by Tool Category
+
+##### Storefront Next Development Guidelines
+
+The `storefront_next_development_guidelines` tool provides critical architecture rules and best practices. **Use this tool first** when starting new Storefront Next development or when you need architecture guidance.
+
+**Good prompts:**
+- ✅ "I'm new to Storefront Next. Use the MCP tool to show me the critical rules I need to know."
+- ✅ "I need to build a product detail page. Use the MCP tool to show me best practices for data fetching and component patterns."
+- ✅ "I need to build a checkout form with authentication and validation. Use the MCP tool to show me how to handle form submissions, authentication, and internationalized error messages."
+- ✅ "Use the MCP tool to show me the data fetching patterns for Storefront Next."
+- ✅ "Show me all available Storefront Next development guidelines."
+
+**Available sections:**
+- `quick-reference` - Critical rules and architecture principles (default)
+- `data-fetching` - Data loading patterns with loaders
+- `state-management` - Client-side state management
+- `auth` - Authentication and session management
+- `components` - Component patterns and best practices
+- `styling` - Tailwind CSS 4, Shadcn/ui, styling guidelines
+- `page-designer` - Page Designer integration
+- `performance` - Performance optimization
+- `testing` - Testing strategies
+- `i18n` - Internationalization patterns
+- `config` - Configuration management
+- `extensions` - Extension development
+- `pitfalls` - Common pitfalls
+
+##### PWA Kit Development
+
+**Good prompts:**
+- ✅ "I'm starting a new PWA Kit project. Use the MCP tool to get the development guidelines."
+- ✅ "Use the MCP tool to create a new product listing page component in my PWA Kit project."
+- ✅ "Use the MCP tool to recommend React hooks for fetching product data in PWA Kit."
+- ✅ "Use the MCP tool to explore the SCAPI Shop API endpoints available for my PWA Kit storefront."
+
+##### SCAPI Discovery
+
+**Good prompts:**
+- ✅ "Use the MCP tool to discover what SCAPI endpoints are available for product data."
+- ✅ "Use the MCP tool to discover custom SCAPI APIs in my B2C instance."
+- ✅ "Use the MCP tool to show me all available SCAPI endpoints and their capabilities."
+- ✅ "Use the MCP tool to scaffold a new custom SCAPI API for order management."
+
+##### Cartridge Deployment
+
+**Good prompts:**
+- ✅ "Use the MCP tool to deploy my cartridges to the sandbox instance."
+- ✅ "Use the MCP tool to deploy only the app_storefront_base cartridge to production."
+- ✅ "Use the MCP tool to deploy cartridges from the ./cartridges directory and reload the code version."
+
+##### MRT Bundle Operations
+
+**Good prompts:**
+- ✅ "Use the MCP tool to build and push my Storefront Next bundle to staging."
+- ✅ "Use the MCP tool to push the bundle from ./build directory to Managed Runtime."
+- ✅ "Use the MCP tool to deploy my PWA Kit bundle to production with a deployment message."
+
+#### Tips for Better Results
+
+- **Start with guidelines**: When learning a new framework, ask for development guidelines first using "Use the MCP tool to get..."
+- **Combine related topics**: Ask for multiple related sections (e.g., "data fetching and components") in one request
+- **Provide project context**: Mention your project type (Storefront Next, PWA Kit, cartridges) for better tool selection
+- **Specify operations clearly**: For deployment operations, mention the target (sandbox, staging, production) and what to deploy
+
 ### Configuration
 
 Credentials can be provided via **config files** (recommended), **environment variables**, or **flags**. Priority: Flags > Env vars > Config files.
@@ -205,19 +285,56 @@ Storefront Next development tools for building modern storefronts.
 
 | Tool | Description |
 |------|-------------|
-| `sfnext_development_guidelines` | Get Storefront Next development guidelines and best practices |
-| `sfnext_site_theming` | Configure and manage site theming for Storefront Next |
-| `sfnext_figma_to_component_workflow` | Convert Figma designs to Storefront Next components |
-| `sfnext_generate_component` | Generate a new Storefront Next component |
-| `sfnext_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
-| `sfnext_design_decorator` | Apply design decorators to Storefront Next components |
-| `sfnext_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
+| `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices |
+| `storefront_next_site_theming` | Configure and manage site theming for Storefront Next |
+| `storefront_next_figma_to_component_workflow` | Convert Figma designs to Storefront Next components |
+| `storefront_next_generate_component` | Generate a new Storefront Next component |
+| `storefront_next_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
+| `storefront_next_design_decorator` | Apply design decorators to Storefront Next components |
+| `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
 | `scapi_discovery` | Discover available SCAPI endpoints and capabilities |
 | `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_discovery`). When using multiple toolsets, tools are automatically deduplicated.
 
+## Telemetry
+
+The MCP server collects anonymous usage telemetry to help improve the developer experience. Telemetry is enabled by default.
+
+**Development mode**: Telemetry is automatically disabled when using `bin/dev.js`, so local development and testing won't pollute production data.
+
+### Disabling Telemetry
+
+Set one of these environment variables to disable telemetry:
+
+```bash
+# Salesforce CLI standard (recommended)
+SF_DISABLE_TELEMETRY=true
+
+# Or SFCC-specific
+SFCC_DISABLE_TELEMETRY=true
+```
+
+You can also override the telemetry connection string for testing:
+
+```bash
+SFCC_APP_INSIGHTS_KEY=your-connection-string
+```
+
+### What We Collect
+
+- **Server lifecycle events**: When the server starts, stops, or encounters errors
+- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
+- **Command metrics**: Command duration and success/failure status
+- **Environment info**: Platform, architecture, Node.js version, and package version
+
+### What We Don't Collect
+
+- **No credentials**: No API keys, passwords, or secrets
+- **No business data**: No product data, customer information, or site content
+- **No tool arguments**: No input parameters or output results from tool calls
+- **No file contents**: No source code, configuration files, or project data
 
 ## Development
 
@@ -287,7 +404,7 @@ npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools --me
 # Call a specific tool
 npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools \
   --method tools/call \
-  --tool-name sfnext_design_decorator
+  --tool-name storefront_next_design_decorator
 ```
 
 #### 2. IDE Integration

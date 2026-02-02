@@ -4,7 +4,7 @@ description: API reference for the B2C Tooling SDK with typed WebDAV and OCAPI c
 
 # API Reference
 
-The `@salesforce/b2c-tooling-sdk` package provides a programmatic API for interacting with Salesforce B2C Commerce instances.
+The `@salesforce/b2c-tooling-sdk` package provides TypeScript APIs for B2C Commerce development, including instance clients (WebDAV, OCAPI), platform service clients (SCAPI, SLAS, MRT, ODS), high-level operations, and developer utilities.
 
 ## Installation
 
@@ -12,60 +12,90 @@ The `@salesforce/b2c-tooling-sdk` package provides a programmatic API for intera
 npm install @salesforce/b2c-tooling-sdk
 ```
 
-## Quick Start
+## Package Structure
 
-### From Configuration (Recommended)
+The SDK is organized into focused submodules that can be imported individually:
 
-Use `resolveConfig()` to load configuration from project files (dw.json) and create a B2C instance:
+```
+@salesforce/b2c-tooling-sdk
+├── /config          # Configuration resolution (dw.json, env vars)
+├── /auth            # Authentication strategies (OAuth, Basic, API Key)
+├── /clients         # Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT)
+├── /logging         # Pino-based logging configuration
+│
+├── /operations/code # Code deployment, cartridge management
+├── /operations/jobs # Job execution, site archive import/export
+├── /operations/logs # Log tailing and retrieval
+├── /operations/mrt  # Managed Runtime bundle operations
+├── /operations/ods  # On-demand sandbox utilities
+│
+├── /docs            # B2C Script API documentation search
+└── /schemas         # OpenAPI schema utilities
+```
+
+Import from specific submodules to access their functionality:
 
 ```typescript
 import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
-
-// Load configuration, override secrets from environment
-const config = resolveConfig({
-  clientId: process.env.SFCC_CLIENT_ID,
-  clientSecret: process.env.SFCC_CLIENT_SECRET,
-});
-
-// Validate configuration before use
-if (!config.hasB2CInstanceConfig()) {
-  throw new Error('Missing B2C instance configuration');
-}
-
-// Create instance from validated config
-const instance = config.createB2CInstance();
-
-// Use typed WebDAV client
-await instance.webdav.mkcol('Cartridges/v1');
-await instance.webdav.put('Cartridges/v1/app.zip', zipBuffer);
-
-// Use typed OCAPI client (openapi-fetch)
-const { data, error } = await instance.ocapi.GET('/sites', {
-  params: { query: { select: '(**)' } },
-});
-
-// Check for configuration warnings
-for (const warning of config.warnings) {
-  console.warn(warning.message);
-}
+import { findAndDeployCartridges } from '@salesforce/b2c-tooling-sdk/operations/code';
+import { tailLogs } from '@salesforce/b2c-tooling-sdk/operations/logs';
 ```
 
-### Direct Construction
+## Quick Start
 
-For advanced use cases, you can construct a B2CInstance directly:
+### B2C Instance Operations
 
 ```typescript
 import { B2CInstance } from '@salesforce/b2c-tooling-sdk';
 
 const instance = new B2CInstance(
   { hostname: 'your-sandbox.demandware.net', codeVersion: 'v1' },
-  {
-    oauth: {
-      clientId: 'your-client-id',
-      clientSecret: 'your-client-secret'
-    }
-  }
+  { oauth: { clientId: 'your-client-id', clientSecret: 'your-client-secret' } }
 );
+
+// Typed WebDAV client
+await instance.webdav.put('Cartridges/v1/app.zip', zipBuffer);
+
+// Typed OCAPI client (openapi-fetch)
+const { data } = await instance.ocapi.GET('/sites');
+```
+
+### Job Execution
+
+```typescript
+import { executeJob, waitForJob } from '@salesforce/b2c-tooling-sdk/operations/jobs';
+
+const execution = await executeJob(instance, 'MyCustomJob');
+const result = await waitForJob(instance, 'MyCustomJob', execution.id!);
+```
+
+### Platform Service Clients
+
+```typescript
+import { createSlasClient, OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const slasClient = createSlasClient({ shortCode: 'kv7kzm78' }, auth);
+const { data } = await slasClient.GET('/tenants/{tenantId}/clients', {
+  params: { path: { tenantId: 'your-tenant' } },
+});
+```
+
+### MRT Operations
+
+```typescript
+import { pushBundle, ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk';
+
+const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!);
+const result = await pushBundle({
+  projectSlug: 'my-storefront',
+  buildDirectory: './build',
+  target: 'staging',
+}, auth);
 ```
 
 ## Configuration Resolution
@@ -105,32 +135,13 @@ if (config.hasB2CInstanceConfig()) {
 
 // Check for MRT configuration
 if (config.hasMrtConfig()) {
-  const mrtClient = config.createMrtClient({ project: 'my-project' });
+  const mrtAuth = config.createMrtAuth();
 }
 
 // Other validation methods
 config.hasOAuthConfig();      // OAuth credentials available?
 config.hasBasicAuthConfig();  // Basic auth credentials available?
 ```
-
-### Configuration Warnings
-
-The config system detects potential issues and provides warnings:
-
-```typescript
-const config = resolveConfig({
-  hostname: 'staging.demandware.net', // Different from dw.json
-});
-
-// Check warnings
-for (const warning of config.warnings) {
-  console.warn(`[${warning.code}] ${warning.message}`);
-}
-```
-
-### Hostname Protection
-
-When you explicitly override the hostname with a value that differs from dw.json, the system protects against credential leakage by ignoring the dw.json credentials. This prevents accidentally using production credentials against a staging server.
 
 ## Authentication
 
@@ -169,31 +180,47 @@ When both are configured, WebDAV uses Basic auth and OCAPI uses OAuth.
 
 ## Typed Clients
 
+The SDK provides typed clients for B2C Commerce APIs. All clients use [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) for full TypeScript support with type-safe paths, parameters, and responses.
+
+### Instance Clients
+
+These clients are accessed via `B2CInstance` for operations on a specific B2C Commerce instance:
+
+| Client | Description | API Reference |
+|--------|-------------|---------------|
+| [WebDavClient](./clients/classes/WebDavClient.md) | File operations (upload, download, list) | WebDAV |
+| [OcapiClient](./clients/type-aliases/OcapiClient.md) | Data API operations (sites, jobs, code versions) | [OCAPI Data API](https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/b2c-api-doc.html) |
+
+### Platform Service Clients
+
+These clients are created directly for platform-wide services:
+
+| Client | Description | API Reference |
+|--------|-------------|---------------|
+| [SlasClient](./clients/type-aliases/SlasClient.md) | SLAS tenant and client management | [SLAS Admin API](https://developer.salesforce.com/docs/commerce/commerce-api/references/slas-admin?meta=Summary) |
+| [OdsClient](./clients/type-aliases/OdsClient.md) | On-demand sandbox management | [ODS REST API](https://developer.salesforce.com/docs/commerce/b2c-commerce/references/ods-rest-api?meta=Summary) |
+| [MrtClient](./clients/type-aliases/MrtClient.md) | Managed Runtime projects and deployments | [MRT Admin API](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=Summary) |
+| [MrtB2CClient](./clients/type-aliases/MrtB2CClient.md) | MRT B2C Commerce integration | [MRT B2C Config API](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-b2c-config?meta=Summary) |
+| [CdnZonesClient](./clients/type-aliases/CdnZonesClient.md) | eCDN zone and cache management | [CDN Zones API](https://developer.salesforce.com/docs/commerce/commerce-api/references/cdn-api-process-apis?meta=Summary) |
+| [ScapiSchemasClient](./clients/type-aliases/ScapiSchemasClient.md) | SCAPI schema discovery | [SCAPI Schemas API](https://developer.salesforce.com/docs/commerce/commerce-api/references/scapi-schemas?meta=Summary) |
+| [CustomApisClient](./clients/type-aliases/CustomApisClient.md) | Custom SCAPI endpoint status | [Custom APIs](https://developer.salesforce.com/docs/commerce/commerce-api/references/custom-apis?meta=Summary) |
+
 ### WebDAV Client
 
 ```typescript
-// Create directories
-await instance.webdav.mkcol('Cartridges/v1');
-
 // Upload files
 await instance.webdav.put('Cartridges/v1/app.zip', buffer, 'application/zip');
+
+// List directory contents
+const entries = await instance.webdav.propfind('Cartridges');
 
 // Download files
 const content = await instance.webdav.get('Cartridges/v1/app.zip');
 
-// List directory
-const entries = await instance.webdav.propfind('Cartridges');
-
-// Check existence
-const exists = await instance.webdav.exists('Cartridges/v1');
-
-// Delete
-await instance.webdav.delete('Cartridges/v1/old-file.zip');
+// Also supports: mkcol, exists, delete, unzip, request
 ```
 
 ### OCAPI Client
-
-The OCAPI client uses [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) with full TypeScript support:
 
 ```typescript
 // List sites
@@ -212,6 +239,219 @@ const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version
   body: { active: true },
 });
 ```
+
+## Account Manager Operations
+
+The SDK provides a unified client for managing users, roles, and organizations through the Account Manager API.
+
+### Authentication
+
+Account Manager operations use **OAuth implicit flow** by default, which opens a browser for interactive authentication. This is ideal for development and manual operations where you want to use roles assigned to your user account.
+
+For CI/CD and automation, you can also use **OAuth client credentials flow** (requires both client ID and secret).
+
+### Unified Client (Recommended)
+
+The recommended approach is to use the unified `createAccountManagerClient` which provides access to all Account Manager APIs (users, roles, and organizations):
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager client with implicit OAuth (opens browser for login)
+const auth = new ImplicitOAuthStrategy({
+  clientId: 'your-client-id',
+  // No clientSecret needed for implicit flow
+});
+
+const client = createAccountManagerClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Users API
+const users = await client.listUsers({ size: 25, page: 0 });
+const user = await client.getUser('user-id');
+const userByLogin = await client.findUserByLogin('user@example.com');
+await client.createUser({
+  mail: 'newuser@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  organizations: ['org-id'],
+  primaryOrganization: 'org-id',
+});
+await client.updateUser('user-id', { firstName: 'Jane' });
+await client.grantRole('user-id', 'bm-admin', 'tenant1,tenant2');
+await client.revokeRole('user-id', 'bm-admin', 'tenant1');
+await client.resetUser('user-id');
+await client.deleteUser('user-id');
+
+// Roles API
+const roles = await client.listRoles({ size: 20, page: 0 });
+const role = await client.getRole('bm-admin');
+
+// Organizations API
+const orgs = await client.listOrgs({ size: 25, page: 0 });
+const org = await client.getOrg('org-id');
+const orgByName = await client.getOrgByName('My Organization');
+const auditLogs = await client.getOrgAuditLogs('org-id');
+```
+
+### Client Credentials Flow (Alternative)
+
+For automation and CI/CD, you can use client credentials flow:
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager client with client credentials OAuth
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Use the unified client as shown above
+```
+
+### Individual Clients
+
+If you only need access to a specific API, you can create individual clients:
+
+```typescript
+import {
+  createAccountManagerUsersClient,
+  createAccountManagerRolesClient,
+  createAccountManagerOrgsClient,
+} from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({
+  clientId: 'your-client-id',
+});
+
+// Users client
+const usersClient = createAccountManagerUsersClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Roles client
+const rolesClient = createAccountManagerRolesClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Organizations client
+const orgsClient = createAccountManagerOrgsClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+```
+
+### User Operations
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// List users with pagination
+const users = await client.listUsers({ size: 25, page: 0 });
+
+// Get user by email/login
+const user = await client.findUserByLogin('user@example.com');
+
+// Get user with expanded organizations and roles
+const userExpanded = await client.getUser('user-id', ['organizations', 'roles']);
+
+// Create a new user
+const newUser = await client.createUser({
+  mail: 'newuser@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  organizations: ['org-id'],
+  primaryOrganization: 'org-id',
+});
+
+// Update a user
+await client.updateUser('user-id', { firstName: 'Jane' });
+
+// Grant a role to a user
+await client.grantRole('user-id', 'bm-admin', 'tenant1,tenant2'); // Optional tenant filter
+
+// Revoke a role from a user
+await client.revokeRole('user-id', 'bm-admin', 'tenant1'); // Optional: remove specific scope
+
+// Reset user to INITIAL state
+await client.resetUser('user-id');
+
+// Delete (disable) a user
+await client.deleteUser('user-id');
+```
+
+### Role Operations
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// Get role details by ID
+const role = await client.getRole('bm-admin');
+
+// List all roles with pagination
+const roles = await client.listRoles({ size: 25, page: 0 });
+
+// List roles filtered by target type
+const userRoles = await client.listRoles({
+  size: 25,
+  page: 0,
+  roleTargetType: 'User',
+});
+```
+
+### Organization Operations
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// Get organization by ID
+const org = await client.getOrg('org-123');
+
+// Get organization by name
+const orgByName = await client.getOrgByName('My Organization');
+
+// List organizations with pagination
+const orgs = await client.listOrgs({ size: 25, page: 0 });
+
+// List all organizations (uses max page size of 5000)
+const allOrgs = await client.listOrgs({ all: true });
+
+// Get audit logs for an organization
+const auditLogs = await client.getOrgAuditLogs('org-123');
+```
+
+### Required Permissions
+
+Account Manager operations require:
+- OAuth client with `sfcc.accountmanager.user.manage` scope
+- Account Manager hostname configuration
+- For implicit flow: roles configured on your **user account**
+- For client credentials flow: roles configured on the **API client**
 
 ## Logging
 

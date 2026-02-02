@@ -5,7 +5,7 @@
  */
 import {Args, Flags, ux} from '@oclif/core';
 import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import {searchDocs, listDocs, type SearchResult, type DocEntry} from '@salesforce/b2c-tooling-sdk/operations/docs';
+import {searchDocs, listDocs, type SearchResult, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import {t} from '../../i18n/index.js';
 
 interface SearchDocsResponse {

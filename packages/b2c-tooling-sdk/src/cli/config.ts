@@ -90,6 +90,10 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     codeVersion: flags['code-version'] as string | undefined,
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
+    // TLS/mTLS options
+    certificate: flags.certificate as string | undefined,
+    certificatePassphrase: flags.passphrase as string | undefined,
+    selfSigned: (flags.selfsigned as boolean) || !(flags.verify as boolean),
     // Include OAuth flags (instance operations often need OAuth too)
     ...extractOAuthFlags(flags),
   };
@@ -245,9 +249,9 @@ export function loadConfig(
     );
   }
 
-  // Log warnings
+  // Log warnings (at warn level so users can see configuration issues)
   for (const warning of resolved.warnings) {
-    logger.trace({warning}, `[Config] ${warning.message}`);
+    logger.warn({warning}, `[Config] ${warning.message}`);
   }
 
   return resolved;
