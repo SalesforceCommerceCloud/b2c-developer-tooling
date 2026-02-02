@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Box, Text, useInput} from 'ink';
 import type {AuthConfig} from '@salesforce/b2c-tooling-sdk';
 import type {LogEntry} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {useLogTail} from '../hooks/use-log-tail.js';
 import type {LogTailConfig, SandboxModel} from '../types.js';
+import type {ScrollViewRef} from './scroll-view.js';
+import {ScrollView} from './scroll-view.js';
 
 interface LogTailViewProps {
   /** Sandbox to tail logs from */
@@ -19,8 +21,6 @@ interface LogTailViewProps {
   authConfig: AuthConfig;
   /** Maximum visible rows */
   maxVisibleRows: number;
-  /** Terminal width for text wrapping */
-  terminalWidth: number;
   /** Callback to open config overlay */
   onOpenConfig: () => void;
   /** Callback to open search filter */
@@ -44,40 +44,16 @@ const LEVEL_COLORS: Record<string, string> = {
 /**
  * Formats a single log entry for display.
  */
-function LogEntryLine({entry, width}: {entry: LogEntry; width: number}): React.ReactElement {
+function LogEntryLine({entry}: {entry: LogEntry}): React.ReactElement {
   const levelColor = LEVEL_COLORS[entry.level ?? 'INFO'] ?? 'white';
   const level = (entry.level ?? 'INFO').padEnd(5);
 
-  // Manually wrap the message to fit within available width
-  const messageWidth = Math.max(20, width - 6); // 6 = level(5) + space(1)
-  const wrappedLines: string[] = [];
-  for (const line of entry.message.split('\n')) {
-    if (line.length <= messageWidth) {
-      wrappedLines.push(line);
-    } else {
-      // Wrap long lines
-      let remaining = line;
-      while (remaining.length > 0) {
-        wrappedLines.push(remaining.slice(0, messageWidth));
-        remaining = remaining.slice(messageWidth);
-      }
-    }
-  }
-
   return (
-    <Box flexDirection="column">
-      {wrappedLines.map((line, i) => (
-        <Box key={i}>
-          {i === 0 ? (
-            <Text bold color={levelColor}>
-              {level}{' '}
-            </Text>
-          ) : (
-            <Text>{'      '}</Text>
-          )}
-          <Text>{line}</Text>
-        </Box>
-      ))}
+    <Box flexDirection="row">
+      <Text bold color={levelColor}>
+        {level}{' '}
+      </Text>
+      <Text wrap="wrap">{entry.message}</Text>
     </Box>
   );
 }
@@ -87,14 +63,12 @@ export function LogTailView({
   config,
   authConfig,
   maxVisibleRows,
-  terminalWidth,
   onOpenConfig,
   onOpenSearch,
   onGoBack,
   isActive,
 }: LogTailViewProps): React.ReactElement {
-  // Account for box borders (2) and padding (2)
-  const contentWidth = Math.max(40, terminalWidth - 4);
+  const scrollViewRef = useRef<ScrollViewRef>(null);
 
   const {entries, loading, error, paused, pause, resume, clear} = useLogTail({
     sandbox,
@@ -102,12 +76,8 @@ export function LogTailView({
     authConfig,
   });
 
-  // Scroll state
-  const [scrollOffset, setScrollOffset] = useState(0);
+  // Track if we should auto-scroll to bottom
   const [autoScroll, setAutoScroll] = useState(true);
-
-  // Calculate visible entries (reserve space for status bar)
-  const availableRows = Math.max(1, maxVisibleRows - 2);
 
   // Filter entries by search (filtering on render so search works on existing entries)
   const filteredEntries = useMemo(() => {
@@ -121,42 +91,58 @@ export function LogTailView({
     );
   }, [entries, config.search]);
 
-  // Auto-scroll to bottom when new entries arrive and not paused
-  useEffect(() => {
-    if (autoScroll && !paused && filteredEntries.length > 0) {
-      const maxOffset = Math.max(0, filteredEntries.length - availableRows);
-      setScrollOffset(maxOffset);
+  // Handle scroll events to detect when user scrolls away from bottom
+  const handleScroll = useCallback(() => {
+    if (scrollViewRef.current) {
+      const atBottom = scrollViewRef.current.isAtBottom();
+      if (!atBottom && autoScroll) {
+        setAutoScroll(false);
+      }
     }
-  }, [filteredEntries.length, autoScroll, paused, availableRows]);
+  }, [autoScroll]);
 
   // Handle keyboard input
   const moveUp = useCallback(() => {
-    setScrollOffset((prev) => Math.max(0, prev - 1));
+    scrollViewRef.current?.scrollBy(-1);
     setAutoScroll(false);
   }, []);
 
   const moveDown = useCallback(() => {
-    const maxOffset = Math.max(0, filteredEntries.length - availableRows);
-    setScrollOffset((prev) => {
-      const next = Math.min(maxOffset, prev + 1);
-      // Re-enable auto-scroll if we're at the bottom
-      if (next >= maxOffset) {
+    scrollViewRef.current?.scrollBy(1);
+    // Check if we're at bottom after scrolling
+    setTimeout(() => {
+      if (scrollViewRef.current?.isAtBottom()) {
         setAutoScroll(true);
       }
-      return next;
-    });
-  }, [filteredEntries.length, availableRows]);
+    }, 0);
+  }, []);
+
+  const pageUp = useCallback(() => {
+    const viewportHeight = scrollViewRef.current?.getViewportHeight() ?? 10;
+    scrollViewRef.current?.scrollBy(-Math.max(1, viewportHeight - 2));
+    setAutoScroll(false);
+  }, []);
+
+  const pageDown = useCallback(() => {
+    const viewportHeight = scrollViewRef.current?.getViewportHeight() ?? 10;
+    scrollViewRef.current?.scrollBy(Math.max(1, viewportHeight - 2));
+    // Check if we're at bottom after scrolling
+    setTimeout(() => {
+      if (scrollViewRef.current?.isAtBottom()) {
+        setAutoScroll(true);
+      }
+    }, 0);
+  }, []);
 
   const jumpToTop = useCallback(() => {
-    setScrollOffset(0);
+    scrollViewRef.current?.scrollToTop();
     setAutoScroll(false);
   }, []);
 
   const jumpToBottom = useCallback(() => {
-    const maxOffset = Math.max(0, filteredEntries.length - availableRows);
-    setScrollOffset(maxOffset);
+    scrollViewRef.current?.scrollToBottom();
     setAutoScroll(true);
-  }, [filteredEntries.length, availableRows]);
+  }, []);
 
   const togglePause = useCallback(() => {
     if (paused) {
@@ -167,6 +153,17 @@ export function LogTailView({
       setAutoScroll(false);
     }
   }, [paused, pause, resume]);
+
+  // Handle terminal resize
+  useEffect(() => {
+    const handleResize = () => {
+      scrollViewRef.current?.remeasure();
+    };
+    process.stdout.on('resize', handleResize);
+    return () => {
+      process.stdout.off('resize', handleResize);
+    };
+  }, []);
 
   useInput(
     (input, key) => {
@@ -182,6 +179,14 @@ export function LogTailView({
       }
       if (key.downArrow || input === 'j') {
         moveDown();
+      }
+
+      // Page navigation
+      if (key.pageUp || input === 'b') {
+        pageUp();
+      }
+      if (key.pageDown || input === 'f') {
+        pageDown();
       }
 
       // Jump to top/bottom
@@ -215,16 +220,6 @@ export function LogTailView({
     {isActive},
   );
 
-  // Memoize visible entries calculation
-  const {visibleEntries, hasMoreAbove, hasMoreBelow} = useMemo(() => {
-    const visible = filteredEntries.slice(scrollOffset, scrollOffset + availableRows);
-    return {
-      hasMoreAbove: scrollOffset > 0,
-      hasMoreBelow: scrollOffset + availableRows < filteredEntries.length,
-      visibleEntries: visible,
-    };
-  }, [filteredEntries, scrollOffset, availableRows]);
-
   if (loading) {
     return (
       <Box flexDirection="column" paddingX={1}>
@@ -243,25 +238,28 @@ export function LogTailView({
     );
   }
 
+  // Reserve space for status bar (1 line) and some margin
+  const scrollAreaHeight = Math.max(3, maxVisibleRows - 2);
+
   return (
     <Box flexDirection="column" paddingX={1}>
-      {/* Scroll indicator */}
-      {hasMoreAbove && (
-        <Box>
-          <Text color="cyan">↑ more above</Text>
-        </Box>
-      )}
-
-      {/* Log entries */}
-      {visibleEntries.length === 0 ? (
-        <Box>
+      {/* Scrollable log entries */}
+      <Box flexDirection="column" height={scrollAreaHeight}>
+        {filteredEntries.length === 0 ? (
           <Text dimColor>Waiting for log entries...</Text>
-        </Box>
-      ) : (
-        visibleEntries.map((entry, index) => (
-          <LogEntryLine entry={entry} key={`${entry.file}-${scrollOffset + index}`} width={contentWidth} />
-        ))
-      )}
+        ) : (
+          <ScrollView
+            autoScrollToBottom={autoScroll && !paused}
+            flexGrow={1}
+            onScroll={handleScroll}
+            ref={scrollViewRef}
+          >
+            {filteredEntries.map((entry, index) => (
+              <LogEntryLine entry={entry} key={`${entry.file}-${index}`} />
+            ))}
+          </ScrollView>
+        )}
+      </Box>
 
       {/* Bottom status bar */}
       <Box marginTop={1}>
@@ -276,7 +274,7 @@ export function LogTailView({
           {' '}
           | {config.search ? `${filteredEntries.length}/${entries.length}` : entries.length} entries
         </Text>
-        {hasMoreBelow && <Text color="cyan"> | ↓ more</Text>}
+        {!autoScroll && <Text color="cyan"> | Press G to resume tailing</Text>}
       </Box>
     </Box>
   );

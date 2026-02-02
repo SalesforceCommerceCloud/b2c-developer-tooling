@@ -3,8 +3,17 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, {useMemo} from 'react';
+import React, {forwardRef, useImperativeHandle, useMemo, useRef} from 'react';
 import {Box, Text} from 'ink';
+import type {ScrollViewRef} from './scroll-view.js';
+import {ScrollView} from './scroll-view.js';
+
+export interface FileViewerRef {
+  scrollBy: (delta: number) => void;
+  scrollToTop: () => void;
+  scrollToBottom: () => void;
+  remeasure: () => void;
+}
 
 interface FileViewerProps {
   content: null | string;
@@ -12,7 +21,6 @@ interface FileViewerProps {
   loading: boolean;
   maxVisibleRows: number;
   path: string;
-  scrollOffset: number;
 }
 
 // Log level colors
@@ -92,108 +100,110 @@ function LogLine({line}: {line: string}): React.ReactElement {
       parts.push(<Text key={keyIndex++}>{remaining}</Text>);
     }
 
-    return <Text>{parts}</Text>;
+    return <Text wrap="wrap">{parts}</Text>;
   }
 
   // No highlighting needed
-  return <Text>{line}</Text>;
+  return <Text wrap="wrap">{line}</Text>;
 }
 
 /**
  * Renders a plain text line.
  */
 function PlainLine({line}: {line: string}): React.ReactElement {
-  return <Text>{line}</Text>;
+  return <Text wrap="wrap">{line}</Text>;
 }
 
-export function FileViewer({
-  content,
-  error,
-  loading,
-  maxVisibleRows,
-  path,
-  scrollOffset,
-}: FileViewerProps): React.ReactElement {
-  // Determine if this is a log file
-  const isLog = isLogFile(path);
+export const FileViewer = forwardRef<FileViewerRef, FileViewerProps>(
+  ({content, error, loading, maxVisibleRows, path}, ref): React.ReactElement => {
+    const scrollViewRef = useRef<ScrollViewRef>(null);
 
-  // Split content into lines and handle scrolling
-  const {hasMore, hasMoreAbove, totalLines, visibleLines} = useMemo(() => {
-    if (!content) {
-      return {hasMore: false, hasMoreAbove: false, totalLines: 0, visibleLines: []};
+    // Expose scroll methods to parent
+    useImperativeHandle(
+      ref,
+      () => ({
+        scrollBy: (delta: number) => scrollViewRef.current?.scrollBy(delta),
+        scrollToTop: () => scrollViewRef.current?.scrollToTop(),
+        scrollToBottom: () => scrollViewRef.current?.scrollToBottom(),
+        remeasure: () => scrollViewRef.current?.remeasure(),
+      }),
+      [],
+    );
+
+    // Determine if this is a log file
+    const isLog = isLogFile(path);
+
+    // Split content into lines
+    const {lines, totalLines} = useMemo(() => {
+      if (!content) {
+        return {lines: [], totalLines: 0};
+      }
+      const allLines = content.split('\n');
+      return {
+        lines: allLines,
+        totalLines: allLines.length,
+      };
+    }, [content]);
+
+    // Extract filename from path
+    const filename = path.split('/').pop() ?? path;
+
+    if (loading) {
+      return (
+        <Box padding={1}>
+          <Text color="yellow">Loading {filename}...</Text>
+        </Box>
+      );
     }
 
-    const allLines = content.split('\n');
-    const availableRows = Math.max(1, maxVisibleRows - 2); // Account for header and scroll indicator
+    if (error) {
+      return (
+        <Box flexDirection="column" paddingX={1}>
+          <Box marginBottom={1}>
+            <Text dimColor>File: </Text>
+            <Text>{filename}</Text>
+          </Box>
+          <Text color="red">{error}</Text>
+        </Box>
+      );
+    }
 
-    const start = Math.min(scrollOffset, Math.max(0, allLines.length - availableRows));
-    const visible = allLines.slice(start, start + availableRows);
+    if (!content) {
+      return (
+        <Box padding={1}>
+          <Text dimColor>No content</Text>
+        </Box>
+      );
+    }
 
-    return {
-      hasMore: start + availableRows < allLines.length,
-      hasMoreAbove: start > 0,
-      totalLines: allLines.length,
-      visibleLines: visible,
-    };
-  }, [content, maxVisibleRows, scrollOffset]);
+    const LineComponent = isLog ? LogLine : PlainLine;
 
-  // Extract filename from path
-  const filename = path.split('/').pop() ?? path;
+    // Reserve space for header (2 lines) and scroll hint (1 line)
+    const scrollAreaHeight = Math.max(3, maxVisibleRows - 3);
 
-  if (loading) {
-    return (
-      <Box padding={1}>
-        <Text color="yellow">Loading {filename}...</Text>
-      </Box>
-    );
-  }
-
-  if (error) {
     return (
       <Box flexDirection="column" paddingX={1}>
+        {/* File header */}
         <Box marginBottom={1}>
           <Text dimColor>File: </Text>
-          <Text>{filename}</Text>
+          <Text bold>{filename}</Text>
+          <Text dimColor> ({totalLines} lines)</Text>
         </Box>
-        <Text color="red">{error}</Text>
-      </Box>
-    );
-  }
 
-  if (!content) {
-    return (
-      <Box padding={1}>
-        <Text dimColor>No content</Text>
-      </Box>
-    );
-  }
-
-  const LineComponent = isLog ? LogLine : PlainLine;
-
-  return (
-    <Box flexDirection="column" paddingX={1}>
-      {/* File header */}
-      <Box marginBottom={1}>
-        <Text dimColor>File: </Text>
-        <Text bold>{filename}</Text>
-        <Text dimColor> ({totalLines} lines)</Text>
-        {hasMoreAbove && <Text color="cyan"> ↑</Text>}
-      </Box>
-
-      {/* File content - minWidth={5} required as geometry anchor for Yoga layout with wrapping text */}
-      {visibleLines.map((line, index) => (
-        <Box key={scrollOffset + index}>
-          <Box minWidth={5} />
-          <LineComponent line={line} />
+        {/* File content with scrolling */}
+        <Box flexDirection="column" height={scrollAreaHeight}>
+          <ScrollView flexGrow={1} ref={scrollViewRef}>
+            {lines.map((line, index) => (
+              <LineComponent key={index} line={line || ' '} />
+            ))}
+          </ScrollView>
         </Box>
-      ))}
 
-      {/* Scroll indicator */}
-      {hasMore && (
+        {/* Scroll hint */}
         <Box justifyContent="flex-end">
-          <Text color="cyan">↓ more (j/k to scroll)</Text>
+          <Text dimColor>j/k to scroll, g/G for top/bottom</Text>
         </Box>
-      )}
-    </Box>
-  );
-}
+      </Box>
+    );
+  },
+);

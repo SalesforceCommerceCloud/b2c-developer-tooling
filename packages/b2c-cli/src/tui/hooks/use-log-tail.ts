@@ -65,7 +65,7 @@ export function useLogTail({sandbox, config, authConfig, maxBuffer = 1000}: UseL
 
   // Batch pending entries to reduce re-renders
   const pendingEntriesRef = useRef<LogEntry[]>([]);
-  const batchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const batchTimeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
 
   // Keep pausedRef in sync
   useEffect(() => {

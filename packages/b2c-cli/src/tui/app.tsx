@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Box, useApp, useInput, useStdout} from 'ink';
 import type {AuthConfig, OdsClient} from '@salesforce/b2c-tooling-sdk';
 
@@ -16,6 +16,7 @@ import {Footer} from './components/footer.js';
 import {SandboxList} from './components/sandbox-list.js';
 import {SandboxDetail} from './components/sandbox-detail.js';
 import {FileBrowser, sortEntries} from './components/file-browser.js';
+import type {FileViewerRef} from './components/file-viewer.js';
 import {FileViewer} from './components/file-viewer.js';
 import {HelpOverlay} from './components/help-overlay.js';
 import {CommandPalette} from './components/command-palette.js';
@@ -59,7 +60,9 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
   const [sandboxIndex, setSandboxIndex] = useState(0);
   const [rootIndex, setRootIndex] = useState(0);
   const [fileIndex, setFileIndex] = useState(0);
-  const [fileScrollOffset, setFileScrollOffset] = useState(0);
+
+  // Ref for file viewer scrolling
+  const fileViewerRef = useRef<FileViewerRef>(null);
 
   const [showHelp, setShowHelp] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -199,7 +202,7 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
         return webdavEntries.length;
       }
       case 'file-viewer': {
-        return fileContent?.split('\n').length ?? 0;
+        return 0; // File viewer handles its own scrolling via ref
       }
       case 'log-tail': {
         return 0; // Log tail view handles its own scrolling
@@ -214,7 +217,7 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
         return 0;
       }
     }
-  }, [currentView.type, displayedSandboxes.length, webdavEntries.length, fileContent]);
+  }, [currentView.type, displayedSandboxes.length, webdavEntries.length]);
 
   // Navigation helpers
   const moveUp = useCallback(() => {
@@ -224,7 +227,7 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
         break;
       }
       case 'file-viewer': {
-        setFileScrollOffset((prev) => Math.max(0, prev - 1));
+        fileViewerRef.current?.scrollBy(-1);
         break;
       }
       case 'sandbox-detail': {
@@ -246,7 +249,7 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
         break;
       }
       case 'file-viewer': {
-        setFileScrollOffset((prev) => Math.min(maxIndex, prev + 1));
+        fileViewerRef.current?.scrollBy(1);
         break;
       }
       case 'sandbox-detail': {
@@ -266,8 +269,6 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
       // Reset indices when going back
       if (currentView.type === 'file-browser') {
         setFileIndex(0);
-      } else if (currentView.type === 'file-viewer') {
-        setFileScrollOffset(0);
       }
     }
   }, [viewStack.length, currentView.type]);
@@ -290,7 +291,6 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
           } else {
             // Open file viewer
             setViewStack((prev) => [...prev, {path: relativePath, sandbox: currentView.sandbox, type: 'file-viewer'}]);
-            setFileScrollOffset(0);
           }
         }
         break;
@@ -781,7 +781,7 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
             loading={webdavLoading}
             maxVisibleRows={availableHeight - 4}
             path={currentView.path}
-            scrollOffset={fileScrollOffset}
+            ref={fileViewerRef}
           />
         );
       }
@@ -796,7 +796,6 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
             onOpenConfig={openLogConfig}
             onOpenSearch={openLogSearch}
             sandbox={currentView.sandbox}
-            terminalWidth={stdout?.columns ?? 80}
           />
         );
       }
