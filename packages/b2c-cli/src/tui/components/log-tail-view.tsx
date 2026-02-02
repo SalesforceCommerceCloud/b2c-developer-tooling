@@ -41,6 +41,9 @@ const LEVEL_COLORS: Record<string, string> = {
   WARN: 'yellow',
 };
 
+// Maximum entries to keep in the buffer to limit render overhead
+const MAX_DISPLAY_ENTRIES = 200;
+
 /**
  * Formats a single log entry for display.
  * Format matches CLI `logs tail`:
@@ -55,11 +58,8 @@ function LogEntryLine({entry}: {entry: LogEntry}): React.ReactElement {
   // Replace tabs with spaces to avoid unpredictable width expansion
   const message = entry.message.replaceAll('\t', '    ');
 
-  // Header line: LEVEL [timestamp] [file]
-  // Message
-  // Blank line separator
   return (
-    <Text wrap="wrap">
+    <Text>
       <Text bold color={levelColor}>
         {level}
       </Text>
@@ -94,16 +94,23 @@ export function LogTailView({
   // Track if we should auto-scroll to bottom
   const [autoScroll, setAutoScroll] = useState(true);
 
-  // Filter entries by search (filtering on render so search works on existing entries)
-  const filteredEntries = useMemo(() => {
-    if (!config.search) return entries;
-    const searchLower = config.search.toLowerCase();
-    return entries.filter(
-      (entry) =>
-        entry.message.toLowerCase().includes(searchLower) ||
-        entry.file.toLowerCase().includes(searchLower) ||
-        (entry.level?.toLowerCase().includes(searchLower) ?? false),
-    );
+  // Filter entries by search and limit to max display entries
+  const displayEntries = useMemo(() => {
+    let filtered = entries;
+    if (config.search) {
+      const searchLower = config.search.toLowerCase();
+      filtered = entries.filter(
+        (entry) =>
+          entry.message.toLowerCase().includes(searchLower) ||
+          entry.file.toLowerCase().includes(searchLower) ||
+          (entry.level?.toLowerCase().includes(searchLower) ?? false),
+      );
+    }
+    // Limit to last N entries for performance
+    if (filtered.length > MAX_DISPLAY_ENTRIES) {
+      return filtered.slice(-MAX_DISPLAY_ENTRIES);
+    }
+    return filtered;
   }, [entries, config.search]);
 
   // Handle scroll events to detect when user scrolls away from bottom
@@ -254,13 +261,13 @@ export function LogTailView({
   }
 
   // Reserve 1 line for status bar
-  const scrollAreaHeight = Math.max(3, maxVisibleRows - 1);
+  const scrollAreaHeight = Math.max(10, maxVisibleRows - 1);
 
   return (
     <Box flexDirection="column" flexGrow={1} paddingX={1}>
       {/* Scrollable log entries */}
       <Box flexGrow={1} height={scrollAreaHeight}>
-        {filteredEntries.length === 0 ? (
+        {displayEntries.length === 0 ? (
           <Text dimColor>Waiting for log entries...</Text>
         ) : (
           <ScrollView
@@ -269,7 +276,7 @@ export function LogTailView({
             onScroll={handleScroll}
             ref={scrollViewRef}
           >
-            {filteredEntries.map((entry, index) => (
+            {displayEntries.map((entry, index) => (
               <LogEntryLine entry={entry} key={`${entry.file}-${index}`} />
             ))}
           </ScrollView>
@@ -287,9 +294,11 @@ export function LogTailView({
         )}
         <Text dimColor>
           {' '}
-          | {config.search ? `${filteredEntries.length}/${entries.length}` : entries.length} entries
+          | {config.search ? `${displayEntries.length}/${entries.length}` : entries.length} entries
+          {entries.length > MAX_DISPLAY_ENTRIES && ` (showing last ${MAX_DISPLAY_ENTRIES})`}
         </Text>
-        {!autoScroll && <Text color="cyan"> | Press G to resume tailing</Text>}
+        {paused && <Text color="cyan"> | Space to resume</Text>}
+        {!paused && !autoScroll && <Text color="cyan"> | G to resume tailing</Text>}
       </Box>
     </Box>
   );

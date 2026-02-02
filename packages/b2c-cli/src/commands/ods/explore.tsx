@@ -8,14 +8,14 @@ import {render} from 'ink';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AuthConfig} from '@salesforce/b2c-tooling-sdk';
 
-import {App} from '../tui/app.js';
+import {App} from '../../tui/app.js';
 
 /**
- * Interactive TUI for B2C Commerce operations.
- * Provides a k9s-style terminal interface for managing sandboxes.
+ * Interactive TUI for exploring and managing on-demand sandboxes.
+ * Provides a k9s-style terminal interface for sandbox operations.
  */
-export default class UiCommand extends OdsCommand<typeof UiCommand> {
-  static description = 'Interactive TUI for B2C Commerce';
+export default class OdsExplore extends OdsCommand<typeof OdsExplore> {
+  static description = 'Interactive TUI for exploring and managing sandboxes';
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',

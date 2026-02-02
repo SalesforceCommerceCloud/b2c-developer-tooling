@@ -667,6 +667,15 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
         if (key.downArrow || input === 'j') {
           moveDown();
         }
+        // Jump to top/bottom (file-viewer only)
+        if (currentView.type === 'file-viewer') {
+          if (input === 'g') {
+            fileViewerRef.current?.scrollToTop();
+          }
+          if (input === 'G') {
+            fileViewerRef.current?.scrollToBottom();
+          }
+        }
         // Enter to open/select
         if (key.return) {
           openSelected();
