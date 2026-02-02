@@ -120,11 +120,17 @@ export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
 
 export {
   createAuthMiddleware,
+  createRateLimitMiddleware,
   createLoggingMiddleware,
   createExtraParamsMiddleware,
   createUserAgentMiddleware,
 } from './middleware.js';
-export type {ExtraParamsConfig, LoggingMiddlewareConfig, UserAgentConfig} from './middleware.js';
+export type {
+  ExtraParamsConfig,
+  LoggingMiddlewareConfig,
+  UserAgentConfig,
+  RateLimitMiddlewareConfig,
+} from './middleware.js';
 
 // User-Agent provider (auto-registers on import)
 export {setUserAgent, getUserAgent, resetUserAgent, userAgentProvider} from './user-agent.js';
