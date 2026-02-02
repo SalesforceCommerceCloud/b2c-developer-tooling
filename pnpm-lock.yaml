@@ -126,6 +126,9 @@ importers:
       mocha:
         specifier: ^10
         version: 10.8.2
+      msw:
+        specifier: ^2.0.0
+        version: 2.12.4(@types/node@18.19.130)(typescript@5.9.3)
       oclif:
         specifier: ^4
         version: 4.22.44(@types/node@18.19.130)
