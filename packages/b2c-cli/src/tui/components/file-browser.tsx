@@ -69,7 +69,15 @@ function getDisplayName(entry: PropfindEntry): string {
   return parts.at(-1) ?? entry.href;
 }
 
-function FileRow({entry, isSelected, nameWidth}: {entry: PropfindEntry; isSelected: boolean; nameWidth: number}): React.ReactElement {
+function FileRow({
+  entry,
+  isSelected,
+  nameWidth,
+}: {
+  entry: PropfindEntry;
+  isSelected: boolean;
+  nameWidth: number;
+}): React.ReactElement {
   const name = getDisplayName(entry);
   const icon = entry.isCollection ? '📁' : '📄';
   const size = entry.isCollection ? '' : formatBytes(entry.contentLength);
@@ -199,12 +207,17 @@ export function FileBrowser({
         <Text dimColor>{'    '}</Text>
         <Text dimColor>{'Name'.padEnd(nameWidth)}</Text>
         <Text dimColor>{'Size'.padStart(SIZE_WIDTH)}</Text>
-        <Text dimColor>{' '}{'Modified'.padStart(DATE_WIDTH)}</Text>
+        <Text dimColor> {'Modified'.padStart(DATE_WIDTH)}</Text>
       </Box>
 
       {/* File entries */}
       {visibleEntries.map((entry, index) => (
-        <FileRow entry={entry} isSelected={startIndex + index === selectedIndex} key={entry.href} nameWidth={nameWidth} />
+        <FileRow
+          entry={entry}
+          isSelected={startIndex + index === selectedIndex}
+          key={entry.href}
+          nameWidth={nameWidth}
+        />
       ))}
 
       {/* Scroll indicator */}

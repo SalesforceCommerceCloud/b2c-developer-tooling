@@ -19,6 +19,8 @@ interface LogTailViewProps {
   authConfig: AuthConfig;
   /** Maximum visible rows */
   maxVisibleRows: number;
+  /** Terminal width for text wrapping */
+  terminalWidth: number;
   /** Callback to open config overlay */
   onOpenConfig: () => void;
   /** Callback to open search filter */
@@ -40,22 +42,42 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 /**
- * Formats a single log entry for display with wrapping.
+ * Formats a single log entry for display.
  */
-function LogEntryLine({entry}: {entry: LogEntry}): React.ReactElement {
+function LogEntryLine({entry, width}: {entry: LogEntry; width: number}): React.ReactElement {
   const levelColor = LEVEL_COLORS[entry.level ?? 'INFO'] ?? 'white';
-  // Take first line only, trim whitespace
-  const message = entry.message.split('\n')[0].trim();
+  const level = (entry.level ?? 'INFO').padEnd(5);
+
+  // Manually wrap the message to fit within available width
+  const messageWidth = Math.max(20, width - 6); // 6 = level(5) + space(1)
+  const wrappedLines: string[] = [];
+  for (const line of entry.message.split('\n')) {
+    if (line.length <= messageWidth) {
+      wrappedLines.push(line);
+    } else {
+      // Wrap long lines
+      let remaining = line;
+      while (remaining.length > 0) {
+        wrappedLines.push(remaining.slice(0, messageWidth));
+        remaining = remaining.slice(messageWidth);
+      }
+    }
+  }
 
   return (
-    <Box>
-      <Text wrap="wrap">
-        <Text bold color={levelColor}>
-          [{entry.level ?? 'INFO'}]
-        </Text>
-        <Text dimColor> {entry.timestamp ?? ''} </Text>
-        <Text>{message}</Text>
-      </Text>
+    <Box flexDirection="column">
+      {wrappedLines.map((line, i) => (
+        <Box key={i}>
+          {i === 0 ? (
+            <Text bold color={levelColor}>
+              {level}{' '}
+            </Text>
+          ) : (
+            <Text>{'      '}</Text>
+          )}
+          <Text>{line}</Text>
+        </Box>
+      ))}
     </Box>
   );
 }
@@ -65,11 +87,15 @@ export function LogTailView({
   config,
   authConfig,
   maxVisibleRows,
+  terminalWidth,
   onOpenConfig,
   onOpenSearch,
   onGoBack,
   isActive,
 }: LogTailViewProps): React.ReactElement {
+  // Account for box borders (2) and padding (2)
+  const contentWidth = Math.max(40, terminalWidth - 4);
+
   const {entries, loading, error, paused, pause, resume, clear} = useLogTail({
     sandbox,
     config,
@@ -232,7 +258,9 @@ export function LogTailView({
           <Text dimColor>Waiting for log entries...</Text>
         </Box>
       ) : (
-        visibleEntries.map((entry, index) => <LogEntryLine entry={entry} key={`${entry.file}-${scrollOffset + index}`} />)
+        visibleEntries.map((entry, index) => (
+          <LogEntryLine entry={entry} key={`${entry.file}-${scrollOffset + index}`} width={contentWidth} />
+        ))
       )}
 
       {/* Bottom status bar */}
@@ -245,7 +273,8 @@ export function LogTailView({
           <Text dimColor>Scrolling</Text>
         )}
         <Text dimColor>
-          {' '}| {config.search ? `${filteredEntries.length}/${entries.length}` : entries.length} entries
+          {' '}
+          | {config.search ? `${filteredEntries.length}/${entries.length}` : entries.length} entries
         </Text>
         {hasMoreBelow && <Text color="cyan"> | ↓ more</Text>}
       </Box>

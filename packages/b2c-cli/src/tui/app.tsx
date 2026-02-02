@@ -796,6 +796,7 @@ export function App({authConfig, filterParams, odsClient, realm}: AppProps): Rea
             onOpenConfig={openLogConfig}
             onOpenSearch={openLogSearch}
             sandbox={currentView.sandbox}
+            terminalWidth={stdout?.columns ?? 80}
           />
         );
       }
