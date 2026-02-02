@@ -43,18 +43,33 @@ const LEVEL_COLORS: Record<string, string> = {
 
 /**
  * Formats a single log entry for display.
+ * Format matches CLI `logs tail`:
+ *   LEVEL [timestamp] [file]
+ *   message
+ *   <blank line>
  */
 function LogEntryLine({entry}: {entry: LogEntry}): React.ReactElement {
   const levelColor = LEVEL_COLORS[entry.level ?? 'INFO'] ?? 'white';
-  const level = (entry.level ?? 'INFO').padEnd(5);
+  const level = entry.level ?? 'INFO';
+  const timestamp = entry.timestamp ? ` [${entry.timestamp}]` : '';
+  // Replace tabs with spaces to avoid unpredictable width expansion
+  const message = entry.message.replaceAll('\t', '    ');
 
+  // Header line: LEVEL [timestamp] [file]
+  // Message
+  // Blank line separator
   return (
-    <Box flexDirection="row">
+    <Text wrap="wrap">
       <Text bold color={levelColor}>
-        {level}{' '}
+        {level}
       </Text>
-      <Text wrap="wrap">{entry.message}</Text>
-    </Box>
+      <Text dimColor>
+        {timestamp} [{entry.file}]
+      </Text>
+      {'\n'}
+      {message}
+      {'\n'}
+    </Text>
   );
 }
 
@@ -238,13 +253,13 @@ export function LogTailView({
     );
   }
 
-  // Reserve space for status bar (1 line) and some margin
-  const scrollAreaHeight = Math.max(3, maxVisibleRows - 2);
+  // Reserve 1 line for status bar
+  const scrollAreaHeight = Math.max(3, maxVisibleRows - 1);
 
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box flexDirection="column" flexGrow={1} paddingX={1}>
       {/* Scrollable log entries */}
-      <Box flexDirection="column" height={scrollAreaHeight}>
+      <Box flexGrow={1} height={scrollAreaHeight}>
         {filteredEntries.length === 0 ? (
           <Text dimColor>Waiting for log entries...</Text>
         ) : (
@@ -262,7 +277,7 @@ export function LogTailView({
       </Box>
 
       {/* Bottom status bar */}
-      <Box marginTop={1}>
+      <Box>
         {paused ? (
           <Text color="yellow">Paused</Text>
         ) : autoScroll ? (

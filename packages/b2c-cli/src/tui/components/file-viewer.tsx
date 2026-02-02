@@ -159,7 +159,7 @@ export const FileViewer = forwardRef<FileViewerRef, FileViewerProps>(
     if (error) {
       return (
         <Box flexDirection="column" paddingX={1}>
-          <Box marginBottom={1}>
+          <Box>
             <Text dimColor>File: </Text>
             <Text>{filename}</Text>
           </Box>
@@ -178,20 +178,20 @@ export const FileViewer = forwardRef<FileViewerRef, FileViewerProps>(
 
     const LineComponent = isLog ? LogLine : PlainLine;
 
-    // Reserve space for header (2 lines) and scroll hint (1 line)
-    const scrollAreaHeight = Math.max(3, maxVisibleRows - 3);
+    // Reserve 2 lines for header and scroll hint
+    const scrollAreaHeight = Math.max(3, maxVisibleRows - 2);
 
     return (
-      <Box flexDirection="column" paddingX={1}>
+      <Box flexDirection="column" flexGrow={1} paddingX={1}>
         {/* File header */}
-        <Box marginBottom={1}>
+        <Box>
           <Text dimColor>File: </Text>
           <Text bold>{filename}</Text>
           <Text dimColor> ({totalLines} lines)</Text>
         </Box>
 
         {/* File content with scrolling */}
-        <Box flexDirection="column" height={scrollAreaHeight}>
+        <Box flexGrow={1} height={scrollAreaHeight}>
           <ScrollView flexGrow={1} ref={scrollViewRef}>
             {lines.map((line, index) => (
               <LineComponent key={index} line={line || ' '} />
