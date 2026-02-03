@@ -5,8 +5,14 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
-import {waitForSandboxStateCommon} from './polling.js';
+import {
+  getApiErrorMessage,
+  SandboxPollingError,
+  SandboxPollingTimeoutError,
+  SandboxTerminalStateError,
+  waitForSandbox,
+  type OdsComponents,
+} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
 type SandboxOperationModel = OdsComponents['schemas']['SandboxOperationModel'];
@@ -89,32 +95,44 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
       }),
     );
     if (wait) {
-      await waitForSandboxStateCommon({
-        sandboxId,
-        targetState: 'stopped',
-        pollIntervalSeconds: pollInterval,
-        timeoutSeconds: timeout,
-        odsClient: this.odsClient,
-        logger: this.logger,
-        onPollError: (message) =>
-          this.error(
-            t('commands.ods.stop.pollError', 'Failed to fetch sandbox status: {{message}}', {
-              message,
-            }),
-          ),
-        onTimeout: (seconds) =>
+      try {
+        await waitForSandbox({
+          sandboxId,
+          targetState: 'stopped',
+          pollIntervalSeconds: pollInterval,
+          timeoutSeconds: timeout,
+          odsClient: this.odsClient,
+          onPoll: ({elapsedSeconds, state}) => {
+            this.logger.info({sandboxId, elapsed: elapsedSeconds, state}, `[${elapsedSeconds}s] State: ${state}`);
+          },
+        });
+      } catch (error) {
+        if (error instanceof SandboxPollingTimeoutError) {
           this.error(
             t('commands.ods.stop.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
-              seconds: String(seconds),
+              seconds: String(error.timeoutSeconds),
             }),
-          ),
-        onFailure: (state) =>
+          );
+        }
+
+        if (error instanceof SandboxTerminalStateError) {
           this.error(
             t('commands.ods.stop.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
-              state: state || 'unknown',
+              state: error.state || 'unknown',
             }),
-          ),
-      });
+          );
+        }
+
+        if (error instanceof SandboxPollingError) {
+          this.error(
+            t('commands.ods.stop.pollError', 'Failed to fetch sandbox status: {{message}}', {
+              message: error.message,
+            }),
+          );
+        }
+
+        throw error;
+      }
 
       this.log('');
       this.logger.info({sandboxId}, t('commands.ods.stop.ready', 'Sandbox is now stopped'));

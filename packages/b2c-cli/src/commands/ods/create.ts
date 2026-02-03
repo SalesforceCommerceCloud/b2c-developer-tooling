@@ -6,9 +6,15 @@
 import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {
+  getApiErrorMessage,
+  SandboxPollingError,
+  SandboxPollingTimeoutError,
+  SandboxTerminalStateError,
+  waitForSandbox,
+  type OdsComponents,
+} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
-import {waitForSandboxStateCommon} from './polling.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 type SandboxResourceProfile = OdsComponents['schemas']['SandboxResourceProfile'];
@@ -153,7 +159,66 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
 
     if (wait && sandbox.id) {
       this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to get started..'));
-      sandbox = await this.waitForSandbox(sandbox.id, pollInterval, timeout);
+
+      try {
+        await waitForSandbox({
+          sandboxId: sandbox.id,
+          targetState: 'started',
+          pollIntervalSeconds: pollInterval,
+          timeoutSeconds: timeout,
+          odsClient: this.odsClient,
+          onPoll: ({elapsedSeconds, state}) => {
+            this.logger.info(
+              {sandboxId: sandbox.id, elapsed: elapsedSeconds, state},
+              `[${elapsedSeconds}s] State: ${state}`,
+            );
+          },
+        });
+      } catch (error) {
+        if (error instanceof SandboxPollingTimeoutError) {
+          this.error(
+            t('commands.ods.create.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
+              seconds: String(error.timeoutSeconds),
+            }),
+          );
+        }
+
+        if (error instanceof SandboxTerminalStateError) {
+          if (error.state === 'deleted') {
+            this.error(t('commands.ods.create.deleted', 'Sandbox was deleted'));
+          }
+          this.error(t('commands.ods.create.failed', 'Sandbox creation failed'));
+        }
+
+        if (error instanceof SandboxPollingError) {
+          this.error(
+            t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
+              message: error.message,
+            }),
+          );
+        }
+
+        throw error;
+      }
+
+      const finalResult = await this.odsClient.GET('/sandboxes/{sandboxId}', {
+        params: {
+          path: {sandboxId: sandbox.id},
+        },
+      });
+
+      if (!finalResult.data?.data) {
+        this.error(
+          t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
+            message: finalResult.response?.statusText || 'Unknown error',
+          }),
+        );
+      }
+
+      sandbox = finalResult.data.data;
+
+      this.log('');
+      this.logger.info({sandboxId: sandbox.id}, t('commands.ods.create.ready', 'Sandbox is now ready'));
     }
 
     if (this.jsonEnabled()) {
@@ -222,74 +287,5 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     }
 
     ux.stdout(ui.toString());
-  }
-
-  /**
-   * Sleep for a given number of milliseconds.
-   */
-  private async sleep(ms: number): Promise<void> {
-    await new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
-
-  /**
-   * Polls for sandbox status until it reaches a terminal state.
-   * @param sandboxId - The sandbox ID to poll
-   * @param pollIntervalSeconds - Interval between polls in seconds
-   * @param timeoutSeconds - Maximum time to wait (0 for no timeout)
-   * @returns The final sandbox state
-   */
-  private async waitForSandbox(
-    sandboxId: string,
-    pollIntervalSeconds: number,
-    timeoutSeconds: number,
-  ): Promise<SandboxModel> {
-    await waitForSandboxStateCommon({
-      sandboxId,
-      targetState: 'started',
-      pollIntervalSeconds,
-      timeoutSeconds,
-      odsClient: this.odsClient,
-      logger: this.logger,
-      sleep: (ms) => this.sleep(ms),
-      onPollError: (message) =>
-        this.error(
-          t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
-            message,
-          }),
-        ),
-      onTimeout: (seconds) =>
-        this.error(
-          t('commands.ods.create.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
-            seconds: String(seconds),
-          }),
-        ),
-      onFailure: (state) => {
-        if (state === 'deleted') {
-          this.error(t('commands.ods.create.deleted', 'Sandbox was deleted'));
-        }
-        this.error(t('commands.ods.create.failed', 'Sandbox creation failed'));
-      },
-    });
-
-    const finalResult = await this.odsClient.GET('/sandboxes/{sandboxId}', {
-      params: {
-        path: {sandboxId},
-      },
-    });
-
-    if (!finalResult.data?.data) {
-      this.error(
-        t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
-          message: finalResult.response?.statusText || 'Unknown error',
-        }),
-      );
-    }
-
-    this.log('');
-    this.logger.info({sandboxId}, t('commands.ods.create.ready', 'Sandbox is now ready'));
-
-    return finalResult.data.data;
   }
 }

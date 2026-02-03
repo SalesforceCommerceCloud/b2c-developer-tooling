@@ -6,9 +6,15 @@
 import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {
+  getApiErrorMessage,
+  SandboxPollingError,
+  SandboxPollingTimeoutError,
+  SandboxTerminalStateError,
+  waitForSandbox,
+  type SandboxState,
+} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
-import {waitForSandboxStateCommon, type SandboxState} from './polling.js';
 
 /**
  * Simple confirmation prompt.
@@ -131,32 +137,44 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
         }),
       );
 
-      await waitForSandboxStateCommon({
-        sandboxId,
-        targetState: 'deleted',
-        pollIntervalSeconds: pollInterval,
-        timeoutSeconds: timeout,
-        odsClient: this.odsClient,
-        logger: this.logger,
-        onPollError: (message) =>
-          this.error(
-            t('commands.ods.delete.pollError', 'Failed to fetch sandbox status: {{message}}', {
-              message,
-            }),
-          ),
-        onTimeout: (seconds) =>
+      try {
+        await waitForSandbox({
+          sandboxId,
+          targetState: 'deleted',
+          pollIntervalSeconds: pollInterval,
+          timeoutSeconds: timeout,
+          odsClient: this.odsClient,
+          onPoll: ({elapsedSeconds, state}) => {
+            this.logger.info({sandboxId, elapsed: elapsedSeconds, state}, `[${elapsedSeconds}s] State: ${state}`);
+          },
+        });
+      } catch (error) {
+        if (error instanceof SandboxPollingTimeoutError) {
           this.error(
             t('commands.ods.delete.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
-              seconds: String(seconds),
+              seconds: String(error.timeoutSeconds),
             }),
-          ),
-        onFailure: (state) =>
+          );
+        }
+
+        if (error instanceof SandboxTerminalStateError) {
           this.error(
             t('commands.ods.delete.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
-              state: state || 'unknown',
+              state: error.state || 'unknown',
             }),
-          ),
-      });
+          );
+        }
+
+        if (error instanceof SandboxPollingError) {
+          this.error(
+            t('commands.ods.delete.pollError', 'Failed to fetch sandbox status: {{message}}', {
+              message: error.message,
+            }),
+          );
+        }
+
+        throw error;
+      }
 
       this.log('');
       this.logger.info({sandboxId}, t('commands.ods.delete.ready', 'Sandbox is now deleted'));
