@@ -204,6 +204,53 @@ export type {
   components as ScapiSchemasComponents,
 } from './scapi-schemas.js';
 
+export {
+  createAccountManagerClient,
+  createAccountManagerUsersClient,
+  getUser,
+  listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  purgeUser,
+  resetUser,
+  findUserByLogin,
+  mapToInternalRole,
+  mapFromInternalRole,
+  ROLE_NAMES_MAP,
+  ROLE_NAMES_MAP_REVERSE,
+  createAccountManagerRolesClient,
+  getRole,
+  listRoles,
+  createAccountManagerOrgsClient,
+} from './am-api.js';
+export type {
+  AccountManagerClient,
+  AccountManagerClientConfig,
+  AccountManagerUsersClient,
+  AccountManagerUser,
+  AccountManagerResponse,
+  AccountManagerError,
+  UserExpandOption,
+  UserCreate,
+  UserUpdate,
+  UserCollection,
+  UserState,
+  ListUsersOptions,
+  AccountManagerRolesClient,
+  AccountManagerRole,
+  AccountManagerRolesResponse,
+  AccountManagerRolesError,
+  RoleCollection,
+  ListRolesOptions,
+  AccountManagerOrgsClient,
+  AccountManagerOrganization,
+  OrganizationCollection,
+  AuditLogRecord,
+  AuditLogCollection,
+  ListOrgsOptions,
+} from './am-api.js';
+
 export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
 export type {
   CdnZonesClient,
@@ -234,3 +281,6 @@ export type {
 } from './mrt-b2c.js';
 
 export {getApiErrorMessage} from './error-utils.js';
+
+export {createTlsDispatcher} from './tls-dispatcher.js';
+export type {TlsOptions} from './tls-dispatcher.js';

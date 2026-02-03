@@ -43,7 +43,7 @@ features:
     linkText: Learn more
   - icon: "\U0001F916"
     title: AI-Assisted Development
-    details: MCP Server for Claude, Cursor, and other AI tools to interact with your B2C instances.
+    details: MCP Server for Claude, Cursor, and other AI tools to interact with your B2C instances. (Coming Soon!)
     link: /guide/
     linkText: Learn more
   - icon: "\U0001F4E6"

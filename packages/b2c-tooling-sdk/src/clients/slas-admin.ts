@@ -26,7 +26,35 @@ export type {paths, components};
 /**
  * The typed SLAS client - this is the openapi-fetch Client with full type safety.
  *
+ * ## Common Endpoints
+ *
+ * | Method | Path | Description |
+ * |--------|------|-------------|
+ * | GET | `/tenants/{tenantId}` | Get tenant info |
+ * | GET | `/tenants/{tenantId}/clients` | List SLAS clients |
+ * | PUT | `/tenants/{tenantId}/clients/{clientId}` | Create/update a client |
+ * | DELETE | `/tenants/{tenantId}/clients/{clientId}` | Delete a client |
+ *
+ * @example
+ * ```typescript
+ * import { createSlasClient } from '@salesforce/b2c-tooling-sdk/clients';
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ * });
+ *
+ * const client = createSlasClient({ shortCode: 'kv7kzm78' }, auth);
+ *
+ * // List all SLAS clients for a tenant
+ * const { data, error } = await client.GET('/tenants/{tenantId}/clients', {
+ *   params: { path: { tenantId: 'your-tenant' } }
+ * });
+ * ```
+ *
  * @see {@link createSlasClient} for instantiation
+ * @see {@link https://developer.salesforce.com/docs/commerce/commerce-api/references/slas-admin?meta=Summary | SLAS Admin API Reference}
  */
 export type SlasClient = Client<paths>;
 

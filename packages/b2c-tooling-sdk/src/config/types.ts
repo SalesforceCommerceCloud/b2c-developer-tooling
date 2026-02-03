@@ -13,7 +13,6 @@
  */
 import type {AuthMethod, AuthStrategy} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
-import type {MrtClient} from '../platform/mrt.js';
 
 /**
  * Normalized B2C configuration with camelCase fields.
@@ -68,6 +67,14 @@ export interface NormalizedConfig {
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
+
+  // TLS/mTLS
+  /** Path to PKCS12 certificate file for client mTLS (two-factor auth) */
+  certificate?: string;
+  /** Passphrase for the certificate */
+  certificatePassphrase?: string;
+  /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
+  selfSigned?: boolean;
 }
 
 /**
@@ -216,18 +223,6 @@ export interface CreateOAuthOptions {
 }
 
 /**
- * Options for creating MRT client.
- */
-export interface CreateMrtClientOptions {
-  /** MRT organization (currently unused but required by MrtClient) */
-  org?: string;
-  /** MRT project slug (overrides config value) */
-  project?: string;
-  /** MRT environment name (overrides config value) */
-  env?: string;
-}
-
-/**
  * Result of configuration resolution with factory methods.
  *
  * Provides both raw configuration values and factory methods for creating
@@ -322,11 +317,4 @@ export interface ResolvedB2CConfig {
    * @throws Error if neither Basic auth nor OAuth is configured
    */
   createWebDavAuth(): AuthStrategy;
-
-  /**
-   * Creates an MRT client.
-   * @param options - MRT project/environment options
-   * @throws Error if mrtApiKey is not configured
-   */
-  createMrtClient(options?: CreateMrtClientOptions): MrtClient;
 }

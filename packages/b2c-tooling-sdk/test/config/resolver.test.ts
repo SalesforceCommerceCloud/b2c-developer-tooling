@@ -217,6 +217,72 @@ describe('config/resolver', () => {
         expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
       });
 
+      it('creates SOURCE_ERROR warning when source throws', () => {
+        // Create a source that throws an error
+        const throwingSource: ConfigSource = {
+          name: 'throwing-source',
+          load() {
+            throw new Error('Malformed config file');
+          },
+        };
+        const validSource = new MockSource('valid', {
+          hostname: 'example.demandware.net',
+          clientId: 'valid-client',
+        });
+        const resolver = new ConfigResolver([throwingSource, validSource]);
+
+        const {config, warnings, sources} = resolver.resolve();
+
+        // Should have one SOURCE_ERROR warning
+        expect(warnings).to.have.length(1);
+        expect(warnings[0].code).to.equal('SOURCE_ERROR');
+        expect(warnings[0].message).to.include('throwing-source');
+        expect(warnings[0].message).to.include('Malformed config file');
+        expect(warnings[0].details).to.deep.equal({
+          source: 'throwing-source',
+          error: 'Malformed config file',
+        });
+
+        // Valid source should still contribute config
+        expect(config.hostname).to.equal('example.demandware.net');
+        expect(config.clientId).to.equal('valid-client');
+        expect(sources).to.have.length(1);
+        expect(sources[0].name).to.equal('valid');
+      });
+
+      it('continues with remaining sources after SOURCE_ERROR', () => {
+        // First source throws, second succeeds, third also throws
+        const throwingSource1: ConfigSource = {
+          name: 'bad-source-1',
+          priority: -1,
+          load() {
+            throw new Error('Error 1');
+          },
+        };
+        const validSource = new MockSource('valid', {hostname: 'example.com'}, undefined, 0);
+        const throwingSource2: ConfigSource = {
+          name: 'bad-source-2',
+          priority: 1,
+          load() {
+            throw new Error('Error 2');
+          },
+        };
+        const resolver = new ConfigResolver([throwingSource1, validSource, throwingSource2]);
+
+        const {config, warnings, sources} = resolver.resolve();
+
+        // Should have two SOURCE_ERROR warnings
+        expect(warnings).to.have.length(2);
+        expect(warnings[0].code).to.equal('SOURCE_ERROR');
+        expect(warnings[0].message).to.include('bad-source-1');
+        expect(warnings[1].code).to.equal('SOURCE_ERROR');
+        expect(warnings[1].message).to.include('bad-source-2');
+
+        // Valid source contributes config
+        expect(config.hostname).to.equal('example.com');
+        expect(sources).to.have.length(1);
+      });
+
       it('returns empty config when no sources have data', () => {
         const resolver = new ConfigResolver([]);
 
@@ -462,6 +528,80 @@ describe('config/resolver', () => {
       expect(config.hostname).to.equal('builtin.com');
       // 'after' plugin provides mrtProject (not in others)
       expect(config.mrtProject).to.equal('after-project');
+    });
+  });
+
+  describe('TLS/mTLS configuration', () => {
+    it('resolves TLS options from source', () => {
+      const source = new MockSource('test', {
+        hostname: 'example.demandware.net',
+        certificate: '/path/to/cert.p12',
+        certificatePassphrase: 'secret',
+        selfSigned: true,
+      });
+      const resolver = new ConfigResolver([source]);
+
+      const {config} = resolver.resolve();
+
+      expect(config.certificate).to.equal('/path/to/cert.p12');
+      expect(config.certificatePassphrase).to.equal('secret');
+      expect(config.selfSigned).to.equal(true);
+    });
+
+    it('allows overrides to take precedence for TLS options', () => {
+      const source = new MockSource('test', {
+        hostname: 'example.demandware.net',
+        certificate: '/source/cert.p12',
+        selfSigned: false,
+      });
+      const resolver = new ConfigResolver([source]);
+
+      const {config} = resolver.resolve({
+        hostname: 'example.demandware.net',
+        certificate: '/override/cert.p12',
+        selfSigned: true,
+      });
+
+      expect(config.certificate).to.equal('/override/cert.p12');
+      expect(config.selfSigned).to.equal(true);
+    });
+
+    it('merges TLS options from multiple sources', () => {
+      const source1 = new MockSource('first', {
+        hostname: 'example.demandware.net',
+        certificate: '/path/to/cert.p12',
+      });
+      const source2 = new MockSource('second', {
+        certificatePassphrase: 'passphrase-from-second',
+        selfSigned: true,
+      });
+      const resolver = new ConfigResolver([source1, source2]);
+
+      const {config} = resolver.resolve();
+
+      expect(config.hostname).to.equal('example.demandware.net');
+      expect(config.certificate).to.equal('/path/to/cert.p12');
+      expect(config.certificatePassphrase).to.equal('passphrase-from-second');
+      expect(config.selfSigned).to.equal(true);
+    });
+
+    it('discards TLS options on hostname mismatch protection', () => {
+      const source = new MockSource('test', {
+        hostname: 'prod.demandware.net',
+        certificate: '/prod/cert.p12',
+        certificatePassphrase: 'prod-secret',
+        selfSigned: false,
+      });
+      const resolver = new ConfigResolver([source]);
+
+      const {config, warnings} = resolver.resolve({hostname: 'staging.demandware.net'}, {hostnameProtection: true});
+
+      expect(config.hostname).to.equal('staging.demandware.net');
+      expect(config.certificate).to.be.undefined;
+      expect(config.certificatePassphrase).to.be.undefined;
+      expect(config.selfSigned).to.be.undefined;
+      expect(warnings).to.have.length(1);
+      expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
     });
   });
 });

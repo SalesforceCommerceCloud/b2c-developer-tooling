@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Core tooling library for Salesforce Commerce Cloud B2C CLI",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
@@ -57,17 +57,6 @@
         "default": "./dist/cjs/instance/index.js"
       }
     },
-    "./platform": {
-      "development": "./src/platform/index.ts",
-      "import": {
-        "types": "./dist/esm/platform/index.d.ts",
-        "default": "./dist/esm/platform/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/platform/index.d.ts",
-        "default": "./dist/cjs/platform/index.js"
-      }
-    },
     "./operations/code": {
       "development": "./src/operations/code/index.ts",
       "import": {
@@ -101,26 +90,26 @@
         "default": "./dist/cjs/operations/mrt/index.js"
       }
     },
-    "./operations/docs": {
-      "development": "./src/operations/docs/index.ts",
+    "./docs": {
+      "development": "./src/docs/index.ts",
       "import": {
-        "types": "./dist/esm/operations/docs/index.d.ts",
-        "default": "./dist/esm/operations/docs/index.js"
+        "types": "./dist/esm/docs/index.d.ts",
+        "default": "./dist/esm/docs/index.js"
       },
       "require": {
-        "types": "./dist/cjs/operations/docs/index.d.ts",
-        "default": "./dist/cjs/operations/docs/index.js"
+        "types": "./dist/cjs/docs/index.d.ts",
+        "default": "./dist/cjs/docs/index.js"
       }
     },
-    "./operations/scapi-schemas": {
-      "development": "./src/operations/scapi-schemas/index.ts",
+    "./schemas": {
+      "development": "./src/schemas/index.ts",
       "import": {
-        "types": "./dist/esm/operations/scapi-schemas/index.d.ts",
-        "default": "./dist/esm/operations/scapi-schemas/index.js"
+        "types": "./dist/esm/schemas/index.d.ts",
+        "default": "./dist/esm/schemas/index.js"
       },
       "require": {
-        "types": "./dist/cjs/operations/scapi-schemas/index.d.ts",
-        "default": "./dist/cjs/operations/scapi-schemas/index.js"
+        "types": "./dist/cjs/schemas/index.d.ts",
+        "default": "./dist/cjs/schemas/index.js"
       }
     },
     "./operations/logs": {
@@ -132,6 +121,39 @@
       "require": {
         "types": "./dist/cjs/operations/logs/index.d.ts",
         "default": "./dist/cjs/operations/logs/index.js"
+      }
+    },
+    "./operations/users": {
+      "development": "./src/operations/users/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/users/index.d.ts",
+        "default": "./dist/esm/operations/users/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/users/index.d.ts",
+        "default": "./dist/cjs/operations/users/index.js"
+      }
+    },
+    "./operations/roles": {
+      "development": "./src/operations/roles/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/roles/index.d.ts",
+        "default": "./dist/esm/operations/roles/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/roles/index.d.ts",
+        "default": "./dist/cjs/operations/roles/index.js"
+      }
+    },
+    "./operations/orgs": {
+      "development": "./src/operations/orgs/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/orgs/index.d.ts",
+        "default": "./dist/esm/operations/orgs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/orgs/index.d.ts",
+        "default": "./dist/cjs/operations/orgs/index.js"
       }
     },
     "./cli": {
@@ -221,6 +243,17 @@
         "types": "./dist/cjs/test-utils/index.d.ts",
         "default": "./dist/cjs/test-utils/index.js"
       }
+    },
+    "./telemetry": {
+      "development": "./src/telemetry/index.ts",
+      "import": {
+        "types": "./dist/esm/telemetry/index.d.ts",
+        "default": "./dist/esm/telemetry/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/telemetry/index.d.ts",
+        "default": "./dist/cjs/telemetry/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
@@ -232,7 +265,7 @@
     "data"
   ],
   "scripts": {
-    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts",
+    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts",
     "build": "pnpm run generate:types && pnpm run build:esm && pnpm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
@@ -292,6 +325,7 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "@salesforce/telemetry": "^6.1.0",
     "archiver": "^7.0.1",
     "chokidar": "^5.0.0",
     "cliui": "^9.0.1",
@@ -304,6 +338,7 @@
     "openapi-fetch": "^0.15.0",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.2",
+    "undici": "^7.0.0",
     "xml2js": "^0.6.2"
   }
 }

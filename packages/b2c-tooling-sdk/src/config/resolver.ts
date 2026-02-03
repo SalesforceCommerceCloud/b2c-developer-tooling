@@ -16,9 +16,11 @@ import type {B2CInstance} from '../instance/index.js';
 import {mergeConfigsWithProtection, getPopulatedFields, createInstanceFromConfig} from './mapping.js';
 import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
+  ConfigLoadResult,
   ConfigSource,
   ConfigSourceInfo,
   ConfigResolutionResult,
+  ConfigWarning,
   NormalizedConfig,
   ResolveConfigOptions,
   ResolvedB2CConfig,
@@ -155,6 +157,7 @@ export class ConfigResolver {
    */
   resolve(overrides: Partial<NormalizedConfig> = {}, options: ResolveConfigOptions = {}): ConfigResolutionResult {
     const sourceInfos: ConfigSourceInfo[] = [];
+    const sourceWarnings: ConfigWarning[] = [];
     const baseConfig: NormalizedConfig = {};
 
     // Create enriched options that will be updated with accumulated config values.
@@ -165,7 +168,19 @@ export class ConfigResolver {
     // Load from each source in order, merging results
     // Earlier sources have higher priority - later sources only fill in missing values
     for (const source of this.sources) {
-      const result = source.load(enrichedOptions);
+      let result: ConfigLoadResult | undefined;
+      try {
+        result = source.load(enrichedOptions);
+      } catch (error) {
+        // Source threw an error (e.g., malformed config file) - create warning and continue
+        const message = error instanceof Error ? error.message : String(error);
+        sourceWarnings.push({
+          code: 'SOURCE_ERROR',
+          message: `Failed to load configuration from ${source.name}: ${message}`,
+          details: {source: source.name, error: message},
+        });
+        continue;
+      }
       if (result && result.config) {
         const {config: sourceConfig, location} = result;
         const fields = getPopulatedFields(sourceConfig);
@@ -219,9 +234,12 @@ export class ConfigResolver {
     }
 
     // Apply overrides with hostname mismatch protection
-    const {config, warnings} = mergeConfigsWithProtection(overrides, baseConfig, {
+    const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
     });
+
+    // Combine source warnings with merge warnings
+    const warnings = [...sourceWarnings, ...mergeWarnings];
 
     return {config, warnings, sources: sourceInfos};
   }
@@ -347,7 +365,7 @@ export function createConfigResolver(): ConfigResolver {
  * }
  *
  * if (config.hasMrtConfig()) {
- *   const mrtClient = config.createMrtClient({ project: 'my-project' });
+ *   const mrtAuth = config.createMrtAuth();
  * }
  * ```
  *

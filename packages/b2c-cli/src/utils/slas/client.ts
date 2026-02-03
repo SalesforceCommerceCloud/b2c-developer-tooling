@@ -184,22 +184,4 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     const oauthStrategy = this.getOAuthStrategy();
     return createSlasClient({shortCode}, oauthStrategy);
   }
-
-  /**
-   * Get the tenant ID from resolved config, throwing if not available.
-   * @throws Error if tenant ID is not provided through any source
-   */
-  protected requireTenantId(): string {
-    const tenantId = this.resolvedConfig.values.tenantId;
-
-    if (!tenantId) {
-      this.error(
-        t(
-          'error.tenantIdRequired',
-          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
-      );
-    }
-    return tenantId;
-  }
 }

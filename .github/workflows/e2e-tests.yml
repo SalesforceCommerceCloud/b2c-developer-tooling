@@ -1,12 +1,12 @@
 name: e2e tests
 
 on:
-  # Nightly workflow - Run at 2 AM UTC daily
+  # Scheduled workflow
+  # 13:00 UTC ~= 8:00 AM ET (EST)
+  # 01:00 UTC ~= 8:00 PM ET (EST)
   schedule:
-    - cron: '0 2 * * *'
-  # Post-merge - Run after changes are merged to main
-  push:
-    branches: [main]
+    - cron: '0 13 * * *'
+    - cron: '0 1 * * *'
   # Manual trigger - Support workflow_dispatch for on-demand runs
   workflow_dispatch:
     inputs:
@@ -32,12 +32,13 @@ on:
         type: string
 jobs:
   e2e-tests:
+    # E2E tests run only on the current LTS Node version for stability and speed.
     strategy:
       matrix:
-        node-version: [22.x, 24.x]
+        node-version: [22.x]
     runs-on: ubuntu-latest
     environment: e2e-dev
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,8 +52,10 @@ jobs:
           TEST_REALM: ${{ vars.TEST_REALM }}
           SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
           SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
         run: |
-          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ]; then
+          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ] && [ -n "$SFCC_SHORTCODE" ]; then
             echo "has-secrets=true" >> $GITHUB_OUTPUT
           else
             echo "has-secrets=false" >> $GITHUB_OUTPUT
@@ -61,6 +64,7 @@ jobs:
             echo "  - TEST_REALM (var): ${TEST_REALM:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_ACCOUNT_MANAGER_HOST (var): ${SFCC_ACCOUNT_MANAGER_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_SANDBOX_API_HOST (var): ${SFCC_SANDBOX_API_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
+            echo "  - SFCC_SHORTCODE (var): ${SFCC_SHORTCODE:+✓}" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -97,6 +101,8 @@ jobs:
           SFCC_ACCOUNT_MANAGER_HOST: ${{ inputs.sfcc_account_manager_host || vars.SFCC_ACCOUNT_MANAGER_HOST }}
           SFCC_SANDBOX_API_HOST: ${{ inputs.sfcc_sandbox_api_host || vars.SFCC_SANDBOX_API_HOST }}
           TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
           # Test configuration
           NODE_ENV: test
           SFCC_LOG_LEVEL: silent
@@ -104,8 +110,8 @@ jobs:
           echo "Running E2E tests with realm: ${TEST_REALM}"
           echo "Node version: $(node --version)"
           
-          # Run E2E tests with JSON reporter for test results
-          pnpm run test:e2e && pnpm run lint
+          # Run E2E tests with CI reporter (outputs test-results.json)
+          pnpm run test:e2e:ci && pnpm run lint
 
       - name: E2E Test Report
         uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0
@@ -124,7 +130,7 @@ jobs:
           retention-days: 30
 
       - name: Notify on Failure
-        if: failure() && (github.event_name == 'schedule' || github.event_name == 'push') && steps.check-secrets.outputs.has-secrets == 'true'
+        if: failure() && github.event_name == 'schedule' && steps.check-secrets.outputs.has-secrets == 'true'
         uses: actions/github-script@v7
         with:
           script: |

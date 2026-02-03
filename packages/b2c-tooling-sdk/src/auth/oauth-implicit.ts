@@ -6,7 +6,7 @@
 import {createServer, type Server, type IncomingMessage, type ServerResponse} from 'node:http';
 import type {Socket} from 'node:net';
 import {URL} from 'node:url';
-import type {AuthStrategy, AccessTokenResponse, DecodedJWT} from './types.js';
+import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -113,7 +113,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     logger.trace({scopes: this.config.scopes}, '[Auth] Configured scopes');
   }
 
-  async fetch(url: string, init: RequestInit = {}): Promise<Response> {
+  async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     const logger = getLogger();
     const method = init.method || 'GET';
 
@@ -126,7 +126,8 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     headers.set('x-dw-client-id', this.config.clientId);
 
     const startTime = Date.now();
-    let res = await fetch(url, {...init, headers});
+    // Pass through dispatcher for TLS/mTLS support
+    let res = await fetch(url, {...init, headers} as RequestInit);
     const duration = Date.now() - startTime;
 
     logger.debug({method, url, status: res.status, duration}, '[Auth] Response');
@@ -140,7 +141,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       headers.set('Authorization', `Bearer ${newToken}`);
 
       const retryStart = Date.now();
-      res = await fetch(url, {...init, headers});
+      res = await fetch(url, {...init, headers} as RequestInit);
       const retryDuration = Date.now() - retryStart;
 
       logger.debug({method, url, status: res.status, duration: retryDuration}, '[Auth] Retry response');
