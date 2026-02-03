@@ -5,15 +5,20 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// Disable telemetry in development mode to avoid polluting production data
-process.env.SFCC_DISABLE_TELEMETRY = process.env.SFCC_DISABLE_TELEMETRY || 'true';
+import {fileURLToPath} from 'node:url';
+import {dirname, join} from 'node:path';
 
-// Load .env file if present (Node.js native support)
+// Load .env file from package root (not cwd) if present
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envPath = join(__dirname, '..', '.env');
 try {
-  process.loadEnvFile();
+  process.loadEnvFile(envPath);
 } catch {
   // .env file not found or not readable, continue without it
 }
+
+// Disable telemetry in development mode (after loading .env so user config is respected)
+process.env.SFCC_DISABLE_TELEMETRY ??= 'true';
 
 import {execute} from '@oclif/core';
 
