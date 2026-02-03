@@ -206,7 +206,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }): Promise<Telemetry | undefined> {
     // If telemetry was already initialized by initTelemetryFromConfig, stop it first
     if (this.telemetry) {
-      this.telemetry.stop();
+      await this.telemetry.stop();
     }
 
     const connectionString = Telemetry.getConnectionString(options.appInsightsKey);
@@ -474,7 +474,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Send exception to telemetry if initialized
     this.telemetry?.sendException(err, {command: this.id, exitCode, duration});
-    this.telemetry?.stop();
+    await this.telemetry?.stop();
 
     // Log if logger is available (may not be if error during init)
     if (this.logger) {
@@ -507,7 +507,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     if (!err && this.telemetry) {
       const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
       this.telemetry.sendEvent('COMMAND_SUCCESS', {command: this.id, duration});
-      this.telemetry.stop();
+      await this.telemetry.stop();
     }
     await super.finally(err);
   }

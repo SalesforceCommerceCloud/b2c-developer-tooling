@@ -185,11 +185,17 @@ export class Telemetry {
 
   /**
    * Stop the telemetry reporter and flush any pending events.
+   * Includes a short delay to allow async HTTP requests to complete.
    */
-  stop(): void {
+  async stop(): Promise<void> {
     if (!this.started) return;
     this.started = false;
     this.reporter?.stop();
+
+    // Allow pending HTTP requests to flush before process exits.
+    // Application Insights SDK sends events asynchronously, so we need
+    // a small delay to ensure events reach the server on fast exits.
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
   private buildEventProperties(attributes: TelemetryAttributes = {}): TelemetryEventProperties {

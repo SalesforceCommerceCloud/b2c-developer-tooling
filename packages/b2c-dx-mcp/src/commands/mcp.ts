@@ -320,11 +320,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    // Track server stop when stdin closes (MCP client disconnects)
-    // Note: The 'close' event has no arguments - it's just a signal that the stream closed
+    // Send SERVER_STOPPED when stdin closes (MCP client disconnects)
     process.stdin.on('close', () => {
-      this.telemetry?.sendEvent('SERVER_STOPPED');
-      // Don't call stop() here - let finally() handle telemetry cleanup
+      this.telemetry?.sendEvent('SERVER_STOPPED', {signal: 'stdin_close'});
     });
 
     // Log startup message using the structured logger
