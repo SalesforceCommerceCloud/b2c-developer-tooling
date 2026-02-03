@@ -84,5 +84,5 @@
       "condition": "includeStatic"
     }
   ],
-  "postInstructions": "Cartridge '<%= cartridgeName %>' has been created.\n\nNext steps:\n1. Add the cartridge to your cartridge path in Business Manager\n2. Upload the cartridge using: b2c code deploy"
+  "postInstructions": "Cartridge '<%= cartridgeName %>' has been created.\n\nNext steps:\n1. Add the cartridge to your cartridge path in Business Manager\n2. Deploy the cartridge to your instance"
 }
