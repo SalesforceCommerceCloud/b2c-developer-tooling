@@ -57,7 +57,6 @@ export interface WaitForSandboxOptions {
   targetState: SandboxState;
   pollIntervalSeconds: number;
   timeoutSeconds: number;
-  odsClient: OdsClient;
   onPoll?: (info: WaitForSandboxPollInfo) => void;
   sleep?: (ms: number) => Promise<void>;
 }
@@ -68,9 +67,39 @@ async function defaultSleep(ms: number): Promise<void> {
   });
 }
 
-export async function waitForSandbox(options: WaitForSandboxOptions): Promise<void> {
+/**
+ * Waits for a sandbox to reach a target state by polling its status.
+ *
+ * This function polls the ODS API at regular intervals until the sandbox reaches the desired state,
+ * times out, or enters a terminal error state (failed/deleted).
+ *
+ * @param client - ODS client for API calls
+ * @param options - Polling configuration options
+ * @param options.sandboxId - ID of the sandbox to monitor
+ * @param options.targetState - Desired sandbox state (e.g., 'started', 'stopped', 'deleted')
+ * @param options.pollIntervalSeconds - Seconds between status checks
+ * @param options.timeoutSeconds - Maximum seconds to wait (0 = no timeout)
+ * @param options.onPoll - Optional callback invoked on each poll with current state
+ * @param options.sleep - Optional custom sleep function (primarily for testing)
+ *
+ * @throws {SandboxPollingTimeoutError} If the timeout is exceeded before reaching target state
+ * @throws {SandboxPollingError} If the API request fails
+ * @throws {SandboxTerminalStateError} If the sandbox enters a terminal error state
+ *
+ * @example
+ * ```typescript
+ * await waitForSandbox(odsClient, {
+ *   sandboxId: 'abc-123',
+ *   targetState: 'started',
+ *   pollIntervalSeconds: 5,
+ *   timeoutSeconds: 300,
+ *   onPoll: (info) => console.log(`State: ${info.state} (${info.elapsedSeconds}s)`),
+ * });
+ * ```
+ */
+export async function waitForSandbox(client: OdsClient, options: WaitForSandboxOptions): Promise<void> {
   const logger = getLogger();
-  const {sandboxId, targetState, pollIntervalSeconds, timeoutSeconds, odsClient} = options;
+  const {sandboxId, targetState, pollIntervalSeconds, timeoutSeconds} = options;
 
   const sleepFn = options.sleep ?? defaultSleep;
   const startTime = Date.now();
@@ -88,7 +117,7 @@ export async function waitForSandbox(options: WaitForSandboxOptions): Promise<vo
       throw new SandboxPollingTimeoutError(sandboxId, targetState, timeoutSeconds, lastState);
     }
 
-    const result = await odsClient.GET('/sandboxes/{sandboxId}', {
+    const result = await client.GET('/sandboxes/{sandboxId}', {
       params: {
         path: {sandboxId},
       },

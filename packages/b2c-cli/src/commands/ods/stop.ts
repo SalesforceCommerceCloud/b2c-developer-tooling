@@ -96,12 +96,11 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
     );
     if (wait) {
       try {
-        await waitForSandbox({
+        await waitForSandbox(this.odsClient, {
           sandboxId,
           targetState: 'stopped',
           pollIntervalSeconds: pollInterval,
           timeoutSeconds: timeout,
-          odsClient: this.odsClient,
           onPoll: ({elapsedSeconds, state}) => {
             this.logger.info({sandboxId, elapsed: elapsedSeconds, state}, `[${elapsedSeconds}s] State: ${state}`);
           },

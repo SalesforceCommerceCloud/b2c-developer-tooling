@@ -138,12 +138,11 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
       );
 
       try {
-        await waitForSandbox({
+        await waitForSandbox(this.odsClient, {
           sandboxId,
           targetState: 'deleted',
           pollIntervalSeconds: pollInterval,
           timeoutSeconds: timeout,
-          odsClient: this.odsClient,
           onPoll: ({elapsedSeconds, state}) => {
             this.logger.info({sandboxId, elapsed: elapsedSeconds, state}, `[${elapsedSeconds}s] State: ${state}`);
           },

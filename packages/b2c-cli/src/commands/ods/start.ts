@@ -98,12 +98,11 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
       this.log(t('commands.ods.start.waiting', 'Waiting for sandbox to reach state {{state}}...', {state: 'started'}));
 
       try {
-        await waitForSandbox({
+        await waitForSandbox(this.odsClient, {
           sandboxId,
           targetState: 'started',
           pollIntervalSeconds: pollInterval,
           timeoutSeconds: timeout,
-          odsClient: this.odsClient,
           onPoll: ({elapsedSeconds, state}) => {
             this.logger.info({sandboxId, elapsed: elapsedSeconds, state}, `[${elapsedSeconds}s] State: ${state}`);
           },
