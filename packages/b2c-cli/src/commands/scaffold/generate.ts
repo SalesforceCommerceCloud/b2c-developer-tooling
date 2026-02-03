@@ -8,7 +8,7 @@ import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {executeScaffoldGenerate, type GenerateResponse} from '../../lib/scaffold/generate-helper.js';
 import {t, withDocs} from '../../i18n/index.js';
 
-export type {GenerateResponse};
+export type {GenerateResponse} from '../../lib/scaffold/generate-helper.js';
 
 /**
  * Command to generate a project from a scaffold.

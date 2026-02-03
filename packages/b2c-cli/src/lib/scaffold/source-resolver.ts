@@ -7,16 +7,14 @@
 import {
   resolveLocalSource as sdkResolveLocalSource,
   resolveRemoteSource as sdkResolveRemoteSource,
-  isRemoteSource,
-  validateAgainstSource,
-  type SourceResult,
   type DynamicParameterSource,
   type ScaffoldChoice,
+  type SourceResult,
 } from '@salesforce/b2c-tooling-sdk/scaffold';
 import {loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 
 // Re-export SDK functions and types
-export {isRemoteSource, validateAgainstSource, type SourceResult};
+export {isRemoteSource, validateAgainstSource, type SourceResult} from '@salesforce/b2c-tooling-sdk/scaffold';
 
 /**
  * @deprecated Use SourceResult from '@salesforce/b2c-tooling-sdk/scaffold' instead.
