@@ -44,6 +44,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "execa": "^9.6.1",
     "mocha": "^10",
+    "msw": "^2.0.0",
     "oclif": "^4",
     "prettier": "^3.6.2",
     "shx": "^0.3.3",
@@ -79,6 +80,9 @@
     "bin": "b2c",
     "dirname": "b2c",
     "commands": "./dist/commands",
+    "telemetry": {
+      "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
+    },
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins",
@@ -147,6 +151,20 @@
       },
       "sites": {
         "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
+      },
+      "am": {
+        "description": "Manage Account Manager resources",
+        "subtopics": {
+          "users": {
+            "description": "Manage Account Manager users"
+          },
+          "roles": {
+            "description": "Manage roles for Account Manager users"
+          },
+          "orgs": {
+            "description": "Manage Account Manager organizations"
+          }
+        }
       },
       "slas": {
         "description": "Manage SLAS API clients and credentials\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",

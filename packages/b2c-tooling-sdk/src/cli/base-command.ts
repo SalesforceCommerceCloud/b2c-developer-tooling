@@ -22,11 +22,19 @@ import type {ConfigSource} from '../config/types.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {setUserAgent} from '../clients/user-agent.js';
+import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
 
 const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as const;
+
+/**
+ * Type for oclif pjson custom telemetry config.
+ */
+interface TelemetryConfig {
+  connectionString?: string;
+}
 
 /**
  * Base command class for B2C CLI tools.
@@ -36,6 +44,11 @@ const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as cons
  * - SFCC_LOG_COLORIZE: Force colors on/off (default: auto-detect TTY)
  * - SFCC_REDACT_SECRETS: Set to 'false' to disable secret redaction
  * - NO_COLOR: Industry standard to disable colors
+ *
+ * Environment variables for telemetry:
+ * - SF_DISABLE_TELEMETRY: Set to 'true' to disable telemetry (sf CLI standard)
+ * - SFCC_DISABLE_TELEMETRY: Set to 'true' to disable telemetry
+ * - SFCC_APP_INSIGHTS_KEY: Override connection string from package.json
  */
 export abstract class BaseCommand<T extends typeof Command> extends Command {
   static baseFlags = {
@@ -103,10 +116,16 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected resolvedConfig!: ResolvedB2CConfig;
   protected logger!: Logger;
 
+  /** Telemetry instance for tracking command events */
+  protected telemetry?: Telemetry;
+
   /** High-priority config sources from plugins (inserted before defaults) */
   protected pluginSourcesBefore: ConfigSource[] = [];
   /** Low-priority config sources from plugins (inserted after defaults) */
   protected pluginSourcesAfter: ConfigSource[] = [];
+
+  /** Start time for command duration tracking */
+  private commandStartTime?: number;
 
   public async init(): Promise<void> {
     await super.init();
@@ -144,7 +163,69 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Collect config sources from plugins before loading configuration
     await this.collectPluginConfigSources();
 
+    // Auto-initialize telemetry from oclif pjson config
+    await this.initTelemetryFromConfig();
+
     this.resolvedConfig = this.loadConfiguration();
+  }
+
+  /**
+   * Auto-initialize telemetry from package.json oclif.telemetry config.
+   * Called during init() to enable automatic telemetry for all commands.
+   */
+  private async initTelemetryFromConfig(): Promise<void> {
+    const pjsonTelemetry = (this.config.pjson.oclif as {telemetry?: TelemetryConfig} | undefined)?.telemetry;
+    const connectionString = Telemetry.getConnectionString(pjsonTelemetry?.connectionString);
+
+    if (!connectionString) return;
+
+    this.telemetry = createTelemetry({
+      project: this.config.name,
+      appInsightsKey: connectionString,
+      version: this.config.version,
+      dataDir: this.config.dataDir,
+      initialAttributes: {command: this.id},
+    });
+    await this.telemetry.start();
+
+    // Track command start
+    this.commandStartTime = Date.now();
+    this.telemetry.sendEvent('COMMAND_START', {command: this.id});
+  }
+
+  /**
+   * Manual telemetry initialization for non-pjson usage (e.g., MCP server with additional attributes).
+   * Use this when you need to pass custom initial attributes or use a different connection string.
+   *
+   * @param options - Telemetry options
+   * @returns The telemetry instance, or undefined if telemetry is disabled
+   */
+  protected async initTelemetry(options: {
+    appInsightsKey?: string;
+    initialAttributes?: TelemetryAttributes;
+  }): Promise<Telemetry | undefined> {
+    // If telemetry was already initialized by initTelemetryFromConfig, stop it first
+    if (this.telemetry) {
+      this.telemetry.stop();
+    }
+
+    const connectionString = Telemetry.getConnectionString(options.appInsightsKey);
+    if (!connectionString) return undefined;
+
+    this.telemetry = createTelemetry({
+      project: this.config.name,
+      appInsightsKey: connectionString,
+      version: this.config.version,
+      dataDir: this.config.dataDir,
+      initialAttributes: {command: this.id, ...options.initialAttributes},
+    });
+    await this.telemetry.start();
+
+    // Track command start
+    this.commandStartTime = Date.now();
+    this.telemetry.sendEvent('COMMAND_START', {command: this.id});
+
+    return this.telemetry;
   }
 
   /**
@@ -385,9 +466,15 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    *
    * Logs the error using the structured logger (including cause if available).
    * In JSON mode, outputs a JSON error object to stdout instead of oclif's default format.
+   * Sends exception to telemetry if initialized.
    */
   protected async catch(err: Error & {exitCode?: number}): Promise<never> {
     const exitCode = err.exitCode ?? 1;
+    const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
+
+    // Send exception to telemetry if initialized
+    this.telemetry?.sendException(err, {command: this.id, exitCode, duration});
+    this.telemetry?.stop();
 
     // Log if logger is available (may not be if error during init)
     if (this.logger) {
@@ -409,6 +496,20 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Use oclif's error() for proper exit code and display
     this.error(err.message, {exit: exitCode});
+  }
+
+  /**
+   * Called after run() completes (whether successfully or via catch()).
+   * Tracks COMMAND_SUCCESS and stops telemetry.
+   */
+  protected async finally(err: Error | undefined): Promise<void> {
+    // Only track success if no error occurred
+    if (!err && this.telemetry) {
+      const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
+      this.telemetry.sendEvent('COMMAND_SUCCESS', {command: this.id, duration});
+      this.telemetry.stop();
+    }
+    await super.finally(err);
   }
 
   public baseCommandTest(): void {

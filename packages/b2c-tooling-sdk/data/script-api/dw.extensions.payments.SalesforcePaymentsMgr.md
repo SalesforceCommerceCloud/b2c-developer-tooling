@@ -59,6 +59,7 @@ This class does not have a constructor, so you cannot create it directly.
 | static [handleAdyenAdditionalDetails](dw.extensions.payments.SalesforcePaymentsMgr.md#handleadyenadditionaldetailsorder-string-object)([Order](dw.order.Order.md), [String](TopLevel.String.md), [Object](TopLevel.Object.md)) | <p>  Handles the given additional Adyen payment details and associates the associated payment with the given order, if  applicable. |
 | static [onCustomerRegistered](dw.extensions.payments.SalesforcePaymentsMgr.md#oncustomerregisteredorder)([Order](dw.order.Order.md)) | Handles the account registration of the shopper who placed the given order. |
 | static [refundAdyenPayment](dw.extensions.payments.SalesforcePaymentsMgr.md#refundadyenpaymentorderpaymentinstrument-money-object)([OrderPaymentInstrument](dw.order.OrderPaymentInstrument.md), [Money](dw.value.Money.md), [Object](TopLevel.Object.md)) | Refunds previously captured funds for the given order payment instrument. |
+| static [refundPayPalOrderCapture](dw.extensions.payments.SalesforcePaymentsMgr.md#refundpaypalordercapturesalesforcepaypalorder)([SalesforcePayPalOrder](dw.extensions.payments.SalesforcePayPalOrder.md)) | Refunds the capture for the given PayPal order. |
 | static [refundPaymentIntent](dw.extensions.payments.SalesforcePaymentsMgr.md#refundpaymentintentsalesforcepaymentintent-money-object)([SalesforcePaymentIntent](dw.extensions.payments.SalesforcePaymentIntent.md), [Money](dw.value.Money.md), [Object](TopLevel.Object.md)) | Refunds previously captured funds for the given payment intent. |
 | static [removeAdyenSavedPaymentMethod](dw.extensions.payments.SalesforcePaymentsMgr.md#removeadyensavedpaymentmethodsalesforceadyensavedpaymentmethod)([SalesforceAdyenSavedPaymentMethod](dw.extensions.payments.SalesforceAdyenSavedPaymentMethod.md)) | Deletes an Adyen saved payment method. |
 | static [removeSavedPaymentMethod](dw.extensions.payments.SalesforcePaymentsMgr.md#removesavedpaymentmethodsalesforcepaymentmethod)([SalesforcePaymentMethod](dw.extensions.payments.SalesforcePaymentMethod.md)) | Removes the given saved payment method so that it is no longer presented to the given customer for reuse in  checkouts. |
@@ -67,6 +68,7 @@ This class does not have a constructor, so you cannot create it directly.
 | static [savePaymentMethod](dw.extensions.payments.SalesforcePaymentsMgr.md#savepaymentmethodcustomer-salesforcepaymentmethod)([Customer](dw.customer.Customer.md), [SalesforcePaymentMethod](dw.extensions.payments.SalesforcePaymentMethod.md)) | Saves the given payment method to be presented to the given customer for reuse in subsequent checkouts. |
 | static [setPaymentDetails](dw.extensions.payments.SalesforcePaymentsMgr.md#setpaymentdetailsorderpaymentinstrument-salesforcepaymentdetails)([OrderPaymentInstrument](dw.order.OrderPaymentInstrument.md), [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)) | Sets the details to the Salesforce Payments payment associated with the given payment instrument. |
 | static [updatePaymentIntent](dw.extensions.payments.SalesforcePaymentsMgr.md#updatepaymentintentsalesforcepaymentintent-shipment-money-string-object)([SalesforcePaymentIntent](dw.extensions.payments.SalesforcePaymentIntent.md), [Shipment](dw.order.Shipment.md), [Money](dw.value.Money.md), [String](TopLevel.String.md), [Object](TopLevel.Object.md)) | Updates the provided information in the given payment intent. |
+| static [voidPayPalOrderAuthorization](dw.extensions.payments.SalesforcePaymentsMgr.md#voidpaypalorderauthorizationsalesforcepaypalorder)([SalesforcePayPalOrder](dw.extensions.payments.SalesforcePayPalOrder.md)) | Voids the authorization for the given PayPal order. |
 
 ### Methods inherited from class Object
 
@@ -747,6 +749,29 @@ use [getSavedPaymentMethods(Customer)](dw.extensions.payments.SalesforcePayments
 
 ---
 
+### refundPayPalOrderCapture(SalesforcePayPalOrder)
+- static refundPayPalOrderCapture(paypalOrder: [SalesforcePayPalOrder](dw.extensions.payments.SalesforcePayPalOrder.md)): [Status](dw.system.Status.md)
+  - : Refunds the capture for the given PayPal order.
+      
+      
+      The PayPal order must have a capture in a status that supports refund. See the PayPal documentation for more
+      details.
+
+
+    **Parameters:**
+    - paypalOrder - PayPal order whose capture to refund
+
+    **Returns:**
+    - Status 'OK' or 'ERROR'. Status detail `'error'` contains the PayPal error information, if it
+              is available in the response.
+
+
+    **Throws:**
+    - Exception - if there was an error refunding the capture for the PayPal order
+
+
+---
+
 ### refundPaymentIntent(SalesforcePaymentIntent, Money, Object)
 - static refundPaymentIntent(paymentIntent: [SalesforcePaymentIntent](dw.extensions.payments.SalesforcePaymentIntent.md), amount: [Money](dw.value.Money.md), refundProperties: [Object](TopLevel.Object.md)): [Status](dw.system.Status.md)
   - : Refunds previously captured funds for the given payment intent.
@@ -934,6 +959,29 @@ use [getSavedPaymentMethods(Customer)](dw.extensions.payments.SalesforcePayments
 
     **Throws:**
     - Exception - if the parameter validation failed or there's an error updating the payment intent
+
+
+---
+
+### voidPayPalOrderAuthorization(SalesforcePayPalOrder)
+- static voidPayPalOrderAuthorization(paypalOrder: [SalesforcePayPalOrder](dw.extensions.payments.SalesforcePayPalOrder.md)): [Status](dw.system.Status.md)
+  - : Voids the authorization for the given PayPal order.
+      
+      
+      The PayPal order must have an authorization in a status that supports voiding. See the PayPal documentation for
+      more details.
+
+
+    **Parameters:**
+    - paypalOrder - PayPal order whose authorization to void
+
+    **Returns:**
+    - Status 'OK' or 'ERROR'. Status detail `'error'` contains the PayPal error information, if it
+              is available in the response.
+
+
+    **Throws:**
+    - Exception - if there was an error voiding the authorization for the PayPal order
 
 
 ---

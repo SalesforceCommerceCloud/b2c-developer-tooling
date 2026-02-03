@@ -99,6 +99,7 @@ export {CartridgeCommand} from './cartridge-command.js';
 export {JobCommand} from './job-command.js';
 export {MrtCommand} from './mrt-command.js';
 export {OdsCommand} from './ods-command.js';
+export {AmCommand} from './am-command.js';
 export {WebDavCommand, WEBDAV_ROOTS, VALID_ROOTS} from './webdav-command.js';
 export type {WebDavRootKey} from './webdav-command.js';
 
