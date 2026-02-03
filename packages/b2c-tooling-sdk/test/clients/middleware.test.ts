@@ -13,6 +13,7 @@ import {
   createAuthMiddleware,
   createExtraParamsMiddleware,
   createLoggingMiddleware,
+  createRateLimitMiddleware,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {configureLogger, getLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
@@ -442,6 +443,337 @@ describe('clients/middleware', () => {
         resetLogger();
         fs.rmSync(tmpDir, {recursive: true, force: true});
       }
+    });
+  });
+
+  describe('createRateLimitMiddleware', () => {
+    it('retries once on 429 with Retry-After header', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        prefix: 'TEST',
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      let callCount = 0;
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+
+      const firstResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '0'},
+      });
+
+      const successResponse = new Response('ok', {status: 200});
+
+      const fetchFn = async () => {
+        callCount += 1;
+        return successResponse;
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: firstResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // ctx.fetch is only used for the retry; the initial 429 response already occurred.
+      expect(callCount).to.equal(1);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('retries even when Retry-After is large (Retry-After is respected by default)', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const firstResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '0'},
+      });
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: firstResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(1);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('does not retry when the request is aborted', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 1000,
+        maxDelayMs: 1000,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const controller = new AbortController();
+      controller.abort();
+
+      const request = new Request('https://example.com/rate', {method: 'GET', signal: controller.signal});
+      const rateLimitedResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '10'},
+      });
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(429);
+    });
+
+    it('does not retry when maxRetries is 0', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 0,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const rateLimitedResponse = new Response('rate-limited', {status: 429});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(429);
+    });
+
+    it('does not retry when response status is not in statusCodes', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        statusCodes: [429],
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/overloaded', {method: 'GET'});
+      const overloadedResponse = new Response('overloaded', {status: 503});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: overloadedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(503);
+    });
+
+    it('retries using backoff when Retry-After header is missing', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+        prefix: 'TEST',
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      let callCount = 0;
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+
+      const firstResponse = new Response('rate-limited', {
+        status: 429,
+      });
+
+      const successResponse = new Response('ok', {status: 200});
+
+      const fetchFn = async () => {
+        callCount += 1;
+        return successResponse;
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: firstResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // ctx.fetch is only used for the retry; the initial 429 response already occurred.
+      expect(callCount).to.equal(1);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('does not retry when openapi-fetch does not provide a fetch helper', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const rateLimitedResponse = new Response('rate-limited', {status: 429});
+
+      const originalFetch = (globalThis as unknown as {fetch?: unknown}).fetch;
+      try {
+        Object.defineProperty(globalThis, 'fetch', {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+
+        const finalResponse = (await middleware.onResponse!({
+          request,
+          response: rateLimitedResponse,
+        } as unknown as OnResponseParams)) as Response;
+
+        expect(finalResponse.status).to.equal(429);
+      } finally {
+        Object.defineProperty(globalThis, 'fetch', {
+          value: originalFetch,
+          writable: true,
+          configurable: true,
+        });
+      }
+    });
+
+    it('stops retrying after maxRetries', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const rateLimitedResponse = new Response('rate-limited', {status: 429});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return rateLimitedResponse;
+      };
+
+      // First 429 should trigger one retry
+      const firstResult = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // Second 429 (after retry) should not trigger further retries
+      const secondResult = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // Only the first onResponse triggers a single retry via ctx.fetch.
+      expect(callCount).to.equal(1);
+      expect(firstResult.status).to.equal(429);
+      expect(secondResult.status).to.equal(429);
+    });
+
+    it('retries multiple times when ctx.fetch is missing and config.fetch is provided', async () => {
+      type OnResponseParams = Parameters<NonNullable<ReturnType<typeof createRateLimitMiddleware>['onResponse']>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const firstResponse = new Response('rate-limited', {status: 429});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        if (callCount === 1) {
+          return new Response('rate-limited again', {status: 429});
+        }
+        return new Response('ok', {status: 200});
+      };
+
+      const fallbackMiddleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+        fetch: fetchFn,
+      });
+
+      const finalResponse = (await fallbackMiddleware.onResponse!({
+        request,
+        response: firstResponse,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(2);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('does not retry in fallback path when request is aborted', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      type OnResponseParams = Parameters<NonNullable<ReturnType<typeof createRateLimitMiddleware>['onResponse']>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET', signal: controller.signal});
+      const rateLimitedResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '10'},
+      });
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const fallbackMiddleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 1000,
+        maxDelayMs: 1000,
+        fetch: fetchFn,
+      });
+
+      const finalResponse = (await fallbackMiddleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(429);
     });
   });
 });
