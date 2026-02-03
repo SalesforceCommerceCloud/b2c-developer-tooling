@@ -13,6 +13,9 @@ permissions:
   actions: read
   checks: write
 
+env:
+  SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
+
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -30,6 +30,10 @@ on:
         description: 'SFCC Sandbox API Host (optional, defaults to var)'
         required: false
         type: string
+
+env:
+  SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
+
 jobs:
   e2e-tests:
     # E2E tests run only on the current LTS Node version for stability and speed.

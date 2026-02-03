@@ -17,6 +17,9 @@ on:
         options:
           - nightly
 
+env:
+  SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
+
 jobs:
   publish:
     name: Publish
