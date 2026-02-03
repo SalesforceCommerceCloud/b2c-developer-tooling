@@ -6,18 +6,21 @@
 import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {
+  getApiErrorMessage,
+  SandboxPollingError,
+  SandboxPollingTimeoutError,
+  SandboxTerminalStateError,
+  waitForSandbox,
+  type OdsComponents,
+} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 type SandboxResourceProfile = OdsComponents['schemas']['SandboxResourceProfile'];
-type SandboxState = OdsComponents['schemas']['SandboxState'];
 type OcapiSettings = OdsComponents['schemas']['OcapiSettings'];
 type WebDavSettings = OdsComponents['schemas']['WebDavSettings'];
 type SandboxSettings = OdsComponents['schemas']['SandboxSettings'];
-
-/** States that indicate sandbox creation has completed (success or failure) */
-const TERMINAL_STATES = new Set<SandboxState>(['deleted', 'failed', 'started']);
 
 /**
  * Default OCAPI resources to grant the client ID access to.
@@ -155,8 +158,66 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     this.logger.info({sandboxId: sandbox.id}, t('commands.ods.create.success', 'Sandbox created successfully'));
 
     if (wait && sandbox.id) {
+      this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to get started..'));
+
+      try {
+        await waitForSandbox(this.odsClient, {
+          sandboxId: sandbox.id,
+          targetState: 'started',
+          pollIntervalSeconds: pollInterval,
+          timeoutSeconds: timeout,
+          onPoll: ({elapsedSeconds, state}) => {
+            this.logger.info(
+              {sandboxId: sandbox.id, elapsed: elapsedSeconds, state},
+              `[${elapsedSeconds}s] State: ${state}`,
+            );
+          },
+        });
+      } catch (error) {
+        if (error instanceof SandboxPollingTimeoutError) {
+          this.error(
+            t('commands.ods.create.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
+              seconds: String(error.timeoutSeconds),
+            }),
+          );
+        }
+
+        if (error instanceof SandboxTerminalStateError) {
+          if (error.state === 'deleted') {
+            this.error(t('commands.ods.create.deleted', 'Sandbox was deleted'));
+          }
+          this.error(t('commands.ods.create.failed', 'Sandbox creation failed'));
+        }
+
+        if (error instanceof SandboxPollingError) {
+          this.error(
+            t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
+              message: error.message,
+            }),
+          );
+        }
+
+        throw error;
+      }
+
+      const finalResult = await this.odsClient.GET('/sandboxes/{sandboxId}', {
+        params: {
+          path: {sandboxId: sandbox.id},
+        },
+      });
+
+      if (!finalResult.data?.data) {
+        this.error(
+          t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
+            message: finalResult.response?.statusText || 'Unknown error',
+          }),
+        );
+      }
+
+      sandbox = finalResult.data.data;
+
       this.log('');
-      sandbox = await this.waitForSandbox(sandbox.id, pollInterval, timeout);
+      this.logger.info({sandboxId: sandbox.id}, t('commands.ods.create.ready', 'Sandbox is now ready'));
     }
 
     if (this.jsonEnabled()) {
@@ -225,94 +286,5 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     }
 
     ux.stdout(ui.toString());
-  }
-
-  /**
-   * Sleep for a given number of milliseconds.
-   */
-  private async sleep(ms: number): Promise<void> {
-    await new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
-
-  /**
-   * Polls for sandbox status until it reaches a terminal state.
-   * @param sandboxId - The sandbox ID to poll
-   * @param pollIntervalSeconds - Interval between polls in seconds
-   * @param timeoutSeconds - Maximum time to wait (0 for no timeout)
-   * @returns The final sandbox state
-   */
-  private async waitForSandbox(
-    sandboxId: string,
-    pollIntervalSeconds: number,
-    timeoutSeconds: number,
-  ): Promise<SandboxModel> {
-    const startTime = Date.now();
-    const pollIntervalMs = pollIntervalSeconds * 1000;
-    const timeoutMs = timeoutSeconds * 1000;
-
-    this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to be ready...'));
-
-    // Initial delay before first poll to allow the sandbox to be registered in the API
-    await this.sleep(pollIntervalMs);
-
-    while (true) {
-      // Check for timeout
-      if (timeoutSeconds > 0 && Date.now() - startTime > timeoutMs) {
-        this.error(
-          t('commands.ods.create.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
-            seconds: String(timeoutSeconds),
-          }),
-        );
-      }
-
-      // eslint-disable-next-line no-await-in-loop
-      const result = await this.odsClient.GET('/sandboxes/{sandboxId}', {
-        params: {
-          path: {sandboxId},
-        },
-      });
-
-      if (!result.data?.data) {
-        this.error(
-          t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
-            message: result.response?.statusText || 'Unknown error',
-          }),
-        );
-      }
-
-      const sandbox = result.data.data;
-      const currentState = sandbox.state as SandboxState;
-
-      // Log current state on each poll
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
-      const state = currentState || 'unknown';
-      this.logger.info({sandboxId, elapsed, state}, `[${elapsed}s] State: ${state}`);
-
-      // Check for terminal states
-      if (currentState && TERMINAL_STATES.has(currentState)) {
-        switch (currentState) {
-          case 'deleted': {
-            this.error(t('commands.ods.create.deleted', 'Sandbox was deleted'));
-            break;
-          }
-          case 'failed': {
-            this.error(t('commands.ods.create.failed', 'Sandbox creation failed'));
-            break;
-          }
-          case 'started': {
-            this.log('');
-            this.logger.info({sandboxId}, t('commands.ods.create.ready', 'Sandbox is now ready'));
-            break;
-          }
-        }
-        return sandbox;
-      }
-
-      // Wait before next poll
-      // eslint-disable-next-line no-await-in-loop
-      await this.sleep(pollIntervalMs);
-    }
   }
 }

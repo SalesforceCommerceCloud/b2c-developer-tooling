@@ -5,6 +5,7 @@
  */
 
 import {expect} from 'chai';
+import sinon from 'sinon';
 
 import OdsStart from '../../../src/commands/ods/start.js';
 
@@ -66,12 +67,26 @@ describe('ods operations', () => {
       expect(OdsStart.enableJsonFlag).to.be.true;
     });
 
+    it('should expose wait/polling flags', () => {
+      expect(OdsStart.flags).to.have.property('wait');
+      expect(OdsStart.flags.wait.char).to.equal('w');
+      expect(OdsStart.flags).to.have.property('poll-interval');
+      expect(OdsStart.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(OdsStart.flags).to.have.property('timeout');
+      expect(OdsStart.flags.timeout.dependsOn).to.deep.equal(['wait']);
+    });
+
     it('should return operation data in JSON mode', async () => {
       const command = new OdsStart([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -103,6 +118,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -144,6 +164,11 @@ describe('ods operations', () => {
         configurable: true,
       });
 
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
+        configurable: true,
+      });
+
       stubCommandConfigAndLogger(command);
       command.log = () => {};
       makeCommandThrowOnError(command);
@@ -163,6 +188,40 @@ describe('ods operations', () => {
         expect(error.message).to.include('Bad request');
       }
     });
+
+    it('should poll sandbox state when --wait is true', async () => {
+      const command = new OdsStart([], {} as any);
+
+      Object.defineProperty(command, 'args', {
+        value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: true, 'poll-interval': 0, timeout: 1},
+        configurable: true,
+      });
+
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
+
+      const getSpy = sinon.spy(async () => ({
+        data: {data: {state: 'started'}},
+        response: new Response(),
+      }));
+
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: {operation: 'start', operationState: 'running'}},
+          response: new Response(),
+        }),
+        GET: getSpy,
+      });
+
+      await command.run();
+
+      expect(getSpy.called, 'Expected GET to be called when --wait is true').to.equal(true);
+    });
   });
 
   describe('ods stop', () => {
@@ -180,12 +239,26 @@ describe('ods operations', () => {
       expect(OdsStop.enableJsonFlag).to.be.true;
     });
 
+    it('should expose wait/polling flags', () => {
+      expect(OdsStop.flags).to.have.property('wait');
+      expect(OdsStop.flags.wait.char).to.equal('w');
+      expect(OdsStop.flags).to.have.property('poll-interval');
+      expect(OdsStop.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(OdsStop.flags).to.have.property('timeout');
+      expect(OdsStop.flags.timeout.dependsOn).to.deep.equal(['wait']);
+    });
+
     it('should return operation data in JSON mode', async () => {
       const command = new OdsStop([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -217,6 +290,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -258,6 +336,11 @@ describe('ods operations', () => {
         configurable: true,
       });
 
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
+        configurable: true,
+      });
+
       stubCommandConfigAndLogger(command);
       command.log = () => {};
       makeCommandThrowOnError(command);
@@ -277,6 +360,40 @@ describe('ods operations', () => {
         expect(error.message).to.include('Bad request');
       }
     });
+
+    it('should poll sandbox state when --wait is true', async () => {
+      const command = new OdsStop([], {} as any);
+
+      Object.defineProperty(command, 'args', {
+        value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: true, 'poll-interval': 0, timeout: 1},
+        configurable: true,
+      });
+
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
+
+      const getSpy = sinon.spy(async () => ({
+        data: {data: {state: 'stopped'}},
+        response: new Response(),
+      }));
+
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: {operation: 'stop', operationState: 'running'}},
+          response: new Response(),
+        }),
+        GET: getSpy,
+      });
+
+      await command.run();
+
+      expect(getSpy.called, 'Expected GET to be called when --wait is true').to.equal(true);
+    });
   });
 
   describe('ods restart', () => {
@@ -294,12 +411,26 @@ describe('ods operations', () => {
       expect(OdsRestart.enableJsonFlag).to.be.true;
     });
 
+    it('should expose wait/polling flags', () => {
+      expect(OdsRestart.flags).to.have.property('wait');
+      expect(OdsRestart.flags.wait.char).to.equal('w');
+      expect(OdsRestart.flags).to.have.property('poll-interval');
+      expect(OdsRestart.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(OdsRestart.flags).to.have.property('timeout');
+      expect(OdsRestart.flags.timeout.dependsOn).to.deep.equal(['wait']);
+    });
+
     it('should return operation data in JSON mode', async () => {
       const command = new OdsRestart([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -331,6 +462,11 @@ describe('ods operations', () => {
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
         configurable: true,
       });
 
@@ -372,6 +508,11 @@ describe('ods operations', () => {
         configurable: true,
       });
 
+      Object.defineProperty(command, 'flags', {
+        value: {wait: false, 'poll-interval': 10, timeout: 600},
+        configurable: true,
+      });
+
       stubCommandConfigAndLogger(command);
       command.log = () => {};
       makeCommandThrowOnError(command);
@@ -390,6 +531,40 @@ describe('ods operations', () => {
         expect(error.message).to.include('Failed to restart sandbox');
         expect(error.message).to.include('Bad request');
       }
+    });
+
+    it('should poll sandbox state when --wait is true', async () => {
+      const command = new OdsRestart([], {} as any);
+
+      Object.defineProperty(command, 'args', {
+        value: {sandboxId: 'sandbox-123'},
+        configurable: true,
+      });
+
+      Object.defineProperty(command, 'flags', {
+        value: {wait: true, 'poll-interval': 0, timeout: 1},
+        configurable: true,
+      });
+
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
+
+      const getSpy = sinon.spy(async () => ({
+        data: {data: {state: 'started'}},
+        response: new Response(),
+      }));
+
+      stubOdsClient(command, {
+        POST: async () => ({
+          data: {data: {operation: 'restart', operationState: 'running'}},
+          response: new Response(),
+        }),
+        GET: getSpy,
+      });
+
+      await command.run();
+
+      expect(getSpy.called, 'Expected GET to be called when --wait is true').to.equal(true);
     });
   });
 });

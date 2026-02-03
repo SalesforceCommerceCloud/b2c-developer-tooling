@@ -227,7 +227,13 @@ export {
   parseFriendlySandboxId,
   resolveSandboxId,
   SandboxNotFoundError,
+  waitForSandbox,
+  SandboxPollingTimeoutError,
+  SandboxPollingError,
+  SandboxTerminalStateError,
 } from './operations/ods/index.js';
+
+export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
 
 // Operations - Users
 export {

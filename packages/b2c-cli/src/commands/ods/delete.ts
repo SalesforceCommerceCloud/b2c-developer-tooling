@@ -6,7 +6,14 @@
 import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {
+  getApiErrorMessage,
+  SandboxPollingError,
+  SandboxPollingTimeoutError,
+  SandboxTerminalStateError,
+  waitForSandbox,
+  type SandboxState,
+} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
 /**
@@ -54,10 +61,28 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
       description: 'Skip confirmation prompt',
       default: false,
     }),
+    wait: Flags.boolean({
+      char: 'w',
+      description: 'Wait for the sandbox to be fully deleted before returning',
+      default: false,
+    }),
+    'poll-interval': Flags.integer({
+      description: 'Polling interval in seconds when using --wait',
+      default: 10,
+      dependsOn: ['wait'],
+    }),
+    timeout: Flags.integer({
+      description: 'Maximum time to wait in seconds when using --wait (0 for no timeout)',
+      default: 600,
+      dependsOn: ['wait'],
+    }),
   };
 
   async run(): Promise<void> {
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
+    const wait = this.flags.wait as boolean;
+    const pollInterval = this.flags['poll-interval'] as number;
+    const timeout = this.flags.timeout as number;
 
     // Get sandbox details first to show in confirmation
     const getResult = await this.odsClient.GET('/sandboxes/{sandboxId}', {
@@ -104,5 +129,54 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
     }
 
     this.log(t('commands.ods.delete.success', 'Sandbox deletion initiated. The sandbox will be removed shortly.'));
+
+    if (wait) {
+      this.log(
+        t('commands.ods.delete.waiting', 'Waiting for sandbox to reach state {{state}}...', {
+          state: 'deleted' satisfies SandboxState,
+        }),
+      );
+
+      try {
+        await waitForSandbox(this.odsClient, {
+          sandboxId,
+          targetState: 'deleted',
+          pollIntervalSeconds: pollInterval,
+          timeoutSeconds: timeout,
+          onPoll: ({elapsedSeconds, state}) => {
+            this.logger.info({sandboxId, elapsed: elapsedSeconds, state}, `[${elapsedSeconds}s] State: ${state}`);
+          },
+        });
+      } catch (error) {
+        if (error instanceof SandboxPollingTimeoutError) {
+          this.error(
+            t('commands.ods.delete.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
+              seconds: String(error.timeoutSeconds),
+            }),
+          );
+        }
+
+        if (error instanceof SandboxTerminalStateError) {
+          this.error(
+            t('commands.ods.delete.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
+              state: error.state || 'unknown',
+            }),
+          );
+        }
+
+        if (error instanceof SandboxPollingError) {
+          this.error(
+            t('commands.ods.delete.pollError', 'Failed to fetch sandbox status: {{message}}', {
+              message: error.message,
+            }),
+          );
+        }
+
+        throw error;
+      }
+
+      this.log('');
+      this.logger.info({sandboxId}, t('commands.ods.delete.ready', 'Sandbox is now deleted'));
+    }
   }
 }

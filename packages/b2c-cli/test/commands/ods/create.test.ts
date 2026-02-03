@@ -266,39 +266,75 @@ describe('ods create', () => {
     describe('waitForSandbox()', () => {
       it('should wait until sandbox reaches started state', async () => {
         const command = setupCreateCommand();
-        let calls = 0;
 
-        const mockClient = {
-          async GET() {
-            calls++;
-            return {
-              data: {
-                data: {
-                  state: calls < 2 ? 'creating' : 'started',
-                },
-              },
-            };
-          },
+        (command as any).flags = {
+          realm: 'abcd',
+          ttl: 24,
+          profile: 'medium',
+          'auto-scheduled': false,
+          wait: true,
+          'poll-interval': 0,
+          timeout: 5,
+          'set-permissions': false,
+          json: true,
         };
 
-        stubOdsClient(command, mockClient);
+        let getCalls = 0;
+        stubOdsClient(command, {
+          POST: async () => ({
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'creating'}},
+            response: new Response(),
+          }),
+          async GET() {
+            getCalls += 1;
+            // First GET call is polling inside waitForSandbox.
+            if (getCalls === 1) {
+              return {
+                data: {data: {id: 'sb-1', realm: 'abcd', state: 'started'}},
+                response: new Response(),
+              };
+            }
+            // Second GET call is the post-wait fetch of the sandbox.
+            return {
+              data: {data: {id: 'sb-1', realm: 'abcd', state: 'started'}},
+              response: new Response(),
+            };
+          },
+        });
 
-        const result = await (command as any).waitForSandbox('sb-1', 0, 5);
-
+        const result = await runSilent(() => command.run());
         expect(result.state).to.equal('started');
+        expect(getCalls).to.equal(2);
       });
 
       it('should error when sandbox enters failed state', async () => {
         const command = setupCreateCommand();
 
+        (command as any).flags = {
+          realm: 'abcd',
+          ttl: 24,
+          profile: 'medium',
+          'auto-scheduled': false,
+          wait: true,
+          'poll-interval': 0,
+          timeout: 5,
+          'set-permissions': false,
+          json: true,
+        };
+
         stubOdsClient(command, {
+          POST: async () => ({
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'creating'}},
+            response: new Response(),
+          }),
           GET: async () => ({
-            data: {data: {state: 'failed'}},
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'failed'}},
+            response: new Response(),
           }),
         });
 
         try {
-          await (command as any).waitForSandbox('sb-1', 0, 5);
+          await command.run();
           expect.fail('Expected error');
         } catch (error: any) {
           expect(error.message).to.include('Sandbox creation failed');
@@ -308,14 +344,31 @@ describe('ods create', () => {
       it('should error when sandbox is deleted', async () => {
         const command = setupCreateCommand();
 
+        (command as any).flags = {
+          realm: 'abcd',
+          ttl: 24,
+          profile: 'medium',
+          'auto-scheduled': false,
+          wait: true,
+          'poll-interval': 0,
+          timeout: 5,
+          'set-permissions': false,
+          json: true,
+        };
+
         stubOdsClient(command, {
+          POST: async () => ({
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'creating'}},
+            response: new Response(),
+          }),
           GET: async () => ({
-            data: {data: {state: 'deleted'}},
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'deleted'}},
+            response: new Response(),
           }),
         });
 
         try {
-          await (command as any).waitForSandbox('sb-1', 0, 5);
+          await command.run();
           expect.fail('Expected error');
         } catch (error: any) {
           expect(error.message).to.include('Sandbox was deleted');
@@ -325,28 +378,65 @@ describe('ods create', () => {
       it('should timeout if sandbox never reaches terminal state', async () => {
         const command = setupCreateCommand();
 
-        sinon.stub(command as any, 'sleep').resolves(undefined);
-        sinon.stub(Date, 'now').onFirstCall().returns(0).returns(1001);
+        (command as any).flags = {
+          realm: 'abcd',
+          ttl: 24,
+          profile: 'medium',
+          'auto-scheduled': false,
+          wait: true,
+          'poll-interval': 0,
+          timeout: 1,
+          'set-permissions': false,
+          json: true,
+        };
+
+        // Use fake timers so waitForSandbox timeout logic can be triggered deterministically.
+        const clock = sinon.useFakeTimers({now: 0});
 
         stubOdsClient(command, {
+          POST: async () => ({
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'creating'}},
+            response: new Response(),
+          }),
           GET: async () => ({
-            data: {data: {id: 'sb-1', state: 'creating'}},
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'creating'}},
             response: new Response(),
           }),
         });
 
+        const promise = command.run();
+        await clock.tickAsync(2000);
+
         try {
-          await (command as any).waitForSandbox('sb-1', 0, 1);
+          await promise;
           expect.fail('Expected timeout');
         } catch (error: any) {
           expect(error.message).to.include('Timeout waiting for sandbox');
+        } finally {
+          clock.restore();
         }
       });
 
-      it('should error if polling API returns no data', async () => {
+      it('should error if polling fails', async () => {
         const command = setupCreateCommand();
 
+        (command as any).flags = {
+          realm: 'abcd',
+          ttl: 24,
+          profile: 'medium',
+          'auto-scheduled': false,
+          wait: true,
+          'poll-interval': 0,
+          timeout: 5,
+          'set-permissions': false,
+          json: true,
+        };
+
         stubOdsClient(command, {
+          POST: async () => ({
+            data: {data: {id: 'sb-1', realm: 'abcd', state: 'creating'}},
+            response: new Response(),
+          }),
           GET: async () => ({
             data: undefined,
             response: {statusText: 'Internal Error'},
@@ -354,7 +444,7 @@ describe('ods create', () => {
         });
 
         try {
-          await (command as any).waitForSandbox('sb-1', 0, 5);
+          await command.run();
           expect.fail('Expected error');
         } catch (error: any) {
           expect(error.message).to.include('Failed to fetch sandbox status');
