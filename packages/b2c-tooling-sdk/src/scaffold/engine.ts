@@ -91,8 +91,8 @@ export function renderTemplate(template: string, context: TemplateContext): stri
 }
 
 /**
- * Render a file path template (using {{variable}} syntax)
- * @param pathTemplate - The path template string (e.g., "{{cartridgeName}}/cartridge/{{kebabCase moduleName}}.js")
+ * Render a file path template (using double-brace variable syntax)
+ * @param pathTemplate - The path template string with double-brace placeholders
  * @param context - Template context with variables and helpers
  * @returns Rendered path string
  */
