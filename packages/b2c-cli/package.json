@@ -22,6 +22,7 @@
     "@oclif/plugin-warn-if-update-available": "^3",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "^9.0.1",
+    "glob": "^13.0.0",
     "marked": "^15.0.0",
     "marked-terminal": "^7.3.0",
     "open": "^11.0.0"
@@ -271,6 +272,9 @@
       },
       "setup": {
         "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html"
+      },
+      "scaffold": {
+        "description": "Generate project scaffolds for cartridges, APIs, and components\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.html"
       }
     }
   },

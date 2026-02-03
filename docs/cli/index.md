@@ -49,6 +49,10 @@ These flags are available on all commands that interact with B2C instances:
 - [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
 - [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
 
+### Development
+
+- [Scaffold Commands](./scaffold) - Generate cartridges, controllers, hooks, and more from templates
+
 ### Account Management
 
 - [Account Manager Commands](./account-manager) - Manage Account Manager users, roles, and organizations

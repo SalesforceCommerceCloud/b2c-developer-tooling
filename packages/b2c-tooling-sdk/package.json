@@ -233,6 +233,17 @@
         "default": "./dist/cjs/skills/index.js"
       }
     },
+    "./scaffold": {
+      "development": "./src/scaffold/index.ts",
+      "import": {
+        "types": "./dist/esm/scaffold/index.d.ts",
+        "default": "./dist/esm/scaffold/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/scaffold/index.d.ts",
+        "default": "./dist/cjs/scaffold/index.js"
+      }
+    },
     "./test-utils": {
       "development": "./src/test-utils/index.ts",
       "import": {
@@ -293,6 +304,7 @@
     "@salesforce/dev-config": "^4.3.2",
     "@tony.ganchev/eslint-plugin-header": "^3.1.11",
     "@types/archiver": "^7.0.0",
+    "@types/ejs": "^3.1.5",
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.10",
     "@types/node": "^18.19.130",
@@ -327,6 +339,7 @@
   "dependencies": {
     "@salesforce/telemetry": "^6.1.0",
     "archiver": "^7.0.1",
+    "ejs": "^3.1.10",
     "chokidar": "^5.0.0",
     "cliui": "^9.0.1",
     "fuse.js": "^7.0.0",

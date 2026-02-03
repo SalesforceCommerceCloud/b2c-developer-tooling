@@ -1,0 +1,23 @@
+<iscontent type="text/html" charset="UTF-8" compact="true"/>
+
+<!--- <%= componentName %> Page Designer Component --->
+
+<div class="experience-component <%= componentId %> ${pdict.cssClass}">
+    <isif condition="${pdict.heading}">
+        <h2 class="<%= componentId %>__heading">${pdict.heading}</h2>
+    </isif>
+
+    <isif condition="${pdict.content}">
+        <div class="<%= componentId %>__content">
+            <isprint value="${pdict.content}" encoding="off"/>
+        </div>
+    </isif>
+
+<% if (hasRegions) { %>    <!--- Region for nested components --->
+    <isif condition="${pdict.mainRegion}">
+        <div class="<%= componentId %>__region">
+            <isprint value="${pdict.mainRegion}" encoding="off"/>
+        </div>
+    </isif>
+<% } %>
+</div>

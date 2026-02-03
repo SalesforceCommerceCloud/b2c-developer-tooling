@@ -1,0 +1,47 @@
+'use strict';
+
+/**
+ * <%= stepId %> Job Step (Task-oriented)
+ *
+ * <%= stepDescription %>
+ *
+ * @module scripts/jobsteps/<%= camelCase(stepId) %>
+ */
+
+var Status = require('dw/system/Status');
+var Logger = require('dw/system/Logger');
+
+var log = Logger.getLogger('<%= camelCase(stepId) %>', 'job');
+
+/**
+ * Execute the job step
+ *
+ * Task-oriented steps run once per job execution.
+ * Use for simple operations that don't need chunked processing.
+ *
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ * @returns {dw.system.Status} - Execution status
+ */
+exports.execute = function (stepExecution, parameters) {
+    log.info('<%= stepId %> step started');
+
+    try {
+        // Access job parameters
+        // var myParam = parameters.get('MyParameter');
+
+        // TODO: Implement your step logic here
+        // Examples:
+        // - Export data to a file
+        // - Call an external service
+        // - Update records in bulk
+        // - Generate reports
+
+        log.info('<%= stepId %> step completed successfully');
+        return new Status(Status.OK);
+
+    } catch (e) {
+        log.error('<%= stepId %> step failed: ' + e.message);
+        return new Status(Status.ERROR, 'ERROR', e.message);
+    }
+};

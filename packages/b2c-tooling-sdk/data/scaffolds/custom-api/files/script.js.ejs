@@ -1,0 +1,95 @@
+'use strict';
+
+/**
+ * Custom SCAPI implementation for <%= apiName %>
+ *
+ * Each exported function corresponds to an operationId in schema.yaml.
+ * Functions must be marked as public: exports.functionName.public = true;
+ *
+ * Use RESTResponseMgr for proper SCAPI responses.
+ */
+
+var RESTResponseMgr = require('dw/system/RESTResponseMgr');
+
+<% if (includeExampleEndpoints) { %>
+/**
+ * GET /hello
+ * Returns a hello message
+ */
+exports.getHello = function () {
+    RESTResponseMgr
+        .createSuccess({
+            message: 'Hello from <%= apiName %>!'
+        })
+        .render();
+};
+exports.getHello.public = true;
+
+/**
+ * GET /items
+ * Get a list of items with pagination
+ */
+exports.getItems = function () {
+    var limit = request.httpParameterMap.get('c_limit').intValue || 10;
+    var offset = request.httpParameterMap.get('c_offset').intValue || 0;
+
+    // TODO: Replace with actual data retrieval logic
+    var allItems = [
+        { id: 'item-1', name: 'Example Item 1' },
+        { id: 'item-2', name: 'Example Item 2' },
+        { id: 'item-3', name: 'Example Item 3' }
+    ];
+
+    var items = allItems.slice(offset, offset + limit);
+
+    RESTResponseMgr
+        .createSuccess({
+            count: items.length,
+            total: allItems.length,
+            data: items
+        })
+        .render();
+};
+exports.getItems.public = true;
+
+/**
+ * GET /items/{itemId}
+ * Get a specific item by ID
+ */
+exports.getItem = function () {
+    var itemId = request.getSCAPIPathParameters().get('itemId');
+
+    // TODO: Replace with actual data retrieval logic
+    var items = {
+        'item-1': { id: 'item-1', name: 'Example Item 1', description: 'First example item' },
+        'item-2': { id: 'item-2', name: 'Example Item 2', description: 'Second example item' },
+        'item-3': { id: 'item-3', name: 'Example Item 3', description: 'Third example item' }
+    };
+
+    var item = items[itemId];
+
+    if (item) {
+        RESTResponseMgr
+            .createSuccess(item)
+            .render();
+    } else {
+        RESTResponseMgr
+            .createError(404, 'item-not-found', 'Item Not Found', 'The requested item was not found.')
+            .render();
+    }
+};
+exports.getItem.public = true;
+<% } else { %>
+/**
+ * GET /example
+ * Example endpoint - replace with your implementation
+ */
+exports.getExample = function () {
+    RESTResponseMgr
+        .createSuccess({
+            message: 'Hello from <%= apiName %>!'
+        })
+        .render();
+};
+exports.getExample.public = true;
+<% } %>
