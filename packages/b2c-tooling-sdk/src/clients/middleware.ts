@@ -38,23 +38,87 @@ function headersToObject(headers: Headers): Record<string, string> {
   return result;
 }
 
+// Track which requests have been retried to prevent infinite loops
+const retriedRequests = new WeakSet<Request>();
+
+// Store cloned request bodies for potential retry (body can only be read once)
+const requestBodies = new WeakMap<Request, ArrayBuffer | null>();
+
 /**
  * Creates authentication middleware for openapi-fetch.
  *
  * This middleware intercepts requests and adds OAuth authentication headers
- * using the provided AuthStrategy.
+ * using the provided AuthStrategy. It also handles 401 responses by invalidating
+ * the token and retrying the request once with a fresh token.
  *
  * @param auth - The authentication strategy to use
- * @returns Middleware that adds auth headers to requests
+ * @returns Middleware that adds auth headers to requests and retries on 401
  */
 export function createAuthMiddleware(auth: AuthStrategy): Middleware {
+  const logger = getLogger();
+
   return {
     async onRequest({request}) {
       if (auth.getAuthorizationHeader) {
         const authHeader = await auth.getAuthorizationHeader();
         request.headers.set('Authorization', authHeader);
       }
+
+      // Clone the request body before it gets consumed, so we can retry if needed
+      if (request.body && auth.invalidateToken && auth.getAuthorizationHeader) {
+        const clonedRequest = request.clone();
+        const bodyBuffer = await clonedRequest.arrayBuffer();
+        requestBodies.set(request, bodyBuffer);
+      }
+
       return request;
+    },
+
+    async onResponse({request, response}) {
+      // Only retry on 401 if we haven't already retried this request
+      // and the strategy supports token invalidation
+      if (
+        response.status === 401 &&
+        !retriedRequests.has(request) &&
+        auth.invalidateToken &&
+        auth.getAuthorizationHeader
+      ) {
+        logger.debug('[AuthMiddleware] Received 401, invalidating token and retrying');
+
+        // Mark this request as retried to prevent infinite loops
+        retriedRequests.add(request);
+
+        // Invalidate the cached token
+        auth.invalidateToken();
+
+        // Get a fresh token
+        const newAuthHeader = await auth.getAuthorizationHeader();
+
+        // Rebuild the request with the new auth header
+        const newHeaders = new Headers(request.headers);
+        newHeaders.set('Authorization', newAuthHeader);
+
+        // Get the saved body (if any)
+        const savedBody = requestBodies.get(request);
+
+        // Create a new request with the fresh token
+        const retryRequest = new Request(request.url, {
+          method: request.method,
+          headers: newHeaders,
+          body: savedBody,
+          // TypeScript doesn't know about duplex, but it's needed for streaming bodies
+          ...(savedBody ? {duplex: 'half'} : {}),
+        } as RequestInit);
+
+        // Retry the request
+        const retryResponse = await fetch(retryRequest);
+
+        logger.debug({status: retryResponse.status}, `[AuthMiddleware] Retry response: ${retryResponse.status}`);
+
+        return retryResponse;
+      }
+
+      return response;
     },
   };
 }
