@@ -13,6 +13,12 @@ on:
         default: 'false'
         type: boolean
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  vulnerability-alerts: read
+
 jobs:
   renovate:
     runs-on: ubuntu-latest
