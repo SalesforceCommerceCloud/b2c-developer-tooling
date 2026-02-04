@@ -89,6 +89,10 @@ export class B2CDxMcpServer extends McpServer {
           isError: result.isError ?? false,
         });
 
+        // Flush telemetry after each tool call to ensure events are sent promptly
+        // in long-running server processes (don't await to avoid blocking the response)
+        this.telemetry?.flush().catch(() => {});
+
         return result;
       } catch (error) {
         const runTimeMs = Date.now() - startTime;
@@ -98,6 +102,9 @@ export class B2CDxMcpServer extends McpServer {
           runTimeMs,
           isError: true,
         });
+
+        // Flush telemetry on error as well
+        this.telemetry?.flush().catch(() => {});
 
         throw error;
       }
