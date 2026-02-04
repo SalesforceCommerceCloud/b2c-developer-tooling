@@ -352,7 +352,10 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       const sendStopAndResolve = (signal: string): void => {
         this.shutdownSignal = signal;
         this.telemetry?.sendEvent('SERVER_STOPPED', {signal});
-        resolve();
+        // Flush telemetry before resolving to ensure SERVER_STOPPED is sent
+        // before finally() proceeds to stop telemetry
+        const flushPromise = this.telemetry?.flush() ?? Promise.resolve();
+        flushPromise.then(() => resolve()).catch(() => resolve());
       };
 
       // Handle stdin close (MCP client disconnects normally)

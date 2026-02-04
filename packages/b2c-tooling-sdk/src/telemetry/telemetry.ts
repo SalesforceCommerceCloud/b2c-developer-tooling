@@ -184,6 +184,24 @@ export class Telemetry {
   }
 
   /**
+   * Flush pending telemetry events without stopping the reporter.
+   * Use this for long-running processes that need to ensure events are sent periodically.
+   *
+   * Note: This restarts the reporter internally to trigger a flush, as the underlying
+   * @salesforce/telemetry SDK doesn't expose a direct flush method for AppInsights.
+   */
+  async flush(): Promise<void> {
+    if (!this.started || !this.reporter) return;
+
+    // The @salesforce/telemetry SDK's stop() triggers an AppInsights flush.
+    // We stop and restart to flush pending events without ending telemetry.
+    this.reporter.stop();
+    // Allow HTTP requests to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    this.reporter.start();
+  }
+
+  /**
    * Stop the telemetry reporter and flush any pending events.
    * Includes a short delay to allow async HTTP requests to complete.
    */

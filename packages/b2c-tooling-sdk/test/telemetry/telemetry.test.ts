@@ -656,6 +656,52 @@ describe('telemetry/telemetry', () => {
     });
   });
 
+  describe('flush', () => {
+    it('does nothing when not started', async () => {
+      const telemetry = new Telemetry({project: 'test-project'});
+      // Should not throw when flushing without starting
+      await telemetry.flush();
+    });
+
+    it('stops and restarts the reporter to flush events', async () => {
+      const mockReporter = createMockReporter(sandbox);
+      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'test-key',
+      });
+
+      await telemetry.start();
+      await telemetry.flush();
+
+      // stop() called to flush events, start() called to resume
+      expect(mockReporter.stop.calledOnce).to.be.true;
+      // start() called twice: once in start(), once in flush()
+      expect(mockReporter.start.calledTwice).to.be.true;
+    });
+
+    it('allows sending events after flush', async () => {
+      const mockReporter = createMockReporter(sandbox);
+      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'test-key',
+      });
+
+      await telemetry.start();
+      telemetry.sendEvent('BEFORE_FLUSH');
+      await telemetry.flush();
+      telemetry.sendEvent('AFTER_FLUSH');
+
+      // Both events should be sent
+      expect(mockReporter.sendTelemetryEvent.calledTwice).to.be.true;
+      expect(mockReporter.sendTelemetryEvent.firstCall.args[0]).to.equal('BEFORE_FLUSH');
+      expect(mockReporter.sendTelemetryEvent.secondCall.args[0]).to.equal('AFTER_FLUSH');
+    });
+  });
+
   describe('CLI ID persistence with dataDir', () => {
     let tempDir: string;
 
