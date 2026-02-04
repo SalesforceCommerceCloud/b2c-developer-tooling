@@ -43,8 +43,33 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
-      - name: Build documentation
+      - name: Get latest release tag
+        id: release
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "exists=$([[ -n $LATEST_TAG ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Build main documentation
         run: pnpm run docs:build
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.tag }}
+
+      - name: Build release documentation
+        if: steps.release.outputs.exists == 'true'
+        run: |
+          # Save main build
+          mv docs/.vitepress/dist docs/.vitepress/dist-main
+
+          # Checkout and build at release tag
+          git checkout ${{ steps.release.outputs.tag }}
+          pnpm install --frozen-lockfile
+          pnpm -r run build
+          RELEASE_VERSION=${{ steps.release.outputs.tag }} IS_RELEASE_BUILD=true pnpm run docs:build
+
+          # Combine: main at root, release in /release/
+          mv docs/.vitepress/dist docs/.vitepress/dist-main/release
+          mv docs/.vitepress/dist-main docs/.vitepress/dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

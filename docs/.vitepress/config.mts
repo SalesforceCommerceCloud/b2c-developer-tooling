@@ -1,6 +1,33 @@
 import { defineConfig } from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 
+// Version configuration from environment
+const releaseVersion = process.env.RELEASE_VERSION || 'unreleased';
+const isReleaseBuild = process.env.IS_RELEASE_BUILD === 'true';
+
+// Base path for this build
+const basePath = '/b2c-developer-tooling/';
+
+// Build version dropdown items
+// Note: VitePress automatically prepends the base path to links, so we use root-relative paths
+function getVersionItems() {
+  if (isReleaseBuild) {
+    return [
+      { text: 'Development (main)', link: basePath },
+      { text: `Release (${releaseVersion})`, link: `${basePath}release/` },
+    ];
+  }
+  // Main branch build - check if there's a release version
+  if (releaseVersion !== 'unreleased') {
+    return [
+      { text: 'Development (main)', link: '/' },
+      { text: `Release (${releaseVersion})`, link: '/release/' },
+    ];
+  }
+  // No release yet
+  return [{ text: 'Development (main)', link: '/' }];
+}
+
 const guideSidebar = [
   {
     text: 'Getting Started',
@@ -73,6 +100,10 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/' },
       { text: 'CLI Reference', link: '/cli/' },
       { text: 'API Reference', link: '/api/' },
+      {
+        text: isReleaseBuild ? releaseVersion : 'dev',
+        items: getVersionItems(),
+      },
     ],
 
     footer: {
