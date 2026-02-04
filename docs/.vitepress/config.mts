@@ -91,11 +91,19 @@ document.addEventListener('click', (e) => {
   const link = e.target.closest('a');
   if (!link) return;
   const href = link.getAttribute('href');
-  // Check if this is a version switch link (contains /release/ or is ../)
-  if (href && (href.includes('/release/') || href === '../' || href.endsWith('/release/'))) {
+  // Check if this is a version switch link
+  if (href && (href.includes('/release/') || href === '../')) {
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = link.href;
+    if (href === '../') {
+      // Navigate from /release/ back to main - construct path explicitly
+      // to avoid relative path issues with trailing slashes
+      const path = window.location.pathname;
+      const mainPath = path.replace(/\\/release\\/.*$/, '/').replace(/\\/release$/, '/');
+      window.location.href = mainPath;
+    } else {
+      window.location.href = link.href;
+    }
   }
 }, true);
 `;
