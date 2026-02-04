@@ -6,6 +6,9 @@
     ":semanticCommits",
     "group:allNonMajor"
   ],
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
   "packageRules": [
