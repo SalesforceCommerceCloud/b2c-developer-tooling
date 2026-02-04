@@ -219,6 +219,32 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     }),
   };
 
+  /** Signal that triggered shutdown (if any) - used to exit process after finally() */
+  private shutdownSignal?: string;
+
+  /** Promise that resolves when stdin closes (MCP client disconnects) */
+  private stdinClosePromise?: Promise<void>;
+
+  /**
+   * Override finally() to wait for stdin close before stopping telemetry.
+   * This ensures SERVER_STOPPED is sent before telemetry.stop() is called.
+   */
+  protected async finally(err: Error | undefined): Promise<void> {
+    // Wait for stdin to close and SERVER_STOPPED to be sent
+    // This keeps the command "running" until the MCP client disconnects
+    await this.stdinClosePromise;
+
+    // Now call super.finally() which sends COMMAND_SUCCESS and stops telemetry
+    await super.finally(err);
+
+    // Exit process if shutdown was triggered by a signal (SIGINT/SIGTERM)
+    // Catching these signals prevents Node's default exit behavior
+    if (this.shutdownSignal === 'SIGINT' || this.shutdownSignal === 'SIGTERM') {
+      // eslint-disable-next-line n/no-process-exit, unicorn/no-process-exit
+      process.exit(0);
+    }
+  }
+
   /**
    * Loads configuration from flags, environment variables, and config files.
    *
@@ -320,9 +346,23 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    // Send SERVER_STOPPED when stdin closes (MCP client disconnects)
-    process.stdin.on('close', () => {
-      this.telemetry?.sendEvent('SERVER_STOPPED', {signal: 'stdin_close'});
+    // Create promise that resolves when server stops (stdin close or signal)
+    // This allows finally() to wait for SERVER_STOPPED before stopping telemetry
+    this.stdinClosePromise = new Promise((resolve) => {
+      const sendStopAndResolve = (signal: string): void => {
+        this.shutdownSignal = signal;
+        this.telemetry?.sendEvent('SERVER_STOPPED', {signal});
+        resolve();
+      };
+
+      // Handle stdin close (MCP client disconnects normally)
+      process.stdin.on('close', () => sendStopAndResolve('stdin_close'));
+
+      // Handle Ctrl+C
+      process.on('SIGINT', () => sendStopAndResolve('SIGINT'));
+
+      // Handle kill signal
+      process.on('SIGTERM', () => sendStopAndResolve('SIGTERM'));
     });
 
     // Log startup message using the structured logger
