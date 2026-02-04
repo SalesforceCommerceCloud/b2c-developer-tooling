@@ -84,10 +84,28 @@ const guideSidebar = [
   },
 ];
 
+// Script to force hard navigation for version switching links
+// VitePress SPA router can't handle navigation between separate VitePress builds
+const versionSwitchScript = `
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a');
+  if (!link) return;
+  const href = link.getAttribute('href');
+  // Check if this is a version switch link (contains /release/ or is ../)
+  if (href && (href.includes('/release/') || href === '../' || href.endsWith('/release/'))) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = link.href;
+  }
+}, true);
+`;
+
 export default defineConfig({
   title: 'B2C DX',
   description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
   base: basePath,
+
+  head: [['script', {}, versionSwitchScript]],
 
   // Ignore dead links in api-readme.md (links are valid after TypeDoc generates the API docs)
   ignoreDeadLinks: [/^\.\/clients\//],
