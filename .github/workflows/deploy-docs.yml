@@ -58,11 +58,17 @@ jobs:
       - name: Build release documentation
         if: steps.release.outputs.exists == 'true'
         run: |
-          # Save main build
+          # Save main build and config (config has version dropdown code)
           mv docs/.vitepress/dist docs/.vitepress/dist-main
+          cp docs/.vitepress/config.mts /tmp/config.mts
 
-          # Checkout and build at release tag
+          # Checkout release tag
           git checkout ${{ steps.release.outputs.tag }}
+
+          # Restore config from main (has version dropdown and dynamic base path)
+          cp /tmp/config.mts docs/.vitepress/config.mts
+
+          # Build at release tag with main's config
           pnpm install --frozen-lockfile
           pnpm -r run build
           RELEASE_VERSION=${{ steps.release.outputs.tag }} IS_RELEASE_BUILD=true pnpm run docs:build

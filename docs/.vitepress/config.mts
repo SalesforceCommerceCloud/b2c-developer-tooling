@@ -5,27 +5,33 @@ import typedocSidebar from '../api/typedoc-sidebar.json';
 const releaseVersion = process.env.RELEASE_VERSION || 'unreleased';
 const isReleaseBuild = process.env.IS_RELEASE_BUILD === 'true';
 
-// Base path for this build
-const basePath = '/b2c-developer-tooling/';
+// Base paths - release build lives in /release/ subdirectory
+const siteBase = '/b2c-developer-tooling';
+const basePath = isReleaseBuild ? `${siteBase}/release/` : `${siteBase}/`;
 
 // Build version dropdown items
-// Note: VitePress automatically prepends the base path to links, so we use root-relative paths
+// VitePress prepends base path to links starting with /, so we use relative paths
+// that work correctly for each build context
 function getVersionItems() {
+  if (releaseVersion === 'unreleased') {
+    // No release yet - only show dev
+    return [{ text: 'Development (main)', link: '/' }];
+  }
+
   if (isReleaseBuild) {
+    // Release build: base is /b2c-developer-tooling/release/
+    // Use ../ to navigate up to main docs
     return [
-      { text: 'Development (main)', link: basePath },
-      { text: `Release (${releaseVersion})`, link: `${basePath}release/` },
+      { text: 'Development (main)', link: '../' },
+      { text: `Release (${releaseVersion})`, link: '/' },
     ];
   }
-  // Main branch build - check if there's a release version
-  if (releaseVersion !== 'unreleased') {
-    return [
-      { text: 'Development (main)', link: '/' },
-      { text: `Release (${releaseVersion})`, link: '/release/' },
-    ];
-  }
-  // No release yet
-  return [{ text: 'Development (main)', link: '/' }];
+
+  // Main build: base is /b2c-developer-tooling/
+  return [
+    { text: 'Development (main)', link: '/' },
+    { text: `Release (${releaseVersion})`, link: '/release/' },
+  ];
 }
 
 const guideSidebar = [
@@ -81,7 +87,7 @@ const guideSidebar = [
 export default defineConfig({
   title: 'B2C DX',
   description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
-  base: '/b2c-developer-tooling/',
+  base: basePath,
 
   // Ignore dead links in api-readme.md (links are valid after TypeDoc generates the API docs)
   ignoreDeadLinks: [/^\.\/clients\//],
