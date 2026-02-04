@@ -45,6 +45,7 @@ const guideSidebar = [
       { text: 'Setup Commands', link: '/cli/setup' },
       { text: 'Scaffold Commands', link: '/cli/scaffold' },
       { text: 'Auth Commands', link: '/cli/auth' },
+      { text: 'Account Manager Commands', link: '/cli/account-manager' },
       { text: 'Logging', link: '/cli/logging' },
     ],
   },
