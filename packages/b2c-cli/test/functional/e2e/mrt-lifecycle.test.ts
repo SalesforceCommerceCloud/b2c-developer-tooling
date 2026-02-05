@@ -730,11 +730,10 @@ describe('MRT Lifecycle E2E Tests', function () {
 
       expect(result.exitCode, 'Command should fail for invalid environment').to.not.equal(0);
 
-      const errorText = result.stderr || result.stdout;
+      const errorText = String(result.stderr || result.stdout || '');
       // We only require that some diagnostic message is shown; it may be a warning
       // from oclif rather than containing the literal word "error".
-      expect(errorText && errorText.trim().length > 0, 'Expected diagnostic output for invalid environment').to.be
-        .true;
+      expect(errorText.trim().length > 0, 'Expected diagnostic output for invalid environment').to.be.true;
     });
 
     it('should require authentication', async function () {
