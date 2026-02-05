@@ -293,22 +293,22 @@ For direct access to the API Clients API only, use `createAccountManagerApiClien
 
 The SDK provides subpath exports for tree-shaking and organization:
 
-| Export                                         | Description                                           |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| `@salesforce/b2c-tooling-sdk`                  | Main entry point with all exports                     |
-| `@salesforce/b2c-tooling-sdk/config`           | Configuration resolution (resolveConfig)              |
-| `@salesforce/b2c-tooling-sdk/auth`             | Authentication strategies (OAuth, Basic, API Key)     |
-| `@salesforce/b2c-tooling-sdk/instance`         | B2CInstance class                                     |
+| Export                                         | Description                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| `@salesforce/b2c-tooling-sdk`                  | Main entry point with all exports                                              |
+| `@salesforce/b2c-tooling-sdk/config`           | Configuration resolution (resolveConfig)                                       |
+| `@salesforce/b2c-tooling-sdk/auth`             | Authentication strategies (OAuth, Basic, API Key)                              |
+| `@salesforce/b2c-tooling-sdk/instance`         | B2CInstance class                                                              |
 | `@salesforce/b2c-tooling-sdk/clients`          | Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT, Account Manager clients) |
-| `@salesforce/b2c-tooling-sdk/operations/code`  | Code deployment operations                            |
-| `@salesforce/b2c-tooling-sdk/operations/jobs`  | Job execution and site import/export                  |
-| `@salesforce/b2c-tooling-sdk/operations/sites` | Site management                                       |
-| `@salesforce/b2c-tooling-sdk/operations/users` | Account Manager user management                       |
-| `@salesforce/b2c-tooling-sdk/operations/roles` | Account Manager role management                       |
-| `@salesforce/b2c-tooling-sdk/operations/orgs`  | Account Manager organization management               |
-| `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)        |
-| `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)          |
-| `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                          |
+| `@salesforce/b2c-tooling-sdk/operations/code`  | Code deployment operations                                                     |
+| `@salesforce/b2c-tooling-sdk/operations/jobs`  | Job execution and site import/export                                           |
+| `@salesforce/b2c-tooling-sdk/operations/sites` | Site management                                                                |
+| `@salesforce/b2c-tooling-sdk/operations/users` | Account Manager user management                                                |
+| `@salesforce/b2c-tooling-sdk/operations/roles` | Account Manager role management                                                |
+| `@salesforce/b2c-tooling-sdk/operations/orgs`  | Account Manager organization management                                        |
+| `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)                                 |
+| `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)                                   |
+| `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                                                   |
 
 ## Logging
 

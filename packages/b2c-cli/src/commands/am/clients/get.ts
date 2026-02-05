@@ -96,7 +96,7 @@ export default class ClientGet extends AmCommand<typeof ClientGet> {
 
   private printBasicFields(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
     const passwordModified =
-      c.passwordModificationTimestamp != null
+      c.passwordModificationTimestamp !== null && c.passwordModificationTimestamp !== undefined
         ? new Date(c.passwordModificationTimestamp).toLocaleString()
         : undefined;
     const fields: [string, string | undefined][] = [
@@ -118,24 +118,22 @@ export default class ClientGet extends AmCommand<typeof ClientGet> {
     }
   }
 
-  private printRedirectUrls(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.redirectUrls === undefined || c.redirectUrls.length === 0) {
-      return;
-    }
+  private printClientDetails(c: AccountManagerApiClient): void {
+    const ui = cliui({width: process.stdout.columns || 80});
 
-    ui.div({text: 'Redirect URLs', padding: [2, 0, 0, 0]});
+    ui.div({text: 'API Client Details', padding: [1, 0, 0, 0]});
     ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-    ui.div({text: 'URLs:', width: 25, padding: [0, 2, 0, 0]}, {text: c.redirectUrls.join(', '), padding: [0, 0, 0, 0]});
-  }
 
-  private printScopes(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.scopes === undefined || c.scopes.length === 0) {
-      return;
-    }
+    this.printBasicFields(ui, c);
+    this.printRedirectUrls(ui, c);
+    this.printScopes(ui, c);
+    this.printDefaultScopes(ui, c);
+    this.printOrganizations(ui, c);
+    this.printRoles(ui, c);
+    this.printRoleTenantFilters(ui, c);
+    this.printVersionControl(ui, c);
 
-    ui.div({text: 'Scopes', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-    ui.div({text: 'Scopes:', width: 25, padding: [0, 2, 0, 0]}, {text: c.scopes.join(', '), padding: [0, 0, 0, 0]});
+    ux.stdout(ui.toString());
   }
 
   private printDefaultScopes(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
@@ -164,6 +162,16 @@ export default class ClientGet extends AmCommand<typeof ClientGet> {
       {text: 'Organization IDs:', width: 25, padding: [0, 2, 0, 0]},
       {text: orgIds.join(', '), padding: [0, 0, 0, 0]},
     );
+  }
+
+  private printRedirectUrls(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
+    if (c.redirectUrls === undefined || c.redirectUrls.length === 0) {
+      return;
+    }
+
+    ui.div({text: 'Redirect URLs', padding: [2, 0, 0, 0]});
+    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+    ui.div({text: 'URLs:', width: 25, padding: [0, 2, 0, 0]}, {text: c.redirectUrls.join(', '), padding: [0, 0, 0, 0]});
   }
 
   private printRoles(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
@@ -205,6 +213,16 @@ export default class ClientGet extends AmCommand<typeof ClientGet> {
     }
   }
 
+  private printScopes(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
+    if (c.scopes === undefined || c.scopes.length === 0) {
+      return;
+    }
+
+    ui.div({text: 'Scopes', padding: [2, 0, 0, 0]});
+    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+    ui.div({text: 'Scopes:', width: 25, padding: [0, 2, 0, 0]}, {text: c.scopes.join(', '), padding: [0, 0, 0, 0]});
+  }
+
   private printVersionControl(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
     if (c.versionControl === undefined || c.versionControl.length === 0) {
       return;
@@ -216,23 +234,5 @@ export default class ClientGet extends AmCommand<typeof ClientGet> {
       {text: 'Identifiers:', width: 25, padding: [0, 2, 0, 0]},
       {text: c.versionControl.join(', '), padding: [0, 0, 0, 0]},
     );
-  }
-
-  private printClientDetails(c: AccountManagerApiClient): void {
-    const ui = cliui({width: process.stdout.columns || 80});
-
-    ui.div({text: 'API Client Details', padding: [1, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-    this.printBasicFields(ui, c);
-    this.printRedirectUrls(ui, c);
-    this.printScopes(ui, c);
-    this.printDefaultScopes(ui, c);
-    this.printOrganizations(ui, c);
-    this.printRoles(ui, c);
-    this.printRoleTenantFilters(ui, c);
-    this.printVersionControl(ui, c);
-
-    ux.stdout(ui.toString());
   }
 }
