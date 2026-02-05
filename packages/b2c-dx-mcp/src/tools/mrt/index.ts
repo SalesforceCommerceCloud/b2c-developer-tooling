@@ -20,6 +20,8 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {pushBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import type {PushResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 /**
@@ -37,17 +39,6 @@ interface MrtBundlePushInput {
 }
 
 /**
- * Output type for mrt_bundle_push tool.
- */
-interface MrtBundlePushOutput {
-  tool: string;
-  status: string;
-  message: string;
-  input: MrtBundlePushInput;
-  timestamp: string;
-}
-
-/**
  * Creates the mrt_bundle_push tool.
  *
  * Creates a bundle from a pre-built PWA Kit project and pushes it to
@@ -59,11 +50,11 @@ interface MrtBundlePushOutput {
  * @returns The mrt_bundle_push tool
  */
 function createMrtBundlePushTool(services: Services): McpTool {
-  return createToolAdapter<MrtBundlePushInput, MrtBundlePushOutput>(
+  return createToolAdapter<MrtBundlePushInput, PushResult>(
     {
       name: 'mrt_bundle_push',
       description:
-        '[PLACEHOLDER] Bundle a pre-built PWA Kit project and push to Managed Runtime. Optionally deploy to a target environment.',
+        'Bundle a pre-built PWA Kit project and push to Managed Runtime. Optionally deploy to a target environment.',
       toolsets: ['MRT', 'PWAV3', 'STOREFRONTNEXT'],
       isGA: false,
       // MRT operations use ApiKeyStrategy from SFCC_MRT_API_KEY or ~/.mobify
@@ -92,39 +83,45 @@ function createMrtBundlePushTool(services: Services): McpTool {
         // Get environment from --environment flag (optional)
         const environment = context.mrtConfig?.environment;
 
-        // Placeholder implementation
-        const timestamp = new Date().toISOString();
+        // Get origin from --cloud-origin flag or mrtOrigin config (optional)
+        const origin = context.mrtConfig?.origin;
 
-        // TODO: Remove this log when implementing
+        // Parse comma-separated glob patterns (same as CLI defaults)
+        const ssrOnly = (args.ssrOnly || 'ssr.js,ssr.mjs,server/**/*').split(',').map((s) => s.trim());
+        const ssrShared = (args.ssrShared || 'static/**/*,client/**/*').split(',').map((s) => s.trim());
+        const buildDirectory = args.buildDirectory || './build';
+
+        // Log all computed variables before pushing bundle
         const logger = getLogger();
-        logger.debug({mrtConfig: context.mrtConfig, project, environment}, 'mrt_bundle_push context');
+        logger.debug(
+          {
+            project,
+            environment,
+            origin,
+            buildDirectory,
+            message: args.message,
+            ssrOnly,
+            ssrShared,
+          },
+          '[MRT] Pushing bundle with computed options',
+        );
 
-        // TODO: When implementing, use context.mrtConfig.auth:
-        //
-        // import { pushBundle } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-        //
-        // // Parse comma-separated glob patterns (same as CLI defaults)
-        // const ssrOnly = (args.ssrOnly || 'ssr.js,ssr.mjs,server/**/*').split(',').map(s => s.trim());
-        // const ssrShared = (args.ssrShared || 'static/**/*,client/**/*').split(',').map(s => s.trim());
-        //
-        // const result = await pushBundle({
-        //   project,
-        //   buildDirectory: args.buildDirectory || './build',
-        //   ssrOnly,    // files that run only on SSR server (never sent to browser)
-        //   ssrShared,  // files served from CDN and also available to SSR
-        //   message: args.message,
-        //   environment,
-        // }, context.mrtConfig!.auth);
-        // return result;
+        // Push bundle to MRT
+        // Note: auth is guaranteed to be present by the adapter when requiresMrtAuth is true
+        const result = await pushBundle(
+          {
+            projectSlug: project,
+            buildDirectory,
+            ssrOnly, // files that run only on SSR server (never sent to browser)
+            ssrShared, // files served from CDN and also available to SSR
+            message: args.message,
+            target: environment,
+            origin, // MRT API origin URL (optional, defaults to https://cloud.mobify.com)
+          },
+          context.mrtConfig!.auth!,
+        );
 
-        return {
-          tool: 'mrt_bundle_push',
-          status: 'placeholder',
-          message:
-            "This is a placeholder implementation for 'mrt_bundle_push'. The actual implementation is coming soon.",
-          input: {...args, project, environment},
-          timestamp,
-        };
+        return result;
       },
       formatOutput: (output) => jsonResult(output),
     },

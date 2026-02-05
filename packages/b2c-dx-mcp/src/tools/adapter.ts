@@ -70,9 +70,8 @@
 
 import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
-import type {Services} from '../services.js';
+import type {Services, MrtConfig} from '../services.js';
 
 /**
  * Context provided to tool execute functions.
@@ -87,18 +86,11 @@ export interface ToolExecutionContext {
   b2cInstance?: B2CInstance;
 
   /**
-   * MRT configuration (auth, project, environment).
+   * MRT configuration (auth, project, environment, origin).
    * Pre-resolved at server startup.
    * Only populated when requiresMrtAuth is true.
    */
-  mrtConfig?: {
-    /** Auth strategy for MRT API operations */
-    auth: AuthStrategy;
-    /** MRT project slug */
-    project?: string;
-    /** MRT environment */
-    environment?: string;
-  };
+  mrtConfig?: MrtConfig;
 
   /**
    * Services instance for file system access and other utilities.
@@ -310,6 +302,7 @@ export function createToolAdapter<TInput, TOutput>(
             auth: services.mrtConfig.auth,
             project: services.mrtConfig.project,
             environment: services.mrtConfig.environment,
+            origin: services.mrtConfig.origin,
           };
         }
 
