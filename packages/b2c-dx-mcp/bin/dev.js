@@ -8,16 +8,17 @@
 import {fileURLToPath} from 'node:url';
 import {dirname, join} from 'node:path';
 
-// Load .env file from package root (not cwd) if present
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const envPath = join(__dirname, '..', '.env');
+// Load .env file from this package's directory if present
+const packageDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 try {
-  process.loadEnvFile(envPath);
+  process.loadEnvFile(join(packageDir, '.env'));
 } catch {
   // .env file not found or not readable, continue without it
 }
 
-// Disable telemetry in development mode (after loading .env so user config is respected)
+// Disable telemetry by default in development mode (after loading .env so user config is respected)
+// Support both SF_DISABLE_TELEMETRY (sf CLI standard) and SFCC_DISABLE_TELEMETRY
+process.env.SF_DISABLE_TELEMETRY ??= 'true';
 process.env.SFCC_DISABLE_TELEMETRY ??= 'true';
 
 import {execute} from '@oclif/core';
