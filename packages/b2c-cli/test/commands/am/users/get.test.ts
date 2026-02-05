@@ -127,7 +127,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/users`, () => {
@@ -171,7 +170,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/users`, () => {
@@ -206,7 +204,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/users`, () => {
@@ -260,7 +257,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/users`, () => {
@@ -316,7 +312,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/users`, () => {
@@ -371,7 +366,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/users`, () => {
@@ -412,7 +406,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
       );
@@ -449,7 +442,6 @@ describe('user get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
       );

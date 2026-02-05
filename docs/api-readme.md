@@ -449,7 +449,6 @@ const auditLogs = await client.getOrgAuditLogs('org-123');
 ### Required Permissions
 
 Account Manager operations require:
-- OAuth client with `sfcc.accountmanager.user.manage` scope
 - Account Manager hostname configuration
 - For implicit flow: roles configured on your **user account**
 - For client credentials flow: roles configured on the **API client**

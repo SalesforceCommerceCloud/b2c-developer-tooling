@@ -100,7 +100,6 @@ describe('org get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
@@ -131,7 +130,6 @@ describe('org get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
@@ -160,7 +158,6 @@ describe('org get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/organizations/Test%20Organization`, () => {
@@ -193,7 +190,6 @@ describe('org get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/organizations/nonexistent-org`, () => {
@@ -236,7 +232,6 @@ describe('org get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {
@@ -274,7 +269,6 @@ describe('org get', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/organizations/org-123`, () => {

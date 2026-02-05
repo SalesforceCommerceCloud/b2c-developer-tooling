@@ -99,7 +99,6 @@ describe('user create', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.post(`${BASE_URL}/users`, async ({request}) => {
@@ -139,7 +138,6 @@ describe('user create', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.post(`${BASE_URL}/users`, () => {
@@ -169,7 +167,6 @@ describe('user create', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.post(`${BASE_URL}/users`, () => {

@@ -16,7 +16,7 @@ These flags are available on all Account Manager commands:
 
 ## Authentication
 
-All Account Manager commands require an Account Manager API Client with OAuth authentication.
+Account Manager commands require an API client or can be executed through an implicit workflow that seamlessly handles user authentication and associated flows.
 
 ### Required Configuration
 
@@ -27,8 +27,11 @@ All Account Manager commands require an Account Manager API Client with OAuth au
 
 ### Required Roles
 
-The API client must have the following role:
-- `sfcc.accountmanager.user.manage` - Required for all Account Manager operations
+| Auth Method | Role | Configured On |
+|-------------|------|---------------|
+| Client Credentials | `User Administrator` or higher | The API client |
+
+User authentication is handled via the implicit flow, utilizing the access rights granted to the user.
 
 ### Configuration
 
