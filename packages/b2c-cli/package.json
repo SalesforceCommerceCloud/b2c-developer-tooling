@@ -299,6 +299,8 @@
     "test:e2e:sites": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/sites-operations.test.ts\"",
     "test:e2e:slas": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/slas-lifecycle.test.ts\"",
     "test:e2e:webdav": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/webdav-operations.test.ts\"",
+    "test:e2e:mrt": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/mrt-lifecycle.test.ts\"",
+    "test:e2e:am": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/am-operations.test.ts\"",
     "coverage": "c8 report",
     "version": "oclif readme && git add README.md",
     "dev": "node ./bin/dev.js"
