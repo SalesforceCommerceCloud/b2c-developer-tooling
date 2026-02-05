@@ -228,6 +228,7 @@ export {
   createAccountManagerRolesClient,
   getRole,
   listRoles,
+  createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
 } from './am-api.js';
 export type {
@@ -249,6 +250,13 @@ export type {
   AccountManagerRolesError,
   RoleCollection,
   ListRolesOptions,
+  AccountManagerApiClientsClient,
+  AccountManagerApiClient,
+  APIClientCreate,
+  APIClientUpdate,
+  APIClientCollection,
+  ApiClientExpandOption,
+  ListApiClientsOptions,
   AccountManagerOrgsClient,
   AccountManagerOrganization,
   OrganizationCollection,

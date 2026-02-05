@@ -20,6 +20,11 @@ import type {
   operations as UsersOperations,
 } from './am-users-api.generated.js';
 import type {paths as RolesPaths, components as RolesComponents} from './am-roles-api.generated.js';
+import type {
+  paths as ApiClientsPaths,
+  components as ApiClientsComponents,
+  operations as ApiClientsOperations,
+} from './am-apiclients-api.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -597,6 +602,259 @@ export async function listRoles(
 }
 
 // ============================================================================
+// API Clients API
+// ============================================================================
+
+/**
+ * The typed Account Manager API Clients client - this is the openapi-fetch Client with full type safety.
+ *
+ * @see {@link createAccountManagerApiClientsClient} for instantiation
+ */
+export type AccountManagerApiClientsClient = Client<ApiClientsPaths>;
+
+/**
+ * API client type from the generated schema (read operations).
+ */
+export type AccountManagerApiClient = ApiClientsComponents['schemas']['APIClientRead'];
+export type APIClientCreate = ApiClientsComponents['schemas']['APIClientCreate'];
+export type APIClientUpdate = ApiClientsComponents['schemas']['APIClientUpdate'];
+export type APIClientCollection = ApiClientsComponents['schemas']['APIClientCollection'];
+
+/**
+ * Expand parameter type for API client get operation.
+ */
+export type ApiClientExpandOption = NonNullable<
+  NonNullable<ApiClientsOperations['getApiClient']['parameters']['query']>['expand']
+>[number];
+
+/**
+ * Options for listing API clients.
+ */
+export interface ListApiClientsOptions {
+  /** Page size (default: 20, min: 1, max: 4000) */
+  size?: number;
+  /** Page number (default: 0) */
+  page?: number;
+}
+
+/**
+ * Creates a typed Account Manager API Clients API client.
+ *
+ * @param config - Account Manager client configuration
+ * @param auth - Authentication strategy (typically OAuth)
+ * @returns Typed openapi-fetch client for API Clients API
+ */
+export function createAccountManagerApiClientsClient(
+  config: AccountManagerClientConfig,
+  auth: AuthStrategy,
+): AccountManagerApiClientsClient {
+  const hostname = config.hostname ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+  const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
+
+  const client = createClient<ApiClientsPaths>({
+    baseUrl: `https://${hostname}`,
+  });
+
+  client.use(createAuthMiddleware(auth));
+  client.use(createPageableTransformMiddleware());
+
+  for (const middleware of registry.getMiddleware('am-apiclients-api')) {
+    client.use(middleware);
+  }
+
+  client.use(createLoggingMiddleware('AM-APICLIENTS'));
+
+  return client;
+}
+
+/**
+ * Lists API clients with pagination.
+ */
+export async function listApiClients(
+  client: AccountManagerApiClientsClient,
+  options: ListApiClientsOptions = {},
+): Promise<APIClientCollection> {
+  const {size = 20, page = 0} = options;
+
+  const result = await client.GET('/dw/rest/v1/apiclients', {
+    params: {
+      query: {
+        pageable: {
+          size,
+          page,
+        },
+      },
+    },
+  });
+
+  if (result.error) {
+    const error = result.error as {error?: {message?: string}; errors?: Array<{message?: string}>};
+    const errorMessage = error.errors?.[0]?.message || error.error?.message;
+    throw new Error(errorMessage || `Failed to list API clients: ${JSON.stringify(result.error)}`);
+  }
+
+  return result.data || {content: []};
+}
+
+/**
+ * Retrieves an API client by ID.
+ */
+export async function getApiClient(
+  client: AccountManagerApiClientsClient,
+  apiClientId: string,
+  expand?: ApiClientExpandOption[],
+): Promise<AccountManagerApiClient> {
+  const result = await client.GET('/dw/rest/v1/apiclients/{apiClientId}', {
+    params: {
+      path: {apiClientId},
+      query: expand && expand.length > 0 ? {expand} : undefined,
+    },
+  });
+
+  if (result.error) {
+    const error = result.error as {error?: {message?: string}};
+    if (result.response?.status === 404) {
+      throw new Error(`API client ${apiClientId} not found`);
+    }
+    throw new Error(error.error?.message || `Failed to get API client: ${JSON.stringify(result.error)}`);
+  }
+
+  if (!result.data) {
+    throw new Error('No data returned from API');
+  }
+
+  return result.data;
+}
+
+/**
+ * Creates a new API client.
+ * Omits active when false so the API uses its default (inactive); some implementations
+ * reject or mishandle explicit active: false and return "invalid argument APIClient".
+ */
+export async function createApiClient(
+  client: AccountManagerApiClientsClient,
+  body: APIClientCreate,
+): Promise<AccountManagerApiClient> {
+  const wireBody =
+    body.active === false
+      ? (() => {
+          const {active: _a, ...rest} = body;
+          return rest;
+        })()
+      : body;
+  const result = await client.POST('/dw/rest/v1/apiclients', {
+    body: wireBody as APIClientCreate,
+  });
+
+  if (result.error) {
+    const err = result.error as {
+      error?: {message?: string};
+      errors?: Array<{
+        message?: string;
+        code?: string;
+        field?: string;
+        fieldErrors?: Array<{field?: string; defaultMessage?: string}>;
+      }>;
+    };
+    const first = err.errors?.[0];
+    const fieldHint =
+      first?.fieldErrors
+        ?.map((fe) => `${fe.field}: ${fe.defaultMessage ?? ''}`)
+        .filter(Boolean)
+        .join('; ') || first?.field;
+    const errorMessage = fieldHint
+      ? `${first?.message ?? err.error?.message ?? 'Bad Request'} (${fieldHint})`
+      : (first?.message ?? err.error?.message);
+    throw new Error(errorMessage || `Failed to create API client: ${JSON.stringify(result.error)}`);
+  }
+
+  if (!result.data) {
+    throw new Error('No data returned from API');
+  }
+
+  return result.data;
+}
+
+/**
+ * Updates an existing API client.
+ */
+export async function updateApiClient(
+  client: AccountManagerApiClientsClient,
+  apiClientId: string,
+  body: APIClientUpdate,
+): Promise<AccountManagerApiClient> {
+  const result = await client.PUT('/dw/rest/v1/apiclients/{apiClientId}', {
+    params: {path: {apiClientId}},
+    body,
+  });
+
+  if (result.error) {
+    const err = result.error as {
+      error?: {message?: string};
+      errors?: Array<{
+        message?: string;
+        code?: string;
+        field?: string;
+        fieldErrors?: Array<{field?: string; defaultMessage?: string}>;
+      }>;
+    };
+    const first = err.errors?.[0];
+    const fieldHint =
+      first?.fieldErrors
+        ?.map((fe) => `${fe.field}: ${fe.defaultMessage ?? ''}`)
+        .filter(Boolean)
+        .join('; ') || first?.field;
+    const errorMessage = fieldHint
+      ? `${first?.message ?? err.error?.message ?? 'Invalid request'} (${fieldHint})`
+      : (first?.message ?? err.error?.message);
+    throw new Error(errorMessage || `Failed to update API client: ${JSON.stringify(result.error)}`);
+  }
+
+  if (!result.data) {
+    throw new Error('No data returned from API');
+  }
+
+  return result.data;
+}
+
+/**
+ * Deletes an API client. Only clients disabled for at least 7 days can be deleted.
+ */
+export async function deleteApiClient(client: AccountManagerApiClientsClient, apiClientId: string): Promise<void> {
+  const result = await client.DELETE('/dw/rest/v1/apiclients/{apiClientId}', {
+    params: {path: {apiClientId}},
+  });
+
+  if (result.error) {
+    const error = result.error as {error?: {message?: string}};
+    if (result.response?.status === 412) {
+      throw new Error('API client must be disabled for at least 7 days before it can be deleted.');
+    }
+    throw new Error(error.error?.message || `Failed to delete API client: ${JSON.stringify(result.error)}`);
+  }
+}
+
+/**
+ * Changes the password for an API client.
+ */
+export async function changeApiClientPassword(
+  client: AccountManagerApiClientsClient,
+  apiClientId: string,
+  oldPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const result = await client.PUT('/dw/rest/v1/apiclients/{apiClientId}/password', {
+    params: {path: {apiClientId}},
+    body: {old: oldPassword, new: newPassword},
+  });
+
+  if (result.error) {
+    const error = result.error as {error?: {message?: string}};
+    throw new Error(error.error?.message || `Failed to change API client password: ${JSON.stringify(result.error)}`);
+  }
+}
+
+// ============================================================================
 // Organizations API
 // ============================================================================
 
@@ -1021,6 +1279,20 @@ export interface AccountManagerClient {
   /** List roles with pagination */
   listRoles(options?: ListRolesOptions): Promise<RoleCollection>;
 
+  // API Clients API methods
+  /** List API clients with pagination */
+  listApiClients(options?: ListApiClientsOptions): Promise<APIClientCollection>;
+  /** Get API client by ID */
+  getApiClient(apiClientId: string, expand?: ApiClientExpandOption[]): Promise<AccountManagerApiClient>;
+  /** Create a new API client */
+  createApiClient(body: APIClientCreate): Promise<AccountManagerApiClient>;
+  /** Update an existing API client */
+  updateApiClient(apiClientId: string, body: APIClientUpdate): Promise<AccountManagerApiClient>;
+  /** Delete an API client (must be disabled 7+ days) */
+  deleteApiClient(apiClientId: string): Promise<void>;
+  /** Change an API client password */
+  changeApiClientPassword(apiClientId: string, oldPassword: string, newPassword: string): Promise<void>;
+
   // Organizations API methods
   /** Get organization by ID */
   getOrg(orgId: string): Promise<AccountManagerOrganization>;
@@ -1073,6 +1345,7 @@ export function createAccountManagerClient(
   // Create internal clients (all use the same config, however, specifications are different)
   const usersClient = createAccountManagerUsersClient(config, auth);
   const rolesClient = createAccountManagerRolesClient(config, auth);
+  const apiClientsClient = createAccountManagerApiClientsClient(config, auth);
   const orgsClient = createAccountManagerOrgsClient(config, auth);
 
   // Return unified client with all methods
@@ -1178,6 +1451,17 @@ export function createAccountManagerClient(
     // Roles API methods
     getRole: (roleId: string) => getRole(rolesClient, roleId),
     listRoles: (options?: ListRolesOptions) => listRoles(rolesClient, options),
+
+    // API Clients API methods
+    listApiClients: (options?: ListApiClientsOptions) => listApiClients(apiClientsClient, options),
+    getApiClient: (apiClientId: string, expand?: ApiClientExpandOption[]) =>
+      getApiClient(apiClientsClient, apiClientId, expand),
+    createApiClient: (body: APIClientCreate) => createApiClient(apiClientsClient, body),
+    updateApiClient: (apiClientId: string, body: APIClientUpdate) =>
+      updateApiClient(apiClientsClient, apiClientId, body),
+    deleteApiClient: (apiClientId: string) => deleteApiClient(apiClientsClient, apiClientId),
+    changeApiClientPassword: (apiClientId: string, oldPassword: string, newPassword: string) =>
+      changeApiClientPassword(apiClientsClient, apiClientId, oldPassword, newPassword),
 
     // Organizations API methods
     getOrg: (orgId: string) => orgsClient.getOrg(orgId),

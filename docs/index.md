@@ -51,6 +51,11 @@ features:
     details: Build custom integrations with @salesforce/b2c-tooling-sdk - the same SDK powering the CLI.
     link: /api/
     linkText: API Reference
+  - icon: "\U0001F510"
+    title: Account Management
+    details: Manage users, roles, organizations, and API clients in Account Manager via CLI and SDK.
+    link: /cli/account-manager
+    linkText: Learn more
 ---
 
 ## Quick Install

@@ -1,10 +1,10 @@
 ---
-description: Commands for managing Account Manager resources including users, roles, and organizations.
+description: Commands for managing Account Manager resources including users, roles, organizations, and API clients.
 ---
 
 # Account Manager Commands
 
-Commands for managing Account Manager resources including users, roles, role assignments, and organizations.
+Commands for managing Account Manager resources including users, roles, role assignments, organizations, and API clients.
 
 ## Global Flags
 
@@ -792,3 +792,267 @@ Displays a table of audit log records with the selected columns. Timestamps are 
 - If organization is not found, an error is returned
 - If no audit records are found, a message is displayed
 - Timestamps are displayed in a human-readable format with zero-padding for consistent spacing
+
+---
+
+## API Client Management
+
+Commands for managing Account Manager API clients (service accounts for programmatic access). API clients can be assigned roles and organizations, support client credentials or JWT authentication, and are created inactive by default. They must be disabled for at least 7 days before they can be deleted.
+
+### b2c am clients list
+
+List Account Manager API clients with pagination.
+
+#### Usage
+
+```bash
+b2c am clients list [FLAGS]
+```
+
+#### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--page` | Page number (0-based) | `0` |
+| `--size`, `-s` | Number of results per page (1-4000) | `20` |
+| `--columns`, `-c` | Comma-separated list of columns to display | Default columns |
+| `--extended`, `-x` | Show all available columns | `false` |
+| `--json` | Output results as JSON | `false` |
+
+#### Default Columns
+
+- ID
+- Name
+- Description
+- Active
+- Auth Method
+- Created
+
+#### Extended Columns
+
+- Last Auth
+- Disabled
+
+#### Examples
+
+```bash
+b2c am clients list
+b2c am clients list --size 50 --page 1
+b2c am clients list --extended --json
+```
+
+#### Notes
+
+- Created and Disabled dates are formatted as `MM/DD/YYYY HH:MM:SS` with zero-padding for equal column width (e.g. `09/10/2020 14:30:00`)
+- Page size must be between 1 and 4000
+- Page number must be a non-negative integer (0-based)
+
+---
+
+### b2c am clients get
+
+Get details of a single Account Manager API client by ID.
+
+#### Usage
+
+```bash
+b2c am clients get <API-CLIENT-ID> [FLAGS]
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `API-CLIENT-ID` | API client UUID | Yes |
+
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--expand` | Comma-separated fields to expand. Valid values: `organizations`, `roles` |
+| `--json` | Output results as JSON |
+
+#### Examples
+
+```bash
+b2c am clients get <api-client-id>
+b2c am clients get <api-client-id> --expand organizations,roles --json
+```
+
+#### Output
+
+When not using `--json`, displays formatted API client information including:
+
+- **API Client Details**: ID, Name, Description, Active, Auth Method, Password Modified, Created, Disabled
+- **Redirect URLs**: List of allowed redirect URLs (if present)
+- **Scopes**: OAuth scopes (if present)
+- **Default Scopes**: Default OAuth scopes (if present)
+- **Organizations**: Organization IDs or full objects (if expanded)
+- **Roles**: Role IDs or full objects (if expanded)
+- **Role Tenant Filters**: Role-to-tenant mappings (if present)
+- **Version Control**: Version control identifiers (if present)
+
+#### Notes
+
+- Invalid `--expand` values return an error listing the valid options (`organizations`, `roles`)
+- If the API client is not found, an error is returned
+
+---
+
+### b2c am clients create
+
+Create a new Account Manager API client. Clients are created inactive by default and must be explicitly activated (e.g. via update).
+
+#### Usage
+
+```bash
+b2c am clients create [FLAGS]
+```
+
+#### Required Flags
+
+| Flag | Description |
+|------|-------------|
+| `--name`, `-n` | API client name (max 200 characters) |
+| `--organizations`, `-o` | Comma-separated organization IDs |
+| `--password`, `-p` | Password (12–128 characters) |
+
+#### Optional Flags
+
+| Flag | Description |
+|------|-------------|
+| `--description`, `-d` | Description (max 256 characters) |
+| `--roles`, `-r` | Comma-separated role IDs (e.g. SALESFORCE_COMMERCE_API) |
+| `--role-tenant-filter` | Role tenant filter (format: ROLE:realm_instance,realm_instance;ROLE2:... e.g. SALESFORCE_COMMERCE_API:abcd_prd) |
+| `--active` | Create as active (default: false) |
+| `--redirect-urls` | Comma-separated list of allowed redirect URLs for OAuth flows |
+| `--scopes` | Comma-separated OAuth scopes |
+| `--default-scopes` | Comma-separated default OAuth scopes |
+| `--version-control` | Comma-separated version control system identifiers |
+| `--token-endpoint-auth-method` | Token endpoint auth method: `private_key_jwt`, `client_secret_post`, `client_secret_basic`, or `none` |
+| `--jwt-public-key` | Public key for JWT authentication (PEM or inline) |
+| `--json` | Output results as JSON |
+
+#### Examples
+
+```bash
+b2c am clients create --name my-client --organizations org-id-1 --password "SecureP@ss123"
+b2c am clients create -n my-client -o org-id-1 -p "SecureP@ss123" -r SALESFORCE_COMMERCE_API
+b2c am clients create -n my-client -o org-id-1 -p "SecureP@ss123" --scopes "mail,openid" --default-scopes "mail"
+```
+
+#### Notes
+
+- Name must be non-empty and at most 200 characters; description at most 256 characters
+- Password must be 12–128 characters
+- Role tenant filter must match pattern: `ROLE:realm_instance(,realm_instance)*(;ROLE:...)*` (e.g. SALESFORCE_COMMERCE_API:abcd_prd)
+- At least one organization ID is required
+
+---
+
+### b2c am clients update
+
+Update an existing Account Manager API client. Only provided fields are updated; omitted fields keep their current values.
+
+#### Usage
+
+```bash
+b2c am clients update <API-CLIENT-ID> [FLAGS]
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `API-CLIENT-ID` | API client UUID | Yes |
+
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--name`, `-n` | API client name (max 200 characters) |
+| `--description`, `-d` | Description (max 256 characters) |
+| `--organizations`, `-o` | Comma-separated organization IDs |
+| `--roles`, `-r` | Comma-separated role IDs |
+| `--role-tenant-filter` | Role tenant filter (format: ROLE:realm_instance,realm_instance;ROLE2:... e.g. SALESFORCE_COMMERCE_API:abcd_prd) |
+| `--active` | Set active (true/false) |
+| `--redirect-urls` | Comma-separated list of allowed redirect URLs for OAuth flows |
+| `--scopes` | Comma-separated OAuth scopes |
+| `--default-scopes` | Comma-separated default OAuth scopes |
+| `--version-control` | Comma-separated version control system identifiers |
+| `--token-endpoint-auth-method` | Token endpoint auth method: `private_key_jwt`, `client_secret_post`, `client_secret_basic`, or `none` |
+| `--jwt-public-key` | Public key for JWT authentication (PEM or inline) |
+| `--json` | Output results as JSON |
+
+#### Examples
+
+```bash
+b2c am clients update <api-client-id> --name new-name
+b2c am clients update <api-client-id> --active
+b2c am clients update <api-client-id> --scopes "mail,openid" --default-scopes "mail"
+```
+
+#### Notes
+
+- At least one flag must be provided
+- Name at most 200 characters; description at most 256 characters
+- Role tenant filter must match pattern: `ROLE:realm_instance(,realm_instance)*(;ROLE:...)*`
+
+---
+
+### b2c am clients delete
+
+Delete an Account Manager API client. The client must have been disabled for at least 7 days before it can be deleted.
+
+#### Usage
+
+```bash
+b2c am clients delete <API-CLIENT-ID>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `API-CLIENT-ID` | API client UUID | Yes |
+
+#### Examples
+
+```bash
+b2c am clients delete <api-client-id>
+```
+
+---
+
+### b2c am clients password
+
+Change the password for an Account Manager API client.
+
+#### Usage
+
+```bash
+b2c am clients password <API-CLIENT-ID> [FLAGS]
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `API-CLIENT-ID` | API client UUID | Yes |
+
+#### Flags
+
+| Flag | Description | Required |
+|------|-------------|----------|
+| `--current`, `-c` | Current password | Yes |
+| `--new`, `-n` | New password (12–128 characters) | Yes |
+
+#### Examples
+
+```bash
+b2c am clients password <api-client-id> --current "OldP@ss" --new "NewP@ss123"
+```
+
+#### Notes
+
+- New password must be 12–128 characters

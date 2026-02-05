@@ -163,6 +163,9 @@
           },
           "orgs": {
             "description": "Manage Account Manager organizations"
+          },
+          "clients": {
+            "description": "Manage Account Manager API clients"
           }
         }
       },
