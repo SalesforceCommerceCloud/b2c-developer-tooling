@@ -166,6 +166,7 @@ If no instance is specified, the config with `"active": true` is used.
 | `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
 | `tenant-id` | Organization/tenant ID for SCAPI |
 | `sandbox-api-host` | ODS (sandbox) API hostname |
+| `mrtApiKey` | MRT API key |
 | `mrtProject` | MRT project slug |
 | `mrtEnvironment` | MRT environment name |
 | `mrtOrigin` | MRT API origin URL override. Also accepts `cloudOrigin`. |
@@ -192,7 +193,7 @@ For instances that require client certificate authentication:
 The certificate must be in PKCS12 format (`.p12` or `.pfx`). The `self-signed` option is often needed for staging environments with internal certificates.
 
 ::: tip MRT Configuration
-Managed Runtime API key is not stored in `dw.json`. It is loaded from `~/.mobify` (see [MRT API Key](#mrt-api-key) below).
+MRT API key can also be loaded from `~/.mobify`. See [MRT API Key](#mrt-api-key) below.
 :::
 
 For multi-instance configurations, each config object also supports:

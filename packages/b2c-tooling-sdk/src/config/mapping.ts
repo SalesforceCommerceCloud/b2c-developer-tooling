@@ -56,6 +56,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     accountManagerHost: json['account-manager-host'],
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
+    mrtApiKey: json.mrtApiKey,
     mrtOrigin: json.mrtOrigin || json.cloudOrigin,
     // TLS/mTLS options
     certificate: json.certificate,
