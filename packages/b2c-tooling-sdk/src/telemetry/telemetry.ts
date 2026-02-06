@@ -196,14 +196,14 @@ export class Telemetry {
     // The @salesforce/telemetry SDK's stop() triggers an AppInsights flush.
     // We stop and restart to flush pending events without ending telemetry.
     this.reporter.stop();
-    // Allow HTTP requests to complete
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Allow HTTP requests to complete (300ms for network latency)
+    await new Promise((resolve) => setTimeout(resolve, 300));
     this.reporter.start();
   }
 
   /**
    * Stop the telemetry reporter and flush any pending events.
-   * Includes a short delay to allow async HTTP requests to complete.
+   * Includes a delay to allow async HTTP requests to complete.
    */
   async stop(): Promise<void> {
     if (!this.started) return;
@@ -212,8 +212,10 @@ export class Telemetry {
 
     // Allow pending HTTP requests to flush before process exits.
     // Application Insights SDK sends events asynchronously, so we need
-    // a small delay to ensure events reach the server on fast exits.
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // a delay to ensure events reach the server on fast exits.
+    // 300ms gives enough time for the HTTP request to complete even on
+    // cold starts when establishing the initial connection.
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
 
   private buildEventProperties(attributes: TelemetryAttributes = {}): TelemetryEventProperties {
