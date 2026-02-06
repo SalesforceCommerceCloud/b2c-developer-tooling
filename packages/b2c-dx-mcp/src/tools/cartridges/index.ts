@@ -9,10 +9,6 @@
  *
  * This toolset provides MCP tools for cartridge and code version management.
  *
- * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
- * > This tool is a placeholder implementation that returns mock responses.
- * > Actual implementation is coming soon. Use `--allow-non-ga-tools` flag to enable.
- *
  * @module tools/cartridges
  */
 
@@ -20,6 +16,9 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {findAndDeployCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {DeployResult, DeployOptions} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 /**
@@ -39,14 +38,11 @@ interface CartridgeDeployInput {
 }
 
 /**
- * Output type for cartridge_deploy tool (placeholder).
+ * Optional dependency injections for testing.
  */
-interface CartridgeDeployOutput {
-  tool: string;
-  status: string;
-  message: string;
-  input: CartridgeDeployInput;
-  timestamp: string;
+interface CartridgeToolInjections {
+  /** Mock findAndDeployCartridges function for testing */
+  findAndDeployCartridges?: (instance: B2CInstance, directory: string, options: DeployOptions) => Promise<DeployResult>;
 }
 
 /**
@@ -60,13 +56,15 @@ interface CartridgeDeployOutput {
  * 5. Optionally reloads the code version after deploy
  *
  * @param services - MCP services
+ * @param injections - Optional dependency injections for testing
  * @returns The cartridge_deploy tool
  */
-function createCartridgeDeployTool(services: Services): McpTool {
-  return createToolAdapter<CartridgeDeployInput, CartridgeDeployOutput>(
+function createCartridgeDeployTool(services: Services, injections?: CartridgeToolInjections): McpTool {
+  const findAndDeployCartridgesFn = injections?.findAndDeployCartridges || findAndDeployCartridges;
+  return createToolAdapter<CartridgeDeployInput, DeployResult>(
     {
       name: 'cartridge_deploy',
-      description: '[PLACEHOLDER] Deploy cartridges to a B2C Commerce instance',
+      description: 'Deploy cartridges to a B2C Commerce instance via WebDAV',
       toolsets: ['CARTRIDGES'],
       isGA: false,
       requiresInstance: true,
@@ -81,33 +79,37 @@ function createCartridgeDeployTool(services: Services): McpTool {
         reload: z.boolean().optional().describe('Reload code version after deploy'),
       },
       async execute(args, context) {
-        // Placeholder implementation
-        const timestamp = new Date().toISOString();
+        // Get instance from context (guaranteed by adapter when requiresInstance is true)
+        const instance = context.b2cInstance!;
 
-        // TODO: Remove this log when implementing
-        const logger = getLogger();
-        logger.debug({context}, 'cartridge_deploy context');
+        // Default directory to current directory
+        const directory = args.directory || '.';
 
-        // TODO: When implementing, use context.b2cInstance:
-        // import { findAndDeployCartridges } from '@salesforce/b2c-tooling-sdk/operations/code';
-        //
-        // const directory = args.directory || '.';
-        // const result = await findAndDeployCartridges(context.b2cInstance!, directory, {
-        //   include: args.cartridges,
-        //   exclude: args.exclude,
-        //   delete: args.delete,
-        //   reload: args.reload,
-        // });
-        // return result;
-
-        return {
-          tool: 'cartridge_deploy',
-          status: 'placeholder',
-          message:
-            "This is a placeholder implementation for 'cartridge_deploy'. The actual implementation is coming soon.",
-          input: args,
-          timestamp,
+        // Parse options
+        const options: DeployOptions = {
+          include: args.cartridges,
+          exclude: args.exclude,
+          delete: args.delete,
+          reload: args.reload,
         };
+
+        // Log all computed variables before deploying
+        const logger = getLogger();
+        logger.debug(
+          {
+            directory,
+            include: options.include,
+            exclude: options.exclude,
+            delete: options.delete,
+            reload: options.reload,
+          },
+          '[Cartridges] Deploying cartridges with computed options',
+        );
+
+        // Deploy cartridges
+        const result = await findAndDeployCartridgesFn(instance, directory, options);
+
+        return result;
       },
       formatOutput: (output) => jsonResult(output),
     },
@@ -119,8 +121,9 @@ function createCartridgeDeployTool(services: Services): McpTool {
  * Creates all tools for the CARTRIDGES toolset.
  *
  * @param services - MCP services
+ * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createCartridgesTools(services: Services): McpTool[] {
-  return [createCartridgeDeployTool(services)];
+export function createCartridgesTools(services: Services, injections?: CartridgeToolInjections): McpTool[] {
+  return [createCartridgeDeployTool(services, injections)];
 }
