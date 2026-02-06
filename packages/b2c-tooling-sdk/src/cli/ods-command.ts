@@ -91,7 +91,7 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
    * Gets the configured ODS API host.
    */
   protected get odsHost(): string {
-    return this.resolvedConfig.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+    return this.resolvedConfig?.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
   }
 
   /**
