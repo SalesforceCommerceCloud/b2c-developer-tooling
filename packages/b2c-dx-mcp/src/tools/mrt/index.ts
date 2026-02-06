@@ -9,10 +9,6 @@
  *
  * This toolset provides MCP tools for Managed Runtime operations.
  *
- * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
- * > This tool is a placeholder implementation that returns mock responses.
- * > Actual implementation is coming soon. Use `--allow-non-ga-tools` flag to enable.
- *
  * @module tools/mrt
  */
 
