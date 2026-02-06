@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import OdsCreate from '../../../src/commands/ods/create.js';
+import SandboxCreate from '../../../src/commands/sandbox/create.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {runSilent} from '../../helpers/test-setup.js';
 
@@ -51,7 +51,7 @@ function makeCommandThrowOnError(command: any): void {
  * Tests settings building, permission logic, wait/poll logic.
  * SDK tests cover the actual API calls.
  */
-describe('ods create', () => {
+describe('sandbox create', () => {
   beforeEach(() => {
     isolateConfig();
   });
@@ -63,31 +63,31 @@ describe('ods create', () => {
 
   describe('buildSettings', () => {
     it('should return undefined when set-permissions is false', () => {
-      const command = new OdsCreate([], {} as any);
+      const command = new SandboxCreate([], {} as any);
       (command as any).flags = {'set-permissions': false};
 
       // Accessing private method for testing
-      const settings = (command as any).buildSettings(false);
+      const settings = (command as any).buildSettings({setPermissions: false});
 
       expect(settings).to.be.undefined;
     });
 
     it('should return undefined when no client ID is configured', () => {
-      const command = new OdsCreate([], {} as any);
+      const command = new SandboxCreate([], {} as any);
       stubCommandConfigAndLogger(command);
       stubResolvedConfig(command, {});
 
-      const settings = (command as any).buildSettings(true);
+      const settings = (command as any).buildSettings({setPermissions: true});
 
       expect(settings).to.be.undefined;
     });
 
     it('should build settings with OCAPI and WebDAV permissions', () => {
-      const command = new OdsCreate([], {} as any);
+      const command = new SandboxCreate([], {} as any);
       stubCommandConfigAndLogger(command);
       stubResolvedConfig(command, {clientId: 'test-client-id'});
 
-      const settings = (command as any).buildSettings(true);
+      const settings = (command as any).buildSettings({setPermissions: true});
 
       expect(settings).to.exist;
       expect(settings).to.have.property('ocapi');
@@ -99,11 +99,11 @@ describe('ods create', () => {
     });
 
     it('should include default OCAPI resources', () => {
-      const command = new OdsCreate([], {} as any);
+      const command = new SandboxCreate([], {} as any);
       stubCommandConfigAndLogger(command);
       stubResolvedConfig(command, {clientId: 'test-client-id'});
 
-      const settings = (command as any).buildSettings(true);
+      const settings = (command as any).buildSettings({setPermissions: true});
 
       const resources = settings.ocapi[0].resources;
       expect(resources).to.be.an('array');
@@ -112,59 +112,144 @@ describe('ods create', () => {
     });
 
     it('should include default WebDAV permissions', () => {
-      const command = new OdsCreate([], {} as any);
+      const command = new SandboxCreate([], {} as any);
       stubCommandConfigAndLogger(command);
       stubResolvedConfig(command, {clientId: 'test-client-id'});
 
-      const settings = (command as any).buildSettings(true);
+      const settings = (command as any).buildSettings({setPermissions: true});
 
       const permissions = settings.webdav[0].permissions;
       expect(permissions).to.be.an('array');
       expect(permissions.some((p: any) => p.path === '/impex')).to.be.true;
       expect(permissions.some((p: any) => p.path === '/cartridges')).to.be.true;
     });
+
+    it('should use permissions-client-id override', () => {
+      const command = new SandboxCreate([], {} as any);
+      stubCommandConfigAndLogger(command);
+      stubResolvedConfig(command, {clientId: 'auth-client-id'});
+
+      const settings = (command as any).buildSettings({
+        setPermissions: true,
+        permissionsClientId: 'override-client-id',
+      });
+
+      expect(settings.ocapi[0].client_id).to.equal('override-client-id');
+      expect(settings.webdav[0].client_id).to.equal('override-client-id');
+    });
+
+    it('should use custom ocapi-settings and default webdav', () => {
+      const command = new SandboxCreate([], {} as any);
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolvedConfig(command, {clientId: 'test-client-id'});
+
+      const customOcapi = JSON.stringify([{client_id: 'custom', resources: [{resource_id: '/custom'}]}]);
+      const settings = (command as any).buildSettings({
+        setPermissions: true,
+        ocapiSettings: customOcapi,
+      });
+
+      expect(settings.ocapi).to.have.lengthOf(1);
+      expect(settings.ocapi[0].client_id).to.equal('custom');
+      // WebDAV should still use defaults
+      expect(settings.webdav[0].client_id).to.equal('test-client-id');
+    });
+
+    it('should use custom webdav-settings and default ocapi', () => {
+      const command = new SandboxCreate([], {} as any);
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolvedConfig(command, {clientId: 'test-client-id'});
+
+      const customWebdav = JSON.stringify([{client_id: 'custom', permissions: [{path: '/custom'}]}]);
+      const settings = (command as any).buildSettings({
+        setPermissions: true,
+        webdavSettings: customWebdav,
+      });
+
+      // OCAPI should still use defaults
+      expect(settings.ocapi[0].client_id).to.equal('test-client-id');
+      expect(settings.webdav).to.have.lengthOf(1);
+      expect(settings.webdav[0].client_id).to.equal('custom');
+    });
+
+    it('should use both custom ocapi and webdav settings', () => {
+      const command = new SandboxCreate([], {} as any);
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolvedConfig(command, {clientId: 'test-client-id'});
+
+      const customOcapi = JSON.stringify([{client_id: 'ocapi-custom', resources: []}]);
+      const customWebdav = JSON.stringify([{client_id: 'webdav-custom', permissions: []}]);
+      const settings = (command as any).buildSettings({
+        setPermissions: true,
+        ocapiSettings: customOcapi,
+        webdavSettings: customWebdav,
+      });
+
+      expect(settings.ocapi[0].client_id).to.equal('ocapi-custom');
+      expect(settings.webdav[0].client_id).to.equal('webdav-custom');
+    });
+
+    it('should throw on invalid JSON for ocapi-settings', () => {
+      const command = new SandboxCreate([], {} as any);
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolvedConfig(command, {clientId: 'test-client-id'});
+
+      try {
+        (command as any).buildSettings({
+          setPermissions: true,
+          ocapiSettings: 'not-valid-json',
+        });
+        expect.fail('Expected error');
+      } catch (error: any) {
+        expect(error.message).to.include('Invalid JSON for --ocapi-settings');
+      }
+    });
   });
 
   describe('flag defaults', () => {
     it('should have correct default TTL', () => {
-      expect(OdsCreate.flags.ttl.default).to.equal(24);
+      expect(SandboxCreate.flags.ttl.default).to.equal(24);
     });
 
     it('should have correct default profile', () => {
-      expect(OdsCreate.flags.profile.default).to.equal('medium');
+      expect(SandboxCreate.flags.profile.default).to.equal('medium');
     });
 
     it('should have correct default for set-permissions', () => {
-      expect(OdsCreate.flags['set-permissions'].default).to.equal(true);
+      expect(SandboxCreate.flags['set-permissions'].default).to.equal(true);
     });
 
     it('should have correct default for auto-scheduled', () => {
-      expect(OdsCreate.flags['auto-scheduled'].default).to.equal(false);
+      expect(SandboxCreate.flags['auto-scheduled'].default).to.equal(false);
     });
 
     it('should have correct default for wait', () => {
-      expect(OdsCreate.flags.wait.default).to.equal(false);
+      expect(SandboxCreate.flags.wait.default).to.equal(false);
     });
 
     it('should have correct default poll interval', () => {
-      expect(OdsCreate.flags['poll-interval'].default).to.equal(10);
+      expect(SandboxCreate.flags['poll-interval'].default).to.equal(10);
     });
 
     it('should have correct default timeout', () => {
-      expect(OdsCreate.flags.timeout.default).to.equal(600);
+      expect(SandboxCreate.flags.timeout.default).to.equal(600);
     });
   });
 
   describe('profile options', () => {
     it('should only allow valid profile values', () => {
       const validProfiles = ['medium', 'large', 'xlarge', 'xxlarge'];
-      expect(OdsCreate.flags.profile.options).to.deep.equal(validProfiles);
+      expect(SandboxCreate.flags.profile.options).to.deep.equal(validProfiles);
     });
   });
 
   describe('run()', () => {
-    function setupCreateCommand(): OdsCreate {
-      const command = new OdsCreate([], {} as any);
+    function setupCreateCommand(): SandboxCreate {
+      const command = new SandboxCreate([], {} as any);
 
       stubCommandConfigAndLogger(command);
 
@@ -261,6 +346,63 @@ describe('ods create', () => {
       await runSilent(() => command.run());
 
       expect(requestBody.settings).to.be.undefined;
+    });
+
+    it('should include scheduler flags in POST body', async () => {
+      const command = setupCreateCommand();
+
+      const startSchedule = {weekdays: ['MONDAY', 'TUESDAY'], time: '08:00:00+03:00'};
+      const stopSchedule = {weekdays: ['MONDAY', 'TUESDAY'], time: '19:00:00Z'};
+
+      (command as any).flags = {
+        realm: 'abcd',
+        ttl: 24,
+        profile: 'medium',
+        wait: false,
+        'set-permissions': false,
+        'start-scheduler': JSON.stringify(startSchedule),
+        'stop-scheduler': JSON.stringify(stopSchedule),
+      };
+
+      let requestBody: any;
+
+      stubOdsClient(command, {
+        async POST(_url: string, options: any) {
+          requestBody = options.body;
+          return {
+            data: {data: {id: 'sb-1', state: 'creating'}},
+          };
+        },
+      });
+
+      await runSilent(() => command.run());
+
+      expect(requestBody.startScheduler).to.deep.equal(startSchedule);
+      expect(requestBody.stopScheduler).to.deep.equal(stopSchedule);
+    });
+
+    it('should throw on invalid JSON for scheduler flags', async () => {
+      const command = setupCreateCommand();
+
+      (command as any).flags = {
+        realm: 'abcd',
+        ttl: 24,
+        profile: 'medium',
+        wait: false,
+        'set-permissions': false,
+        'start-scheduler': 'not-json',
+      };
+
+      stubOdsClient(command, {
+        POST: async () => ({data: {data: {id: 'sb-1', state: 'creating'}}}),
+      });
+
+      try {
+        await command.run();
+        expect.fail('Expected error');
+      } catch (error: any) {
+        expect(error.message).to.include('Invalid JSON for --start-scheduler');
+      }
     });
 
     describe('waitForSandbox()', () => {

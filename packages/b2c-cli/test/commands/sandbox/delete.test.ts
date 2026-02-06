@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 
-import OdsDelete from '../../../src/commands/ods/delete.js';
+import SandboxDelete from '../../../src/commands/sandbox/delete.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
@@ -48,7 +48,7 @@ function makeCommandThrowOnError(command: any): void {
  * Tests confirmation logic and flag handling.
  * SDK tests cover the actual API calls.
  */
-describe('ods delete', () => {
+describe('sandbox delete', () => {
   beforeEach(() => {
     isolateConfig();
   });
@@ -60,44 +60,44 @@ describe('ods delete', () => {
 
   describe('command structure', () => {
     it('should require sandboxId as argument', () => {
-      expect(OdsDelete.args).to.have.property('sandboxId');
-      expect(OdsDelete.args.sandboxId.required).to.be.true;
+      expect(SandboxDelete.args).to.have.property('sandboxId');
+      expect(SandboxDelete.args.sandboxId.required).to.be.true;
     });
 
     it('should have force flag', () => {
-      expect(OdsDelete.flags).to.have.property('force');
-      expect(OdsDelete.flags.force.char).to.equal('f');
+      expect(SandboxDelete.flags).to.have.property('force');
+      expect(SandboxDelete.flags.force.char).to.equal('f');
     });
 
     it('should expose wait/polling flags', () => {
-      expect(OdsDelete.flags).to.have.property('wait');
-      expect(OdsDelete.flags.wait.char).to.equal('w');
-      expect(OdsDelete.flags).to.have.property('poll-interval');
-      expect(OdsDelete.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
-      expect(OdsDelete.flags).to.have.property('timeout');
-      expect(OdsDelete.flags.timeout.dependsOn).to.deep.equal(['wait']);
+      expect(SandboxDelete.flags).to.have.property('wait');
+      expect(SandboxDelete.flags.wait.char).to.equal('w');
+      expect(SandboxDelete.flags).to.have.property('poll-interval');
+      expect(SandboxDelete.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(SandboxDelete.flags).to.have.property('timeout');
+      expect(SandboxDelete.flags.timeout.dependsOn).to.deep.equal(['wait']);
     });
 
     it('should have correct description', () => {
-      expect(OdsDelete.description).to.be.a('string');
-      expect(OdsDelete.description.toLowerCase()).to.include('delete');
+      expect(SandboxDelete.description).to.be.a('string');
+      expect(SandboxDelete.description.toLowerCase()).to.include('delete');
     });
 
     it('should have examples', () => {
-      expect(OdsDelete.examples).to.be.an('array');
-      expect(OdsDelete.examples.length).to.be.greaterThan(0);
+      expect(SandboxDelete.examples).to.be.an('array');
+      expect(SandboxDelete.examples.length).to.be.greaterThan(0);
     });
   });
 
   describe('flag defaults', () => {
     it('should have force flag default to false', () => {
-      expect(OdsDelete.flags.force.default).to.be.false;
+      expect(SandboxDelete.flags.force.default).to.be.false;
     });
   });
 
   describe('output formatting', () => {
     it('should delete successfully with --force flag', async () => {
-      const command = new OdsDelete([], {} as any);
+      const command = new SandboxDelete([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
@@ -138,7 +138,7 @@ describe('ods delete', () => {
     });
 
     it('should poll sandbox state when --wait is true', async () => {
-      const command = new OdsDelete([], {} as any);
+      const command = new SandboxDelete([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -178,7 +178,7 @@ describe('ods delete', () => {
     });
 
     it('should log messages in non-JSON mode', async () => {
-      const command = new OdsDelete([], {} as any);
+      const command = new SandboxDelete([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -211,7 +211,7 @@ describe('ods delete', () => {
     });
 
     it('should error when sandbox not found', async () => {
-      const command = new OdsDelete([], {} as any);
+      const command = new SandboxDelete([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'nonexistent'},
@@ -237,7 +237,7 @@ describe('ods delete', () => {
     });
 
     it('should error when delete operation fails', async () => {
-      const command = new OdsDelete([], {} as any);
+      const command = new SandboxDelete([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -270,7 +270,7 @@ describe('ods delete', () => {
     });
 
     it('should handle null sandbox data', async () => {
-      const command = new OdsDelete([], {} as any);
+      const command = new SandboxDelete([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -296,7 +296,7 @@ describe('ods delete', () => {
     });
 
     it('should error on non-202 response status', async () => {
-      const command = new OdsDelete([], {} as any);
+      const command = new SandboxDelete([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},

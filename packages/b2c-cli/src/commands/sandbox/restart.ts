@@ -18,9 +18,11 @@ import {t, withDocs} from '../../i18n/index.js';
 type SandboxOperationModel = OdsComponents['schemas']['SandboxOperationModel'];
 
 /**
- * Command to stop an on-demand sandbox.
+ * Command to restart an on-demand sandbox.
  */
-export default class OdsStop extends OdsCommand<typeof OdsStop> {
+export default class SandboxRestart extends OdsCommand<typeof SandboxRestart> {
+  static aliases = ['ods:restart'];
+
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or realm-instance, e.g., abcd-123)',
@@ -29,8 +31,8 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
   };
 
   static description = withDocs(
-    t('commands.ods.stop.description', 'Stop an on-demand sandbox'),
-    '/cli/ods.html#b2c-ods-stop',
+    t('commands.sandbox.restart.description', 'Restart an on-demand sandbox'),
+    '/cli/sandbox.html#b2c-sandbox-restart',
   );
 
   static enableJsonFlag = true;
@@ -46,7 +48,7 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
   static flags = {
     wait: Flags.boolean({
       char: 'w',
-      description: 'Wait for the sandbox to reach stopped or failed state before returning',
+      description: 'Wait for the sandbox to reach started or failed state before returning',
       default: false,
     }),
     'poll-interval': Flags.integer({
@@ -67,20 +69,20 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
     const pollInterval = this.flags['poll-interval'];
     const timeout = this.flags.timeout;
 
-    this.log(t('commands.ods.stop.stopping', 'Stopping sandbox {{sandboxId}}...', {sandboxId}));
+    this.log(t('commands.sandbox.restart.restarting', 'Restarting sandbox {{sandboxId}}...', {sandboxId}));
 
     const result = await this.odsClient.POST('/sandboxes/{sandboxId}/operations', {
       params: {
         path: {sandboxId},
       },
       body: {
-        operation: 'stop',
+        operation: 'restart',
       },
     });
 
     if (!result.data?.data) {
       this.error(
-        t('commands.ods.stop.error', 'Failed to stop sandbox: {{message}}', {
+        t('commands.sandbox.restart.error', 'Failed to restart sandbox: {{message}}', {
           message: getApiErrorMessage(result.error, result.response),
         }),
       );
@@ -89,7 +91,7 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
     const operation = result.data.data;
 
     this.log(
-      t('commands.ods.stop.success', 'Stop operation {{operationState}}. Sandbox state: {{sandboxState}}', {
+      t('commands.sandbox.restart.success', 'Restart operation {{operationState}}. Sandbox state: {{sandboxState}}', {
         operationState: operation.operationState,
         sandboxState: operation.sandboxState || 'unknown',
       }),
@@ -98,7 +100,7 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
       try {
         await waitForSandbox(this.odsClient, {
           sandboxId,
-          targetState: 'stopped',
+          targetState: 'started',
           pollIntervalSeconds: pollInterval,
           timeoutSeconds: timeout,
           onPoll: ({elapsedSeconds, state}) => {
@@ -108,7 +110,7 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
       } catch (error) {
         if (error instanceof SandboxPollingTimeoutError) {
           this.error(
-            t('commands.ods.stop.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
+            t('commands.sandbox.restart.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
               seconds: String(error.timeoutSeconds),
             }),
           );
@@ -116,7 +118,7 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
 
         if (error instanceof SandboxTerminalStateError) {
           this.error(
-            t('commands.ods.stop.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
+            t('commands.sandbox.restart.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
               state: error.state || 'unknown',
             }),
           );
@@ -124,7 +126,7 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
 
         if (error instanceof SandboxPollingError) {
           this.error(
-            t('commands.ods.stop.pollError', 'Failed to fetch sandbox status: {{message}}', {
+            t('commands.sandbox.restart.pollError', 'Failed to fetch sandbox status: {{message}}', {
               message: error.message,
             }),
           );
@@ -134,7 +136,7 @@ export default class OdsStop extends OdsCommand<typeof OdsStop> {
       }
 
       this.log('');
-      this.logger.info({sandboxId}, t('commands.ods.stop.ready', 'Sandbox is now stopped'));
+      this.logger.info({sandboxId}, t('commands.sandbox.restart.ready', 'Sandbox is now ready'));
     }
 
     return operation;

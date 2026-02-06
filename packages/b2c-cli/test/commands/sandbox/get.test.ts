@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 
-import OdsGet from '../../../src/commands/ods/get.js';
+import SandboxGet from '../../../src/commands/sandbox/get.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {runSilent} from '../../helpers/test-setup.js';
 
@@ -49,7 +49,7 @@ function makeCommandThrowOnError(command: any): void {
  * Tests output formatting.
  * SDK tests cover the actual API calls.
  */
-describe('ods get', () => {
+describe('sandbox get', () => {
   beforeEach(() => {
     isolateConfig();
   });
@@ -61,23 +61,23 @@ describe('ods get', () => {
 
   describe('command structure', () => {
     it('should require sandboxId as argument', () => {
-      expect(OdsGet.args).to.have.property('sandboxId');
-      expect(OdsGet.args.sandboxId.required).to.be.true;
+      expect(SandboxGet.args).to.have.property('sandboxId');
+      expect(SandboxGet.args.sandboxId.required).to.be.true;
     });
 
     it('should have correct description', () => {
-      expect(OdsGet.description).to.be.a('string');
-      expect(OdsGet.description.length).to.be.greaterThan(0);
+      expect(SandboxGet.description).to.be.a('string');
+      expect(SandboxGet.description.length).to.be.greaterThan(0);
     });
 
     it('should enable JSON flag', () => {
-      expect(OdsGet.enableJsonFlag).to.be.true;
+      expect(SandboxGet.enableJsonFlag).to.be.true;
     });
   });
 
   describe('output formatting', () => {
     it('should return sandbox data in JSON mode', async () => {
-      const command = new OdsGet([], {} as any);
+      const command = new SandboxGet([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
@@ -110,7 +110,7 @@ describe('ods get', () => {
     });
 
     it('should return sandbox data in non-JSON mode', async () => {
-      const command = new OdsGet([], {} as any);
+      const command = new SandboxGet([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -143,7 +143,7 @@ describe('ods get', () => {
     });
 
     it('should handle missing sandbox data', async () => {
-      const command = new OdsGet([], {} as any);
+      const command = new SandboxGet([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
@@ -169,7 +169,7 @@ describe('ods get', () => {
     });
 
     it('should handle null sandbox data', async () => {
-      const command = new OdsGet([], {} as any);
+      const command = new SandboxGet([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sb-null'},
@@ -194,7 +194,7 @@ describe('ods get', () => {
     });
 
     it('should handle API errors with error message', async () => {
-      const command = new OdsGet([], {} as any);
+      const command = new SandboxGet([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sb-error'},

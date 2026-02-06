@@ -19,9 +19,9 @@ commands/
 │   ├── deploy.ts      → b2c code deploy
 │   ├── activate.ts    → b2c code activate
 │   └── list.ts        → b2c code list
-├── ods/
-│   ├── create.ts      → b2c ods create
-│   └── list.ts        → b2c ods list
+├── sandbox/
+│   ├── create.ts      → b2c sandbox create
+│   └── list.ts        → b2c sandbox list
 └── mrt/
     └── env/
         └── var/

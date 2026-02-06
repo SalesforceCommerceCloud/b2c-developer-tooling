@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 
-import OdsInfo from '../../../src/commands/ods/info.js';
+import SandboxInfo from '../../../src/commands/sandbox/info.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {runSilent} from '../../helpers/test-setup.js';
 
@@ -51,7 +51,7 @@ function makeCommandThrowOnError(command: any): void {
  * Tests output formatting and data combination.
  * SDK tests cover the actual API calls.
  */
-describe('ods info', () => {
+describe('sandbox info', () => {
   beforeEach(() => {
     isolateConfig();
   });
@@ -63,18 +63,18 @@ describe('ods info', () => {
 
   describe('command structure', () => {
     it('should have correct description', () => {
-      expect(OdsInfo.description).to.be.a('string');
-      expect(OdsInfo.description).to.include('information');
+      expect(SandboxInfo.description).to.be.a('string');
+      expect(SandboxInfo.description).to.include('information');
     });
 
     it('should enable JSON flag', () => {
-      expect(OdsInfo.enableJsonFlag).to.be.true;
+      expect(SandboxInfo.enableJsonFlag).to.be.true;
     });
   });
 
   describe('output formatting', () => {
     it('should combine user and system info in JSON mode', async () => {
-      const command = new OdsInfo([], {} as any);
+      const command = new SandboxInfo([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -112,7 +112,7 @@ describe('ods info', () => {
     });
 
     it('should display formatted info in non-JSON mode', async () => {
-      const command = new OdsInfo([], {} as any);
+      const command = new SandboxInfo([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, false);
 
@@ -156,7 +156,7 @@ describe('ods info', () => {
     });
 
     it('should error when user info fails', async () => {
-      const command = new OdsInfo([], {} as any);
+      const command = new SandboxInfo([], {} as any);
       (command as any).flags = {};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
@@ -183,7 +183,7 @@ describe('ods info', () => {
     });
 
     it('should error when system info fails', async () => {
-      const command = new OdsInfo([], {} as any);
+      const command = new SandboxInfo([], {} as any);
       (command as any).flags = {};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
@@ -210,7 +210,7 @@ describe('ods info', () => {
     });
 
     it('should handle null user info data', async () => {
-      const command = new OdsInfo([], {} as any);
+      const command = new SandboxInfo([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
 
@@ -232,7 +232,7 @@ describe('ods info', () => {
     });
 
     it('should handle API errors with error messages', async () => {
-      const command = new OdsInfo([], {} as any);
+      const command = new SandboxInfo([], {} as any);
       (command as any).flags = {};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);

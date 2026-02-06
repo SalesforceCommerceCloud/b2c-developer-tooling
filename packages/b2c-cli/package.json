@@ -146,8 +146,12 @@
       "mrt:user": {
         "description": "View profile, reset API keys, and configure email preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#user-commands"
       },
+      "sandbox": {
+        "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.html"
+      },
       "ods": {
-        "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ods.html"
+        "description": "Alias for 'sandbox' commands. Use 'b2c sandbox' instead.",
+        "hidden": true
       },
       "sites": {
         "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
@@ -299,7 +303,7 @@
     "test:e2e:auth": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/auth-token.test.ts\"",
     "test:e2e:code": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/code-lifecycle.test.ts\"",
     "test:e2e:jobs": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/job-execution.test.ts\"",
-    "test:e2e:ods": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/ods-lifecycle.test.ts\"",
+    "test:e2e:sandbox": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/sandbox-lifecycle.test.ts\"",
     "test:e2e:sites": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/sites-operations.test.ts\"",
     "test:e2e:slas": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/slas-lifecycle.test.ts\"",
     "test:e2e:webdav": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/webdav-operations.test.ts\"",

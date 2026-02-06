@@ -14,7 +14,9 @@ type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 /**
  * Command to get details of a specific sandbox.
  */
-export default class OdsGet extends OdsCommand<typeof OdsGet> {
+export default class SandboxGet extends OdsCommand<typeof SandboxGet> {
+  static aliases = ['ods:get'];
+
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or realm-instance, e.g., abcd-123)',
@@ -23,8 +25,8 @@ export default class OdsGet extends OdsCommand<typeof OdsGet> {
   };
 
   static description = withDocs(
-    t('commands.ods.get.description', 'Get details of a specific sandbox'),
-    '/cli/ods.html#b2c-ods-get',
+    t('commands.sandbox.get.description', 'Get details of a specific sandbox'),
+    '/cli/sandbox.html#b2c-sandbox-get',
   );
 
   static enableJsonFlag = true;
@@ -38,7 +40,7 @@ export default class OdsGet extends OdsCommand<typeof OdsGet> {
   async run(): Promise<SandboxModel> {
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
 
-    this.log(t('commands.ods.get.fetching', 'Fetching sandbox {{sandboxId}}...', {sandboxId}));
+    this.log(t('commands.sandbox.get.fetching', 'Fetching sandbox {{sandboxId}}...', {sandboxId}));
 
     const result = await this.odsClient.GET('/sandboxes/{sandboxId}', {
       params: {
@@ -48,7 +50,7 @@ export default class OdsGet extends OdsCommand<typeof OdsGet> {
 
     if (!result.data?.data) {
       this.error(
-        t('commands.ods.get.error', 'Failed to fetch sandbox: {{message}}', {
+        t('commands.sandbox.get.error', 'Failed to fetch sandbox: {{message}}', {
           message: result.response?.statusText || 'Sandbox not found',
         }),
       );
