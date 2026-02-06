@@ -113,7 +113,7 @@ Each section markdown file includes:
 ✅ **Modular**: Access specific sections as needed  
 ✅ **Multi-Select**: Combine related sections in a single call for contextual learning  
 ✅ **Always Current**: Content loaded from markdown files (easy to update)  
-✅ **Comprehensive Default**: Returns key sections by default for immediate value  
+✅ **Comprehensive Default**: Returns key sections by default for immediate value
 
 ## Placeholder Tools
 
