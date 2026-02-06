@@ -55,12 +55,13 @@ These flags are available on all commands that interact with B2C instances:
 
 ### Account Management
 
-- [Account Manager Commands](./account-manager) - Manage Account Manager users, roles, and organizations
+- [Account Manager Commands](./account-manager) - Manage Account Manager users, roles, organizations, and API clients
 
 All Account Manager commands are under the `am` topic:
 - `b2c am users ...` - User management commands
 - `b2c am roles ...` - Role management commands
 - `b2c am orgs ...` - Organization management commands
+- `b2c am clients ...` - API client management (list, get, create, update, delete, password)
 
 ### Utilities
 

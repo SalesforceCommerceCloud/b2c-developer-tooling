@@ -243,7 +243,7 @@ const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version
 
 ## Account Manager Operations
 
-The SDK provides a unified client for managing users, roles, and organizations through the Account Manager API.
+The SDK provides a unified client for managing users, roles, organizations, and API clients through the Account Manager API.
 
 ### Authentication
 
@@ -253,7 +253,7 @@ For CI/CD and automation, you can also use **OAuth client credentials flow** (re
 
 ### Unified Client (Recommended)
 
-The recommended approach is to use the unified `createAccountManagerClient` which provides access to all Account Manager APIs (users, roles, and organizations):
+The recommended approach is to use the unified `createAccountManagerClient`, which provides access to all Account Manager APIs (users, roles, organizations, and API clients):
 
 ```typescript
 import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
@@ -296,6 +296,19 @@ const orgs = await client.listOrgs({ size: 25, page: 0 });
 const org = await client.getOrg('org-id');
 const orgByName = await client.getOrgByName('My Organization');
 const auditLogs = await client.getOrgAuditLogs('org-id');
+
+// API Clients API (service accounts for programmatic access)
+const apiClients = await client.listApiClients({ size: 20, page: 0 });
+const apiClient = await client.getApiClient('api-client-uuid', ['organizations', 'roles']);
+await client.createApiClient({
+  name: 'my-client',
+  organizations: ['org-id'],
+  password: 'SecureP@ss12',
+  active: false,
+});
+await client.updateApiClient('api-client-uuid', { name: 'new-name', active: true });
+await client.changeApiClientPassword('api-client-uuid', 'oldPassword', 'newPassword12');
+await client.deleteApiClient('api-client-uuid'); // Client must be disabled 7+ days first
 ```
 
 ### Client Credentials Flow (Alternative)
@@ -329,6 +342,7 @@ import {
   createAccountManagerUsersClient,
   createAccountManagerRolesClient,
   createAccountManagerOrgsClient,
+  createAccountManagerApiClientsClient,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
 
@@ -350,6 +364,12 @@ const rolesClient = createAccountManagerRolesClient(
 
 // Organizations client
 const orgsClient = createAccountManagerOrgsClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// API Clients client (service accounts)
+const apiClientsClient = createAccountManagerApiClientsClient(
   { accountManagerHost: 'account.demandware.com' },
   auth,
 );
@@ -444,6 +464,41 @@ const allOrgs = await client.listOrgs({ all: true });
 
 // Get audit logs for an organization
 const auditLogs = await client.getOrgAuditLogs('org-123');
+```
+
+### API Client Operations
+
+Manage Account Manager API clients (service accounts for programmatic access). API clients are created inactive by default and must be disabled for at least 7 days before deletion.
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// List API clients with pagination
+const result = await client.listApiClients({ size: 20, page: 0 });
+
+// Get API client by ID (optionally expand organizations and roles)
+const apiClient = await client.getApiClient('api-client-uuid', ['organizations', 'roles']);
+
+// Create a new API client (created inactive by default)
+const newClient = await client.createApiClient({
+  name: 'my-client',
+  organizations: ['org-id'],
+  password: 'SecureP@ss12',
+  active: false,
+});
+
+// Update an API client (only provided fields are updated)
+await client.updateApiClient('api-client-uuid', { name: 'new-name', active: true });
+
+// Change API client password
+await client.changeApiClientPassword('api-client-uuid', 'oldPassword', 'newPassword12');
+
+// Delete an API client (must have been disabled for at least 7 days)
+await client.deleteApiClient('api-client-uuid');
 ```
 
 ### Required Permissions

@@ -1,0 +1,965 @@
+openapi: 3.0.3
+info:
+  title: API Clients
+  description: |
+    # API Overview
+
+    Manage API clients within the Account Manager system. API clients are service accounts used for programmatic access to APIs. They can be assigned roles and organizations, support various authentication methods (JWT, client secrets), and can be enabled, disabled, or deleted based on their state.
+
+    ## Authentication & Authorization
+
+    All requests to the API Clients API must be authenticated using OAuth 2.0 bearer token authentication. The API supports two OAuth 2.0 flows: client credentials and authorization code. The token endpoint is available at `https://account.demandware.com/dwsso/oauth2/access_token`.
+
+    ## Use Cases
+
+    ### Create an API Client for Service Integration
+
+    Create a new API client to enable programmatic access for service-to-service integrations. For example, access the B2C Commerce API (SCAPI), the Open Commerce API (OCAPI), or the On-Demand Sandbox API. You can't use the same client ID for both the B2C Commerce API (SCAPI) and OCAPI. Each API framework requires its own client ID. An API Client ID that's meant for OCAPI must not have the role "Salesforce Commerce API" assigned to it.
+
+    API clients are created in an inactive state by default and must be explicitly activated before use.
+
+    ### Manage API Client Lifecycle
+
+    Update API client properties, change passwords, disable inactive clients, and delete clients that have been disabled for at least 7 days.
+  version: 1.0.0-beta
+servers:
+  - url: https://account.demandware.com
+    description: Account Manager Production Instance
+security:
+  - AmOAuth2: []
+paths:
+  /dw/rest/v1/apiclients:
+    get:
+      operationId: getApiClients
+      summary: Retrieve a paginated list of all API clients.
+      description: Get the list of API clients with no filtering.
+      parameters:
+        - name: pageable
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Pageable"
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIClientCollection"
+    post:
+      operationId: createApiClient
+      summary: Create an API client.
+      description: |
+        Create a new API client with the specified properties. 
+        Note: API clients are created with active=false by default and must be explicitly activated.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/APIClientCreate"
+            example:
+              name: "apiclient-stg"
+              description: "Client for staging environment."
+              organizations:
+                - "e39dbb7a-63bd-4972-980b-0f6fb3a24bd6"
+              password: "MySecureP@ss123"
+              roles:
+                - "SALESFORCE_COMMERCE_API"
+              roleTenantFilter: "SALESFORCE_COMMERCE_API:abcd_prd"
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorCreatingUserFailed:
+                  $ref: "#/components/examples/ErrorApiClientValidation"
+        "403":
+          description: Principal lacks permission to create API client.
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        201:
+          description: Created
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+            Location:
+              description: URL to read created API client.
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIClientRead"
+              example:
+                id: "b7d9e3f2-45c8-4a1b-9e6d-8f3a2c7b5e4a"
+                name: "Production Service Client"
+                description: "API client for production services."
+                passwordModificationTimestamp: null
+                jwtPublicKey: null
+                redirectUrls: []
+                scopes:
+                  - "mail"
+                defaultScopes:
+                  - "mail"
+                organizations:
+                  - "f3e7a9c2-68d4-4b5e-9a1f-7c2d8e4b6a9c"
+                active: false
+                versionControl: []
+                roles:
+                  - "SALESFORCE_COMMERCE_API"
+                roleTenantFilter: "SALESFORCE_COMMERCE_API:abcd_prd"
+                tokenEndpointAuthMethod: "client_secret_post"
+                lastAuthenticatedDate: null
+                disabledTimestamp: null
+                createdAt: "2024-12-04T13:45:00Z"
+  /dw/rest/v1/apiclients/{apiClientId}:
+    get:
+      operationId: getApiClient
+      summary: Retrieve details of a specific API client.
+      description: Gets the API client with the specified ID. Use the expand parameter to retrieve more information on related organizations and roles.
+      parameters:
+        - name: apiClientId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: expand
+          in: query
+          required: false
+          style: form
+          explode: false
+          example: organizations
+          description: Comma-separated list of fields that should be expanded in the response. Ensures that fully inlined organization and/or role objects get returned.
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - organizations
+                - roles
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        404:
+          description: No API client found with the specified ID.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIClientRead"
+              example:
+                id: "b7d9e3f2-45c8-4a1b-9e6d-8f3a2c7b5e4a"
+                name: "Production Service Client"
+                description: "API client for production services."
+                passwordModificationTimestamp: null
+                jwtPublicKey: null
+                redirectUrls: []
+                scopes:
+                  - "mail"
+                defaultScopes:
+                  - "mail"
+                organizations:
+                  - "f3e7a9c2-68d4-4b5e-9a1f-7c2d8e4b6a9c"
+                active: false
+                versionControl: []
+                roles: []
+                roleTenantFilter: null
+                tokenEndpointAuthMethod: "client_secret_post"
+                lastAuthenticatedDate: null
+                disabledTimestamp: null
+                createdAt: "2024-12-04T13:45:00Z"
+    put:
+      operationId: updateApiClient
+      summary: Update an API client.
+      description: Apply a partial update to an existing API client. An omitted field stays at its previous value and a contained field replaces the previously saved value.
+      parameters:
+        - name: apiClientId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/APIClientUpdate"
+            example:
+              name: "apiclient-staging"
+              description: "API client for staging services."
+              organizations:
+                - "e39dbb7a-63bd-4972-980b-0f6fb3a24bd6"
+              password: "SecureP@ssw0rd123"
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorCreatingUserFailed:
+                  $ref: "#/components/examples/ErrorApiClientValidation"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIClientRead"
+              example:
+                id: "b7d9e3f2-45c8-4a1b-9e6d-8f3a2c7b5e4a"
+                name: "Production Service Client"
+                description: "API Client for production services"
+                passwordModificationTimestamp: null
+                jwtPublicKey: null
+                redirectUrls: []
+                scopes:
+                  - "mail"
+                defaultScopes:
+                  - "mail"
+                organizations:
+                  - "f3e7a9c2-68d4-4b5e-9a1f-7c2d8e4b6a9c"
+                active: false
+                versionControl: []
+                roles: []
+                roleTenantFilter: null
+                tokenEndpointAuthMethod: "client_secret_post"
+                lastAuthenticatedDate: null
+                disabledTimestamp: null
+                createdAt: "2024-12-04T13:45:00Z"
+    delete:
+      operationId: deleteApiClient
+      summary: Delete an API client.
+      description: |
+        Only API clients that have been disabled for at least 7 days can be deleted.
+      parameters:
+        - name: apiClientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "412":
+          description: Precondition Failed - API client must be disabled for at least 7 days before deletion.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "204":
+          description: The resource was deleted successfully.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+  /dw/rest/v1/apiclients/{apiClientId}/password:
+    put:
+      operationId: changePassword
+      summary: Change the password for an API client.
+      description: Update an API client's password by providing the current and new password.
+      parameters:
+        - name: apiClientId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - old
+                - new
+              properties:
+                old:
+                  type: string
+                  description: Current password.
+                new:
+                  type: string
+                  description: New password.
+                  maxLength: 128
+                  minLength: 12
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "403":
+          description: Principal lacks permission to change API client password.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "204":
+          description: No Content - Password changed successfully
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+components:
+  examples:
+    ErrorApiClientValidation:
+      summary: 400 Bad request
+      description: Response for `400 Bad request` status
+      value: >
+        {
+          "errors": [
+            {
+              "message": "invalid argument APIClient",
+              "code": "invalid argument APIClient",
+              "fieldErrors": [
+                {
+                  "codes": [
+                    "NotNull.APIClient.name",
+                    "NotNull.name",
+                    "NotNull.java.lang.String",
+                    "NotNull"
+                  ],
+                  "arguments": null,
+                  "defaultMessage": "must not be null",
+                  "objectName": "APIClient",
+                  "field": "name",
+                  "rejectedValue": null,
+                  "bindingFailure": false,
+                  "code": "NotNull"
+                }
+              ]
+            }
+          ]
+        }
+    ErrorAuthenticationRequired:
+      summary: 401 Unauthorized
+      description: Response for `401 Unauthorized` status
+      value: >
+        {
+          "message": "Full authentication is required to access this resource",
+          "code": "InsufficientAuthenticationException",
+          "fieldErrors": null
+        }
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                description: The list of errors.
+                items:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: Error message.
+                    code:
+                      type: string
+                      description: Error code.
+                    fieldErrors:
+                      type: array
+                      nullable: true
+                      description: Field-specific errors.
+                      items:
+                        type: object
+                        properties:
+                          field:
+                            type: string
+                            description: The field that contained the erroneous value.
+                          rejectedValue:
+                            type: object
+                            description: The value that was rejected.
+                          bindingFailure:
+                            type: boolean
+                            description: Whether this error was caused by failed binding (e.g. type mismatch).
+          example:
+            errors:
+              - message: "Full authentication is required to access this resource"
+                code: "InsufficientAuthenticationException"
+                fieldErrors: null
+    RateLimitedError:
+      description: Request has been rate-limited. The X-RateLimit-* headers can be used to improve retry behavior.
+      headers:
+        X-RateLimit-Limit:
+          $ref: "#/components/headers/X-RateLimit-Limit"
+        X-RateLimit-Remaining:
+          $ref: "#/components/headers/X-RateLimit-Remaining"
+        X-RateLimit-Reset:
+          $ref: "#/components/headers/X-RateLimit-Reset"
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      description: Account Manager OAuth 2.0 bearer token authentication.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes: {}
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes: {}
+  headers:
+    X-RateLimit-Limit:
+      schema:
+        type: integer
+      description: Rate limit per minute.
+    X-RateLimit-Remaining:
+      schema:
+        type: integer
+      description: The number of requests left in the current time window.
+    X-RateLimit-Reset:
+      schema:
+        type: string
+        format: date-time
+      description: The UTC timestamp at which the current rate limit window resets.
+  schemas:
+    APIClientCreate:
+      type: object
+      description: Request body for creating a new API client.
+      required:
+        - name
+        - organizations
+        - password
+      properties:
+        name:
+          maxLength: 200
+          minLength: 1
+          type: string
+          description: Name of the API client.
+        description:
+          maxLength: 256
+          minLength: 0
+          type: string
+          description: Description of the API client.
+        jwtPublicKey:
+          maxLength: 8192
+          minLength: 0
+          nullable: true
+          type: string
+          description: Public key for JWT authentication.
+        redirectUrls:
+          type: array
+          description: List of allowed redirect URLs for OAuth flows.
+          items:
+            type: string
+        scopes:
+          type: array
+          description: OAuth scopes available to this API client.
+          items:
+            type: string
+        defaultScopes:
+          type: array
+          description: Default OAuth scopes granted to this API client.
+          items:
+            type: string
+        organizations:
+          uniqueItems: true
+          type: array
+          description: List of organization IDs this API client belongs to.
+          items:
+            type: string
+            title: Organization ID
+        active:
+          type: boolean
+          default: false
+          description: Indicates whether the API client is active. New API clients are created as inactive (false) by default.
+        versionControl:
+          type: array
+          description: Version control system identifiers.
+          items:
+            type: string
+        roles:
+          uniqueItems: true
+          type: array
+          description: List of IDs of the roles this API client possesses.
+          items:
+            type: string
+            title: Role ID
+        roleTenantFilter:
+          $ref: "#/components/schemas/RoleTenantFilter"
+        tokenEndpointAuthMethod:
+          description: Enforced for OIDC flows.
+          type: string
+          enum:
+            - private_key_jwt
+            - client_secret_post
+            - client_secret_basic
+            - none
+        password:
+          type: string
+          maxLength: 128
+          minLength: 12
+    APIClientUpdate:
+      type: object
+      description: Request body for updating an existing API client.
+      properties:
+        name:
+          maxLength: 200
+          minLength: 1
+          type: string
+          description: Name of the API client.
+        description:
+          maxLength: 256
+          minLength: 0
+          type: string
+          description: Description of the API client.
+        jwtPublicKey:
+          maxLength: 8192
+          minLength: 0
+          nullable: true
+          type: string
+          description: Public key for JWT authentication.
+        redirectUrls:
+          type: array
+          description: List of allowed redirect URLs for OAuth flows.
+          items:
+            type: string
+        scopes:
+          type: array
+          description: OAuth scopes available to this API client.
+          items:
+            type: string
+        defaultScopes:
+          type: array
+          description: Default OAuth scopes granted to this API client.
+          items:
+            type: string
+        organizations:
+          uniqueItems: true
+          type: array
+          description: List of organization IDs this API client belongs to.
+          items:
+            type: string
+            title: Organization ID
+        active:
+          type: boolean
+          default: false
+          description: Indicates whether the API client is active. New API clients are created as inactive (false) by default.
+        versionControl:
+          type: array
+          description: Version control system identifiers.
+          items:
+            type: string
+        roles:
+          uniqueItems: true
+          type: array
+          description: List of IDs of the roles this API client possesses.
+          items:
+            type: string
+            title: Role ID
+        roleTenantFilter:
+          $ref: "#/components/schemas/RoleTenantFilter"
+        tokenEndpointAuthMethod:
+          description: Enforced for OIDC flows.
+          type: string
+          enum:
+            - private_key_jwt
+            - client_secret_post
+            - client_secret_basic
+            - none
+    APIClientRead:
+      type: object
+      description: API client object returned in read operations.
+      properties:
+        passwordModificationTimestamp:
+          type: integer
+          readOnly: true
+          nullable: true
+          format: int64
+          description: Timestamp of the last password modification.
+        name:
+          maxLength: 200
+          minLength: 1
+          type: string
+          description: Name of the API client.
+        description:
+          maxLength: 256
+          minLength: 0
+          type: string
+          description: Description of the API client.
+        jwtPublicKey:
+          maxLength: 8192
+          minLength: 0
+          nullable: true
+          type: string
+          description: Public key for JWT authentication.
+        redirectUrls:
+          type: array
+          description: List of allowed redirect URLs for OAuth flows.
+          items:
+            type: string
+        scopes:
+          type: array
+          description: OAuth scopes available to this API client.
+          items:
+            type: string
+        defaultScopes:
+          type: array
+          description: Default OAuth scopes granted to this API client.
+          items:
+            type: string
+        organizations:
+          uniqueItems: true
+          type: array
+          description: List of organization IDs this API client belongs to, or organization objects in case the expand parameter was used.
+          items:
+            oneOf:
+              - type: string
+                title: Organization ID
+              - $ref: "#/components/schemas/Organization"
+        active:
+          type: boolean
+          default: false
+          description: Indicates whether the API client is active. New API clients are created as inactive (false) by default.
+        versionControl:
+          type: array
+          description: Version control system identifiers.
+          items:
+            type: string
+        roles:
+          uniqueItems: true
+          type: array
+          description: List of role IDs assigned to this API client, or role objects in case the expand parameter was used.
+          items:
+            oneOf:
+              - type: string
+                title: Role ID
+              - $ref: "#/components/schemas/Role"
+        roleTenantFilter:
+          $ref: "#/components/schemas/RoleTenantFilter"
+        tokenEndpointAuthMethod:
+          description: Enforced for OIDC flows.
+          type: string
+          enum:
+            - private_key_jwt
+            - client_secret_post
+            - client_secret_basic
+            - none
+        lastAuthenticatedDate:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Date of the last successful authentication.
+        disabledTimestamp:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp when the API client was disabled.
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Timestamp when the API client was created.
+        roleTenantFilterMap:
+          readOnly: true
+          type: object
+          description: Map of role tenant filter assignments.
+        id:
+          type: string
+          readOnly: true
+          description: Unique identifier of the API client.
+    Pageable:
+      type: object
+      description: Pagination parameters for list operations.
+      properties:
+        page:
+          minimum: 0
+          type: integer
+          format: int32
+          description: Zero-based page index.
+        size:
+          minimum: 1
+          default: 20
+          maximum: 4000
+          type: integer
+          format: int32
+          description: Number of items to return per page.
+    APIClientCollection:
+      type: object
+      description: A paginated collection of API clients.
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/APIClientRead"
+    Role:
+      type: object
+      description: A role defines permissions and access levels that can be assigned to Users and API Clients.
+      properties:
+        description:
+          type: string
+          description: Description of the role.
+        roleEnumName:
+          maxLength: 50
+          minLength: 0
+          type: string
+          description: Enumeration name of the role.
+        permissions:
+          uniqueItems: true
+          type: array
+          description: List of permissions granted by this role.
+          items:
+            type: string
+        scope:
+          type: string
+          description: Scope level of the role (global or instance-specific).
+          enum:
+            - GLOBAL
+            - INSTANCE
+        targetType:
+          type: string
+          nullable: true
+          description: Type of entity this role can be assigned to.
+          enum:
+            - ApiClient
+            - User
+        twoFAEnabled:
+          type: boolean
+          description: Indicates if two-factor authentication is required for this role.
+        id:
+          type: string
+          description: Unique identifier of the role.
+    Organization:
+      type: object
+      description: An organization represents a customer, partner, or internal entity within the Account Manager system.
+      properties:
+        name:
+          type: string
+          description: Name of the organization.
+        contactUsers:
+          type: array
+          description: List of contact user IDs.
+          items:
+            type: string
+        realms:
+          type: array
+          description: List of realm identifiers.
+          items:
+            type: string
+        passwordMinEntropy:
+          type: integer
+          description: Minimum password entropy requirement.
+        passwordHistorySize:
+          type: integer
+          description: Number of previous passwords to remember.
+        passwordDaysExpiration:
+          type: integer
+          description: Number of days until password expires.
+        sfAccountIds:
+          type: array
+          description: Salesforce account identifiers.
+          items:
+            type: string
+        type:
+          type: string
+          description: Type of organization.
+          enum:
+            - CUSTOMER
+            - PARTNER
+            - INTERNAL
+        twoFARoles:
+          type: array
+          description: List of role IDs that require two-factor authentication.
+          items:
+            type: string
+        twoFAEnabled:
+          type: boolean
+          description: Indicates if two-factor authentication is enabled for the organization.
+        sfMyDomain:
+          type: string
+          nullable: true
+          description: Salesforce My Domain name.
+        sfMyDomainSuffix:
+          type: string
+          description: Salesforce My Domain suffix.
+        sfMyDomainVerified:
+          type: boolean
+          description: Indicates if Salesforce My Domain is verified.
+        sfMyDomainVerificationTimestamp:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when Salesforce My Domain was verified.
+        sfIdentityFederation:
+          type: string
+          description: Salesforce identity federation status.
+          enum:
+            - DISABLED
+            - ENABLED
+        justInTimeUserProvisioningEnabled:
+          type: boolean
+          description: Indicates if just-in-time user provisioning is enabled.
+        allowedVerifierTypes:
+          type: array
+          description: List of allowed verifier types for authentication.
+          items:
+            type: string
+        disableInactiveUsers:
+          type: boolean
+          description: Indicates if inactive users should be automatically disabled.
+        inactiveUserDays:
+          type: integer
+          description: Number of days before a user is considered inactive.
+        id:
+          type: string
+          readOnly: true
+          description: Unique identifier of the organization.
+    ErrorResponse:
+      type: object
+      description: Standard error response format returned when API requests fail.
+      properties:
+        errors:
+          type: array
+          description: The list of errors
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message
+              code:
+                type: string
+                description: Error code
+              fieldErrors:
+                type: array
+                nullable: true
+                description: Field-specific errors
+                items:
+                  type: object
+                  properties:
+                    codes:
+                      type: array
+                      items:
+                        type: string
+                      description: List of error codes.
+                    arguments:
+                      nullable: true
+                      description: Arguments for the error message.
+                    defaultMessage:
+                      type: string
+                      description: Default error message.
+                    objectName:
+                      type: string
+                      description: Name of the object that failed validation.
+                    field:
+                      type: string
+                      description: The field that contained the erroneous value
+                    rejectedValue:
+                      nullable: true
+                      description: The value that was rejected
+                    bindingFailure:
+                      type: boolean
+                      description: Whether this error was caused by failed binding (e.g. type mismatch)
+                    code:
+                      type: string
+                      description: Error code.
+    RoleTenantFilter:
+      type: string
+      pattern: '(\w+:\w{4,}_\w{3,}(,\w{4,}_\w{3,})*(;)?)*'
+      description: |
+        Filter for role tenant assignments. Format: ROLE_ENUM_NAME:instance_id,instance_id;ROLE_ENUM_NAME:instance_id
+        - Role enum names are separated by semicolons (;)
+        - Each role enum name is followed by a colon (:) and its tenant filters
+        - Tenant filters are comma-separated (,)
+        - Each tenant filter consists of a 4-character realm and 3-character instance_id separated by underscore (_)
+        - A special case is an instance_id ending in _sbx, as it gives access to all sandboxes of a realm
+
+        Example: CC_USER:aabc_prd,aabc_t12;LOGCENTER_USER:aamn_sbx
