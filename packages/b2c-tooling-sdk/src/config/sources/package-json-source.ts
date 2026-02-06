@@ -27,6 +27,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'mrtProject',
   'mrtOrigin',
   'accountManagerHost',
+  'sandboxApiHost',
 ];
 
 /**
@@ -38,6 +39,7 @@ interface PackageJsonB2CConfig {
   mrtProject?: string;
   mrtOrigin?: string;
   accountManagerHost?: string;
+  sandboxApiHost?: string;
   [key: string]: unknown;
 }
 
