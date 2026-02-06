@@ -50,6 +50,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     // Support multiple field names for short code (priority order)
     shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
     tenantId: json['tenant-id'],
+    sandboxApiHost: json['sandbox-api-host'],
     instanceName: json.name,
     authMethods: json['auth-methods'],
     accountManagerHost: json['account-manager-host'],
@@ -159,6 +160,7 @@ export function mergeConfigsWithProtection(
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
+      sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       instanceName: overrides.instanceName ?? base.instanceName,
       mrtProject: overrides.mrtProject ?? base.mrtProject,
       mrtEnvironment: overrides.mrtEnvironment ?? base.mrtEnvironment,
