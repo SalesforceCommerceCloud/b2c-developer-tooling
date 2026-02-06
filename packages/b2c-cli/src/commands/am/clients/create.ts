@@ -5,11 +5,8 @@
  */
 import {Flags} from '@oclif/core';
 import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import type {AccountManagerApiClient, APIClientCreate} from '@salesforce/b2c-tooling-sdk';
+import {isValidRoleTenantFilter, type AccountManagerApiClient, type APIClientCreate} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
-
-/** Role tenant filter pattern: ROLE_ENUM:realm_instance(,realm_instance)*(;ROLE_ENUM:...)* e.g. SALESFORCE_COMMERCE_API:abcd_prd */
-const ROLE_TENANT_FILTER_PATTERN = /^(\w+:\w{4,}_\w{3,}(,\w{4,}_\w{3,})*(;)?)*$/;
 
 function splitCommaSeparated(s: string): string[] {
   return s
@@ -181,7 +178,7 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
       );
     }
     const rtf = flags['role-tenant-filter'];
-    if (rtf !== undefined && rtf.length > 0 && !ROLE_TENANT_FILTER_PATTERN.test(rtf)) {
+    if (rtf !== undefined && rtf.length > 0 && !isValidRoleTenantFilter(rtf)) {
       this.error(
         t(
           'commands.client.create.invalidRoleTenantFilter',

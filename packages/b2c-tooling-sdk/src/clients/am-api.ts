@@ -30,6 +30,20 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-re
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {getLogger} from '../logging/logger.js';
 
+/**
+ * Regex for Account Manager role tenant filter format:
+ * ROLE_ENUM:realm_instance(,realm_instance)*(;ROLE_ENUM:...)*
+ * e.g. SALESFORCE_COMMERCE_API:abcd_prd or bm-admin:tenant1,tenant2;ECOM_USER:wxyz_stg
+ */
+export const ROLE_TENANT_FILTER_PATTERN = /^(\w+:\w{4,}_\w{3,}(,\w{4,}_\w{3,})*(;)?)*$/;
+
+/**
+ * Returns true if the value matches the Account Manager role tenant filter format.
+ */
+export function isValidRoleTenantFilter(value: string): boolean {
+  return value.length > 0 && ROLE_TENANT_FILTER_PATTERN.test(value);
+}
+
 // ============================================================================
 // Users API
 // ============================================================================

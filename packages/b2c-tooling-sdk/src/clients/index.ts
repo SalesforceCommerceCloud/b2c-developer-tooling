@@ -230,6 +230,8 @@ export {
   listRoles,
   createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
+  isValidRoleTenantFilter,
+  ROLE_TENANT_FILTER_PATTERN,
 } from './am-api.js';
 export type {
   AccountManagerClient,
