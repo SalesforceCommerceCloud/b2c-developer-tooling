@@ -100,6 +100,10 @@ Add `.env` to your `.gitignore` to avoid committing credentials.
 
 You can create a `dw.json` file to store instance settings. The CLI searches for this file starting from the current directory and walking up the directory tree.
 
+::: tip Flexible Field Names
+Both camelCase and kebab-case are accepted for all field names in `dw.json`. For example, `client-id` and `clientId` are equivalent, as are `code-version` and `codeVersion`. Legacy aliases like `server` (for `hostname`) and `passphrase` (for `certificatePassphrase`) are also still supported.
+:::
+
 ### Single Instance
 
 ```json
@@ -222,7 +226,7 @@ You can store project-level defaults in your `package.json` file under the `b2c`
 
 ### Allowed Fields
 
-Only non-sensitive, project-level fields can be configured in `package.json`:
+Only non-sensitive, project-level fields can be configured in `package.json`. Both camelCase and kebab-case are accepted (e.g., `shortCode` or `short-code`):
 
 | Field | Description |
 |-------|-------------|
