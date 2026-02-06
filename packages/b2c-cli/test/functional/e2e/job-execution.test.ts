@@ -68,7 +68,7 @@ describe('Job Execution E2E Tests', function () {
       }
 
       const result = await runCLI(
-        ['ods', 'create', '--realm', process.env.TEST_REALM, '--ttl', '4', '--wait', '--set-permissions', '--json'],
+        ['ods', 'create', '--realm', process.env.TEST_REALM, '--ttl', '24', '--wait', '--set-permissions', '--json'],
         {timeout: 720_000},
       );
 
