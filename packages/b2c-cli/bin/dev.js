@@ -5,10 +5,22 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {execute} from '@oclif/core';
+import {fileURLToPath} from 'node:url';
+import {dirname, join} from 'node:path';
 
-await execute({development: true, dir: import.meta.url});
+// Load .env file from this package's directory if present
+const packageDir = join(dirname(fileURLToPath(import.meta.url)), '..');
+try {
+  process.loadEnvFile(join(packageDir, '.env'));
+} catch {
+  // .env file not found or not readable, continue without it
+}
+
 // Disable telemetry by default in development mode (after loading .env so user config is respected)
 // Support both SF_DISABLE_TELEMETRY (sf CLI standard) and SFCC_DISABLE_TELEMETRY
 process.env.SF_DISABLE_TELEMETRY ??= 'true';
 process.env.SFCC_DISABLE_TELEMETRY ??= 'true';
+
+import {execute} from '@oclif/core';
+
+await execute({development: true, dir: import.meta.url});
