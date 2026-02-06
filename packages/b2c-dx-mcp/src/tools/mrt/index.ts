@@ -21,7 +21,8 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {pushBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import type {PushResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import type {PushResult, PushOptions} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 /**
@@ -39,6 +40,14 @@ interface MrtBundlePushInput {
 }
 
 /**
+ * Optional dependency injections for testing.
+ */
+interface MrtToolInjections {
+  /** Mock pushBundle function for testing */
+  pushBundle?: (options: PushOptions, auth: AuthStrategy) => Promise<PushResult>;
+}
+
+/**
  * Creates the mrt_bundle_push tool.
  *
  * Creates a bundle from a pre-built PWA Kit project and pushes it to
@@ -47,9 +56,11 @@ interface MrtBundlePushInput {
  * Shared across MRT, PWAV3, and STOREFRONTNEXT toolsets.
  *
  * @param services - MCP services
+ * @param injections - Optional dependency injections for testing
  * @returns The mrt_bundle_push tool
  */
-function createMrtBundlePushTool(services: Services): McpTool {
+function createMrtBundlePushTool(services: Services, injections?: MrtToolInjections): McpTool {
+  const pushBundleFn = injections?.pushBundle || pushBundle;
   return createToolAdapter<MrtBundlePushInput, PushResult>(
     {
       name: 'mrt_bundle_push',
@@ -108,7 +119,7 @@ function createMrtBundlePushTool(services: Services): McpTool {
 
         // Push bundle to MRT
         // Note: auth is guaranteed to be present by the adapter when requiresMrtAuth is true
-        const result = await pushBundle(
+        const result = await pushBundleFn(
           {
             projectSlug: project,
             buildDirectory,
@@ -133,8 +144,9 @@ function createMrtBundlePushTool(services: Services): McpTool {
  * Creates all tools for the MRT toolset.
  *
  * @param services - MCP services
+ * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createMrtTools(services: Services): McpTool[] {
-  return [createMrtBundlePushTool(services)];
+export function createMrtTools(services: Services, injections?: MrtToolInjections): McpTool[] {
+  return [createMrtBundlePushTool(services, injections)];
 }
