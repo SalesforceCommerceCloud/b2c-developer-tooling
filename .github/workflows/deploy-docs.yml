@@ -70,10 +70,16 @@ jobs:
           mv docs/.vitepress/dist docs/.vitepress/dist-main
           cp docs/.vitepress/config.mts /tmp/config.mts
 
+          # Remove S3-extracted uxstudio files before checkout to avoid conflicts
+          # (older tags still have these files tracked in git)
+          rm -rf docs/public/uxstudio
+
           # Checkout release tag
           git checkout ${{ steps.release.outputs.tag }}
 
-          # Restore UX Studio artifacts (git checkout wipes working tree)
+          # Ensure UX Studio artifacts are present (older tags have them in git,
+          # future tags won't — always extract from S3 to be safe)
+          rm -rf docs/public/uxstudio
           mkdir -p docs/public/uxstudio
           tar -xzf /tmp/uxstudio-4.5.tar.gz -C docs/public/uxstudio
           tar -xzf /tmp/uxstudio-4.6.tar.gz -C docs/public/uxstudio
