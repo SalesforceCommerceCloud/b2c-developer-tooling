@@ -6,9 +6,7 @@
   ],
   "commit": false,
   "fixed": [],
-  "linked": [
-    ["@salesforce/b2c-cli", "@salesforce/b2c-tooling-sdk", "@salesforce/b2c-dx-mcp"]
-  ],
+  "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

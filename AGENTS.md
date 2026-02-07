@@ -127,11 +127,17 @@ See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing t
 
 ## Changesets
 
-This project uses [Changesets](https://github.com/changesets/changesets) for version management. When making changes that affect users, create a changeset:
+This project uses [Changesets](https://github.com/changesets/changesets) for version management with **independent per-package versioning**. Each package versions independently based on its own changesets.
+
+**How it works:**
+- A changeset affecting only the SDK bumps only the SDK version
+- Packages that depend on a bumped package get an automatic patch bump (via `updateInternalDependencies: "patch"`) — e.g., if SDK bumps, CLI and MCP auto-get a patch bump because they depend on it
+- Only packages with a newer version than what's on npm get published
 
 Changeset guidelines:
-- Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; 
+- Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests
 - a pull request can have multiple changesets; separate files for separate changes
+- Only list directly-changed packages in changeset frontmatter — do not include dependent packages (they get auto-bumped)
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - This is a pre-1.0 preview release, so there are no `major` breaking change bumps yet
 - Good changesets explain:
@@ -151,4 +157,4 @@ create a changeset file directly in `.changeset/` with a unique filename (e.g., 
 Description of the change explaining WHAT, WHY, and HOW to update
 ```
 
-- Include only the packages that were modified
+- Include only the packages that were directly modified
