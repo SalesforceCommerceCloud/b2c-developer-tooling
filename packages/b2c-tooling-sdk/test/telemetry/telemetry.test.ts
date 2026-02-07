@@ -617,9 +617,10 @@ describe('telemetry/telemetry', () => {
   });
 
   describe('stop', () => {
-    it('does nothing when not started', () => {
+    it('does nothing when not started', async () => {
       const telemetry = new Telemetry({project: 'test-project'});
-      expect(() => telemetry.stop()).not.to.throw();
+      // Should not throw when stopping without starting
+      await telemetry.stop();
     });
 
     it('stops the reporter', async () => {
@@ -632,7 +633,7 @@ describe('telemetry/telemetry', () => {
       });
 
       await telemetry.start();
-      telemetry.stop();
+      await telemetry.stop();
 
       expect(mockReporter.stop.calledOnce).to.be.true;
     });
@@ -647,11 +648,57 @@ describe('telemetry/telemetry', () => {
       });
 
       await telemetry.start();
-      telemetry.stop();
-      telemetry.stop();
+      await telemetry.stop();
+      await telemetry.stop();
 
       // Only called once because second stop() returns early (started is false)
       expect(mockReporter.stop.calledOnce).to.be.true;
+    });
+  });
+
+  describe('flush', () => {
+    it('does nothing when not started', async () => {
+      const telemetry = new Telemetry({project: 'test-project'});
+      // Should not throw when flushing without starting
+      await telemetry.flush();
+    });
+
+    it('stops and restarts the reporter to flush events', async () => {
+      const mockReporter = createMockReporter(sandbox);
+      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'test-key',
+      });
+
+      await telemetry.start();
+      await telemetry.flush();
+
+      // stop() called to flush events, start() called to resume
+      expect(mockReporter.stop.calledOnce).to.be.true;
+      // start() called twice: once in start(), once in flush()
+      expect(mockReporter.start.calledTwice).to.be.true;
+    });
+
+    it('allows sending events after flush', async () => {
+      const mockReporter = createMockReporter(sandbox);
+      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'test-key',
+      });
+
+      await telemetry.start();
+      telemetry.sendEvent('BEFORE_FLUSH');
+      await telemetry.flush();
+      telemetry.sendEvent('AFTER_FLUSH');
+
+      // Both events should be sent
+      expect(mockReporter.sendTelemetryEvent.calledTwice).to.be.true;
+      expect(mockReporter.sendTelemetryEvent.firstCall.args[0]).to.equal('BEFORE_FLUSH');
+      expect(mockReporter.sendTelemetryEvent.secondCall.args[0]).to.equal('AFTER_FLUSH');
     });
   });
 
@@ -914,7 +961,7 @@ describe('telemetry/telemetry', () => {
       // Simulate successful completion
       telemetry.sendEvent('COMMAND_SUCCESS', {command: 'code deploy', duration: 5000});
 
-      telemetry.stop();
+      await telemetry.stop();
 
       expect(mockReporter.sendTelemetryEvent.calledTwice).to.be.true;
       expect(mockReporter.stop.calledOnce).to.be.true;
@@ -943,7 +990,7 @@ describe('telemetry/telemetry', () => {
 
       // Simulate shutdown
       telemetry.sendEvent('SERVER_STOPPED');
-      telemetry.stop();
+      await telemetry.stop();
 
       expect(mockReporter.sendTelemetryEvent.callCount).to.equal(5);
       expect(mockReporter.stop.calledOnce).to.be.true;
@@ -969,7 +1016,7 @@ describe('telemetry/telemetry', () => {
       const error = new Error('Connection refused');
       telemetry.sendException(error, {exitCode: 1, duration: 1000});
 
-      telemetry.stop();
+      await telemetry.stop();
 
       expect(mockReporter.sendTelemetryEvent.calledOnce).to.be.true;
       expect(mockReporter.sendTelemetryException.calledOnce).to.be.true;
