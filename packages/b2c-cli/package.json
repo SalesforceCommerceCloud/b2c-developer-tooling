@@ -104,6 +104,9 @@
       "code": {
         "description": "Deploy and manage code versions on instances\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html"
       },
+      "content": {
+        "description": "Export and manage Page Designer content libraries"
+      },
       "docs": {
         "description": "Search and read Script API documentation"
       },

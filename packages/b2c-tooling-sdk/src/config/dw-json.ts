@@ -69,6 +69,8 @@ export interface DwJsonConfig {
   cloudOrigin?: string;
   /** Tenant/Organization ID for SCAPI */
   'tenant-id'?: string;
+  /** Default content library ID for content export/list commands */
+  'content-library'?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
   /** Passphrase for the certificate (kebab-case) */
