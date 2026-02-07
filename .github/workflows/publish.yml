@@ -1,10 +1,6 @@
 name: Publish to npm
 
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+' # Stable releases: v1.0.0, v2.1.3
-      - 'v[0-9]+.[0-9]+.[0-9]+-*' # Pre-releases: v1.0.0-beta.1, v1.0.0-rc.1
   schedule:
     - cron: '0 2 * * 1-5' # Weekdays at 2 AM UTC (Mon-Fri)
   workflow_dispatch:
@@ -16,6 +12,7 @@ on:
         type: choice
         options:
           - nightly
+          - stable
 
 env:
   SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
@@ -25,7 +22,7 @@ jobs:
     name: Publish
     runs-on: ubuntu-latest
     permissions:
-      contents: write # For creating GitHub releases
+      contents: write # For creating GitHub releases and tags
       id-token: write # Required for npm OIDC trusted publishers
     steps:
       - name: Checkout
@@ -34,30 +31,12 @@ jobs:
       - name: Determine release type
         id: release-type
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+          if [[ "${{ github.event.inputs.release_type }}" == "stable" ]]; then
             echo "type=stable" >> $GITHUB_OUTPUT
-            # Pre-release versions (v1.0.0-beta.1) publish to @next, stable to @latest
-            if [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-.+ ]]; then
-              echo "tag=next" >> $GITHUB_OUTPUT
-              echo "prerelease=true" >> $GITHUB_OUTPUT
-            else
-              echo "tag=latest" >> $GITHUB_OUTPUT
-              echo "prerelease=false" >> $GITHUB_OUTPUT
-            fi
+            echo "tag=latest" >> $GITHUB_OUTPUT
           else
             echo "type=nightly" >> $GITHUB_OUTPUT
             echo "tag=nightly" >> $GITHUB_OUTPUT
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Validate tag matches package version
-        if: steps.release-type.outputs.type == 'stable'
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION=$(node -p "require('./packages/b2c-tooling-sdk/package.json').version")
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "Error: Tag version ($TAG_VERSION) does not match package version ($PKG_VERSION)"
-            exit 1
           fi
 
       - name: Setup pnpm
@@ -75,6 +54,32 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Determine packages to publish
+        if: steps.release-type.outputs.type == 'stable'
+        id: packages
+        run: |
+          check_package() {
+            local pkg_name=$1
+            local pkg_path=$2
+            local output_key=$3
+
+            LOCAL_VERSION=$(node -p "require('./${pkg_path}/package.json').version")
+            NPM_VERSION=$(npm view "$pkg_name" version 2>/dev/null || echo "0.0.0")
+
+            echo "${pkg_name}: local=${LOCAL_VERSION} npm=${NPM_VERSION}"
+
+            if [ "$LOCAL_VERSION" != "$NPM_VERSION" ]; then
+              echo "publish_${output_key}=true" >> $GITHUB_OUTPUT
+              echo "version_${output_key}=${LOCAL_VERSION}" >> $GITHUB_OUTPUT
+            else
+              echo "publish_${output_key}=false" >> $GITHUB_OUTPUT
+            fi
+          }
+
+          check_package "@salesforce/b2c-tooling-sdk" "packages/b2c-tooling-sdk" "sdk"
+          check_package "@salesforce/b2c-cli" "packages/b2c-cli" "cli"
+          check_package "@salesforce/b2c-dx-mcp" "packages/b2c-dx-mcp" "mcp"
 
       - name: Create snapshot versions
         if: steps.release-type.outputs.type == 'nightly'
@@ -97,48 +102,102 @@ jobs:
       - name: Run tests
         run: pnpm run test
 
-      - name: Publish to npm
-        run: |
-          pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
-          pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
-          # pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+      - name: Publish SDK to npm
+        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_sdk == 'true'
+        run: pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
 
-      - name: Extract changelog for release
+      - name: Publish CLI to npm
+        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_cli == 'true'
+        run: pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+
+      - name: Publish MCP to npm
+        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_mcp == 'true'
+        run: pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+
+      - name: Create git tags
         if: steps.release-type.outputs.type == 'stable'
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Function to extract version section from a changelog
-          extract_version() {
-            awk -v ver="$1" '
-              /^## / { if (found) exit; if ($2 == ver) found=1; next }
+          TAGS_CREATED=""
+
+          if [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
+            TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
+            git tag "$TAG"
+            TAGS_CREATED="$TAGS_CREATED $TAG"
+          fi
+
+          if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
+            TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
+            git tag "$TAG"
+            TAGS_CREATED="$TAGS_CREATED $TAG"
+          fi
+
+          if [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
+            TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+            git tag "$TAG"
+            TAGS_CREATED="$TAGS_CREATED $TAG"
+          fi
+
+          if [ -n "$TAGS_CREATED" ]; then
+            git push origin $TAGS_CREATED
+            echo "Created tags:$TAGS_CREATED"
+          else
+            echo "No tags to create"
+          fi
+
+      - name: Extract changelogs for release
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          # Function to extract the latest version section from a changelog
+          extract_latest() {
+            awk '
+              /^## / { if (found) exit; found=1; next }
               found { print }
-            ' "$2"
+            ' "$1"
           }
 
-          # Build combined release notes
+          # Build combined release notes for published packages
           {
-            echo "## @salesforce/b2c-cli"
-            echo ""
-            extract_version "$VERSION" packages/b2c-cli/CHANGELOG.md
-            echo ""
-            echo "## @salesforce/b2c-dx-mcp"
-            echo ""
-            extract_version "$VERSION" packages/b2c-dx-mcp/CHANGELOG.md
-            echo ""
-            echo "## @salesforce/b2c-tooling-sdk"
-            echo ""
-            extract_version "$VERSION" packages/b2c-tooling-sdk/CHANGELOG.md
+            if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
+              echo "## @salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
+              echo ""
+              extract_latest packages/b2c-cli/CHANGELOG.md
+              echo ""
+            fi
+
+            if [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
+              echo "## @salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+              echo ""
+              extract_latest packages/b2c-dx-mcp/CHANGELOG.md
+              echo ""
+            fi
+
+            if [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
+              echo "## @salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
+              echo ""
+              extract_latest packages/b2c-tooling-sdk/CHANGELOG.md
+              echo ""
+            fi
           } > /tmp/release-notes.md
 
       - name: Create GitHub Release
         if: steps.release-type.outputs.type == 'stable'
         run: |
-          PRERELEASE_FLAG=""
-          if [[ "${{ steps.release-type.outputs.prerelease }}" == "true" ]]; then
-            PRERELEASE_FLAG="--prerelease"
+          # Determine the release tag — prefer CLI as the user-facing product
+          if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
+          elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
+          elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+          else
+            echo "No packages published, skipping release"
+            exit 0
           fi
-          gh release create "$GITHUB_REF_NAME" --notes-file /tmp/release-notes.md $PRERELEASE_FLAG
+
+          gh release create "$RELEASE_TAG" --notes-file /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -157,6 +216,18 @@ jobs:
       - name: Upload skills to release
         if: steps.release-type.outputs.type == 'stable'
         run: |
-          gh release upload "$GITHUB_REF_NAME" b2c-skills.zip b2c-cli-skills.zip
+          # Determine the release tag (same logic as Create GitHub Release)
+          if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
+          elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
+          elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+          else
+            echo "No release to upload to"
+            exit 0
+          fi
+
+          gh release upload "$RELEASE_TAG" b2c-skills.zip b2c-cli-skills.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
