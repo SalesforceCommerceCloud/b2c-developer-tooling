@@ -65,6 +65,7 @@ const guideSidebar = [
     items: [
       { text: 'Overview', link: '/cli/' },
       { text: 'Code Commands', link: '/cli/code' },
+      { text: 'Content Commands', link: '/cli/content' },
       { text: 'Job Commands', link: '/cli/jobs' },
       { text: 'Logs Commands', link: '/cli/logs' },
       { text: 'Sites Commands', link: '/cli/sites' },

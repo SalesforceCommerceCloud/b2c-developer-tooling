@@ -64,6 +64,10 @@ export interface NormalizedConfig {
   /** MRT API origin URL override */
   mrtOrigin?: string;
 
+  // Content
+  /** Default content library ID for content export/list commands */
+  contentLibrary?: string;
+
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;

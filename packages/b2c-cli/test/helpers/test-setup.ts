@@ -75,9 +75,10 @@ export async function createTestCommand<T extends {init: () => Promise<void>}>(
   config: Config,
   flags: Record<string, unknown> = {},
   args: Record<string, unknown> = {},
+  argv: string[] = [],
 ): Promise<T> {
   const command: any = new CommandClass([], config);
-  stubParse(command, flags, args);
+  stubParse(command, flags, args, argv);
   await command.init();
   return command as T;
 }

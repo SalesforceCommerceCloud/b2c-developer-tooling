@@ -154,6 +154,7 @@ If no instance is specified, the config with `"active": true` is used.
 | `oauth-scopes` | OAuth scopes (array of strings) |
 | `auth-methods` | Authentication methods in priority order (array of strings) |
 | `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
+| `content-library` | Default content library ID for `content export` and `content list` commands |
 | `certificate` | Path to PKCS12 certificate for two-factor auth (mTLS) |
 | `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`. |
 | `self-signed` | Allow self-signed server certificates. Also accepts `selfsigned`. |
@@ -212,6 +213,7 @@ Only non-sensitive, project-level fields can be configured in `package.json`:
 |-------|-------------|
 | `shortCode` | SCAPI short code |
 | `clientId` | OAuth client ID (for implicit login discovery) |
+| `contentLibrary` | Default content library ID for `content export` and `content list` commands |
 | `mrtProject` | MRT project slug |
 | `mrtOrigin` | MRT API origin URL override |
 | `accountManagerHost` | Account Manager hostname for OAuth |
