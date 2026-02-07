@@ -48,10 +48,12 @@ const DEFAULT_WEBDAV_PERMISSIONS: WebDavSettings[number]['permissions'] = [
 /**
  * Command to create a new on-demand sandbox.
  */
-export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
+export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
+  static aliases = ['ods:create'];
+
   static description = withDocs(
-    t('commands.ods.create.description', 'Create a new on-demand sandbox'),
-    '/cli/ods.html#b2c-ods-create',
+    t('commands.sandbox.create.description', 'Create a new on-demand sandbox'),
+    '/cli/sandbox.html#b2c-sandbox-create',
   );
 
   static enableJsonFlag = true;
@@ -105,6 +107,23 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       default: true,
       allowNo: true,
     }),
+    'permissions-client-id': Flags.string({
+      description: 'Client ID to use for default OCAPI/WebDAV permissions (defaults to auth client ID)',
+    }),
+    'ocapi-settings': Flags.string({
+      description:
+        'Custom OCAPI settings JSON array (replaces defaults). Format: [{"client_id":"...","resources":[...]}]',
+    }),
+    'webdav-settings': Flags.string({
+      description:
+        'Custom WebDAV settings JSON array (replaces defaults). Format: [{"client_id":"...","permissions":[...]}]',
+    }),
+    'start-scheduler': Flags.string({
+      description: 'Start schedule JSON. Format: {"weekdays":["MONDAY",...],"time":"08:00:00+03:00"}',
+    }),
+    'stop-scheduler': Flags.string({
+      description: 'Stop schedule JSON. Format: {"weekdays":["MONDAY",...],"time":"19:00:00Z"}',
+    }),
   };
 
   async run(): Promise<SandboxModel> {
@@ -116,22 +135,38 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     const pollInterval = this.flags['poll-interval'];
     const timeout = this.flags.timeout;
     const setPermissions = this.flags['set-permissions'];
+    const permissionsClientId = this.flags['permissions-client-id'];
+    const ocapiSettingsRaw = this.flags['ocapi-settings'];
+    const webdavSettingsRaw = this.flags['webdav-settings'];
+    const startSchedulerRaw = this.flags['start-scheduler'];
+    const stopSchedulerRaw = this.flags['stop-scheduler'];
 
-    this.log(t('commands.ods.create.creating', 'Creating sandbox in realm {{realm}}...', {realm}));
-    this.log(t('commands.ods.create.profile', 'Profile: {{profile}}', {profile}));
-    this.log(t('commands.ods.create.ttl', 'TTL: {{ttl}} hours', {ttl: ttl === 0 ? 'infinite' : String(ttl)}));
+    this.log(t('commands.sandbox.create.creating', 'Creating sandbox in realm {{realm}}...', {realm}));
+    this.log(t('commands.sandbox.create.profile', 'Profile: {{profile}}', {profile}));
+    this.log(t('commands.sandbox.create.ttl', 'TTL: {{ttl}} hours', {ttl: ttl === 0 ? 'infinite' : String(ttl)}));
 
     // Build settings with OCAPI and WebDAV permissions if enabled
-    const settings = this.buildSettings(setPermissions);
+    const settings = this.buildSettings({
+      setPermissions,
+      permissionsClientId,
+      ocapiSettings: ocapiSettingsRaw,
+      webdavSettings: webdavSettingsRaw,
+    });
     if (settings) {
+      const effectiveClientId = permissionsClientId || this.resolvedConfig.values.clientId;
+      const hasCustom = ocapiSettingsRaw || webdavSettingsRaw;
       this.log(
         t(
-          'commands.ods.create.settingPermissions',
+          'commands.sandbox.create.settingPermissions',
           'Setting OCAPI and WebDAV permissions for client ID: {{clientId}}',
-          {clientId: this.resolvedConfig.values.clientId!},
+          {clientId: hasCustom ? 'custom settings' : effectiveClientId!},
         ),
       );
     }
+
+    // Parse scheduler flags
+    const startScheduler = startSchedulerRaw ? this.parseJsonFlag('start-scheduler', startSchedulerRaw) : undefined;
+    const stopScheduler = stopSchedulerRaw ? this.parseJsonFlag('stop-scheduler', stopSchedulerRaw) : undefined;
 
     const result = await this.odsClient.POST('/sandboxes', {
       body: {
@@ -141,12 +176,14 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
         autoScheduled,
         analyticsEnabled: false,
         settings,
+        startScheduler,
+        stopScheduler,
       },
     });
 
     if (!result.data?.data) {
       this.error(
-        t('commands.ods.create.error', 'Failed to create sandbox: {{message}}', {
+        t('commands.sandbox.create.error', 'Failed to create sandbox: {{message}}', {
           message: getApiErrorMessage(result.error, result.response),
         }),
       );
@@ -155,10 +192,10 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
     let sandbox = result.data.data;
 
     this.log('');
-    this.logger.info({sandboxId: sandbox.id}, t('commands.ods.create.success', 'Sandbox created successfully'));
+    this.logger.info({sandboxId: sandbox.id}, t('commands.sandbox.create.success', 'Sandbox created successfully'));
 
     if (wait && sandbox.id) {
-      this.log(t('commands.ods.create.waiting', 'Waiting for sandbox to get started..'));
+      this.log(t('commands.sandbox.create.waiting', 'Waiting for sandbox to get started..'));
 
       try {
         await waitForSandbox(this.odsClient, {
@@ -176,7 +213,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       } catch (error) {
         if (error instanceof SandboxPollingTimeoutError) {
           this.error(
-            t('commands.ods.create.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
+            t('commands.sandbox.create.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
               seconds: String(error.timeoutSeconds),
             }),
           );
@@ -184,14 +221,14 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
 
         if (error instanceof SandboxTerminalStateError) {
           if (error.state === 'deleted') {
-            this.error(t('commands.ods.create.deleted', 'Sandbox was deleted'));
+            this.error(t('commands.sandbox.create.deleted', 'Sandbox was deleted'));
           }
-          this.error(t('commands.ods.create.failed', 'Sandbox creation failed'));
+          this.error(t('commands.sandbox.create.failed', 'Sandbox creation failed'));
         }
 
         if (error instanceof SandboxPollingError) {
           this.error(
-            t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
+            t('commands.sandbox.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
               message: error.message,
             }),
           );
@@ -208,7 +245,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
 
       if (!finalResult.data?.data) {
         this.error(
-          t('commands.ods.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
+          t('commands.sandbox.create.pollError', 'Failed to fetch sandbox status: {{message}}', {
             message: finalResult.response?.statusText || 'Unknown error',
           }),
         );
@@ -217,7 +254,7 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
       sandbox = finalResult.data.data;
 
       this.log('');
-      this.logger.info({sandboxId: sandbox.id}, t('commands.ods.create.ready', 'Sandbox is now ready'));
+      this.logger.info({sandboxId: sandbox.id}, t('commands.sandbox.create.ready', 'Sandbox is now ready'));
     }
 
     if (this.jsonEnabled()) {
@@ -231,33 +268,49 @@ export default class OdsCreate extends OdsCommand<typeof OdsCreate> {
 
   /**
    * Builds the sandbox settings object with OCAPI and WebDAV permissions.
-   * @param setPermissions - Whether to set permissions for the client ID
    * @returns Settings object or undefined if permissions should not be set
    */
-  private buildSettings(setPermissions: boolean): SandboxSettings | undefined {
-    if (!setPermissions) {
+  private buildSettings(options: {
+    setPermissions: boolean;
+    permissionsClientId?: string;
+    ocapiSettings?: string;
+    webdavSettings?: string;
+  }): SandboxSettings | undefined {
+    if (!options.setPermissions) {
       return undefined;
     }
 
-    const clientId = this.resolvedConfig.values.clientId;
-    if (!clientId) {
+    const hasCustomOcapi = options.ocapiSettings !== undefined;
+    const hasCustomWebdav = options.webdavSettings !== undefined;
+
+    const clientId = options.permissionsClientId || this.resolvedConfig.values.clientId;
+
+    // If no custom settings and no client ID, we can't build defaults
+    if (!hasCustomOcapi && !hasCustomWebdav && !clientId) {
       return undefined;
     }
 
-    return {
-      ocapi: [
-        {
-          client_id: clientId,
-          resources: DEFAULT_OCAPI_RESOURCES,
-        },
-      ],
-      webdav: [
-        {
-          client_id: clientId,
-          permissions: DEFAULT_WEBDAV_PERMISSIONS,
-        },
-      ],
-    };
+    const ocapi: OcapiSettings = hasCustomOcapi
+      ? this.parseJsonFlag('ocapi-settings', options.ocapiSettings!)
+      : clientId
+        ? [{client_id: clientId, resources: DEFAULT_OCAPI_RESOURCES}]
+        : [];
+
+    const webdav: WebDavSettings = hasCustomWebdav
+      ? this.parseJsonFlag('webdav-settings', options.webdavSettings!)
+      : clientId
+        ? [{client_id: clientId, permissions: DEFAULT_WEBDAV_PERMISSIONS}]
+        : [];
+
+    return {ocapi, webdav};
+  }
+
+  private parseJsonFlag<T>(flagName: string, value: string): T {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      this.error(`Invalid JSON for --${flagName}: ${value}`);
+    }
   }
 
   private printSandboxSummary(sandbox: SandboxModel): void {

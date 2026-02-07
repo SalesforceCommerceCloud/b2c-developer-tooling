@@ -1,10 +1,14 @@
 ---
-description: Commands for creating, managing, starting, stopping, and deleting On-Demand Sandboxes (ODS) for development.
+description: Commands for creating, managing, starting, stopping, and deleting On-Demand Sandboxes for development.
 ---
 
-# ODS Commands
+# Sandbox Commands
 
-Commands for managing On-Demand Sandboxes (ODS).
+Commands for managing On-Demand Sandboxes.
+
+::: tip Alias
+These commands were previously available as `b2c ods <command>`. The `ods` prefix still works as a backward-compatible alias.
+:::
 
 ## Sandbox ID Formats
 
@@ -19,21 +23,21 @@ The realm-instance format uses the 4-character realm code followed by a dash (`-
 
 ```bash
 # These are equivalent (assuming zzzv-123 resolves to the UUID)
-b2c ods get abc12345-1234-1234-1234-abc123456789
-b2c ods get zzzv-123
+b2c sandbox get abc12345-1234-1234-1234-abc123456789
+b2c sandbox get zzzv-123
 ```
 
-## Global ODS Flags
+## Global Sandbox Flags
 
-These flags are available on all ODS commands:
+These flags are available on all sandbox commands:
 
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
-| `--sandbox-api-host` | `SFCC_SANDBOX_API_HOST` | ODS API hostname (default: admin.dx.commercecloud.salesforce.com) |
+| `--sandbox-api-host` | `SFCC_SANDBOX_API_HOST` | Sandbox API hostname (default: admin.dx.commercecloud.salesforce.com) |
 
 ## Authentication
 
-ODS commands require an Account Manager API Client.
+Sandbox commands require an Account Manager API Client.
 
 ### Required Roles
 
@@ -54,26 +58,26 @@ The API client's roles must have a tenant filter configured for the realm(s) you
 
 ```bash
 # User Authentication (opens browser)
-b2c ods list --client-id xxx
+b2c sandbox list --client-id xxx
 
 # Client Credentials
 export SFCC_CLIENT_ID=my-client
 export SFCC_CLIENT_SECRET=my-secret
-b2c ods list
+b2c sandbox list
 ```
 
 For complete setup instructions, see the [Authentication Guide](/guide/authentication#account-manager-api-client).
 
 ---
 
-## b2c ods list
+## b2c sandbox list
 
 List all on-demand sandboxes accessible to your account.
 
 ### Usage
 
 ```bash
-b2c ods list
+b2c sandbox list
 ```
 
 ### Flags
@@ -94,22 +98,22 @@ b2c ods list
 
 ```bash
 # List all sandboxes
-b2c ods list
+b2c sandbox list
 
 # Filter by realm
-b2c ods list --realm abcd
+b2c sandbox list --realm abcd
 
 # Filter by state and realm
-b2c ods list --filter-params "realm=abcd&state=started"
+b2c sandbox list --filter-params "realm=abcd&state=started"
 
 # Show extended information
-b2c ods list --extended
+b2c sandbox list --extended
 
 # Custom columns
-b2c ods list --columns realm,instance,state,hostname
+b2c sandbox list --columns realm,instance,state,hostname
 
 # Output as JSON
-b2c ods list --json
+b2c sandbox list --json
 ```
 
 ### Output
@@ -123,14 +127,14 @@ abcd   002       stopped  large    12/19/2024, 2:30 PM  12/20/2024, 2:30 PM
 
 ---
 
-## b2c ods create
+## b2c sandbox create
 
 Create a new on-demand sandbox.
 
 ### Usage
 
 ```bash
-b2c ods create --realm <REALM>
+b2c sandbox create --realm <REALM>
 ```
 
 ### Flags
@@ -144,49 +148,64 @@ b2c ods create --realm <REALM>
 | `--wait`, `-w` | Wait for sandbox to reach started or failed state | `false` |
 | `--poll-interval` | Polling interval in seconds when using --wait | `10` |
 | `--timeout` | Maximum wait time in seconds (0 for no timeout) | `600` |
-| `--set-permissions` | Automatically set OCAPI and WebDAV permissions | |
+| `--set-permissions` / `--no-set-permissions` | Automatically set OCAPI and WebDAV permissions | `true` |
+| `--permissions-client-id` | Client ID to use for default OCAPI/WebDAV permissions (defaults to auth client ID) | |
+| `--ocapi-settings` | Custom OCAPI settings JSON array (replaces defaults) | |
+| `--webdav-settings` | Custom WebDAV settings JSON array (replaces defaults) | |
+| `--start-scheduler` | Start schedule JSON | |
+| `--stop-scheduler` | Stop schedule JSON | |
 
 ### Examples
 
 ```bash
 # Create a sandbox with default settings
-b2c ods create --realm abcd
+b2c sandbox create --realm abcd
 
 # Create with extended TTL
-b2c ods create --realm abcd --ttl 48
+b2c sandbox create --realm abcd --ttl 48
 
 # Create with larger resources
-b2c ods create --realm abcd --profile large
+b2c sandbox create --realm abcd --profile large
 
 # Create and wait for it to be ready
-b2c ods create --realm abcd --wait
+b2c sandbox create --realm abcd --wait
 
 # Create with auto-scheduling enabled
-b2c ods create --realm abcd --auto-scheduled
+b2c sandbox create --realm abcd --auto-scheduled
 
-# Create and automatically set permissions for the client
-b2c ods create --realm abcd --set-permissions
+# Create without automatic permissions
+b2c sandbox create --realm abcd --no-set-permissions
+
+# Use a different client ID for permissions
+b2c sandbox create --realm abcd --permissions-client-id my-other-client
+
+# Custom OCAPI settings (replaces defaults)
+b2c sandbox create --realm abcd --ocapi-settings '[{"client_id":"my-client","resources":[{"resource_id":"/code_versions","methods":["get"]}]}]'
+
+# Custom start/stop scheduler
+b2c sandbox create --realm abcd --start-scheduler '{"weekdays":["MONDAY","TUESDAY"],"time":"08:00:00Z"}' --stop-scheduler '{"weekdays":["MONDAY","TUESDAY"],"time":"19:00:00Z"}'
 
 # Output as JSON
-b2c ods create --realm abcd --json
+b2c sandbox create --realm abcd --json
 ```
 
 ### Notes
 
 - Sandbox creation can take several minutes
 - Use `--wait` to block until the sandbox is ready
-- The `--set-permissions` flag configures OCAPI and WebDAV access for the client ID used to create the sandbox
+- By default, OCAPI and WebDAV permissions are set for the auth client ID. Use `--permissions-client-id` to override the client ID, or `--ocapi-settings`/`--webdav-settings` to provide fully custom settings
+- The `--start-scheduler` and `--stop-scheduler` flags accept JSON objects with `weekdays` and `time` fields
 
 ---
 
-## b2c ods get
+## b2c sandbox get
 
 Get details of a specific sandbox.
 
 ### Usage
 
 ```bash
-b2c ods get <SANDBOXID>
+b2c sandbox get <SANDBOXID>
 ```
 
 ### Arguments
@@ -199,13 +218,13 @@ b2c ods get <SANDBOXID>
 
 ```bash
 # Get sandbox details using UUID
-b2c ods get abc12345-1234-1234-1234-abc123456789
+b2c sandbox get abc12345-1234-1234-1234-abc123456789
 
 # Get sandbox details using realm-instance format
-b2c ods get zzzv-123
+b2c sandbox get zzzv-123
 
 # Output as JSON
-b2c ods get zzzv_123 --json
+b2c sandbox get zzzv_123 --json
 ```
 
 ### Output
@@ -220,24 +239,24 @@ Displays detailed information about the sandbox including:
 
 ---
 
-## b2c ods info
+## b2c sandbox info
 
-Display ODS user and system information.
+Display sandbox user and system information.
 
 ### Usage
 
 ```bash
-b2c ods info
+b2c sandbox info
 ```
 
 ### Examples
 
 ```bash
-# Get ODS info
-b2c ods info
+# Get sandbox info
+b2c sandbox info
 
 # Output as JSON
-b2c ods info --json
+b2c sandbox info --json
 ```
 
 ### Output
@@ -250,14 +269,14 @@ Displays information about:
 
 ---
 
-## b2c ods start
+## b2c sandbox start
 
 Start a stopped on-demand sandbox.
 
 ### Usage
 
 ```bash
-b2c ods start <SANDBOXID>
+b2c sandbox start <SANDBOXID>
 ```
 
 ### Arguments
@@ -270,25 +289,25 @@ b2c ods start <SANDBOXID>
 
 ```bash
 # Start a sandbox using UUID
-b2c ods start abc12345-1234-1234-1234-abc123456789
+b2c sandbox start abc12345-1234-1234-1234-abc123456789
 
 # Start a sandbox using realm-instance format
-b2c ods start zzzv-123
+b2c sandbox start zzzv-123
 
 # Output as JSON
-b2c ods start zzzv_123 --json
+b2c sandbox start zzzv_123 --json
 ```
 
 ---
 
-## b2c ods stop
+## b2c sandbox stop
 
 Stop a running on-demand sandbox.
 
 ### Usage
 
 ```bash
-b2c ods stop <SANDBOXID>
+b2c sandbox stop <SANDBOXID>
 ```
 
 ### Arguments
@@ -301,25 +320,25 @@ b2c ods stop <SANDBOXID>
 
 ```bash
 # Stop a sandbox using UUID
-b2c ods stop abc12345-1234-1234-1234-abc123456789
+b2c sandbox stop abc12345-1234-1234-1234-abc123456789
 
 # Stop a sandbox using realm-instance format
-b2c ods stop zzzv-123
+b2c sandbox stop zzzv-123
 
 # Output as JSON
-b2c ods stop zzzv_123 --json
+b2c sandbox stop zzzv_123 --json
 ```
 
 ---
 
-## b2c ods restart
+## b2c sandbox restart
 
 Restart an on-demand sandbox.
 
 ### Usage
 
 ```bash
-b2c ods restart <SANDBOXID>
+b2c sandbox restart <SANDBOXID>
 ```
 
 ### Arguments
@@ -332,25 +351,25 @@ b2c ods restart <SANDBOXID>
 
 ```bash
 # Restart a sandbox using UUID
-b2c ods restart abc12345-1234-1234-1234-abc123456789
+b2c sandbox restart abc12345-1234-1234-1234-abc123456789
 
 # Restart a sandbox using realm-instance format
-b2c ods restart zzzv-123
+b2c sandbox restart zzzv-123
 
 # Output as JSON
-b2c ods restart zzzv_123 --json
+b2c sandbox restart zzzv_123 --json
 ```
 
 ---
 
-## b2c ods delete
+## b2c sandbox delete
 
 Delete an on-demand sandbox.
 
 ### Usage
 
 ```bash
-b2c ods delete <SANDBOXID>
+b2c sandbox delete <SANDBOXID>
 ```
 
 ### Arguments
@@ -369,13 +388,13 @@ b2c ods delete <SANDBOXID>
 
 ```bash
 # Delete a sandbox using UUID (with confirmation prompt)
-b2c ods delete abc12345-1234-1234-1234-abc123456789
+b2c sandbox delete abc12345-1234-1234-1234-abc123456789
 
 # Delete a sandbox using realm-instance format
-b2c ods delete zzzv-123
+b2c sandbox delete zzzv-123
 
 # Delete without confirmation
-b2c ods delete zzzv_123 --force
+b2c sandbox delete zzzv_123 --force
 ```
 
 ### Notes

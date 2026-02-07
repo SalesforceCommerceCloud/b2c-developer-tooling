@@ -72,10 +72,12 @@ const tableRenderer = new TableRenderer(COLUMNS);
 /**
  * Command to list all on-demand sandboxes.
  */
-export default class OdsList extends OdsCommand<typeof OdsList> {
+export default class SandboxList extends OdsCommand<typeof SandboxList> {
+  static aliases = ['ods:list'];
+
   static description = withDocs(
-    t('commands.ods.list.description', 'List all on-demand sandboxes'),
-    '/cli/ods.html#b2c-ods-list',
+    t('commands.sandbox.list.description', 'List all on-demand sandboxes'),
+    '/cli/sandbox.html#b2c-sandbox-list',
   );
 
   static enableJsonFlag = true;
@@ -132,7 +134,7 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
       filterParams = parts.join('&');
     }
 
-    this.log(t('commands.ods.list.fetching', 'Fetching sandboxes from {{host}}...', {host}));
+    this.log(t('commands.sandbox.list.fetching', 'Fetching sandboxes from {{host}}...', {host}));
 
     const result = await this.odsClient.GET('/sandboxes', {
       params: {
@@ -146,7 +148,7 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
 
     if (result.error) {
       this.error(
-        t('commands.ods.list.error', 'Failed to fetch sandboxes: {{message}}', {
+        t('commands.sandbox.list.error', 'Failed to fetch sandboxes: {{message}}', {
           message: getApiErrorMessage(result.error, result.response),
         }),
       );
@@ -163,7 +165,7 @@ export default class OdsList extends OdsCommand<typeof OdsList> {
     }
 
     if (sandboxes.length === 0) {
-      this.log(t('commands.ods.list.noSandboxes', 'No sandboxes found.'));
+      this.log(t('commands.sandbox.list.noSandboxes', 'No sandboxes found.'));
       return response;
     }
 

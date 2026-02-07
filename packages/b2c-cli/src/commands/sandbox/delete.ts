@@ -36,7 +36,9 @@ async function confirm(message: string): Promise<boolean> {
 /**
  * Command to delete an on-demand sandbox.
  */
-export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
+export default class SandboxDelete extends OdsCommand<typeof SandboxDelete> {
+  static aliases = ['ods:delete'];
+
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or realm-instance, e.g., abcd-123)',
@@ -45,8 +47,8 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
   };
 
   static description = withDocs(
-    t('commands.ods.delete.description', 'Delete an on-demand sandbox'),
-    '/cli/ods.html#b2c-ods-delete',
+    t('commands.sandbox.delete.description', 'Delete an on-demand sandbox'),
+    '/cli/sandbox.html#b2c-sandbox-delete',
   );
 
   static examples = [
@@ -92,7 +94,7 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
     });
 
     if (!getResult.data?.data) {
-      this.error(t('commands.ods.delete.notFound', 'Sandbox not found: {{sandboxId}}', {sandboxId}));
+      this.error(t('commands.sandbox.delete.notFound', 'Sandbox not found: {{sandboxId}}', {sandboxId}));
     }
 
     const sandbox = getResult.data.data;
@@ -101,18 +103,18 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
     // Confirm deletion unless --force is used
     if (!this.flags.force) {
       const confirmed = await confirm(
-        t('commands.ods.delete.confirm', 'Are you sure you want to delete sandbox "{{sandboxInfo}}"? (y/n)', {
+        t('commands.sandbox.delete.confirm', 'Are you sure you want to delete sandbox "{{sandboxInfo}}"? (y/n)', {
           sandboxInfo,
         }),
       );
 
       if (!confirmed) {
-        this.log(t('commands.ods.delete.cancelled', 'Deletion cancelled'));
+        this.log(t('commands.sandbox.delete.cancelled', 'Deletion cancelled'));
         return;
       }
     }
 
-    this.log(t('commands.ods.delete.deleting', 'Deleting sandbox {{sandboxInfo}}...', {sandboxInfo}));
+    this.log(t('commands.sandbox.delete.deleting', 'Deleting sandbox {{sandboxInfo}}...', {sandboxInfo}));
 
     const result = await this.odsClient.DELETE('/sandboxes/{sandboxId}', {
       params: {
@@ -122,17 +124,17 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
 
     if (result.response.status !== 202) {
       this.error(
-        t('commands.ods.delete.error', 'Failed to delete sandbox: {{message}}', {
+        t('commands.sandbox.delete.error', 'Failed to delete sandbox: {{message}}', {
           message: getApiErrorMessage(result.error, result.response),
         }),
       );
     }
 
-    this.log(t('commands.ods.delete.success', 'Sandbox deletion initiated. The sandbox will be removed shortly.'));
+    this.log(t('commands.sandbox.delete.success', 'Sandbox deletion initiated. The sandbox will be removed shortly.'));
 
     if (wait) {
       this.log(
-        t('commands.ods.delete.waiting', 'Waiting for sandbox to reach state {{state}}...', {
+        t('commands.sandbox.delete.waiting', 'Waiting for sandbox to reach state {{state}}...', {
           state: 'deleted' satisfies SandboxState,
         }),
       );
@@ -150,7 +152,7 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
       } catch (error) {
         if (error instanceof SandboxPollingTimeoutError) {
           this.error(
-            t('commands.ods.delete.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
+            t('commands.sandbox.delete.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
               seconds: String(error.timeoutSeconds),
             }),
           );
@@ -158,7 +160,7 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
 
         if (error instanceof SandboxTerminalStateError) {
           this.error(
-            t('commands.ods.delete.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
+            t('commands.sandbox.delete.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
               state: error.state || 'unknown',
             }),
           );
@@ -166,7 +168,7 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
 
         if (error instanceof SandboxPollingError) {
           this.error(
-            t('commands.ods.delete.pollError', 'Failed to fetch sandbox status: {{message}}', {
+            t('commands.sandbox.delete.pollError', 'Failed to fetch sandbox status: {{message}}', {
               message: error.message,
             }),
           );
@@ -176,7 +178,7 @@ export default class OdsDelete extends OdsCommand<typeof OdsDelete> {
       }
 
       this.log('');
-      this.logger.info({sandboxId}, t('commands.ods.delete.ready', 'Sandbox is now deleted'));
+      this.logger.info({sandboxId}, t('commands.sandbox.delete.ready', 'Sandbox is now deleted'));
     }
   }
 }

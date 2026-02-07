@@ -20,7 +20,9 @@ type SandboxOperationModel = OdsComponents['schemas']['SandboxOperationModel'];
 /**
  * Command to start an on-demand sandbox.
  */
-export default class OdsStart extends OdsCommand<typeof OdsStart> {
+export default class SandboxStart extends OdsCommand<typeof SandboxStart> {
+  static aliases = ['ods:start'];
+
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or realm-instance, e.g., abcd-123)',
@@ -29,8 +31,8 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
   };
 
   static description = withDocs(
-    t('commands.ods.start.description', 'Start an on-demand sandbox'),
-    '/cli/ods.html#b2c-ods-start',
+    t('commands.sandbox.start.description', 'Start an on-demand sandbox'),
+    '/cli/sandbox.html#b2c-sandbox-start',
   );
 
   static enableJsonFlag = true;
@@ -67,7 +69,7 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
     const pollInterval = this.flags['poll-interval'];
     const timeout = this.flags.timeout;
 
-    this.log(t('commands.ods.start.starting', 'Starting sandbox {{sandboxId}}...', {sandboxId}));
+    this.log(t('commands.sandbox.start.starting', 'Starting sandbox {{sandboxId}}...', {sandboxId}));
 
     const result = await this.odsClient.POST('/sandboxes/{sandboxId}/operations', {
       params: {
@@ -80,7 +82,7 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
 
     if (!result.data?.data) {
       this.error(
-        t('commands.ods.start.error', 'Failed to start sandbox: {{message}}', {
+        t('commands.sandbox.start.error', 'Failed to start sandbox: {{message}}', {
           message: getApiErrorMessage(result.error, result.response),
         }),
       );
@@ -89,13 +91,15 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
     const operation = result.data.data;
 
     this.log(
-      t('commands.ods.start.success', 'Start operation {{operationState}}. Sandbox state: {{sandboxState}}', {
+      t('commands.sandbox.start.success', 'Start operation {{operationState}}. Sandbox state: {{sandboxState}}', {
         operationState: operation.operationState,
         sandboxState: operation.sandboxState || 'unknown',
       }),
     );
     if (wait) {
-      this.log(t('commands.ods.start.waiting', 'Waiting for sandbox to reach state {{state}}...', {state: 'started'}));
+      this.log(
+        t('commands.sandbox.start.waiting', 'Waiting for sandbox to reach state {{state}}...', {state: 'started'}),
+      );
 
       try {
         await waitForSandbox(this.odsClient, {
@@ -110,7 +114,7 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
       } catch (error) {
         if (error instanceof SandboxPollingTimeoutError) {
           this.error(
-            t('commands.ods.start.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
+            t('commands.sandbox.start.timeout', 'Timeout waiting for sandbox after {{seconds}} seconds', {
               seconds: String(error.timeoutSeconds),
             }),
           );
@@ -118,7 +122,7 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
 
         if (error instanceof SandboxTerminalStateError) {
           this.error(
-            t('commands.ods.start.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
+            t('commands.sandbox.start.failed', 'Sandbox did not reach the expected state. Current state: {{state}}', {
               state: error.state || 'unknown',
             }),
           );
@@ -126,7 +130,7 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
 
         if (error instanceof SandboxPollingError) {
           this.error(
-            t('commands.ods.start.pollError', 'Failed to fetch sandbox status: {{message}}', {
+            t('commands.sandbox.start.pollError', 'Failed to fetch sandbox status: {{message}}', {
               message: error.message,
             }),
           );
@@ -136,7 +140,7 @@ export default class OdsStart extends OdsCommand<typeof OdsStart> {
       }
 
       this.log('');
-      this.logger.info({sandboxId}, t('commands.ods.start.ready', 'Sandbox is now ready'));
+      this.logger.info({sandboxId}, t('commands.sandbox.start.ready', 'Sandbox is now ready'));
     }
 
     return operation;

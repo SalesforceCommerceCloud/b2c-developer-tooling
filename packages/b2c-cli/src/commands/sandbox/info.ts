@@ -24,10 +24,12 @@ interface OdsInfoResponse {
  * Command to display ODS user and system information.
  * Combines data from getUserInfo and getSystemInfo API endpoints.
  */
-export default class OdsInfo extends OdsCommand<typeof OdsInfo> {
+export default class SandboxInfo extends OdsCommand<typeof SandboxInfo> {
+  static aliases = ['ods:info'];
+
   static description = withDocs(
-    t('commands.ods.info.description', 'Display ODS user and system information'),
-    '/cli/ods.html#b2c-ods-info',
+    t('commands.sandbox.info.description', 'Display sandbox user and system information'),
+    '/cli/sandbox.html#b2c-sandbox-info',
   );
 
   static enableJsonFlag = true;
@@ -41,7 +43,7 @@ export default class OdsInfo extends OdsCommand<typeof OdsInfo> {
   async run(): Promise<OdsInfoResponse> {
     const host = this.odsHost;
 
-    this.log(t('commands.ods.info.fetching', 'Fetching ODS information from {{host}}...', {host}));
+    this.log(t('commands.sandbox.info.fetching', 'Fetching ODS information from {{host}}...', {host}));
 
     // Fetch user info and system info in parallel
     const [userResult, systemResult] = await Promise.all([
@@ -51,7 +53,7 @@ export default class OdsInfo extends OdsCommand<typeof OdsInfo> {
 
     if (!userResult.data) {
       this.error(
-        t('commands.ods.info.userError', 'Failed to fetch user info: {{message}}', {
+        t('commands.sandbox.info.userError', 'Failed to fetch user info: {{message}}', {
           message: userResult.response?.statusText || 'Unknown error',
         }),
       );
@@ -59,7 +61,7 @@ export default class OdsInfo extends OdsCommand<typeof OdsInfo> {
 
     if (!systemResult.data) {
       this.error(
-        t('commands.ods.info.systemError', 'Failed to fetch system info: {{message}}', {
+        t('commands.sandbox.info.systemError', 'Failed to fetch system info: {{message}}', {
           message: systemResult.response?.statusText || 'Unknown error',
         }),
       );

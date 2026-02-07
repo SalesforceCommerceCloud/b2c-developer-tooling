@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import OdsList from '../../../src/commands/ods/list.js';
+import SandboxList from '../../../src/commands/sandbox/list.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {runSilent} from '../../helpers/test-setup.js';
 
@@ -48,7 +48,7 @@ function makeCommandThrowOnError(command: any): void {
  * Tests column selection, filter building, output formatting.
  * SDK tests cover the actual API calls.
  */
-describe('ods list', () => {
+describe('sandbox list', () => {
   beforeEach(() => {
     isolateConfig();
   });
@@ -60,7 +60,7 @@ describe('ods list', () => {
 
   describe('getSelectedColumns', () => {
     it('should return default columns when no flags provided', () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       const columns = (command as any).getSelectedColumns();
 
@@ -68,7 +68,7 @@ describe('ods list', () => {
     });
 
     it('should return all columns when --extended flag is set', () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {extended: true};
       const columns = (command as any).getSelectedColumns();
 
@@ -79,7 +79,7 @@ describe('ods list', () => {
     });
 
     it('should return custom columns when --columns flag is set', () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {columns: 'id,state,hostname'};
       const columns = (command as any).getSelectedColumns();
 
@@ -87,7 +87,7 @@ describe('ods list', () => {
     });
 
     it('should ignore invalid column names', () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {columns: 'id,invalid,state'};
       const columns = (command as any).getSelectedColumns();
 
@@ -99,7 +99,7 @@ describe('ods list', () => {
 
   describe('filter parameter building', () => {
     it('should build filter params from realm flag', () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {realm: 'zzzv'};
 
       const realm = (command as any).flags.realm;
@@ -107,7 +107,7 @@ describe('ods list', () => {
     });
 
     it('should combine realm and custom filter params', () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {
         realm: 'zzzv',
         'filter-params': 'state=started',
@@ -124,7 +124,7 @@ describe('ods list', () => {
 
   describe('output formatting', () => {
     it('should return count and data in JSON mode', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -149,7 +149,7 @@ describe('ods list', () => {
     });
 
     it('should handle empty results', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -167,7 +167,7 @@ describe('ods list', () => {
     });
 
     it('should return data in non-JSON mode', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, false);
       stubCommandConfigAndLogger(command);
@@ -189,7 +189,7 @@ describe('ods list', () => {
     });
 
     it('should error on null data', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
@@ -212,7 +212,7 @@ describe('ods list', () => {
     });
 
     it('should handle undefined data as empty list', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, true);
       stubCommandConfigAndLogger(command);
@@ -231,7 +231,7 @@ describe('ods list', () => {
     });
 
     it('should handle empty API response gracefully in non-JSON mode', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       stubJsonEnabled(command, false);
       stubCommandConfigAndLogger(command);
@@ -249,7 +249,7 @@ describe('ods list', () => {
     });
 
     it('should error when result.data is completely missing', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);
@@ -272,7 +272,7 @@ describe('ods list', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const command = new OdsList([], {} as any);
+      const command = new SandboxList([], {} as any);
       (command as any).flags = {realm: 'invalid'};
       stubCommandConfigAndLogger(command);
       makeCommandThrowOnError(command);

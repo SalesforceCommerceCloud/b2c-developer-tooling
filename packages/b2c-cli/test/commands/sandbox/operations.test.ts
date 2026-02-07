@@ -7,11 +7,11 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 
-import OdsStart from '../../../src/commands/ods/start.js';
+import SandboxStart from '../../../src/commands/sandbox/start.js';
 
-import OdsStop from '../../../src/commands/ods/stop.js';
+import SandboxStop from '../../../src/commands/sandbox/stop.js';
 
-import OdsRestart from '../../../src/commands/ods/restart.js';
+import SandboxRestart from '../../../src/commands/sandbox/restart.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -51,33 +51,33 @@ function makeCommandThrowOnError(command: any): void {
  * Tests start, stop, restart command structure and output.
  * SDK tests cover the actual API calls.
  */
-describe('ods operations', () => {
-  describe('ods start', () => {
+describe('sandbox operations', () => {
+  describe('sandbox start', () => {
     it('should require sandboxId as argument', () => {
-      expect(OdsStart.args).to.have.property('sandboxId');
-      expect(OdsStart.args.sandboxId.required).to.be.true;
+      expect(SandboxStart.args).to.have.property('sandboxId');
+      expect(SandboxStart.args.sandboxId.required).to.be.true;
     });
 
     it('should have correct description', () => {
-      expect(OdsStart.description).to.be.a('string');
-      expect(OdsStart.description.toLowerCase()).to.include('start');
+      expect(SandboxStart.description).to.be.a('string');
+      expect(SandboxStart.description.toLowerCase()).to.include('start');
     });
 
     it('should enable JSON flag', () => {
-      expect(OdsStart.enableJsonFlag).to.be.true;
+      expect(SandboxStart.enableJsonFlag).to.be.true;
     });
 
     it('should expose wait/polling flags', () => {
-      expect(OdsStart.flags).to.have.property('wait');
-      expect(OdsStart.flags.wait.char).to.equal('w');
-      expect(OdsStart.flags).to.have.property('poll-interval');
-      expect(OdsStart.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
-      expect(OdsStart.flags).to.have.property('timeout');
-      expect(OdsStart.flags.timeout.dependsOn).to.deep.equal(['wait']);
+      expect(SandboxStart.flags).to.have.property('wait');
+      expect(SandboxStart.flags.wait.char).to.equal('w');
+      expect(SandboxStart.flags).to.have.property('poll-interval');
+      expect(SandboxStart.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(SandboxStart.flags).to.have.property('timeout');
+      expect(SandboxStart.flags.timeout.dependsOn).to.deep.equal(['wait']);
     });
 
     it('should return operation data in JSON mode', async () => {
-      const command = new OdsStart([], {} as any);
+      const command = new SandboxStart([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
@@ -114,7 +114,7 @@ describe('ods operations', () => {
     });
 
     it('should log success message in non-JSON mode', async () => {
-      const command = new OdsStart([], {} as any);
+      const command = new SandboxStart([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -157,7 +157,7 @@ describe('ods operations', () => {
     });
 
     it('should throw when API returns no operation data', async () => {
-      const command = new OdsStart([], {} as any);
+      const command = new SandboxStart([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -190,7 +190,7 @@ describe('ods operations', () => {
     });
 
     it('should poll sandbox state when --wait is true', async () => {
-      const command = new OdsStart([], {} as any);
+      const command = new SandboxStart([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -224,32 +224,32 @@ describe('ods operations', () => {
     });
   });
 
-  describe('ods stop', () => {
+  describe('sandbox stop', () => {
     it('should require sandboxId as argument', () => {
-      expect(OdsStop.args).to.have.property('sandboxId');
-      expect(OdsStop.args.sandboxId.required).to.be.true;
+      expect(SandboxStop.args).to.have.property('sandboxId');
+      expect(SandboxStop.args.sandboxId.required).to.be.true;
     });
 
     it('should have correct description', () => {
-      expect(OdsStop.description).to.be.a('string');
-      expect(OdsStop.description.toLowerCase()).to.include('stop');
+      expect(SandboxStop.description).to.be.a('string');
+      expect(SandboxStop.description.toLowerCase()).to.include('stop');
     });
 
     it('should enable JSON flag', () => {
-      expect(OdsStop.enableJsonFlag).to.be.true;
+      expect(SandboxStop.enableJsonFlag).to.be.true;
     });
 
     it('should expose wait/polling flags', () => {
-      expect(OdsStop.flags).to.have.property('wait');
-      expect(OdsStop.flags.wait.char).to.equal('w');
-      expect(OdsStop.flags).to.have.property('poll-interval');
-      expect(OdsStop.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
-      expect(OdsStop.flags).to.have.property('timeout');
-      expect(OdsStop.flags.timeout.dependsOn).to.deep.equal(['wait']);
+      expect(SandboxStop.flags).to.have.property('wait');
+      expect(SandboxStop.flags.wait.char).to.equal('w');
+      expect(SandboxStop.flags).to.have.property('poll-interval');
+      expect(SandboxStop.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(SandboxStop.flags).to.have.property('timeout');
+      expect(SandboxStop.flags.timeout.dependsOn).to.deep.equal(['wait']);
     });
 
     it('should return operation data in JSON mode', async () => {
-      const command = new OdsStop([], {} as any);
+      const command = new SandboxStop([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
@@ -286,7 +286,7 @@ describe('ods operations', () => {
     });
 
     it('should log success message in non-JSON mode', async () => {
-      const command = new OdsStop([], {} as any);
+      const command = new SandboxStop([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -329,7 +329,7 @@ describe('ods operations', () => {
     });
 
     it('should throw when API returns no operation data', async () => {
-      const command = new OdsStop([], {} as any);
+      const command = new SandboxStop([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -362,7 +362,7 @@ describe('ods operations', () => {
     });
 
     it('should poll sandbox state when --wait is true', async () => {
-      const command = new OdsStop([], {} as any);
+      const command = new SandboxStop([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -396,32 +396,32 @@ describe('ods operations', () => {
     });
   });
 
-  describe('ods restart', () => {
+  describe('sandbox restart', () => {
     it('should require sandboxId as argument', () => {
-      expect(OdsRestart.args).to.have.property('sandboxId');
-      expect(OdsRestart.args.sandboxId.required).to.be.true;
+      expect(SandboxRestart.args).to.have.property('sandboxId');
+      expect(SandboxRestart.args.sandboxId.required).to.be.true;
     });
 
     it('should have correct description', () => {
-      expect(OdsRestart.description).to.be.a('string');
-      expect(OdsRestart.description.toLowerCase()).to.include('restart');
+      expect(SandboxRestart.description).to.be.a('string');
+      expect(SandboxRestart.description.toLowerCase()).to.include('restart');
     });
 
     it('should enable JSON flag', () => {
-      expect(OdsRestart.enableJsonFlag).to.be.true;
+      expect(SandboxRestart.enableJsonFlag).to.be.true;
     });
 
     it('should expose wait/polling flags', () => {
-      expect(OdsRestart.flags).to.have.property('wait');
-      expect(OdsRestart.flags.wait.char).to.equal('w');
-      expect(OdsRestart.flags).to.have.property('poll-interval');
-      expect(OdsRestart.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
-      expect(OdsRestart.flags).to.have.property('timeout');
-      expect(OdsRestart.flags.timeout.dependsOn).to.deep.equal(['wait']);
+      expect(SandboxRestart.flags).to.have.property('wait');
+      expect(SandboxRestart.flags.wait.char).to.equal('w');
+      expect(SandboxRestart.flags).to.have.property('poll-interval');
+      expect(SandboxRestart.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+      expect(SandboxRestart.flags).to.have.property('timeout');
+      expect(SandboxRestart.flags.timeout.dependsOn).to.deep.equal(['wait']);
     });
 
     it('should return operation data in JSON mode', async () => {
-      const command = new OdsRestart([], {} as any);
+      const command = new SandboxRestart([], {} as any);
 
       // Mock args
       Object.defineProperty(command, 'args', {
@@ -458,7 +458,7 @@ describe('ods operations', () => {
     });
 
     it('should log success message in non-JSON mode', async () => {
-      const command = new OdsRestart([], {} as any);
+      const command = new SandboxRestart([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -501,7 +501,7 @@ describe('ods operations', () => {
     });
 
     it('should throw when API returns no operation data', async () => {
-      const command = new OdsRestart([], {} as any);
+      const command = new SandboxRestart([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
@@ -534,7 +534,7 @@ describe('ods operations', () => {
     });
 
     it('should poll sandbox state when --wait is true', async () => {
-      const command = new OdsRestart([], {} as any);
+      const command = new SandboxRestart([], {} as any);
 
       Object.defineProperty(command, 'args', {
         value: {sandboxId: 'sandbox-123'},
