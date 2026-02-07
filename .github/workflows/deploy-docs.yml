@@ -43,6 +43,14 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
+      - name: Download UX Studio artifacts
+        run: |
+          curl -fsSL https://sfcc-uxstudio.s3.amazonaws.com/uxstudio-4.5.tar.gz -o /tmp/uxstudio-4.5.tar.gz
+          curl -fsSL https://sfcc-uxstudio.s3.amazonaws.com/uxstudio-4.6.tar.gz -o /tmp/uxstudio-4.6.tar.gz
+          mkdir -p docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.5.tar.gz -C docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.6.tar.gz -C docs/public/uxstudio
+
       - name: Get latest release tag
         id: release
         run: |
@@ -64,6 +72,11 @@ jobs:
 
           # Checkout release tag
           git checkout ${{ steps.release.outputs.tag }}
+
+          # Restore UX Studio artifacts (git checkout wipes working tree)
+          mkdir -p docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.5.tar.gz -C docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.6.tar.gz -C docs/public/uxstudio
 
           # Restore config from main (has version dropdown and dynamic base path)
           cp /tmp/config.mts docs/.vitepress/config.mts
