@@ -1,5 +1,22 @@
 # @salesforce/b2c-cli
 
+## 0.4.0
+
+### Minor Changes
+
+- [#113](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/113) [`0a6b8c8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0a6b8c8c80fd114bca034e26907a0f815bfcaf43) Thanks [@clavery](https://github.com/clavery)! - Rename `ods` topic to `sandbox` (with `ods` alias for backward compatibility). Add `--permissions-client-id`, `--ocapi-settings`, `--webdav-settings`, `--start-scheduler`, and `--stop-scheduler` flags to `sandbox create`.
+
+- [#102](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/102) [`8592727`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/859272776afa5a9d6b94f96b13de97a7af9814eb) Thanks [@clavery](https://github.com/clavery)! - Add scaffolding framework for generating B2C Commerce components from templates. Includes 7 built-in scaffolds (cartridge, controller, hook, service, custom-api, job-step, page-designer-component) and support for custom project/user scaffolds. SDK provides programmatic API for IDE integrations and MCP servers.
+
+### Patch Changes
+
+- [`e116ce4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e116ce4ac1f7de705207c6c91eee0979be0ace65) Thanks [@clavery](https://github.com/clavery)! - Add update notifications that warn users when a newer version of the CLI is available
+
+- [#63](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/63) [`1a3117c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a3117c42211e4db6629928d1f8a58395a0cadc7) Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)! - Account Manager (AM) topic with `users`, `roles`, and `orgs` subtopics. Use `b2c am users`, `b2c am roles`, and `b2c am orgs` for user, role, and organization management.
+
+- Updated dependencies [[`1a3117c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a3117c42211e4db6629928d1f8a58395a0cadc7), [`7a3015f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7a3015f05183ad09c55e20dfe64ce7f3b8f1ca50), [`33dbd2f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/33dbd2fc1f4d27e94572e36505088007ebe77b81), [`33dbd2f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/33dbd2fc1f4d27e94572e36505088007ebe77b81), [`8592727`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/859272776afa5a9d6b94f96b13de97a7af9814eb)]:
+  - @salesforce/b2c-tooling-sdk@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

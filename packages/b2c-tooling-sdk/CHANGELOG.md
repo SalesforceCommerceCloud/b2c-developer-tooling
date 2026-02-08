@@ -1,5 +1,21 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.4.0
+
+### Minor Changes
+
+- [#112](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/112) [`33dbd2f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/33dbd2fc1f4d27e94572e36505088007ebe77b81) Thanks [@clavery](https://github.com/clavery)! - Accept both camelCase and kebab-case for all field names in dw.json and package.json `b2c` config. For example, `clientId` and `client-id` are now equivalent everywhere. Legacy aliases like `server`, `passphrase`, and `selfsigned` continue to work.
+
+- [#102](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/102) [`8592727`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/859272776afa5a9d6b94f96b13de97a7af9814eb) Thanks [@clavery](https://github.com/clavery)! - Add scaffolding framework for generating B2C Commerce components from templates. Includes 7 built-in scaffolds (cartridge, controller, hook, service, custom-api, job-step, page-designer-component) and support for custom project/user scaffolds. SDK provides programmatic API for IDE integrations and MCP servers.
+
+### Patch Changes
+
+- [#63](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/63) [`1a3117c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a3117c42211e4db6629928d1f8a58395a0cadc7) Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)! - Account Manager (AM) topic with `users`, `roles`, and `orgs` subtopics. Use `b2c am users`, `b2c am roles`, and `b2c am orgs` for user, role, and organization management.
+
+- [#103](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/103) [`7a3015f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7a3015f05183ad09c55e20dfe64ce7f3b8f1ca50) Thanks [@clavery](https://github.com/clavery)! - Add automatic 401 retry with token refresh to openapi-fetch middleware. This ensures API clients (OCAPI, SLAS, SCAPI, etc.) automatically refresh expired tokens during long-running operations.
+
+- [#112](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/112) [`33dbd2f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/33dbd2fc1f4d27e94572e36505088007ebe77b81) Thanks [@clavery](https://github.com/clavery)! - Support `sandbox-api-host` in dw.json and other config sources (previously only worked as a CLI flag or environment variable)
+
 ## 0.3.0
 
 ### Minor Changes
