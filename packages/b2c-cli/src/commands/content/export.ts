@@ -96,7 +96,12 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
   async run(): Promise<ContentExportResult> {
     const {argv, flags} = await this.parse(ContentExport);
     const pageIds = argv as string[];
-    const outputPath = flags.output ?? `content-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
+    const outputPath =
+      flags.output ??
+      `content-${new Date()
+        .toISOString()
+        .replaceAll(/[-:.TZ]/g, '')
+        .slice(0, 14)}`;
 
     if (pageIds.length === 0) {
       this.error('At least one content ID is required.');
