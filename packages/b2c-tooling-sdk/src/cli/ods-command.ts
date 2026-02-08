@@ -36,9 +36,8 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
   static baseFlags = {
     ...OAuthCommand.baseFlags,
     'sandbox-api-host': Flags.string({
-      description: 'ODS API hostname',
+      description: `ODS API hostname (default: ${DEFAULT_ODS_HOST})`,
       env: 'SFCC_SANDBOX_API_HOST',
-      default: DEFAULT_ODS_HOST,
       // helpGroup: 'ODS',
     }),
   };

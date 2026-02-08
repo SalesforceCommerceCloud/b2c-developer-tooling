@@ -56,6 +56,7 @@ const requestBodies = new WeakMap<Request, ArrayBuffer | null>();
  */
 export function createAuthMiddleware(auth: AuthStrategy): Middleware {
   const logger = getLogger();
+  let hasHadSuccess = false;
 
   return {
     async onRequest({request}) {
@@ -75,10 +76,16 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
     },
 
     async onResponse({request, response}) {
-      // Only retry on 401 if we haven't already retried this request
-      // and the strategy supports token invalidation
+      if (response.status !== 401) {
+        hasHadSuccess = true;
+      }
+
+      // Only retry on 401 if we have had a prior successful response (indicating
+      // token expiry rather than bad credentials), haven't already retried this
+      // request, and the strategy supports token invalidation
       if (
         response.status === 401 &&
+        hasHadSuccess &&
         !retriedRequests.has(request) &&
         auth.invalidateToken &&
         auth.getAuthorizationHeader
