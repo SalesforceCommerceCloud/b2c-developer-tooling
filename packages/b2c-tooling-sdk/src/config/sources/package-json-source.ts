@@ -14,7 +14,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions, NormalizedConfig} from '../types.js';
-import {getPopulatedFields} from '../mapping.js';
+import {getPopulatedFields, normalizeConfigKeys} from '../mapping.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -27,6 +27,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'mrtProject',
   'mrtOrigin',
   'accountManagerHost',
+  'sandboxApiHost',
 ];
 
 /**
@@ -38,6 +39,7 @@ interface PackageJsonB2CConfig {
   mrtProject?: string;
   mrtOrigin?: string;
   accountManagerHost?: string;
+  sandboxApiHost?: string;
   [key: string]: unknown;
 }
 
@@ -76,7 +78,8 @@ export class PackageJsonSource implements ConfigSource {
         return undefined;
       }
 
-      const b2cConfig = packageJson.b2c;
+      // Normalize keys to camelCase (accepts both kebab-case and camelCase)
+      const b2cConfig = normalizeConfigKeys(packageJson.b2c as Record<string, unknown>);
       const config: NormalizedConfig = {};
 
       // Only copy allowed fields
@@ -87,7 +90,7 @@ export class PackageJsonSource implements ConfigSource {
         }
       }
 
-      // Warn about disallowed fields
+      // Warn about disallowed fields (check post-normalization keys)
       const disallowedFields = Object.keys(b2cConfig).filter(
         (key) => !ALLOWED_FIELDS.includes(key as keyof NormalizedConfig),
       );

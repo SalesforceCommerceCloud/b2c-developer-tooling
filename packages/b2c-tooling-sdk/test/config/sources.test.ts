@@ -544,6 +544,57 @@ describe('config/sources', () => {
       expect(actualLocation).to.equal(expectedPath);
     });
 
+    it('accepts kebab-case fields and normalizes to camelCase', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {
+            'short-code': 'abc123',
+            'client-id': 'test-client-id',
+            'mrt-project': 'my-project',
+            'account-manager-host': 'account.demandware.com',
+            'sandbox-api-host': 'admin.dx.commercecloud.salesforce.com',
+          },
+        }),
+      );
+
+      const source = new PackageJsonSource();
+      const result = source.load({startDir: tempDir});
+
+      expect(result).to.not.be.undefined;
+      expect(result!.config.shortCode).to.equal('abc123');
+      expect(result!.config.clientId).to.equal('test-client-id');
+      expect(result!.config.mrtProject).to.equal('my-project');
+      expect(result!.config.accountManagerHost).to.equal('account.demandware.com');
+      expect(result!.config.sandboxApiHost).to.equal('admin.dx.commercecloud.salesforce.com');
+    });
+
+    it('rejects disallowed fields even in kebab-case', () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {
+            'short-code': 'abc123',
+            // These should still be rejected after normalization
+            password: 'secret',
+            'client-secret': 'secret',
+          },
+        }),
+      );
+
+      const source = new PackageJsonSource();
+      const result = source.load({startDir: tempDir});
+
+      expect(result).to.not.be.undefined;
+      expect(result!.config.shortCode).to.equal('abc123');
+      expect(result!.config.password).to.be.undefined;
+      expect(result!.config.clientSecret).to.be.undefined;
+    });
+
     it('handles invalid JSON gracefully', () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(packageJsonPath, 'invalid json');
