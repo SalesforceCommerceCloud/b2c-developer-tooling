@@ -120,14 +120,31 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 - ✅ "I'm starting a new PWA Kit project. Use the MCP tool to get the development guidelines."
 - ✅ "Use the MCP tool to create a new product listing page component in my PWA Kit project."
 - ✅ "Use the MCP tool to recommend React hooks for fetching product data in PWA Kit."
-- ✅ "Use the MCP tool to explore the SCAPI Shop API endpoints available for my PWA Kit storefront."
 
 ##### SCAPI Discovery
 
-**Good prompts:**
+**Standard SCAPI Endpoints:**
+
+Discover standard Salesforce Commerce API schemas (Shopper APIs, Admin APIs, etc.):
+
 - ✅ "Use the MCP tool to discover what SCAPI endpoints are available for product data."
-- ✅ "Use the MCP tool to discover custom SCAPI APIs in my B2C instance."
-- ✅ "Use the MCP tool to show me all available SCAPI endpoints and their capabilities."
+- ✅ "Use the MCP tool to show me all available SCAPI schemas."
+- ✅ "Use the MCP tool to get the OpenAPI schema for the shopper-baskets API."
+
+**Custom API Discovery:**
+
+List and discover custom SCAPI APIs (both deployed and in your workspace):
+
+- ✅ "Use the MCP tool to list custom SCAPI APIs in my B2C instance."
+- ✅ "Use the MCP tool to show me all deployed and local custom API endpoints with their URLs."
+- ✅ "Use the MCP tool to list custom APIs with their OpenAPI schemas."
+- ✅ "Use the MCP tool to check which custom APIs are deployed vs only defined locally."
+- ✅ "Use the MCP tool to find custom APIs that are in my workspace but not deployed yet."
+
+**Scaffolding:**
+
+Create new custom SCAPI APIs:
+
 - ✅ "Use the MCP tool to scaffold a new custom SCAPI API for order management."
 
 ##### Cartridge Deployment
@@ -264,9 +281,8 @@ PWA Kit v3 development tools for building headless storefronts.
 | `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases |
 | `pwakit_run_site_test` | Run site tests for PWA Kit project |
 | `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development |
-| `pwakit_explore_scapi_shop_api` | Explore SCAPI Shop API endpoints and capabilities |
-| `scapi_discovery` | Discover available SCAPI endpoints and capabilities |
-| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
+| `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
+| `scapi_custom_api_list` | List custom SCAPI API endpoints (both deployed and local) |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 #### SCAPI
@@ -275,9 +291,9 @@ Salesforce Commerce API discovery and exploration.
 
 | Tool | Description |
 |------|-------------|
-| `scapi_discovery` | Discover available SCAPI endpoints and capabilities |
-| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API |
-| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
+| `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
+| `scapi_custom_api_list` | List custom SCAPI API endpoints (both deployed and local) |
+| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API (not yet implemented) |
 
 #### STOREFRONTNEXT
 Storefront Next development tools for building modern storefronts.
@@ -292,11 +308,11 @@ Storefront Next development tools for building modern storefronts.
 | `storefront_next_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
 | `storefront_next_design_decorator` | Apply design decorators to Storefront Next components |
 | `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
-| `scapi_discovery` | Discover available SCAPI endpoints and capabilities |
-| `scapi_custom_api_discovery` | Discover custom SCAPI API endpoints |
+| `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
+| `scapi_custom_api_list` | List custom SCAPI API endpoints (both deployed and local) |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
-> **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_discovery`). When using multiple toolsets, tools are automatically deduplicated.
+> **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`). When using multiple toolsets, tools are automatically deduplicated.
 
 ## Telemetry
 

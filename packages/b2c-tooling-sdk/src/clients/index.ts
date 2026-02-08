@@ -184,6 +184,7 @@ export {
   toOrganizationId,
   toTenantId,
   buildTenantScope,
+  buildCustomApiUrl,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
   CUSTOM_APIS_DEFAULT_SCOPES,
@@ -197,7 +198,7 @@ export type {
   components as CustomApisComponents,
 } from './custom-apis.js';
 
-export {createScapiSchemasClient, SCAPI_SCHEMAS_DEFAULT_SCOPES} from './scapi-schemas.js';
+export {createScapiSchemasClient, SCAPI_SCHEMAS_DEFAULT_SCOPES, buildScapiApiUrl} from './scapi-schemas.js';
 export type {
   ScapiSchemasClient,
   ScapiSchemasClientConfig,

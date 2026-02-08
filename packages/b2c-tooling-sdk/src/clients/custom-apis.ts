@@ -219,3 +219,43 @@ export function toTenantId(value: string): string {
 export function buildTenantScope(tenantId: string): string {
   return `${SCAPI_TENANT_SCOPE_PREFIX}${toTenantId(tenantId)}`;
 }
+
+/**
+ * Constructs the full SCAPI URL for a custom API endpoint.
+ *
+ * This function builds the complete URL that can be used to call a custom SCAPI API endpoint.
+ * The URL includes the short code, API name, version, organization ID, and endpoint path.
+ *
+ * @param shortCode - SCAPI shortCode (e.g., "kv7kzm78")
+ * @param organizationId - Organization ID with f_ecom_ prefix (use {@link toOrganizationId} to ensure correct format)
+ * @param apiName - Custom API name
+ * @param apiVersion - API version (e.g., "v1")
+ * @param endpointPath - Endpoint path (with or without leading slash)
+ * @returns Full SCAPI URL for testing
+ *
+ * @example
+ * ```typescript
+ * import { buildCustomApiUrl, toOrganizationId } from '@salesforce/b2c-tooling-sdk/clients';
+ *
+ * const url = buildCustomApiUrl(
+ *   "kv7kzm78",
+ *   toOrganizationId("zzxy_prd"),
+ *   "loyalty-info",
+ *   "v1",
+ *   "/customers/{customerId}/points"
+ * );
+ * // Returns: "https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/customers/{customerId}/points"
+ * ```
+ */
+export function buildCustomApiUrl(
+  shortCode: string,
+  organizationId: string,
+  apiName: string,
+  apiVersion: string,
+  endpointPath: string,
+): string {
+  // Remove leading slash from endpoint path if present
+  const cleanPath = endpointPath.startsWith('/') ? endpointPath.slice(1) : endpointPath;
+
+  return `https://${shortCode}.api.commercecloud.salesforce.com/custom/${apiName}/${apiVersion}/organizations/${organizationId}/${cleanPath}`;
+}

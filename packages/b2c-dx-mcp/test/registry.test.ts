@@ -9,10 +9,11 @@ import {createToolRegistry, registerToolsets} from '../src/registry.js';
 import {Services} from '../src/services.js';
 import {B2CDxMcpServer} from '../src/server.js';
 import type {StartupFlags} from '../src/utils/types.js';
+import {createMockResolvedConfig} from './test-helpers.js';
 
 // Create a mock services instance for testing
 function createMockServices(): Services {
-  return new Services({});
+  return new Services({resolvedConfig: createMockResolvedConfig()});
 }
 
 // Create a mock server that tracks registered tools
@@ -87,9 +88,8 @@ describe('registry', () => {
       expect(registry.SCAPI.length).to.be.greaterThan(0);
 
       const toolNames = registry.SCAPI.map((t) => t.name);
-      expect(toolNames).to.include('scapi_discovery');
-      expect(toolNames).to.include('scapi_customapi_scaffold');
-      expect(toolNames).to.include('scapi_custom_api_discovery');
+      expect(toolNames).to.include('scapi_schemas_list');
+      expect(toolNames).to.include('scapi_custom_api_list');
     });
 
     it('should create STOREFRONTNEXT tools', () => {
@@ -145,7 +145,7 @@ describe('registry', () => {
       await registerToolsets(flags, server, services);
       expect(server.registeredTools.length).to.be.greaterThan(0);
       // SCAPI tools should be registered as fallback
-      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
     });
 
     it('should skip auto-discovery when empty toolsets array is explicitly provided', async () => {
@@ -159,7 +159,7 @@ describe('registry', () => {
       // Empty toolsets array still triggers auto-discovery (length is 0)
       await registerToolsets(flags, server, services);
       // Should have auto-discovered SCAPI as fallback
-      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
     });
 
     it('should register tools from a single toolset', async () => {
@@ -174,7 +174,7 @@ describe('registry', () => {
 
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should not include tools exclusive to other toolsets
-      expect(server.registeredTools).to.not.include('scapi_customapi_scaffold');
+      expect(server.registeredTools).to.not.include('scapi_custom_api_list');
     });
 
     it('should register tools from multiple toolsets', async () => {
@@ -209,7 +209,7 @@ describe('registry', () => {
       expect(server.registeredTools).to.include('cartridge_deploy');
       expect(server.registeredTools).to.include('mrt_bundle_push');
       expect(server.registeredTools).to.include('pwakit_create_storefront');
-      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('storefront_next_development_guidelines');
     });
 
@@ -233,7 +233,7 @@ describe('registry', () => {
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES'],
-        tools: ['scapi_customapi_scaffold'],
+        tools: ['scapi_custom_api_list'],
         allowNonGaTools: true,
       };
 
@@ -242,9 +242,9 @@ describe('registry', () => {
       // Should include all CARTRIDGES tools
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should also include the individual SCAPI tool
-      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
+      expect(server.registeredTools).to.include('scapi_custom_api_list');
       // Should not include other SCAPI tools not in CARTRIDGES
-      expect(server.registeredTools).to.not.include('scapi_discovery');
+      expect(server.registeredTools).to.not.include('scapi_schemas_list');
     });
 
     it('should not duplicate tools when specified in both toolset and --tools', async () => {
@@ -307,9 +307,8 @@ describe('registry', () => {
       await registerToolsets(flags, server, services);
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
-      expect(server.registeredTools).to.include('scapi_discovery');
-      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
-      expect(server.registeredTools).to.include('scapi_custom_api_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_api_list');
     });
 
     it('should trigger auto-discovery when all individual tools are invalid', async () => {
@@ -324,9 +323,8 @@ describe('registry', () => {
       await registerToolsets(flags, server, services);
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
-      expect(server.registeredTools).to.include('scapi_discovery');
-      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
-      expect(server.registeredTools).to.include('scapi_custom_api_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_api_list');
     });
 
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
@@ -371,7 +369,7 @@ describe('registry', () => {
         // Should not throw even with non-existent path
         await registerToolsets(flags, server, services);
         // Falls back to SCAPI for unknown projects
-        expect(server.registeredTools).to.include('scapi_discovery');
+        expect(server.registeredTools).to.include('scapi_schemas_list');
       });
 
       it('should map detected project type to MCP toolsets', async () => {
@@ -387,7 +385,7 @@ describe('registry', () => {
         await registerToolsets(flags, server, services);
 
         // Only SCAPI tools should be registered (the fallback for unknown projects)
-        expect(server.registeredTools).to.include('scapi_discovery');
+        expect(server.registeredTools).to.include('scapi_schemas_list');
       });
 
       it('should not auto-discover when individual tools are provided', async () => {

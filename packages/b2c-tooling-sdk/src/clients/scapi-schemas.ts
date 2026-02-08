@@ -201,3 +201,31 @@ export function createScapiSchemasClient(config: ScapiSchemasClientConfig, auth:
 
   return client;
 }
+
+/**
+ * Build the base URL for a SCAPI API endpoint.
+ *
+ * Returns the base URL where the actual SCAPI API can be called (not the schema metadata URL).
+ * This URL is where you make API requests to the SCAPI service itself.
+ *
+ * @param shortCode - SCAPI instance short code (e.g., "kv7kzm78")
+ * @param apiFamily - API family (e.g., "shopper", "checkout", "product")
+ * @param apiName - API name (e.g., "products", "baskets", "orders")
+ * @param apiVersion - API version (e.g., "v1", "v2")
+ * @returns Full base URL for the SCAPI API
+ *
+ * @example
+ * ```typescript
+ * import { buildScapiApiUrl } from '@salesforce/b2c-tooling-sdk/clients';
+ *
+ * const url = buildScapiApiUrl("kv7kzm78", "shopper", "products", "v1");
+ * // Returns: "https://kv7kzm78.api.commercecloud.salesforce.com/shopper/products/v1"
+ *
+ * // Use this URL as the base for API calls:
+ * // GET https://kv7kzm78.api.commercecloud.salesforce.com/shopper/products/v1/products
+ * // GET https://kv7kzm78.api.commercecloud.salesforce.com/shopper/products/v1/products/{id}
+ * ```
+ */
+export function buildScapiApiUrl(shortCode: string, apiFamily: string, apiName: string, apiVersion: string): string {
+  return `https://${shortCode}.api.commercecloud.salesforce.com/${apiFamily}/${apiName}/${apiVersion}`;
+}
