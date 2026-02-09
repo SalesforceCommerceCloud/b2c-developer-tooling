@@ -12,23 +12,31 @@ For the full command reference with all flags and options, see [Account Manager 
 
 ## Authentication
 
-Account Manager commands support two authentication methods. The right choice depends on whether you're working interactively or automating operations.
+Account Manager commands work out of the box — no configuration required. The CLI uses a built-in public client that authenticates via browser login. For automation, you can provide your own API client credentials.
+
+### Zero-Config (Default)
+
+Just run commands. The CLI opens a browser for login using the built-in client:
+
+```bash
+# Works immediately — opens browser for login
+b2c am users list
+b2c am orgs list
+```
+
+Your user account's roles determine what operations you can perform (see [Role Requirements](#role-requirements)).
 
 ### User Authentication (`--user-auth`)
 
-Opens a browser for interactive login. Uses roles assigned to your **user account** in Account Manager. Best for development and manual operations.
+When you have client credentials configured but want browser-based login instead, use `--user-auth`:
 
 ```bash
-# List users with browser-based login
-b2c am users list --client-id $SFCC_CLIENT_ID --user-auth
+# Force browser login even with SFCC_CLIENT_SECRET set
+b2c am users list --user-auth
 
 # Manage organizations (requires user auth)
-b2c am orgs list --client-id $SFCC_CLIENT_ID --user-auth
+b2c am orgs list --user-auth
 ```
-
-Requirements:
-- A `--client-id` with `http://localhost:8080` in its redirect URLs
-- Your user account must have the appropriate Account Manager roles (see [Role Requirements](#role-requirements))
 
 ### Client Credentials
 
@@ -45,7 +53,7 @@ Requirements:
 
 ### Authentication Order
 
-By default, the CLI tries client credentials first (if `--client-secret` is provided), then falls back to user authentication. To force browser-based login, pass `--user-auth`.
+By default, the CLI tries client credentials first (if `--client-secret` is provided), then falls back to browser-based user authentication (using either your configured `--client-id` or the built-in public client). To force browser-based login, pass `--user-auth`.
 
 ### Role Requirements
 
@@ -67,12 +75,18 @@ If authentication fails, the CLI provides contextual error messages recommending
 
 ### For Interactive Use
 
+No setup required. Account Manager commands use the CLI's built-in public client by default:
+
+```bash
+b2c am users list
+```
+
+If you need to use your own API client (for specific scopes or organization restrictions):
+
 1. In [Account Manager](https://account.demandware.com), find or create an API client
 2. Under **Redirect URLs**, add `http://localhost:8080`
 3. Under **Allowed Scopes**, add: `mail roles tenantFilter openid`
 4. Set **Default Scopes** to: `mail roles tenantFilter openid`
-
-Then use it with `--user-auth`:
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id

@@ -17,23 +17,16 @@ These flags are available on all Account Manager commands:
 
 ## Authentication
 
-Account Manager commands support both client credentials and browser-based user authentication. By default, the CLI tries client credentials first (if `--client-secret` is provided), then falls back to user authentication.
+Account Manager commands work out of the box using the CLI's built-in public client, which authenticates via browser login (implicit flow). No API client configuration is required for interactive use.
 
-Use `--user-auth` to force browser-based authentication, which uses your user account's roles instead of the API client's roles.
-
-### Required Configuration
-
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID for Account Manager |
-| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret (not required with `--user-auth`) |
+For automation or CI/CD, you can provide your own API client credentials. Use `--user-auth` to force browser-based authentication when you have client credentials configured but want to use your user account's roles instead.
 
 ### Required Roles by Subtopic
 
 Different Account Manager operations require different roles depending on the authentication method:
 
-| Subtopic | Client Credentials (roles on API client) | User Auth `--user-auth` (roles on user) |
-|----------|------------------------------------------|----------------------------------------|
+| Subtopic | Client Credentials (roles on API client) | User Auth / built-in client (roles on user) |
+|----------|------------------------------------------|---------------------------------------------|
 | `users`, `roles` | User Administrator | Account Administrator or User Administrator |
 | `orgs` | Not supported — use `--user-auth` | Account Administrator |
 | `clients` | Not supported — use `--user-auth` | Account Administrator or API Administrator |
@@ -41,15 +34,16 @@ Different Account Manager operations require different roles depending on the au
 ### Configuration
 
 ```bash
-# Set Account Manager host
-export SFCC_ACCOUNT_MANAGER_HOST=account.demandware.com
+# No configuration needed — opens browser for login
+b2c am users list
 
-# Set OAuth credentials
+# Client Credentials (for automation)
 export SFCC_CLIENT_ID=my-client-id
 export SFCC_CLIENT_SECRET=my-client-secret
+b2c am users list
 
-# Or use browser-based authentication (no secret needed)
-b2c am users list --client-id my-client-id --user-auth
+# Force browser-based login even with client credentials configured
+b2c am users list --user-auth
 ```
 
 ---

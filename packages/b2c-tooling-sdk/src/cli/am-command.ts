@@ -9,6 +9,7 @@ import {createAccountManagerClient} from '../clients/am-api.js';
 import type {AccountManagerClient} from '../clients/am-api.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
+import {DEFAULT_PUBLIC_CLIENT_ID} from '../defaults.js';
 
 /** Account Manager role: User Administrator */
 const AM_USER_ADMIN = 'User Administrator';
@@ -50,6 +51,10 @@ const AUTH_ERROR_PATTERNS = [
  * }
  */
 export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T> {
+  protected override getDefaultClientId(): string {
+    return DEFAULT_PUBLIC_CLIENT_ID;
+  }
+
   private _accountManagerClient?: AccountManagerClient;
   private _authStrategy?: OAuthStrategy | ImplicitOAuthStrategy;
 
