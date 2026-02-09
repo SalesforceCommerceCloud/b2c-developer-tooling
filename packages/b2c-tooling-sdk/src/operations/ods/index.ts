@@ -16,3 +16,12 @@ export {
   resolveSandboxId,
   SandboxNotFoundError,
 } from './sandbox-lookup.js';
+
+export {
+  waitForSandbox,
+  SandboxPollingTimeoutError,
+  SandboxPollingError,
+  SandboxTerminalStateError,
+} from './wait-for-sandbox.js';
+
+export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './wait-for-sandbox.js';

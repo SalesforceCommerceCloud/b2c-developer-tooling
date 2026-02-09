@@ -1,0 +1,371 @@
+'use strict';
+
+/**
+ * <%= serviceName %> Service
+ *
+ * SFTP service for secure file transfer operations.
+ * Configure in Business Manager: Administration > Operations > Services
+ *
+ * Service ID: <%= cartridgeName %>.<%= serviceName.toLowerCase() %>
+ *
+ * Credential configuration:
+ * - URL: sftp://hostname:port (default port 22)
+ * - User: SFTP username
+ * - Password: SFTP password or private key passphrase
+ *
+ * @module scripts/services/<%= serviceName %>Service
+ */
+
+var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
+var Logger = require('dw/system/Logger');
+var File = require('dw/io/File');
+
+var log = Logger.getLogger('<%= serviceName %>Service', '<%= cartridgeName %>');
+
+/**
+ * Service ID - must match Business Manager configuration
+ * @type {string}
+ */
+var SERVICE_ID = '<%= cartridgeName %>.<%= serviceName.toLowerCase() %>';
+
+/**
+ * Supported SFTP operations
+ * @enum {string}
+ */
+var Operations = {
+    LIST: 'list',
+    GET: 'get',
+    GET_BINARY: 'getBinary',
+    PUT: 'put',
+    PUT_BINARY: 'putBinary',
+    DELETE: 'del',
+    MKDIR: 'mkdir',
+    RENAME: 'rename',
+    FILE_INFO: 'getFileInfo'
+};
+
+/**
+ * Create the <%= serviceName %> SFTP service instance
+ * @returns {dw.svc.FTPService} The service instance
+ */
+function createService() {
+    return LocalServiceRegistry.createService(SERVICE_ID, {
+        /**
+         * Configure the SFTP operation
+         * @param {dw.svc.FTPService} svc - The service instance
+         * @param {Object} params - Operation parameters
+         */
+        createRequest: function (svc, params) {
+            var operation = params.operation || Operations.LIST;
+            var args = [];
+
+            switch (operation) {
+                case Operations.LIST:
+                    args = [params.path || '/'];
+                    break;
+
+                case Operations.GET:
+                    args = [params.remotePath];
+                    break;
+
+                case Operations.GET_BINARY:
+                    var downloadFile = new File(File.IMPEX + '/src/' + params.localFilename);
+                    args = [params.remotePath, downloadFile];
+                    break;
+
+                case Operations.PUT:
+                    args = [params.remotePath, params.content];
+                    break;
+
+                case Operations.PUT_BINARY:
+                    var uploadFile = new File(File.IMPEX + '/src/' + params.localFilename);
+                    args = [params.remotePath, uploadFile];
+                    break;
+
+                case Operations.DELETE:
+                    args = [params.remotePath];
+                    break;
+
+                case Operations.MKDIR:
+                    args = [params.remotePath];
+                    break;
+
+                case Operations.RENAME:
+                    args = [params.oldPath, params.newPath];
+                    break;
+
+                case Operations.FILE_INFO:
+                    args = [params.remotePath];
+                    break;
+
+                default:
+                    throw new Error('Unknown SFTP operation: ' + operation);
+            }
+
+            svc.setOperation.apply(svc, [operation].concat(args));
+        },
+
+        /**
+         * Parse the SFTP response
+         * @param {dw.svc.FTPService} svc - The service instance
+         * @param {*} response - The operation result
+         * @returns {Object} Parsed response
+         */
+        parseResponse: function (svc, response) {
+<% if (includeErrorHandling) { %>
+            var result = {
+                success: true,
+                data: null
+            };
+
+            // Handle different response types
+            if (response === null || response === undefined) {
+                result.success = false;
+                result.data = null;
+            } else if (typeof response === 'boolean') {
+                result.success = response;
+                result.data = response;
+            } else if (Array.isArray(response) || (response && typeof response.length === 'number')) {
+                // File list - convert to plain objects
+                var files = [];
+                for (var i = 0; i < response.length; i++) {
+                    var f = response[i];
+                    files.push({
+                        name: f.name,
+                        directory: f.directory,
+                        size: f.size,
+                        modificationTime: f.modificationTime
+                    });
+                }
+                result.data = files;
+            } else if (response && response.name !== undefined) {
+                // Single file info
+                result.data = {
+                    name: response.name,
+                    directory: response.directory,
+                    size: response.size,
+                    modificationTime: response.modificationTime
+                };
+            } else {
+                // String content or other
+                result.data = response;
+            }
+
+            return result;
+<% } else { %>
+            // Handle file list responses
+            if (Array.isArray(response) || (response && typeof response.length === 'number')) {
+                var files = [];
+                for (var i = 0; i < response.length; i++) {
+                    var f = response[i];
+                    files.push({
+                        name: f.name,
+                        directory: f.directory,
+                        size: f.size,
+                        modificationTime: f.modificationTime
+                    });
+                }
+                return files;
+            }
+            return response;
+<% } %>
+        },
+<% if (includeMocking) { %>
+
+        /**
+         * Mock SFTP operations for testing
+         * @param {dw.svc.FTPService} svc - The service instance
+         * @param {Object} params - Operation parameters
+         * @returns {*} Mock response
+         */
+        mockCall: function (svc, params) {
+            log.info('<%= serviceName %>Service mock call: ' + params.operation);
+
+            switch (params.operation) {
+                case Operations.LIST:
+                    return [
+                        { name: 'mock-file-1.xml', directory: false, size: 1024, modificationTime: new Date() },
+                        { name: 'mock-file-2.csv', directory: false, size: 2048, modificationTime: new Date() },
+                        { name: 'archive', directory: true, size: 0, modificationTime: new Date() }
+                    ];
+
+                case Operations.GET:
+                    return '<?xml version="1.0"?><mock>Mock file content</mock>';
+
+                case Operations.FILE_INFO:
+                    return { name: 'mock-file.xml', directory: false, size: 1024, modificationTime: new Date() };
+
+                default:
+                    return true;
+            }
+        },
+<% } %>
+
+        /**
+         * Filter sensitive data from log messages
+         * @param {string} msg - The message to filter
+         * @returns {string} Filtered message
+         */
+        filterLogMessage: function (msg) {
+            // Filter password from connection string
+            msg = msg.replace(/password=[^&\s]+/gi, 'password=***');
+            return msg;
+        }
+    });
+}
+
+/**
+ * Get or create the service instance
+ * @returns {dw.svc.FTPService} The service instance
+ */
+function getService() {
+    return createService();
+}
+
+/**
+ * List files in a directory
+ *
+ * @param {string} [path='/'] - Remote directory path
+ * @returns {dw.svc.Result} Service result with file list
+ *
+ * @example
+ * var result = <%= serviceName %>Service.listFiles('/incoming');
+ * if (result.ok) {
+ *     result.object<% if (includeErrorHandling) { %>.data<% } %>.forEach(function(file) {
+ *         log.info('File: ' + file.name + ' (' + file.size + ' bytes)');
+ *     });
+ * }
+ */
+function listFiles(path) {
+    return call({ operation: Operations.LIST, path: path || '/' });
+}
+
+/**
+ * Download file content as string
+ *
+ * @param {string} remotePath - Remote file path
+ * @returns {dw.svc.Result} Service result with file content
+ */
+function getFile(remotePath) {
+    return call({ operation: Operations.GET, remotePath: remotePath });
+}
+
+/**
+ * Download file to local IMPEX directory
+ *
+ * @param {string} remotePath - Remote file path
+ * @param {string} localFilename - Local filename (saved to IMPEX/src/)
+ * @returns {dw.svc.Result} Service result (success boolean)
+ */
+function downloadFile(remotePath, localFilename) {
+    return call({
+        operation: Operations.GET_BINARY,
+        remotePath: remotePath,
+        localFilename: localFilename
+    });
+}
+
+/**
+ * Upload string content to remote file
+ *
+ * @param {string} remotePath - Remote file path
+ * @param {string} content - File content
+ * @returns {dw.svc.Result} Service result (success boolean)
+ */
+function putFile(remotePath, content) {
+    return call({
+        operation: Operations.PUT,
+        remotePath: remotePath,
+        content: content
+    });
+}
+
+/**
+ * Upload local file to remote path
+ *
+ * @param {string} localFilename - Local filename (from IMPEX/src/)
+ * @param {string} remotePath - Remote file path
+ * @returns {dw.svc.Result} Service result (success boolean)
+ */
+function uploadFile(localFilename, remotePath) {
+    return call({
+        operation: Operations.PUT_BINARY,
+        localFilename: localFilename,
+        remotePath: remotePath
+    });
+}
+
+/**
+ * Delete a remote file
+ *
+ * @param {string} remotePath - Remote file path
+ * @returns {dw.svc.Result} Service result (success boolean)
+ */
+function deleteFile(remotePath) {
+    return call({ operation: Operations.DELETE, remotePath: remotePath });
+}
+
+/**
+ * Move or rename a remote file
+ *
+ * @param {string} oldPath - Current file path
+ * @param {string} newPath - New file path
+ * @returns {dw.svc.Result} Service result (success boolean)
+ */
+function moveFile(oldPath, newPath) {
+    return call({
+        operation: Operations.RENAME,
+        oldPath: oldPath,
+        newPath: newPath
+    });
+}
+
+/**
+ * Get file metadata
+ *
+ * @param {string} remotePath - Remote file path
+ * @returns {dw.svc.Result} Service result with file info
+ */
+function getFileInfo(remotePath) {
+    return call({ operation: Operations.FILE_INFO, remotePath: remotePath });
+}
+
+/**
+ * Generic service call
+ *
+ * @param {Object} params - Operation parameters
+ * @param {string} params.operation - SFTP operation (list, get, put, etc.)
+ * @param {string} [params.path] - Directory path (for list)
+ * @param {string} [params.remotePath] - Remote file path
+ * @param {string} [params.localFilename] - Local filename
+ * @param {string} [params.content] - File content (for put)
+ * @param {string} [params.oldPath] - Old path (for rename)
+ * @param {string} [params.newPath] - New path (for rename)
+ * @returns {dw.svc.Result} Service result
+ */
+function call(params) {
+    var service = getService();
+    var result = service.call(params);
+
+    if (!result.ok) {
+        log.error('<%= serviceName %>Service call failed: ' + result.errorMessage +
+            ' (operation: ' + params.operation + ', status: ' + result.status + ')');
+    }
+
+    return result;
+}
+
+module.exports = {
+    SERVICE_ID: SERVICE_ID,
+    Operations: Operations,
+    getService: getService,
+    call: call,
+    listFiles: listFiles,
+    getFile: getFile,
+    downloadFile: downloadFile,
+    putFile: putFile,
+    uploadFile: uploadFile,
+    deleteFile: deleteFile,
+    moveFile: moveFile,
+    getFileInfo: getFileInfo
+};

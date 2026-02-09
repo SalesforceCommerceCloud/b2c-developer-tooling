@@ -62,6 +62,310 @@ describe('clients/middleware', () => {
 
       expect(modifiedRequest.headers.get('Authorization')).to.equal(null);
     });
+
+    it('retries request with fresh token on 401 response', async () => {
+      let tokenCallCount = 0;
+      let invalidateCalled = false;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          tokenCallCount++;
+          return tokenCallCount === 1 ? 'Bearer expired-token' : 'Bearer fresh-token';
+        },
+        invalidateToken() {
+          invalidateCalled = true;
+        },
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      // Simulate initial request
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Simulate a prior successful response so that hasHadSuccess is true
+      await middleware.onResponse!({
+        request: modifiedRequest,
+        response: new Response('OK', {status: 200}),
+      } as unknown as OnResponseParams);
+
+      // Stub global fetch to return success on retry
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = sinon.stub().resolves(new Response('OK', {status: 200}));
+
+      try {
+        // Simulate 401 response
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        expect(invalidateCalled).to.equal(true);
+        expect(tokenCallCount).to.equal(2); // Initial + retry
+        expect(result).to.not.equal(unauthorizedResponse);
+        expect(result?.status).to.equal(200);
+
+        // Verify the retry request had the fresh token
+        const fetchStub = globalThis.fetch as sinon.SinonStub;
+        expect(fetchStub.calledOnce).to.equal(true);
+        const retryRequest = fetchStub.firstCall.args[0] as Request;
+        expect(retryRequest.headers.get('Authorization')).to.equal('Bearer fresh-token');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('does not retry more than once (returns 401 on second failure)', async () => {
+      let tokenCallCount = 0;
+      let invalidateCallCount = 0;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          tokenCallCount++;
+          return `Bearer token-${tokenCallCount}`;
+        },
+        invalidateToken() {
+          invalidateCallCount++;
+        },
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      // Simulate initial request
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Simulate a prior successful response so that hasHadSuccess is true
+      await middleware.onResponse!({
+        request: modifiedRequest,
+        response: new Response('OK', {status: 200}),
+      } as unknown as OnResponseParams);
+
+      // Stub global fetch to also return 401
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = sinon.stub().resolves(new Response('Unauthorized', {status: 401}));
+
+      try {
+        // First 401 response - should trigger retry
+        const firstUnauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: firstUnauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        // Should have retried once
+        expect(invalidateCallCount).to.equal(1);
+        expect(tokenCallCount).to.equal(2);
+
+        // The retry also returned 401, but we don't retry again
+        expect(result?.status).to.equal(401);
+
+        // Fetch should only have been called once (for the retry)
+        const fetchStub = globalThis.fetch as sinon.SinonStub;
+        expect(fetchStub.calledOnce).to.equal(true);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('does not retry when strategy lacks invalidateToken', async () => {
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          return 'Bearer test-token';
+        },
+        // No invalidateToken method
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Stub global fetch (should not be called)
+      const originalFetch = globalThis.fetch;
+      const fetchStub = sinon.stub();
+      globalThis.fetch = fetchStub;
+
+      try {
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        // Should return original 401 response without retry
+        expect(result).to.equal(unauthorizedResponse);
+        expect(fetchStub.called).to.equal(false);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('handles requests with body (POST/PUT) on retry', async () => {
+      let tokenCallCount = 0;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          tokenCallCount++;
+          return tokenCallCount === 1 ? 'Bearer expired-token' : 'Bearer fresh-token';
+        },
+        invalidateToken() {},
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const bodyContent = JSON.stringify({data: 'test'});
+      const request = new Request('https://example.com/items', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: bodyContent,
+        duplex: 'half',
+      } as RequestInit);
+
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Simulate a prior successful response so that hasHadSuccess is true
+      await middleware.onResponse!({
+        request: modifiedRequest,
+        response: new Response('OK', {status: 200}),
+      } as unknown as OnResponseParams);
+
+      // Stub global fetch to return success
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = sinon.stub().resolves(new Response('Created', {status: 201}));
+
+      try {
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        expect(result?.status).to.equal(201);
+
+        // Verify retry request preserved the body
+        const fetchStub = globalThis.fetch as sinon.SinonStub;
+        const retryRequest = fetchStub.firstCall.args[0] as Request;
+        const retryBody = await retryRequest.text();
+        expect(retryBody).to.equal(bodyContent);
+        expect(retryRequest.method).to.equal('POST');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('does not retry on initial 401 when no prior successful response', async () => {
+      let invalidateCalled = false;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          return 'Bearer test-token';
+        },
+        invalidateToken() {
+          invalidateCalled = true;
+        },
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Stub global fetch (should not be called)
+      const originalFetch = globalThis.fetch;
+      const fetchStub = sinon.stub();
+      globalThis.fetch = fetchStub;
+
+      try {
+        // Send a 401 without any prior successful response
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        // Should return original 401 without retrying
+        expect(result).to.equal(unauthorizedResponse);
+        expect(fetchStub.called).to.equal(false);
+        expect(invalidateCalled).to.equal(false);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('passes through non-401 responses unchanged', async () => {
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          return 'Bearer test-token';
+        },
+        invalidateToken() {},
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Test various non-401 status codes
+      for (const status of [200, 201, 400, 403, 404, 500]) {
+        const response = new Response('Response', {status});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response,
+        } as unknown as OnResponseParams);
+
+        expect(result).to.equal(response);
+      }
+    });
   });
 
   describe('createExtraParamsMiddleware', () => {

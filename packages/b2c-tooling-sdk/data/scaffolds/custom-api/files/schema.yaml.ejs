@@ -1,0 +1,188 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: <%= apiName %>
+  description: <%= apiDescription %>
+components:
+  securitySchemes:
+<% if (apiType === 'shopper') { %>
+    ShopperToken:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token
+          scopes:
+            c_<%= apiName.replace(/-/g, '_') %>: Access <%= apiName %> API
+<% } else { %>
+    AmOAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            c_<%= apiName.replace(/-/g, '_') %>: Access <%= apiName %> API
+<% } %>
+<% if (includeExampleEndpoints) { %>
+paths:
+  /hello:
+    get:
+      summary: Returns a hello message
+      operationId: getHello
+<% if (apiType === 'shopper') { %>
+      parameters:
+        - in: query
+          name: siteId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+<% } %>
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+      security:
+<% if (apiType === 'shopper') { %>
+        - ShopperToken: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } else { %>
+        - AmOAuth2: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } %>
+  /items:
+    get:
+      summary: Get a list of items
+      operationId: getItems
+      parameters:
+<% if (apiType === 'shopper') { %>
+        - in: query
+          name: siteId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+<% } %>
+        - in: query
+          name: c_limit
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: c_offset
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  total:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+      security:
+<% if (apiType === 'shopper') { %>
+        - ShopperToken: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } else { %>
+        - AmOAuth2: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } %>
+  /items/{itemId}:
+    get:
+      summary: Get a specific item by ID
+      operationId: getItem
+      parameters:
+<% if (apiType === 'shopper') { %>
+        - in: query
+          name: siteId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+<% } %>
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  message:
+                    type: string
+      security:
+<% if (apiType === 'shopper') { %>
+        - ShopperToken: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } else { %>
+        - AmOAuth2: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } %>
+<% } else { %>
+paths:
+  /example:
+    get:
+      summary: Example endpoint
+      operationId: getExample
+<% if (apiType === 'shopper') { %>
+      parameters:
+        - in: query
+          name: siteId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+<% } %>
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+      security:
+<% if (apiType === 'shopper') { %>
+        - ShopperToken: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } else { %>
+        - AmOAuth2: [c_<%= apiName.replace(/-/g, '_') %>]
+<% } %>
+<% } %>

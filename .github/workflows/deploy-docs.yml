@@ -43,8 +43,58 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
-      - name: Build documentation
+      - name: Download UX Studio artifacts
+        run: |
+          curl -fsSL https://sfcc-uxstudio.s3.amazonaws.com/uxstudio-4.5.tar.gz -o /tmp/uxstudio-4.5.tar.gz
+          curl -fsSL https://sfcc-uxstudio.s3.amazonaws.com/uxstudio-4.6.tar.gz -o /tmp/uxstudio-4.6.tar.gz
+          mkdir -p docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.5.tar.gz -C docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.6.tar.gz -C docs/public/uxstudio
+
+      - name: Get latest release tag
+        id: release
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "exists=$([[ -n $LATEST_TAG ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Build main documentation
         run: pnpm run docs:build
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.tag }}
+
+      - name: Build release documentation
+        if: steps.release.outputs.exists == 'true'
+        run: |
+          # Save main build and config (config has version dropdown code)
+          mv docs/.vitepress/dist docs/.vitepress/dist-main
+          cp docs/.vitepress/config.mts /tmp/config.mts
+
+          # Remove S3-extracted uxstudio files before checkout to avoid conflicts
+          # (older tags still have these files tracked in git)
+          rm -rf docs/public/uxstudio
+
+          # Checkout release tag
+          git checkout ${{ steps.release.outputs.tag }}
+
+          # Ensure UX Studio artifacts are present (older tags have them in git,
+          # future tags won't — always extract from S3 to be safe)
+          rm -rf docs/public/uxstudio
+          mkdir -p docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.5.tar.gz -C docs/public/uxstudio
+          tar -xzf /tmp/uxstudio-4.6.tar.gz -C docs/public/uxstudio
+
+          # Restore config from main (has version dropdown and dynamic base path)
+          cp /tmp/config.mts docs/.vitepress/config.mts
+
+          # Build at release tag with main's config
+          pnpm install --frozen-lockfile
+          pnpm -r run build
+          RELEASE_VERSION=${{ steps.release.outputs.tag }} IS_RELEASE_BUILD=true pnpm run docs:build
+
+          # Combine: main at root, release in /release/
+          mv docs/.vitepress/dist docs/.vitepress/dist-main/release
+          mv docs/.vitepress/dist-main docs/.vitepress/dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

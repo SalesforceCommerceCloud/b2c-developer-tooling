@@ -97,7 +97,7 @@ For complete authentication setup instructions, see the [Authentication Setup Gu
 | [Code](/cli/code) deploy/watch | WebDAV credentials |
 | [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI configuration |
 | SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | OAuth + SCAPI scopes |
-| [ODS](/cli/ods), [SLAS](/cli/slas) | OAuth + appropriate roles |
+| [Sandbox](/cli/sandbox), [SLAS](/cli/slas) | OAuth + appropriate roles |
 | [MRT](/cli/mrt) | API Key |
 
 See [Configuration](/guide/configuration) for setting up credentials via environment variables or config files.

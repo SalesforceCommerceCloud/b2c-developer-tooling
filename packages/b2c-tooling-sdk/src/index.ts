@@ -68,13 +68,16 @@ export {
   createCustomApisClient,
   createAccountManagerUsersClient,
   createAccountManagerRolesClient,
+  createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
   createCdnZonesClient,
   toOrganizationId,
   toTenantId,
   buildTenantScope,
   getApiErrorMessage,
+  isValidRoleTenantFilter,
   ORGANIZATION_ID_PREFIX,
+  ROLE_TENANT_FILTER_PATTERN,
   SCAPI_TENANT_SCOPE_PREFIX,
   CUSTOM_APIS_DEFAULT_SCOPES,
   CDN_ZONES_READ_SCOPES,
@@ -122,6 +125,13 @@ export type {
   AccountManagerRolesError,
   RoleCollection,
   ListRolesOptions,
+  AccountManagerApiClientsClient,
+  AccountManagerApiClient,
+  APIClientCreate,
+  APIClientUpdate,
+  APIClientCollection,
+  ApiClientExpandOption,
+  ListApiClientsOptions,
   AccountManagerOrgsClient,
   AccountManagerOrganization,
   OrganizationCollection,
@@ -227,7 +237,13 @@ export {
   parseFriendlySandboxId,
   resolveSandboxId,
   SandboxNotFoundError,
+  waitForSandbox,
+  SandboxPollingTimeoutError,
+  SandboxPollingError,
+  SandboxTerminalStateError,
 } from './operations/ods/index.js';
+
+export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
 
 // Operations - Users
 export {
@@ -250,7 +266,7 @@ export {getRole, listRoles} from './operations/roles/index.js';
 export {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from './operations/orgs/index.js';
 
 // Defaults
-export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';
+export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from './defaults.js';
 
 // Version info
 export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';

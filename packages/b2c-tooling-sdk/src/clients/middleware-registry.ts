@@ -56,6 +56,7 @@ export type HttpClientType =
   | 'webdav'
   | 'am-users-api'
   | 'am-roles-api'
+  | 'am-apiclients-api'
   | 'am-orgs-api';
 
 /**

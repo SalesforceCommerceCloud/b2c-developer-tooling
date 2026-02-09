@@ -1,6 +1,39 @@
 import { defineConfig } from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 
+// Version configuration from environment
+const releaseVersion = process.env.RELEASE_VERSION || 'unreleased';
+const isReleaseBuild = process.env.IS_RELEASE_BUILD === 'true';
+
+// Base paths - release build lives in /release/ subdirectory
+const siteBase = '/b2c-developer-tooling';
+const basePath = isReleaseBuild ? `${siteBase}/release/` : `${siteBase}/`;
+
+// Build version dropdown items
+// VitePress prepends base path to links starting with /, so we use relative paths
+// that work correctly for each build context
+function getVersionItems() {
+  if (releaseVersion === 'unreleased') {
+    // No release yet - only show dev
+    return [{ text: 'Development (main)', link: '/' }];
+  }
+
+  if (isReleaseBuild) {
+    // Release build: base is /b2c-developer-tooling/release/
+    // Use ../ to navigate up to main docs
+    return [
+      { text: 'Development (main)', link: '../' },
+      { text: 'Latest Release', link: '/' },
+    ];
+  }
+
+  // Main build: base is /b2c-developer-tooling/
+  return [
+    { text: 'Development (main)', link: '/' },
+    { text: 'Latest Release', link: '/release/' },
+  ];
+}
+
 const guideSidebar = [
   {
     text: 'Getting Started',
@@ -15,6 +48,7 @@ const guideSidebar = [
     text: 'Guides',
     items: [
       { text: 'Authentication Setup', link: '/guide/authentication' },
+      { text: 'Scaffolding', link: '/guide/scaffolding' },
       { text: 'IDE Support', link: '/guide/ide-support' },
       { text: 'Security', link: '/guide/security' },
     ],
@@ -35,23 +69,51 @@ const guideSidebar = [
       { text: 'Logs Commands', link: '/cli/logs' },
       { text: 'Sites Commands', link: '/cli/sites' },
       { text: 'WebDAV Commands', link: '/cli/webdav' },
-      { text: 'ODS Commands', link: '/cli/ods' },
+      { text: 'Sandbox Commands', link: '/cli/sandbox' },
       { text: 'MRT Commands', link: '/cli/mrt' },
       { text: 'eCDN Commands', link: '/cli/ecdn' },
       { text: 'SLAS Commands', link: '/cli/slas' },
       { text: 'Custom APIs', link: '/cli/custom-apis' },
       { text: 'SCAPI Schemas', link: '/cli/scapi-schemas' },
       { text: 'Setup Commands', link: '/cli/setup' },
+      { text: 'Scaffold Commands', link: '/cli/scaffold' },
       { text: 'Auth Commands', link: '/cli/auth' },
+      { text: 'Account Manager Commands', link: '/cli/account-manager' },
       { text: 'Logging', link: '/cli/logging' },
     ],
   },
 ];
 
+// Script to force hard navigation for version switching links
+// VitePress SPA router can't handle navigation between separate VitePress builds
+const versionSwitchScript = `
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a');
+  if (!link) return;
+  const href = link.getAttribute('href');
+  // Check if this is a version switch link
+  if (href && (href.includes('/release/') || href === '../')) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (href === '../') {
+      // Navigate from /release/ back to main - construct path explicitly
+      // to avoid relative path issues with trailing slashes
+      const path = window.location.pathname;
+      const mainPath = path.replace(/\\/release\\/.*$/, '/').replace(/\\/release$/, '/');
+      window.location.href = mainPath;
+    } else {
+      window.location.href = link.href;
+    }
+  }
+}, true);
+`;
+
 export default defineConfig({
   title: 'B2C DX',
   description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
-  base: '/b2c-developer-tooling/',
+  base: basePath,
+
+  head: [['script', {}, versionSwitchScript]],
 
   // Ignore dead links in api-readme.md (links are valid after TypeDoc generates the API docs)
   ignoreDeadLinks: [/^\.\/clients\//],
@@ -70,6 +132,10 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/' },
       { text: 'CLI Reference', link: '/cli/' },
       { text: 'API Reference', link: '/api/' },
+      {
+        text: isReleaseBuild ? 'Latest Release' : 'dev',
+        items: getVersionItems(),
+      },
     ],
 
     footer: {

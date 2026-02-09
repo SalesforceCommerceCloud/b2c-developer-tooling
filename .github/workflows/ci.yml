@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'renovate/**'
   pull_request:
     branches:
       - main
@@ -12,6 +13,9 @@ permissions:
   contents: read
   actions: read
   checks: write
+
+env:
+  SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
 
 jobs:
   test:

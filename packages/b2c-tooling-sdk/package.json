@@ -233,6 +233,17 @@
         "default": "./dist/cjs/skills/index.js"
       }
     },
+    "./scaffold": {
+      "development": "./src/scaffold/index.ts",
+      "import": {
+        "types": "./dist/esm/scaffold/index.d.ts",
+        "default": "./dist/esm/scaffold/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/scaffold/index.d.ts",
+        "default": "./dist/cjs/scaffold/index.js"
+      }
+    },
     "./test-utils": {
       "development": "./src/test-utils/index.ts",
       "import": {
@@ -265,7 +276,7 @@
     "data"
   ],
   "scripts": {
-    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts",
+    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts",
     "build": "pnpm run generate:types && pnpm run build:esm && pnpm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
@@ -294,6 +305,7 @@
     "@tony.ganchev/eslint-plugin-header": "^3.1.11",
     "@types/archiver": "^7.0.0",
     "@types/chai": "^4.3.20",
+    "@types/ejs": "^3.1.5",
     "@types/mocha": "^10.0.10",
     "@types/node": "^18.19.130",
     "@types/sinon": "^21.0.0",
@@ -329,9 +341,10 @@
     "archiver": "^7.0.1",
     "chokidar": "^5.0.0",
     "cliui": "^9.0.1",
+    "ejs": "^3.1.10",
     "fuse.js": "^7.0.0",
     "glob": "^13.0.0",
-    "i18next": "^25.6.3",
+    "i18next": "25.7.4",
     "jszip": "^3.10.1",
     "minimatch": "^10.1.1",
     "open": "^11.0.0",

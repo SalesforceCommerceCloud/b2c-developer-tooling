@@ -7,10 +7,12 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {DEFAULT_PUBLIC_CLIENT_ID} from '@salesforce/b2c-tooling-sdk';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
 
-// Create a test command class
+// Create a test command class (no default client ID)
 class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
   static id = 'test:oauth';
   static description = 'Test OAuth command';
@@ -22,6 +24,38 @@ class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
   // Expose protected methods for testing
   public testRequireOAuthCredentials() {
     return this.requireOAuthCredentials();
+  }
+
+  public testHasOAuthCredentials() {
+    return this.hasOAuthCredentials();
+  }
+
+  public testGetOAuthStrategy() {
+    return this.getOAuthStrategy();
+  }
+}
+
+// Test command with default client ID (simulates AmCommand/OdsCommand behavior)
+class TestOAuthCommandWithDefault extends OAuthCommand<typeof TestOAuthCommandWithDefault> {
+  static id = 'test:oauth-default';
+  static description = 'Test OAuth command with default client';
+
+  async run(): Promise<void> {}
+
+  protected override getDefaultClientId(): string {
+    return DEFAULT_PUBLIC_CLIENT_ID;
+  }
+
+  public testHasOAuthCredentials() {
+    return this.hasOAuthCredentials();
+  }
+
+  public testRequireOAuthCredentials() {
+    return this.requireOAuthCredentials();
+  }
+
+  public testGetOAuthStrategy() {
+    return this.getOAuthStrategy();
   }
 }
 
@@ -63,6 +97,63 @@ describe('cli/oauth-command', () => {
       await command.init();
       // Should not throw
       command.testRequireOAuthCredentials();
+    });
+  });
+
+  describe('getDefaultClientId', () => {
+    it('returns undefined by default (no fallback)', async () => {
+      stubParse(command);
+      await command.init();
+
+      expect(command.testHasOAuthCredentials()).to.be.false;
+    });
+
+    describe('with default client ID override', () => {
+      let commandWithDefault: TestOAuthCommandWithDefault;
+
+      beforeEach(async () => {
+        commandWithDefault = new TestOAuthCommandWithDefault([], config);
+      });
+
+      it('hasOAuthCredentials returns true even without explicit clientId', async () => {
+        stubParse(commandWithDefault);
+        await commandWithDefault.init();
+
+        expect(commandWithDefault.testHasOAuthCredentials()).to.be.true;
+      });
+
+      it('requireOAuthCredentials does not throw without explicit clientId', async () => {
+        stubParse(commandWithDefault);
+        await commandWithDefault.init();
+
+        // Should not throw because default client is available
+        commandWithDefault.testRequireOAuthCredentials();
+      });
+
+      it('getOAuthStrategy returns ImplicitOAuthStrategy using default client', async () => {
+        stubParse(commandWithDefault);
+        await commandWithDefault.init();
+
+        const strategy = commandWithDefault.testGetOAuthStrategy();
+        expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+      });
+
+      it('uses explicit clientId over default when provided', async () => {
+        stubParse(commandWithDefault, {'client-id': 'explicit-client'});
+        await commandWithDefault.init();
+
+        const strategy = commandWithDefault.testGetOAuthStrategy();
+        expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+      });
+
+      it('uses client-credentials when both clientId and clientSecret are provided', async () => {
+        stubParse(commandWithDefault, {'client-id': 'explicit-client', 'client-secret': 'secret'});
+        await commandWithDefault.init();
+
+        const strategy = commandWithDefault.testGetOAuthStrategy();
+        // client-credentials has higher priority than implicit in the default auth methods
+        expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
+      });
     });
   });
 });

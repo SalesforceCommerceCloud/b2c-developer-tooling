@@ -1,0 +1,50 @@
+{
+    "name": "<%= componentName %>",
+    "description": "<%= componentName %> component for Page Designer",
+    "group": "<%= componentGroup %>",
+    "attribute_definition_groups": [
+        {
+            "id": "main",
+            "name": "Main Settings",
+            "description": "Main component settings",
+            "attribute_definitions": [
+                {
+                    "id": "heading",
+                    "name": "Heading",
+                    "description": "Component heading text",
+                    "type": "string",
+                    "required": false
+                },
+                {
+                    "id": "content",
+                    "name": "Content",
+                    "description": "Main content text",
+                    "type": "markup",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "id": "styling",
+            "name": "Styling",
+            "description": "Visual styling options",
+            "attribute_definitions": [
+                {
+                    "id": "cssClass",
+                    "name": "CSS Class",
+                    "description": "Additional CSS classes",
+                    "type": "string",
+                    "required": false
+                }
+            ]
+        }
+    ]<% if (hasRegions) { %>,
+    "region_definitions": [
+        {
+            "id": "main_region",
+            "name": "Main Region",
+            "description": "Main content region for nested components",
+            "max_components": 10
+        }
+    ]<% } %>
+}

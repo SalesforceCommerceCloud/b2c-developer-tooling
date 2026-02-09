@@ -589,6 +589,40 @@ describe('tools/adapter', () => {
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
+        // Verify origin field is present in mrtConfig (may be undefined if not set)
+        expect(contextReceived?.mrtConfig).to.have.property('origin');
+      });
+
+      it('should pass mrtOrigin through to mrtConfig.origin in context', async () => {
+        // Test that mrtOrigin from config is passed through to context.mrtConfig.origin
+        const config = resolveConfig({
+          mrtApiKey: 'test-api-key-12345',
+          mrtOrigin: 'https://custom-cloud.mobify.com',
+        });
+        const services = Services.fromResolvedConfig(config);
+        let contextReceived: ToolExecutionContext | undefined;
+
+        const tool = createToolAdapter(
+          {
+            name: 'mrt_origin_tool',
+            description: 'Tests mrtOrigin passthrough',
+            toolsets: ['MRT'],
+            requiresMrtAuth: true,
+            inputSchema: {},
+            async execute(_args, context) {
+              contextReceived = context;
+              return 'success';
+            },
+            formatOutput: (output) => textResult(output),
+          },
+          services,
+        );
+
+        const result = await tool.handler({});
+
+        expect(result.isError).to.be.undefined;
+        expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
+        expect(contextReceived?.mrtConfig?.origin).to.equal('https://custom-cloud.mobify.com');
       });
 
       it('should support both requiresInstance and requiresMrtAuth being false', async () => {
