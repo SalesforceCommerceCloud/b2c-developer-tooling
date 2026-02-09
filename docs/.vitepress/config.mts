@@ -69,7 +69,7 @@ const guideSidebar = [
       { text: 'Logs Commands', link: '/cli/logs' },
       { text: 'Sites Commands', link: '/cli/sites' },
       { text: 'WebDAV Commands', link: '/cli/webdav' },
-      { text: 'ODS Commands', link: '/cli/ods' },
+      { text: 'Sandbox Commands', link: '/cli/sandbox' },
       { text: 'MRT Commands', link: '/cli/mrt' },
       { text: 'eCDN Commands', link: '/cli/ecdn' },
       { text: 'SLAS Commands', link: '/cli/slas' },

@@ -61,16 +61,25 @@ You can configure the CLI using environment variables:
 | `SFCC_CONFIG` | Path to config file (dw.json format) |
 | `SFCC_INSTANCE` | Instance name from config file |
 | `SFCC_SERVER` | The B2C instance hostname |
+| `SFCC_WEBDAV_SERVER` | Separate hostname for WebDAV (if different from main hostname) |
+| `SFCC_CODE_VERSION` | Code version for deployments |
 | `SFCC_CLIENT_ID` | OAuth client ID |
 | `SFCC_CLIENT_SECRET` | OAuth client secret |
+| `SFCC_OAUTH_SCOPES` | OAuth scopes to request |
+| `SFCC_AUTH_METHODS` | Comma-separated list of allowed auth methods |
+| `SFCC_SHORTCODE` | SCAPI short code |
+| `SFCC_TENANT_ID` | Organization/tenant ID for SCAPI |
+| `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname for OAuth |
 | `SFCC_USERNAME` | Basic auth username |
 | `SFCC_PASSWORD` | Basic auth password |
-| `SFCC_AUTH_METHODS` | Comma-separated list of allowed auth methods |
-| `SFCC_OAUTH_SCOPES` | OAuth scopes to request |
-| `SFCC_CODE_VERSION` | Code version for deployments |
 | `SFCC_CERTIFICATE` | Path to PKCS12 certificate for two-factor auth (mTLS) |
 | `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate |
 | `SFCC_SELFSIGNED` | Allow self-signed server certificates |
+| `SFCC_SANDBOX_API_HOST` | ODS (sandbox) API hostname |
+| `SFCC_MRT_API_KEY` | MRT API key |
+| `SFCC_MRT_PROJECT` | MRT project slug |
+| `SFCC_MRT_ENVIRONMENT` | MRT environment name |
+| `SFCC_MRT_CLOUD_ORIGIN` | MRT API origin URL override |
 
 ## .env File
 
@@ -90,6 +99,10 @@ Add `.env` to your `.gitignore` to avoid committing credentials.
 ## Configuration File
 
 You can create a `dw.json` file to store instance settings. The CLI searches for this file starting from the current directory and walking up the directory tree.
+
+::: tip Flexible Field Names
+Both camelCase and kebab-case are accepted for all field names in `dw.json`. For example, `client-id` and `clientId` are equivalent, as are `code-version` and `codeVersion`. Legacy aliases like `server` (for `hostname`) and `passphrase` (for `certificatePassphrase`) are also still supported.
+:::
 
 ### Single Instance
 
@@ -144,7 +157,7 @@ If no instance is specified, the config with `"active": true` is used.
 
 | Field | Description |
 |-------|-------------|
-| `hostname` | B2C instance hostname |
+| `hostname` | B2C instance hostname. Also accepts `server`. |
 | `webdav-hostname` | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`. |
 | `code-version` | Code version for deployments |
 | `client-id` | OAuth client ID |
@@ -153,7 +166,14 @@ If no instance is specified, the config with `"active": true` is used.
 | `password` | Basic auth access key (WebDAV) |
 | `oauth-scopes` | OAuth scopes (array of strings) |
 | `auth-methods` | Authentication methods in priority order (array of strings) |
+| `account-manager-host` | Account Manager hostname for OAuth |
 | `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
+| `tenant-id` | Organization/tenant ID for SCAPI |
+| `sandbox-api-host` | ODS (sandbox) API hostname |
+| `mrtApiKey` | MRT API key |
+| `mrtProject` | MRT project slug |
+| `mrtEnvironment` | MRT environment name |
+| `mrtOrigin` | MRT API origin URL override. Also accepts `cloudOrigin`. |
 | `certificate` | Path to PKCS12 certificate for two-factor auth (mTLS) |
 | `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`. |
 | `self-signed` | Allow self-signed server certificates. Also accepts `selfsigned`. |
@@ -177,7 +197,7 @@ For instances that require client certificate authentication:
 The certificate must be in PKCS12 format (`.p12` or `.pfx`). The `self-signed` option is often needed for staging environments with internal certificates.
 
 ::: tip MRT Configuration
-Managed Runtime API key is not stored in `dw.json`. It is loaded from `~/.mobify`. You can specify `mrtProject` and `mrtEnvironment` in `dw.json` for project/environment selection.
+MRT API key can also be loaded from `~/.mobify`. See [MRT API Key](#mrt-api-key) below.
 :::
 
 For multi-instance configurations, each config object also supports:
@@ -206,7 +226,7 @@ You can store project-level defaults in your `package.json` file under the `b2c`
 
 ### Allowed Fields
 
-Only non-sensitive, project-level fields can be configured in `package.json`:
+Only non-sensitive, project-level fields can be configured in `package.json`. Both camelCase and kebab-case are accepted (e.g., `shortCode` or `short-code`):
 
 | Field | Description |
 |-------|-------------|
@@ -215,6 +235,7 @@ Only non-sensitive, project-level fields can be configured in `package.json`:
 | `mrtProject` | MRT project slug |
 | `mrtOrigin` | MRT API origin URL override |
 | `accountManagerHost` | Account Manager hostname for OAuth |
+| `sandboxApiHost` | ODS (sandbox) API hostname |
 
 ::: warning Security Note
 Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `mrtApiKey` are intentionally **not** supported in `package.json`. These should be configured via `dw.json` (which should be in `.gitignore`), environment variables, or secure credential stores.

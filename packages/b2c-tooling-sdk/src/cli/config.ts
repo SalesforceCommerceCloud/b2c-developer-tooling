@@ -68,6 +68,21 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
 }
 
 /**
+ * Extracts ODS-related configuration from oclif flags.
+ *
+ * Includes OAuth flags since ODS operations require OAuth authentication.
+ *
+ * @param flags - Parsed oclif flags
+ * @returns Partial NormalizedConfig with ODS and OAuth fields
+ */
+export function extractOdsFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
+  return {
+    sandboxApiHost: flags['sandbox-api-host'] as string | undefined,
+    ...extractOAuthFlags(flags),
+  };
+}
+
+/**
  * Extracts B2C instance-related configuration from oclif flags.
  *
  * Includes both instance-specific flags (--server, --username, etc.)
