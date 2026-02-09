@@ -300,6 +300,10 @@ When using the `--cloud-origin` flag to specify a different MRT endpoint, the CL
 
 By default, the CLI automatically detects available credentials and tries authentication methods in this order: `client-credentials`, then `implicit`. You can override this behavior to control which methods are used.
 
+::: tip Default Public Client
+For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includes a built-in public client ID. If no `--client-id` is configured, these commands automatically use the built-in client with the implicit flow, opening a browser for authentication. This means you can use these commands with zero configuration.
+:::
+
 ### Available Auth Methods
 
 - `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret). Used for SCAPI/OCAPI and WebDAV.

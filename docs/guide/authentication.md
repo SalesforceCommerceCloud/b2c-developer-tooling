@@ -16,9 +16,14 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [Code](/cli/code) list, activate, delete | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
 | [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
 | SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) |
-| [SLAS](/cli/slas) client management | OAuth | [API Client](#account-manager-api-client) with appropriate roles |
-| [Sandbox](/cli/sandbox) management | OAuth | [API Client](#account-manager-api-client) with `Sandbox API User` role |
+| [SLAS](/cli/slas) client management | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
+| [Sandbox](/cli/sandbox) management | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
+| [Account Manager](/cli/account-manager) | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
 | [MRT](/cli/mrt) commands | MRT API Key | [MRT API Key](#managed-runtime-api-key) |
+
+::: tip Zero-Config for Platform Commands
+Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (implicit flow). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
+:::
 
 ::: tip
 Each CLI command page documents its specific authentication requirements. See the [CLI Reference](/cli/) for details.

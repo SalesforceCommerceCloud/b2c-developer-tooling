@@ -6,7 +6,7 @@
 import {Command, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createSlasClient, getApiErrorMessage, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
+import {createSlasClient, getApiErrorMessage, DEFAULT_PUBLIC_CLIENT_ID, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 export type Client = SlasComponents['schemas']['Client'];
@@ -100,6 +100,10 @@ export function formatApiError(error: unknown, response: Response): string {
  * Provides common flags and helper methods.
  */
 export abstract class SlasClientCommand<T extends typeof Command> extends OAuthCommand<T> {
+  protected override getDefaultClientId(): string {
+    return DEFAULT_PUBLIC_CLIENT_ID;
+  }
+
   /**
    * Ensure tenant exists, creating it if necessary.
    * This is required before creating SLAS clients.
