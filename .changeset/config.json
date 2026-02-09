@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
   "changelog": [
-    "./.changeset/changelog-config.cjs",
+    "./changelog-config.cjs",
     { "repo": "SalesforceCommerceCloud/b2c-developer-tooling" }
   ],
   "commit": false,
