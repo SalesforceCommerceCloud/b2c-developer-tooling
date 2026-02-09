@@ -78,6 +78,17 @@
       content: "📄 ";
     }
     .entries-table .size { text-align: right; color: var(--vscode-descriptionForeground); }
+    .entries-table .actions { width: 4rem; text-align: right; }
+    .entries-table .btn-delete {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.8em;
+      cursor: pointer;
+      background: transparent;
+      color: var(--vscode-errorForeground);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 3px;
+    }
+    .entries-table .btn-delete:hover { background: var(--vscode-inputValidation-errorBackground); }
     .loading, .error {
       padding: 1rem;
       color: var(--vscode-descriptionForeground);
@@ -91,6 +102,17 @@
       font-size: 0.9em;
     }
     .back-link:hover { text-decoration: underline; }
+    .toolbar { margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .toolbar button {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.9em;
+      cursor: pointer;
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border: none;
+      border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--vscode-button-hoverBackground); }
   </style>
 </head>
 <body>
@@ -99,9 +121,12 @@
   <a id="back-link" class="back-link" style="display: none;">← Back</a>
   <div id="roots-view" class="roots-grid"></div>
   <div id="entries-view" style="display: none;">
+    <div id="entries-toolbar" class="toolbar">
+      <button type="button" id="new-folder-btn">New folder</button>
+    </div>
     <table class="entries-table">
       <thead>
-        <tr><th class="name">Name</th><th class="type">Type</th><th class="size">Size</th></tr>
+        <tr><th class="name">Name</th><th class="type">Type</th><th class="size">Size</th><th class="actions"></th></tr>
       </thead>
       <tbody id="entries-body"></tbody>
     </table>
@@ -120,6 +145,8 @@
       const backLink = document.getElementById("back-link");
       const loadingEl = document.getElementById("loading");
       const errorEl = document.getElementById("error");
+      const entriesToolbar = document.getElementById("entries-toolbar");
+      const newFolderBtn = document.getElementById("new-folder-btn");
 
       let currentPath = ""; // empty = showing roots; else e.g. "Cartridges" or "Cartridges/version1"
 
@@ -128,6 +155,7 @@
         entriesView.style.display = view === "entries" ? "block" : "none";
         loadingEl.style.display = view === "loading" ? "block" : "none";
         errorEl.style.display = "none";
+        entriesToolbar.style.display = view === "entries" ? "flex" : "none";
       }
 
       function setError(msg) {
@@ -220,21 +248,40 @@
         entriesBody.innerHTML = entries.map(function(e) {
           const type = e.isCollection ? "dir" : "file";
           const rowClass = e.isCollection ? "entry-row dir" : "entry-row file";
-          return "<tr class=\"" + rowClass + "\" data-name=\"" + escapeHtml(e.name) + "\" data-dir=\"" + !!e.isCollection + "\">" +
+          const fullPath = currentPath ? currentPath + "/" + e.name : e.name;
+          return "<tr class=\"" + rowClass + "\" data-name=\"" + escapeHtml(e.name) + "\" data-path=\"" + escapeHtml(fullPath) + "\" data-dir=\"" + !!e.isCollection + "\">" +
             "<td class=\"name\">" + escapeHtml(e.name) + "</td>" +
             "<td class=\"type\">" + type + "</td>" +
-            "<td class=\"size\">" + formatSize(e.contentLength) + "</td></tr>";
+            "<td class=\"size\">" + formatSize(e.contentLength) + "</td>" +
+            "<td class=\"actions\"><button type=\"button\" class=\"btn-delete\" title=\"Delete\">Delete</button></td></tr>";
         }).join("");
         entriesBody.querySelectorAll(".entry-row.dir").forEach(function(row) {
-          row.addEventListener("click", function() {
+          row.addEventListener("click", function(ev) {
+            if (ev.target.closest(".btn-delete")) return;
             const name = this.dataset.name;
             const nextPath = currentPath ? currentPath + "/" + name : name;
             currentPath = nextPath;
             loadPath(nextPath);
           });
         });
+        entriesBody.querySelectorAll(".btn-delete").forEach(function(btn) {
+          btn.addEventListener("click", function(ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const row = this.closest("tr");
+            const pathToDelete = row.dataset.path;
+            const name = row.dataset.name;
+            const isDir = row.dataset.dir === "true";
+            vscode.postMessage({ type: "requestDelete", path: pathToDelete, name: name, isCollection: isDir });
+          });
+        });
         showView("entries");
       }
+
+      newFolderBtn.addEventListener("click", function() {
+        if (!currentPath) return;
+        vscode.postMessage({ type: "requestMkdir", path: currentPath });
+      });
 
       window.addEventListener("message", function(event) {
         const msg = event.data;
@@ -246,6 +293,18 @@
           currentPath = msg.path || currentPath;
           renderEntries(msg);
           renderBreadcrumb(currentPath);
+        } else if (msg.type === "mkdirResult") {
+          if (msg.error) {
+            setError(msg.error);
+            return;
+          }
+          loadPath(currentPath);
+        } else if (msg.type === "deleteResult") {
+          if (msg.error) {
+            setError(msg.error);
+            return;
+          }
+          loadPath(currentPath);
         }
       });
 

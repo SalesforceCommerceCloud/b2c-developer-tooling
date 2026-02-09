@@ -244,44 +244,97 @@ export function activate(context: vscode.ExtensionContext) {
     panel.webview.html = getWebdavWebviewContent(context, roots);
 
     const instance = config.createB2CInstance() as {
-      webdav: { propfind: (path: string, depth: '1') => Promise<WebDavPropfindEntry[]> };
+      webdav: {
+        propfind: (path: string, depth: '1') => Promise<WebDavPropfindEntry[]>;
+        mkcol: (path: string) => Promise<void>;
+        delete: (path: string) => Promise<void>;
+      };
     };
 
     const getDisplayName = (e: WebDavPropfindEntry): string =>
       e.displayName ?? e.href.split('/').filter(Boolean).at(-1) ?? e.href;
 
     panel.webview.onDidReceiveMessage(
-      async (msg: { type: string; path?: string }) => {
-        if (msg.type !== 'listPath' || msg.path === undefined) return;
-        const listPath = msg.path as string;
-        try {
-          const entries = await instance.webdav.propfind(listPath, '1');
-          const normalizedPath = listPath.replace(/\/$/, '');
-          const filtered = entries.filter((entry: WebDavPropfindEntry) => {
-            const entryPath = decodeURIComponent(entry.href);
-            return (
-              !entryPath.endsWith(`/${normalizedPath}`) &&
-              !entryPath.endsWith(`/${normalizedPath}/`)
-            );
+      async (msg: { type: string; path?: string; name?: string; isCollection?: boolean }) => {
+        if (msg.type === 'listPath' && msg.path !== undefined) {
+          const listPath = msg.path as string;
+          try {
+            const entries = await instance.webdav.propfind(listPath, '1');
+            const normalizedPath = listPath.replace(/\/$/, '');
+            const filtered = entries.filter((entry: WebDavPropfindEntry) => {
+              const entryPath = decodeURIComponent(entry.href);
+              return (
+                !entryPath.endsWith(`/${normalizedPath}`) &&
+                !entryPath.endsWith(`/${normalizedPath}/`)
+              );
+            });
+            panel.webview.postMessage({
+              type: 'listResult',
+              path: listPath,
+              entries: filtered.map((e: WebDavPropfindEntry) => ({
+                name: getDisplayName(e),
+                isCollection: Boolean(e.isCollection),
+                contentLength: e.contentLength,
+              })),
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({
+              type: 'listResult',
+              path: listPath,
+              entries: [],
+              error: message,
+            });
+          }
+          return;
+        }
+        if (msg.type === 'requestMkdir' && msg.path !== undefined) {
+          const parentPath = msg.path as string;
+          const name = await vscode.window.showInputBox({
+            title: 'New folder',
+            prompt: parentPath ? `Create directory under ${parentPath}` : 'Create directory at root',
+            placeHolder: 'Folder name',
+            validateInput: (value) => {
+              const trimmed = value.trim();
+              if (!trimmed) return 'Enter a folder name';
+              if (/[\\/:*?"<>|]/.test(trimmed)) return 'Name cannot contain \\ / : * ? " < > |';
+              return null;
+            },
           });
-          const payload = {
-            type: 'listResult',
-            path: listPath,
-            entries: filtered.map((e: WebDavPropfindEntry) => ({
-              name: getDisplayName(e),
-              isCollection: Boolean(e.isCollection),
-              contentLength: e.contentLength,
-            })),
-          };
-          panel.webview.postMessage(payload);
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          panel.webview.postMessage({
-            type: 'listResult',
-            path: listPath,
-            entries: [],
-            error: message,
-          });
+          if (name === undefined) return;
+          const trimmed = name.trim();
+          if (!trimmed) return;
+          const fullPath = parentPath ? `${parentPath}/${trimmed}` : trimmed;
+          try {
+            await instance.webdav.mkcol(fullPath);
+            panel.webview.postMessage({ type: 'mkdirResult', success: true, path: fullPath });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({ type: 'mkdirResult', success: false, error: message });
+          }
+          return;
+        }
+        if (msg.type === 'requestDelete' && msg.path !== undefined) {
+          const pathToDelete = msg.path as string;
+          const name = msg.name ?? pathToDelete.split('/').pop() ?? pathToDelete;
+          const isDir = msg.isCollection === true;
+          const detail = isDir
+            ? 'This directory and its contents will be deleted.'
+            : 'This file will be deleted.';
+          const choice = await vscode.window.showWarningMessage(
+            `Delete "${name}"? ${detail}`,
+            { modal: true },
+            'Delete',
+            'Cancel'
+          );
+          if (choice !== 'Delete') return;
+          try {
+            await instance.webdav.delete(pathToDelete);
+            panel.webview.postMessage({ type: 'deleteResult', success: true });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({ type: 'deleteResult', success: false, error: message });
+          }
         }
       }
     );
