@@ -16,6 +16,11 @@ try {
   // .env file not found or not readable, continue without it
 }
 
+// Disable telemetry by default in development mode (after loading .env so user config is respected)
+// Support both SF_DISABLE_TELEMETRY (sf CLI standard) and SFCC_DISABLE_TELEMETRY
+process.env.SF_DISABLE_TELEMETRY ??= 'true';
+process.env.SFCC_DISABLE_TELEMETRY ??= 'true';
+
 import {execute} from '@oclif/core';
 
 await execute({development: true, dir: import.meta.url});
