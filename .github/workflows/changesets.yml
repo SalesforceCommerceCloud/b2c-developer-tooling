@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -33,10 +34,17 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Create Release PR
+        id: changesets
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
         with:
           version: pnpm changeset version
           title: 'Next Release: changelog and version packages'
           commit: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger publish workflow
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: gh workflow run publish.yml -f release_type=stable
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
