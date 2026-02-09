@@ -186,6 +186,7 @@ export default class SetupConfig extends BaseCommand<typeof SetupConfig> {
         ['scopes', config.scopes],
         ['authMethods', config.authMethods],
         ['accountManagerHost', config.accountManagerHost],
+        ['sandboxApiHost', config.sandboxApiHost],
       ],
       fieldSources,
       unmask,

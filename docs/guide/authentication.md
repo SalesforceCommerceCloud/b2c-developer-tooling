@@ -17,7 +17,7 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
 | SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) |
 | [SLAS](/cli/slas) client management | OAuth | [API Client](#account-manager-api-client) with appropriate roles |
-| [ODS](/cli/ods) management | OAuth | [API Client](#account-manager-api-client) with `Sandbox API User` role |
+| [Sandbox](/cli/sandbox) management | OAuth | [API Client](#account-manager-api-client) with `Sandbox API User` role |
 | [MRT](/cli/mrt) commands | MRT API Key | [MRT API Key](#managed-runtime-api-key) |
 
 ::: tip

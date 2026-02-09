@@ -17,50 +17,116 @@ import type {DwJsonConfig} from './dw-json.js';
 import type {NormalizedConfig, ConfigWarning} from './types.js';
 
 /**
+ * Converts a kebab-case string to camelCase.
+ *
+ * @param str - The kebab-case string to convert
+ * @returns The camelCase equivalent
+ *
+ * @example
+ * ```typescript
+ * kebabToCamelCase('code-version'); // 'codeVersion'
+ * kebabToCamelCase('client-id');    // 'clientId'
+ * kebabToCamelCase('hostname');     // 'hostname' (no change)
+ * ```
+ */
+export function kebabToCamelCase(str: string): string {
+  return str.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+}
+
+/**
+ * Legacy/non-standard aliases that cannot be derived by kebab→camel conversion.
+ * Maps alias → canonical camelCase field name.
+ */
+export const CONFIG_KEY_ALIASES: Record<string, string> = {
+  server: 'hostname',
+  'scapi-shortcode': 'shortCode',
+  'webdav-server': 'webdavHostname',
+  'secure-server': 'webdavHostname',
+  secureHostname: 'webdavHostname',
+  passphrase: 'certificatePassphrase',
+  cloudOrigin: 'mrtOrigin',
+  selfsigned: 'selfSigned',
+  'oauth-scopes': 'oauthScopes',
+  'auth-methods': 'authMethods',
+};
+
+/**
+ * Normalizes config keys to canonical camelCase form.
+ *
+ * Resolution order for each key:
+ * 1. Check CONFIG_KEY_ALIASES for legacy/non-standard names
+ * 2. Fall back to kebab→camelCase conversion
+ * 3. First value wins when multiple keys resolve to the same canonical name
+ *
+ * @param raw - The raw config object with potentially mixed key formats
+ * @returns A new object with all keys in canonical camelCase
+ *
+ * @example
+ * ```typescript
+ * normalizeConfigKeys({ 'client-id': 'abc', 'code-version': 'v1' });
+ * // { clientId: 'abc', codeVersion: 'v1' }
+ *
+ * normalizeConfigKeys({ server: 'example.com', hostname: 'other.com' });
+ * // { hostname: 'example.com' } (first value wins)
+ * ```
+ */
+export function normalizeConfigKeys(raw: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (value === undefined) continue;
+    const canonical = CONFIG_KEY_ALIASES[key] ?? kebabToCamelCase(key);
+    if (!(canonical in result)) {
+      result[canonical] = value;
+    }
+  }
+  return result;
+}
+
+/**
  * Maps dw.json fields to normalized config format.
  *
  * This is the SINGLE place where dw.json field mapping happens.
- * Handles multiple field name variants for backward compatibility:
- * - WebDAV hostname: `webdav-hostname`, `webdav-server`, `secureHostname`, `secure-server`
- * - Short code: `shortCode`, `short-code`, `scapi-shortcode`
+ * Keys are already normalized to camelCase by normalizeConfigKeys() in loadDwJson(),
+ * so this function only handles genuine renames (e.g., `name` → `instanceName`,
+ * `oauthScopes` → `scopes`).
  *
- * @param json - The raw dw.json config
+ * @param json - The normalized dw.json config (camelCase keys)
  * @returns Normalized configuration
  *
  * @example
  * ```typescript
  * import { mapDwJsonToNormalizedConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const dwJson = { hostname: 'example.com', 'code-version': 'v1' };
+ * const dwJson = { hostname: 'example.com', codeVersion: 'v1' };
  * const config = mapDwJsonToNormalizedConfig(dwJson);
  * // { hostname: 'example.com', codeVersion: 'v1' }
  * ```
  */
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
   return {
-    hostname: json.hostname || json.server,
-    // Support multiple field names for webdav hostname (priority order)
-    webdavHostname: json['webdav-hostname'] || json['webdav-server'] || json.secureHostname || json['secure-server'],
-    codeVersion: json['code-version'],
+    hostname: json.hostname,
+    webdavHostname: json.webdavHostname,
+    codeVersion: json.codeVersion,
     username: json.username,
     password: json.password,
-    clientId: json['client-id'],
-    clientSecret: json['client-secret'],
-    scopes: json['oauth-scopes'],
-    // Support multiple field names for short code (priority order)
-    shortCode: json.shortCode || json['short-code'] || json['scapi-shortcode'],
-    tenantId: json['tenant-id'],
-    contentLibrary: json['content-library'],
+    clientId: json.clientId,
+    clientSecret: json.clientSecret,
+    scopes: json.oauthScopes,
+    shortCode: json.shortCode,
+    tenantId: json.tenantId,
+    sandboxApiHost: json.sandboxApiHost,
+    contentLibrary: json.contentLibrary,
     instanceName: json.name,
-    authMethods: json['auth-methods'],
-    accountManagerHost: json['account-manager-host'],
+    authMethods: json.authMethods,
+    accountManagerHost: json.accountManagerHost,
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
-    mrtOrigin: json.mrtOrigin || json.cloudOrigin,
+    mrtApiKey: json.mrtApiKey,
+    mrtOrigin: json.mrtOrigin,
     // TLS/mTLS options
     certificate: json.certificate,
-    certificatePassphrase: json['certificate-passphrase'] || json.passphrase,
-    selfSigned: json['self-signed'] ?? json.selfsigned,
+    certificatePassphrase: json.certificatePassphrase,
+    selfSigned: json.selfSigned,
   };
 }
 
@@ -161,6 +227,7 @@ export function mergeConfigsWithProtection(
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
+      sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       instanceName: overrides.instanceName ?? base.instanceName,
       mrtProject: overrides.mrtProject ?? base.mrtProject,
       mrtEnvironment: overrides.mrtEnvironment ?? base.mrtEnvironment,

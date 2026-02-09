@@ -50,7 +50,7 @@ The `b2c-cli` plugin provides skills that teach Claude about B2C Commerce CLI co
 - **Job Execution** (`b2c-job`) - Run jobs and import/export site archives
 - **Site Management** (`b2c-sites`) - List and inspect storefront sites
 - **WebDAV Operations** (`b2c-webdav`) - File operations on instances
-- **Sandbox Management** (`b2c-ods`) - Manage On-Demand Sandboxes
+- **Sandbox Management** (`b2c-sandbox`) - Manage On-Demand Sandboxes
 - **MRT Management** (`b2c-mrt`) - Manage Managed Runtime projects and deployments
 - **SLAS Configuration** (`b2c-slas`) - Manage SLAS API clients and credentials
 
@@ -63,7 +63,7 @@ skills/b2c-cli/skills/
 ├── b2c-code/SKILL.md      # Code deployment commands
 ├── b2c-job/SKILL.md       # Job execution commands
 ├── b2c-mrt/SKILL.md       # Managed Runtime commands
-├── b2c-ods/SKILL.md       # On-Demand Sandbox commands
+├── b2c-sandbox/SKILL.md   # On-Demand Sandbox commands
 ├── b2c-sites/SKILL.md     # Sites commands
 ├── b2c-slas/SKILL.md      # SLAS commands
 └── b2c-webdav/SKILL.md    # WebDAV commands

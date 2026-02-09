@@ -23,14 +23,14 @@ function getVersionItems() {
     // Use ../ to navigate up to main docs
     return [
       { text: 'Development (main)', link: '../' },
-      { text: `Release (${releaseVersion})`, link: '/' },
+      { text: 'Latest Release', link: '/' },
     ];
   }
 
   // Main build: base is /b2c-developer-tooling/
   return [
     { text: 'Development (main)', link: '/' },
-    { text: `Release (${releaseVersion})`, link: '/release/' },
+    { text: 'Latest Release', link: '/release/' },
   ];
 }
 
@@ -70,7 +70,7 @@ const guideSidebar = [
       { text: 'Logs Commands', link: '/cli/logs' },
       { text: 'Sites Commands', link: '/cli/sites' },
       { text: 'WebDAV Commands', link: '/cli/webdav' },
-      { text: 'ODS Commands', link: '/cli/ods' },
+      { text: 'Sandbox Commands', link: '/cli/sandbox' },
       { text: 'MRT Commands', link: '/cli/mrt' },
       { text: 'eCDN Commands', link: '/cli/ecdn' },
       { text: 'SLAS Commands', link: '/cli/slas' },
@@ -134,7 +134,7 @@ export default defineConfig({
       { text: 'CLI Reference', link: '/cli/' },
       { text: 'API Reference', link: '/api/' },
       {
-        text: isReleaseBuild ? releaseVersion : 'dev',
+        text: isReleaseBuild ? 'Latest Release' : 'dev',
         items: getVersionItems(),
       },
     ],

@@ -34,7 +34,7 @@ features:
   - icon: "\U0001F3D6\uFE0F"
     title: Sandbox Management
     details: Create, manage, and provision On-Demand Sandboxes programmatically.
-    link: /cli/ods
+    link: /cli/sandbox
     linkText: Learn more
   - icon: "\U0001F9E0"
     title: Agent Skills

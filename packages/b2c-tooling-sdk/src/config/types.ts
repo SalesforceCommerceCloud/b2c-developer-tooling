@@ -54,6 +54,10 @@ export interface NormalizedConfig {
   /** Tenant/Organization ID for SCAPI */
   tenantId?: string;
 
+  // ODS (On-Demand Sandbox)
+  /** ODS API hostname */
+  sandboxApiHost?: string;
+
   // MRT fields
   /** MRT project slug */
   mrtProject?: string;

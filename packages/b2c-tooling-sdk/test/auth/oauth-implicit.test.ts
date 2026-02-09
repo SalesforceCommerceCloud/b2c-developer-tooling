@@ -74,20 +74,64 @@ describe('auth/oauth-implicit', () => {
       const headers = new Headers(init?.headers);
       seenAuth.push(headers.get('Authorization') ?? '');
 
+      // First call succeeds (establishes prior success)
       if (fetchCalls === 1) {
+        return new Response('ok', {status: 200});
+      }
+
+      // Second call returns 401 (simulates expired token)
+      if (fetchCalls === 2) {
         return new Response('unauthorized', {status: 401});
       }
 
+      // Third call succeeds (retry with fresh token)
       return new Response('ok', {status: 200});
     };
 
+    // First call succeeds - establishes prior success
+    const firstRes = await strategy.fetch('https://example.com/test');
+    expect(firstRes.status).to.equal(200);
+
+    // Second call gets 401 then retries with fresh token
     const res = await strategy.fetch('https://example.com/test');
     expect(res.status).to.equal(200);
 
-    expect(fetchCalls).to.equal(2);
+    expect(fetchCalls).to.equal(3);
     expect(tokenCalls).to.equal(2);
     expect(seenAuth[0]).to.equal('Bearer tok-1');
-    expect(seenAuth[1]).to.equal('Bearer tok-2');
+    expect(seenAuth[1]).to.equal('Bearer tok-1');
+    expect(seenAuth[2]).to.equal('Bearer tok-2');
+
+    strategy.invalidateToken();
+  });
+
+  it('does not retry on initial 401 when no prior success', async () => {
+    const clientId = 'implicit-client-no-retry';
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+
+    let tokenCalls = 0;
+    (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
+      tokenCalls++;
+      return {
+        accessToken: 'tok-bad',
+        expires: futureDate(30),
+        scopes: ['a'],
+      };
+    };
+
+    let fetchCalls = 0;
+
+    globalThis.fetch = async (_input: string | URL | Request, _init?: RequestInit) => {
+      fetchCalls++;
+      return new Response('unauthorized', {status: 401});
+    };
+
+    // First call gets 401 - should NOT retry since no prior success
+    const res = await strategy.fetch('https://example.com/test');
+    expect(res.status).to.equal(401);
+
+    expect(fetchCalls).to.equal(1); // No retry
+    expect(tokenCalls).to.equal(1); // Only fetched once
 
     strategy.invalidateToken();
   });
