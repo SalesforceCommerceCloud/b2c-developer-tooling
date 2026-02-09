@@ -104,7 +104,7 @@
     "@salesforce/dev-config": "^4.3.2",
     "@types/chai": "^4",
     "@types/mocha": "^10",
-    "@types/node": "^22.16.5",
+    "@types/node": "^24.10.12",
     "@types/sinon": "^21.0.0",
     "chai": "^4",
     "eslint": "^9",
