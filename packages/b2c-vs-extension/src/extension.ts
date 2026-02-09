@@ -12,6 +12,31 @@ function getWebviewContent(context: vscode.ExtensionContext): string {
   return fs.readFileSync(htmlPath, "utf-8");
 }
 
+const WEBDAV_ROOT_LABELS: Record<string, string> = {
+  impex: "Impex directory (default)",
+  temp: "Temporary files",
+  cartridges: "Code cartridges",
+  realmdata: "Realm data",
+  catalogs: "Product catalogs",
+  libraries: "Content libraries",
+  static: "Static resources",
+  logs: "Log files",
+  securitylogs: "Security log files",
+};
+
+function getWebdavWebviewContent(
+  context: vscode.ExtensionContext,
+  roots: { key: string; path: string; label: string }[]
+): string {
+  const htmlPath = path.join(context.extensionPath, "src", "webdav.html");
+  const raw = fs.readFileSync(htmlPath, "utf-8");
+  const rootsJson = JSON.stringify(roots);
+  return raw.replace(
+    "const roots = window.WEBDAV_ROOTS || [];",
+    `window.WEBDAV_ROOTS = ${rootsJson};\n      const roots = window.WEBDAV_ROOTS;`
+  );
+}
+
 /** PascalCase for use in template content (class names, types, etc.). e.g. "first page" → "FirstPage" */
 function pageNameToPageId(pageName: string): string {
   return pageName
@@ -170,112 +195,96 @@ export function activate(context: vscode.ExtensionContext) {
   type WebDavPropfindEntry = { href: string; displayName?: string; contentLength?: number; isCollection?: boolean };
 
   const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', async () => {
-    const output = vscode.window.createOutputChannel('B2C DX');
-    output.show(true);
-
     let cli: {
       loadConfig: (flags: object, options: { startDir?: string; configPath?: string }) => { hasB2CInstanceConfig: () => boolean; createB2CInstance: () => unknown };
       findDwJson: (startDir: string) => string | undefined;
-      WEBDAV_ROOTS: { IMPEX: string };
+      WEBDAV_ROOTS: Record<string, string>;
     };
     try {
       cli = (await import('@salesforce/b2c-tooling-sdk/cli')) as typeof cli;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      output.appendLine(`Failed to load B2C Tooling SDK: ${message}`);
-      vscode.window.showErrorMessage(`B2C DX: Could not load SDK. Run "pnpm install" and "pnpm run build" in the repo.`);
+      vscode.window.showErrorMessage(`B2C DX: Could not load SDK. ${message}`);
       return;
     }
 
-    // Resolve dw.json: search from workspace folder, cwd, or extension dir upward (findDwJson walks parents)
     let startDir =
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-    // Extension Host often has cwd="/" when no folder is open; use extension dir so we find repo's dw.json
     if (!startDir || startDir === '/' || !fs.existsSync(startDir)) {
       startDir = context.extensionPath;
     }
-    output.appendLine(`Searching for dw.json from: ${startDir}`);
     const dwPath = cli.findDwJson(startDir);
     const config = dwPath
       ? cli.loadConfig({}, { configPath: dwPath })
       : cli.loadConfig({}, { startDir });
-    if (dwPath) {
-      output.appendLine(`Using config: ${dwPath}`);
-    }
 
     if (!config.hasB2CInstanceConfig()) {
-      output.appendLine('B2C instance not configured. Set SFCC_* env vars or use dw.json in the workspace.');
-      if (!dwPath) {
-        output.appendLine('No dw.json found in the workspace directory or any parent.');
-      } else {
-        output.appendLine('dw.json was found but is missing hostname (and auth). Add hostname (and username/password or OAuth) to dw.json.');
-      }
       vscode.window.showErrorMessage(
         'B2C DX: No instance config. Configure SFCC_* env vars or dw.json in the workspace.'
       );
       return;
     }
 
-    try {
-      const instance = config.createB2CInstance() as { webdav: { propfind: (path: string, depth: '1') => Promise<WebDavPropfindEntry[]> } };
-      const fullPath = cli.WEBDAV_ROOTS.IMPEX;
-      output.appendLine(`Listing ${fullPath}...`);
-
-      const entries = await instance.webdav.propfind(fullPath, '1');
-      const normalizedFullPath = fullPath.replace(/\/$/, '');
-      const filtered = entries.filter((entry: WebDavPropfindEntry) => {
-        const entryPath = decodeURIComponent(entry.href);
-        return (
-          !entryPath.endsWith(`/${normalizedFullPath}`) &&
-          !entryPath.endsWith(`/${normalizedFullPath}/`)
-        );
-      });
-
-      if (filtered.length === 0) {
-        output.appendLine('No files or directories found.');
-        return;
-      }
-
-      // Format helpers (aligned with CLI webdav ls)
-      const formatBytes = (bytes: number | undefined): string => {
-        if (bytes === undefined || bytes === null) return '-';
-        if (bytes === 0) return '0 B';
-        const units = ['B', 'KB', 'MB', 'GB'];
-        const k = 1024;
-        const i = Math.min(
-          Math.floor(Math.log(bytes) / Math.log(k)),
-          units.length - 1
-        );
-        return `${(bytes / k ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+    const roots = (Object.keys(cli.WEBDAV_ROOTS) as string[]).map((key) => {
+      const pathVal = (cli.WEBDAV_ROOTS as Record<string, string>)[key];
+      const keyLower = key.toLowerCase();
+      return {
+        key: keyLower,
+        path: pathVal,
+        label: WEBDAV_ROOT_LABELS[keyLower] ?? pathVal,
       };
-      const getDisplayName = (e: WebDavPropfindEntry): string =>
-        e.displayName ?? e.href.split('/').filter(Boolean).at(-1) ?? e.href;
+    });
 
-      // Build a simple table: Name, Type, Size
-      const nameWidth = Math.max(
-        'Name'.length,
-        ...filtered.map((e: WebDavPropfindEntry) => getDisplayName(e).length)
-      );
-      const typeWidth = Math.max('Type'.length, 3);
-      const sizeWidth = Math.max(
-        'Size'.length,
-        ...filtered.map((e: WebDavPropfindEntry) => formatBytes(e.contentLength).length)
-      );
-      const pad = (s: string, w: number) => s.padEnd(w);
-      output.appendLine(
-        `${pad('Name', nameWidth)}  ${pad('Type', typeWidth)}  ${pad('Size', sizeWidth)}`
-      );
-      output.appendLine('-'.repeat(nameWidth + typeWidth + sizeWidth + 4));
-      for (const e of filtered) {
-        output.appendLine(
-          `${pad(getDisplayName(e), nameWidth)}  ${pad(e.isCollection ? 'dir' : 'file', typeWidth)}  ${pad(formatBytes(e.contentLength), sizeWidth)}`
-        );
+    const panel = vscode.window.createWebviewPanel(
+      'b2c-dx-webdav',
+      'B2C WebDAV Browser',
+      vscode.ViewColumn.One,
+      { enableScripts: true }
+    );
+    panel.webview.html = getWebdavWebviewContent(context, roots);
+
+    const instance = config.createB2CInstance() as {
+      webdav: { propfind: (path: string, depth: '1') => Promise<WebDavPropfindEntry[]> };
+    };
+
+    const getDisplayName = (e: WebDavPropfindEntry): string =>
+      e.displayName ?? e.href.split('/').filter(Boolean).at(-1) ?? e.href;
+
+    panel.webview.onDidReceiveMessage(
+      async (msg: { type: string; path?: string }) => {
+        if (msg.type !== 'listPath' || msg.path === undefined) return;
+        const listPath = msg.path as string;
+        try {
+          const entries = await instance.webdav.propfind(listPath, '1');
+          const normalizedPath = listPath.replace(/\/$/, '');
+          const filtered = entries.filter((entry: WebDavPropfindEntry) => {
+            const entryPath = decodeURIComponent(entry.href);
+            return (
+              !entryPath.endsWith(`/${normalizedPath}`) &&
+              !entryPath.endsWith(`/${normalizedPath}/`)
+            );
+          });
+          const payload = {
+            type: 'listResult',
+            path: listPath,
+            entries: filtered.map((e: WebDavPropfindEntry) => ({
+              name: getDisplayName(e),
+              isCollection: Boolean(e.isCollection),
+              contentLength: e.contentLength,
+            })),
+          };
+          panel.webview.postMessage(payload);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          panel.webview.postMessage({
+            type: 'listResult',
+            path: listPath,
+            entries: [],
+            error: message,
+          });
+        }
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      output.appendLine(`Error: ${message}`);
-      vscode.window.showErrorMessage(`B2C DX WebDAV: ${message}`);
-    }
+    );
   });
 
   context.subscriptions.push(disposable, promptAgentDisposable, listWebDavDisposable);

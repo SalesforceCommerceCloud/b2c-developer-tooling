@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>B2C WebDAV Browser</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--vscode-font-family, system-ui, sans-serif);
+      font-size: var(--vscode-font-size, 13px);
+      color: var(--vscode-foreground);
+      background: var(--vscode-editor-background);
+      margin: 0;
+      padding: 1rem;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+      color: var(--vscode-foreground);
+    }
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+      font-size: 0.9em;
+      color: var(--vscode-descriptionForeground);
+    }
+    .breadcrumb a {
+      color: var(--vscode-textLink-foreground);
+      text-decoration: none;
+    }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { margin: 0 0.25rem; }
+    .roots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+      gap: 0.75rem;
+    }
+    .root-card {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--vscode-widget-border);
+      border-radius: 6px;
+      background: var(--vscode-editor-inactiveSelectionBackground);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .root-card:hover {
+      background: var(--vscode-list-hoverBackground);
+    }
+    .root-card .name { font-weight: 600; }
+    .root-card .desc { font-size: 0.85em; color: var(--vscode-descriptionForeground); margin-top: 0.25rem; }
+    .entries-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    .entries-table th,
+    .entries-table td {
+      text-align: left;
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid var(--vscode-widget-border);
+    }
+    .entries-table th {
+      color: var(--vscode-descriptionForeground);
+      font-weight: 500;
+    }
+    .entries-table tr.entry-row { cursor: pointer; }
+    .entries-table tr.entry-row:hover { background: var(--vscode-list-hoverBackground); }
+    .entries-table tr.entry-row.dir .name::before {
+      content: "📁 ";
+    }
+    .entries-table tr.entry-row.file .name::before {
+      content: "📄 ";
+    }
+    .entries-table .size { text-align: right; color: var(--vscode-descriptionForeground); }
+    .loading, .error {
+      padding: 1rem;
+      color: var(--vscode-descriptionForeground);
+    }
+    .error { color: var(--vscode-errorForeground); }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 0.75rem;
+      color: var(--vscode-textLink-foreground);
+      text-decoration: none;
+      font-size: 0.9em;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>B2C WebDAV Browser</h1>
+  <div id="breadcrumb" class="breadcrumb" style="display: none;"></div>
+  <a id="back-link" class="back-link" style="display: none;">← Back</a>
+  <div id="roots-view" class="roots-grid"></div>
+  <div id="entries-view" style="display: none;">
+    <table class="entries-table">
+      <thead>
+        <tr><th class="name">Name</th><th class="type">Type</th><th class="size">Size</th></tr>
+      </thead>
+      <tbody id="entries-body"></tbody>
+    </table>
+  </div>
+  <div id="loading" class="loading" style="display: none;">Loading…</div>
+  <div id="error" class="error" style="display: none;"></div>
+
+  <script>
+    (function() {
+      const vscode = acquireVsCodeApi();
+      const roots = window.WEBDAV_ROOTS || [];
+      const rootsView = document.getElementById("roots-view");
+      const entriesView = document.getElementById("entries-view");
+      const entriesBody = document.getElementById("entries-body");
+      const breadcrumbEl = document.getElementById("breadcrumb");
+      const backLink = document.getElementById("back-link");
+      const loadingEl = document.getElementById("loading");
+      const errorEl = document.getElementById("error");
+
+      let currentPath = ""; // empty = showing roots; else e.g. "Cartridges" or "Cartridges/version1"
+
+      function showView(view) {
+        rootsView.style.display = view === "roots" ? "grid" : "none";
+        entriesView.style.display = view === "entries" ? "block" : "none";
+        loadingEl.style.display = view === "loading" ? "block" : "none";
+        errorEl.style.display = "none";
+      }
+
+      function setError(msg) {
+        errorEl.textContent = msg;
+        errorEl.style.display = "block";
+        loadingEl.style.display = "none";
+      }
+
+      function renderRoots() {
+        rootsView.innerHTML = roots.map(function(r) {
+          return '<div class="root-card" data-path="' + escapeHtml(r.path) + '">' +
+            '<div class="name">' + escapeHtml(r.key) + '</div>' +
+            '<div class="desc">' + escapeHtml(r.label) + '</div></div>';
+        }).join("");
+        rootsView.querySelectorAll(".root-card").forEach(function(el) {
+          el.addEventListener("click", function() {
+            currentPath = this.dataset.path;
+            loadPath(currentPath);
+          });
+        });
+        breadcrumbEl.style.display = "none";
+        backLink.style.display = "none";
+      }
+
+      function escapeHtml(s) {
+        const div = document.createElement("div");
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      function renderBreadcrumb(path) {
+        const parts = path.split("/").filter(Boolean);
+        let html = '<a href="#" data-path="">Roots</a>';
+        let acc = "";
+        parts.forEach(function(p, i) {
+          acc += (acc ? "/" : "") + p;
+          const isLast = i === parts.length - 1;
+          if (isLast) {
+            html += ' <span>/</span> ' + escapeHtml(p);
+          } else {
+            html += ' <span>/</span> <a href="#" data-path="' + escapeHtml(acc) + '">' + escapeHtml(p) + "</a>";
+          }
+        });
+        breadcrumbEl.innerHTML = html;
+        breadcrumbEl.style.display = "flex";
+        breadcrumbEl.querySelectorAll("a").forEach(function(a) {
+          a.addEventListener("click", function(e) {
+            e.preventDefault();
+            currentPath = this.dataset.path || "";
+            if (currentPath) loadPath(currentPath);
+            else { showView("roots"); renderRoots(); }
+          });
+        });
+      }
+
+      function backPath(path) {
+        const idx = path.lastIndexOf("/");
+        return idx <= 0 ? "" : path.slice(0, idx);
+      }
+
+      backLink.addEventListener("click", function(e) {
+        e.preventDefault();
+        if (!currentPath) { showView("roots"); renderRoots(); return; }
+        const parent = backPath(currentPath);
+        currentPath = parent;
+        if (parent) loadPath(parent);
+        else { showView("roots"); renderRoots(); }
+      });
+
+      function loadPath(path) {
+        showView("loading");
+        setError("");
+        renderBreadcrumb(path);
+        backLink.style.display = "block";
+        backLink.textContent = path ? "← Back to " + (backPath(path) || "Roots") : "← Back";
+        vscode.postMessage({ type: "listPath", path: path });
+      }
+
+      function formatSize(bytes) {
+        if (bytes === undefined || bytes === null) return "—";
+        if (bytes === 0) return "0 B";
+        var u = ["B", "KB", "MB", "GB"];
+        var k = 1024;
+        var i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), u.length - 1);
+        return (bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1) + " " + u[i];
+      }
+
+      function renderEntries(data) {
+        const entries = data.entries || [];
+        entriesBody.innerHTML = entries.map(function(e) {
+          const type = e.isCollection ? "dir" : "file";
+          const rowClass = e.isCollection ? "entry-row dir" : "entry-row file";
+          return "<tr class=\"" + rowClass + "\" data-name=\"" + escapeHtml(e.name) + "\" data-dir=\"" + !!e.isCollection + "\">" +
+            "<td class=\"name\">" + escapeHtml(e.name) + "</td>" +
+            "<td class=\"type\">" + type + "</td>" +
+            "<td class=\"size\">" + formatSize(e.contentLength) + "</td></tr>";
+        }).join("");
+        entriesBody.querySelectorAll(".entry-row.dir").forEach(function(row) {
+          row.addEventListener("click", function() {
+            const name = this.dataset.name;
+            const nextPath = currentPath ? currentPath + "/" + name : name;
+            currentPath = nextPath;
+            loadPath(nextPath);
+          });
+        });
+        showView("entries");
+      }
+
+      window.addEventListener("message", function(event) {
+        const msg = event.data;
+        if (msg.type === "listResult") {
+          if (msg.error) {
+            setError(msg.error);
+            return;
+          }
+          currentPath = msg.path || currentPath;
+          renderEntries(msg);
+          renderBreadcrumb(currentPath);
+        }
+      });
+
+      renderRoots();
+    })();
+  </script>
+</body>
+</html>
