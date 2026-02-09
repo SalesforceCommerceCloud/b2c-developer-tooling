@@ -102,6 +102,26 @@ function renderTemplate(
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  const log = vscode.window.createOutputChannel('B2C DX');
+  try {
+    return activateInner(context, log);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    log.appendLine(`Activation failed: ${message}`);
+    if (stack) log.appendLine(stack);
+    console.error('B2C DX extension activation failed:', err);
+    vscode.window.showErrorMessage(`B2C DX: Extension failed to activate. See Output > B2C DX. Error: ${message}`);
+    context.subscriptions.push(
+      vscode.commands.registerCommand('b2c-dx.openUI', () => {
+        log.show();
+        vscode.window.showErrorMessage(`B2C DX activation error: ${message}`);
+      })
+    );
+  }
+}
+
+function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
     vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');
 
@@ -288,7 +308,7 @@ export function activate(context: vscode.ExtensionContext) {
             title: 'New folder',
             prompt: parentPath ? `Create directory under ${parentPath}` : 'Create directory at root',
             placeHolder: 'Folder name',
-            validateInput: (value) => {
+            validateInput: (value: string) => {
               const trimmed = value.trim();
               if (!trimmed) return 'Enter a folder name';
               if (/[\\/:*?"<>|]/.test(trimmed)) return 'Name cannot contain \\ / : * ? " < > |';
@@ -448,6 +468,7 @@ export function activate(context: vscode.ExtensionContext) {
     listWebDavDisposable,
     storefrontNextCartridgeDisposable
   );
+  log.appendLine('B2C DX extension activated.');
 }
 
 

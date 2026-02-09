@@ -5,6 +5,7 @@ src/**
 !src/webdav.html
 !src/storefront-next-cartridge.html
 **/node_modules/**
+
 !node_modules/
 !node_modules/@salesforce/
 !node_modules/@salesforce/b2c-tooling-sdk/
