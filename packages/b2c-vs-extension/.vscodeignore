@@ -1,0 +1,11 @@
+.vscode/**
+.vscode-test/**
+src/**
+!src/webview.html
+!src/template/**
+.gitignore
+**/tsconfig.json
+**/eslint.config.mjs
+**/*.map
+**/*.ts
+**/.vscode-test.*
