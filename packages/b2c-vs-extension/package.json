@@ -1,5 +1,5 @@
 {
-  "name": "@salesforce/b2c-vs-extension",
+  "name": "b2c-vs-extension",
   "displayName": "B2C DX - VS Code Extension",
   "description": "VS Code extension for B2C Commerce Cloud developer experience (Page Designer assistant, B2C CLI integration)",
   "version": "0.0.1",
@@ -8,6 +8,7 @@
   "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/b2c-vs-extension",
   "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
   "categories": ["Other"],
+  "files": ["out", "src", "package.json", "tsconfig.json", ".vscodeignore", "README.md", "CHANGELOG.md"],
   "dependencies": {
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
@@ -24,6 +25,11 @@
         "category": "B2C DX - Page Designer Assistant"
       },
       {
+        "command": "b2c-dx.handleStorefrontNextCartridge",
+        "title": "Storefront Next Cartridge",
+        "category": "B2C DX - Page Designer Assistant"
+      },
+      {
         "command": "b2c-dx.promptAgent",
         "title": "Prompt Agent",
         "category": "B2C DX"
@@ -37,7 +43,8 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run build",
-    "build": "tsc -p .",
+    "build": "pnpm exec tsc -p . && node scripts/esbuild-bundle.mjs",
+    "package": "pnpm run build && rm -rf .vsce-stage && cd ../.. && pnpm --filter b2c-vs-extension deploy packages/b2c-vs-extension/.vsce-stage --legacy && cd packages/b2c-vs-extension/.vsce-stage && node -e \"const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.scripts['vscode:prepublish']='echo ok'; fs.writeFileSync('package.json', JSON.stringify(p,null,2));\" && npx vsce package --no-dependencies && cp *.vsix ..",
     "watch": "tsc -watch -p .",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -61,6 +68,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0"
+    "typescript-eslint": "^8.54.0",
+    "esbuild": "^0.24.0"
   }
 }

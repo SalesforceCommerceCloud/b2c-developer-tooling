@@ -123,6 +123,7 @@
   <div id="entries-view" style="display: none;">
     <div id="entries-toolbar" class="toolbar">
       <button type="button" id="new-folder-btn">New folder</button>
+      <button type="button" id="upload-btn">Upload</button>
     </div>
     <table class="entries-table">
       <thead>
@@ -147,6 +148,7 @@
       const errorEl = document.getElementById("error");
       const entriesToolbar = document.getElementById("entries-toolbar");
       const newFolderBtn = document.getElementById("new-folder-btn");
+      const uploadBtn = document.getElementById("upload-btn");
 
       let currentPath = ""; // empty = showing roots; else e.g. "Cartridges" or "Cartridges/version1"
 
@@ -283,6 +285,11 @@
         vscode.postMessage({ type: "requestMkdir", path: currentPath });
       });
 
+      uploadBtn.addEventListener("click", function() {
+        if (!currentPath) return;
+        vscode.postMessage({ type: "requestUpload", path: currentPath });
+      });
+
       window.addEventListener("message", function(event) {
         const msg = event.data;
         if (msg.type === "listResult") {
@@ -300,6 +307,12 @@
           }
           loadPath(currentPath);
         } else if (msg.type === "deleteResult") {
+          if (msg.error) {
+            setError(msg.error);
+            return;
+          }
+          loadPath(currentPath);
+        } else if (msg.type === "uploadResult") {
           if (msg.error) {
             setError(msg.error);
             return;

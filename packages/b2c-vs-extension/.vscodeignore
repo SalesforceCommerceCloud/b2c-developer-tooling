@@ -2,6 +2,8 @@
 .vscode-test/**
 src/**
 !src/webview.html
+!src/webdav.html
+!src/storefront-next-cartridge.html
 !src/template/**
 .gitignore
 **/tsconfig.json
