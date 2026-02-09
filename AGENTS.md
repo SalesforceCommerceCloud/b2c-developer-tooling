@@ -121,6 +121,16 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 - [Testing](./.claude/skills/testing/SKILL.md) - Mocha, Chai, MSW patterns
 - [Documentation](./.claude/skills/documentation/SKILL.md) - user guides, CLI reference, API docs
 
+## Pre-Commit Checks
+
+Before committing code, always run lint to catch formatting and style issues:
+
+```bash
+pnpm run lint:agent
+```
+
+This catches prettier formatting, import ordering, class member ordering (`perfectionist/sort-classes`), and other issues that will fail CI.
+
 ## Testing
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
