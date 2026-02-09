@@ -13,25 +13,30 @@ These flags are available on all Account Manager commands:
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (e.g., `account.demandware.com`) |
+| `--user-auth` | — | Use browser-based user authentication (implicit OAuth flow) |
 
 ## Authentication
 
-Account Manager commands require an API client or can be executed through an implicit workflow that seamlessly handles user authentication and associated flows.
+Account Manager commands support both client credentials and browser-based user authentication. By default, the CLI tries client credentials first (if `--client-secret` is provided), then falls back to user authentication.
+
+Use `--user-auth` to force browser-based authentication, which uses your user account's roles instead of the API client's roles.
 
 ### Required Configuration
 
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
 | `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID for Account Manager |
-| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret for Account Manager |
+| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret (not required with `--user-auth`) |
 
-### Required Roles
+### Required Roles by Subtopic
 
-| Auth Method | Role | Configured On |
-|-------------|------|---------------|
-| Client Credentials | `User Administrator` or higher | The API client |
+Different Account Manager operations require different roles depending on the authentication method:
 
-User authentication is handled via the implicit flow, utilizing the access rights granted to the user.
+| Subtopic | Client Credentials (roles on API client) | User Auth `--user-auth` (roles on user) |
+|----------|------------------------------------------|----------------------------------------|
+| `users`, `roles` | User Administrator | Account Administrator or User Administrator |
+| `orgs` | Not supported — use `--user-auth` | Account Administrator |
+| `clients` | Not supported — use `--user-auth` | Account Administrator or API Administrator |
 
 ### Configuration
 
@@ -42,6 +47,9 @@ export SFCC_ACCOUNT_MANAGER_HOST=account.demandware.com
 # Set OAuth credentials
 export SFCC_CLIENT_ID=my-client-id
 export SFCC_CLIENT_SECRET=my-client-secret
+
+# Or use browser-based authentication (no secret needed)
+b2c am users list --client-id my-client-id --user-auth
 ```
 
 ---

@@ -7,6 +7,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
 
@@ -22,6 +23,10 @@ class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
   // Expose protected methods for testing
   public testRequireOAuthCredentials() {
     return this.requireOAuthCredentials();
+  }
+
+  public testGetOAuthStrategy() {
+    return this.getOAuthStrategy();
   }
 }
 
@@ -63,6 +68,37 @@ describe('cli/oauth-command', () => {
       await command.init();
       // Should not throw
       command.testRequireOAuthCredentials();
+    });
+  });
+
+  describe('--user-auth flag', () => {
+    it('should force implicit auth method when --user-auth is set', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+        'client-secret': 'test-secret',
+        'user-auth': true,
+      });
+
+      await command.init();
+
+      // With --user-auth, even though client-secret is provided,
+      // implicit auth should be used
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+    });
+
+    it('should use client-credentials when --user-auth is not set and secret is provided', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+        'client-secret': 'test-secret',
+        'user-auth': false,
+      });
+
+      await command.init();
+
+      // Without --user-auth, client-credentials should be used when secret is available
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
     });
   });
 });
