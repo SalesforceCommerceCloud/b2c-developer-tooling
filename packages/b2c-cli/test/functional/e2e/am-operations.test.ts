@@ -31,11 +31,13 @@ describe('Account Manager Operations E2E Tests', function () {
   let userId: string;
   let hasRoles = false;
   let roleId: string;
+  let hasApiClients = false;
+  let apiClientId: string;
 
   // Force client-credentials auth for all AM tests (no browser in CI)
   // Build env object without undefined values to satisfy Record<string, string>
+  // Note: Don't pass SFCC_AUTH_METHODS via env as it causes parsing issues
   const AM_AUTH_ENV: Record<string, string> = {
-    SFCC_AUTH_METHODS: 'client-credentials',
     ...(process.env.SFCC_CLIENT_ID ? {SFCC_CLIENT_ID: process.env.SFCC_CLIENT_ID} : {}),
     ...(process.env.SFCC_CLIENT_SECRET ? {SFCC_CLIENT_SECRET: process.env.SFCC_CLIENT_SECRET} : {}),
   };
@@ -49,7 +51,7 @@ describe('Account Manager Operations E2E Tests', function () {
 
     // Check if we have access to organizations
     try {
-      const result = await runCLI(['am', 'orgs', 'list', '--json'], {
+      const result = await runCLI(['am', 'orgs', 'list', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         env: AM_AUTH_ENV,
       });
@@ -80,14 +82,14 @@ describe('Account Manager Operations E2E Tests', function () {
 
     // Check if we have access to users
     try {
-      const result = await runCLI(['am', 'users', 'list', '--json'], {
+      const result = await runCLI(['am', 'users', 'list', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         env: AM_AUTH_ENV,
       });
       if (result.exitCode === 0) {
         const response = parseJSONOutput(result);
         if (response.content && response.content.length > 0) {
-          userId = response.content[0].id || response.content[0].email;
+          userId = response.content[0].mail;
           hasUsers = true;
           console.log(`✓ Found ${response.content.length} user(s)`);
         }
@@ -98,7 +100,7 @@ describe('Account Manager Operations E2E Tests', function () {
 
     // Check if we have access to roles
     try {
-      const result = await runCLI(['am', 'roles', 'list', '--json'], {
+      const result = await runCLI(['am', 'roles', 'list', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         env: AM_AUTH_ENV,
       });
@@ -113,11 +115,31 @@ describe('Account Manager Operations E2E Tests', function () {
     } catch {
       console.log('⚠ Could not access roles, some tests will be skipped');
     }
+
+    // Check if we have access to API clients  
+    try {
+      const result = await runCLI(['am', 'clients', 'list', '--json', '--auth-methods', 'client-credentials'], {
+        timeout: TIMEOUTS.DEFAULT,
+        env: AM_AUTH_ENV,
+      });
+      if (result.exitCode === 0) {
+        const response = parseJSONOutput(result);
+        if (response.content && response.content.length > 0) {
+          apiClientId = response.content[0].id;
+          if (typeof apiClientId === 'string' && apiClientId.length > 0) {
+            hasApiClients = true;
+            console.log(`✓ Found ${response.content.length} API client(s)`);
+          }
+        }
+      }
+    } catch {
+      console.log('⚠ Could not access API clients, some tests will be skipped');
+    }
   });
 
   describe('Step 1: Organizations', () => {
     it('should list organizations', async function () {
-      const result = await runCLIWithRetry(['am', 'orgs', 'list', '--json'], {
+      const result = await runCLIWithRetry(['am', 'orgs', 'list', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         verbose: true,
         env: AM_AUTH_ENV,
@@ -141,7 +163,7 @@ describe('Account Manager Operations E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLIWithRetry(['am', 'orgs', 'get', orgId, '--json'], {
+      const result = await runCLIWithRetry(['am', 'orgs', 'get', orgId, '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         verbose: true,
         env: AM_AUTH_ENV,
@@ -164,8 +186,9 @@ describe('Account Manager Operations E2E Tests', function () {
       expect(result.exitCode, `Org get command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      expect(response).to.have.property('organization');
-      expect(response.organization).to.have.property('id').that.equals(orgId);
+      // Org get --json returns the organization object directly
+      expect(response).to.have.property('id').that.equals(orgId);
+      expect(response).to.have.property('name');
     });
 
     it('should get organization audit logs', async function () {
@@ -174,7 +197,7 @@ describe('Account Manager Operations E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLIWithRetry(['am', 'orgs', 'audit', orgId, '--json'], {
+      const result = await runCLIWithRetry(['am', 'orgs', 'audit', orgId, '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         verbose: true,
         env: AM_AUTH_ENV,
@@ -197,14 +220,15 @@ describe('Account Manager Operations E2E Tests', function () {
       expect(result.exitCode, `Org audit command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      expect(response).to.have.property('auditLogs');
-      expect(response.auditLogs).to.be.an('array');
+      // Org audit --json returns an AuditLogCollection with content array
+      expect(response).to.have.property('content');
+      expect(response.content).to.be.an('array');
     });
   });
 
   describe('Step 2: Users', () => {
     it('should list users', async function () {
-      const result = await runCLIWithRetry(['am', 'users', 'list', '--json'], {
+      const result = await runCLIWithRetry(['am', 'users', 'list', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         verbose: true,
         env: AM_AUTH_ENV,
@@ -217,10 +241,9 @@ describe('Account Manager Operations E2E Tests', function () {
       expect(response.content).to.be.an('array');
 
       if (response.content.length > 0) {
-        expect(response.content[0]).to.have.property('email');
-        // Either id or email can be used as identifier
-        const hasIdentifier = response.content[0].id || response.content[0].email;
-        expect(hasIdentifier, 'User should have id or email').to.exist;
+        expect(response.content[0]).to.have.property('mail');
+        const hasIdentifier = response.content[0].id || response.content[0].mail;
+        expect(hasIdentifier, 'User should have id or mail').to.exist;
       }
     });
 
@@ -230,7 +253,7 @@ describe('Account Manager Operations E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLIWithRetry(['am', 'users', 'get', userId, '--json'], {
+      const result = await runCLIWithRetry(['am', 'users', 'get', userId, '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         verbose: true,
         env: AM_AUTH_ENV,
@@ -239,14 +262,14 @@ describe('Account Manager Operations E2E Tests', function () {
       expect(result.exitCode, `User get command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      expect(response).to.have.property('user');
-      expect(response.user).to.have.property('email');
+      // User get --json returns the user object directly
+      expect(response).to.have.property('mail');
     });
   });
 
   describe('Step 3: Roles', () => {
     it('should list roles', async function () {
-      const result = await runCLIWithRetry(['am', 'roles', 'list', '--json'], {
+      const result = await runCLIWithRetry(['am', 'roles', 'list', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         verbose: true,
         env: AM_AUTH_ENV,
@@ -270,7 +293,7 @@ describe('Account Manager Operations E2E Tests', function () {
         this.skip();
       }
 
-      const result = await runCLIWithRetry(['am', 'roles', 'get', roleId, '--json'], {
+      const result = await runCLIWithRetry(['am', 'roles', 'get', roleId, '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         verbose: true,
         env: AM_AUTH_ENV,
@@ -293,14 +316,15 @@ describe('Account Manager Operations E2E Tests', function () {
       expect(result.exitCode, `Role get command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      expect(response).to.have.property('role');
-      expect(response.role).to.have.property('id').that.equals(roleId);
+      // Role get --json returns the role object directly
+      expect(response).to.have.property('id').that.equals(roleId);
+      expect(response).to.have.property('description');
     });
   });
 
   describe('Step 4: Error Handling', () => {
     it('should fail gracefully with invalid organization ID', async function () {
-      const result = await runCLI(['am', 'orgs', 'get', 'invalid-org-id-12345', '--json'], {
+      const result = await runCLI(['am', 'orgs', 'get', 'invalid-org-id-12345', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         env: AM_AUTH_ENV,
       });
@@ -312,7 +336,7 @@ describe('Account Manager Operations E2E Tests', function () {
     });
 
     it('should fail gracefully with invalid user ID', async function () {
-      const result = await runCLI(['am', 'users', 'get', 'nonexistent-user-12345@example.com', '--json'], {
+      const result = await runCLI(['am', 'users', 'get', 'nonexistent-user-12345@example.com', '--json', '--auth-methods', 'client-credentials'], {
         timeout: TIMEOUTS.DEFAULT,
         env: AM_AUTH_ENV,
       });
@@ -324,18 +348,18 @@ describe('Account Manager Operations E2E Tests', function () {
     });
 
     it('should require authentication', async function () {
-      const result = await runCLI(['am', 'orgs', 'list', '--json'], {
-        timeout: TIMEOUTS.DEFAULT,
-        env: {
-          SFCC_CLIENT_ID: '',
-          SFCC_CLIENT_SECRET: '',
-          SFCC_CONFIG: '/nonexistent/dw.json', // Prevent loading dw.json
-        },
-      });
+        const result = await runCLI(['am', 'orgs', 'list', '--json', '--auth-methods', 'client-credentials'], {
+          timeout: TIMEOUTS.DEFAULT,
+          env: {
+            SFCC_CLIENT_ID: '',
+            SFCC_CLIENT_SECRET: '',
+            SFCC_CONFIG: '/nonexistent/dw.json', // Prevent loading dw.json
+          },
+        });
 
       expect(result.exitCode, 'Command should fail without credentials').to.not.equal(0);
 
-      const errorText = result.stderr || result.stdout;
+      const errorText = String(result.stderr || result.stdout || '');
       expect(errorText).to.match(/client.?id|credentials|authentication|unauthorized/i);
     });
   });
@@ -350,7 +374,9 @@ describe('Account Manager Operations E2E Tests', function () {
 
       // Run all commands in parallel to avoid await-in-loop
       const results = await Promise.all(
-        commands.map((cmd) => runCLI([...cmd, '--json'], {timeout: TIMEOUTS.DEFAULT, env: AM_AUTH_ENV})),
+        commands.map((cmd) =>
+          runCLI([...cmd, '--json', '--auth-methods', 'client-credentials'], {timeout: TIMEOUTS.DEFAULT, env: AM_AUTH_ENV}),
+        ),
       );
 
       // Validate all results
@@ -362,6 +388,71 @@ describe('Account Manager Operations E2E Tests', function () {
           expect(() => parseJSONOutput(result), `Command ${cmd.join(' ')} returned invalid JSON`).to.not.throw();
         }
       }
+    });
+  });
+
+  describe('Step 6: API Clients', () => {
+    it('should list API clients', async function () {
+        const result = await runCLIWithRetry(['am', 'clients', 'list', '--json', '--auth-methods', 'client-credentials'], {
+        timeout: TIMEOUTS.DEFAULT,
+        verbose: true,
+        env: AM_AUTH_ENV,
+      });
+
+      // If the command is not available in this CLI build, skip instead of failing
+      if (
+        result.exitCode === 127 &&
+        (String(result.stderr).includes('is not a b2c command') ||
+          String(result.stderr).includes('Run b2c help am for a list of available commands'))
+      ) {
+        console.log('  ⚠ am clients list command not available in this build, skipping test');
+        this.skip();
+      }
+
+      expect(result.exitCode, `Clients list command failed: ${result.stderr}`).to.equal(0);
+
+      const response = parseJSONOutput(result);
+      expect(response).to.have.property('content');
+      expect(response.content).to.be.an('array');
+
+      if (response.content.length > 0) {
+        expect(response.content[0]).to.have.property('id');
+        expect(response.content[0]).to.have.property('name');
+      }
+    });
+
+    it('should get specific API client', async function () {
+      if (!hasApiClients) {
+        console.log('  ⚠ No API clients available, skipping test');
+        this.skip();
+      }
+
+      const result = await runCLIWithRetry(['am', 'clients', 'get', apiClientId, '--json', '--auth-methods', 'client-credentials'], {
+        timeout: TIMEOUTS.DEFAULT,
+        verbose: true,
+        env: AM_AUTH_ENV,
+      });
+
+      // Skip if authentication/permission error (some API clients may be restricted)
+      if (result.exitCode !== 0) {
+        const errorText = String(result.stderr || result.stdout || '');
+        if (
+          errorText.includes('Authentication invalid') ||
+          errorText.includes('Access is denied') ||
+          errorText.includes('401') ||
+          errorText.includes('403')
+        ) {
+          console.log('  ⚠ Insufficient permissions for API client get, skipping test');
+          this.skip();
+        }
+      }
+
+      expect(result.exitCode, `API client get command failed: ${result.stderr}`).to.equal(0);
+
+      const response = parseJSONOutput(result);
+      // Clients get --json returns the client object directly
+      expect(response).to.have.property('id').that.equals(apiClientId);
+      expect(response).to.have.property('name');
     });
   });
 });
