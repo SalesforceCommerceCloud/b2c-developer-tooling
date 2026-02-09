@@ -297,7 +297,7 @@
     "generate:docs-index": "tsx scripts/generate-docs-index.ts"
   },
   "devDependencies": {
-    "@eslint/compat": "^1",
+    "@eslint/compat": "^2.0.2",
     "@oclif/core": "^4",
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^4.1.14",
@@ -312,7 +312,7 @@
     "@types/xml2js": "^0.4.14",
     "c8": "^10.1.3",
     "chai": "^4.5.0",
-    "eslint": "^9",
+    "eslint": "^10.0.0",
     "eslint-config-prettier": "^10",
     "eslint-plugin-prettier": "^5.5.4",
     "mocha": "^10.8.2",
