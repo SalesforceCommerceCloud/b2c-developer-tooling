@@ -97,8 +97,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@eslint/compat": "^1",
-    "@eslint/js": "^9",
+    "@eslint/compat": "^1.4.1",
+    "@eslint/js": "^9.39.2",
     "@modelcontextprotocol/inspector": "^0.18.0",
     "@oclif/prettier-config": "^0.2.1",
     "@salesforce/dev-config": "^4.3.2",
@@ -107,11 +107,11 @@
     "@types/node": "^22.16.5",
     "@types/sinon": "^21.0.0",
     "chai": "^4",
-    "eslint": "^9",
-    "eslint-config-oclif": "^6",
-    "eslint-config-prettier": "^10",
+    "eslint": "^9.39.2",
+    "eslint-config-oclif": "^6.0.137",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-header": "^3.1.1",
-    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-prettier": "^5.5.5",
     "mocha": "^10",
     "oclif": "^4",
     "prettier": "^3.6.2",
@@ -119,7 +119,7 @@
     "sinon": "^21.0.1",
     "tsx": "^4",
     "typescript": "^5",
-    "typescript-eslint": "^8"
+    "typescript-eslint": "^8.55.0"
   },
   "engines": {
     "node": ">=22.16.0"
