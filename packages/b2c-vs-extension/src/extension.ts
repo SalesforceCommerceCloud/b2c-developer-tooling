@@ -436,13 +436,18 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         const cli = resolveCliScript(context);
         const projectDirectory = projectDir;
         if (msg.type === "createCartridge") {
-          const cmd =
-            cli
-              ? `node ${JSON.stringify(cli.script)} generate-cartridge --project-directory=${JSON.stringify(projectDirectory)}`
-              : `npx --yes @salesforce/b2c-cli generate-cartridge --project-directory=${JSON.stringify(projectDirectory)}`;
+          const cartridgesDir = path.join(projectDirectory, "cartridges");
+          if (!fs.existsSync(cartridgesDir) || !fs.statSync(cartridgesDir).isDirectory()) {
+            const message =
+              "B2C DX: This command must be run under a Storefront Next storefront template. No 'cartridges' directory found.";
+            log.appendLine(`[Storefront Next Cartridge] ${message}`);
+            vscode.window.showErrorMessage(message);
+            return;
+          }
+          const cmd = "pnpm sfnext generate-cartridge -d .";
           const term = vscode.window.createTerminal({
             name: "B2C Create Cartridge",
-            cwd: cli ? path.dirname(cli.script) : undefined,
+            cwd: projectDirectory,
           });
           term.show();
           term.sendText(cmd);
