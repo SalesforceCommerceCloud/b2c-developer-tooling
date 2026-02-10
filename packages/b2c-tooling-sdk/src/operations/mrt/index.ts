@@ -222,3 +222,7 @@ export type {
   B2CTargetInfo,
   PatchedB2CTargetInfo,
 } from './b2c-config.js';
+
+// Log tailing operations
+export {createLoggingToken, parseMrtLogLine, getLogsWebSocketUrl, tailMrtLogs} from './tail-logs.js';
+export type {MrtLogEntry, CreateLoggingTokenOptions, TailMrtLogsOptions, TailMrtLogsResult} from './tail-logs.js';
