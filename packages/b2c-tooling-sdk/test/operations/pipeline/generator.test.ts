@@ -1,0 +1,1004 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+import {expect} from 'chai';
+import {
+  parsePipeline,
+  analyzePipeline,
+  generateController,
+  convertPipelineContent,
+  UnconvertablePipelineError,
+} from '@salesforce/b2c-tooling-sdk/operations/pipeline';
+
+describe('operations/pipeline/generator', () => {
+  describe('generateController', () => {
+    it('generates a simple controller with one function', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Show">
+            <segment>
+              <node><start-node name="Show" secure="false"/></node>
+              <simple-transition/>
+              <node>
+                <interaction-node transaction-required="false">
+                  <template name="content/homepage"/>
+                </interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Home');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("'use strict';");
+      expect(code).to.include("var ISML = require('dw/template/ISML');");
+      expect(code).to.include('function Show(pdict)');
+      expect(code).to.include('pdict = pdict || {};');
+      expect(code).to.include("ISML.renderTemplate('content/homepage', pdict);");
+      expect(code).to.include('exports.Show = Show;');
+      expect(code).to.include('exports.Show.public = true;');
+    });
+
+    it('generates dynamic template as expression', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Show">
+            <segment>
+              <node><start-node name="Show"/></node>
+              <simple-transition/>
+              <node>
+                <interaction-node transaction-required="false">
+                  <template name="Product.template" dynamic="true"/>
+                </interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Dynamic templates use pdict expression, not string literal
+      expect(code).to.include('ISML.renderTemplate(pdict.Product.template, pdict);');
+      expect(code).not.to.include("ISML.renderTemplate('Product.template', pdict);");
+    });
+
+    it('generates private functions without .public = true', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Helper">
+            <segment>
+              <node><start-node name="Helper" call-mode="private"/></node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Account');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('function Helper(pdict)');
+      expect(code).to.include('exports.Helper = Helper;');
+      expect(code).not.to.include('exports.Helper.public');
+    });
+
+    it('generates end node with named return', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node><end-node name="success"/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("return 'success';");
+    });
+
+    it('generates Assign pipelet as variable assignments', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="Assign" pipelet-set-identifier="bc_api">
+                  <key-binding alias="&quot;hello&quot;" key="From_0"/>
+                  <key-binding alias="greeting" key="To_0"/>
+                  <key-binding alias="null" key="From_1"/>
+                  <key-binding alias="null" key="To_1"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('pdict.greeting = "hello";');
+    });
+
+    it('transforms CurrentForms to session.forms', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="Assign" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CurrentForms.billing.address" key="From_0"/>
+                  <key-binding alias="address" key="To_0"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('session.forms.billing.address');
+    });
+
+    it('transforms CurrentSession to session', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="Assign" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CurrentSession.customer" key="From_0"/>
+                  <key-binding alias="cust" key="To_0"/>
+                </pipelet-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('session.customer');
+    });
+
+    it('generates Script pipelet with args variable for output capture', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="Script" pipelet-set-identifier="bc_api">
+                  <config-property key="ScriptFile" value="app_storefront:checkout/Helper.ds"/>
+                  <key-binding alias="CurrentForms.billing" key="Form"/>
+                  <key-binding alias="Customer" key="Customer"/>
+                </pipelet-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Script pipelet uses a named args object so outputs can be read back
+      expect(code).to.include('var scriptArgs = {');
+      expect(code).to.include('Form: session.forms.billing');
+      expect(code).to.include('Customer: pdict.Customer');
+      expect(code).to.include("require('app_storefront/cartridge/scripts/checkout/Helper').execute(scriptArgs);");
+      // Only pdict variables are read back (not session objects like CurrentForms)
+      expect(code).not.to.include('session.forms.billing = scriptArgs.Form;');
+      expect(code).to.include('pdict.Customer = scriptArgs.Customer;');
+    });
+
+    it('generates jump node as redirect', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <jump-node start-name-ref="Home-Show"/>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var URLUtils = require('dw/web/URLUtils');");
+      expect(code).to.include("response.redirect(URLUtils.url('Home-Show'));");
+    });
+
+    it('generates call node within same pipeline as direct call', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Show">
+            <segment>
+              <node><start-node name="Show"/></node>
+              <simple-transition/>
+              <node><call-node start-name-ref="Test-Helper"/></node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+          <branch basename="Helper">
+            <segment>
+              <node><start-node name="Helper" call-mode="private"/></node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('pdict = Helper(pdict) || pdict;');
+    });
+
+    it('generates call node to different pipeline as require', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Show">
+            <segment>
+              <node><start-node name="Show"/></node>
+              <simple-transition/>
+              <node><call-node start-name-ref="Account-RequireLogin"/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Cart');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("pdict = require('./Account').RequireLogin(pdict) || pdict;");
+    });
+  });
+
+  describe('form pipelets', () => {
+    it('generates ClearFormElement pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="ClearFormElement" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CurrentForms.billing" key="FormElement"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('session.forms.billing.clearFormElement();');
+    });
+
+    it('generates UpdateFormWithObject pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="UpdateFormWithObject" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CurrentForms.profile" key="Form"/>
+                  <key-binding alias="CurrentCustomer.profile" key="Object"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('session.forms.profile.copyFrom(customer.profile);');
+    });
+
+    it('generates InvalidateFormElement pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="InvalidateFormElement" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CurrentForms.login.password" key="FormElement"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('session.forms.login.password.invalidateFormElement();');
+    });
+
+    it('generates UpdateObjectWithForm pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="UpdateObjectWithForm" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CurrentForms.profile" key="Form"/>
+                  <key-binding alias="Address" key="Object"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('session.forms.profile.copyTo(pdict.Address);');
+    });
+  });
+
+  describe('product pipelets', () => {
+    it('generates GetProduct pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetProduct" pipelet-set-identifier="bc_api">
+                  <key-binding alias="ProductID" key="ProductID"/>
+                  <key-binding alias="Product" key="Product"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var ProductMgr = require('dw/catalog/ProductMgr');");
+      expect(code).to.include('pdict.Product = ProductMgr.getProduct(pdict.ProductID);');
+    });
+
+    it('generates GetCategory pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetCategory" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CategoryID" key="CategoryID"/>
+                  <key-binding alias="Category" key="Category"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var CatalogMgr = require('dw/catalog/CatalogMgr');");
+      expect(code).to.include('pdict.Category = CatalogMgr.getCategory(pdict.CategoryID);');
+    });
+  });
+
+  describe('customer pipelets', () => {
+    it('generates GetCustomer pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetCustomer" pipelet-set-identifier="bc_api">
+                  <key-binding alias="Login" key="Login"/>
+                  <key-binding alias="Customer" key="Customer"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var CustomerMgr = require('dw/customer/CustomerMgr');");
+      expect(code).to.include('pdict.Customer = CustomerMgr.getCustomerByLogin(pdict.Login);');
+    });
+
+    it('generates GetCustomerAddress pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetCustomerAddress" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CurrentCustomer" key="Customer"/>
+                  <key-binding alias="AddressID" key="AddressID"/>
+                  <key-binding alias="Address" key="Address"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('pdict.Address = customer.addressBook.getAddress(pdict.AddressID);');
+    });
+
+    it('generates LogoutCustomer pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="LogoutCustomer" pipelet-set-identifier="bc_api"/>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('CustomerMgr.logoutCustomer(false);');
+    });
+  });
+
+  describe('basket pipelets', () => {
+    it('generates GetBasket pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetBasket" pipelet-set-identifier="bc_api">
+                  <key-binding alias="Basket" key="Basket"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var BasketMgr = require('dw/order/BasketMgr');");
+      expect(code).to.include('pdict.Basket = BasketMgr.getCurrentBasket();');
+    });
+
+    it('generates RemoveBasketPaymentInstrument pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="RemoveBasketPaymentInstrument" pipelet-set-identifier="bc_api">
+                  <key-binding alias="Basket" key="Basket"/>
+                  <key-binding alias="PaymentInstrument" key="PaymentInstrument"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('pdict.Basket.removePaymentInstrument(pdict.PaymentInstrument);');
+    });
+  });
+
+  describe('search pipelets', () => {
+    it('generates Search pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="Search" pipelet-set-identifier="bc_api">
+                  <key-binding alias="CategoryID" key="CategoryID"/>
+                  <key-binding alias="SearchPhrase" key="SearchPhrase"/>
+                  <key-binding alias="ProductSearchResult" key="ProductSearchResult"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var ProductSearchModel = require('dw/catalog/ProductSearchModel');");
+      expect(code).to.include('pdict.ProductSearchResult = new ProductSearchModel();');
+      expect(code).to.include('pdict.ProductSearchResult.setCategoryID(pdict.CategoryID);');
+      expect(code).to.include('pdict.ProductSearchResult.setSearchPhrase(pdict.SearchPhrase);');
+      expect(code).to.include('pdict.ProductSearchResult.search();');
+    });
+
+    it('generates Paging pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="Paging" pipelet-set-identifier="bc_api">
+                  <key-binding alias="Iterator" key="Iterator"/>
+                  <key-binding alias="PageSize" key="PageSize"/>
+                  <key-binding alias="PagingModel" key="PagingModel"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var PagingModel = require('dw/web/PagingModel');");
+      expect(code).to.include('pdict.PagingModel = new PagingModel(pdict.Iterator);');
+      expect(code).to.include('pdict.PagingModel.setPageSize(pdict.PageSize);');
+    });
+  });
+
+  describe('misc pipelets', () => {
+    it('generates SendMail pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="SendMail" pipelet-set-identifier="bc_api">
+                  <key-binding alias="&quot;test@example.com&quot;" key="MailFrom"/>
+                  <key-binding alias="CustomerEmail" key="MailTo"/>
+                  <key-binding alias="&quot;Order Confirmation&quot;" key="MailSubject"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var Mail = require('dw/net/Mail');");
+      expect(code).to.include('var mail = new Mail();');
+      expect(code).to.include('mail.setFrom("test@example.com");');
+      expect(code).to.include('mail.addTo(pdict.CustomerEmail);');
+      expect(code).to.include('mail.setSubject("Order Confirmation");');
+      expect(code).to.include('mail.send();');
+    });
+
+    it('generates GenerateCSRFToken pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GenerateCSRFToken" pipelet-set-identifier="bc_api"/>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var CSRFProtection = require('dw/web/CSRFProtection');");
+      expect(code).to.include('pdict.csrf = CSRFProtection.generateToken();');
+    });
+
+    it('generates GetContent pipelet', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetContent" pipelet-set-identifier="bc_api">
+                  <key-binding alias="&quot;homepage-banner&quot;" key="ContentID"/>
+                  <key-binding alias="Content" key="Content"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include("var ContentMgr = require('dw/content/ContentMgr');");
+      expect(code).to.include('pdict.Content = ContentMgr.getContent("homepage-banner");');
+    });
+
+    it('generates unknown pipelets as TODO comments', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="SomeUnknownPipelet" pipelet-set-identifier="bc_api">
+                  <key-binding alias="Value" key="SomeKey"/>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      expect(code).to.include('// TODO: Convert pipelet SomeUnknownPipelet');
+      expect(code).to.include('//   SomeKey = Value');
+    });
+  });
+
+  describe('convertPipelineContent', () => {
+    it('provides high-level API for conversion', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline group="Catalog">
+          <branch basename="Show">
+            <segment>
+              <node><start-node name="Show" secure="false"/></node>
+              <simple-transition/>
+              <node>
+                <interaction-node>
+                  <template name="catalog/product"/>
+                </interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const result = await convertPipelineContent(xml, 'Product');
+
+      expect(result.pipelineName).to.equal('Product');
+      expect(result.code).to.include('function Show(pdict)');
+      expect(result.code).to.include("ISML.renderTemplate('catalog/product', pdict);");
+      expect(result.warnings).to.be.an('array');
+    });
+
+    it('generates multiple functions for multiple start nodes', async () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Show">
+            <segment>
+              <node><start-node name="Show"/></node>
+              <simple-transition/>
+              <node>
+                <interaction-node><template name="home"/></interaction-node>
+              </node>
+            </segment>
+          </branch>
+          <branch basename="Edit">
+            <segment>
+              <node><start-node name="Edit" secure="true"/></node>
+              <simple-transition/>
+              <node>
+                <interaction-node><template name="edit"/></interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const result = await convertPipelineContent(xml, 'Page');
+
+      expect(result.code).to.include('function Show(pdict)');
+      expect(result.code).to.include('function Edit(pdict)');
+      expect(result.code).to.include('exports.Show.public = true;');
+      expect(result.code).to.include('exports.Edit.public = true;');
+    });
+  });
+
+  describe('pipelet error branches', () => {
+    it('handles error path through join-node to interaction', async () => {
+      // When a pipelet error transition leads to a join-node that eventually
+      // reaches an interaction node (like error/notfound), the error handling
+      // should be included in the else block.
+      // Structure: pipelet error -> join-node -> error/notfound interaction
+      // Success path terminates at end-node before reaching join-node.
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="GetProduct">
+            <segment>
+              <node><start-node name="GetProduct" call-mode="private"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetProduct" pipelet-set-identifier="bc_api">
+                  <key-binding alias="ProductID" key="ProductID"/>
+                  <key-binding alias="Product" key="Product"/>
+                  <branch source-connector="error" target-connector="in">
+                    <segment>
+                      <node><join-node/></node>
+                      <simple-transition target-connector="in"/>
+                      <node>
+                        <interaction-node>
+                          <template name="error/notfound"/>
+                        </interaction-node>
+                      </node>
+                    </segment>
+                  </branch>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node><end-node name="ok"/></node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Product');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Should have if block checking Product
+      expect(code).to.include('if (pdict.Product)');
+      // Success path returns 'ok'
+      expect(code).to.include("return 'ok';");
+      // Error path should render error/notfound
+      expect(code).to.include('} else {');
+      expect(code).to.include("ISML.renderTemplate('error/notfound', pdict);");
+    });
+
+    it('handles pipelet with error branch to simple error handling', async () => {
+      // Direct error transition to interaction node (no join-node)
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <pipelet-node pipelet-name="GetProduct" pipelet-set-identifier="bc_api">
+                  <key-binding alias="pid" key="ProductID"/>
+                  <key-binding alias="Product" key="Product"/>
+                  <branch source-connector="error">
+                    <segment>
+                      <node>
+                        <interaction-node>
+                          <template name="error/productnotfound"/>
+                        </interaction-node>
+                      </node>
+                    </segment>
+                  </branch>
+                </pipelet-node>
+              </node>
+              <simple-transition/>
+              <node>
+                <interaction-node><template name="product/show"/></interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Should have if-else structure
+      expect(code).to.include('if (pdict.Product)');
+      expect(code).to.include("ISML.renderTemplate('product/show', pdict);");
+      expect(code).to.include('} else {');
+      expect(code).to.include("ISML.renderTemplate('error/productnotfound', pdict);");
+    });
+  });
+
+  describe('decision nodes', () => {
+    it('handles implicit no branch via simple-transition', async () => {
+      // When a decision node has an explicit "yes" branch but no explicit "no" branch,
+      // the simple-transition after the decision represents the "no" path
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <pipeline>
+          <branch basename="Test">
+            <segment>
+              <node><start-node name="Test"/></node>
+              <simple-transition/>
+              <node>
+                <decision-node condition-key="Product.template == null" condition-operator="expr"/>
+                <branch source-connector="yes">
+                  <segment>
+                    <node>
+                      <interaction-node><template name="product/default"/></interaction-node>
+                    </node>
+                  </segment>
+                </branch>
+              </node>
+              <simple-transition/>
+              <node>
+                <interaction-node><template name="Product.template" dynamic="true"/></interaction-node>
+              </node>
+            </segment>
+          </branch>
+        </pipeline>`;
+
+      const pipeline = await parsePipeline(xml, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis);
+
+      // Should generate if with then block and else block
+      expect(code).to.include('if (pdict.Product.template == null)');
+      expect(code).to.include("ISML.renderTemplate('product/default', pdict);");
+      // The else block should render the dynamic template
+      expect(code).to.include('} else {');
+      expect(code).to.include('ISML.renderTemplate(pdict.Product.template, pdict);');
+    });
+  });
+
+  describe('allowUnsupported option', () => {
+    const xmlWithUnconvertable = `<?xml version="1.0" encoding="UTF-8"?>
+      <pipeline>
+        <branch basename="Test">
+          <segment>
+            <node><start-node name="Test"/></node>
+            <simple-transition/>
+            <node>
+              <pipelet-node pipelet-name="GetLastVisitedProducts" pipelet-set-identifier="bc_api">
+                <key-binding alias="Products" key="Products"/>
+              </pipelet-node>
+            </node>
+            <simple-transition/>
+            <node><end-node/></node>
+          </segment>
+        </branch>
+      </pipeline>`;
+
+    it('throws UnconvertablePipelineError by default for unsupported pipelets', async () => {
+      try {
+        await convertPipelineContent(xmlWithUnconvertable, 'Test');
+        expect.fail('Should have thrown UnconvertablePipelineError');
+      } catch (error) {
+        expect(error).to.be.instanceOf(UnconvertablePipelineError);
+        expect((error as UnconvertablePipelineError).pipelineName).to.equal('Test');
+        expect((error as UnconvertablePipelineError).unconvertablePipelets).to.have.length(1);
+        expect((error as UnconvertablePipelineError).unconvertablePipelets[0].name).to.equal('GetLastVisitedProducts');
+      }
+    });
+
+    it('generates UNSUPPORTED comments when allowUnsupported is true', async () => {
+      const result = await convertPipelineContent(xmlWithUnconvertable, 'Test', {allowUnsupported: true});
+
+      expect(result.code).to.include('// UNSUPPORTED: GetLastVisitedProducts');
+      expect(result.code).to.include('// Reason: Session-based pipelet');
+      expect(result.code).to.include('// TODO: Manual conversion required');
+      expect(result.code).to.include('//   Products = Products');
+    });
+
+    it('returns warnings for unsupported pipelets when allowUnsupported is true', async () => {
+      const result = await convertPipelineContent(xmlWithUnconvertable, 'Test', {allowUnsupported: true});
+
+      expect(result.warnings).to.include(
+        'Unsupported pipelet "GetLastVisitedProducts": Session-based pipelet. Use session.custom or clickstream API instead.',
+      );
+    });
+
+    it('works with generateController directly when allowUnsupported is true', async () => {
+      const pipeline = await parsePipeline(xmlWithUnconvertable, 'Test');
+      const analysis = analyzePipeline(pipeline);
+      const code = generateController(pipeline, analysis, {allowUnsupported: true});
+
+      expect(code).to.include('// UNSUPPORTED: GetLastVisitedProducts');
+      expect(code).to.include('// TODO: Manual conversion required');
+    });
+  });
+});

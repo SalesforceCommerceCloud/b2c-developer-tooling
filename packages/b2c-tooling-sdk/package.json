@@ -167,6 +167,17 @@
         "default": "./dist/cjs/operations/content/index.js"
       }
     },
+    "./operations/pipeline": {
+      "development": "./src/operations/pipeline/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/pipeline/index.d.ts",
+        "default": "./dist/esm/operations/pipeline/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/pipeline/index.d.ts",
+        "default": "./dist/cjs/operations/pipeline/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {
