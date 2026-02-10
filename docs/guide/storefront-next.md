@@ -66,7 +66,7 @@ Set up a Managed Runtime environment to host your storefront.
 - An MRT project (see [`b2c mrt project create`](/cli/mrt#b2c-mrt-project-create) to create one)
 
 ::: tip
-Configure your API key in `~/.mobify` or via the `SFCC_MRT_API_KEY` environment variable so you don't need to pass it on every command. See [Configuration](/guide/configuration) for details.
+Configure your API key in `~/.mobify`, `dw.json`, or via the `SFCC_MRT_API_KEY` environment variable so you don't need to pass it on every command. See [Configuration](/guide/configuration) for all available options.
 :::
 
 Find your short code in Business Manager under **Administration > Salesforce Commerce API Settings**.
