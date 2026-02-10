@@ -237,7 +237,7 @@ Use `--toolsets all` to enable all toolsets, or select specific ones with `--too
 
 #### CARTRIDGES
 Cartridge development, deployment, and code version management.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
@@ -245,7 +245,7 @@ Cartridge development, deployment, and code version management.
 
 #### MRT
 Managed Runtime operations for PWA Kit and Storefront Next deployments.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
