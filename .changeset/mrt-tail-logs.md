@@ -3,4 +3,4 @@
 '@salesforce/b2c-tooling-sdk': minor
 ---
 
-Add `mrt tail-logs` command to stream real-time application logs from Managed Runtime environments
+Add `mrt tail-logs` command to stream real-time application logs from Managed Runtime environments. Supports level filtering, regex search with match highlighting, and JSON output.
