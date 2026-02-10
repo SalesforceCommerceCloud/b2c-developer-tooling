@@ -168,6 +168,7 @@ If no instance is specified, the config with `"active": true` is used.
 | `auth-methods` | Authentication methods in priority order (array of strings) |
 | `account-manager-host` | Account Manager hostname for OAuth |
 | `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
+| `content-library` | Default content library ID for `content export` and `content list` commands |
 | `tenant-id` | Organization/tenant ID for SCAPI |
 | `sandbox-api-host` | ODS (sandbox) API hostname |
 | `mrtApiKey` | MRT API key |
@@ -232,6 +233,7 @@ Only non-sensitive, project-level fields can be configured in `package.json`. Bo
 |-------|-------------|
 | `shortCode` | SCAPI short code |
 | `clientId` | OAuth client ID (for implicit login discovery) |
+| `contentLibrary` | Default content library ID for `content export` and `content list` commands |
 | `mrtProject` | MRT project slug |
 | `mrtOrigin` | MRT API origin URL override |
 | `accountManagerHost` | Account Manager hostname for OAuth |
