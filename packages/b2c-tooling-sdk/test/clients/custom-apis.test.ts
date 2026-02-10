@@ -13,9 +13,9 @@ import {
   toOrganizationId,
   toTenantId,
   buildTenantScope,
-  buildCustomApiUrl,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
+  CUSTOM_APIS_DEFAULT_SCOPES,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
@@ -383,136 +383,10 @@ describe('clients/custom-apis', () => {
     });
   });
 
-  describe('buildCustomApiUrl', () => {
-    it('builds URL with all required parameters', () => {
-      const url = buildCustomApiUrl(
-        'kv7kzm78',
-        'f_ecom_zzxy_prd',
-        'loyalty-info',
-        'v1',
-        '/customers/{customerId}/points',
-      );
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/customers/{customerId}/points',
-      );
-    });
-
-    it('removes leading slash from endpoint path', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'loyalty-info', 'v1', '/customers');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/customers',
-      );
-    });
-
-    it('handles endpoint path without leading slash', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'loyalty-info', 'v1', 'customers');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/customers',
-      );
-    });
-
-    it('handles path parameters in endpoint path', () => {
-      const url = buildCustomApiUrl(
-        'kv7kzm78',
-        'f_ecom_zzxy_prd',
-        'loyalty-info',
-        'v1',
-        '/customers/{id}/rewards/{rewardId}',
-      );
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/customers/{id}/rewards/{rewardId}',
-      );
-    });
-
-    it('handles different API names', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'order-management', 'v2', '/orders');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/order-management/v2/organizations/f_ecom_zzxy_prd/orders',
-      );
-    });
-
-    it('handles different API versions', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'loyalty-info', 'v2', '/customers');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v2/organizations/f_ecom_zzxy_prd/customers',
-      );
-    });
-
-    it('handles different short codes', () => {
-      const url = buildCustomApiUrl('abc123xy', 'f_ecom_test_dev', 'loyalty-info', 'v1', '/customers');
-
-      expect(url).to.equal(
-        'https://abc123xy.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_test_dev/customers',
-      );
-    });
-
-    it('handles empty endpoint path', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'loyalty-info', 'v1', '');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/',
-      );
-    });
-
-    it('handles root endpoint path', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'loyalty-info', 'v1', '/');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/',
-      );
-    });
-
-    it('handles complex nested paths', () => {
-      const url = buildCustomApiUrl(
-        'kv7kzm78',
-        'f_ecom_zzxy_prd',
-        'loyalty-info',
-        'v1',
-        '/customers/{customerId}/orders/{orderId}/items/{itemId}',
-      );
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/customers/{customerId}/orders/{orderId}/items/{itemId}',
-      );
-    });
-
-    it('preserves query parameter placeholders in path', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'loyalty-info', 'v1', '/search?query={term}');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/search?query={term}',
-      );
-    });
-
-    it('works with organization ID from toOrganizationId', () => {
-      const organizationId = toOrganizationId('zzxy_prd');
-      const url = buildCustomApiUrl('kv7kzm78', organizationId, 'loyalty-info', 'v1', '/customers');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty-info/v1/organizations/f_ecom_zzxy_prd/customers',
-      );
-    });
-
-    it('handles hyphenated API names', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'customer-loyalty-rewards', 'v1', '/points');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/customer-loyalty-rewards/v1/organizations/f_ecom_zzxy_prd/points',
-      );
-    });
-
-    it('handles underscore in API names', () => {
-      const url = buildCustomApiUrl('kv7kzm78', 'f_ecom_zzxy_prd', 'loyalty_info', 'v1', '/customers');
-
-      expect(url).to.equal(
-        'https://kv7kzm78.api.commercecloud.salesforce.com/custom/loyalty_info/v1/organizations/f_ecom_zzxy_prd/customers',
-      );
+  describe('CUSTOM_APIS_DEFAULT_SCOPES', () => {
+    it('exports default scopes array including sfcc.custom-apis', () => {
+      expect(CUSTOM_APIS_DEFAULT_SCOPES).to.be.an('array');
+      expect(CUSTOM_APIS_DEFAULT_SCOPES).to.include('sfcc.custom-apis');
     });
   });
 });

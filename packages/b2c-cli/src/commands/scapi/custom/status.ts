@@ -11,26 +11,10 @@ import {
   toOrganizationId,
   type CustomApisComponents,
 } from '@salesforce/b2c-tooling-sdk';
+import {getApiType} from '@salesforce/b2c-tooling-sdk/operations/scapi';
 import {t, withDocs} from '../../../i18n/index.js';
 
 type CustomApiEndpoint = CustomApisComponents['schemas']['CustomApiEndpoint'];
-
-/**
- * Maps security scheme to human-readable API type.
- */
-function getApiType(securityScheme?: string): string {
-  switch (securityScheme) {
-    case 'AmOAuth2': {
-      return 'Admin';
-    }
-    case 'ShopperToken': {
-      return 'Shopper';
-    }
-    default: {
-      return securityScheme || '-';
-    }
-  }
-}
 
 /**
  * Rolled-up endpoint with sites combined.

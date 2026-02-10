@@ -7,54 +7,48 @@
 /**
  * SCAPI (Salesforce Commerce API) operations.
  *
- * This module provides functions for working with custom SCAPI APIs,
- * including local discovery, remote management, and utility functions.
- *
- * ## Local Custom API Discovery
- *
- * - {@link scanLocalCustomApis} - Scan workspace for custom API definitions
+ * This module provides utility functions for working with custom SCAPI APIs.
  *
  * ## Utility Functions
  *
  * - {@link getApiType} - Map security scheme to human-readable API type
- * - {@link getEndpointKey} - Generate unique key for endpoint grouping
- * - {@link rollUpEndpoints} - Roll up endpoints across multiple sites
  *
  * ## Usage
  *
  * ```typescript
- * import {
- *   scanLocalCustomApis,
- *   rollUpEndpoints,
- *   getApiType
- * } from '@salesforce/b2c-tooling-sdk/operations/scapi';
+ * import { getApiType } from '@salesforce/b2c-tooling-sdk/operations/scapi';
  *
- * // Discover custom APIs in current directory
- * const endpoints = scanLocalCustomApis();
- *
- * // With filters
- * const endpoints = scanLocalCustomApis({
- *   directory: './my-project',
- *   includeCartridges: ['app_storefront_base'],
- *   includeApis: ['loyalty-points'],
- * });
- *
- * console.log(`Found ${endpoints.length} custom API endpoints`);
- *
- * // Roll up endpoints across sites
- * const rolledUp = rollUpEndpoints(remoteEndpoints);
- * console.log(`Grouped into ${rolledUp.length} unique endpoints`);
+ * // Map security scheme to API type
+ * const apiType = getApiType('AmOAuth2');      // Returns 'Admin'
+ * const shopperType = getApiType('ShopperToken');  // Returns 'Shopper'
  * ```
  *
  * @module operations/scapi
  */
 
-export {scanLocalCustomApis} from './local-scanner.js';
-export type {
-  HttpMethod,
-  LocalCustomApiEndpoint,
-  ScanLocalCustomApisOptions,
-  SecurityScheme,
-  RolledUpEndpoint,
-} from './types.js';
-export {getApiType, getEndpointKey, rollUpEndpoints} from './utils.js';
+/**
+ * Maps security scheme to human-readable API type.
+ *
+ * @param securityScheme - The security scheme from the custom API endpoint
+ * @returns Human-readable API type (Admin, Shopper, or the scheme itself)
+ *
+ * @example
+ * ```typescript
+ * getApiType('AmOAuth2')      // Returns 'Admin'
+ * getApiType('ShopperToken')  // Returns 'Shopper'
+ * getApiType(undefined)       // Returns '-'
+ * ```
+ */
+export function getApiType(securityScheme?: string): string {
+  switch (securityScheme) {
+    case 'AmOAuth2': {
+      return 'Admin';
+    }
+    case 'ShopperToken': {
+      return 'Shopper';
+    }
+    default: {
+      return securityScheme || '-';
+    }
+  }
+}

@@ -11,7 +11,7 @@
  * Optionally fetches full OpenAPI schemas when includeSchemas=true is provided along with all three identifiers.
  * Matches the CLI command: b2c scapi schemas list
  *
- * @module tools/scapi/scapi-list
+ * @module tools/scapi/scapi-schemas-list
  */
 
 import {z} from 'zod';
@@ -19,8 +19,30 @@ import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
-import {getApiErrorMessage, buildScapiApiUrl} from '@salesforce/b2c-tooling-sdk/clients';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
 import {collapseOpenApiSchema, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
+
+/**
+ * Builds the base URL for a SCAPI API endpoint.
+ *
+ * Constructs the base URL for making SCAPI API calls based on the instance short code,
+ * API family, API name, and version.
+ *
+ * @param shortCode - SCAPI instance short code (e.g., "kv7kzm78")
+ * @param apiFamily - API family (e.g., "shopper", "checkout", "product")
+ * @param apiName - API name (e.g., "products", "baskets", "orders")
+ * @param apiVersion - API version (e.g., "v1", "v2")
+ * @returns Full base URL for the SCAPI API
+ *
+ * @example
+ * ```typescript
+ * const url = buildScapiApiUrl("kv7kzm78", "shopper", "products", "v1");
+ * // Returns: "https://kv7kzm78.api.commercecloud.salesforce.com/shopper/products/v1"
+ * ```
+ */
+function buildScapiApiUrl(shortCode: string, apiFamily: string, apiName: string, apiVersion: string): string {
+  return `https://${shortCode}.api.commercecloud.salesforce.com/${apiFamily}/${apiName}/${apiVersion}`;
+}
 
 /**
  * Input parameters for scapi_schemas_list tool.
@@ -41,8 +63,7 @@ interface SchemasListInput {
 }
 
 /**
- * Schema metadata without the authenticated 'link' field.
- * The link field is removed because it's an authenticated endpoint that users cannot access directly.
+ * Schema metadata without the authenticated 'link' field (with optional baseUrl).
  */
 type SchemaMetadata = Omit<SchemaListItem, 'link'> & {
   /** Base URL for calling the actual SCAPI API (not the schema endpoint) */
@@ -53,7 +74,7 @@ type SchemaMetadata = Omit<SchemaListItem, 'link'> & {
  * Output for discovery mode (listing schemas with metadata).
  */
 interface SchemasListOutput {
-  /** Array of schema metadata objects (without 'link' field) */
+  /** Array of schema metadata objects (without 'link' field, with optional baseUrl) */
   schemas: SchemaMetadata[];
   /** Total number of schemas found */
   total: number;
@@ -189,19 +210,7 @@ async function fetchSchemasList(params: {
 
   const schemas = data?.data ?? [];
 
-  // Remove 'link' field from schemas and add baseUrl for the actual SCAPI API
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const filteredSchemas = schemas.map(({link, ...schema}) => {
-    // Build base URL if we have all required fields
-    const baseUrl =
-      shortCode && schema.apiFamily && schema.apiName && schema.apiVersion
-        ? buildScapiApiUrl(shortCode, schema.apiFamily, schema.apiName, schema.apiVersion)
-        : undefined;
-
-    return {...schema, baseUrl};
-  });
-
-  // Extract unique values for agent convenience
+  const filteredSchemas = prepareSchemaListForConsumer(schemas, shortCode);
   const discoveryMetadata = getAvailableFilters(schemas);
 
   // Generate helpful message for empty results
@@ -233,31 +242,22 @@ function generateEmptyResultMessage(args: SchemasListInput): string {
 }
 
 /**
- * Extracts unique filter values from a list of schemas.
- *
- * This function analyzes all schemas and returns the unique values for
- * apiFamily, apiName, and apiVersion. This helps users/agents discover
- * what filter options are available without prior knowledge.
- *
- * @param schemas - Array of schema list items from the API
- * @returns Object containing sorted arrays of unique values, or undefined if none found
- *
- * @example
- * ```typescript
- * const schemas = [
- *   { apiFamily: "checkout", apiName: "shopper-baskets", apiVersion: "v1" },
- *   { apiFamily: "checkout", apiName: "shopper-orders", apiVersion: "v1" },
- *   { apiFamily: "product", apiName: "shopper-products", apiVersion: "v2" },
- * ];
- *
- * const result = getAvailableFilters(schemas);
- * // Returns:
- * // {
- * //   availableApiFamilies: ["checkout", "product"],
- * //   availableApiNames: ["shopper-baskets", "shopper-orders", "shopper-products"],
- * //   availableVersions: ["v1", "v2"]
- * // }
- * ```
+ * Prepares schema list for consumer: strips link, adds baseUrl when shortCode provided.
+ */
+function prepareSchemaListForConsumer(schemas: SchemaListItem[], shortCode?: string): SchemaMetadata[] {
+  return schemas.map((item) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {link, ...rest} = item;
+    const baseUrl =
+      shortCode && item.apiFamily && item.apiName && item.apiVersion
+        ? buildScapiApiUrl(shortCode, item.apiFamily, item.apiName, item.apiVersion)
+        : undefined;
+    return {...rest, baseUrl};
+  });
+}
+
+/**
+ * Extracts unique filter values (apiFamily, apiName, apiVersion) from a schema list.
  */
 function getAvailableFilters(schemas: SchemaListItem[]): {
   availableApiFamilies?: string[];
@@ -267,7 +267,6 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
   if (schemas.length === 0) {
     return {};
   }
-
   const availableApiFamilies = [
     ...new Set(schemas.map((s) => s.apiFamily).filter((v) => v !== undefined) as string[]),
   ].sort();
@@ -277,7 +276,6 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
   const availableVersions = [
     ...new Set(schemas.map((s) => s.apiVersion).filter((v) => v !== undefined) as string[]),
   ].sort();
-
   return {
     availableApiFamilies: availableApiFamilies.length > 0 ? availableApiFamilies : undefined,
     availableApiNames: availableApiNames.length > 0 ? availableApiNames : undefined,
@@ -288,9 +286,8 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
 /**
  * Creates the scapi_schemas_list tool.
  *
- * This tool has two modes:
- * 1. Discovery mode: List available SCAPI schemas with metadata (default, fast)
- * 2. Fetch mode: Get full OpenAPI schema (requires includeSchemas=true + all three identifiers, slower)
+ * Mirrors CLI: b2c scapi schemas list (discovery) and b2c scapi schemas get (fetch).
+ * Lists or fetches SCAPI schema specifications; includes standard SCAPI and custom API as schema types.
  *
  * @param services - MCP services instance
  * @returns MCP tool for listing/fetching SCAPI schemas
@@ -299,63 +296,23 @@ export function createSchemasListTool(services: Services): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
-      description: `List or fetch standard SCAPI (Salesforce Commerce API) schemas.
+      description: `List or fetch SCAPI (Salesforce Commerce API) schema metadata and OpenAPI specs. Use for standard SCAPI (Shop, Admin, Shopper APIs). For Custom API endpoint registration status (active/not_registered), use scapi_custom_api_status instead.
 
-This tool works with STANDARD Commerce Cloud APIs like Shop API, Admin API, and Shopper APIs.
-For CUSTOM APIs created by developers, use scapi_custom_api_list instead.
+**How to choose mode:**
+- **List (discovery):** Omit includeSchemas, or omit any of apiFamily/apiName/apiVersion. Use when you need to discover what APIs exist or filter by family/name/version/status. Returns: schemas[] (metadata only), total, availableApiFamilies, availableApiNames, availableVersions.
+- **Fetch (one schema):** Set includeSchemas=true AND provide all three: apiFamily, apiName, apiVersion. Use when you need the full OpenAPI 3.0 schema for a specific API. Returns: schema (object), apiFamily, apiName, apiVersion, baseUrl, collapsed. Set expandAll=true to get the full uncollapsed schema.
 
-**Two Modes:**
+**Rules:**
+- If you set includeSchemas=true you MUST provide apiFamily, apiName, and apiVersion. Otherwise the tool returns an error.
+- In list mode, all of apiFamily, apiName, apiVersion, status are optional filters. Omit them or set only the ones you need.
+- status (current | deprecated) only applies in list mode; it is ignored in fetch mode.
 
-1. **Discovery Mode** (default, fast)
-   - Returns metadata only: apiFamily, apiName, apiVersion, status, baseUrl
-   - Use to find what SCAPI schemas are available
-   - Provides availableApiFamilies, availableApiNames, availableVersions for filtering
-   - Example: {} (no params) returns all schemas
-   
-2. **Fetch Mode** (opt-in, slower)
-   - Returns full OpenAPI 3.0 schema definition
-   - Requires: apiFamily + apiName + apiVersion + includeSchemas=true
-   - Schemas are collapsed by default (use expandAll=true for full schema)
-   - Use when you need paths, operations, request/response models
+**Examples:**
+- "What checkout APIs exist?" → list with apiFamily: "checkout" (no includeSchemas).
+- "Show me the shopper-products v1 OpenAPI schema" → apiFamily: "product", apiName: "shopper-products", apiVersion: "v1", includeSchemas: true.
+- "List all current schemas" → list with status: "current".
 
-**When to Use Each Mode:**
-
-Discovery mode (fast):
-- "What SCAPI APIs are available?"
-- "List checkout APIs"
-- "Show me all v2 APIs"
-- User wants to explore or find an API
-
-Fetch mode (slower):
-- "Show me the Shop API schema"
-- "What endpoints does shopper-baskets v2 have?"
-- User needs schema details to make API calls or generate code
-
-**Filter Examples (Discovery Mode):**
-- {} - List all schemas
-- {apiFamily: "checkout"} - List all checkout APIs
-- {apiFamily: "shopper", status: "current"} - Current shopper APIs only
-- {apiVersion: "v2"} - All v2 APIs across families
-
-**Fetch Examples (Fetch Mode):**
-- {apiFamily: "checkout", apiName: "shopper-baskets", apiVersion: "v2", includeSchemas: true}
-- {apiFamily: "product", apiName: "shopper-products", apiVersion: "v1", includeSchemas: true, expandAll: true}
-
-**Agent Guidelines:**
-- ALWAYS start with discovery mode to find available APIs (faster, cheaper)
-- Only use includeSchemas=true when you need schema structure/details
-- Use collapsed schemas (default) - they're sufficient for understanding API structure
-- Use expandAll=true only if user explicitly needs full schema details
-- The 'baseUrl' field shows where to call the API (e.g., https://shortcode.api.commercecloud.salesforce.com/shopper/products/v1)
-- DO NOT show 'link' field URLs - those are internal authenticated endpoints
-
-**Output Fields:**
-- baseUrl: Where to call the actual SCAPI API (for making requests)
-- availableApiFamilies/Names/Versions: Help users discover filter options
-- status: "current" (active) or "deprecated"
-- schema: Full OpenAPI schema (only in fetch mode with includeSchemas=true)
-
-Note: Requires SCAPI shortCode, tenantId, and OAuth credentials configured.`,
+**Requirements:** Instance must have shortCode, tenantId, and OAuth with sfcc.scapi-schemas scope.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)

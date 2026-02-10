@@ -123,29 +123,27 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 
 ##### SCAPI Discovery
 
-**Standard SCAPI Endpoints:**
+Use **scapi_schemas_list** for standard SCAPI (Shop, Admin, Shopper APIs). Use **scapi_custom_api_status** for developer-defined custom API endpoints and their registration status on the instance.
 
-Discover standard Salesforce Commerce API schemas (Shopper APIs, Admin APIs, etc.):
+**Standard SCAPI (tool: `scapi_schemas_list`):**
 
-- ✅ "Use the MCP tool to discover what SCAPI endpoints are available for product data."
-- ✅ "Use the MCP tool to show me all available SCAPI schemas."
-- ✅ "Use the MCP tool to get the OpenAPI schema for the shopper-baskets API."
+Discover schema metadata and fetch OpenAPI specs for built-in SCAPI:
 
-**Custom API Discovery:**
+- ✅ "Use the MCP tool to list all available SCAPI schemas." → list mode (no includeSchemas).
+- ✅ "Use the MCP tool to show me what checkout APIs exist." → list with apiFamily filter.
+- ✅ "Use the MCP tool to discover SCAPI product endpoints." → list with apiFamily: product.
+- ✅ "Use the MCP tool to get the OpenAPI schema for shopper-baskets v1." → fetch with apiFamily, apiName, apiVersion, includeSchemas: true.
+- ✅ "Use the MCP tool to show me the full OpenAPI spec for shopper-products v1." → fetch with includeSchemas: true, expandAll: true.
 
-List and discover custom SCAPI APIs (both deployed and in your workspace):
+**Custom API status (tool: `scapi_custom_api_status`):**
 
-- ✅ "Use the MCP tool to list custom SCAPI APIs in my B2C instance."
-- ✅ "Use the MCP tool to show me all deployed and local custom API endpoints with their URLs."
-- ✅ "Use the MCP tool to list custom APIs with their OpenAPI schemas."
-- ✅ "Use the MCP tool to check which custom APIs are deployed vs only defined locally."
-- ✅ "Use the MCP tool to find custom APIs that are in my workspace but not deployed yet."
+List custom API endpoints deployed on the instance and whether each is active or not_registered (one row per endpoint per site):
 
-**Scaffolding:**
-
-Create new custom SCAPI APIs:
-
-- ✅ "Use the MCP tool to scaffold a new custom SCAPI API for order management."
+- ✅ "Use the MCP tool to list custom SCAPI endpoints on my instance."
+- ✅ "Use the MCP tool to show which custom APIs are active vs not registered."
+- ✅ "Use the MCP tool to list custom API endpoints grouped by site."
+- ✅ "Use the MCP tool to list only active custom API endpoints." → status: active.
+- ✅ "Use the MCP tool to find custom API endpoints that failed to register." → status: not_registered.
 
 ##### Cartridge Deployment
 
@@ -282,7 +280,7 @@ PWA Kit v3 development tools for building headless storefronts.
 | `pwakit_run_site_test` | Run site tests for PWA Kit project |
 | `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development |
 | `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
-| `scapi_custom_api_list` | List custom SCAPI API endpoints (both deployed and local) |
+| `scapi_custom_api_status` | List custom SCAPI API endpoints (both deployed and local) |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 #### SCAPI
@@ -292,7 +290,7 @@ Salesforce Commerce API discovery and exploration.
 | Tool | Description |
 |------|-------------|
 | `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
-| `scapi_custom_api_list` | List custom SCAPI API endpoints (both deployed and local) |
+| `scapi_custom_api_status` | List custom SCAPI API endpoints (both deployed and local) |
 | `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API (not yet implemented) |
 
 #### STOREFRONTNEXT
@@ -309,7 +307,7 @@ Storefront Next development tools for building modern storefronts.
 | `storefront_next_design_decorator` | Apply design decorators to Storefront Next components |
 | `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
 | `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
-| `scapi_custom_api_list` | List custom SCAPI API endpoints (both deployed and local) |
+| `scapi_custom_api_status` | List custom SCAPI API endpoints (both deployed and local) |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`). When using multiple toolsets, tools are automatically deduplicated.
