@@ -424,6 +424,32 @@ describe('telemetry/telemetry', () => {
       expect(eventProps.duration).to.equal(1234);
     });
 
+    it('supports COMMAND_ERROR event type with error details', async () => {
+      const mockReporter = createMockReporter(sandbox);
+      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'test-key',
+      });
+
+      await telemetry.start();
+      telemetry.sendEvent('COMMAND_ERROR', {
+        command: 'scapi schemas list',
+        exitCode: 1,
+        duration: 100,
+        errorMessage: 'OAuth client ID required.',
+        errorCause: 'Missing SFCC_CLIENT_ID',
+      });
+
+      const [eventName, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
+      expect(eventName).to.equal('COMMAND_ERROR');
+      expect(eventProps.command).to.equal('scapi schemas list');
+      expect(eventProps.exitCode).to.equal(1);
+      expect(eventProps.errorMessage).to.equal('OAuth client ID required.');
+      expect(eventProps.errorCause).to.equal('Missing SFCC_CLIENT_ID');
+    });
+
     it('supports SERVER_STOPPED event type', async () => {
       const mockReporter = createMockReporter(sandbox);
       sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));

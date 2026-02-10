@@ -472,12 +472,20 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
 
-    // Send exception to telemetry if initialized
-    // Flush explicitly before stop to ensure the exception event is sent
-    // This is critical for fast exits where the process terminates immediately
-    this.telemetry?.sendException(err, {command: this.id, exitCode, duration});
-    await this.telemetry?.flush();
-    await this.telemetry?.stop();
+    // Send exception and COMMAND_ERROR event so the error appears in custom events (same view as COMMAND_START)
+    // Flush explicitly before stop to ensure events are sent before process exits
+    if (this.telemetry) {
+      this.telemetry.sendException(err, {command: this.id, exitCode, duration});
+      this.telemetry.sendEvent('COMMAND_ERROR', {
+        command: this.id,
+        exitCode,
+        duration,
+        errorMessage: err.message,
+        ...(err.cause ? {errorCause: String(err.cause)} : {}),
+      });
+      await this.telemetry.flush();
+      await this.telemetry.stop();
+    }
 
     // Log if logger is available (may not be if error during init)
     if (this.logger) {

@@ -13,9 +13,8 @@ try {
   // .env file not found or not readable, continue without it
 }
 
-// Disable telemetry by default in development only when BOTH vars are unset.
-// .env can set SF_DISABLE_TELEMETRY/SFCC_DISABLE_TELEMETRY to enable telemetry.
-// isDisabled() is: SF_DISABLE_TELEMETRY === 'true' || SFCC_DISABLE_TELEMETRY === 'true'
+// Disable telemetry by default in development when both vars are unset.
+// Set SFCC_DISABLE_TELEMETRY=false (or SF_DISABLE_TELEMETRY=false) in .env to enable COMMAND_START/COMMAND_SUCCESS.
 const userWantsTelemetryEnabled =
   process.env.SF_DISABLE_TELEMETRY === 'false' || process.env.SFCC_DISABLE_TELEMETRY === 'false';
 if (userWantsTelemetryEnabled) {
@@ -24,6 +23,9 @@ if (userWantsTelemetryEnabled) {
 } else {
   process.env.SF_DISABLE_TELEMETRY = 'true';
   process.env.SFCC_DISABLE_TELEMETRY = 'true';
+  process.stderr.write(
+    '[b2c-cli dev] Telemetry is disabled. Set SFCC_DISABLE_TELEMETRY=false in .env to enable COMMAND_START/COMMAND_SUCCESS.\n',
+  );
 }
 
 import {execute} from '@oclif/core';
