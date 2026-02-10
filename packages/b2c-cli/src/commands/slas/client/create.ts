@@ -21,6 +21,7 @@ const DEFAULT_SCOPES = [
   'sfcc.shopper-customers.login',
   'sfcc.shopper-customers.register',
   'sfcc.shopper-discovery-search',
+  'sfcc.shopper-experience',
   'sfcc.shopper-gift-certificates',
   'sfcc.shopper-myaccount.addresses.rw',
   'sfcc.shopper-myaccount.baskets',

@@ -33,6 +33,10 @@ class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
   public testGetOAuthStrategy() {
     return this.getOAuthStrategy();
   }
+
+  public testRequireTenantId() {
+    return this.requireTenantId();
+  }
 }
 
 // Test command with default client ID (simulates AmCommand/OdsCommand behavior)
@@ -128,6 +132,37 @@ describe('cli/oauth-command', () => {
       // Without --user-auth, client-credentials should be used when secret is available
       const strategy = command.testGetOAuthStrategy();
       expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
+    });
+  });
+
+  describe('requireTenantId', () => {
+    it('returns tenant ID as-is when no f_ecom_ prefix', async () => {
+      stubParse(command, {'client-id': 'test-client', 'tenant-id': 'abcd_001'});
+      await command.init();
+
+      expect(command.testRequireTenantId()).to.equal('abcd_001');
+    });
+
+    it('strips f_ecom_ prefix from tenant ID', async () => {
+      stubParse(command, {'client-id': 'test-client', 'tenant-id': 'f_ecom_abcd_001'});
+      await command.init();
+
+      expect(command.testRequireTenantId()).to.equal('abcd_001');
+    });
+
+    it('throws error when no tenant ID provided', async () => {
+      stubParse(command);
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        command.testRequireTenantId();
+      } catch {
+        // Expected
+      }
+
+      expect(errorStub.called).to.be.true;
     });
   });
 

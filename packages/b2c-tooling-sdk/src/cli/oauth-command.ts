@@ -225,6 +225,10 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
         ),
       );
     }
+    // Strip optional f_ecom_ prefix so users can pass either the organization ID or tenant ID
+    if (tenantId.startsWith('f_ecom_')) {
+      return tenantId.slice('f_ecom_'.length);
+    }
     return tenantId;
   }
 }

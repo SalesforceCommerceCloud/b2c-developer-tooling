@@ -51,6 +51,7 @@ const guideSidebar = [
       { text: 'Account Manager', link: '/guide/account-manager' },
       { text: 'Scaffolding', link: '/guide/scaffolding' },
       { text: 'Security', link: '/guide/security' },
+      { text: 'Storefront Next', link: '/guide/storefront-next' },
     ],
   },
   {
