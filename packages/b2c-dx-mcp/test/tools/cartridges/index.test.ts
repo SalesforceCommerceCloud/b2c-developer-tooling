@@ -143,7 +143,6 @@ describe('tools/cartridges', () => {
       expect(dir).to.equal(directory);
       expect(options.include).to.be.undefined;
       expect(options.exclude).to.be.undefined;
-      expect(options.delete).to.be.undefined;
       expect(options.reload).to.be.undefined;
       const jsonResult = getResultJson<DeployResult>(result);
       expect(jsonResult.codeVersion).to.equal('v1');
@@ -227,28 +226,6 @@ describe('tools/cartridges', () => {
       expect(options.exclude).to.deep.equal(exclude);
     });
 
-    it('should pass delete option', async () => {
-      const mockResult: DeployResult = {
-        cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
-        codeVersion: 'v1',
-        reloaded: false,
-      };
-      findAndDeployCartridgesStub.resolves(mockResult);
-
-      const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
-        findAndDeployCartridges: findAndDeployCartridgesStub,
-      })[0];
-
-      await tool.handler({delete: true});
-
-      expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
-      const args = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
-      const options = args[2];
-      expect(options.delete).to.be.true;
-    });
-
     it('should pass reload option', async () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
@@ -275,7 +252,6 @@ describe('tools/cartridges', () => {
       const directory = './cartridges';
       const cartridges = ['app_storefront_base'];
       const exclude = ['test_cartridge'];
-      const deleteFlag = true;
       const reload = true;
 
       const mockResult: DeployResult = {
@@ -295,7 +271,6 @@ describe('tools/cartridges', () => {
         directory,
         cartridges,
         exclude,
-        delete: deleteFlag,
         reload,
       });
 
@@ -304,7 +279,6 @@ describe('tools/cartridges', () => {
       expect(dir).to.equal(directory);
       expect(options.include).to.deep.equal(cartridges);
       expect(options.exclude).to.deep.equal(exclude);
-      expect(options.delete).to.equal(deleteFlag);
       expect(options.reload).to.equal(reload);
     });
 

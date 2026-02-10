@@ -31,8 +31,6 @@ interface CartridgeDeployInput {
   cartridges?: string[];
   /** Exclude these cartridge names */
   exclude?: string[];
-  /** Delete existing cartridges before upload */
-  delete?: boolean;
   /** Reload code version after deploy */
   reload?: boolean;
 }
@@ -52,8 +50,7 @@ interface CartridgeToolInjections {
  * 1. Finds cartridges by `.project` files in the specified directory
  * 2. Creates a zip archive of all cartridge directories
  * 3. Uploads the zip to WebDAV and triggers server-side unzip
- * 4. Optionally deletes existing cartridges before upload
- * 5. Optionally reloads the code version after deploy
+ * 4. Optionally reloads the code version after deploy
  *
  * @param services - MCP services
  * @param injections - Optional dependency injections for testing
@@ -75,7 +72,6 @@ function createCartridgeDeployTool(services: Services, injections?: CartridgeToo
           .describe('Path to directory containing cartridges (default: current directory)'),
         cartridges: z.array(z.string()).optional().describe('Only deploy these cartridge names'),
         exclude: z.array(z.string()).optional().describe('Exclude these cartridge names'),
-        delete: z.boolean().optional().describe('Delete existing cartridges before upload'),
         reload: z.boolean().optional().describe('Reload code version after deploy'),
       },
       async execute(args, context) {
@@ -89,7 +85,6 @@ function createCartridgeDeployTool(services: Services, injections?: CartridgeToo
         const options: DeployOptions = {
           include: args.cartridges,
           exclude: args.exclude,
-          delete: args.delete,
           reload: args.reload,
         };
 
@@ -100,7 +95,6 @@ function createCartridgeDeployTool(services: Services, injections?: CartridgeToo
             directory,
             include: options.include,
             exclude: options.exclude,
-            delete: options.delete,
             reload: options.reload,
           },
           '[Cartridges] Deploying cartridges with computed options',
