@@ -4,6 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {findDwJson, loadConfig, WEBDAV_ROOTS} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  findAndDeployCartridges,
+  getActiveCodeVersion,
+} from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -433,7 +437,6 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       panel.webview.html = getStorefrontNextCartridgeWebviewContent(context);
 
       panel.webview.onDidReceiveMessage(async (msg: { type: string }) => {
-        const cli = resolveCliScript(context);
         const projectDirectory = projectDir;
         if (msg.type === "createCartridge") {
           const cartridgesDir = path.join(projectDirectory, "cartridges");
@@ -452,16 +455,65 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           term.show();
           term.sendText(cmd);
         } else if (msg.type === "deployCartridge") {
-          const cmd =
-            cli
-              ? `node ${JSON.stringify(cli.script)} deploy-cartridge --project-directory=${JSON.stringify(projectDirectory)}`
-              : `npx --yes @salesforce/b2c-cli deploy-cartridge --project-directory=${JSON.stringify(projectDirectory)}`;
-          const term = vscode.window.createTerminal({
-            name: "B2C Deploy Cartridge",
-            cwd: cli ? path.dirname(cli.script) : undefined,
-          });
-          term.show();
-          term.sendText(cmd);
+          const cartridgesDir = path.join(projectDirectory, "cartridges");
+          if (!fs.existsSync(cartridgesDir) || !fs.statSync(cartridgesDir).isDirectory()) {
+            const message =
+              "B2C DX: Deploy is only supported for Storefront Next storefronts. No 'cartridges' folder found.";
+            log.appendLine(`[Storefront Next Cartridge] ${message}`);
+            vscode.window.showErrorMessage(message);
+            return;
+          }
+          const dwPath = findDwJson(projectDirectory);
+          const config = dwPath
+            ? loadConfig({}, {configPath: dwPath})
+            : loadConfig({}, {startDir: projectDirectory});
+          if (!config.hasB2CInstanceConfig()) {
+            const message =
+              "B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.";
+            log.appendLine(`[Storefront Next Cartridge] ${message}`);
+            vscode.window.showErrorMessage(message);
+            return;
+          }
+          const instance = config.createB2CInstance();
+          if (!instance.config.codeVersion) {
+            try {
+              const active = await getActiveCodeVersion(instance);
+              if (active?.id) {
+                instance.config.codeVersion = active.id;
+              }
+            } catch (err) {
+              const detail = err instanceof Error ? err.message : String(err);
+              const message =
+                "B2C DX: No code version set and could not discover active version. Set code-version in dw.json or configure OAuth.";
+              log.appendLine(`[Storefront Next Cartridge] ${message} ${detail}`);
+              vscode.window.showErrorMessage(message);
+              return;
+            }
+          }
+          if (!instance.config.codeVersion) {
+            const message =
+              "B2C DX: No active code version found. Set code-version in dw.json or ensure OAuth is configured.";
+            log.appendLine(`[Storefront Next Cartridge] ${message}`);
+            vscode.window.showErrorMessage(message);
+            return;
+          }
+          try {
+            log.appendLine(
+              `[Storefront Next Cartridge] Deploying cartridges to ${instance.config.hostname} (${instance.config.codeVersion})...`
+            );
+            const result = await findAndDeployCartridges(instance, cartridgesDir, {});
+            console.log(result);
+            log.appendLine(
+              `[Storefront Next Cartridge] Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`
+            );
+            vscode.window.showInformationMessage(
+              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`
+            );
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            log.appendLine(`[Storefront Next Cartridge] Deploy failed: ${message}`);
+            vscode.window.showErrorMessage(`B2C DX: Deploy failed. ${message}`);
+          }
         }
       });
     }
