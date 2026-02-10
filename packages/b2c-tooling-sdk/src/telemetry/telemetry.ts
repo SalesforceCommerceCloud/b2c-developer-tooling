@@ -158,6 +158,19 @@ export class Telemetry {
   }
 
   /**
+   * Send a telemetry event and flush immediately.
+   * Prefer this over sendEvent + flush when you need the event delivered before continuing
+   * (e.g. after tool calls or server lifecycle events) to avoid forgetting to flush.
+   *
+   * @param eventName - Name of the event (e.g., 'SERVER_STATUS', 'TOOL_CALLED')
+   * @param attributes - Event-specific attributes (only string/number/boolean are sent)
+   */
+  async sendEventAndFlush(eventName: string, attributes: TelemetryAttributes = {}): Promise<void> {
+    this.sendEvent(eventName, attributes);
+    await this.flush();
+  }
+
+  /**
    * Send an exception to telemetry.
    *
    * @param error - The error to report

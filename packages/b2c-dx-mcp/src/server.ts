@@ -83,23 +83,25 @@ export class B2CDxMcpServer extends McpServer {
         const result = await handler(args);
         const runTimeMs = Date.now() - startTime;
 
-        this.telemetry?.sendEvent('TOOL_CALLED', {
-          toolName: name,
-          runTimeMs,
-          isError: result.isError ?? false,
-        });
-        await this.telemetry?.flush().catch(() => {});
+        await this.telemetry
+          ?.sendEventAndFlush('TOOL_CALLED', {
+            toolName: name,
+            runTimeMs,
+            isError: result.isError ?? false,
+          })
+          .catch(() => {});
 
         return result;
       } catch (error) {
         const runTimeMs = Date.now() - startTime;
 
-        this.telemetry?.sendEvent('TOOL_CALLED', {
-          toolName: name,
-          runTimeMs,
-          isError: true,
-        });
-        await this.telemetry?.flush().catch(() => {});
+        await this.telemetry
+          ?.sendEventAndFlush('TOOL_CALLED', {
+            toolName: name,
+            runTimeMs,
+            isError: true,
+          })
+          .catch(() => {});
 
         throw error;
       }
@@ -115,21 +117,19 @@ export class B2CDxMcpServer extends McpServer {
   public override async connect(transport: Transport): Promise<void> {
     try {
       await super.connect(transport);
-      if (this.isConnected()) {
-        this.telemetry?.sendEvent('SERVER_STATUS', {status: 'started'});
-      } else {
-        this.telemetry?.sendEvent('SERVER_STATUS', {
-          status: 'error',
-          errorMessage: 'Server not connected after connect() call',
-        });
-      }
-      await this.telemetry?.flush().catch(() => {});
+      const statusPromise = this.isConnected()
+        ? this.telemetry?.sendEventAndFlush('SERVER_STATUS', {status: 'started'})
+        : this.telemetry?.sendEventAndFlush('SERVER_STATUS', {
+            status: 'error',
+            errorMessage: 'Server not connected after connect() call',
+          });
+      await (statusPromise ?? Promise.resolve()).catch(() => {});
     } catch (error) {
-      this.telemetry?.sendEvent('SERVER_STATUS', {
+      const errorPromise = this.telemetry?.sendEventAndFlush('SERVER_STATUS', {
         status: 'error',
         errorMessage: error instanceof Error ? error.message : String(error),
       });
-      await this.telemetry?.flush().catch(() => {});
+      await (errorPromise ?? Promise.resolve()).catch(() => {});
       throw error;
     }
   }

@@ -306,21 +306,10 @@ The MCP server collects anonymous usage telemetry to help improve the developer 
 
 ### Configuring telemetry
 
-The MCP server does not read `mcp.json` itself. When Cursor or Claude Desktop runs the server, they inject environment variables from your `mcp.json` into the process. Configure telemetry by adding an `env` object to your server entry in `.cursor/mcp.json` or `~/.cursor/mcp.json`. Example: `"env": { "SFCC_DISABLE_TELEMETRY": "true", "SFCC_APP_INSIGHTS_KEY": "your-key" }`.
+Set options in the `env` object of your server entry in `.cursor/mcp.json` or `~/.cursor/mcp.json` (the client injects these when it starts the server):
 
-### Disabling telemetry
-
-Set one of these in your `mcp.json` server `env` to disable telemetry:
-
-```bash
-# Salesforce CLI standard (recommended)
-SF_DISABLE_TELEMETRY=true
-
-# Or SFCC-specific
-SFCC_DISABLE_TELEMETRY=true
-```
-
-To use a custom App Insights endpoint (e.g. for testing), set `SFCC_APP_INSIGHTS_KEY` in your `mcp.json` server `env`.
+- **Disable**: `SF_DISABLE_TELEMETRY=true` or `SFCC_DISABLE_TELEMETRY=true`
+- **Custom endpoint**: `SFCC_APP_INSIGHTS_KEY=your-key`
 
 ### What We Collect
 

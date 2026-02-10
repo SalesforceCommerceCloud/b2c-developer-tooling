@@ -14,18 +14,6 @@ try {
   // .env file not found or not readable, continue without it
 }
 
-// Disable telemetry in production by default when both vars are unset.
-// If either is explicitly "false" (enable), set both to "false".
-const userWantsTelemetryEnabled =
-  process.env.SF_DISABLE_TELEMETRY === 'false' || process.env.SFCC_DISABLE_TELEMETRY === 'false';
-if (userWantsTelemetryEnabled) {
-  process.env.SF_DISABLE_TELEMETRY = 'false';
-  process.env.SFCC_DISABLE_TELEMETRY = 'false';
-} else if (process.env.SF_DISABLE_TELEMETRY === undefined && process.env.SFCC_DISABLE_TELEMETRY === undefined) {
-  process.env.SF_DISABLE_TELEMETRY = 'true';
-  process.env.SFCC_DISABLE_TELEMETRY = 'true';
-}
-
 import {execute} from '@oclif/core';
 
 await execute({dir: import.meta.url});
