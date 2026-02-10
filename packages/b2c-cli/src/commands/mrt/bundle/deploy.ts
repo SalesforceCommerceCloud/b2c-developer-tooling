@@ -15,6 +15,27 @@ import {
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
+ * Parses a glob pattern string into an array of patterns.
+ * Accepts either a JSON array (e.g. '["server/**\/*", "ssr.{js,mjs}"]')
+ * or a comma-separated string (e.g. 'server/**\/*,ssr.js').
+ * JSON array format supports brace expansion in individual patterns.
+ */
+function parseGlobPatterns(value: string): string[] {
+  const trimmed = value.trim();
+  if (trimmed.startsWith('[')) {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === 'string')) {
+      throw new Error(`Invalid glob pattern array: expected an array of strings`);
+    }
+    return parsed.map((s: string) => s.trim()).filter(Boolean);
+  }
+  return trimmed
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
  * Parses SSR parameter flags into a key-value object.
  * Accepts format: key=value
  */
@@ -79,11 +100,11 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       default: 'build',
     }),
     'ssr-only': Flags.string({
-      description: 'Glob patterns for server-only files (comma-separated, only for local builds)',
+      description: 'Glob patterns for server-only files (comma-separated or JSON array, only for local builds)',
       default: 'ssr.js,ssr.mjs,server/**/*',
     }),
     'ssr-shared': Flags.string({
-      description: 'Glob patterns for shared files (comma-separated, only for local builds)',
+      description: 'Glob patterns for shared files (comma-separated or JSON array, only for local builds)',
       default: 'static/**/*,client/**/*',
     }),
     'node-version': Flags.string({
@@ -190,8 +211,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }
 
     const buildDir = this.flags['build-dir'];
-    const ssrOnly = this.flags['ssr-only'].split(',').map((s) => s.trim());
-    const ssrShared = this.flags['ssr-shared'].split(',').map((s) => s.trim());
+    const ssrOnly = parseGlobPatterns(this.flags['ssr-only']);
+    const ssrShared = parseGlobPatterns(this.flags['ssr-shared']);
 
     // Build SSR parameters from flags
     const ssrParameters: Record<string, unknown> = parseSsrParams(this.flags['ssr-param']);

@@ -16,32 +16,27 @@ These flags are available on all Account Manager commands:
 
 ## Authentication
 
-Account Manager commands require an API client or can be executed through an implicit workflow that seamlessly handles user authentication and associated flows.
+Account Manager commands work out of the box using the CLI's built-in public client, which authenticates via browser login (implicit flow). No API client configuration is required for interactive use.
 
-### Required Configuration
-
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID for Account Manager |
-| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret for Account Manager |
+For automation or CI/CD, you can provide your own API client credentials.
 
 ### Required Roles
 
 | Auth Method | Role | Configured On |
 |-------------|------|---------------|
+| Built-in client (default) | Uses your user account's roles | Your user account |
 | Client Credentials | `User Administrator` or higher | The API client |
-
-User authentication is handled via the implicit flow, utilizing the access rights granted to the user.
 
 ### Configuration
 
 ```bash
-# Set Account Manager host
-export SFCC_ACCOUNT_MANAGER_HOST=account.demandware.com
+# No configuration needed — opens browser for login
+b2c am users list
 
-# Set OAuth credentials
+# Client Credentials (for automation)
 export SFCC_CLIENT_ID=my-client-id
 export SFCC_CLIENT_SECRET=my-client-secret
+b2c am users list
 ```
 
 ---

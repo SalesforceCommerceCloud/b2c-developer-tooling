@@ -8,6 +8,7 @@ import {OAuthCommand} from './oauth-command.js';
 import {createAccountManagerClient} from '../clients/am-api.js';
 import type {AccountManagerClient} from '../clients/am-api.js';
 import type {AuthMethod} from './config.js';
+import {DEFAULT_PUBLIC_CLIENT_ID} from '../defaults.js';
 
 /**
  * Base command for Account Manager operations.
@@ -32,6 +33,10 @@ import type {AuthMethod} from './config.js';
  * }
  */
 export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T> {
+  protected override getDefaultClientId(): string {
+    return DEFAULT_PUBLIC_CLIENT_ID;
+  }
+
   /**
    * Override default auth methods to prioritize implicit flow for Account Manager.
    * Gets the default methods from parent class, then ensures 'implicit' is first.

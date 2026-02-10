@@ -103,10 +103,22 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
+   * Returns a default client ID for implicit OAuth flows when no client ID is configured.
+   * Returns undefined by default. Subclasses (AmCommand, OdsCommand, etc.) override this
+   * to return DEFAULT_PUBLIC_CLIENT_ID for platform-level commands that support public client tokens.
+   */
+  protected getDefaultClientId(): string | undefined {
+    return undefined;
+  }
+
+  /**
    * Gets an OAuth auth strategy based on allowed auth methods and available credentials.
    *
    * Iterates through allowed methods (in priority order) and returns the first
    * strategy for which the required credentials are available.
+   *
+   * For the implicit flow, falls back to getDefaultClientId() when no client ID
+   * is explicitly configured.
    *
    * @throws Error if no allowed method has the required credentials configured
    */
@@ -115,6 +127,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     const accountManagerHost = this.accountManagerHost;
     // Use getDefaultAuthMethods() to get default array, allowing subclasses to override
     const allowedMethods = config.authMethods || this.getDefaultAuthMethods();
+    const defaultClientId = this.getDefaultClientId();
 
     for (const method of allowedMethods) {
       switch (method) {
@@ -129,15 +142,20 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           }
           break;
 
-        case 'implicit':
-          if (config.clientId) {
+        case 'implicit': {
+          const effectiveClientId = config.clientId ?? defaultClientId;
+          if (effectiveClientId) {
+            if (!config.clientId && defaultClientId) {
+              this.logger.debug('Using default B2C CLI public client for authentication');
+            }
             return new ImplicitOAuthStrategy({
-              clientId: config.clientId,
+              clientId: effectiveClientId,
               scopes: config.scopes,
               accountManagerHost,
             });
           }
           break;
+        }
 
         // 'basic' and 'api-key' are not applicable for OAuth strategies
         // They would be handled by different command bases (e.g., InstanceCommand, MRTCommand)
@@ -157,10 +175,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
 
   /**
    * Check if OAuth credentials are available.
-   * Returns true if clientId is configured (with or without clientSecret).
+   * Returns true if clientId is configured (with or without clientSecret),
+   * or if a default client ID is available for implicit flows.
    */
   protected hasOAuthCredentials(): boolean {
-    return this.resolvedConfig.hasOAuthConfig();
+    return this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined;
   }
 
   /**
@@ -198,6 +217,10 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
         ),
       );
+    }
+    // Strip optional f_ecom_ prefix so users can pass either the organization ID or tenant ID
+    if (tenantId.startsWith('f_ecom_')) {
+      return tenantId.slice('f_ecom_'.length);
     }
     return tenantId;
   }

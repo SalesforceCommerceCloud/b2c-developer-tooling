@@ -266,7 +266,7 @@ export {getRole, listRoles} from './operations/roles/index.js';
 export {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from './operations/orgs/index.js';
 
 // Defaults
-export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from './defaults.js';
+export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from './defaults.js';
 
 // Version info
 export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';
