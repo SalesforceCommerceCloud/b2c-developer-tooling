@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   findAndDeployCartridges,
   getActiveCodeVersion,
@@ -120,6 +121,26 @@ function renderTemplate(
 
 export function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
+
+  try {
+    configureLogger({
+      level: 'trace',
+      destination: {
+        write(chunk: string | Buffer): boolean {
+          const line = typeof chunk === 'string' ? chunk : chunk.toString('utf-8');
+          log.appendLine(line.trimEnd());
+          return true;
+        },
+      },
+      json: false,
+      colorize: false,
+      redact: true,
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
+    log.appendLine(`Warning: Failed to configure SDK logger; SDK logs will not appear in this panel.\n${detail}`);
+  }
+
   try {
     return activateInner(context, log);
   } catch (err) {

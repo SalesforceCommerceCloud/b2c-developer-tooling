@@ -7,9 +7,10 @@
  * Logger using pino with pretty printing by default.
  */
 
+import {Writable} from 'node:stream';
 import pino from 'pino';
 import pretty from 'pino-pretty';
-import type {Logger, LoggerOptions} from './types.js';
+import type {LogDestination, Logger, LoggerOptions} from './types.js';
 
 const REDACT_FIELDS = [
   'password',
@@ -61,6 +62,17 @@ function censor(value: unknown, path: string[]): string {
   return 'REDACTED';
 }
 
+/** Wrap a minimal LogDestination in a Node.js Writable so pino-pretty's transport pipeline works. */
+function toWritable(dest: LogDestination): Writable {
+  if (dest instanceof Writable) return dest;
+  return new Writable({
+    write(chunk: Buffer, _encoding: BufferEncoding, callback: (error?: Error | null) => void) {
+      dest.write(chunk);
+      callback();
+    },
+  });
+}
+
 let globalLogger: Logger | null = null;
 let globalOptions: LoggerOptions = {level: 'silent'};
 
@@ -91,7 +103,7 @@ function createPinoLogger(options: LoggerOptions): Logger {
     }
     const isVerbose = level === 'debug' || level === 'trace';
     const prettyStream = pretty({
-      destination: options.destination,
+      destination: toWritable(options.destination),
       sync: true,
       colorize,
       ignore: 'pid,hostname' + (isVerbose ? '' : ',time'),
