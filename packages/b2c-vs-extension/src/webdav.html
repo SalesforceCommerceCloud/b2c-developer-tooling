@@ -14,6 +14,15 @@
       margin: 0;
       padding: 1rem;
       min-height: 100vh;
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+    }
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
     }
     h1 {
       font-size: 1.1rem;
@@ -113,9 +122,65 @@
       border-radius: 4px;
     }
     .toolbar button:hover { background: var(--vscode-button-hoverBackground); }
+    #entries-view { flex: 1; min-height: 0; flex-direction: column; }
+    .entries-scroll { flex: 1; min-height: 0; overflow: auto; }
+    #preview-panel {
+      width: 42%;
+      min-width: 280px;
+      max-width: 560px;
+      border-left: 1px solid var(--vscode-widget-border);
+      padding-left: 1rem;
+      display: none;
+      flex-direction: column;
+      min-height: 0;
+    }
+    #preview-panel.visible { display: flex; }
+    #preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.9em;
+      color: var(--vscode-descriptionForeground);
+    }
+    #preview-header .preview-title { font-weight: 600; color: var(--vscode-foreground); }
+    #preview-content {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      background: var(--vscode-textCodeBlock-background);
+      border: 1px solid var(--vscode-widget-border);
+      border-radius: 4px;
+      padding: 0.75rem;
+    }
+    #preview-content img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    #preview-content pre {
+      margin: 0;
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: 11px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    #preview-close {
+      padding: 0.2rem 0.5rem;
+      font-size: 0.85em;
+      cursor: pointer;
+      background: transparent;
+      color: var(--vscode-foreground);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 3px;
+    }
+    #preview-close:hover { background: var(--vscode-list-hoverBackground); }
   </style>
 </head>
 <body>
+  <div class="main-content">
   <h1>B2C WebDAV Browser</h1>
   <div id="breadcrumb" class="breadcrumb" style="display: none;"></div>
   <a id="back-link" class="back-link" style="display: none;">← Back</a>
@@ -125,15 +190,26 @@
       <button type="button" id="new-folder-btn">New folder</button>
       <button type="button" id="upload-btn">Upload</button>
     </div>
+    <div class="entries-scroll">
     <table class="entries-table">
       <thead>
         <tr><th class="name">Name</th><th class="type">Type</th><th class="size">Size</th><th class="actions"></th></tr>
       </thead>
       <tbody id="entries-body"></tbody>
     </table>
+    </div>
   </div>
   <div id="loading" class="loading" style="display: none;">Loading…</div>
   <div id="error" class="error" style="display: none;"></div>
+  </div>
+
+  <div id="preview-panel">
+    <div id="preview-header">
+      <span class="preview-title" id="preview-title">Preview</span>
+      <button type="button" id="preview-close">Close</button>
+    </div>
+    <div id="preview-content"></div>
+  </div>
 
   <script>
     (function() {
@@ -154,7 +230,7 @@
 
       function showView(view) {
         rootsView.style.display = view === "roots" ? "grid" : "none";
-        entriesView.style.display = view === "entries" ? "block" : "none";
+        entriesView.style.display = view === "entries" ? "flex" : "none";
         loadingEl.style.display = view === "loading" ? "block" : "none";
         errorEl.style.display = "none";
         entriesToolbar.style.display = view === "entries" ? "flex" : "none";
@@ -260,10 +336,25 @@
         entriesBody.querySelectorAll(".entry-row.dir").forEach(function(row) {
           row.addEventListener("click", function(ev) {
             if (ev.target.closest(".btn-delete")) return;
+            document.getElementById("preview-panel").classList.remove("visible");
             const name = this.dataset.name;
             const nextPath = currentPath ? currentPath + "/" + name : name;
             currentPath = nextPath;
             loadPath(nextPath);
+          });
+        });
+        entriesBody.querySelectorAll(".entry-row.file").forEach(function(row) {
+          row.addEventListener("click", function(ev) {
+            if (ev.target.closest(".btn-delete")) return;
+            const fullPath = this.dataset.path;
+            const name = this.dataset.name;
+            const previewPanel = document.getElementById("preview-panel");
+            const previewContent = document.getElementById("preview-content");
+            const previewTitle = document.getElementById("preview-title");
+            previewTitle.textContent = name || fullPath;
+            previewContent.innerHTML = "<span class=\"loading\">Loading…</span>";
+            previewPanel.classList.add("visible");
+            vscode.postMessage({ type: "requestFileContent", path: fullPath, name: name });
           });
         });
         entriesBody.querySelectorAll(".btn-delete").forEach(function(btn) {
@@ -318,7 +409,31 @@
             return;
           }
           loadPath(currentPath);
+        } else if (msg.type === "fileContent") {
+          const previewPanel = document.getElementById("preview-panel");
+          const previewContent = document.getElementById("preview-content");
+          const previewTitle = document.getElementById("preview-title");
+          if (msg.name) previewTitle.textContent = msg.name;
+          if (msg.error) {
+            previewContent.innerHTML = "<span class=\"error\">" + escapeHtml(msg.error) + "</span>";
+          } else if (msg.kind === "image" && msg.base64 && msg.contentType) {
+            previewContent.innerHTML = "<img src=\"data:" + escapeHtml(msg.contentType) + ";base64," + msg.base64 + "\" alt=\"" + escapeHtml(msg.name || "") + "\" />";
+          } else if (msg.kind === "text" && msg.text !== undefined) {
+            var pre = document.createElement("pre");
+            pre.textContent = msg.text;
+            previewContent.innerHTML = "";
+            previewContent.appendChild(pre);
+          } else if (msg.kind === "binary" && msg.error) {
+            previewContent.innerHTML = "<span class=\"error\">" + escapeHtml(msg.error) + "</span>";
+          } else {
+            previewContent.innerHTML = "<span class=\"loading\">No preview available.</span>";
+          }
+          previewPanel.classList.add("visible");
         }
+      });
+
+      document.getElementById("preview-close").addEventListener("click", function() {
+        document.getElementById("preview-panel").classList.remove("visible");
       });
 
       renderRoots();

@@ -266,6 +266,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         mkcol: (path: string) => Promise<void>;
         delete: (path: string) => Promise<void>;
         put: (path: string, content: Buffer | Blob | string, contentType?: string) => Promise<void>;
+        get: (path: string) => Promise<ArrayBuffer>;
       };
     };
 
@@ -387,6 +388,71 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             const message = err instanceof Error ? err.message : String(err);
             panel.webview.postMessage({ type: 'uploadResult', success: false, error: message });
           }
+          return;
+        }
+        if (msg.type === 'requestFileContent' && msg.path !== undefined) {
+          const filePath = msg.path as string;
+          const fileName = msg.name ?? filePath.split('/').pop() ?? filePath;
+          const ext = path.extname(fileName).toLowerCase();
+          const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']);
+          const textExtensions = new Set([
+            '.json', '.js', '.ts', '.mjs', '.cjs', '.html', '.htm', '.css', '.xml', '.txt', '.md',
+            '.log', '.yml', '.yaml', '.env', '.sh', '.bat', '.csv', '.isml',
+          ]);
+          const isImage = imageExtensions.has(ext);
+          const isText = textExtensions.has(ext) || ext === '';
+          try {
+            const buffer = await instance.webdav.get(filePath);
+            const arr = new Uint8Array(buffer);
+            if (isImage) {
+              const base64 = Buffer.from(arr).toString('base64');
+              const mime: Record<string, string> = {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp',
+                '.bmp': 'image/bmp',
+                '.ico': 'image/x-icon',
+                '.svg': 'image/svg+xml',
+              };
+              const contentType = mime[ext] ?? 'application/octet-stream';
+              panel.webview.postMessage({
+                type: 'fileContent',
+                path: filePath,
+                name: fileName,
+                kind: 'image',
+                contentType,
+                base64,
+              });
+            } else if (isText) {
+              const text = new TextDecoder('utf-8', { fatal: false }).decode(arr);
+              panel.webview.postMessage({
+                type: 'fileContent',
+                path: filePath,
+                name: fileName,
+                kind: 'text',
+                text,
+              });
+            } else {
+              panel.webview.postMessage({
+                type: 'fileContent',
+                path: filePath,
+                name: fileName,
+                kind: 'binary',
+                error: 'Binary file cannot be previewed.',
+              });
+            }
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({
+              type: 'fileContent',
+              path: filePath,
+              name: fileName,
+              kind: 'error',
+              error: message,
+            });
+          }
         }
       }
     );
@@ -507,7 +573,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
               `[Storefront Next Cartridge] Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`
             );
             vscode.window.showInformationMessage(
-              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`
+              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}. ${result.cartridges.join(', ')}  `
             );
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
