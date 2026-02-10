@@ -7,14 +7,15 @@ minimumReleaseAgeExclude: []
 
 nodeLinker: hoisted
 
+# Pin exact versions by default when adding dependencies (no ^ or ~ prefix)
+savePrefix: ''
+
 onlyBuiltDependencies:
   - unrs-resolver
   - yarn
 
 overrides:
   '@isaacs/brace-expansion@<=5.0.0': '>=5.0.1'
-  '@modelcontextprotocol/sdk@<1.25.2': '>=1.25.2'
-  '@modelcontextprotocol/sdk@>=1.10.0 <=1.25.3': '>=1.26.0'
   diff@>=4.0.0 <4.0.4: '>=4.0.4'
   diff@>=5.0.0 <5.2.2: '>=5.2.2'
   esbuild@<=0.24.2: '>=0.25.0'

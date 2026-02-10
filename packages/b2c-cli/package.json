@@ -12,20 +12,20 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@inquirer/prompts": "^8.2.0",
-    "@oclif/core": "^4",
-    "@oclif/plugin-autocomplete": "^3",
-    "@oclif/plugin-help": "^6",
-    "@oclif/plugin-not-found": "^3",
-    "@oclif/plugin-plugins": "^5",
-    "@oclif/plugin-version": "^2",
-    "@oclif/plugin-warn-if-update-available": "^3",
+    "@inquirer/prompts": "8.2.0",
+    "@oclif/core": "4.8.0",
+    "@oclif/plugin-autocomplete": "3.2.39",
+    "@oclif/plugin-help": "6.2.35",
+    "@oclif/plugin-not-found": "3.2.72",
+    "@oclif/plugin-plugins": "5.4.53",
+    "@oclif/plugin-version": "2.2.36",
+    "@oclif/plugin-warn-if-update-available": "3.1.52",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "cliui": "^9.0.1",
-    "glob": "^13.0.0",
-    "marked": "^15.0.0",
-    "marked-terminal": "^7.3.0",
-    "open": "^11.0.0"
+    "cliui": "9.0.1",
+    "glob": "13.0.0",
+    "marked": "15.0.12",
+    "marked-terminal": "7.3.0",
+    "open": "11.0.0"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
