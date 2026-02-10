@@ -304,17 +304,13 @@ The MCP server collects anonymous usage telemetry to help improve the developer 
 
 **Development mode**: Telemetry is automatically disabled when using `bin/dev.js`, so local development and testing won't pollute production data.
 
-### Configuring telemetry (priority)
+### Configuring telemetry
 
-For MCP, telemetry is usually configured via **mcp.json** (Cursor MCP config). A `.env` file in the package directory is optional and often not used when running the server.
-
-- **Priority**: If both mcp.json and a `.env` file set telemetry-related variables, **mcp.json takes priority** for those keys (`SF_DISABLE_TELEMETRY`, `SFCC_DISABLE_TELEMETRY`, `SFCC_APP_INSIGHTS_KEY`).
-- **mcp.json**: Use the `env` object for your server entry (or top-level `env`) in `.cursor/mcp.json` or `~/.cursor/mcp.json`. Example: `"env": { "SFCC_DISABLE_TELEMETRY": "false", "SFCC_APP_INSIGHTS_KEY": "your-key" }`.
-- **.env**: You can instead (or additionally) set these in `packages/b2c-dx-mcp/.env`; they are overridden by mcp.json when both are present.
+The MCP server does not read `mcp.json` itself. When Cursor or Claude Desktop runs the server, they inject environment variables from your `mcp.json` into the process. Configure telemetry by adding an `env` object to your server entry in `.cursor/mcp.json` or `~/.cursor/mcp.json`. Example: `"env": { "SFCC_DISABLE_TELEMETRY": "true", "SFCC_APP_INSIGHTS_KEY": "your-key" }`.
 
 ### Disabling telemetry
 
-Set one of these (in mcp.json `env` or in `.env`) to disable telemetry:
+Set one of these in your `mcp.json` server `env` to disable telemetry:
 
 ```bash
 # Salesforce CLI standard (recommended)
@@ -324,7 +320,7 @@ SF_DISABLE_TELEMETRY=true
 SFCC_DISABLE_TELEMETRY=true
 ```
 
-To use a custom App Insights endpoint (e.g. for testing), set `SFCC_APP_INSIGHTS_KEY` in mcp.json `env` or in `.env`.
+To use a custom App Insights endpoint (e.g. for testing), set `SFCC_APP_INSIGHTS_KEY` in your `mcp.json` server `env`. For telemetry debugging, set `SFCC_TELEMETRY_DEBUG=true` there to log telemetry payloads (do not enable in production).
 
 ### What We Collect
 

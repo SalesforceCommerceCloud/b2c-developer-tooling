@@ -23,9 +23,6 @@ if (userWantsTelemetryEnabled) {
 } else {
   process.env.SF_DISABLE_TELEMETRY = 'true';
   process.env.SFCC_DISABLE_TELEMETRY = 'true';
-  process.stderr.write(
-    '[b2c-cli dev] Telemetry is disabled. Set SFCC_DISABLE_TELEMETRY=false in .env to enable COMMAND_START/COMMAND_SUCCESS.\n',
-  );
 }
 
 import {execute} from '@oclif/core';
