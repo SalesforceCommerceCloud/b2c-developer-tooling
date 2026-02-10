@@ -1,14 +1,12 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
   "changelog": [
-    "@changesets/changelog-github",
+    "./changelog-config.cjs",
     { "repo": "SalesforceCommerceCloud/b2c-developer-tooling" }
   ],
   "commit": false,
   "fixed": [],
-  "linked": [
-    ["@salesforce/b2c-cli", "@salesforce/b2c-tooling-sdk", "@salesforce/b2c-dx-mcp"]
-  ],
+  "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

@@ -1,0 +1,230 @@
+'use strict';
+
+/**
+ * <%= serviceName %> Service
+ *
+ * SOAP service for WSDL-based web service integration.
+ * Configure in Business Manager: Administration > Operations > Services
+ *
+ * Service ID: <%= cartridgeName %>.<%= serviceName.toLowerCase() %>
+ *
+ * Prerequisites:
+ * 1. Upload WSDL file to: <%= cartridgeName %>/cartridge/webreferences2/<%= serviceName %>.wsdl
+ * 2. The stub will be auto-generated as: webreferences2.<%= serviceName %>
+ *
+ * @module scripts/services/<%= serviceName %>Service
+ */
+
+var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
+var Logger = require('dw/system/Logger');
+
+var log = Logger.getLogger('<%= serviceName %>Service', '<%= cartridgeName %>');
+
+/**
+ * Service ID - must match Business Manager configuration
+ * @type {string}
+ */
+var SERVICE_ID = '<%= cartridgeName %>.<%= serviceName.toLowerCase() %>';
+
+/**
+ * Create the <%= serviceName %> SOAP service instance
+ * @returns {dw.svc.SOAPService} The service instance
+ */
+function createService() {
+    return LocalServiceRegistry.createService(SERVICE_ID, {
+        /**
+         * Initialize the SOAP service client (stub)
+         * @param {dw.svc.SOAPService} svc - The service instance
+         * @returns {Object} The WSDL-generated service stub
+         */
+        initServiceClient: function (svc) {
+            // TODO: Replace with your actual WSDL reference
+            // The stub is auto-generated from the WSDL file in webreferences2/
+            // return webreferences2.<%= serviceName %>.getDefaultService();
+            throw new Error('SOAP stub not configured. Upload WSDL to webreferences2/<%= serviceName %>.wsdl');
+        },
+
+        /**
+         * Configure the SOAP request
+         * @param {dw.svc.SOAPService} svc - The service instance
+         * @param {Object} params - Parameters passed to service.call()
+         * @returns {Object} SOAP request object
+         */
+        createRequest: function (svc, params) {
+            // TODO: Create WSDL-generated request object
+            // Example:
+            // var request = new webreferences2.<%= serviceName %>.<%= serviceName %>Request();
+            // request.setId(params.id);
+            // request.setData(params.data);
+            // return request;
+
+            return params;
+        },
+
+        /**
+         * Execute the SOAP operation
+         * @param {dw.svc.SOAPService} svc - The service instance
+         * @param {Object} request - The request object from createRequest
+         * @returns {Object} SOAP response object
+         */
+        execute: function (svc, request) {
+            var client = svc.serviceClient;
+
+            // TODO: Call the appropriate SOAP operation
+            // Example:
+            // return client.myOperation(request);
+
+            throw new Error('SOAP operation not configured');
+        },
+
+        /**
+         * Parse the SOAP response
+         * @param {dw.svc.SOAPService} svc - The service instance
+         * @param {Object} response - The response from execute
+         * @returns {Object} Parsed response
+         */
+        parseResponse: function (svc, response) {
+<% if (includeErrorHandling) { %>
+            var result = {
+                success: false,
+                data: null,
+                errorCode: null,
+                errorMessage: null
+            };
+
+            if (!response) {
+                result.errorMessage = 'No response received';
+                return result;
+            }
+
+            // TODO: Parse response based on your WSDL structure
+            // Example:
+            // result.success = response.getStatus() === 'SUCCESS';
+            // result.data = {
+            //     id: response.getId(),
+            //     value: response.getValue()
+            // };
+            // if (!result.success) {
+            //     result.errorCode = response.getErrorCode();
+            //     result.errorMessage = response.getErrorMessage();
+            // }
+
+            result.success = true;
+            result.data = response;
+            return result;
+<% } else { %>
+            // TODO: Parse response based on your WSDL structure
+            // Example:
+            // return {
+            //     status: response.getStatus(),
+            //     result: response.getResult()
+            // };
+            return response;
+<% } %>
+        },
+<% if (includeMocking) { %>
+
+        /**
+         * Mock the SOAP execution phase for testing
+         * @param {dw.svc.SOAPService} svc - The service instance
+         * @param {Object} request - The request object
+         * @returns {Object} Mock response object
+         */
+        mockCall: function (svc, request) {
+            log.info('<%= serviceName %>Service mock call');
+            // Return mock response that mimics WSDL response structure
+            return {
+                getStatus: function () { return 'SUCCESS'; },
+                getId: function () { return 'mock-id-123'; },
+                getMessage: function () { return 'Mock response'; }
+            };
+        },
+<% } %>
+
+        /**
+         * Filter sensitive data from SOAP log messages
+         * @param {string} msg - The message to filter
+         * @returns {string} Filtered message
+         */
+        filterLogMessage: function (msg) {
+            // Filter password elements
+            msg = msg.replace(/<password>[^<]+<\/password>/gi, '<password>***</password>');
+            msg = msg.replace(/<wsse:Password[^>]*>[^<]+<\/wsse:Password>/gi, '<wsse:Password>***</wsse:Password>');
+            // Filter common sensitive elements
+            msg = msg.replace(/<(apiKey|secret|token)>[^<]+<\/\1>/gi, '<$1>***</$1>');
+            return msg;
+        }
+    });
+}
+
+/**
+ * Get or create the service instance
+ * @returns {dw.svc.SOAPService} The service instance
+ */
+function getService() {
+    return createService();
+}
+
+/**
+ * Call the <%= serviceName %> SOAP service
+ *
+ * @param {Object} params - Request parameters (depends on WSDL operation)
+ * @returns {dw.svc.Result} Service result
+ *
+ * @example
+ * var result = <%= serviceName %>Service.call({
+ *     operation: 'getData',
+ *     id: '12345'
+ * });
+ * if (result.ok) {
+ *     var data = result.object;
+ * }
+ */
+function call(params) {
+    var service = getService();
+    var result = service.call(params || {});
+
+    if (!result.ok) {
+        log.error('<%= serviceName %>Service call failed: ' + result.errorMessage +
+            ' (status: ' + result.status + ', unavailable: ' + result.unavailableReason + ')');
+    }
+
+    return result;
+}
+<% if (includeErrorHandling) { %>
+
+/**
+ * Call the service and return data or throw error
+ *
+ * @param {Object} params - Request parameters
+ * @returns {Object} Response data
+ * @throws {Error} If service call fails
+ */
+function callOrThrow(params) {
+    var result = call(params);
+
+    if (!result.ok) {
+        var errorMsg = '<%= serviceName %>Service error: ' + result.errorMessage;
+        if (result.unavailableReason) {
+            errorMsg += ' (reason: ' + result.unavailableReason + ')';
+        }
+        throw new Error(errorMsg);
+    }
+
+    var response = result.object;
+    if (!response.success) {
+        throw new Error('<%= serviceName %>Service SOAP error: ' +
+            (response.errorCode ? response.errorCode + ' - ' : '') +
+            (response.errorMessage || 'Unknown error'));
+    }
+
+    return response.data;
+}
+<% } %>
+
+module.exports = {
+    SERVICE_ID: SERVICE_ID,
+    getService: getService,
+    call: call<% if (includeErrorHandling) { %>,
+    callOrThrow: callOrThrow<% } %>
+};

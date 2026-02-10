@@ -269,13 +269,18 @@ describe('auth/oauth', () => {
             apiRequestCount++;
             const authHeader = request.headers.get('Authorization');
 
-            // First request with old token fails
+            // First request succeeds (establishes prior success)
             if (apiRequestCount === 1 && authHeader === `Bearer ${mockToken1}`) {
+              return HttpResponse.json({success: true});
+            }
+
+            // Second request with old token fails (simulates expired token)
+            if (apiRequestCount === 2 && authHeader === `Bearer ${mockToken1}`) {
               return new HttpResponse(null, {status: 401});
             }
 
-            // Second request with new token succeeds
-            if (apiRequestCount === 2 && authHeader === `Bearer ${mockToken2}`) {
+            // Third request with new token succeeds
+            if (apiRequestCount === 3 && authHeader === `Bearer ${mockToken2}`) {
               return HttpResponse.json({success: true});
             }
 
@@ -288,11 +293,49 @@ describe('auth/oauth', () => {
           clientSecret: 'test-secret',
         });
 
+        // First call succeeds - establishes prior success
+        const firstResponse = await strategy.fetch(TEST_API_URL);
+        expect(firstResponse.status).to.equal(200);
+
+        // Second call gets 401 then retries with fresh token
         const response = await strategy.fetch(TEST_API_URL);
 
         expect(tokenRequestCount).to.equal(2); // Fetched twice
-        expect(apiRequestCount).to.equal(2); // API called twice
+        expect(apiRequestCount).to.equal(3); // Initial success + 401 + retry
         expect(response.status).to.equal(200);
+      });
+
+      it('should not retry on initial 401 with bad credentials', async () => {
+        const clientId = 'test-client-bad-creds';
+        const mockToken = createMockJWT({sub: clientId});
+        let tokenRequestCount = 0;
+        let apiRequestCount = 0;
+
+        server.use(
+          http.post(AM_URL, () => {
+            tokenRequestCount++;
+            return HttpResponse.json({
+              access_token: mockToken,
+              expires_in: 1800,
+            });
+          }),
+          http.get(TEST_API_URL, () => {
+            apiRequestCount++;
+            return new HttpResponse(null, {status: 401});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId,
+          clientSecret: 'test-secret',
+        });
+
+        // First call gets 401 - should NOT retry since no prior success
+        const response = await strategy.fetch(TEST_API_URL);
+
+        expect(tokenRequestCount).to.equal(1); // Only fetched once
+        expect(apiRequestCount).to.equal(1); // API called once, no retry
+        expect(response.status).to.equal(401);
       });
     });
 

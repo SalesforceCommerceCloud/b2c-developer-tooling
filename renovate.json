@@ -1,0 +1,54 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "group:allNonMajor"
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
+  "gitAuthor": "Charles Lavery <clavery@salesforce.com>",
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "major": {
+    "dependencyDashboardApproval": true
+  },
+  "packageRules": [
+    {
+      "description": "Group all non-major updates together",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies"
+    },
+    {
+      "description": "Group TypeScript ecosystem",
+      "matchPackagePatterns": ["^typescript", "^@types/"],
+      "groupName": "typescript"
+    },
+    {
+      "description": "Group ESLint ecosystem",
+      "matchPackagePatterns": ["eslint"],
+      "groupName": "eslint"
+    },
+    {
+      "description": "Group testing tools",
+      "matchPackagePatterns": ["mocha", "chai", "sinon", "c8", "msw"],
+      "groupName": "testing"
+    },
+    {
+      "description": "Pin production dependencies in standalone apps (CLI, MCP)",
+      "matchFileNames": ["packages/b2c-cli/package.json", "packages/b2c-dx-mcp/package.json"],
+      "matchDepTypes": ["dependencies"],
+      "rangeStrategy": "pin"
+    },
+    {
+      "description": "Pin production dependencies in SDK (library)",
+      "matchFileNames": ["packages/b2c-tooling-sdk/package.json"],
+      "matchDepTypes": ["dependencies"],
+      "rangeStrategy": "pin"
+    }
+  ],
+  "ignoreDeps": [],
+  "schedule": ["before 6am on monday"]
+}

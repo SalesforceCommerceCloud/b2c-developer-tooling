@@ -149,6 +149,7 @@ instance.init({
   returnEmptyString: false,
   // Use the default value when key is missing (our primary mode)
   saveMissing: false,
+  debug: false,
   // Namespace configuration
   defaultNS: B2C_NAMESPACE,
   ns: [B2C_NAMESPACE],
@@ -158,6 +159,8 @@ instance.init({
   interpolation: {
     escapeValue: false, // CLI doesn't need HTML escaping
   },
+  // Suppress funding notice added in i18next v25.8+ (not yet in type defs)
+  ...({showSupportNotice: false} as Record<string, unknown>),
 });
 
 /**

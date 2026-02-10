@@ -35,6 +35,11 @@
  * 1. `--api-key` flag (oclif also checks `SFCC_MRT_API_KEY` env var)
  * 2. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
  *
+ * **MRT Origin** (for Managed Runtime API URL):
+ * 1. `--cloud-origin` flag (oclif also checks `SFCC_MRT_CLOUD_ORIGIN` env var)
+ * 2. `mrtOrigin` field in dw.json
+ * 3. Default: `https://cloud.mobify.com`
+ *
  * @module services
  */
 
@@ -55,7 +60,7 @@ import {
 
 /**
  * MRT (Managed Runtime) configuration.
- * Groups auth, project, and environment settings.
+ * Groups auth, project, environment, and origin settings.
  */
 export interface MrtConfig {
   /** Pre-resolved auth strategy for MRT API operations */
@@ -64,6 +69,8 @@ export interface MrtConfig {
   project?: string;
   /** MRT environment from --environment flag or SFCC_MRT_ENVIRONMENT env var */
   environment?: string;
+  /** MRT API origin URL from --cloud-origin flag, SFCC_MRT_CLOUD_ORIGIN env var, or mrtOrigin in dw.json */
+  origin?: string;
 }
 
 /**
@@ -104,7 +111,7 @@ export class Services {
   public readonly b2cInstance?: B2CInstance;
 
   /**
-   * Pre-resolved MRT configuration (auth, project, environment).
+   * Pre-resolved MRT configuration (auth, project, environment, origin).
    * Resolved once at server startup from MrtCommand flags and ~/.mobify.
    */
   public readonly mrtConfig: MrtConfig;
@@ -140,6 +147,7 @@ export class Services {
       auth: config.hasMrtConfig() ? config.createMrtAuth() : undefined,
       project: config.values.mrtProject,
       environment: config.values.mrtEnvironment,
+      origin: config.values.mrtOrigin,
     };
 
     // Build B2C instance using factory method

@@ -167,7 +167,6 @@ describe('role list', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/roles`, ({request}) => {
@@ -196,7 +195,6 @@ describe('role list', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/roles`, () => {
@@ -220,7 +218,6 @@ describe('role list', () => {
           return HttpResponse.json({
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
-            scope: 'sfcc.accountmanager.user.manage',
           });
         }),
         http.get(`${BASE_URL}/roles`, ({request}) => {

@@ -16,9 +16,14 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [Code](/cli/code) list, activate, delete | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
 | [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
 | SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) |
-| [SLAS](/cli/slas) client management | OAuth | [API Client](#account-manager-api-client) with appropriate roles |
-| [ODS](/cli/ods) management | OAuth | [API Client](#account-manager-api-client) with `Sandbox API User` role |
+| [SLAS](/cli/slas) client management | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
+| [Sandbox](/cli/sandbox) management | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
+| [Account Manager](/cli/account-manager) | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
 | [MRT](/cli/mrt) commands | MRT API Key | [MRT API Key](#managed-runtime-api-key) |
+
+::: tip Zero-Config for Platform Commands
+Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (implicit flow). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
+:::
 
 ::: tip
 Each CLI command page documents its specific authentication requirements. See the [CLI Reference](/cli/) for details.
@@ -34,12 +39,16 @@ The CLI supports two authentication methods:
 
 | Method | When Used | Role Configuration |
 |--------|-----------|-------------------|
-| **User Authentication** | When only `--client-id` is provided (no secret) | Roles configured on your **user account** |
+| **User Authentication** | When `--user-auth` is passed, or when only `--client-id` is provided (no secret) | Roles configured on your **user account** |
 | **Client Credentials** | When both `--client-id` and `--client-secret` are provided | Roles configured on the **API client** |
 
-**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations.
+**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods implicit` on any OAuth command.
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
+
+::: tip
+For Account Manager operations that require user-level roles (organization and API client management), use `--user-auth` to authenticate with your user account. See [Account Manager Authentication](/cli/account-manager#authentication) for per-subtopic role requirements.
+:::
 
 ### Creating an API Client
 

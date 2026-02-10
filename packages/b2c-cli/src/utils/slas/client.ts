@@ -6,7 +6,13 @@
 import {Command, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createSlasClient, getApiErrorMessage, type SlasClient, type SlasComponents} from '@salesforce/b2c-tooling-sdk';
+import {
+  createSlasClient,
+  getApiErrorMessage,
+  DEFAULT_PUBLIC_CLIENT_ID,
+  type SlasClient,
+  type SlasComponents,
+} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 export type Client = SlasComponents['schemas']['Client'];
@@ -165,6 +171,10 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.create.tenantCreated', 'SLAS tenant created successfully.'));
     }
+  }
+
+  protected override getDefaultClientId(): string {
+    return DEFAULT_PUBLIC_CLIENT_ID;
   }
 
   /**

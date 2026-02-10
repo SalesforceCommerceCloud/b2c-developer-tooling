@@ -1,0 +1,64 @@
+{
+  "name": "controller",
+  "displayName": "SFRA Controller",
+  "description": "Create an SFRA controller with route handlers and middleware",
+  "category": "cartridge",
+  "parameters": [
+    {
+      "name": "controllerName",
+      "prompt": "What is the controller name?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[A-Z][a-zA-Z0-9]*$",
+      "validationMessage": "Controller name must be PascalCase (start with uppercase letter)"
+    },
+    {
+      "name": "cartridgeName",
+      "prompt": "Which cartridge should contain this controller?",
+      "type": "string",
+      "required": true,
+      "source": "cartridges",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    },
+    {
+      "name": "routes",
+      "prompt": "Which route types do you want to include?",
+      "type": "multi-choice",
+      "required": true,
+      "choices": [
+        { "value": "Show", "label": "Show (GET - render page)" },
+        { "value": "Submit", "label": "Submit (POST - form handler)" },
+        { "value": "JSON", "label": "JSON (GET - AJAX endpoint)" },
+        { "value": "SubmitJSON", "label": "SubmitJSON (POST - AJAX form)" }
+      ],
+      "default": ["Show"]
+    },
+    {
+      "name": "useMiddleware",
+      "prompt": "Include middleware chain example?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "includeTemplate",
+      "prompt": "Generate accompanying ISML template?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    }
+  ],
+  "files": [
+    {
+      "template": "controller.js.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/controllers/{{controllerName}}.js"
+    },
+    {
+      "template": "template.isml.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/templates/default/{{kebabCase controllerName}}/show.isml",
+      "condition": "includeTemplate"
+    }
+  ],
+  "postInstructions": "Controller '<%= controllerName %>' has been created in '<%= cartridgeName %>'.\n\nRoutes created:\n<% routes.forEach(function(route) { %>\n- <%= controllerName %>-<%= route %>: /<%= controllerName %>-<%= route %>\n<% }); %>\n\nNext steps:\n1. Deploy the cartridge to your instance\n2. Ensure <%= cartridgeName %> is in your cartridge path"
+}

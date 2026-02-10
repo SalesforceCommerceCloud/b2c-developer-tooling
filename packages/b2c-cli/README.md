@@ -18,7 +18,7 @@ npm install -g @salesforce/b2c-cli
 ### Homebrew (macOS/Linux)
 
 ```sh
-brew tap SalesforceCommerceCloud/tooling
+brew tap SalesforceCommerceCloud/tools
 brew install b2c-cli
 ```
 

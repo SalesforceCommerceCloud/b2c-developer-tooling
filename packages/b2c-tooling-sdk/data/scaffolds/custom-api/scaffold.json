@@ -1,0 +1,65 @@
+{
+  "name": "custom-api",
+  "displayName": "Custom SCAPI",
+  "description": "Create a custom SCAPI endpoint with OAS 3.0 schema",
+  "category": "cartridge",
+  "parameters": [
+    {
+      "name": "apiName",
+      "prompt": "What is the API name?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "validationMessage": "API name must be kebab-case (lowercase letters, numbers, hyphens)"
+    },
+    {
+      "name": "apiType",
+      "prompt": "What type of API is this?",
+      "type": "choice",
+      "required": true,
+      "default": "shopper",
+      "choices": [
+        { "value": "shopper", "label": "Shopper API (requires siteId, customer-facing)" },
+        { "value": "admin", "label": "Admin API (no siteId, administrative)" }
+      ]
+    },
+    {
+      "name": "apiDescription",
+      "prompt": "Describe your API:",
+      "type": "string",
+      "required": false,
+      "default": "A custom B2C Commerce API"
+    },
+    {
+      "name": "cartridgeName",
+      "prompt": "Which cartridge should contain this API?",
+      "type": "string",
+      "required": true,
+      "source": "cartridges",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    },
+    {
+      "name": "includeExampleEndpoints",
+      "prompt": "Include example endpoints?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    }
+  ],
+  "files": [
+    {
+      "template": "schema.yaml.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/rest-apis/{{apiName}}/schema.yaml"
+    },
+    {
+      "template": "api.json.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/rest-apis/{{apiName}}/api.json"
+    },
+    {
+      "template": "script.js.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/rest-apis/{{apiName}}/script.js"
+    }
+  ],
+  "postInstructions": "Custom API '<%= apiName %>' has been created in cartridge '<%= cartridgeName %>'.\n\nFiles created:\n- rest-apis/<%= apiName %>/schema.yaml (OAS 3.0 contract)\n- rest-apis/<%= apiName %>/api.json (endpoint mapping)\n- rest-apis/<%= apiName %>/script.js (implementation)\n\nNext steps:\n1. Deploy the cartridge to your instance\n2. Activate the code version to register the API\n3. The API will be available at:\n   https://{shortCode}.api.commercecloud.salesforce.com/custom/<%= apiName %>/v1/organizations/{organizationId}/...\n<% if (apiType === 'shopper') { %>\nNote: Shopper APIs require the siteId query parameter and ShopperToken authentication.\n<% } else { %>\nNote: Admin APIs use AmOAuth2 authentication. Add cartridge to Business Manager site's cartridge path.\n<% } %>"
+}
