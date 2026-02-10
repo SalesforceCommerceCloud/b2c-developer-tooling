@@ -13,6 +13,20 @@ import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} fr
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
 /**
+ * Sanitize attributes to only include string, number, boolean (App Insights–safe).
+ * Aligns with sf CLI telemetry record() validation.
+ */
+function sanitizeAttributes(attributes: TelemetryAttributes): TelemetryAttributes {
+  const out: TelemetryAttributes = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+/**
  * Get the path to the persistent CLI ID file.
  * @param dataDir - oclif dataDir for persistent storage
  */
@@ -131,12 +145,13 @@ export class Telemetry {
    * Send a telemetry event.
    *
    * @param eventName - Name of the event (e.g., 'SERVER_STATUS', 'TOOL_CALLED')
-   * @param attributes - Event-specific attributes
+   * @param attributes - Event-specific attributes (only string/number/boolean are sent)
    */
   sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
     try {
+      const name = eventName?.trim() || 'UNKNOWN';
       const eventProperties = this.buildEventProperties(attributes);
-      this.reporter?.sendTelemetryEvent(eventName, eventProperties);
+      this.reporter?.sendTelemetryEvent(name, eventProperties);
     } catch {
       // ignore send errors
     }
@@ -150,7 +165,7 @@ export class Telemetry {
    */
   sendException(error: Error, attributes: TelemetryAttributes = {}): void {
     try {
-      const properties = this.buildEventProperties(attributes);
+      const properties = this.buildEventProperties(sanitizeAttributes(attributes));
       this.reporter?.sendTelemetryException(error, properties);
     } catch {
       // ignore send errors
@@ -186,19 +201,25 @@ export class Telemetry {
   /**
    * Flush pending telemetry events without stopping the reporter.
    * Use this for long-running processes that need to ensure events are sent periodically.
-   *
-   * Note: This restarts the reporter internally to trigger a flush, as the underlying
-   * @salesforce/telemetry SDK doesn't expose a direct flush method for AppInsights.
+   * Uses the native reporter.flush() as documented in https://github.com/forcedotcom/telemetry,
+   * and also flushes the App Insights client when present (SDK flush() only flushes O11y).
    */
   async flush(): Promise<void> {
     if (!this.started || !this.reporter) return;
 
-    // The @salesforce/telemetry SDK's stop() triggers an AppInsights flush.
-    // We stop and restart to flush pending events without ending telemetry.
-    this.reporter.stop();
-    // Allow HTTP requests to complete (300ms for network latency)
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    this.reporter.start();
+    await this.reporter.flush();
+
+    // SDK flush() only flushes O11y; we use App Insights. Flush the underlying client.
+    try {
+      const client = this.reporter.getTelemetryClient();
+      if (client?.flush) {
+        await new Promise<void>((resolve) => {
+          client.flush({callback: () => resolve()});
+        });
+      }
+    } catch {
+      // getTelemetryClient() throws if App Insights not initialized
+    }
   }
 
   /**
@@ -219,9 +240,9 @@ export class Telemetry {
   }
 
   private buildEventProperties(attributes: TelemetryAttributes = {}): TelemetryEventProperties {
+    const sanitized = sanitizeAttributes({...this.attributes, ...attributes});
     return {
-      ...this.attributes,
-      ...attributes,
+      ...sanitized,
       sessionId: this.sessionId,
       cliId: this.cliId,
       version: this.version,
@@ -241,7 +262,6 @@ export class Telemetry {
       project: this.project,
       key: this.appInsightsKey ?? '',
       userId: this.cliId,
-      waitForConnection: true,
     });
     this.reporter.start();
   }

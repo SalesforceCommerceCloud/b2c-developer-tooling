@@ -17,7 +17,6 @@ interface ReporterCreateOptions {
   project: string;
   key: string;
   userId: string;
-  waitForConnection: boolean;
 }
 
 /** Partial mock of TelemetryReporter for testing */
@@ -26,14 +25,21 @@ interface MockReporter {
   sendTelemetryException: sinon.SinonStub;
   start: sinon.SinonStub;
   stop: sinon.SinonStub;
+  flush: sinon.SinonStub;
+  getTelemetryClient: sinon.SinonStub;
 }
 
 function createMockReporter(sandbox: sinon.SinonSandbox): MockReporter {
+  const mockClient = {
+    flush: sandbox.stub().callsFake((opts?: {callback?: () => void}) => opts?.callback?.()),
+  };
   return {
     sendTelemetryEvent: sandbox.stub(),
     sendTelemetryException: sandbox.stub(),
     start: sandbox.stub(),
     stop: sandbox.stub(),
+    flush: sandbox.stub().resolves(),
+    getTelemetryClient: sandbox.stub().returns(mockClient),
   };
 }
 
@@ -612,7 +618,6 @@ describe('telemetry/telemetry', () => {
       expect(createOptions.project).to.equal('test-project');
       expect(createOptions.key).to.equal('test-key-123');
       expect(createOptions.userId).to.equal('known-cli-id');
-      expect(createOptions.waitForConnection).to.be.true;
     });
   });
 
@@ -663,7 +668,7 @@ describe('telemetry/telemetry', () => {
       await telemetry.flush();
     });
 
-    it('stops and restarts the reporter to flush events', async () => {
+    it('calls native reporter.flush() and App Insights client flush', async () => {
       const mockReporter = createMockReporter(sandbox);
       sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
 
@@ -675,10 +680,11 @@ describe('telemetry/telemetry', () => {
       await telemetry.start();
       await telemetry.flush();
 
-      // stop() called to flush events, start() called to resume
-      expect(mockReporter.stop.calledOnce).to.be.true;
-      // start() called twice: once in start(), once in flush()
-      expect(mockReporter.start.calledTwice).to.be.true;
+      expect(mockReporter.flush.calledOnce).to.be.true;
+      expect(mockReporter.getTelemetryClient.calledOnce).to.be.true;
+      const client = mockReporter.getTelemetryClient.firstCall.returnValue;
+      expect(client.flush.calledOnce).to.be.true;
+      expect(client.flush.firstCall.args[0]).to.have.property('callback');
     });
 
     it('allows sending events after flush', async () => {
