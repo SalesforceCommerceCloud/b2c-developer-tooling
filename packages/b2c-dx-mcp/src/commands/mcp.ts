@@ -287,7 +287,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 4. Create Services via Services.fromResolvedConfig() using already-resolved config
    * 5. Register tools based on --toolsets and --tools flags
    * 6. Connect to stdio transport (JSON-RPC over stdin/stdout)
-   * 7. Log startup message to stderr
+   * 7. Log startup message via structured logger
    *
    * @throws Never throws - invalid toolsets are filtered, not rejected
    *
@@ -368,7 +368,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       process.on('SIGTERM', () => sendStopAndResolve('SIGTERM'));
     });
 
-    // Log startup message using the structured logger
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
   }
 }

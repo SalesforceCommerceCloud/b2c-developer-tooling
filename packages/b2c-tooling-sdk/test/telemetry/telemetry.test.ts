@@ -107,6 +107,18 @@ describe('telemetry/telemetry', () => {
       expect(Telemetry.isDisabled()).to.be.false;
     });
 
+    it('returns false when only SFCC_DISABLE_TELEMETRY=false and SF_DISABLE_TELEMETRY is unset (e.g. mcp.json)', () => {
+      process.env.SFCC_DISABLE_TELEMETRY = 'false';
+      delete process.env.SF_DISABLE_TELEMETRY;
+      expect(Telemetry.isDisabled()).to.be.false;
+    });
+
+    it('returns false when only SF_DISABLE_TELEMETRY=false and SFCC_DISABLE_TELEMETRY is unset', () => {
+      process.env.SF_DISABLE_TELEMETRY = 'false';
+      delete process.env.SFCC_DISABLE_TELEMETRY;
+      expect(Telemetry.isDisabled()).to.be.false;
+    });
+
     it('returns true when both disable vars are set to true', () => {
       process.env.SF_DISABLE_TELEMETRY = 'true';
       process.env.SFCC_DISABLE_TELEMETRY = 'true';

@@ -304,9 +304,17 @@ The MCP server collects anonymous usage telemetry to help improve the developer 
 
 **Development mode**: Telemetry is automatically disabled when using `bin/dev.js`, so local development and testing won't pollute production data.
 
-### Disabling Telemetry
+### Configuring telemetry (priority)
 
-Set one of these environment variables to disable telemetry:
+For MCP, telemetry is usually configured via **mcp.json** (Cursor MCP config). A `.env` file in the package directory is optional and often not used when running the server.
+
+- **Priority**: If both mcp.json and a `.env` file set telemetry-related variables, **mcp.json takes priority** for those keys (`SF_DISABLE_TELEMETRY`, `SFCC_DISABLE_TELEMETRY`, `SFCC_APP_INSIGHTS_KEY`).
+- **mcp.json**: Use the `env` object for your server entry (or top-level `env`) in `.cursor/mcp.json` or `~/.cursor/mcp.json`. Example: `"env": { "SFCC_DISABLE_TELEMETRY": "false", "SFCC_APP_INSIGHTS_KEY": "your-key" }`.
+- **.env**: You can instead (or additionally) set these in `packages/b2c-dx-mcp/.env`; they are overridden by mcp.json when both are present.
+
+### Disabling telemetry
+
+Set one of these (in mcp.json `env` or in `.env`) to disable telemetry:
 
 ```bash
 # Salesforce CLI standard (recommended)
@@ -316,11 +324,7 @@ SF_DISABLE_TELEMETRY=true
 SFCC_DISABLE_TELEMETRY=true
 ```
 
-You can also override the telemetry connection string for testing:
-
-```bash
-SFCC_APP_INSIGHTS_KEY=your-connection-string
-```
+To use a custom App Insights endpoint (e.g. for testing), set `SFCC_APP_INSIGHTS_KEY` in mcp.json `env` or in `.env`.
 
 ### What We Collect
 
