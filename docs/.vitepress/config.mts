@@ -51,6 +51,7 @@ const guideSidebar = [
       { text: 'Scaffolding', link: '/guide/scaffolding' },
       { text: 'IDE Support', link: '/guide/ide-support' },
       { text: 'Security', link: '/guide/security' },
+      { text: 'Storefront Next', link: '/guide/storefront-next' },
     ],
   },
   {
