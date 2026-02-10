@@ -46,21 +46,17 @@
   },
 
   "scripts": {
-    "vscode:prepublish": "pnpm run build",
-    "build": "pnpm exec tsc -p . && pnpm --filter @salesforce/b2c-tooling-sdk build && node scripts/esbuild-bundle.mjs",
-    "watch": "tsc -watch -p .",
+    "build": "node scripts/esbuild-bundle.mjs",
+    "watch": "node scripts/esbuild-bundle.mjs --watch",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
+    "package": "pnpm exec vsce package --no-dependencies",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
-    "pretest": "pnpm run build && pnpm run lint",
     "test": "vscode-test",
-    "posttest": "pnpm run lint",
-    "analyze": "ANALYZE_BUNDLE=1 pnpm run build",
-    "package": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs && pnpm exec vsce package --no-dependencies"
-
-
+    "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
   },
   "devDependencies": {
     "@eslint/compat": "^1",

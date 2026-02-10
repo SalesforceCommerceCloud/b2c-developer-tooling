@@ -8,7 +8,7 @@
 			"label": "build extension",
 			"command": "pnpm run build",
 			"options": { "cwd": "${workspaceFolder}" },
-			"problemMatcher": "$tsc",
+			"problemMatcher": [],
 			"group": { "kind": "build", "isDefault": true }
 		},
 		{
@@ -16,7 +16,7 @@
 			"label": "watch extension",
 			"command": "pnpm run watch",
 			"options": { "cwd": "${workspaceFolder}" },
-			"problemMatcher": "$tsc-watch",
+			"problemMatcher": [],
 			"isBackground": true,
 			"presentation": { "reveal": "never" }
 		}

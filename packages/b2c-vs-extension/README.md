@@ -32,7 +32,7 @@ pnpm --filter @salesforce/b2c-vs-extension run test
 
 Press **F5** in VS Code (with `packages/b2c-vs-extension` or the repo root open) to launch an Extension Development Host.
 
-The build bundles `@salesforce/b2c-tooling-sdk` into `out/extension.js` with esbuild, so the extension works when installed from a .vsix without requiring a separate `node_modules` install (unlike the CLI, which declares the SDK as an npm dependency).
+The build bundles `@salesforce/b2c-tooling-sdk` into `dist/extension.js` with esbuild, so the extension works when installed from a `.vsix` without requiring a separate `node_modules` install (unlike the CLI, which declares the SDK as an npm dependency).
 
 ## Requirements
 
