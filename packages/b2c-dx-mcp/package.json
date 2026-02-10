@@ -91,15 +91,15 @@
     "postpack": "shx rm -f oclif.manifest.json"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.18.0",
-    "@oclif/core": "^4",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@oclif/core": "^4.8.0",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
     "@eslint/js": "^9",
-    "@modelcontextprotocol/inspector": "^0.18.0",
+    "@modelcontextprotocol/inspector": "^0.20.0",
     "@oclif/prettier-config": "^0.2.1",
     "@salesforce/dev-config": "^4.3.2",
     "@types/chai": "^4",
@@ -113,15 +113,15 @@
     "eslint-plugin-header": "^3.1.1",
     "eslint-plugin-prettier": "^5.5.4",
     "mocha": "^10",
-    "oclif": "^4",
-    "prettier": "^3.6.2",
-    "shx": "^0.3.3",
+    "oclif": "^4.22.77",
+    "prettier": "^3.8.1",
+    "shx": "^0.4.0",
     "sinon": "^21.0.1",
-    "tsx": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "typescript-eslint": "^8"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.22.0"
   }
 }
