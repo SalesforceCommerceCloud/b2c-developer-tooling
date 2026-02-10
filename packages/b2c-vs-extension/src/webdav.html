@@ -86,6 +86,13 @@
     .entries-table tr.entry-row.file .name::before {
       content: "📄 ";
     }
+    .entries-table tr.entry-row.preview-selected {
+      background: var(--vscode-list-activeSelectionBackground);
+      color: var(--vscode-list-activeSelectionForeground);
+    }
+    .entries-table tr.entry-row.preview-selected:hover {
+      background: var(--vscode-list-activeSelectionBackground);
+    }
     .entries-table .size { text-align: right; color: var(--vscode-descriptionForeground); }
     .entries-table .actions { width: 4rem; text-align: right; }
     .entries-table .btn-delete {
@@ -337,6 +344,7 @@
           row.addEventListener("click", function(ev) {
             if (ev.target.closest(".btn-delete")) return;
             document.getElementById("preview-panel").classList.remove("visible");
+            entriesBody.querySelectorAll(".entry-row.preview-selected").forEach(function(r) { r.classList.remove("preview-selected"); });
             const name = this.dataset.name;
             const nextPath = currentPath ? currentPath + "/" + name : name;
             currentPath = nextPath;
@@ -346,6 +354,8 @@
         entriesBody.querySelectorAll(".entry-row.file").forEach(function(row) {
           row.addEventListener("click", function(ev) {
             if (ev.target.closest(".btn-delete")) return;
+            entriesBody.querySelectorAll(".entry-row.preview-selected").forEach(function(r) { r.classList.remove("preview-selected"); });
+            this.classList.add("preview-selected");
             const fullPath = this.dataset.path;
             const name = this.dataset.name;
             const previewPanel = document.getElementById("preview-panel");
@@ -434,6 +444,7 @@
 
       document.getElementById("preview-close").addEventListener("click", function() {
         document.getElementById("preview-panel").classList.remove("visible");
+        entriesBody.querySelectorAll(".entry-row.preview-selected").forEach(function(r) { r.classList.remove("preview-selected"); });
       });
 
       renderRoots();
