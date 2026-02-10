@@ -192,18 +192,7 @@ export class Telemetry {
     this.started = true;
 
     // If no key provided, telemetry is disabled
-    if (!this.appInsightsKey) {
-      if (process.env.SFCC_TELEMETRY_DEBUG === 'true' || process.env.SFCC_TELEMETRY_DEBUG === '1') {
-        process.stderr.write('[telemetry] disabled (no connection string)\n');
-      }
-      return;
-    }
-
-    if (process.env.SFCC_TELEMETRY_DEBUG === 'true' || process.env.SFCC_TELEMETRY_DEBUG === '1') {
-      process.stderr.write(
-        `[telemetry] connection string: ${redactConnectionString(this.appInsightsKey)}\n`,
-      );
-    }
+    if (!this.appInsightsKey) return;
 
     try {
       await this.createReporter();
