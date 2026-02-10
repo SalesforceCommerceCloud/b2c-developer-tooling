@@ -152,11 +152,11 @@ This is run from your Storefront Next project directory.
 
 ```bash
 b2c mrt bundle deploy -p <PROJECT> -e <ENVIRONMENT> \
-  --ssr-only "server/**/*,loader.js,sfnext-server-*.mjs,streamingHandler.{js,mjs,cjs},streamingHandler.{js,mjs,cjs}.map,!static/**/*" \
-  --ssr-shared "client/**/*,static/**/*,**/*.css,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,**/*.woff,**/*.woff2,**/*.ttf,**/*.eot"
+  --ssr-only '["server/**/*", "loader.js", "sfnext-server-*.mjs", "streamingHandler.{js,mjs,cjs}", "streamingHandler.{js,mjs,cjs}.map", "!static/**/*", "!**/*.stories.tsx", "!**/*.stories.ts", "!**/*-snapshot.tsx", "!.storybook/**/*", "!storybook-static/**/*", "!**/__mocks__/**/*", "!**/__snapshots__/**/*"]' \
+  --ssr-shared '["client/**/*", "static/**/*", "**/*.css", "**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.gif", "**/*.svg", "**/*.ico", "**/*.woff", "**/*.woff2", "**/*.ttf", "**/*.eot", "!**/*.stories.tsx", "!**/*.stories.ts", "!**/*-snapshot.tsx", "!.storybook/**/*", "!storybook-static/**/*", "!**/__mocks__/**/*", "!**/__snapshots__/**/*"]'
 ```
 
-The `--ssr-only` and `--ssr-shared` patterns are required for the Storefront Next bundle structure.
+These patterns match the defaults used by `pnpm sfnext push`. The `--ssr-only` and `--ssr-shared` flags accept either a JSON array (for patterns with brace expansion) or a comma-separated string, and can be overridden if your project structure differs.
 
 ## Summary
 
