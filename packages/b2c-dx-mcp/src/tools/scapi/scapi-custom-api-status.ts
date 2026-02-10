@@ -150,11 +150,33 @@ export function createCustomListTool(services: Services): McpTool {
   return createToolAdapter<CustomListInput, CustomListOutput>(
     {
       name: 'scapi_custom_api_status',
-      description: `List Custom SCAPI API endpoints and their registration status (active vs not_registered). Use this for developer-defined custom APIs only; for standard SCAPI (Shop, Admin, Shopper products/baskets etc.) use scapi_schemas_list instead.
+      description: `List Custom SCAPI API endpoints and their registration status (active vs not_registered). Returns individual HTTP endpoints (e.g., GET /hello, POST /items/{id}) with deployment status, one row per endpoint per site. Use this for developer-defined custom APIs only.
 
-Returns one row per endpoint per site (no roll-up). Data comes from the remote instance only. Requires OAuth with sfcc.custom-apis and valid instance config (shortCode, organizationId). On failure, response includes remoteError and total 0.
+**When to use this tool:**
+- Use this tool when you need: endpoint registration status (active/not_registered), endpoint-level details per site, or to verify custom endpoints are deployed.
+- For API-level schema information, use scapi_schemas_list instead.
 
-Output: endpoints (array) or groups (when groupBy is set), total, activeCodeVersion, timestamp, message. Each endpoint includes type (Admin|Shopper), apiName, endpointPath, httpMethod, status, siteId by default; use columns or extended to change fields.
+**Efficient workflows for agents:**
+- To check if custom endpoints are active: use this tool with status: "active".
+- To get custom API schemas: use scapi_schemas_list with apiFamily: "custom" instead.
+- To see all custom endpoints across sites: use this tool without filters (or groupBy: "site").
+- To get endpoint details: use extended: true or specify columns.
+
+**Output format:**
+- Returns endpoints (array) or groups (when groupBy is set), total, activeCodeVersion, timestamp, message.
+- Default fields (6): type, apiName, endpointPath, httpMethod, status, siteId.
+- Extended fields (14 total): adds apiVersion, cartridgeName, securityScheme, operationId, schemaFile, implementationScript, errorReason, id.
+- Use extended: true to get all fields, or columns: "field1,field2" to select specific fields.
+- Returns one row per endpoint per site (no roll-up). Data comes from the remote instance only.
+
+**Examples:**
+- "What custom API endpoints are deployed?" → call without filters (returns all endpoints with registration status).
+- "Show me only active custom endpoints" → status: "active".
+- "Group endpoints by site" → groupBy: "site".
+- "Show me endpoint details with all fields" → extended: true.
+- "Show me only apiName and status for active endpoints" → status: "active", columns: "apiName,status".
+
+**Requirements:** Requires OAuth with sfcc.custom-apis scope and valid instance config (shortCode, tenantId). On failure, response includes remoteError and total 0.
 
 CLI reference: b2c scapi custom status — https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.html#b2c-scapi-custom-status`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
@@ -179,7 +201,7 @@ CLI reference: b2c scapi custom status — https://salesforcecommercecloud.githu
           .boolean()
           .optional()
           .describe(
-            'If true, return all fields. If false or omitted, return default columns only (type, apiName, endpointPath, httpMethod, status, siteId).',
+            'If true, return all available fields (14 fields total). If false or omitted, return default columns only (6 fields: type, apiName, endpointPath, httpMethod, status, siteId). Use extended: true when you need additional details like apiVersion, cartridgeName, securityScheme, operationId, schemaFile, implementationScript, errorReason, or id. Note: If you only need specific fields, use columns parameter instead for more control.',
           ),
       },
       async execute(args, {services: svc}) {

@@ -296,21 +296,38 @@ export function createSchemasListTool(services: Services): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
-      description: `List or fetch SCAPI (Salesforce Commerce API) schema metadata and OpenAPI specs. Use for standard SCAPI (Shop, Admin, Shopper APIs). For Custom API endpoint registration status (active/not_registered), use scapi_custom_api_status instead.
+      description: `List or fetch SCAPI (Salesforce Commerce API) schema metadata and OpenAPI specs. Works for BOTH standard SCAPI (Shop, Admin, Shopper APIs) AND custom APIs (apiFamily: "custom").
+
+**When to use this tool:**
+- Use this tool when you need: schema discovery, OpenAPI specs, API metadata, or to fetch a specific schema.
+- Returns API-level definitions (e.g., loyalty-points v1, shopper-products v1) with schema information.
+- For endpoint-level registration status (active/not_registered), use scapi_custom_api_status instead.
 
 **How to choose mode:**
 - **List (discovery):** Omit includeSchemas, or omit any of apiFamily/apiName/apiVersion. Use when you need to discover what APIs exist or filter by family/name/version/status. Returns: schemas[] (metadata only), total, availableApiFamilies, availableApiNames, availableVersions.
 - **Fetch (one schema):** Set includeSchemas=true AND provide all three: apiFamily, apiName, apiVersion. Use when you need the full OpenAPI 3.0 schema for a specific API. Returns: schema (object), apiFamily, apiName, apiVersion, baseUrl, collapsed. Set expandAll=true to get the full uncollapsed schema.
 
+**Efficient workflows for agents:**
+- To discover custom APIs: list with apiFamily: "custom" (no includeSchemas needed initially). This shows all custom APIs with their apiName and apiVersion.
+- To fetch a custom API schema: if you know the API name and version, fetch directly with apiFamily: "custom", apiName: "<name>", apiVersion: "<version>", includeSchemas: true (one call). If you don't know the version, discover first with apiFamily: "custom" and apiName: "<name>".
+- To discover standard APIs: list with apiFamily filter (e.g., apiFamily: "product" for product APIs).
+- To fetch a specific schema: provide all three identifiers + includeSchemas: true (most efficient - one call).
+
 **Rules:**
 - If you set includeSchemas=true you MUST provide apiFamily, apiName, and apiVersion. Otherwise the tool returns an error.
 - In list mode, all of apiFamily, apiName, apiVersion, status are optional filters. Omit them or set only the ones you need.
 - status (current | deprecated) only applies in list mode; it is ignored in fetch mode.
+- Custom APIs appear with apiFamily: "custom" in list results.
 
 **Examples:**
-- "What checkout APIs exist?" → list with apiFamily: "checkout" (no includeSchemas).
-- "Show me the shopper-products v1 OpenAPI schema" → apiFamily: "product", apiName: "shopper-products", apiVersion: "v1", includeSchemas: true.
-- "List all current schemas" → list with status: "current".
+- Standard APIs:
+  - "What checkout APIs exist?" → list with apiFamily: "checkout" (no includeSchemas).
+  - "Show me the shopper-products v1 OpenAPI schema" → apiFamily: "product", apiName: "shopper-products", apiVersion: "v1", includeSchemas: true.
+- Custom APIs:
+  - "What custom API definitions are available?" → list with apiFamily: "custom".
+  - "Show me the loyalty-points custom API schema" → apiFamily: "custom", apiName: "loyalty-points", apiVersion: "v1", includeSchemas: true.
+- General:
+  - "List all current schemas" → list with status: "current".
 
 **Requirements:** Instance must have shortCode, tenantId, and OAuth with sfcc.scapi-schemas scope.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],

@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import sinon from 'sinon';
+import {stub, restore, type SinonStub} from 'sinon';
 import {createSchemasListTool} from '../../../src/tools/scapi/scapi-schemas-list.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
@@ -28,8 +28,8 @@ function parseResultContent(result: {content: Array<{type: string; text?: string
 
 describe('tools/scapi/scapi-schemas-list', () => {
   let services: Services;
-  let getShortCodeStub: sinon.SinonStub;
-  let mockGet: sinon.SinonStub;
+  let getShortCodeStub: SinonStub;
+  let mockGet: SinonStub;
 
   const ORG_ID = 'f_ecom_test_tenant';
 
@@ -41,15 +41,15 @@ describe('tools/scapi/scapi-schemas-list', () => {
       }),
     });
 
-    mockGet = sinon.stub();
+    mockGet = stub();
     const mockClient = {GET: mockGet} as unknown as ScapiSchemasClient;
-    sinon.stub(services, 'getScapiSchemasClient').returns(mockClient);
-    sinon.stub(services, 'getOrganizationId').returns(ORG_ID);
-    getShortCodeStub = sinon.stub(services, 'getShortCode').returns('test-shortcode');
+    stub(services, 'getScapiSchemasClient').returns(mockClient);
+    stub(services, 'getOrganizationId').returns(ORG_ID);
+    getShortCodeStub = stub(services, 'getShortCode').returns('test-shortcode');
   });
 
   afterEach(() => {
-    sinon.restore();
+    restore();
   });
 
   describe('createSchemasListTool', () => {
@@ -190,7 +190,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
 
     it('omits baseUrl when getShortCode throws', async () => {
       getShortCodeStub.restore();
-      sinon.stub(services, 'getShortCode').throws(new Error('No short code'));
+      stub(services, 'getShortCode').throws(new Error('No short code'));
 
       mockGet.resolves({
         data: {

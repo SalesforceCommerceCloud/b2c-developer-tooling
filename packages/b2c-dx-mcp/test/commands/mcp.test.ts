@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import sinon from 'sinon';
+import {createSandbox, type SinonStub, type SinonSandbox} from 'sinon';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import McpServerCommand from '../../src/commands/mcp.js';
 import {B2CDxMcpServer} from '../../src/server.js';
@@ -101,12 +101,12 @@ describe('McpServerCommand', () => {
   });
 
   describe('telemetry initialization', () => {
-    let sandbox: sinon.SinonSandbox;
-    let serverConnectStub: sinon.SinonStub;
-    let addAttributesStub: sinon.SinonStub;
+    let sandbox: SinonSandbox;
+    let serverConnectStub: SinonStub;
+    let addAttributesStub: SinonStub;
 
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = createSandbox();
 
       // Stub Telemetry prototype methods - this works because BaseCommand creates
       // telemetry instances with `new Telemetry()`, so all instances use these stubs
@@ -392,10 +392,10 @@ describe('McpServerCommand', () => {
   });
 
   describe('telemetry lifecycle', () => {
-    let sandbox: sinon.SinonSandbox;
+    let sandbox: SinonSandbox;
 
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = createSandbox();
     });
 
     afterEach(() => {

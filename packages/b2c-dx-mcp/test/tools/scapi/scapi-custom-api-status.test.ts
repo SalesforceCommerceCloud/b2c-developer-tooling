@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import sinon from 'sinon';
+import {stub, restore, type SinonStub} from 'sinon';
 import {createCustomListTool} from '../../../src/tools/scapi/scapi-custom-api-status.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
@@ -28,9 +28,9 @@ function parseResultContent(result: {content: Array<{type: string; text?: string
 
 describe('tools/scapi/scapi-custom-api-status', () => {
   let services: Services;
-  let getCustomApisClientStub: sinon.SinonStub;
-  let getOrganizationIdStub: sinon.SinonStub;
-  let mockGet: sinon.SinonStub;
+  let getCustomApisClientStub: SinonStub;
+  let getOrganizationIdStub: SinonStub;
+  let mockGet: SinonStub;
 
   beforeEach(() => {
     services = new Services({
@@ -40,17 +40,17 @@ describe('tools/scapi/scapi-custom-api-status', () => {
       }),
     });
 
-    mockGet = sinon.stub();
+    mockGet = stub();
     const mockClient = {
       GET: mockGet,
     } as unknown as CustomApisClient;
 
-    getCustomApisClientStub = sinon.stub(services, 'getCustomApisClient').returns(mockClient);
-    getOrganizationIdStub = sinon.stub(services, 'getOrganizationId').returns('f_ecom_test_tenant');
+    getCustomApisClientStub = stub(services, 'getCustomApisClient').returns(mockClient);
+    getOrganizationIdStub = stub(services, 'getOrganizationId').returns('f_ecom_test_tenant');
   });
 
   afterEach(() => {
-    sinon.restore();
+    restore();
   });
 
   describe('createCustomListTool', () => {
