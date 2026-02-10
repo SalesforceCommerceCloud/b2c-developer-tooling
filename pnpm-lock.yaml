@@ -88,11 +88,11 @@ importers:
         specifier: ^13.0.0
         version: 13.0.0
       marked:
-        specifier: ^15.0.0
-        version: 15.0.12
+        specifier: ^17.0.1
+        version: 17.0.1
       marked-terminal:
         specifier: ^7.3.0
-        version: 7.3.0(marked@15.0.12)
+        version: 7.3.0(marked@17.0.1)
       open:
         specifier: ^11.0.0
         version: 11.0.0
@@ -171,7 +171,7 @@ importers:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: '>=1.26.0'
-        version: 1.26.0(zod@3.25.76)
+        version: 1.26.0(zod@4.3.6)
       '@oclif/core':
         specifier: ^4
         version: 4.8.0
@@ -179,8 +179,8 @@ importers:
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@eslint/compat':
         specifier: ^1
@@ -307,8 +307,8 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       ejs:
-        specifier: ^3.1.10
-        version: 3.1.10
+        specifier: ^4.0.1
+        version: 4.0.1
       fuse.js:
         specifier: ^7.0.0
         version: 7.1.0
@@ -3760,6 +3760,11 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
+  ejs@4.0.1:
+    resolution: {integrity: sha512-krvQtxc0btwSm/nvnt1UpnaFDFVJpJ0fdckmALpCgShsr/iGYHTnJiUliZTgmzq/UxTX33TtOQVKaNigMQp/6Q==}
+    engines: {node: '>=0.12.18'}
+    hasBin: true
+
   electron-to-chromium@1.5.250:
     resolution: {integrity: sha512-/5UMj9IiGDMOFBnN4i7/Ry5onJrAGSbOGo3s9FEKmwobGq6xw832ccET0CE3CkkMBZ8GJSlUIesZofpyurqDXw==}
 
@@ -5065,9 +5070,9 @@ packages:
     peerDependencies:
       marked: '>=1 <16'
 
-  marked@15.0.12:
-    resolution: {integrity: sha512-8dD6FusOQSrpv9Z1rdNMdlSgQOIP880DHqnohobOmYLElGEqAL/JvxvuxZO16r4HtjTlfPRDC1hbvxC9dPN2nA==}
-    engines: {node: '>= 18'}
+  marked@17.0.1:
+    resolution: {integrity: sha512-boeBdiS0ghpWcSwoNm/jJBwdpFaMnZWRzjA6SkUMYb40SVaN1x7mmfGKp0jvexGcx+7y2La5zRZsYFZI6Qpypg==}
+    engines: {node: '>= 20'}
     hasBin: true
 
   math-intrinsics@1.1.0:
@@ -6884,8 +6889,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.3.5:
-    resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -8732,6 +8737,28 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@modelcontextprotocol/sdk@1.26.0(zod@4.3.6)':
+    dependencies:
+      '@hono/node-server': 1.19.9(hono@4.11.8)
+      ajv: 8.17.1
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      content-type: 1.0.5
+      cors: 2.8.5
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.0.6
+      express: 5.2.1
+      express-rate-limit: 8.2.1(express@5.2.1)
+      hono: 4.11.8
+      jose: 6.1.3
+      json-schema-typed: 8.0.2
+      pkce-challenge: 5.0.1
+      raw-body: 3.0.2
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.1(zod@4.3.6)
+    transitivePeerDependencies:
+      - supports-color
+
   '@mswjs/interceptors@0.40.0':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
@@ -9397,7 +9424,7 @@ snapshots:
       proper-lockfile: 4.1.2
       semver: 7.7.3
       ts-retry-promise: 0.8.1
-      zod: 4.3.5
+      zod: 4.3.6
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -11046,6 +11073,10 @@ snapshots:
     dependencies:
       jake: 10.9.4
 
+  ejs@4.0.1:
+    dependencies:
+      jake: 10.9.4
+
   electron-to-chromium@1.5.250: {}
 
   emitter-listener@1.1.2:
@@ -12546,18 +12577,18 @@ snapshots:
       punycode.js: 2.3.1
       uc.micro: 2.1.0
 
-  marked-terminal@7.3.0(marked@15.0.12):
+  marked-terminal@7.3.0(marked@17.0.1):
     dependencies:
       ansi-escapes: 7.2.0
       ansi-regex: 6.2.2
       chalk: 5.6.2
       cli-highlight: 2.1.11
       cli-table3: 0.6.5
-      marked: 15.0.12
+      marked: 17.0.1
       node-emoji: 2.2.0
       supports-hyperlinks: 3.2.0
 
-  marked@15.0.12: {}
+  marked@17.0.1: {}
 
   math-intrinsics@1.1.0: {}
 
@@ -14563,8 +14594,12 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
+  zod-to-json-schema@3.25.1(zod@4.3.6):
+    dependencies:
+      zod: 4.3.6
+
   zod@3.25.76: {}
 
-  zod@4.3.5: {}
+  zod@4.3.6: {}
 
   zwitch@2.0.4: {}

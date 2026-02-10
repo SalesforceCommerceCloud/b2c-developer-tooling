@@ -14,9 +14,9 @@ jobs:
     environment: e2e-dev
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
 
@@ -59,7 +59,7 @@ jobs:
 
       - name: Setup pnpm cache
         if: steps.check-secrets.outputs.has-secrets == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}

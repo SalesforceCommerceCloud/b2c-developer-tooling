@@ -23,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Renovate
-        uses: renovatebot/github-action@v41.0.21
+        uses: renovatebot/github-action@v46.0.2
         with:
           configurationFile: renovate.json
           token: ${{ secrets.RENOVATE_TOKEN }}
