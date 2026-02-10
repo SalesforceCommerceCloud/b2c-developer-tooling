@@ -320,7 +320,7 @@ SF_DISABLE_TELEMETRY=true
 SFCC_DISABLE_TELEMETRY=true
 ```
 
-To use a custom App Insights endpoint (e.g. for testing), set `SFCC_APP_INSIGHTS_KEY` in your `mcp.json` server `env`. For telemetry debugging, set `SFCC_TELEMETRY_DEBUG=true` there to log telemetry payloads (do not enable in production).
+To use a custom App Insights endpoint (e.g. for testing), set `SFCC_APP_INSIGHTS_KEY` in your `mcp.json` server `env`.
 
 ### What We Collect
 

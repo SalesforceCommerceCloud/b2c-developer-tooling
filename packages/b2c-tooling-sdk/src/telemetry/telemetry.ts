@@ -13,17 +13,6 @@ import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} fr
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
 /**
- * Redact connection string for debug logging (InstrumentationKey=first8...last4).
- */
-function redactConnectionString(connectionString: string): string {
-  const match = connectionString.match(/InstrumentationKey=([^;]+)/);
-  if (!match) return 'InstrumentationKey=***';
-  const key = match[1];
-  if (key.length <= 12) return 'InstrumentationKey=***';
-  return `InstrumentationKey=${key.slice(0, 8)}...${key.slice(-4)}`;
-}
-
-/**
  * Sanitize attributes to only include string, number, boolean (App Insights–safe).
  * Aligns with sf CLI telemetry record() validation.
  */
