@@ -68,8 +68,7 @@ const buildOptions = {
   outfile: path.join(pkgRoot, "dist", "extension.js"),
   sourcemap: true,
   metafile: true,
-  // typescript is pulled in transitively by @oclif/core's read-tsconfig.js (~9 MB); not needed at runtime.
-  external: ["vscode", "typescript"],
+  external: ["vscode"],
   // In watch mode, include "development" so esbuild resolves the SDK's exports to .ts source files
   // directly (no SDK rebuild needed). Production builds use the built dist/ artifacts.
   conditions: watchMode
