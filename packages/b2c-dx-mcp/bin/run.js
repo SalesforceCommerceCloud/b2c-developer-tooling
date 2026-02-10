@@ -6,8 +6,16 @@
  */
 /* global process */
 
-// Load .env file if present (Node.js native support; same as b2c-cli run.js).
-// When run by an MCP client (Cursor, Claude Desktop), env from mcp.json is already set in process.env.
+/**
+ * Production entry point for MCP server using oclif.
+ *
+ * This uses oclif's production mode which:
+ * - Uses compiled JavaScript from dist/
+ * - Loads .env file if present for local configuration
+ *
+ */
+
+// Load .env file if present (Node.js native support)
 try {
   process.loadEnvFile();
 } catch {
