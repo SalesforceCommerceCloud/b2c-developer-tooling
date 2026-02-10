@@ -118,7 +118,7 @@ jobs:
           pnpm run test:e2e:ci && pnpm run lint
 
       - name: E2E Test Report
-        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0
+        uses: dorny/test-reporter@b082adf0eced0765477756c2a610396589b8c637  # v2.5.0
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         with:
           name: E2E Test Results (Node ${{ matrix.node-version }})
