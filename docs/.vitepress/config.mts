@@ -48,8 +48,8 @@ const guideSidebar = [
     text: 'Guides',
     items: [
       { text: 'Authentication Setup', link: '/guide/authentication' },
+      { text: 'Account Manager', link: '/guide/account-manager' },
       { text: 'Scaffolding', link: '/guide/scaffolding' },
-      { text: 'IDE Support', link: '/guide/ide-support' },
       { text: 'Security', link: '/guide/security' },
       { text: 'Storefront Next', link: '/guide/storefront-next' },
     ],
@@ -66,6 +66,7 @@ const guideSidebar = [
     items: [
       { text: 'Overview', link: '/cli/' },
       { text: 'Code Commands', link: '/cli/code' },
+      { text: 'Content Commands', link: '/cli/content' },
       { text: 'Job Commands', link: '/cli/jobs' },
       { text: 'Logs Commands', link: '/cli/logs' },
       { text: 'Sites Commands', link: '/cli/sites' },

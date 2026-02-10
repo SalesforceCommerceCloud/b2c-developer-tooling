@@ -6,8 +6,6 @@ settings:
 
 overrides:
   '@isaacs/brace-expansion@<=5.0.0': '>=5.0.1'
-  '@modelcontextprotocol/sdk@<1.25.2': '>=1.25.2'
-  '@modelcontextprotocol/sdk@>=1.10.0 <=1.25.3': '>=1.26.0'
   diff@>=4.0.0 <4.0.4: '>=4.0.4'
   diff@>=5.0.0 <5.2.2: '>=5.2.2'
   esbuild@<=0.24.2: '>=0.25.0'
@@ -55,46 +53,46 @@ importers:
   packages/b2c-cli:
     dependencies:
       '@inquirer/prompts':
-        specifier: ^8.2.0
+        specifier: 8.2.0
         version: 8.2.0(@types/node@22.19.0)
       '@oclif/core':
-        specifier: ^4
+        specifier: 4.8.0
         version: 4.8.0
       '@oclif/plugin-autocomplete':
-        specifier: ^3
+        specifier: 3.2.39
         version: 3.2.39
       '@oclif/plugin-help':
-        specifier: ^6
+        specifier: 6.2.35
         version: 6.2.35
       '@oclif/plugin-not-found':
-        specifier: ^3
+        specifier: 3.2.72
         version: 3.2.72(@types/node@22.19.0)
       '@oclif/plugin-plugins':
-        specifier: ^5
+        specifier: 5.4.53
         version: 5.4.53
       '@oclif/plugin-version':
-        specifier: ^2
+        specifier: 2.2.36
         version: 2.2.36
       '@oclif/plugin-warn-if-update-available':
-        specifier: ^3
+        specifier: 3.1.52
         version: 3.1.52
       '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
       cliui:
-        specifier: ^9.0.1
+        specifier: 9.0.1
         version: 9.0.1
       glob:
-        specifier: ^13.0.0
+        specifier: 13.0.0
         version: 13.0.0
       marked:
-        specifier: ^15.0.0
+        specifier: 15.0.12
         version: 15.0.12
       marked-terminal:
-        specifier: ^7.3.0
+        specifier: 7.3.0
         version: 7.3.0(marked@15.0.12)
       open:
-        specifier: ^11.0.0
+        specifier: 11.0.0
         version: 11.0.0
     devDependencies:
       '@eslint/compat':
@@ -170,16 +168,16 @@ importers:
   packages/b2c-dx-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: 1.26.0
         version: 1.26.0(zod@3.25.76)
       '@oclif/core':
-        specifier: ^4
+        specifier: 4.8.0
         version: 4.8.0
       '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
       zod:
-        specifier: ^3.25.76
+        specifier: 3.25.76
         version: 3.25.76
     devDependencies:
       '@eslint/compat':
@@ -295,52 +293,52 @@ importers:
   packages/b2c-tooling-sdk:
     dependencies:
       '@salesforce/telemetry':
-        specifier: ^6.1.0
+        specifier: 6.4.6
         version: 6.4.6(tslib@2.8.1)
       archiver:
-        specifier: ^7.0.1
+        specifier: 7.0.1
         version: 7.0.1
       chokidar:
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0
       cliui:
-        specifier: ^9.0.1
+        specifier: 9.0.1
         version: 9.0.1
       ejs:
-        specifier: ^3.1.10
+        specifier: 3.1.10
         version: 3.1.10
       fuse.js:
-        specifier: ^7.0.0
+        specifier: 7.1.0
         version: 7.1.0
       glob:
-        specifier: ^13.0.0
+        specifier: 13.0.0
         version: 13.0.0
       i18next:
         specifier: 25.7.4
         version: 25.7.4(typescript@5.9.3)
       jszip:
-        specifier: ^3.10.1
+        specifier: 3.10.1
         version: 3.10.1
       minimatch:
-        specifier: ^10.1.1
+        specifier: 10.1.1
         version: 10.1.1
       open:
-        specifier: ^11.0.0
+        specifier: 11.0.0
         version: 11.0.0
       openapi-fetch:
-        specifier: ^0.15.0
+        specifier: 0.15.0
         version: 0.15.0
       pino:
-        specifier: ^10.1.0
+        specifier: 10.1.0
         version: 10.1.0
       pino-pretty:
-        specifier: ^13.1.2
+        specifier: 13.1.2
         version: 13.1.2
       undici:
-        specifier: ^7.0.0
+        specifier: 7.19.2
         version: 7.19.2
       xml2js:
-        specifier: ^0.6.2
+        specifier: 0.6.2
         version: 0.6.2
     devDependencies:
       '@eslint/compat':

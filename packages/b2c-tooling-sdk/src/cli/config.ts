@@ -46,10 +46,12 @@ export type ParsedFlags = Record<string, unknown>;
 export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
   const scopes = flags.scope as string[] | undefined;
 
-  // Parse auth methods from --auth-methods flag
+  // Parse auth methods from --auth-methods or --user-auth flag
   const authMethodValues = flags['auth-methods'] as string[] | undefined;
   let authMethods: AuthMethod[] | undefined;
-  if (authMethodValues && authMethodValues.length > 0) {
+  if (flags['user-auth']) {
+    authMethods = ['implicit'];
+  } else if (authMethodValues && authMethodValues.length > 0) {
     const methods = authMethodValues
       .map((s) => s.trim())
       .filter((s): s is AuthMethod => ALL_AUTH_METHODS.includes(s as AuthMethod));

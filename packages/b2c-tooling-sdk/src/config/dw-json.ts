@@ -67,6 +67,8 @@ export interface DwJsonConfig {
   tenantId?: string;
   /** ODS API hostname */
   sandboxApiHost?: string;
+  /** Default content library ID for content export/list commands */
+  contentLibrary?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
   /** Passphrase for the certificate */

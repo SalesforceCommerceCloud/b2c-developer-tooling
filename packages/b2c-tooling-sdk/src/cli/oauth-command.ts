@@ -68,6 +68,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       delimiter: ',',
       options: ALL_AUTH_METHODS,
       helpGroup: 'AUTH',
+      exclusive: ['user-auth'],
+    }),
+    'user-auth': Flags.boolean({
+      description: 'Use browser-based user authentication (implicit OAuth flow)',
+      default: false,
+      exclusive: ['auth-methods'],
+      helpGroup: 'AUTH',
     }),
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
