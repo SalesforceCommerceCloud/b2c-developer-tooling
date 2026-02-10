@@ -24,18 +24,18 @@
     },
     {
       "description": "Group TypeScript ecosystem",
-      "matchPackagePatterns": ["^typescript", "^@types/"],
-      "groupName": "typescript"
+      "groupName": "typescript",
+      "matchPackageNames": ["/^typescript/", "/^@types//"]
     },
     {
       "description": "Group ESLint ecosystem",
-      "matchPackagePatterns": ["eslint"],
-      "groupName": "eslint"
+      "groupName": "eslint",
+      "matchPackageNames": ["/eslint/"]
     },
     {
       "description": "Group testing tools",
-      "matchPackagePatterns": ["mocha", "chai", "sinon", "c8", "msw"],
-      "groupName": "testing"
+      "groupName": "testing",
+      "matchPackageNames": ["/mocha/", "/chai/", "/sinon/", "/c8/", "/msw/"]
     }
   ],
   "ignoreDeps": [],
