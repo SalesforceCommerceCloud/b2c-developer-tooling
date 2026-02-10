@@ -24,6 +24,7 @@ import {getLogger} from '../../logging/logger.js';
 const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'shortCode',
   'clientId',
+  'contentLibrary',
   'mrtProject',
   'mrtOrigin',
   'accountManagerHost',
@@ -36,6 +37,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
 interface PackageJsonB2CConfig {
   shortCode?: string;
   clientId?: string;
+  contentLibrary?: string;
   mrtProject?: string;
   mrtOrigin?: string;
   accountManagerHost?: string;

@@ -39,12 +39,16 @@ The CLI supports two authentication methods:
 
 | Method | When Used | Role Configuration |
 |--------|-----------|-------------------|
-| **User Authentication** | When only `--client-id` is provided (no secret) | Roles configured on your **user account** |
+| **User Authentication** | When `--user-auth` is passed, or when only `--client-id` is provided (no secret) | Roles configured on your **user account** |
 | **Client Credentials** | When both `--client-id` and `--client-secret` are provided | Roles configured on the **API client** |
 
-**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations.
+**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods implicit` on any OAuth command.
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
+
+::: tip
+For Account Manager operations that require user-level roles (organization and API client management), use `--user-auth` to authenticate with your user account. See [Account Manager Authentication](/cli/account-manager#authentication) for per-subtopic role requirements.
+:::
 
 ### Creating an API Client
 

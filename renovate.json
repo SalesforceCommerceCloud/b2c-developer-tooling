@@ -9,18 +9,17 @@
   "vulnerabilityAlerts": {
     "enabled": false
   },
+  "gitAuthor": "Charles Lavery <clavery@salesforce.com>",
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
+  "major": {
+    "dependencyDashboardApproval": true
+  },
   "packageRules": [
     {
       "description": "Group all non-major updates together",
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "all non-major dependencies"
-    },
-    {
-      "description": "Group all major updates together",
-      "matchUpdateTypes": ["major"],
-      "groupName": "all major dependencies"
     },
     {
       "description": "Group TypeScript ecosystem",

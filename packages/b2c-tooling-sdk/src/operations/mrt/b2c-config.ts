@@ -20,6 +20,21 @@ import {
 } from '../../clients/mrt-b2c.js';
 import {getLogger} from '../../logging/logger.js';
 
+const B2C_API_PATH = '/api/cc/b2c';
+
+/**
+ * Ensures the origin has the /api/cc/b2c path suffix.
+ * When callers pass the generic MRT origin (e.g. https://cloud.mobify.com),
+ * we need to append the B2C API path.
+ */
+function toB2COrigin(origin: string | undefined): string {
+  if (!origin) return DEFAULT_MRT_B2C_ORIGIN;
+  // Already has the B2C path
+  if (origin.endsWith(B2C_API_PATH)) return origin;
+  // Strip trailing slash before appending
+  return origin.replace(/\/+$/, '') + B2C_API_PATH;
+}
+
 // Re-export types
 export type {B2COrgInfo, B2CTargetInfo, PatchedB2CTargetInfo};
 
@@ -155,7 +170,7 @@ export async function getB2COrgInfo(options: GetB2COrgInfoOptions, auth: AuthStr
 
   logger.debug({organizationSlug}, '[MRT-B2C] Getting B2C organization info');
 
-  const client = createMrtB2CClient({origin: origin || DEFAULT_MRT_B2C_ORIGIN}, auth);
+  const client = createMrtB2CClient({origin: toB2COrigin(origin)}, auth);
 
   const {data, error} = await client.GET('/b2c-organization-info/{organization_slug}/', {
     params: {
@@ -208,7 +223,7 @@ export async function getB2CTargetInfo(options: GetB2CTargetInfoOptions, auth: A
 
   logger.debug({projectSlug, targetSlug}, '[MRT-B2C] Getting B2C target info');
 
-  const client = createMrtB2CClient({origin: origin || DEFAULT_MRT_B2C_ORIGIN}, auth);
+  const client = createMrtB2CClient({origin: toB2COrigin(origin)}, auth);
 
   const {data, error} = await client.GET('/projects/{project_slug}/b2c-target-info/{target_slug}/', {
     params: {
@@ -260,7 +275,7 @@ export async function setB2CTargetInfo(options: SetB2CTargetInfoOptions, auth: A
 
   logger.debug({projectSlug, targetSlug, instanceId}, '[MRT-B2C] Setting B2C target info');
 
-  const client = createMrtB2CClient({origin: origin || DEFAULT_MRT_B2C_ORIGIN}, auth);
+  const client = createMrtB2CClient({origin: toB2COrigin(origin)}, auth);
 
   const body: B2CTargetInfo = {
     instance_id: instanceId,
@@ -324,7 +339,7 @@ export async function updateB2CTargetInfo(
 
   logger.debug({projectSlug, targetSlug, instanceId}, '[MRT-B2C] Updating B2C target info');
 
-  const client = createMrtB2CClient({origin: origin || DEFAULT_MRT_B2C_ORIGIN}, auth);
+  const client = createMrtB2CClient({origin: toB2COrigin(origin)}, auth);
 
   const body: PatchedB2CTargetInfo = {};
 
