@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {stub, restore, type SinonStub} from 'sinon';
-import {createCustomListTool} from '../../../src/tools/scapi/scapi-custom-api-status.js';
+import {createScapiCustomApisStatusTool} from '../../../src/tools/scapi/scapi-custom-apis-status.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {CustomApisClient} from '@salesforce/b2c-tooling-sdk/clients';
@@ -26,7 +26,7 @@ function parseResultContent(result: {content: Array<{type: string; text?: string
   }
 }
 
-describe('tools/scapi/scapi-custom-api-status', () => {
+describe('tools/scapi/scapi-custom-apis-status', () => {
   let services: Services;
   let getCustomApisClientStub: SinonStub;
   let getOrganizationIdStub: SinonStub;
@@ -53,12 +53,12 @@ describe('tools/scapi/scapi-custom-api-status', () => {
     restore();
   });
 
-  describe('createCustomListTool', () => {
-    it('should create scapi_custom_api_status tool with correct metadata', () => {
-      const tool = createCustomListTool(services);
+  describe('createScapiCustomApisStatusTool', () => {
+    it('should create scapi_custom_apis_status tool with correct metadata', () => {
+      const tool = createScapiCustomApisStatusTool(services);
 
       expect(tool).to.exist;
-      expect(tool.name).to.equal('scapi_custom_api_status');
+      expect(tool.name).to.equal('scapi_custom_apis_status');
       expect(tool.description).to.include('Custom');
       expect(tool.description).to.include('endpoints');
       expect(tool.description).to.include('Custom');
@@ -70,7 +70,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
     });
 
     it('should have optional input params: status, groupBy, columns, extended', () => {
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
 
       expect(tool.inputSchema).to.have.property('status');
       expect(tool.inputSchema).to.have.property('groupBy');
@@ -102,7 +102,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
@@ -130,7 +130,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       await tool.handler({});
 
       expect(getCustomApisClientStub.called).to.be.true;
@@ -147,7 +147,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       await tool.handler({status: 'active'});
 
       expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({status: 'active'});
@@ -160,7 +160,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       await tool.handler({});
 
       expect(mockGet.firstCall.args[1]?.params?.query).to.be.undefined;
@@ -195,7 +195,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -214,7 +214,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -230,7 +230,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 400, statusText: 'Bad Request'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -242,7 +242,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
     it('should return remoteError when client GET throws', async () => {
       mockGet.rejects(new Error('Network error'));
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -279,7 +279,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({groupBy: 'type'});
       const {parsed} = parseResultContent(result);
 
@@ -320,7 +320,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({groupBy: 'site'});
       const {parsed} = parseResultContent(result);
 
@@ -353,7 +353,7 @@ describe('tools/scapi/scapi-custom-api-status', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({columns: 'type,apiName,status'});
       const {parsed} = parseResultContent(result);
 
@@ -365,8 +365,55 @@ describe('tools/scapi/scapi-custom-api-status', () => {
       expect(endpoint).to.not.have.property('cartridgeName');
     });
 
+    it('should return all columns when extended is true', async () => {
+      mockGet.resolves({
+        data: {
+          data: [
+            {
+              apiName: 'my-api',
+              apiVersion: 'v1',
+              cartridgeName: 'app_custom',
+              endpointPath: '/hello',
+              httpMethod: 'GET',
+              status: 'active',
+              siteId: 'RefArch',
+              securityScheme: 'ShopperToken',
+              operationId: 'getHello',
+              schemaFile: 'schema.yaml',
+              implementationScript: 'controller.js',
+              errorReason: undefined,
+              id: 'ep-1',
+            },
+          ],
+          activeCodeVersion: undefined,
+        },
+        error: undefined,
+        response: {status: 200, statusText: 'OK'},
+      });
+
+      const tool = createScapiCustomApisStatusTool(services);
+      const result = await tool.handler({extended: true});
+      const {parsed} = parseResultContent(result);
+
+      const endpoint = (parsed?.endpoints as Record<string, unknown>[])?.[0];
+      // Should have all 14 fields when extended is true
+      expect(endpoint).to.have.property('type');
+      expect(endpoint).to.have.property('apiName');
+      expect(endpoint).to.have.property('apiVersion');
+      expect(endpoint).to.have.property('cartridgeName');
+      expect(endpoint).to.have.property('endpointPath');
+      expect(endpoint).to.have.property('httpMethod');
+      expect(endpoint).to.have.property('status');
+      expect(endpoint).to.have.property('siteId');
+      expect(endpoint).to.have.property('securityScheme');
+      expect(endpoint).to.have.property('operationId');
+      expect(endpoint).to.have.property('schemaFile');
+      expect(endpoint).to.have.property('implementationScript');
+      expect(endpoint).to.have.property('id');
+    });
+
     it('should return validation error for invalid status value', async () => {
-      const tool = createCustomListTool(services);
+      const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({status: 'invalid'});
 
       expect(result.isError).to.be.true;

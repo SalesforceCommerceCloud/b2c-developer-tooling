@@ -123,27 +123,35 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 
 ##### SCAPI Discovery
 
-Use **scapi_schemas_list** for standard SCAPI (Shop, Admin, Shopper APIs). Use **scapi_custom_api_status** for developer-defined custom API endpoints and their registration status on the instance.
+Use **scapi_schemas_list** for both standard SCAPI (Shop, Admin, Shopper APIs) and custom APIs. Use **scapi_custom_apis_status** for endpoint-level registration status (active/not_registered).
 
-**Standard SCAPI (tool: `scapi_schemas_list`):**
+**SCAPI Schemas (tool: `scapi_schemas_list`):**
 
-Discover schema metadata and fetch OpenAPI specs for built-in SCAPI:
+Discover schema metadata and fetch OpenAPI specs for both standard and custom SCAPI:
 
+**Standard SCAPI:**
 - ✅ "Use the MCP tool to list all available SCAPI schemas." → list mode (no includeSchemas).
-- ✅ "Use the MCP tool to show me what checkout APIs exist." → list with apiFamily filter.
+- ✅ "Use the MCP tool to show me what checkout APIs exist." → list with apiFamily: checkout.
 - ✅ "Use the MCP tool to discover SCAPI product endpoints." → list with apiFamily: product.
 - ✅ "Use the MCP tool to get the OpenAPI schema for shopper-baskets v1." → fetch with apiFamily, apiName, apiVersion, includeSchemas: true.
 - ✅ "Use the MCP tool to show me the full OpenAPI spec for shopper-products v1." → fetch with includeSchemas: true, expandAll: true.
 
-**Custom API status (tool: `scapi_custom_api_status`):**
+**Custom APIs (use apiFamily: "custom"):**
+- ✅ "Use the MCP tool to list custom API definitions." → list with apiFamily: custom.
+- ✅ "Use the MCP tool to show me the loyalty-points custom API schema." → apiFamily: custom, apiName: loyalty-points, apiVersion: v1, includeSchemas: true.
 
-List custom API endpoints deployed on the instance and whether each is active or not_registered (one row per endpoint per site):
+**Custom API Endpoint Status (tool: `scapi_custom_apis_status`):**
+
+Get registration status of custom API endpoints deployed on the instance (remote only). Returns individual HTTP endpoints (e.g., GET /hello, POST /items/{id}) with registration status (active/not_registered), one row per endpoint per site. Requires OAuth with `sfcc.custom-apis` scope.
 
 - ✅ "Use the MCP tool to list custom SCAPI endpoints on my instance."
 - ✅ "Use the MCP tool to show which custom APIs are active vs not registered."
-- ✅ "Use the MCP tool to list custom API endpoints grouped by site."
-- ✅ "Use the MCP tool to list only active custom API endpoints." → status: active.
-- ✅ "Use the MCP tool to find custom API endpoints that failed to register." → status: not_registered.
+- ✅ "Use the MCP tool to list custom API endpoints grouped by site." → groupBy: site
+- ✅ "Use the MCP tool to list custom API endpoints grouped by type." → groupBy: type
+- ✅ "Use the MCP tool to list only active custom API endpoints." → status: active
+- ✅ "Use the MCP tool to find custom API endpoints that failed to register." → status: not_registered
+- ✅ "Use the MCP tool to show endpoint details with all fields." → extended: true
+- ✅ "Use the MCP tool to show only apiName and status for active endpoints." → status: active, columns: "apiName,status"
 
 ##### Cartridge Deployment
 
@@ -172,7 +180,7 @@ Credentials can be provided via **config files** (recommended), **environment va
 
 | Toolset | Required Credentials |
 |---------|---------------------|
-| **SCAPI** | `hostname` + `client-id` + `client-secret` |
+| **SCAPI** | `hostname` + `client-id` + `client-secret` (for `scapi_custom_apis_status`: requires `sfcc.custom-apis` scope) |
 | **CARTRIDGES** | `hostname` + `username` + `password` (or OAuth) |
 | **MRT** | `api-key` + `project` (optionally `environment`) |
 | **PWAV3** | `--working-directory` only (+ MRT config for deployments) |
@@ -279,8 +287,8 @@ PWA Kit v3 development tools for building headless storefronts.
 | `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases |
 | `pwakit_run_site_test` | Run site tests for PWA Kit project |
 | `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development |
-| `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
-| `scapi_custom_api_status` | List custom SCAPI API endpoints (both deployed and local) |
+| `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
+| `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 #### SCAPI
@@ -289,8 +297,8 @@ Salesforce Commerce API discovery and exploration.
 
 | Tool | Description |
 |------|-------------|
-| `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
-| `scapi_custom_api_status` | List custom SCAPI API endpoints (both deployed and local) |
+| `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
+| `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API (not yet implemented) |
 
 #### STOREFRONTNEXT
@@ -306,8 +314,8 @@ Storefront Next development tools for building modern storefronts.
 | `storefront_next_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
 | `storefront_next_design_decorator` | Apply design decorators to Storefront Next components |
 | `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
-| `scapi_schemas_list` | List available SCAPI schemas with optional filtering |
-| `scapi_custom_api_status` | List custom SCAPI API endpoints (both deployed and local) |
+| `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
+| `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`). When using multiple toolsets, tools are automatically deduplicated.

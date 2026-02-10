@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {stub, restore, type SinonStub} from 'sinon';
-import {createSchemasListTool} from '../../../src/tools/scapi/scapi-schemas-list.js';
+import {createScapiSchemasListTool} from '../../../src/tools/scapi/scapi-schemas-list.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ScapiSchemasClient} from '@salesforce/b2c-tooling-sdk/clients';
@@ -52,16 +52,16 @@ describe('tools/scapi/scapi-schemas-list', () => {
     restore();
   });
 
-  describe('createSchemasListTool', () => {
+  describe('createScapiSchemasListTool', () => {
     it('creates tool with correct metadata', () => {
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
 
       expect(tool).to.exist;
       expect(tool.name).to.equal('scapi_schemas_list');
       expect(tool.description).to.include('SCAPI');
       expect(tool.description).to.include('List');
       expect(tool.description).to.include('Fetch');
-      expect(tool.description).to.include('scapi_custom_api_status');
+      expect(tool.description).to.include('scapi_custom_apis_status');
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
@@ -69,7 +69,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
     });
 
     it('has optional input params: apiFamily, apiName, apiVersion, status, includeSchemas, expandAll', () => {
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
 
       expect(tool.inputSchema).to.have.property('apiFamily');
       expect(tool.inputSchema).to.have.property('apiName');
@@ -106,7 +106,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
@@ -139,7 +139,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       await tool.handler({
         apiFamily: 'checkout',
         apiName: 'shopper-baskets',
@@ -162,7 +162,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -179,7 +179,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({apiFamily: 'checkout', status: 'current'});
       const {parsed} = parseResultContent(result);
 
@@ -201,7 +201,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -217,7 +217,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 401, statusText: 'Unauthorized'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({});
 
       expect(result.isError).to.be.true;
@@ -236,7 +236,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({
         apiFamily: 'product',
         apiName: 'shopper-products',
@@ -276,7 +276,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({
         apiFamily: 'checkout',
         apiName: 'shopper-baskets',
@@ -297,7 +297,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({
         apiFamily: 'product',
         apiName: 'shopper-products',
@@ -310,11 +310,65 @@ describe('tools/scapi/scapi-schemas-list', () => {
       expect(parsed?.warning).to.include('status');
       expect(parsed?.warning).to.include('ignored');
     });
+
+    it('returns error when fetch mode API call fails', async () => {
+      mockGet.resolves({
+        data: undefined,
+        error: {title: 'Not Found', detail: 'Schema not found'},
+        response: {status: 404, statusText: 'Not Found'},
+      });
+
+      const tool = createScapiSchemasListTool(services);
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'nonexistent-api',
+        apiVersion: 'v1',
+        includeSchemas: true,
+      });
+
+      expect(result.isError).to.be.true;
+      const first = result.content?.[0] as {text?: string};
+      expect(first?.text).to.include('Execution error');
+      expect(first?.text).to.include('Failed to fetch schema');
+      expect(first?.text).to.include('product/nonexistent-api/v1');
+    });
+
+    it('returns undefined baseUrl when shortCode is missing', async () => {
+      const servicesWithoutShortCode = new Services({
+        resolvedConfig: createMockResolvedConfig({
+          tenantId: 'test_tenant',
+          // shortCode is missing
+        }),
+      });
+      const mockGetForShortCode = stub();
+      const mockClientForShortCode = {GET: mockGetForShortCode} as unknown as ScapiSchemasClient;
+      stub(servicesWithoutShortCode, 'getScapiSchemasClient').returns(mockClientForShortCode);
+      stub(servicesWithoutShortCode, 'getOrganizationId').returns(ORG_ID);
+      stub(servicesWithoutShortCode, 'getShortCode').returns(undefined);
+
+      mockGetForShortCode.resolves({
+        data: {openapi: '3.0.0', paths: {}, info: {title: 'Test'}},
+        error: undefined,
+        response: {status: 200, statusText: 'OK'},
+      });
+
+      const tool = createScapiSchemasListTool(servicesWithoutShortCode);
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'shopper-products',
+        apiVersion: 'v1',
+        includeSchemas: true,
+      });
+
+      expect(result.isError).to.be.undefined;
+      const {parsed} = parseResultContent(result);
+      expect(parsed?.baseUrl).to.be.undefined;
+    });
   });
 
   describe('handler (validation and errors)', () => {
     it('returns error result when includeSchemas true but missing apiFamily', async () => {
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({
         apiName: 'shopper-baskets',
         apiVersion: 'v1',
@@ -328,7 +382,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
     });
 
     it('returns error result when includeSchemas true but missing apiVersion', async () => {
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({
         apiFamily: 'checkout',
         apiName: 'shopper-baskets',
@@ -339,7 +393,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
     });
 
     it('returns validation error for invalid status value', async () => {
-      const tool = createSchemasListTool(services);
+      const tool = createScapiSchemasListTool(services);
       const result = await tool.handler({status: 'invalid' as 'current'});
 
       expect(result.isError).to.be.true;

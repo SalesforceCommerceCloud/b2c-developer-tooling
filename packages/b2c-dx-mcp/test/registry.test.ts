@@ -89,7 +89,7 @@ describe('registry', () => {
 
       const toolNames = registry.SCAPI.map((t) => t.name);
       expect(toolNames).to.include('scapi_schemas_list');
-      expect(toolNames).to.include('scapi_custom_api_status');
+      expect(toolNames).to.include('scapi_custom_apis_status');
     });
 
     it('should create STOREFRONTNEXT tools', () => {
@@ -174,7 +174,7 @@ describe('registry', () => {
 
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should not include tools exclusive to other toolsets
-      expect(server.registeredTools).to.not.include('scapi_custom_api_status');
+      expect(server.registeredTools).to.not.include('scapi_custom_apis_status');
     });
 
     it('should register tools from multiple toolsets', async () => {
@@ -233,7 +233,7 @@ describe('registry', () => {
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES'],
-        tools: ['scapi_custom_api_status'],
+        tools: ['scapi_custom_apis_status'],
         allowNonGaTools: true,
       };
 
@@ -242,7 +242,7 @@ describe('registry', () => {
       // Should include all CARTRIDGES tools
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should also include the individual SCAPI tool
-      expect(server.registeredTools).to.include('scapi_custom_api_status');
+      expect(server.registeredTools).to.include('scapi_custom_apis_status');
       // Should not include other SCAPI tools not in CARTRIDGES
       expect(server.registeredTools).to.not.include('scapi_schemas_list');
     });
@@ -308,7 +308,7 @@ describe('registry', () => {
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
-      expect(server.registeredTools).to.include('scapi_custom_api_status');
+      expect(server.registeredTools).to.include('scapi_custom_apis_status');
     });
 
     it('should trigger auto-discovery when all individual tools are invalid', async () => {
@@ -324,7 +324,7 @@ describe('registry', () => {
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
-      expect(server.registeredTools).to.include('scapi_custom_api_status');
+      expect(server.registeredTools).to.include('scapi_custom_apis_status');
     });
 
     it('should skip non-GA tools when allowNonGaTools is false', async () => {

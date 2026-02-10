@@ -292,7 +292,7 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
  * @param services - MCP services instance
  * @returns MCP tool for listing/fetching SCAPI schemas
  */
-export function createSchemasListTool(services: Services): McpTool {
+export function createScapiSchemasListTool(services: Services): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
@@ -301,7 +301,7 @@ export function createSchemasListTool(services: Services): McpTool {
 **When to use this tool:**
 - Use this tool when you need: schema discovery, OpenAPI specs, API metadata, or to fetch a specific schema.
 - Returns API-level definitions (e.g., loyalty-points v1, shopper-products v1) with schema information.
-- For endpoint-level registration status (active/not_registered), use scapi_custom_api_status instead.
+- For endpoint-level registration status (active/not_registered), use scapi_custom_apis_status instead.
 
 **How to choose mode:**
 - **List (discovery):** Omit includeSchemas, or omit any of apiFamily/apiName/apiVersion. Use when you need to discover what APIs exist or filter by family/name/version/status. Returns: schemas[] (metadata only), total, availableApiFamilies, availableApiNames, availableVersions.

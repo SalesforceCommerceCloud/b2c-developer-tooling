@@ -15,7 +15,6 @@ import {
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
-  CUSTOM_APIS_DEFAULT_SCOPES,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
@@ -380,13 +379,6 @@ describe('clients/custom-apis', () => {
     it('handles various tenant ID formats', () => {
       expect(buildTenantScope('abcd_001')).to.equal('SALESFORCE_COMMERCE_API:abcd_001');
       expect(buildTenantScope('f_ecom_test')).to.equal('SALESFORCE_COMMERCE_API:test');
-    });
-  });
-
-  describe('CUSTOM_APIS_DEFAULT_SCOPES', () => {
-    it('exports default scopes array including sfcc.custom-apis', () => {
-      expect(CUSTOM_APIS_DEFAULT_SCOPES).to.be.an('array');
-      expect(CUSTOM_APIS_DEFAULT_SCOPES).to.include('sfcc.custom-apis');
     });
   });
 });

@@ -10,7 +10,7 @@
  * Mirrors CLI: b2c scapi custom status. All CLI flags are supported; let the agent decide what to use.
  * Returns raw endpoints from the API (no roll-up). Remote only.
  *
- * @module tools/scapi/scapi-custom-api-status
+ * @module tools/scapi/scapi-custom-apis-status
  */
 
 import {z} from 'zod';
@@ -111,7 +111,7 @@ function buildResponse(
 }
 
 /**
- * Input schema for scapi_custom_api_status tool.
+ * Input schema for scapi_custom_apis_status tool.
  * All flags mirror b2c scapi custom status (--status, --group-by, --columns, --extended).
  */
 interface CustomListInput {
@@ -126,7 +126,7 @@ interface CustomListInput {
 }
 
 /**
- * Output schema for scapi_custom_api_status tool.
+ * Output schema for scapi_custom_apis_status tool.
  */
 interface CustomListOutput {
   /** Raw endpoints (one per site). When groupBy is set, use "groups" instead. */
@@ -141,15 +141,15 @@ interface CustomListOutput {
 }
 
 /**
- * Creates the scapi_custom_api_status tool.
+ * Creates the scapi_custom_apis_status tool.
  *
  * Mirrors CLI: b2c scapi custom status. All flags supported; agent chooses what to use.
  * See: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.html#b2c-scapi-custom-status
  */
-export function createCustomListTool(services: Services): McpTool {
+export function createScapiCustomApisStatusTool(services: Services): McpTool {
   return createToolAdapter<CustomListInput, CustomListOutput>(
     {
-      name: 'scapi_custom_api_status',
+      name: 'scapi_custom_apis_status',
       description: `List Custom SCAPI API endpoints and their registration status (active vs not_registered). Returns individual HTTP endpoints (e.g., GET /hello, POST /items/{id}) with deployment status, one row per endpoint per site. Use this for developer-defined custom APIs only.
 
 **When to use this tool:**
