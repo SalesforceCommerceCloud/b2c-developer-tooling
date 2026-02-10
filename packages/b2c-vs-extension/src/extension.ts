@@ -3,11 +3,25 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {findDwJson, loadConfig, WEBDAV_ROOTS} from '@salesforce/b2c-tooling-sdk/cli';
+import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   findAndDeployCartridges,
   getActiveCodeVersion,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
+
+/** Standard B2C Commerce WebDAV root directories. */
+const WEBDAV_ROOTS: Record<string, string> = {
+  IMPEX: 'Impex',
+  TEMP: 'Temp',
+  CARTRIDGES: 'Cartridges',
+  REALMDATA: 'Realmdata',
+  CATALOGS: 'Catalogs',
+  LIBRARIES: 'Libraries',
+  STATIC: 'Static',
+  LOGS: 'Logs',
+  SECURITYLOGS: 'Securitylogs',
+};
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -107,6 +121,26 @@ function renderTemplate(
 
 export function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
+
+  try {
+    configureLogger({
+      level: 'trace',
+      destination: {
+        write(chunk: string | Buffer): boolean {
+          const line = typeof chunk === 'string' ? chunk : chunk.toString('utf-8');
+          log.appendLine(line.trimEnd());
+          return true;
+        },
+      },
+      json: false,
+      colorize: false,
+      redact: true,
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
+    log.appendLine(`Warning: Failed to configure SDK logger; SDK logs will not appear in this panel.\n${detail}`);
+  }
+
   try {
     return activateInner(context, log);
   } catch (err) {
@@ -232,8 +266,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     }
     const dwPath = findDwJson(startDir);
     const config = dwPath
-      ? loadConfig({}, {configPath: dwPath})
-      : loadConfig({}, {startDir});
+      ? resolveConfig({}, {configPath: dwPath})
+      : resolveConfig({}, {startDir});
 
     if (!config.hasB2CInstanceConfig()) {
       vscode.window.showErrorMessage(
@@ -531,8 +565,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           }
           const dwPath = findDwJson(projectDirectory);
           const config = dwPath
-            ? loadConfig({}, {configPath: dwPath})
-            : loadConfig({}, {startDir: projectDirectory});
+            ? resolveConfig({}, {configPath: dwPath})
+            : resolveConfig({}, {startDir: projectDirectory});
           if (!config.hasB2CInstanceConfig()) {
             const message =
               "B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.";
