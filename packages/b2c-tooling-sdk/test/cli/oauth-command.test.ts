@@ -104,6 +104,37 @@ describe('cli/oauth-command', () => {
     });
   });
 
+  describe('--user-auth flag', () => {
+    it('should force implicit auth method when --user-auth is set', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+        'client-secret': 'test-secret',
+        'user-auth': true,
+      });
+
+      await command.init();
+
+      // With --user-auth, even though client-secret is provided,
+      // implicit auth should be used
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+    });
+
+    it('should use client-credentials when --user-auth is not set and secret is provided', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+        'client-secret': 'test-secret',
+        'user-auth': false,
+      });
+
+      await command.init();
+
+      // Without --user-auth, client-credentials should be used when secret is available
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
+    });
+  });
+
   describe('requireTenantId', () => {
     it('returns tenant ID as-is when no f_ecom_ prefix', async () => {
       stubParse(command, {'client-id': 'test-client', 'tenant-id': 'abcd_001'});

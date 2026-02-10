@@ -13,19 +13,23 @@ These flags are available on all Account Manager commands:
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (e.g., `account.demandware.com`) |
+| `--user-auth` | — | Use browser-based user authentication (implicit OAuth flow) |
 
 ## Authentication
 
 Account Manager commands work out of the box using the CLI's built-in public client, which authenticates via browser login (implicit flow). No API client configuration is required for interactive use.
 
-For automation or CI/CD, you can provide your own API client credentials.
+For automation or CI/CD, you can provide your own API client credentials. Use `--user-auth` to force browser-based authentication when you have client credentials configured but want to use your user account's roles instead.
 
-### Required Roles
+### Required Roles by Subtopic
 
-| Auth Method | Role | Configured On |
-|-------------|------|---------------|
-| Built-in client (default) | Uses your user account's roles | Your user account |
-| Client Credentials | `User Administrator` or higher | The API client |
+Different Account Manager operations require different roles depending on the authentication method:
+
+| Subtopic | Client Credentials (roles on API client) | User Auth / built-in client (roles on user) |
+|----------|------------------------------------------|---------------------------------------------|
+| `users`, `roles` | User Administrator | Account Administrator or User Administrator |
+| `orgs` | Not supported — use `--user-auth` | Account Administrator |
+| `clients` | Not supported — use `--user-auth` | Account Administrator or API Administrator |
 
 ### Configuration
 
@@ -37,6 +41,9 @@ b2c am users list
 export SFCC_CLIENT_ID=my-client-id
 export SFCC_CLIENT_SECRET=my-client-secret
 b2c am users list
+
+# Force browser-based login even with client credentials configured
+b2c am users list --user-auth
 ```
 
 ---
