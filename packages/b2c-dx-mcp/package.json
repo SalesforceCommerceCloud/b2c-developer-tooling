@@ -91,10 +91,10 @@
     "postpack": "shx rm -f oclif.manifest.json"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.18.0",
-    "@oclif/core": "^4",
+    "@modelcontextprotocol/sdk": "1.26.0",
+    "@oclif/core": "4.8.0",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "zod": "^3.25.76"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/compat": "^1",

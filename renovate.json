@@ -35,6 +35,18 @@
       "description": "Group testing tools",
       "matchPackagePatterns": ["mocha", "chai", "sinon", "c8", "msw"],
       "groupName": "testing"
+    },
+    {
+      "description": "Pin production dependencies in standalone apps (CLI, MCP)",
+      "matchFileNames": ["packages/b2c-cli/package.json", "packages/b2c-dx-mcp/package.json"],
+      "matchDepTypes": ["dependencies"],
+      "rangeStrategy": "pin"
+    },
+    {
+      "description": "Pin production dependencies in SDK (library)",
+      "matchFileNames": ["packages/b2c-tooling-sdk/package.json"],
+      "matchDepTypes": ["dependencies"],
+      "rangeStrategy": "pin"
     }
   ],
   "ignoreDeps": [],
