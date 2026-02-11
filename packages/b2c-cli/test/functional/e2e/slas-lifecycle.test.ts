@@ -62,7 +62,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
       console.log('No shared sandbox, creating dedicated sandbox for SLAS tests...');
       this.timeout(TIMEOUTS.ODS_OPERATION);
 
-      const odsCreate = await runCLIWithRetry(['ods', 'create', '--realm', realm, '--ttl', '4', '--wait', '--json'], {
+      const odsCreate = await runCLIWithRetry(['ods', 'create', '--realm', realm, '--ttl', '24', '--wait', '--json'], {
         timeout: TIMEOUTS.ODS_OPERATION,
         verbose: true,
       });

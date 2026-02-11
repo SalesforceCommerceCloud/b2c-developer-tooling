@@ -46,7 +46,7 @@ describe('Sites Operations E2E Tests', function () {
       }
 
       const result = await runCLIWithRetry(
-        ['ods', 'create', '--realm', process.env.TEST_REALM, '--ttl', '4', '--wait', '--set-permissions', '--json'],
+        ['ods', 'create', '--realm', process.env.TEST_REALM, '--ttl', '24', '--wait', '--set-permissions', '--json'],
         {timeout: TIMEOUTS.ODS_OPERATION, maxRetries: 2, verbose: true},
       );
 
