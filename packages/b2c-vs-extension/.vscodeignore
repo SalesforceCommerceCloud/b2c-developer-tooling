@@ -4,11 +4,8 @@ src/**
 !src/webview.html
 !src/webdav.html
 !src/storefront-next-cartridge.html
+out/**
 **/node_modules/**
-!node_modules/
-!node_modules/@salesforce/
-!node_modules/@salesforce/b2c-tooling-sdk/
-!node_modules/@salesforce/b2c-tooling-sdk/package.json
 
 !src/template/**
 .gitignore

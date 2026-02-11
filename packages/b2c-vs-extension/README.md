@@ -30,9 +30,24 @@ pnpm --filter @salesforce/b2c-vs-extension run format
 pnpm --filter @salesforce/b2c-vs-extension run test
 ```
 
-Press **F5** in VS Code (with `packages/b2c-vs-extension` or the repo root open) to launch an Extension Development Host.
+The build bundles `@salesforce/b2c-tooling-sdk` into `dist/extension.js` with esbuild, so the extension works when installed from a `.vsix` without requiring a separate `node_modules` install (unlike the CLI, which declares the SDK as an npm dependency).
 
-The build bundles `@salesforce/b2c-tooling-sdk` into `out/extension.js` with esbuild, so the extension works when installed from a .vsix without requiring a separate `node_modules` install (unlike the CLI, which declares the SDK as an npm dependency).
+### Dev workflow (watch mode)
+
+For iterating on both the extension and the SDK without rebuilding:
+
+1. Start the watcher in a terminal:
+   ```bash
+   cd packages/b2c-vs-extension
+   pnpm run watch
+   ```
+   This uses esbuild with the `development` condition, resolving SDK imports to source `.ts` files directly — no SDK rebuild needed.
+
+2. Open `packages/b2c-vs-extension` in VS Code and select the **Run Extension (Dev)** launch configuration (F5). This launches an Extension Development Host without a preLaunchTask so it won't overwrite the watch output.
+
+3. After making changes, press **Cmd+Shift+F5** (Restart Debugging) to restart the extension host and pick up the new bundle.
+
+> **Note:** The **Run Extension** launch config runs a production build (`pnpm run build`) as a preLaunchTask, which overwrites `dist/extension.js` without the `development` condition. Use **Run Extension (Dev)** when iterating with watch mode.
 
 ## Requirements
 
