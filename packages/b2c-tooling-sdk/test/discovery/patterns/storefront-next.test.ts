@@ -86,15 +86,6 @@ describe('discovery/patterns/storefront-next', () => {
       expect(result).to.be.true;
     });
 
-    it('detects by root package name sfcc-odyssey (monorepo)', async () => {
-      const pkg = {name: 'sfcc-odyssey'};
-      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
-
-      const result = await storefrontNextPattern.detect(tempDir);
-
-      expect(result).to.be.true;
-    });
-
     it('detects monorepo when a workspace package has storefront-next dependency', async () => {
       const rootPkg = {name: 'my-monorepo', workspaces: ['packages/*']};
       await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(rootPkg));

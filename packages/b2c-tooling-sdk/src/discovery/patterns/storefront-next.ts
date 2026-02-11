@@ -13,11 +13,9 @@ import type {DetectionPattern} from '../types.js';
 import type {PackageJson} from '../utils.js';
 import {readPackageJson, globDirs} from '../utils.js';
 
-/** Package names (without scope) that indicate the Storefront Next monorepo root. */
-const STOREFRONT_NEXT_MONOREPO_NAMES = ['sfcc-odyssey'];
-
 /**
  * Returns true if this package.json (deps or name) indicates a Storefront Next project.
+ * Relies on @salesforce/storefront-next* dependency or package name starting with "storefront-next" only.
  */
 function packageIndicatesStorefrontNext(pkg: PackageJson): boolean {
   const deps = Object.keys({...pkg.dependencies, ...pkg.devDependencies});
@@ -28,7 +26,7 @@ function packageIndicatesStorefrontNext(pkg: PackageJson): boolean {
   if (typeof name !== 'string' || !name.trim()) return false;
   const nameWithoutScope = name.includes('/') ? name.split('/').pop()?.trim() : name.trim();
   if (!nameWithoutScope) return false;
-  return nameWithoutScope.startsWith('storefront-next') || STOREFRONT_NEXT_MONOREPO_NAMES.includes(nameWithoutScope);
+  return nameWithoutScope.startsWith('storefront-next');
 }
 
 /**
