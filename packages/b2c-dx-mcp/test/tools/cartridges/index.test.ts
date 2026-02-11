@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {createCartridgesTools} from '../../../src/tools/cartridges/index.js';
 import {Services} from '../../../src/services.js';
+import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {DeployResult, DeployOptions} from '@salesforce/b2c-tooling-sdk/operations/code';
@@ -52,6 +53,7 @@ function createMockB2CInstance(): B2CInstance {
 function createMockServices(options?: {b2cInstance?: B2CInstance}): Services {
   return new Services({
     b2cInstance: options?.b2cInstance,
+    resolvedConfig: createMockResolvedConfig(),
   });
 }
 

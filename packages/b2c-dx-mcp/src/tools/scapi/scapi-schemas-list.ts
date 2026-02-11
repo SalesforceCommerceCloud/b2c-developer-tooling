@@ -54,7 +54,7 @@ interface SchemasListInput {
   apiName?: string;
   /** Filter by API version (e.g., "v1", "v2") */
   apiVersion?: string;
-  /** Filter by schema status ("current" or "deprecated") */
+  /** Filter by schema status ("current" or "deprecated"). Omit to return all schemas. */
   status?: 'current' | 'deprecated';
   /** Include full OpenAPI schemas (slower, requires all three: apiFamily, apiName, apiVersion) */
   includeSchemas?: boolean;
@@ -296,74 +296,34 @@ export function createScapiSchemasListTool(services: Services): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
-      description: `List or fetch SCAPI (Salesforce Commerce API) schema metadata and OpenAPI specs. Works for BOTH standard SCAPI (Shop, Admin, Shopper APIs) AND custom APIs (apiFamily: "custom").
+      description: `List or fetch SCAPI schema metadata and OpenAPI specs for standard SCAPI (Shop/Admin/Shopper) and custom APIs (apiFamily: "custom"). For endpoint registration status, use scapi_custom_apis_status.
 
-**When to use this tool:**
-- Use this tool when you need: schema discovery, OpenAPI specs, API metadata, or to fetch a specific schema.
-- Returns API-level definitions (e.g., loyalty-points v1, shopper-products v1) with schema information.
-- For endpoint-level registration status (active/not_registered), use scapi_custom_apis_status instead.
+**Modes:**
+- **List (discovery):** Omit includeSchemas or any identifier. Returns metadata: schemas[], total, availableApiFamilies/Names/Versions.
+- **Fetch:** Set includeSchemas=true + all three: apiFamily, apiName, apiVersion. Returns full OpenAPI schema (collapsed by default; set expandAll=true for full).
 
-**How to choose mode:**
-- **List (discovery):** Omit includeSchemas, or omit any of apiFamily/apiName/apiVersion. Use when you need to discover what APIs exist or filter by family/name/version/status. Returns: schemas[] (metadata only), total, availableApiFamilies, availableApiNames, availableVersions.
-- **Fetch (one schema):** Set includeSchemas=true AND provide all three: apiFamily, apiName, apiVersion. Use when you need the full OpenAPI 3.0 schema for a specific API. Returns: schema (object), apiFamily, apiName, apiVersion, baseUrl, collapsed. Set expandAll=true to get the full uncollapsed schema.
+**Rules:** includeSchemas requires all three identifiers. status only works in list mode. Custom APIs use apiFamily: "custom".
 
-**Efficient workflows for agents:**
-- To discover custom APIs: list with apiFamily: "custom" (no includeSchemas needed initially). This shows all custom APIs with their apiName and apiVersion.
-- To fetch a custom API schema: if you know the API name and version, fetch directly with apiFamily: "custom", apiName: "<name>", apiVersion: "<version>", includeSchemas: true (one call). If you don't know the version, discover first with apiFamily: "custom" and apiName: "<name>".
-- To discover standard APIs: list with apiFamily filter (e.g., apiFamily: "product" for product APIs).
-- To fetch a specific schema: provide all three identifiers + includeSchemas: true (most efficient - one call).
-
-**Rules:**
-- If you set includeSchemas=true you MUST provide apiFamily, apiName, and apiVersion. Otherwise the tool returns an error.
-- In list mode, all of apiFamily, apiName, apiVersion, status are optional filters. Omit them or set only the ones you need.
-- status (current | deprecated) only applies in list mode; it is ignored in fetch mode.
-- Custom APIs appear with apiFamily: "custom" in list results.
-
-**Examples:**
-- Standard APIs:
-  - "What checkout APIs exist?" → list with apiFamily: "checkout" (no includeSchemas).
-  - "Show me the shopper-products v1 OpenAPI schema" → apiFamily: "product", apiName: "shopper-products", apiVersion: "v1", includeSchemas: true.
-- Custom APIs:
-  - "What custom API definitions are available?" → list with apiFamily: "custom".
-  - "Show me the loyalty-points custom API schema" → apiFamily: "custom", apiName: "loyalty-points", apiVersion: "v1", includeSchemas: true.
-- General:
-  - "List all current schemas" → list with status: "current".
-
-**Requirements:** Instance must have shortCode, tenantId, and OAuth with sfcc.scapi-schemas scope.`,
+**Requirements:** OAuth with sfcc.scapi-schemas scope.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: true,
+      isGA: false,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)
       inputSchema: {
-        apiFamily: z
-          .string()
-          .optional()
-          .describe('API family (e.g., "checkout", "product", "shopper"). Use to filter or identify schemas.'),
-        apiName: z
-          .string()
-          .optional()
-          .describe('API name (e.g., "shopper-baskets", "shopper-products"). Use to filter or identify schemas.'),
-        apiVersion: z
-          .string()
-          .optional()
-          .describe('API version (e.g., "v1", "v2"). Use to filter or identify schemas.'),
+        apiFamily: z.string().optional().describe('API family (e.g., "checkout", "product", "custom").'),
+        apiName: z.string().optional().describe('API name (e.g., "shopper-baskets", "shopper-products").'),
+        apiVersion: z.string().optional().describe('API version (e.g., "v1", "v2").'),
         status: z
           .enum(['current', 'deprecated'])
           .optional()
-          .describe(
-            'Filter by schema status. "current" returns only active schemas, "deprecated" returns deprecated ones. Only works in discovery mode.',
-          ),
+          .describe('Filter by status (list mode only). Omit to return all schemas.'),
         includeSchemas: z
           .boolean()
-          .optional()
-          .describe(
-            'Include full OpenAPI schemas. Requires all three identifiers (apiFamily, apiName, apiVersion). Default false (returns metadata only). WARNING: Slower and increases response size.',
-          ),
+          .default(false)
+          .describe('Fetch full OpenAPI schema. Requires apiFamily+apiName+apiVersion. Default: false.'),
         expandAll: z
           .boolean()
-          .optional()
-          .describe(
-            'Return full uncompressed schema instead of collapsed version. Only works when includeSchemas=true. Default false.',
-          ),
+          .default(false)
+          .describe('Return full uncompressed schema. Only when includeSchemas=true. Default: false.'),
       },
       async execute(args, {services: svc}) {
         // Get client and organization ID

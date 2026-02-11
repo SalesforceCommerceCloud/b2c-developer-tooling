@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {createMrtTools} from '../../../src/tools/mrt/index.js';
 import {Services} from '../../../src/services.js';
+import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
 import type {AuthStrategy, FetchInit} from '@salesforce/b2c-tooling-sdk/auth';
 import type {PushResult, PushOptions} from '@salesforce/b2c-tooling-sdk/operations/mrt';
@@ -72,6 +73,7 @@ function createMockServices(options?: {
       environment: options?.mrtEnvironment,
       origin: options?.mrtOrigin,
     },
+    resolvedConfig: createMockResolvedConfig(),
   });
 }
 

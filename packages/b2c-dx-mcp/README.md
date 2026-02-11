@@ -293,7 +293,7 @@ PWA Kit v3 development tools for building headless storefronts.
 
 #### SCAPI
 Salesforce Commerce API discovery and exploration.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
@@ -318,7 +318,7 @@ Storefront Next development tools for building modern storefronts.
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
-> **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`). When using multiple toolsets, tools are automatically deduplicated.
+> **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated.
 
 ## Telemetry
 

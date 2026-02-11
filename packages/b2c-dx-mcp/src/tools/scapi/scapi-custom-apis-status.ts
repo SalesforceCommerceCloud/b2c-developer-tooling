@@ -26,23 +26,8 @@ type CustomApiEndpoint = CustomApisComponents['schemas']['CustomApiEndpoint'];
 /** Endpoint with optional display field (type) added by the tool. */
 type EndpointWithMeta = CustomApiEndpoint & {type?: string};
 
-const DEFAULT_COLUMNS = ['type', 'apiName', 'endpointPath', 'httpMethod', 'status', 'siteId'] as const;
-const ALL_COLUMN_KEYS = [
-  'type',
-  'apiName',
-  'apiVersion',
-  'cartridgeName',
-  'endpointPath',
-  'httpMethod',
-  'status',
-  'siteId',
-  'securityScheme',
-  'operationId',
-  'schemaFile',
-  'implementationScript',
-  'errorReason',
-  'id',
-] as const;
+// MCP-specific default columns (includes siteId since MCP returns raw endpoints per site)
+const DEFAULT_COLUMNS = ['type', 'apiName', 'cartridgeName', 'endpointPath', 'httpMethod', 'status', 'siteId'] as const;
 
 function pickColumns(endpoint: EndpointWithMeta, columns: string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -55,9 +40,7 @@ function pickColumns(endpoint: EndpointWithMeta, columns: string[]): Record<stri
 }
 
 function buildColumnList(args: CustomListInput): string[] {
-  if (args.extended) {
-    return [...ALL_COLUMN_KEYS];
-  }
+  // If columns specified, use those; otherwise use defaults (saves tokens)
   if (args.columns?.trim()) {
     return args.columns
       .split(',')
@@ -73,9 +56,9 @@ function buildResponse(
   columnList: string[],
   activeCodeVersion: string | undefined,
 ): CustomListOutput {
-  const filterColumns = columnList.length > 0 && (args.extended !== true || (args.columns ?? '').trim() !== '');
-  const toOutput = (e: EndpointWithMeta): EndpointWithMeta | Record<string, unknown> =>
-    filterColumns ? (pickColumns(e, columnList) as Record<string, unknown>) : e;
+  // Always filter to requested columns (saves tokens by not returning unused fields)
+  const toOutput = (e: EndpointWithMeta): Record<string, unknown> =>
+    pickColumns(e, columnList) as Record<string, unknown>;
 
   if (args.groupBy) {
     const groups: Record<string, (EndpointWithMeta | Record<string, unknown>)[]> = {};
@@ -112,17 +95,16 @@ function buildResponse(
 
 /**
  * Input schema for scapi_custom_apis_status tool.
- * All flags mirror b2c scapi custom status (--status, --group-by, --columns, --extended).
+ * Mirrors b2c scapi custom status (--status, --group-by, --columns).
+ * Use columns parameter to request all fields or specific fields.
  */
 interface CustomListInput {
   /** Filter by endpoint status. Same as CLI --status / -s */
   status?: 'active' | 'not_registered';
   /** Group output by "site" or "type" (Admin/Shopper). Same as CLI --group-by / -g */
   groupBy?: 'site' | 'type';
-  /** Comma-separated columns to include. Same as CLI --columns / -c. Available: type, apiName, apiVersion, cartridgeName, endpointPath, httpMethod, status, siteId, securityScheme, operationId, schemaFile, implementationScript, errorReason, id */
+  /** Comma-separated columns to include. Same as CLI --columns / -c. Omit for defaults (7 fields). Use all field names for complete data. */
   columns?: string;
-  /** Include all fields. Same as CLI --extended / -x. When false, only default columns are returned. */
-  extended?: boolean;
 }
 
 /**
@@ -150,58 +132,26 @@ export function createScapiCustomApisStatusTool(services: Services): McpTool {
   return createToolAdapter<CustomListInput, CustomListOutput>(
     {
       name: 'scapi_custom_apis_status',
-      description: `List Custom SCAPI API endpoints and their registration status (active vs not_registered). Returns individual HTTP endpoints (e.g., GET /hello, POST /items/{id}) with deployment status, one row per endpoint per site. Use this for developer-defined custom APIs only.
+      description: `List Custom SCAPI endpoint registration status (active/not_registered). Returns one row per endpoint per site. For schemas, use scapi_schemas_list with apiFamily: "custom".
 
-**When to use this tool:**
-- Use this tool when you need: endpoint registration status (active/not_registered), endpoint-level details per site, or to verify custom endpoints are deployed.
-- For API-level schema information, use scapi_schemas_list instead.
+Use cases: Check endpoint status, verify deployment, get per-site details. Use status: "active" to filter, groupBy: "site" to group, columns: "field1,field2" for specific fields, or omit columns for defaults.
 
-**Efficient workflows for agents:**
-- To check if custom endpoints are active: use this tool with status: "active".
-- To get custom API schemas: use scapi_schemas_list with apiFamily: "custom" instead.
-- To see all custom endpoints across sites: use this tool without filters (or groupBy: "site").
-- To get endpoint details: use extended: true or specify columns.
+Output: Default (7 fields): type,apiName,cartridgeName,endpointPath,httpMethod,status,siteId. All fields: type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id.
 
-**Output format:**
-- Returns endpoints (array) or groups (when groupBy is set), total, activeCodeVersion, timestamp, message.
-- Default fields (6): type, apiName, endpointPath, httpMethod, status, siteId.
-- Extended fields (14 total): adds apiVersion, cartridgeName, securityScheme, operationId, schemaFile, implementationScript, errorReason, id.
-- Use extended: true to get all fields, or columns: "field1,field2" to select specific fields.
-- Returns one row per endpoint per site (no roll-up). Data comes from the remote instance only.
+Requires OAuth (sfcc.custom-apis scope) and instance config (shortCode, tenantId). Returns remoteError on failure.
 
-**Examples:**
-- "What custom API endpoints are deployed?" → call without filters (returns all endpoints with registration status).
-- "Show me only active custom endpoints" → status: "active".
-- "Group endpoints by site" → groupBy: "site".
-- "Show me endpoint details with all fields" → extended: true.
-- "Show me only apiName and status for active endpoints" → status: "active", columns: "apiName,status".
-
-**Requirements:** Requires OAuth with sfcc.custom-apis scope and valid instance config (shortCode, tenantId). On failure, response includes remoteError and total 0.
-
-CLI reference: b2c scapi custom status — https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.html#b2c-scapi-custom-status`,
+CLI: b2c scapi custom status`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: false,
       requiresInstance: false,
       inputSchema: {
-        status: z
-          .enum(['active', 'not_registered'])
-          .optional()
-          .describe('Return only endpoints with this status. Omit to return all.'),
-        groupBy: z
-          .enum(['site', 'type'])
-          .optional()
-          .describe('Return groups instead of flat list: "type" = Admin vs Shopper; "site" = by siteId.'),
+        status: z.enum(['active', 'not_registered']).optional().describe('Filter by status. Omit for all.'),
+        groupBy: z.enum(['site', 'type']).optional().describe('Group by siteId or type (Admin/Shopper).'),
         columns: z
           .string()
           .optional()
           .describe(
-            'Comma-separated fields to return, e.g. type,apiName,status,siteId. Valid: type, apiName, apiVersion, cartridgeName, endpointPath, httpMethod, status, siteId, securityScheme, operationId, schemaFile, implementationScript, errorReason, id.',
-          ),
-        extended: z
-          .boolean()
-          .optional()
-          .describe(
-            'If true, return all available fields (14 fields total). If false or omitted, return default columns only (6 fields: type, apiName, endpointPath, httpMethod, status, siteId). Use extended: true when you need additional details like apiVersion, cartridgeName, securityScheme, operationId, schemaFile, implementationScript, errorReason, or id. Note: If you only need specific fields, use columns parameter instead for more control.',
+            'Comma-separated fields. Omit for defaults (7 fields). All fields: type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id',
           ),
       },
       async execute(args, {services: svc}) {

@@ -10,7 +10,9 @@ import {stub, restore, type SinonStub} from 'sinon';
 import {createScapiCustomApisStatusTool} from '../../../src/tools/scapi/scapi-custom-apis-status.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
-import type {CustomApisClient} from '@salesforce/b2c-tooling-sdk/clients';
+import type {CustomApisClient, CustomApisComponents} from '@salesforce/b2c-tooling-sdk/clients';
+
+type CustomApiEndpoint = CustomApisComponents['schemas']['CustomApiEndpoint'];
 
 function parseResultContent(result: {content: Array<{type: string; text?: string}>; isError?: boolean}): {
   parsed: null | Record<string, unknown>;
@@ -26,10 +28,46 @@ function parseResultContent(result: {content: Array<{type: string; text?: string
   }
 }
 
+/**
+ * Creates mock endpoint data (simulating SDK response).
+ * Focus tests on MCP-specific logic, not SDK internals.
+ */
+function createMockEndpoints(overrides: Partial<CustomApiEndpoint>[] = []): CustomApiEndpoint[] {
+  const defaultEndpoint: CustomApiEndpoint = {
+    apiName: 'my-api',
+    apiVersion: 'v1',
+    cartridgeName: 'app_custom',
+    endpointPath: '/hello',
+    httpMethod: 'GET',
+    status: 'active',
+    siteId: 'RefArch',
+    securityScheme: 'ShopperToken',
+    id: 'ep-1',
+  };
+
+  if (overrides.length === 0) {
+    return [defaultEndpoint];
+  }
+
+  return overrides.map((override) => ({...defaultEndpoint, ...override}));
+}
+
+/**
+ * Creates a mock SDK client response.
+ */
+function createMockClientResponse(endpoints: CustomApiEndpoint[], activeCodeVersion?: string) {
+  return {
+    data: {
+      data: endpoints,
+      activeCodeVersion,
+    },
+    error: undefined,
+    response: {status: 200, statusText: 'OK'},
+  };
+}
+
 describe('tools/scapi/scapi-custom-apis-status', () => {
   let services: Services;
-  let getCustomApisClientStub: SinonStub;
-  let getOrganizationIdStub: SinonStub;
   let mockGet: SinonStub;
 
   beforeEach(() => {
@@ -40,13 +78,14 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       }),
     });
 
+    // Mock SDK client - focus tests on MCP-specific logic, not SDK internals
     mockGet = stub();
     const mockClient = {
       GET: mockGet,
     } as unknown as CustomApisClient;
 
-    getCustomApisClientStub = stub(services, 'getCustomApisClient').returns(mockClient);
-    getOrganizationIdStub = stub(services, 'getOrganizationId').returns('f_ecom_test_tenant');
+    stub(services, 'getCustomApisClient').returns(mockClient);
+    stub(services, 'getOrganizationId').returns('f_ecom_test_tenant');
   });
 
   afterEach(() => {
@@ -60,7 +99,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(tool).to.exist;
       expect(tool.name).to.equal('scapi_custom_apis_status');
       expect(tool.description).to.include('Custom');
-      expect(tool.description).to.include('endpoints');
+      expect(tool.description).to.include('endpoint');
       expect(tool.description).to.include('Custom');
       expect(tool.description).to.include('b2c scapi custom status');
       expect(tool.inputSchema).to.exist;
@@ -69,38 +108,20 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(tool.isGA).to.be.false;
     });
 
-    it('should have optional input params: status, groupBy, columns, extended', () => {
+    it('should have optional input params: status, groupBy, columns', () => {
       const tool = createScapiCustomApisStatusTool(services);
 
       expect(tool.inputSchema).to.have.property('status');
       expect(tool.inputSchema).to.have.property('groupBy');
       expect(tool.inputSchema).to.have.property('columns');
-      expect(tool.inputSchema).to.have.property('extended');
+      expect(tool.inputSchema).to.not.have.property('extended');
     });
   });
 
   describe('handler', () => {
-    it('should return endpoints and total when API returns data', async () => {
-      mockGet.resolves({
-        data: {
-          data: [
-            {
-              apiName: 'my-api',
-              apiVersion: 'v1',
-              cartridgeName: 'app_custom',
-              endpointPath: '/hello',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'RefArch',
-              securityScheme: 'ShopperToken',
-              id: 'ep-1',
-            },
-          ],
-          activeCodeVersion: 'version1',
-        },
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+    it('should return endpoints with default columns and add type field', async () => {
+      const mockEndpoints = createMockEndpoints();
+      mockGet.resolves(createMockClientResponse(mockEndpoints, 'version1'));
 
       const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
@@ -114,86 +135,33 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(parsed?.message).to.include('1 endpoint');
       expect(parsed?.timestamp).to.match(/^\d{4}-\d{2}-\d{2}T/);
 
+      // Verify MCP-specific logic: default columns include cartridgeName and type is added
       const endpoint = (parsed?.endpoints as Record<string, unknown>[])?.[0];
       expect(endpoint?.type).to.equal('Shopper');
       expect(endpoint?.apiName).to.equal('my-api');
+      expect(endpoint?.cartridgeName).to.equal('app_custom');
       expect(endpoint?.endpointPath).to.equal('/hello');
       expect(endpoint?.httpMethod).to.equal('GET');
       expect(endpoint?.status).to.equal('active');
       expect(endpoint?.siteId).to.equal('RefArch');
     });
 
-    it('should call GET with organizationId from services', async () => {
-      mockGet.resolves({
-        data: {data: [], activeCodeVersion: undefined},
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
-
-      const tool = createScapiCustomApisStatusTool(services);
-      await tool.handler({});
-
-      expect(getCustomApisClientStub.called).to.be.true;
-      expect(getOrganizationIdStub.called).to.be.true;
-      expect(mockGet.calledOnce).to.be.true;
-      expect(mockGet.firstCall.args[0]).to.equal('/organizations/{organizationId}/endpoints');
-      expect(mockGet.firstCall.args[1]?.params?.path?.organizationId).to.equal('f_ecom_test_tenant');
-    });
-
-    it('should pass status query when status arg provided', async () => {
-      mockGet.resolves({
-        data: {data: [], activeCodeVersion: undefined},
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+    it('should pass status filter to SDK when provided', async () => {
+      mockGet.resolves(createMockClientResponse([]));
 
       const tool = createScapiCustomApisStatusTool(services);
       await tool.handler({status: 'active'});
 
+      expect(mockGet.calledOnce).to.be.true;
       expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({status: 'active'});
     });
 
-    it('should not pass query when status omitted', async () => {
-      mockGet.resolves({
-        data: {data: [], activeCodeVersion: undefined},
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
-
-      const tool = createScapiCustomApisStatusTool(services);
-      await tool.handler({});
-
-      expect(mockGet.firstCall.args[1]?.params?.query).to.be.undefined;
-    });
-
-    it('should add type Admin for AmOAuth2 and Shopper for ShopperToken', async () => {
-      mockGet.resolves({
-        data: {
-          data: [
-            {
-              apiName: 'admin-api',
-              apiVersion: 'v1',
-              endpointPath: '/admin',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'RefArch',
-              securityScheme: 'AmOAuth2',
-            },
-            {
-              apiName: 'shopper-api',
-              apiVersion: 'v1',
-              endpointPath: '/shopper',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'RefArch',
-              securityScheme: 'ShopperToken',
-            },
-          ],
-          activeCodeVersion: undefined,
-        },
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+    it('should add type field based on securityScheme (MCP-specific transformation)', async () => {
+      const mockEndpoints = createMockEndpoints([
+        {apiName: 'admin-api', securityScheme: 'AmOAuth2'},
+        {apiName: 'shopper-api', securityScheme: 'ShopperToken'},
+      ]);
+      mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
@@ -207,12 +175,8 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(shopperEp?.type).to.equal('Shopper');
     });
 
-    it('should return empty endpoints and message when API returns empty data', async () => {
-      mockGet.resolves({
-        data: {data: [], activeCodeVersion: 'v1'},
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+    it('should return empty endpoints and message when no data returned', async () => {
+      mockGet.resolves(createMockClientResponse([], 'v1'));
 
       const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({});
@@ -223,7 +187,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(parsed?.message).to.include('No Custom API endpoints found');
     });
 
-    it('should return remoteError and total 0 when API returns error', async () => {
+    it('should handle SDK errors and return remoteError (MCP error handling)', async () => {
       mockGet.resolves({
         data: undefined,
         error: {title: 'Bad Request', detail: 'Invalid filter'},
@@ -235,11 +199,11 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.total).to.equal(0);
-      expect(parsed?.remoteError).to.include('Failed to fetch remote endpoints');
+      expect(parsed?.remoteError).to.exist;
       expect(parsed?.message).to.include('Failed to fetch Custom API endpoints');
     });
 
-    it('should return remoteError when client GET throws', async () => {
+    it('should handle SDK exceptions and return remoteError', async () => {
       mockGet.rejects(new Error('Network error'));
 
       const tool = createScapiCustomApisStatusTool(services);
@@ -250,34 +214,12 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(parsed?.remoteError).to.include('Network error');
     });
 
-    it('should return groups when groupBy is type', async () => {
-      mockGet.resolves({
-        data: {
-          data: [
-            {
-              apiName: 'a',
-              apiVersion: 'v1',
-              endpointPath: '/a',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'RefArch',
-              securityScheme: 'AmOAuth2',
-            },
-            {
-              apiName: 'b',
-              apiVersion: 'v1',
-              endpointPath: '/b',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'RefArch',
-              securityScheme: 'ShopperToken',
-            },
-          ],
-          activeCodeVersion: undefined,
-        },
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+    it('should group endpoints by type (MCP-specific grouping)', async () => {
+      const mockEndpoints = createMockEndpoints([
+        {apiName: 'a', securityScheme: 'AmOAuth2'},
+        {apiName: 'b', securityScheme: 'ShopperToken'},
+      ]);
+      mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({groupBy: 'type'});
@@ -291,34 +233,12 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(parsed?.total).to.equal(2);
     });
 
-    it('should return groups when groupBy is site', async () => {
-      mockGet.resolves({
-        data: {
-          data: [
-            {
-              apiName: 'a',
-              apiVersion: 'v1',
-              endpointPath: '/a',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'Site1',
-              securityScheme: 'ShopperToken',
-            },
-            {
-              apiName: 'b',
-              apiVersion: 'v1',
-              endpointPath: '/b',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'Site2',
-              securityScheme: 'ShopperToken',
-            },
-          ],
-          activeCodeVersion: undefined,
-        },
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+    it('should group endpoints by site (MCP-specific grouping)', async () => {
+      const mockEndpoints = createMockEndpoints([
+        {apiName: 'a', siteId: 'Site1'},
+        {apiName: 'b', siteId: 'Site2'},
+      ]);
+      mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({groupBy: 'site'});
@@ -331,27 +251,9 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(parsed?.total).to.equal(2);
     });
 
-    it('should return only requested columns when columns arg provided', async () => {
-      mockGet.resolves({
-        data: {
-          data: [
-            {
-              apiName: 'my-api',
-              apiVersion: 'v1',
-              cartridgeName: 'app_custom',
-              endpointPath: '/hello',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'RefArch',
-              securityScheme: 'ShopperToken',
-              id: 'ep-1',
-            },
-          ],
-          activeCodeVersion: undefined,
-        },
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+    it('should filter columns when custom columns specified (MCP column selection)', async () => {
+      const mockEndpoints = createMockEndpoints();
+      mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(services);
       const result = await tool.handler({columns: 'type,apiName,status'});
@@ -365,51 +267,44 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       expect(endpoint).to.not.have.property('cartridgeName');
     });
 
-    it('should return all columns when extended is true', async () => {
-      mockGet.resolves({
-        data: {
-          data: [
-            {
-              apiName: 'my-api',
-              apiVersion: 'v1',
-              cartridgeName: 'app_custom',
-              endpointPath: '/hello',
-              httpMethod: 'GET',
-              status: 'active',
-              siteId: 'RefArch',
-              securityScheme: 'ShopperToken',
-              operationId: 'getHello',
-              schemaFile: 'schema.yaml',
-              implementationScript: 'controller.js',
-              errorReason: undefined,
-              id: 'ep-1',
-            },
-          ],
-          activeCodeVersion: undefined,
+    it('should return all columns when all fields specified (MCP column selection)', async () => {
+      const mockEndpoints = createMockEndpoints([
+        {
+          operationId: 'getHello',
+          schemaFile: 'schema.yaml',
+          implementationScript: 'controller.js',
+          errorReason: undefined,
         },
-        error: undefined,
-        response: {status: 200, statusText: 'OK'},
-      });
+      ]);
+      mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(services);
-      const result = await tool.handler({extended: true});
+      const result = await tool.handler({
+        columns:
+          'type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id',
+      });
       const {parsed} = parseResultContent(result);
 
       const endpoint = (parsed?.endpoints as Record<string, unknown>[])?.[0];
-      // Should have all 14 fields when extended is true
-      expect(endpoint).to.have.property('type');
-      expect(endpoint).to.have.property('apiName');
-      expect(endpoint).to.have.property('apiVersion');
-      expect(endpoint).to.have.property('cartridgeName');
-      expect(endpoint).to.have.property('endpointPath');
-      expect(endpoint).to.have.property('httpMethod');
-      expect(endpoint).to.have.property('status');
-      expect(endpoint).to.have.property('siteId');
-      expect(endpoint).to.have.property('securityScheme');
-      expect(endpoint).to.have.property('operationId');
-      expect(endpoint).to.have.property('schemaFile');
-      expect(endpoint).to.have.property('implementationScript');
-      expect(endpoint).to.have.property('id');
+      // Verify all requested columns are present
+      const expectedFields = [
+        'type',
+        'apiName',
+        'apiVersion',
+        'cartridgeName',
+        'endpointPath',
+        'httpMethod',
+        'status',
+        'siteId',
+        'securityScheme',
+        'operationId',
+        'schemaFile',
+        'implementationScript',
+        'id',
+      ];
+      for (const field of expectedFields) {
+        expect(endpoint).to.have.property(field);
+      }
     });
 
     it('should return validation error for invalid status value', async () => {

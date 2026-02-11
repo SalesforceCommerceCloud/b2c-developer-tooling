@@ -65,7 +65,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
-      expect(tool.isGA).to.be.true;
+      expect(tool.isGA).to.be.false;
     });
 
     it('has optional input params: apiFamily, apiName, apiVersion, status, includeSchemas, expandAll', () => {
