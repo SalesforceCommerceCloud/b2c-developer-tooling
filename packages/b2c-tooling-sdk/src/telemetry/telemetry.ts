@@ -142,7 +142,9 @@ export class Telemetry {
   }
 
   /**
-   * Send a telemetry event.
+   * Send a telemetry event. Events are buffered until you call {@link flush} or
+   * {@link stop}. Use this for batching; use {@link sendEventAndFlush} when you
+   * need one event sent before continuing.
    *
    * @param eventName - Name of the event (e.g., 'SERVER_STATUS', 'TOOL_CALLED')
    * @param attributes - Event-specific attributes (only string/number/boolean are sent)
@@ -158,9 +160,10 @@ export class Telemetry {
   }
 
   /**
-   * Send a telemetry event and flush immediately.
-   * Prefer this over sendEvent + flush when you need the event delivered before continuing
-   * (e.g. after tool calls or server lifecycle events) to avoid forgetting to flush.
+   * Send a telemetry event and flush immediately. Use this when you need the event
+   * delivered before continuing (e.g. after a tool call or server lifecycle event),
+   * so you don't have to remember to call {@link flush}. For batching multiple
+   * events and flushing once, use {@link sendEvent} and then {@link flush}.
    *
    * @param eventName - Name of the event (e.g., 'SERVER_STATUS', 'TOOL_CALLED')
    * @param attributes - Event-specific attributes (only string/number/boolean are sent)
