@@ -54,7 +54,7 @@ interface SchemasListInput {
   apiName?: string;
   /** Filter by API version (e.g., "v1", "v2") */
   apiVersion?: string;
-  /** Filter by schema status ("current" or "deprecated"). Omit to return all schemas. */
+  /** Filter by schema status ("current" or "deprecated"). Use "current" to see only active schemas, or "deprecated" to find schemas being phased out. Only works in list mode (discovery). Omit to return all schemas. */
   status?: 'current' | 'deprecated';
   /** Include full OpenAPI schemas (slower, requires all three: apiFamily, apiName, apiVersion) */
   includeSchemas?: boolean;
@@ -302,7 +302,7 @@ export function createScapiSchemasListTool(services: Services): McpTool {
 - **List (discovery):** Omit includeSchemas or any identifier. Returns metadata: schemas[], total, availableApiFamilies/Names/Versions.
 - **Fetch:** Set includeSchemas=true + all three: apiFamily, apiName, apiVersion. Returns full OpenAPI schema (collapsed by default; set expandAll=true for full).
 
-**Rules:** includeSchemas requires all three identifiers. status only works in list mode. Custom APIs use apiFamily: "custom".
+**Rules:** includeSchemas requires all three identifiers. status only works in list mode (use "current" for active schemas, "deprecated" for phased-out schemas). Custom APIs use apiFamily: "custom".
 
 **Requirements:** OAuth with sfcc.scapi-schemas scope.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
