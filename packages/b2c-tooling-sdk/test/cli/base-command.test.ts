@@ -217,13 +217,15 @@ describe('cli/base-command', () => {
   describe('telemetry', () => {
     let telemetryStartStub: sinon.SinonStub;
     let telemetryStopStub: sinon.SinonStub;
+    let telemetryFlushStub: sinon.SinonStub;
     let telemetrySendEventStub: sinon.SinonStub;
     let telemetrySendExceptionStub: sinon.SinonStub;
 
     beforeEach(() => {
       // Stub Telemetry prototype methods
       telemetryStartStub = sinon.stub(Telemetry.prototype, 'start').resolves();
-      telemetryStopStub = sinon.stub(Telemetry.prototype, 'stop');
+      telemetryStopStub = sinon.stub(Telemetry.prototype, 'stop').resolves();
+      telemetryFlushStub = sinon.stub(Telemetry.prototype, 'flush').resolves();
       telemetrySendEventStub = sinon.stub(Telemetry.prototype, 'sendEvent');
       telemetrySendExceptionStub = sinon.stub(Telemetry.prototype, 'sendException');
     });
@@ -392,7 +394,7 @@ describe('cli/base-command', () => {
     });
 
     describe('catch() exception tracking', () => {
-      it('sends exception to telemetry when telemetry is initialized', async () => {
+      it('sends exception and COMMAND_ERROR to telemetry when telemetry is initialized', async () => {
         // Create a telemetry instance and attach it to the command
         const telemetry = new Telemetry({project: 'test', appInsightsKey: 'test-key'});
         (command as unknown as {telemetry: Telemetry}).telemetry = telemetry;
@@ -412,11 +414,13 @@ describe('cli/base-command', () => {
         }
 
         expect(telemetrySendExceptionStub.called).to.be.true;
+        expect(telemetrySendEventStub.calledWith('COMMAND_ERROR')).to.be.true;
+        expect(telemetryFlushStub.called).to.be.true;
         expect(telemetryStopStub.called).to.be.true;
         expect(errorStub.called).to.be.true;
       });
 
-      it('includes exitCode and command in exception attributes', async () => {
+      it('includes exitCode and command in exception and COMMAND_ERROR attributes', async () => {
         const telemetry = new Telemetry({project: 'test', appInsightsKey: 'test-key'});
         (command as unknown as {telemetry: Telemetry}).telemetry = telemetry;
 
@@ -439,6 +443,14 @@ describe('cli/base-command', () => {
         expect(sentError).to.equal(error);
         expect(attributes.exitCode).to.equal(42);
         expect(attributes.command).to.equal('test:base');
+
+        const commandErrorCall = telemetrySendEventStub.getCalls().find((c) => c.args[0] === 'COMMAND_ERROR');
+        expect(commandErrorCall).to.not.be.undefined;
+        expect(commandErrorCall!.args[1]).to.include({
+          command: 'test:base',
+          exitCode: 42,
+          errorMessage: 'Test error',
+        });
       });
     });
 
