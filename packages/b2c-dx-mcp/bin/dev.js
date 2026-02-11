@@ -5,14 +5,18 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// Disable telemetry in development mode to avoid polluting production data
-process.env.SFCC_DISABLE_TELEMETRY = process.env.SFCC_DISABLE_TELEMETRY || 'true';
-
-// Load .env file if present (Node.js native support)
-try {
-  process.loadEnvFile();
-} catch {
-  // .env file not found or not readable, continue without it
+// Disable telemetry in development to avoid polluting production data.
+// Honor SF_DISABLE_TELEMETRY (sf CLI) and SFCC_DISABLE_TELEMETRY.
+// If user explicitly enables (either is 'false'), respect that and sync both to 'false'.
+// Otherwise, default to disabling in dev.
+const userWantsTelemetryEnabled =
+  process.env.SF_DISABLE_TELEMETRY === 'false' || process.env.SFCC_DISABLE_TELEMETRY === 'false';
+if (userWantsTelemetryEnabled) {
+  process.env.SF_DISABLE_TELEMETRY = 'false';
+  process.env.SFCC_DISABLE_TELEMETRY = 'false';
+} else {
+  process.env.SF_DISABLE_TELEMETRY = 'true';
+  process.env.SFCC_DISABLE_TELEMETRY = 'true';
 }
 
 import {execute} from '@oclif/core';
