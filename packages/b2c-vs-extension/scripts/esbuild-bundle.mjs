@@ -45,16 +45,22 @@ const importMetaUrlPlugin = {
 // Inline SDK package.json so the bundle doesn't require() it at runtime (vsce --no-dependencies
 // never includes node_modules). The SDK uses createRequire() so esbuild leaves it as runtime require;
 // we replace that require in the bundle output with the actual JSON (post-build).
+// Also replace require.resolve('@salesforce/b2c-tooling-sdk/package.json') so it doesn't throw when
+// the extension runs from a VSIX (no node_modules). We use __dirname so path.dirname(...) is the extension dist.
 const sdkPkgJsonPath = path.join(pkgRoot, "..", "b2c-tooling-sdk", "package.json");
+const REQUIRE_RESOLVE_PACKAGE_JSON_RE = /require\d*\.resolve\s*\(\s*["']@salesforce\/b2c-tooling-sdk\/package\.json["']\s*\)/g;
+const REQUIRE_RESOLVE_REPLACEMENT = "require('path').join(__dirname, 'package.json')";
+
 function inlineSdkPackageJson() {
   const outPath = path.join(pkgRoot, "dist", "extension.js");
   let str = fs.readFileSync(outPath, "utf8");
   const sdkPkg = JSON.stringify(JSON.parse(fs.readFileSync(sdkPkgJsonPath, "utf8")));
-  const replaced = str.replace(
+  str = str.replace(
     /require\d*\s*\(\s*["']@salesforce\/b2c-tooling-sdk\/package\.json["']\s*\)/g,
     sdkPkg
   );
-  if (replaced !== str) fs.writeFileSync(outPath, replaced, "utf8");
+  str = str.replace(REQUIRE_RESOLVE_PACKAGE_JSON_RE, REQUIRE_RESOLVE_REPLACEMENT);
+  fs.writeFileSync(outPath, str, "utf8");
 }
 
 const watchMode = process.argv.includes("--watch");

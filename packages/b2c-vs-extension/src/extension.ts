@@ -3,12 +3,15 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   findAndDeployCartridges,
   getActiveCodeVersion,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
+import {randomUUID} from 'node:crypto';
 
 /** Standard B2C Commerce WebDAV root directories. */
 const WEBDAV_ROOTS: Record<string, string> = {
@@ -34,6 +37,17 @@ function getWebviewContent(context: vscode.ExtensionContext): string {
 function getStorefrontNextCartridgeWebviewContent(context: vscode.ExtensionContext): string {
   const htmlPath = path.join(context.extensionPath, "src", "storefront-next-cartridge.html");
   return fs.readFileSync(htmlPath, "utf-8");
+}
+
+function getScapiExplorerWebviewContent(
+  context: vscode.ExtensionContext,
+  prefill?: { tenantId: string; channelId: string; shortCode?: string }
+): string {
+  const htmlPath = path.join(context.extensionPath, "src", "scapi-explorer.html");
+  let html = fs.readFileSync(htmlPath, "utf-8");
+  const prefillJson = prefill ? JSON.stringify(prefill) : "null";
+  html = html.replace("__SCAPI_PREFILL__", prefillJson);
+  return html;
 }
 
 const WEBDAV_ROOT_LABELS: Record<string, string> = {
@@ -150,11 +164,16 @@ export function activate(context: vscode.ExtensionContext) {
     if (stack) log.appendLine(stack);
     console.error('B2C DX extension activation failed:', err);
     vscode.window.showErrorMessage(`B2C DX: Extension failed to activate. See Output > B2C DX. Error: ${message}`);
+    const showActivationError = () => {
+      log.show();
+      vscode.window.showErrorMessage(`B2C DX activation error: ${message}`);
+    };
     context.subscriptions.push(
-      vscode.commands.registerCommand('b2c-dx.openUI', () => {
-        log.show();
-        vscode.window.showErrorMessage(`B2C DX activation error: ${message}`);
-      })
+      vscode.commands.registerCommand('b2c-dx.openUI', showActivationError),
+      vscode.commands.registerCommand('b2c-dx.handleStorefrontNextCartridge', showActivationError),
+      vscode.commands.registerCommand('b2c-dx.promptAgent', showActivationError),
+      vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
+      vscode.commands.registerCommand('b2c-dx.scapiExplorer', showActivationError)
     );
   }
 }
@@ -518,6 +537,428 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     return null;
   }
 
+  const scapiExplorerDisposable = vscode.commands.registerCommand(
+    "b2c-dx.scapiExplorer",
+    () => {
+      const panel = vscode.window.createWebviewPanel(
+        "b2c-dx-scapi-explorer",
+        "SCAPI API Explorer",
+        vscode.ViewColumn.One,
+        { enableScripts: true }
+      );
+      let prefill: { tenantId: string; channelId: string; shortCode?: string } | undefined;
+      try {
+        const startDir =
+          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+        const dwPath = findDwJson(startDir);
+        const config = dwPath
+          ? resolveConfig({}, {configPath: dwPath})
+          : resolveConfig({}, {startDir});
+        const hostname = config.values.hostname;
+        const shortCode = config.values.shortCode;
+        const firstPart = hostname && typeof hostname === "string" ? hostname.split(".")[0] ?? "" : "";
+        const tenantId = firstPart ? firstPart.replace(/-/g, "_") : "";
+        if (tenantId || shortCode) {
+          prefill = {
+            tenantId: tenantId || "",
+            channelId: "RefArch",
+            shortCode: typeof shortCode === "string" ? shortCode : undefined,
+          };
+        }
+      } catch {
+        // Prefill is optional; leave undefined if config fails
+      }
+      panel.webview.html = getScapiExplorerWebviewContent(context, prefill);
+      panel.webview.onDidReceiveMessage(async (msg: {
+        type: string;
+        tenantId?: string;
+        channelId?: string;
+        clientId?: string;
+        clientSecret?: string;
+        token?: string;
+        apiFamily?: string;
+        apiName?: string;
+        apiPath?: string;
+        query?: string;
+        curlText?: string;
+      }) => {
+        const getConfig = () => {
+          const startDir =
+            vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+          const dwPath = findDwJson(startDir);
+          return dwPath
+            ? resolveConfig({}, {configPath: dwPath})
+            : resolveConfig({}, {startDir});
+        };
+
+        if (msg.type === "scapiFetchSchemas") {
+          const tenantId = (msg.tenantId ?? "").trim();
+          if (!tenantId) {
+            panel.webview.postMessage({
+              type: "scapiSchemasListResult",
+              success: false,
+              error: "Tenant Id is required to load schemas.",
+            });
+            return;
+          }
+          try {
+            const config = getConfig();
+            const shortCode = config.values.shortCode;
+            if (!shortCode) {
+              panel.webview.postMessage({
+                type: "scapiSchemasListResult",
+                success: false,
+                error: "Short code not found. Set short-code in dw.json or SFCC_SHORTCODE.",
+              });
+              return;
+            }
+            if (!config.hasOAuthConfig()) {
+              panel.webview.postMessage({
+                type: "scapiSchemasListResult",
+                success: false,
+                error: "OAuth credentials required. Set clientId and clientSecret in dw.json.",
+              });
+              return;
+            }
+            const oauthStrategy = config.createOAuth();
+            const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
+            const orgId = toOrganizationId(tenantId);
+            const {data, error, response} = await schemasClient.GET('/organizations/{organizationId}/schemas', {
+              params: {path: {organizationId: orgId}},
+            });
+            if (error) {
+              panel.webview.postMessage({
+                type: "scapiSchemasListResult",
+                success: false,
+                error: getApiErrorMessage(error, response),
+              });
+              return;
+            }
+            const schemas = data?.data ?? [];
+            const apiFamilies = Array.from(new Set(schemas.map((s: {apiFamily?: string}) => s.apiFamily).filter(Boolean))) as string[];
+            apiFamilies.sort();
+            panel.webview.postMessage({
+              type: "scapiSchemasListResult",
+              success: true,
+              schemas,
+              apiFamilies,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({
+              type: "scapiSchemasListResult",
+              success: false,
+              error: message,
+            });
+          }
+          return;
+        }
+
+        if (msg.type === "scapiExecuteCurl") {
+          const curlText = (msg.curlText ?? "").trim();
+          const urlMatch = curlText.match(/"https:\/\/[^"]+"/);
+          const url = urlMatch ? urlMatch[0].slice(1, -1) : "";
+          const bearerMatch = curlText.match(/Authorization:\s*Bearer\s+([^"\\\s]+)/);
+          const token = bearerMatch ? bearerMatch[1].trim() : "";
+          if (!url) {
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: false,
+              error: "Could not parse URL from curl command. Expected a quoted https:// URL.",
+            });
+            return;
+          }
+          if (!token) {
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: false,
+              error: "Could not parse Authorization: Bearer token from curl command.",
+            });
+            return;
+          }
+          try {
+            const res = await fetch(url, {
+              method: "GET",
+              headers: {Authorization: `Bearer ${token}`},
+            });
+            const text = await res.text();
+            if (!res.ok) {
+              panel.webview.postMessage({
+                type: "scapiExecuteApiResult",
+                success: false,
+                error: `HTTP ${res.status}: ${text || res.statusText}`,
+              });
+              return;
+            }
+            let body: string | object = text;
+            try {
+              body = JSON.parse(text);
+            } catch {
+              // leave as string
+            }
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: true,
+              body,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: false,
+              error: message,
+            });
+          }
+          return;
+        }
+
+        if (msg.type === "scapiExecuteShopApi") {
+          const token = (msg.token ?? "").trim();
+          const tenantId = (msg.tenantId ?? "").trim();
+          const channelId = (msg.channelId ?? "").trim();
+          const apiFamily = (msg.apiFamily ?? "").trim();
+          const apiName = (msg.apiName ?? "").trim();
+          const apiPath = (msg.apiPath ?? "").trim();
+          const query = (msg.query ?? "").trim();
+          if (!token) {
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: false,
+              error: "Bearer token is required. Generate a token first.",
+            });
+            return;
+          }
+          if (!tenantId || !channelId || !apiFamily || !apiName) {
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: false,
+              error: "Tenant Id, Channel Id, API Family, and API Name are required.",
+            });
+            return;
+          }
+          try {
+            const config = getConfig();
+            const shortCode = config.values.shortCode;
+            if (!shortCode) {
+              panel.webview.postMessage({
+                type: "scapiExecuteApiResult",
+                success: false,
+                error: "Short code not found. Set short-code in dw.json or SFCC_SHORTCODE.",
+              });
+              return;
+            }
+            const orgId = toOrganizationId(tenantId);
+            const pathPart = apiPath ? `/${apiPath.replace(/^\//, "")}` : "";
+            const url = `https://${shortCode}.api.commercecloud.salesforce.com/${apiFamily}/${apiName}/v1/organizations/${orgId}${pathPart}?siteId=${encodeURIComponent(channelId)}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+            const res = await fetch(url, {
+              method: "GET",
+              headers: {Authorization: `Bearer ${token}`},
+            });
+            const text = await res.text();
+            if (!res.ok) {
+              panel.webview.postMessage({
+                type: "scapiExecuteApiResult",
+                success: false,
+                error: `HTTP ${res.status}: ${text || res.statusText}`,
+              });
+              return;
+            }
+            let body: string | object = text;
+            try {
+              body = JSON.parse(text);
+            } catch {
+              // leave as string
+            }
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: true,
+              body,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({
+              type: "scapiExecuteApiResult",
+              success: false,
+              error: message,
+            });
+          }
+          return;
+        }
+
+        if (msg.type === "scapiGenerateBearerToken") {
+          const clientId = (msg.clientId ?? "").trim();
+          const clientSecret = (msg.clientSecret ?? "").trim();
+          const tenantId = (msg.tenantId ?? "").trim();
+          const channelId = (msg.channelId ?? "").trim();
+          if (!clientId || !clientSecret || !tenantId || !channelId) {
+            panel.webview.postMessage({
+              type: "scapiGenerateBearerTokenResult",
+              success: false,
+              error: "SLAS Client Id, Client Secret, Tenant Id, and Channel Id are required.",
+            });
+            return;
+          }
+          const config = getConfig();
+          const shortCode = config.values.shortCode;
+          if (!shortCode) {
+            panel.webview.postMessage({
+              type: "scapiGenerateBearerTokenResult",
+              success: false,
+              error: "Short code not found. Set short-code or scapi-shortcode in dw.json, or SFCC_SHORTCODE in the environment.",
+            });
+            return;
+          }
+          const orgId = toOrganizationId(tenantId);
+          const tokenUrl = `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/token`;
+          const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+          try {
+            const res = await fetch(tokenUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Authorization: `Basic ${basicAuth}`,
+              },
+              body: `grant_type=client_credentials&channel_id=${encodeURIComponent(channelId)}`,
+            });
+            const data = (await res.json()) as { access_token?: string; error?: string; error_description?: string };
+            if (!res.ok) {
+              const errMsg = data.error_description ?? data.error ?? res.statusText ?? String(res.status);
+              panel.webview.postMessage({
+                type: "scapiGenerateBearerTokenResult",
+                success: false,
+                error: errMsg,
+              });
+              return;
+            }
+            const token = data.access_token;
+            if (!token) {
+              panel.webview.postMessage({
+                type: "scapiGenerateBearerTokenResult",
+                success: false,
+                error: "No access_token in response.",
+              });
+              return;
+            }
+            panel.webview.postMessage({
+              type: "scapiGenerateBearerTokenResult",
+              success: true,
+              token,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({
+              type: "scapiGenerateBearerTokenResult",
+              success: false,
+              error: message,
+            });
+          }
+          return;
+        }
+        if (msg.type !== "scapiCreateSlasClient") return;
+        const tenantId = (msg.tenantId ?? "").trim();
+        const channelId = (msg.channelId ?? "").trim();
+        if (!tenantId || !channelId) {
+          vscode.window.showErrorMessage("B2C DX: Tenant Id and Channel Id are required to create a SLAS client.");
+          return;
+        }
+        const startDir =
+          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+        const dwPath = findDwJson(startDir);
+        const config = dwPath
+          ? resolveConfig({}, {configPath: dwPath})
+          : resolveConfig({}, {startDir});
+        const shortCode = config.values.shortCode;
+        if (!shortCode) {
+          vscode.window.showErrorMessage(
+            "B2C DX: SCAPI short code required. Set short-code or scapi-shortcode in dw.json, or SFCC_SHORTCODE in the environment."
+          );
+          return;
+        }
+        if (!config.hasOAuthConfig()) {
+          vscode.window.showErrorMessage(
+            "B2C DX: OAuth credentials required for SLAS. Set clientId and clientSecret in dw.json or SFCC_CLIENT_ID / SFCC_CLIENT_SECRET."
+          );
+          return;
+        }
+        try {
+          const oauthStrategy = config.createOAuth();
+          const slasClient = createSlasClient({shortCode}, oauthStrategy);
+          const {error: getErr, response: getResp} = await slasClient.GET('/tenants/{tenantId}', {
+            params: {path: {tenantId}},
+          });
+          if (getErr) {
+            const isNotFound =
+              getResp.status === 404 ||
+              (getResp.status === 400 &&
+                typeof getErr === 'object' &&
+                getErr !== null &&
+                'exception_name' in getErr &&
+                (getErr as {exception_name?: string}).exception_name === 'TenantNotFoundException');
+            if (isNotFound) {
+              await slasClient.PUT('/tenants/{tenantId}', {
+                params: {path: {tenantId}},
+                body: {
+                  tenantId,
+                  merchantName: 'B2C DX Tenant',
+                  description: 'Created from SCAPI API Explorer',
+                  contact: 'B2C DX',
+                  emailAddress: 'noreply@example.com',
+                  phoneNo: '+1 000-000-0000',
+                },
+              });
+            } else {
+              const message = getApiErrorMessage(getErr, getResp);
+              vscode.window.showErrorMessage(`B2C DX: Failed to check tenant: ${message}`);
+              return;
+            }
+          }
+          const clientId = randomUUID().toLowerCase();
+          const clientSecret = `sk_${randomUUID().replaceAll('-', '')}`;
+          const defaultScopes = [
+            'sfcc.shopper-products',
+            'sfcc.shopper-product-search',
+            'sfcc.shopper-baskets-orders.rw',
+            'sfcc.shopper-customers.login',
+            'sfcc.shopper-discovery-search',
+            'sfcc.shopper-customers.register',
+            'sfcc.shopper-promotions',
+            'sfcc.shopper-stores',
+          ];
+          const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
+            params: {path: {tenantId, clientId}},
+            body: {
+              clientId,
+              name: `b2c-dx client ${new Date().toISOString().slice(0, 19)}`,
+              channels: [channelId],
+              scopes: defaultScopes,
+              redirectUri: ['http://localhost:3000/callback'],
+              callbackUri: [],
+              secret: clientSecret,
+              isPrivateClient: true,
+            },
+          });
+          if (error) {
+            vscode.window.showErrorMessage(
+              `B2C DX: Create SLAS client failed. ${getApiErrorMessage(error, response)}`
+            );
+            return;
+          }
+          vscode.window.showInformationMessage("B2C DX: SLAS client created. See Explorer for Client ID and Secret.");
+          panel.webview.postMessage({
+            type: 'scapiCreateSlasClientResult',
+            success: true,
+            clientId,
+            secret: clientSecret,
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(`B2C DX: Create SLAS client failed. ${message}`);
+          panel.webview.postMessage({type: 'scapiCreateSlasClientResult', success: false, error: message});
+        }
+      });
+    }
+  );
+
   const storefrontNextCartridgeDisposable = vscode.commands.registerCommand(
     "b2c-dx.handleStorefrontNextCartridge",
     () => {
@@ -623,6 +1064,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     disposable,
     promptAgentDisposable,
     listWebDavDisposable,
+    scapiExplorerDisposable,
     storefrontNextCartridgeDisposable
   );
   log.appendLine('B2C DX extension activated.');

@@ -18,7 +18,13 @@
     "vscode": "^1.105.1"
   },
   "activationEvents": [
-    "onStartupFinished"
+    "*",
+    "onStartupFinished",
+    "onCommand:b2c-dx.openUI",
+    "onCommand:b2c-dx.handleStorefrontNextCartridge",
+    "onCommand:b2c-dx.promptAgent",
+    "onCommand:b2c-dx.listWebDav",
+    "onCommand:b2c-dx.scapiExplorer"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -41,6 +47,11 @@
       {
         "command": "b2c-dx.listWebDav",
         "title": "List WebDAV",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.scapiExplorer",
+        "title": "SCAPI API Explorer",
         "category": "B2C DX"
       }
     ]
