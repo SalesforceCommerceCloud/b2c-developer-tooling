@@ -57,7 +57,7 @@ The server analyzes your working directory and enables toolsets based on what it
 | Project Type | Detection | Toolsets Enabled |
 |--------------|-----------|------------------|
 | **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` in package.json | PWAV3, MRT, SCAPI |
-| **Storefront Next** | `@salesforce/storefront-next-*` in package.json | STOREFRONTNEXT, MRT, SCAPI |
+| **Storefront Next** | Root or a workspace package has `@salesforce/storefront-next*` dependency, or package name like `storefront-next*` / `sfcc-odyssey`. Supports both [storefront-next-template](https://github.com/SalesforceCommerceCloud/storefront-next-template) and [storefront-next](https://github.com/SalesforceCommerceCloud/storefront-next) monorepo. | STOREFRONTNEXT, MRT, CARTRIDGES, SCAPI |
 | **Cartridges** | `.project` file in cartridge directory | CARTRIDGES, SCAPI |
 | **No project detected** | No B2C markers found | SCAPI (base toolset only) |
 

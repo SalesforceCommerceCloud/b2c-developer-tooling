@@ -306,7 +306,7 @@ The SDK provides subpath exports for tree-shaking and organization:
 | `@salesforce/b2c-tooling-sdk/operations/users` | Account Manager user management                                                |
 | `@salesforce/b2c-tooling-sdk/operations/roles` | Account Manager role management                                                |
 | `@salesforce/b2c-tooling-sdk/operations/orgs`  | Account Manager organization management                                        |
-| `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)                                 |
+| `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, Storefront Next, cartridges, etc.)           |
 | `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)                                   |
 | `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                                                   |
 
