@@ -76,5 +76,68 @@ describe('discovery/patterns/storefront-next', () => {
 
       expect(result).to.be.false;
     });
+
+    it('detects by root package name starting with storefront-next', async () => {
+      const pkg = {name: 'storefront-next-app'};
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
+
+      const result = await storefrontNextPattern.detect(tempDir);
+
+      expect(result).to.be.true;
+    });
+
+    it('detects by root package name sfcc-odyssey (monorepo)', async () => {
+      const pkg = {name: 'sfcc-odyssey'};
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
+
+      const result = await storefrontNextPattern.detect(tempDir);
+
+      expect(result).to.be.true;
+    });
+
+    it('detects monorepo when a workspace package has storefront-next dependency', async () => {
+      const rootPkg = {name: 'my-monorepo', workspaces: ['packages/*']};
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(rootPkg));
+      const packagesDir = path.join(tempDir, 'packages');
+      await fs.mkdir(packagesDir, {recursive: true});
+      const pkgDir = path.join(packagesDir, 'storefront-app');
+      await fs.mkdir(pkgDir, {recursive: true});
+      const pkgPkg = {name: 'storefront-app', dependencies: {'@salesforce/storefront-next-runtime': '^1.0.0'}};
+      await fs.writeFile(path.join(pkgDir, 'package.json'), JSON.stringify(pkgPkg));
+
+      const result = await storefrontNextPattern.detect(tempDir);
+
+      expect(result).to.be.true;
+    });
+
+    it('detects monorepo when a workspace package name starts with storefront-next', async () => {
+      const rootPkg = {name: 'some-repo', workspaces: ['packages/*']};
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(rootPkg));
+      const packagesDir = path.join(tempDir, 'packages');
+      await fs.mkdir(packagesDir, {recursive: true});
+      const pkgDir = path.join(packagesDir, 'storefront-next-runtime');
+      await fs.mkdir(pkgDir, {recursive: true});
+      const pkgPkg = {name: 'storefront-next-runtime'};
+      await fs.writeFile(path.join(pkgDir, 'package.json'), JSON.stringify(pkgPkg));
+
+      const result = await storefrontNextPattern.detect(tempDir);
+
+      expect(result).to.be.true;
+    });
+
+    it('returns false for monorepo when no workspace package indicates storefront-next', async () => {
+      const rootPkg = {name: 'my-monorepo', workspaces: ['packages/*']};
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(rootPkg));
+      const packagesDir = path.join(tempDir, 'packages');
+      await fs.mkdir(packagesDir, {recursive: true});
+      const pkgDir = path.join(packagesDir, 'other-app');
+      await fs.mkdir(pkgDir, {recursive: true});
+      const pkgPkg = {name: 'other-app', dependencies: {react: '^18.0.0'}};
+      await fs.writeFile(path.join(pkgDir, 'package.json'), JSON.stringify(pkgPkg));
+
+      const result = await storefrontNextPattern.detect(tempDir);
+
+      expect(result).to.be.false;
+    });
   });
 });

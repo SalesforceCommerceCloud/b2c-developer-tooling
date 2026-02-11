@@ -8,24 +8,59 @@
  *
  * @module discovery/patterns/storefront-next
  */
+import path from 'node:path';
 import type {DetectionPattern} from '../types.js';
-import {readPackageJson} from '../utils.js';
+import type {PackageJson} from '../utils.js';
+import {readPackageJson, globDirs} from '../utils.js';
+
+/** Package names (without scope) that indicate the Storefront Next monorepo root. */
+const STOREFRONT_NEXT_MONOREPO_NAMES = ['sfcc-odyssey'];
+
+/**
+ * Returns true if this package.json (deps or name) indicates a Storefront Next project.
+ */
+function packageIndicatesStorefrontNext(pkg: PackageJson): boolean {
+  const deps = Object.keys({...pkg.dependencies, ...pkg.devDependencies});
+  if (deps.some((dep) => dep.startsWith('@salesforce/storefront-next'))) {
+    return true;
+  }
+  const name = pkg.name;
+  if (typeof name !== 'string' || !name.trim()) return false;
+  const nameWithoutScope = name.includes('/') ? name.split('/').pop()?.trim() : name.trim();
+  if (!nameWithoutScope) return false;
+  return nameWithoutScope.startsWith('storefront-next') || STOREFRONT_NEXT_MONOREPO_NAMES.includes(nameWithoutScope);
+}
 
 /**
  * Detection pattern for Storefront Next (Odyssey) projects.
  *
- * Detects projects that have Storefront Next SDK dependencies.
- * Matches packages starting with @salesforce/storefront-next
- * (e.g., @salesforce/storefront-next-dev, @salesforce/storefront-next-runtime).
+ * Detects (1) storefront-next-template and similar: root package.json has
+ * @salesforce/storefront-next* dependency or name starting with "storefront-next".
+ * (2) storefront-next monorepo: root has no signal but a workspace package has
+ * the dependency or name (e.g. https://github.com/SalesforceCommerceCloud/storefront-next).
  */
 export const storefrontNextPattern: DetectionPattern = {
   name: 'storefront-next',
   projectType: 'storefront-next',
   detect: async (workspacePath) => {
-    const pkg = await readPackageJson(workspacePath);
-    if (!pkg) return false;
+    const rootPkg = await readPackageJson(workspacePath);
+    if (!rootPkg) return false;
 
-    const deps = Object.keys({...pkg.dependencies, ...pkg.devDependencies});
-    return deps.some((dep) => dep.startsWith('@salesforce/storefront-next'));
+    if (packageIndicatesStorefrontNext(rootPkg)) return true;
+
+    const workspaces = rootPkg.workspaces;
+    if (!workspaces) return false;
+
+    const patterns = Array.isArray(workspaces) ? workspaces : [workspaces];
+    for (const pattern of patterns) {
+      if (typeof pattern !== 'string' || !pattern.trim()) continue;
+      const dirs = await globDirs(pattern, {cwd: workspacePath});
+      for (const dir of dirs) {
+        const pkgPath = path.join(workspacePath, dir);
+        const pkg = await readPackageJson(pkgPath);
+        if (pkg && packageIndicatesStorefrontNext(pkg)) return true;
+      }
+    }
+    return false;
   },
 };
