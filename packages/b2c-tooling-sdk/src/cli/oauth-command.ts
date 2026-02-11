@@ -59,6 +59,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       description: 'Organization/tenant ID',
       env: 'SFCC_TENANT_ID',
       helpGroup: 'AUTH',
+      aliases: ['tenant'],
     }),
     'auth-methods': Flags.string({
       description: 'Allowed auth methods in priority order (comma-separated)',
