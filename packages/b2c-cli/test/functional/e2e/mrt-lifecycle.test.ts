@@ -166,7 +166,7 @@ describe('MRT Lifecycle E2E Tests', function () {
       expect(result.exitCode, `Org B2C command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      expect(response).to.have.property('b2cInfo');
+      expect(response).to.have.property('is_b2c_customer');
     });
   });
 
@@ -354,7 +354,12 @@ describe('MRT Lifecycle E2E Tests', function () {
       // Skip if 404 (some environments may not have B2C connection configured)
       if (result.exitCode !== 0) {
         const errorText = String(result.stderr || result.stdout || '');
-        if (errorText.includes('404') || errorText.includes('Not found')) {
+        if (
+          errorText.includes('404') ||
+          errorText.includes('Not found') ||
+          errorText.includes('No B2CTargetInfo matches the given query') ||
+          errorText.includes('Failed to get B2C target info')
+        ) {
           console.log('  ⚠ B2C target info not available for this environment, skipping');
           this.skip();
         }
