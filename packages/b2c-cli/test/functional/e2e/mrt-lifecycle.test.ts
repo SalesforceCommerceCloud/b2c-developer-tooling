@@ -166,7 +166,6 @@ describe('MRT Lifecycle E2E Tests', function () {
       expect(result.exitCode, `Org B2C command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      // Response is the raw B2COrgInfo object, not wrapped
       expect(response).to.have.property('is_b2c_customer');
     });
   });
