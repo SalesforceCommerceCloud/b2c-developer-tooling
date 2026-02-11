@@ -1,0 +1,90 @@
+{
+  "name": "b2c-vs-extension",
+  "displayName": "B2C DX VSCE",
+  "description": "VS Code extension for B2C Commerce Cloud developer experience (Page Designer assistant, B2C CLI integration)",
+  "version": "0.0.1",
+  "publisher": "Salesforce",
+  "license": "Apache-2.0",
+  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
+  "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/b2c-vs-extension",
+  "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
+  "categories": [
+    "Other"
+  ],
+  "dependencies": {
+    "@salesforce/b2c-tooling-sdk": "workspace:*"
+  },
+  "engines": {
+    "vscode": "^1.105.1"
+  },
+  "activationEvents": [
+    "*",
+    "onStartupFinished",
+    "onCommand:b2c-dx.openUI",
+    "onCommand:b2c-dx.handleStorefrontNextCartridge",
+    "onCommand:b2c-dx.promptAgent",
+    "onCommand:b2c-dx.listWebDav",
+    "onCommand:b2c-dx.scapiExplorer"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "b2c-dx.openUI",
+        "title": "Open Page Designer Assistant UI",
+        "category": "B2C DX - Page Designer Assistant"
+      },
+      {
+        "command": "b2c-dx.handleStorefrontNextCartridge",
+        "title": "Storefront Next Cartridge",
+        "category": "B2C DX - Page Designer Assistant"
+      },
+      {
+        "command": "b2c-dx.promptAgent",
+        "title": "Prompt Agent",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.listWebDav",
+        "title": "List WebDAV",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.scapiExplorer",
+        "title": "SCAPI API Explorer",
+        "category": "B2C DX"
+      }
+    ]
+  },
+
+  "scripts": {
+    "build": "node scripts/esbuild-bundle.mjs",
+    "watch": "node scripts/esbuild-bundle.mjs --watch",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
+    "package": "pnpm exec vsce package --no-dependencies",
+    "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc -p . --noEmit --pretty false",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "test": "vscode-test",
+    "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22",
+    "@types/vscode": "^1.105.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-header": "^3.1.1",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0"
+  }
+}
