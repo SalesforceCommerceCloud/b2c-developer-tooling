@@ -16,30 +16,30 @@ These flags are available on all SLAS commands:
 
 ## Authentication
 
-SLAS commands require an Account Manager API Client.
+SLAS commands work out of the box using the CLI's built-in public client, which authenticates via browser login (implicit flow). No API client configuration is required for interactive use.
+
+For automation or CI/CD, you can provide your own API client credentials.
 
 ### Required Roles
 
 | Auth Method | Role | Configured On |
 |-------------|------|---------------|
+| Built-in client (default) | `SLAS Organization Administrator` | Your user account |
 | User Authentication | `SLAS Organization Administrator` | Your user account |
 | Client Credentials | `Sandbox API User` | The API client |
 
-**User Authentication**: Used when only `--client-id` is provided. Opens a browser for login. Roles must be assigned to your user account in Account Manager.
-
-**Client Credentials**: Used when both `--client-id` and `--client-secret` are provided. Roles must be assigned to the API client.
-
-### Tenant Filter
-
-The API client's roles must have a tenant filter configured for the organization you wish to manage. In Account Manager, under each role (e.g., `Sandbox API User`, `SLAS Organization Administrator`), add the organization IDs you need to access to the **Tenant Filter**.
+The role must have a **tenant filter** configured for the organization you wish to manage.
 
 ### Configuration
 
 ```bash
-# User Authentication (opens browser)
+# No configuration needed — opens browser for login
+b2c slas client list --tenant-id abcd_123
+
+# Or provide your own client ID
 b2c slas client list --tenant-id abcd_123 --client-id xxx
 
-# Client Credentials
+# Client Credentials (for automation)
 export SFCC_CLIENT_ID=my-client
 export SFCC_CLIENT_SECRET=my-secret
 b2c slas client list --tenant-id abcd_123

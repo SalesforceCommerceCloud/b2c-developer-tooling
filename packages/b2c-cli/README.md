@@ -18,7 +18,7 @@ npm install -g @salesforce/b2c-cli
 ### Homebrew (macOS/Linux)
 
 ```sh
-brew tap SalesforceCommerceCloud/tooling
+brew tap SalesforceCommerceCloud/tools
 brew install b2c-cli
 ```
 
@@ -184,6 +184,75 @@ List and inspect storefront sites.
 
 ```sh
 b2c sites list
+```
+
+### User Management (Account Manager)
+
+Manage users in Account Manager.
+
+```sh
+# List users with pagination
+b2c am users list --page 0 --size 20
+
+# Get user details by email
+b2c am users get user@example.com
+
+# Create a new user
+b2c am users create --org org-id --mail user@example.com --first-name John --last-name Doe
+
+# Update a user
+b2c am users update user@example.com --first-name Jane
+
+# Reset a user to INITIAL state
+b2c am users reset user@example.com
+
+# Delete (disable) a user
+b2c am users delete user@example.com
+```
+
+### Role Management (Account Manager)
+
+Manage roles and role assignments in Account Manager.
+
+```sh
+# List roles with pagination
+b2c am roles list --page 0 --size 20 --target-type User
+
+# Get role details
+b2c am roles get bm-admin
+
+# Grant a role to a user
+b2c am roles grant user@example.com --role bm-admin
+
+# Grant a role with tenant scope
+b2c am roles grant user@example.com --role bm-admin --scope "tenant1,tenant2"
+
+# Revoke a role from a user
+b2c am roles revoke user@example.com --role bm-admin
+```
+
+### Organization Management (Account Manager)
+
+Manage organizations in Account Manager.
+
+```sh
+# List organizations with pagination
+b2c am orgs list --page 0 --size 25
+
+# List all organizations
+b2c am orgs list --all
+
+# Get organization details by ID
+b2c am orgs get org-123
+
+# Get organization details by name
+b2c am orgs get "My Organization"
+
+# Get audit logs for an organization
+b2c am orgs audit org-123
+
+# Get audit logs with extended columns
+b2c am orgs audit org-123 --extended
 ```
 
 ### Authentication

@@ -13,6 +13,7 @@ import {
   createAuthMiddleware,
   createExtraParamsMiddleware,
   createLoggingMiddleware,
+  createRateLimitMiddleware,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {configureLogger, getLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
@@ -60,6 +61,310 @@ describe('clients/middleware', () => {
       }
 
       expect(modifiedRequest.headers.get('Authorization')).to.equal(null);
+    });
+
+    it('retries request with fresh token on 401 response', async () => {
+      let tokenCallCount = 0;
+      let invalidateCalled = false;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          tokenCallCount++;
+          return tokenCallCount === 1 ? 'Bearer expired-token' : 'Bearer fresh-token';
+        },
+        invalidateToken() {
+          invalidateCalled = true;
+        },
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      // Simulate initial request
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Simulate a prior successful response so that hasHadSuccess is true
+      await middleware.onResponse!({
+        request: modifiedRequest,
+        response: new Response('OK', {status: 200}),
+      } as unknown as OnResponseParams);
+
+      // Stub global fetch to return success on retry
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = sinon.stub().resolves(new Response('OK', {status: 200}));
+
+      try {
+        // Simulate 401 response
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        expect(invalidateCalled).to.equal(true);
+        expect(tokenCallCount).to.equal(2); // Initial + retry
+        expect(result).to.not.equal(unauthorizedResponse);
+        expect(result?.status).to.equal(200);
+
+        // Verify the retry request had the fresh token
+        const fetchStub = globalThis.fetch as sinon.SinonStub;
+        expect(fetchStub.calledOnce).to.equal(true);
+        const retryRequest = fetchStub.firstCall.args[0] as Request;
+        expect(retryRequest.headers.get('Authorization')).to.equal('Bearer fresh-token');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('does not retry more than once (returns 401 on second failure)', async () => {
+      let tokenCallCount = 0;
+      let invalidateCallCount = 0;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          tokenCallCount++;
+          return `Bearer token-${tokenCallCount}`;
+        },
+        invalidateToken() {
+          invalidateCallCount++;
+        },
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      // Simulate initial request
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Simulate a prior successful response so that hasHadSuccess is true
+      await middleware.onResponse!({
+        request: modifiedRequest,
+        response: new Response('OK', {status: 200}),
+      } as unknown as OnResponseParams);
+
+      // Stub global fetch to also return 401
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = sinon.stub().resolves(new Response('Unauthorized', {status: 401}));
+
+      try {
+        // First 401 response - should trigger retry
+        const firstUnauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: firstUnauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        // Should have retried once
+        expect(invalidateCallCount).to.equal(1);
+        expect(tokenCallCount).to.equal(2);
+
+        // The retry also returned 401, but we don't retry again
+        expect(result?.status).to.equal(401);
+
+        // Fetch should only have been called once (for the retry)
+        const fetchStub = globalThis.fetch as sinon.SinonStub;
+        expect(fetchStub.calledOnce).to.equal(true);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('does not retry when strategy lacks invalidateToken', async () => {
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          return 'Bearer test-token';
+        },
+        // No invalidateToken method
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Stub global fetch (should not be called)
+      const originalFetch = globalThis.fetch;
+      const fetchStub = sinon.stub();
+      globalThis.fetch = fetchStub;
+
+      try {
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        // Should return original 401 response without retry
+        expect(result).to.equal(unauthorizedResponse);
+        expect(fetchStub.called).to.equal(false);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('handles requests with body (POST/PUT) on retry', async () => {
+      let tokenCallCount = 0;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          tokenCallCount++;
+          return tokenCallCount === 1 ? 'Bearer expired-token' : 'Bearer fresh-token';
+        },
+        invalidateToken() {},
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const bodyContent = JSON.stringify({data: 'test'});
+      const request = new Request('https://example.com/items', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: bodyContent,
+        duplex: 'half',
+      } as RequestInit);
+
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Simulate a prior successful response so that hasHadSuccess is true
+      await middleware.onResponse!({
+        request: modifiedRequest,
+        response: new Response('OK', {status: 200}),
+      } as unknown as OnResponseParams);
+
+      // Stub global fetch to return success
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = sinon.stub().resolves(new Response('Created', {status: 201}));
+
+      try {
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        expect(result?.status).to.equal(201);
+
+        // Verify retry request preserved the body
+        const fetchStub = globalThis.fetch as sinon.SinonStub;
+        const retryRequest = fetchStub.firstCall.args[0] as Request;
+        const retryBody = await retryRequest.text();
+        expect(retryBody).to.equal(bodyContent);
+        expect(retryRequest.method).to.equal('POST');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('does not retry on initial 401 when no prior successful response', async () => {
+      let invalidateCalled = false;
+
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          return 'Bearer test-token';
+        },
+        invalidateToken() {
+          invalidateCalled = true;
+        },
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Stub global fetch (should not be called)
+      const originalFetch = globalThis.fetch;
+      const fetchStub = sinon.stub();
+      globalThis.fetch = fetchStub;
+
+      try {
+        // Send a 401 without any prior successful response
+        const unauthorizedResponse = new Response('Unauthorized', {status: 401});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response: unauthorizedResponse,
+        } as unknown as OnResponseParams);
+
+        // Should return original 401 without retrying
+        expect(result).to.equal(unauthorizedResponse);
+        expect(fetchStub.called).to.equal(false);
+        expect(invalidateCalled).to.equal(false);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('passes through non-401 responses unchanged', async () => {
+      const auth: AuthStrategy = {
+        async fetch() {
+          throw new Error('not used in this unit test');
+        },
+        async getAuthorizationHeader() {
+          return 'Bearer test-token';
+        },
+        invalidateToken() {},
+      };
+
+      const middleware = createAuthMiddleware(auth);
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/ping', {method: 'GET'});
+      const modifiedRequest = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!modifiedRequest) {
+        throw new Error('Expected middleware to return a Request');
+      }
+
+      // Test various non-401 status codes
+      for (const status of [200, 201, 400, 403, 404, 500]) {
+        const response = new Response('Response', {status});
+        const result = await middleware.onResponse!({
+          request: modifiedRequest,
+          response,
+        } as unknown as OnResponseParams);
+
+        expect(result).to.equal(response);
+      }
     });
   });
 
@@ -442,6 +747,337 @@ describe('clients/middleware', () => {
         resetLogger();
         fs.rmSync(tmpDir, {recursive: true, force: true});
       }
+    });
+  });
+
+  describe('createRateLimitMiddleware', () => {
+    it('retries once on 429 with Retry-After header', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        prefix: 'TEST',
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      let callCount = 0;
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+
+      const firstResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '0'},
+      });
+
+      const successResponse = new Response('ok', {status: 200});
+
+      const fetchFn = async () => {
+        callCount += 1;
+        return successResponse;
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: firstResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // ctx.fetch is only used for the retry; the initial 429 response already occurred.
+      expect(callCount).to.equal(1);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('retries even when Retry-After is large (Retry-After is respected by default)', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const firstResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '0'},
+      });
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: firstResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(1);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('does not retry when the request is aborted', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 1000,
+        maxDelayMs: 1000,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const controller = new AbortController();
+      controller.abort();
+
+      const request = new Request('https://example.com/rate', {method: 'GET', signal: controller.signal});
+      const rateLimitedResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '10'},
+      });
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(429);
+    });
+
+    it('does not retry when maxRetries is 0', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 0,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const rateLimitedResponse = new Response('rate-limited', {status: 429});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(429);
+    });
+
+    it('does not retry when response status is not in statusCodes', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        statusCodes: [429],
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/overloaded', {method: 'GET'});
+      const overloadedResponse = new Response('overloaded', {status: 503});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: overloadedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(503);
+    });
+
+    it('retries using backoff when Retry-After header is missing', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+        prefix: 'TEST',
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      let callCount = 0;
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+
+      const firstResponse = new Response('rate-limited', {
+        status: 429,
+      });
+
+      const successResponse = new Response('ok', {status: 200});
+
+      const fetchFn = async () => {
+        callCount += 1;
+        return successResponse;
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request,
+        response: firstResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // ctx.fetch is only used for the retry; the initial 429 response already occurred.
+      expect(callCount).to.equal(1);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('does not retry when openapi-fetch does not provide a fetch helper', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const rateLimitedResponse = new Response('rate-limited', {status: 429});
+
+      const originalFetch = (globalThis as unknown as {fetch?: unknown}).fetch;
+      try {
+        Object.defineProperty(globalThis, 'fetch', {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+
+        const finalResponse = (await middleware.onResponse!({
+          request,
+          response: rateLimitedResponse,
+        } as unknown as OnResponseParams)) as Response;
+
+        expect(finalResponse.status).to.equal(429);
+      } finally {
+        Object.defineProperty(globalThis, 'fetch', {
+          value: originalFetch,
+          writable: true,
+          configurable: true,
+        });
+      }
+    });
+
+    it('stops retrying after maxRetries', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRetries: 1,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+      });
+
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const rateLimitedResponse = new Response('rate-limited', {status: 429});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return rateLimitedResponse;
+      };
+
+      // First 429 should trigger one retry
+      const firstResult = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // Second 429 (after retry) should not trigger further retries
+      const secondResult = (await middleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+        fetch: fetchFn,
+      } as unknown as OnResponseParams)) as Response;
+
+      // Only the first onResponse triggers a single retry via ctx.fetch.
+      expect(callCount).to.equal(1);
+      expect(firstResult.status).to.equal(429);
+      expect(secondResult.status).to.equal(429);
+    });
+
+    it('retries multiple times when ctx.fetch is missing and config.fetch is provided', async () => {
+      type OnResponseParams = Parameters<NonNullable<ReturnType<typeof createRateLimitMiddleware>['onResponse']>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET'});
+      const firstResponse = new Response('rate-limited', {status: 429});
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        if (callCount === 1) {
+          return new Response('rate-limited again', {status: 429});
+        }
+        return new Response('ok', {status: 200});
+      };
+
+      const fallbackMiddleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 0,
+        maxDelayMs: 0,
+        fetch: fetchFn,
+      });
+
+      const finalResponse = (await fallbackMiddleware.onResponse!({
+        request,
+        response: firstResponse,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(2);
+      expect(finalResponse.status).to.equal(200);
+    });
+
+    it('does not retry in fallback path when request is aborted', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      type OnResponseParams = Parameters<NonNullable<ReturnType<typeof createRateLimitMiddleware>['onResponse']>>[0];
+
+      const request = new Request('https://example.com/rate', {method: 'GET', signal: controller.signal});
+      const rateLimitedResponse = new Response('rate-limited', {
+        status: 429,
+        headers: {'Retry-After': '10'},
+      });
+
+      let callCount = 0;
+      const fetchFn = async () => {
+        callCount += 1;
+        return new Response('ok', {status: 200});
+      };
+
+      const fallbackMiddleware = createRateLimitMiddleware({
+        maxRetries: 2,
+        baseDelayMs: 1000,
+        maxDelayMs: 1000,
+        fetch: fetchFn,
+      });
+
+      const finalResponse = (await fallbackMiddleware.onResponse!({
+        request,
+        response: rateLimitedResponse,
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(callCount).to.equal(0);
+      expect(finalResponse.status).to.equal(429);
     });
   });
 });

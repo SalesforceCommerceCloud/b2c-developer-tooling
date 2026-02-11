@@ -44,10 +44,24 @@ These flags are available on all commands that interact with B2C instances:
 
 ### Services
 
-- [ODS Commands](./ods) - Create and manage On-Demand Sandboxes (ODS)
+- [Sandbox Commands](./sandbox) - Create and manage On-Demand Sandboxes
 - [MRT Commands](./mrt) - Manage Managed Runtime (MRT) projects and deployments
 - [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
 - [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
+
+### Development
+
+- [Scaffold Commands](./scaffold) - Generate cartridges, controllers, hooks, and more from templates
+
+### Account Management
+
+- [Account Manager Commands](./account-manager) - Manage Account Manager users, roles, organizations, and API clients
+
+All Account Manager commands are under the `am` topic:
+- `b2c am users ...` - User management commands
+- `b2c am roles ...` - Role management commands
+- `b2c am orgs ...` - Organization management commands
+- `b2c am clients ...` - API client management (list, get, create, update, delete, password)
 
 ### Utilities
 

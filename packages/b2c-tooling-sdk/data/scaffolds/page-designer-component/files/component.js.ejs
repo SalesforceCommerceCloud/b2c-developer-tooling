@@ -1,0 +1,35 @@
+'use strict';
+
+/**
+ * <%= componentName %> Page Designer Component
+ *
+ * @module experience/components/<%= componentGroup %>/<%= componentId %>
+ */
+
+var Template = require('dw/util/Template');
+var HashMap = require('dw/util/HashMap');
+<% if (hasRegions) { %>var PageRenderHelper = require('*/cartridge/experience/utilities/PageRenderHelper.js');
+<% } %>
+
+/**
+ * Render the <%= componentName %> component
+ *
+ * @param {dw.experience.ComponentScriptContext} context - The component script context
+ * @returns {string} - The rendered template string
+ */
+module.exports.render = function (context) {
+    var model = new HashMap();
+    var content = context.content;
+
+    // Get component attributes
+    model.heading = content.heading || '';
+    model.content = content.content || '';
+    model.cssClass = content.cssClass || '';
+
+<% if (hasRegions) { %>    // Render regions
+    var regions = PageRenderHelper.getRegionModelRegistry(context.component);
+    model.regions = regions;
+    model.mainRegion = regions.main_region ? regions.main_region.render() : '';
+
+<% } %>    return new Template('experience/components/<%= componentGroup %>/<%= componentId %>').render(model).text;
+};

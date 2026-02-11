@@ -12,19 +12,20 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@inquirer/prompts": "^8.2.0",
-    "@oclif/core": "^4",
-    "@oclif/plugin-autocomplete": "^3",
-    "@oclif/plugin-help": "^6",
-    "@oclif/plugin-not-found": "^3",
-    "@oclif/plugin-plugins": "^5",
-    "@oclif/plugin-version": "^2",
-    "@oclif/plugin-warn-if-update-available": "^3",
+    "@inquirer/prompts": "8.2.0",
+    "@oclif/core": "4.8.0",
+    "@oclif/plugin-autocomplete": "3.2.39",
+    "@oclif/plugin-help": "6.2.35",
+    "@oclif/plugin-not-found": "3.2.72",
+    "@oclif/plugin-plugins": "5.4.53",
+    "@oclif/plugin-version": "2.2.36",
+    "@oclif/plugin-warn-if-update-available": "3.1.52",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "cliui": "^9.0.1",
-    "marked": "^15.0.0",
-    "marked-terminal": "^7.3.0",
-    "open": "^11.0.0"
+    "cliui": "9.0.1",
+    "glob": "13.0.0",
+    "marked": "15.0.12",
+    "marked-terminal": "7.3.0",
+    "open": "11.0.0"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
@@ -33,7 +34,7 @@
     "@salesforce/dev-config": "^4.3.2",
     "@types/chai": "^4",
     "@types/mocha": "^10",
-    "@types/node": "^18",
+    "@types/node": "^22",
     "c8": "^10.1.3",
     "chai": "^4",
     "eslint": "^9",
@@ -43,6 +44,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "execa": "^9.6.1",
     "mocha": "^10",
+    "msw": "^2.0.0",
     "oclif": "^4",
     "prettier": "^3.6.2",
     "shx": "^0.3.3",
@@ -78,6 +80,9 @@
     "bin": "b2c",
     "dirname": "b2c",
     "commands": "./dist/commands",
+    "telemetry": {
+      "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
+    },
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins",
@@ -98,6 +103,9 @@
       },
       "code": {
         "description": "Deploy and manage code versions on instances\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html"
+      },
+      "content": {
+        "description": "Export and manage Page Designer content libraries"
       },
       "docs": {
         "description": "Search and read Script API documentation"
@@ -141,11 +149,32 @@
       "mrt:user": {
         "description": "View profile, reset API keys, and configure email preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#user-commands"
       },
+      "sandbox": {
+        "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.html"
+      },
       "ods": {
-        "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ods.html"
+        "description": "Alias for 'sandbox' commands. Use 'b2c sandbox' instead.",
+        "hidden": true
       },
       "sites": {
         "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
+      },
+      "am": {
+        "description": "Manage Account Manager resources",
+        "subtopics": {
+          "users": {
+            "description": "Manage Account Manager users"
+          },
+          "roles": {
+            "description": "Manage roles for Account Manager users"
+          },
+          "orgs": {
+            "description": "Manage Account Manager organizations"
+          },
+          "clients": {
+            "description": "Manage Account Manager API clients"
+          }
+        }
       },
       "slas": {
         "description": "Manage SLAS API clients and credentials\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
@@ -253,6 +282,9 @@
       },
       "setup": {
         "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html"
+      },
+      "scaffold": {
+        "description": "Generate project scaffolds for cartridges, APIs, and components\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.html"
       }
     }
   },
@@ -277,10 +309,12 @@
     "test:e2e:auth": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/auth-token.test.ts\"",
     "test:e2e:code": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/code-lifecycle.test.ts\"",
     "test:e2e:jobs": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/job-execution.test.ts\"",
-    "test:e2e:ods": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/ods-lifecycle.test.ts\"",
+    "test:e2e:sandbox": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/sandbox-lifecycle.test.ts\"",
     "test:e2e:sites": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/sites-operations.test.ts\"",
     "test:e2e:slas": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/slas-lifecycle.test.ts\"",
     "test:e2e:webdav": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/webdav-operations.test.ts\"",
+    "test:e2e:mrt": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/mrt-lifecycle.test.ts\"",
+    "test:e2e:am": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/am-operations.test.ts\"",
     "coverage": "c8 report",
     "version": "oclif readme && git add README.md",
     "dev": "node ./bin/dev.js"

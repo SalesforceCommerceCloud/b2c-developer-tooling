@@ -46,10 +46,12 @@ export type ParsedFlags = Record<string, unknown>;
 export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
   const scopes = flags.scope as string[] | undefined;
 
-  // Parse auth methods from --auth-methods flag
+  // Parse auth methods from --auth-methods or --user-auth flag
   const authMethodValues = flags['auth-methods'] as string[] | undefined;
   let authMethods: AuthMethod[] | undefined;
-  if (authMethodValues && authMethodValues.length > 0) {
+  if (flags['user-auth']) {
+    authMethods = ['implicit'];
+  } else if (authMethodValues && authMethodValues.length > 0) {
     const methods = authMethodValues
       .map((s) => s.trim())
       .filter((s): s is AuthMethod => ALL_AUTH_METHODS.includes(s as AuthMethod));
@@ -64,6 +66,21 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     authMethods,
     accountManagerHost: flags['account-manager-host'] as string | undefined,
     scopes: scopes && scopes.length > 0 ? scopes : undefined,
+  };
+}
+
+/**
+ * Extracts ODS-related configuration from oclif flags.
+ *
+ * Includes OAuth flags since ODS operations require OAuth authentication.
+ *
+ * @param flags - Parsed oclif flags
+ * @returns Partial NormalizedConfig with ODS and OAuth fields
+ */
+export function extractOdsFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
+  return {
+    sandboxApiHost: flags['sandbox-api-host'] as string | undefined,
+    ...extractOAuthFlags(flags),
   };
 }
 

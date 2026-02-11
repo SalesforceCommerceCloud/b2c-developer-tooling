@@ -1,0 +1,22 @@
+<iscontent type="text/html" charset="UTF-8" compact="true"/>
+
+<isinclude template="/components/modules"/>
+
+<!--- <%= controllerName %> Show Template --->
+
+<isdecorate template="common/layout/page">
+    <isscript>
+        var assets = require('*/cartridge/scripts/assets');
+        assets.addCss('/css/<%= kebabCase(controllerName) %>.css');
+        assets.addJs('/js/<%= kebabCase(controllerName) %>.js');
+    </isscript>
+
+    <div class="container <%= kebabCase(controllerName) %>-page">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="page-title">${pdict.title}</h1>
+                <p class="lead">${pdict.message}</p>
+            </div>
+        </div>
+    </div>
+</isdecorate>

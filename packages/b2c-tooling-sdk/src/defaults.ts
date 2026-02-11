@@ -27,3 +27,10 @@ export const DEFAULT_ACCOUNT_MANAGER_HOST = 'account.demandware.com';
  * Environment variable: SFCC_SANDBOX_API_HOST
  */
 export const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
+
+/**
+ * Default public client ID for implicit OAuth flows.
+ * Used as a fallback when no client ID is configured for platform-level
+ * commands (Account Manager, Sandbox, SLAS) that support public client tokens.
+ */
+export const DEFAULT_PUBLIC_CLIENT_ID = '7eee11e3-375b-498f-a087-e450a330d202';

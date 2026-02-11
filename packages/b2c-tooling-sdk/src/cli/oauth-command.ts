@@ -14,6 +14,12 @@ import {t} from '../i18n/index.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
 /**
+ * Default OAuth authentication methods array used by getOAuthStrategy.
+ * Extracted from getOAuthStrategy() to ensure getDefaultAuthMethods() returns the same array.
+ */
+const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'implicit'];
+
+/**
  * Base command for operations requiring OAuth authentication.
  * Use this for platform-level operations like ODS, APIs.
  *
@@ -62,6 +68,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       delimiter: ',',
       options: ALL_AUTH_METHODS,
       helpGroup: 'AUTH',
+      exclusive: ['user-auth'],
+    }),
+    'user-auth': Flags.boolean({
+      description: 'Use browser-based user authentication (implicit OAuth flow)',
+      default: false,
+      exclusive: ['auth-methods'],
+      helpGroup: 'AUTH',
     }),
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
@@ -86,18 +99,42 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
+   * Gets the default authentication methods in priority order.
+   * This method is used by getOAuthStrategy() when no auth methods are specified in config.
+   * Subclasses can override this to change the default priority.
+   *
+   * @returns Array of auth methods in priority order (first is highest priority)
+   */
+  protected getDefaultAuthMethods(): AuthMethod[] {
+    return DEFAULT_OAUTH_AUTH_METHODS;
+  }
+
+  /**
+   * Returns a default client ID for implicit OAuth flows when no client ID is configured.
+   * Returns undefined by default. Subclasses (AmCommand, OdsCommand, etc.) override this
+   * to return DEFAULT_PUBLIC_CLIENT_ID for platform-level commands that support public client tokens.
+   */
+  protected getDefaultClientId(): string | undefined {
+    return undefined;
+  }
+
+  /**
    * Gets an OAuth auth strategy based on allowed auth methods and available credentials.
    *
    * Iterates through allowed methods (in priority order) and returns the first
    * strategy for which the required credentials are available.
+   *
+   * For the implicit flow, falls back to getDefaultClientId() when no client ID
+   * is explicitly configured.
    *
    * @throws Error if no allowed method has the required credentials configured
    */
   protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy {
     const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
-    // Default to client-credentials and implicit if no methods specified
-    const allowedMethods = config.authMethods || (['client-credentials', 'implicit'] as AuthMethod[]);
+    // Use getDefaultAuthMethods() to get default array, allowing subclasses to override
+    const allowedMethods = config.authMethods || this.getDefaultAuthMethods();
+    const defaultClientId = this.getDefaultClientId();
 
     for (const method of allowedMethods) {
       switch (method) {
@@ -112,15 +149,20 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           }
           break;
 
-        case 'implicit':
-          if (config.clientId) {
+        case 'implicit': {
+          const effectiveClientId = config.clientId ?? defaultClientId;
+          if (effectiveClientId) {
+            if (!config.clientId && defaultClientId) {
+              this.logger.debug('Using default B2C CLI public client for authentication');
+            }
             return new ImplicitOAuthStrategy({
-              clientId: config.clientId,
+              clientId: effectiveClientId,
               scopes: config.scopes,
               accountManagerHost,
             });
           }
           break;
+        }
 
         // 'basic' and 'api-key' are not applicable for OAuth strategies
         // They would be handled by different command bases (e.g., InstanceCommand, MRTCommand)
@@ -140,10 +182,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
 
   /**
    * Check if OAuth credentials are available.
-   * Returns true if clientId is configured (with or without clientSecret).
+   * Returns true if clientId is configured (with or without clientSecret),
+   * or if a default client ID is available for implicit flows.
    */
   protected hasOAuthCredentials(): boolean {
-    return this.resolvedConfig.hasOAuthConfig();
+    return this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined;
   }
 
   /**
@@ -181,6 +224,10 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
         ),
       );
+    }
+    // Strip optional f_ecom_ prefix so users can pass either the organization ID or tenant ID
+    if (tenantId.startsWith('f_ecom_')) {
+      return tenantId.slice('f_ecom_'.length);
     }
     return tenantId;
   }

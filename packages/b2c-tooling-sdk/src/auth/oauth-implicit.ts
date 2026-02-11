@@ -100,6 +100,7 @@ async function openBrowser(url: string): Promise<void> {
 export class ImplicitOAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private localPort: number;
+  private _hasHadSuccess = false;
 
   constructor(private config: ImplicitOAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
@@ -132,9 +133,14 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
 
     logger.debug({method, url, status: res.status, duration}, '[Auth] Response');
 
-    // RESILIENCE: If the server says 401, the token might have expired or been revoked.
-    // We retry exactly once after invalidating the cached token.
-    if (res.status === 401) {
+    if (res.status !== 401) {
+      this._hasHadSuccess = true;
+    }
+
+    // RESILIENCE: If we previously had a successful response and now get a 401,
+    // the token likely expired. Retry once after invalidating the cached token.
+    // Skip retry on initial 401 to avoid retrying with bad credentials.
+    if (res.status === 401 && this._hasHadSuccess) {
       logger.debug('[Auth] Received 401, invalidating token and retrying');
       this.invalidateToken();
       const newToken = await this.getAccessToken();

@@ -125,23 +125,190 @@ const result = await waitForJob(instance, 'my-job-id', execution.id);
 await siteArchiveImport(instance, './site-data.zip');
 ```
 
+### Account Manager User Management
+
+```typescript
+import {
+  getUserByLogin,
+  listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  resetUser,
+  grantRole,
+  revokeRole,
+} from '@salesforce/b2c-tooling-sdk/operations/users';
+import {createAccountManagerUsersClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerUsersClient({}, auth);
+
+// List users with pagination
+const users = await listUsers(client, {size: 25, page: 0});
+
+// Get user by email
+const user = await getUserByLogin(client, 'user@example.com');
+
+// Create a new user
+const newUser = await createUser(client, {
+  user: {
+    mail: 'newuser@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    organizations: ['org-id'],
+    primaryOrganization: 'org-id',
+  },
+});
+
+// Update a user
+await updateUser(client, {
+  userId: user.id!,
+  changes: {firstName: 'Jane'},
+});
+
+// Grant a role to a user
+await grantRole(client, {
+  userId: user.id!,
+  role: 'bm-admin',
+  scope: 'tenant1,tenant2', // Optional tenant filter
+});
+
+// Reset user to INITIAL state
+await resetUser(client, user.id!);
+```
+
+### Account Manager Role Management
+
+```typescript
+import {getRole, listRoles} from '@salesforce/b2c-tooling-sdk/operations/roles';
+import {createAccountManagerRolesClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerRolesClient({}, auth);
+
+// Get role details by ID
+const role = await getRole(client, 'bm-admin');
+
+// List all roles with pagination
+const roles = await listRoles(client, {size: 25, page: 0});
+
+// List roles filtered by target type
+const userRoles = await listRoles(client, {
+  size: 25,
+  page: 0,
+  roleTargetType: 'User',
+});
+```
+
+### Account Manager Organization Management
+
+```typescript
+import {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from '@salesforce/b2c-tooling-sdk/operations/orgs';
+import {createAccountManagerOrgsClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerOrgsClient({}, auth);
+
+// Get organization by ID
+const org = await getOrg(client, 'org-123');
+
+// Get organization by name
+const orgByName = await getOrgByName(client, 'My Organization');
+
+// List organizations with pagination
+const orgs = await listOrgs(client, {size: 25, page: 0});
+
+// List all organizations (uses max page size of 5000)
+const allOrgs = await listOrgs(client, {all: true});
+
+// Get audit logs for an organization
+const auditLogs = await getOrgAuditLogs(client, 'org-123');
+```
+
+### Account Manager API Client Management
+
+Manage Account Manager API clients (OAuth client credentials used for API access) via the unified Account Manager client:
+
+```typescript
+import {
+  createAccountManagerClient,
+  type APIClientCreate,
+  type APIClientUpdate,
+} from '@salesforce/b2c-tooling-sdk/clients';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerClient({}, auth);
+
+// List API clients with pagination
+const apiClients = await client.listApiClients({size: 25, page: 0});
+
+// Get a single API client by ID (optional expand: organizations, roles)
+const apiClient = await client.getApiClient('api-client-id', ['organizations', 'roles']);
+
+// Create a new API client
+const newClient = await client.createApiClient({
+  name: 'My API Client',
+  password: 'initial-password',
+  organizations: ['org-id'],
+  roles: ['ECOM_ADMIN'],
+  active: true,
+});
+
+// Update an API client (e.g. disable, change name, roles, or organizations)
+await client.updateApiClient('api-client-id', {
+  name: 'Updated Name',
+  active: false,
+});
+
+// Change API client password (requires old password)
+await client.changeApiClientPassword('api-client-id', 'old-password', 'new-password');
+
+// Delete an API client (must be disabled for at least 7 days first)
+await client.deleteApiClient('api-client-id');
+```
+
+For direct access to the API Clients API only, use `createAccountManagerApiClientsClient` from `@salesforce/b2c-tooling-sdk/clients`.
+
 ## Module Exports
 
 The SDK provides subpath exports for tree-shaking and organization:
 
-| Export                                         | Description                                           |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| `@salesforce/b2c-tooling-sdk`                  | Main entry point with all exports                     |
-| `@salesforce/b2c-tooling-sdk/config`           | Configuration resolution (resolveConfig)              |
-| `@salesforce/b2c-tooling-sdk/auth`             | Authentication strategies (OAuth, Basic, API Key)     |
-| `@salesforce/b2c-tooling-sdk/instance`         | B2CInstance class                                     |
-| `@salesforce/b2c-tooling-sdk/clients`          | Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT) |
-| `@salesforce/b2c-tooling-sdk/operations/code`  | Code deployment operations                            |
-| `@salesforce/b2c-tooling-sdk/operations/jobs`  | Job execution and site import/export                  |
-| `@salesforce/b2c-tooling-sdk/operations/sites` | Site management                                       |
-| `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)        |
-| `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)          |
-| `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                          |
+| Export                                         | Description                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| `@salesforce/b2c-tooling-sdk`                  | Main entry point with all exports                                              |
+| `@salesforce/b2c-tooling-sdk/config`           | Configuration resolution (resolveConfig)                                       |
+| `@salesforce/b2c-tooling-sdk/auth`             | Authentication strategies (OAuth, Basic, API Key)                              |
+| `@salesforce/b2c-tooling-sdk/instance`         | B2CInstance class                                                              |
+| `@salesforce/b2c-tooling-sdk/clients`          | Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT, Account Manager clients) |
+| `@salesforce/b2c-tooling-sdk/operations/code`  | Code deployment operations                                                     |
+| `@salesforce/b2c-tooling-sdk/operations/jobs`  | Job execution and site import/export                                           |
+| `@salesforce/b2c-tooling-sdk/operations/sites` | Site management                                                                |
+| `@salesforce/b2c-tooling-sdk/operations/users` | Account Manager user management                                                |
+| `@salesforce/b2c-tooling-sdk/operations/roles` | Account Manager role management                                                |
+| `@salesforce/b2c-tooling-sdk/operations/orgs`  | Account Manager organization management                                        |
+| `@salesforce/b2c-tooling-sdk/discovery`        | Workspace type detection (PWA Kit, SFRA, etc.)                                 |
+| `@salesforce/b2c-tooling-sdk/cli`              | CLI utilities (BaseCommand, table rendering)                                   |
+| `@salesforce/b2c-tooling-sdk/logging`          | Structured logging utilities                                                   |
 
 ## Logging
 

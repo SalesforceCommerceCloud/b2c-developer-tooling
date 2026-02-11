@@ -33,6 +33,7 @@ function decodeJWT(jwt: string): DecodedJWT {
 
 export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
+  private _hasHadSuccess = false;
 
   constructor(private config: OAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
@@ -49,9 +50,14 @@ export class OAuthStrategy implements AuthStrategy {
     // Node.js fetch accepts dispatcher as an undocumented option
     let res = await fetch(url, {...init, headers} as RequestInit);
 
-    // RESILIENCE: If the server says 401, the token might have expired or been revoked.
-    // We retry exactly once after invalidating the cached token.
-    if (res.status === 401) {
+    if (res.status !== 401) {
+      this._hasHadSuccess = true;
+    }
+
+    // RESILIENCE: If we previously had a successful response and now get a 401,
+    // the token likely expired. Retry once after invalidating the cached token.
+    // Skip retry on initial 401 to avoid retrying with bad credentials.
+    if (res.status === 401 && this._hasHadSuccess) {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);

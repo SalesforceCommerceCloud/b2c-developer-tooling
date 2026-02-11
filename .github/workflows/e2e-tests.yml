@@ -30,6 +30,10 @@ on:
         description: 'SFCC Sandbox API Host (optional, defaults to var)'
         required: false
         type: string
+
+env:
+  SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
+
 jobs:
   e2e-tests:
     # E2E tests run only on the current LTS Node version for stability and speed.
@@ -54,6 +58,8 @@ jobs:
           SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
           SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
           SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
+          SFCC_MRT_CLOUD_ORIGIN: ${{ vars.SFCC_MRT_CLOUD_ORIGIN }}
+          SFCC_MRT_API_KEY: ${{ secrets.SFCC_MRT_API_KEY }}
         run: |
           if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ] && [ -n "$SFCC_SHORTCODE" ]; then
             echo "has-secrets=true" >> $GITHUB_OUTPUT
@@ -65,6 +71,7 @@ jobs:
             echo "  - SFCC_ACCOUNT_MANAGER_HOST (var): ${SFCC_ACCOUNT_MANAGER_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_SANDBOX_API_HOST (var): ${SFCC_SANDBOX_API_HOST:+✓}" >> $GITHUB_STEP_SUMMARY
             echo "  - SFCC_SHORTCODE (var): ${SFCC_SHORTCODE:+✓}" >> $GITHUB_STEP_SUMMARY
+            echo "  - SFCC_MRT_CLOUD_ORIGIN (var): ${SFCC_MRT_CLOUD_ORIGIN:+✓}" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -103,6 +110,8 @@ jobs:
           TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
           SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
           SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
+          SFCC_MRT_CLOUD_ORIGIN: ${{ vars.SFCC_MRT_CLOUD_ORIGIN }}
+          SFCC_MRT_API_KEY: ${{ secrets.SFCC_MRT_API_KEY }}
           # Test configuration
           NODE_ENV: test
           SFCC_LOG_LEVEL: silent

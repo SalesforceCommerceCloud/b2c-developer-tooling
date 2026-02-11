@@ -1,0 +1,60 @@
+{
+  "name": "hook",
+  "displayName": "Hook Implementation",
+  "description": "Create a hook implementation with hooks.json registration",
+  "category": "cartridge",
+  "parameters": [
+    {
+      "name": "hookName",
+      "prompt": "What is the hook script name?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z][a-zA-Z0-9]*$",
+      "validationMessage": "Hook name must be camelCase (start with lowercase letter)"
+    },
+    {
+      "name": "hookType",
+      "prompt": "What type of hook is this?",
+      "type": "choice",
+      "required": true,
+      "choices": [
+        { "value": "ocapi", "label": "OCAPI Hook (shop/data API extension)" },
+        { "value": "scapi", "label": "SCAPI Hook (shopper API extension)" },
+        { "value": "system", "label": "System Hook (order, basket, etc.)" }
+      ],
+      "default": "system"
+    },
+    {
+      "name": "hookPoint",
+      "prompt": "What is the hook extension point?",
+      "type": "string",
+      "required": true,
+      "source": "hook-points",
+      "validationMessage": "Hook point is required (e.g., dw.order.calculate, dw.ocapi.shop.order.beforePOST)"
+    },
+    {
+      "name": "cartridgeName",
+      "prompt": "Which cartridge should contain this hook?",
+      "type": "string",
+      "required": true,
+      "source": "cartridges",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    }
+  ],
+  "files": [
+    {
+      "template": "hook.js.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/scripts/hooks/{{hookName}}.js"
+    }
+  ],
+  "modifications": [
+    {
+      "target": "{{cartridgeNamePath}}/cartridge/hooks.json",
+      "type": "json-merge",
+      "contentTemplate": "hooks-entry.json.ejs",
+      "jsonPath": "hooks"
+    }
+  ],
+  "postInstructions": "Hook '<%= hookName %>' has been created in '<%= cartridgeName %>'.\n\nHook point: <%= hookPoint %>\n\nNext steps:\n1. Implement the hook logic in cartridge/scripts/hooks/<%= hookName %>.js\n2. Deploy the cartridge to your instance\n3. Ensure <%= cartridgeName %> is in your cartridge path"
+}

@@ -5,6 +5,9 @@ on:
     - cron: '0 3 * * *'  # Run at 3 AM UTC daily
   workflow_dispatch:
 
+env:
+  SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
+
 jobs:
   e2e-shell-tests:
     runs-on: ubuntu-latest

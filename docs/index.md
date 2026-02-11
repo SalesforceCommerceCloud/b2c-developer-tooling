@@ -34,7 +34,7 @@ features:
   - icon: "\U0001F3D6\uFE0F"
     title: Sandbox Management
     details: Create, manage, and provision On-Demand Sandboxes programmatically.
-    link: /cli/ods
+    link: /cli/sandbox
     linkText: Learn more
   - icon: "\U0001F9E0"
     title: Agent Skills
@@ -51,6 +51,11 @@ features:
     details: Build custom integrations with @salesforce/b2c-tooling-sdk - the same SDK powering the CLI.
     link: /api/
     linkText: API Reference
+  - icon: "\U0001F510"
+    title: Account Management
+    details: Manage users, roles, organizations, and API clients in Account Manager via CLI and SDK.
+    link: /cli/account-manager
+    linkText: Learn more
 ---
 
 ## Quick Install
@@ -68,10 +73,10 @@ npx @salesforce/b2c-cli --help
 ```
 
 ```bash [Homebrew]
-brew install SalesforceCommerceCloud/tooling/b2c-cli
+brew install SalesforceCommerceCloud/tools/b2c-cli
 
 # or
-brew tap SalesforceCommerceCloud/tooling
+brew tap SalesforceCommerceCloud/tools
 brew install b2c-cli
 ```
 

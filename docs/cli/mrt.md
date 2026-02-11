@@ -286,6 +286,8 @@ b2c mrt env create prod -p my-storefront --name "Production" \
 | `--external-domain` | External domain for SSR |
 | `--allow-cookies` | Forward HTTP cookies |
 | `--enable-source-maps` | Enable source maps |
+| `--proxy` | Proxy configuration in format `path=host` (repeatable) |
+| `--wait`, `-w` | Wait for the environment to be ready before returning |
 
 ### b2c mrt env get
 

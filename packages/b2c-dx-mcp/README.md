@@ -237,7 +237,7 @@ Use `--toolsets all` to enable all toolsets, or select specific ones with `--too
 
 #### CARTRIDGES
 Cartridge development, deployment, and code version management.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
@@ -245,7 +245,7 @@ Cartridge development, deployment, and code version management.
 
 #### MRT
 Managed Runtime operations for PWA Kit and Storefront Next deployments.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
@@ -298,6 +298,32 @@ Storefront Next development tools for building modern storefronts.
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_discovery`). When using multiple toolsets, tools are automatically deduplicated.
 
+## Telemetry
+
+The MCP server collects anonymous usage telemetry to help improve the developer experience. Telemetry is enabled by default.
+
+**Development mode**: Telemetry is automatically disabled when using `bin/dev.js`, so local development and testing won't pollute production data.
+
+### Configuring telemetry
+
+Set options in the `env` object of your server entry in `.cursor/mcp.json` or `~/.cursor/mcp.json` (the client injects these when it starts the server):
+
+- **Disable**: `SF_DISABLE_TELEMETRY=true` or `SFCC_DISABLE_TELEMETRY=true`
+- **Custom endpoint**: `SFCC_APP_INSIGHTS_KEY=your-key`
+
+### What We Collect
+
+- **Server lifecycle events**: When the server starts, stops, or encounters errors
+- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
+- **Command metrics**: Command duration and success/failure status
+- **Environment info**: Platform, architecture, Node.js version, and package version
+
+### What We Don't Collect
+
+- **No credentials**: No API keys, passwords, or secrets
+- **No business data**: No product data, customer information, or site content
+- **No tool arguments**: No input parameters or output results from tool calls
+- **No file contents**: No source code, configuration files, or project data
 
 ## Development
 

@@ -1,0 +1,41 @@
+[
+  {
+    "@type-id": "<%= stepId %>",
+<% if (stepType === 'task') { %>    "@supports-parallel-execution": "false",
+    "@supports-site-context": "true",
+    "@supports-organization-context": "false",
+    "module": "cartridge/scripts/jobsteps/<%= camelCase(stepId) %>.js",
+    "function": "execute",
+<% } else { %>    "@supports-parallel-execution": "true",
+    "@supports-site-context": "true",
+    "@supports-organization-context": "false",
+    "chunk-size": 100,
+    "transactional": "true",
+    "module": "cartridge/scripts/jobsteps/<%= camelCase(stepId) %>.js",
+    "before-step-function": "beforeStep",
+    "before-chunk-function": "beforeChunk",
+    "read-function": "read",
+    "process-function": "process",
+    "write-function": "write",
+    "after-chunk-function": "afterChunk",
+    "after-step-function": "afterStep",
+    "total-count-function": "getTotalCount",
+<% } %>    "description": "<%= stepDescription %>",
+    "parameters": {
+      "parameter": [
+      ]
+    },
+    "status-codes": {
+      "status": [
+        {
+          "@code": "ERROR",
+          "description": "An error occurred during step execution"
+        },
+        {
+          "@code": "OK",
+          "description": "Step completed successfully"
+        }
+      ]
+    }
+  }
+]

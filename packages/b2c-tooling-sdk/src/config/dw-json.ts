@@ -15,10 +15,18 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
+import {normalizeConfigKeys} from './mapping.js';
 
 /**
- * Configuration structure matching dw.json file format.
- * Uses kebab-case keys to match the file format.
+ * Configuration structure for dw.json after key normalization.
+ *
+ * All keys are normalized to camelCase by `normalizeConfigKeys()` when loading.
+ * Both camelCase and kebab-case are accepted in the raw file; the interface
+ * documents the canonical (post-normalization) field names.
+ *
+ * Legacy aliases (e.g., `server`, `secureHostname`, `passphrase`, `selfsigned`,
+ * `cloudOrigin`, `scapi-shortcode`) are also accepted and mapped to their
+ * canonical names during normalization.
  */
 export interface DwJsonConfig {
   /** Instance name (for multi-config files) */
@@ -27,58 +35,46 @@ export interface DwJsonConfig {
   active?: boolean;
   /** B2C instance hostname */
   hostname?: string;
-  /** B2C instance hostname (alias for CLI flag consistency) */
-  server?: string;
   /** Code version for deployments */
-  'code-version'?: string;
+  codeVersion?: string;
   /** Username for Basic auth (WebDAV) */
   username?: string;
   /** Password/access-key for Basic auth (WebDAV) */
   password?: string;
   /** OAuth client ID */
-  'client-id'?: string;
+  clientId?: string;
   /** OAuth client secret */
-  'client-secret'?: string;
+  clientSecret?: string;
   /** OAuth scopes */
-  'oauth-scopes'?: string[];
-  /** SCAPI short code (kebab-case) */
-  'short-code'?: string;
-  /** SCAPI short code (camelCase) */
+  oauthScopes?: string[];
+  /** SCAPI short code */
   shortCode?: string;
-  /** SCAPI short code (alternate kebab-case) */
-  'scapi-shortcode'?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
-  'webdav-hostname'?: string;
-  /** Alternate hostname for WebDAV (matches CLI flag name) */
-  'webdav-server'?: string;
-  /** Alternate hostname for WebDAV (legacy camelCase format) */
-  secureHostname?: string;
-  /** Alternate hostname for WebDAV (legacy kebab-case format) */
-  'secure-server'?: string;
+  webdavHostname?: string;
   /** Allowed authentication methods in priority order */
-  'auth-methods'?: AuthMethod[];
+  authMethods?: AuthMethod[];
   /** Account Manager hostname for OAuth */
-  'account-manager-host'?: string;
+  accountManagerHost?: string;
   /** MRT project slug */
   mrtProject?: string;
   /** MRT environment name (e.g., staging, production) */
   mrtEnvironment?: string;
+  /** MRT API key */
+  mrtApiKey?: string;
   /** MRT cloud origin URL */
   mrtOrigin?: string;
-  /** MRT cloud origin URL (alias) */
-  cloudOrigin?: string;
   /** Tenant/Organization ID for SCAPI */
-  'tenant-id'?: string;
+  tenantId?: string;
+  /** ODS API hostname */
+  sandboxApiHost?: string;
+  /** Default content library ID for content export/list commands */
+  contentLibrary?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
-  /** Passphrase for the certificate (kebab-case) */
-  'certificate-passphrase'?: string;
-  /** Passphrase for the certificate (legacy) */
-  passphrase?: string;
-  /** Allow self-signed certificates (kebab-case) */
-  'self-signed'?: boolean;
-  /** Allow self-signed certificates (legacy) */
-  selfsigned?: boolean;
+  /** Passphrase for the certificate */
+  certificatePassphrase?: string;
+  /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
+  selfSigned?: boolean;
 }
 
 /**
@@ -243,8 +239,19 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | 
 
   try {
     const content = fs.readFileSync(dwJsonPath, 'utf8');
-    const json = JSON.parse(content) as DwJsonMultiConfig;
-    const config = selectConfig(json, options.instance);
+    const raw = JSON.parse(content) as Record<string, unknown>;
+
+    // Normalize root-level keys to camelCase
+    const normalized = normalizeConfigKeys(raw) as DwJsonMultiConfig;
+
+    // Normalize keys in each configs[] item
+    if (Array.isArray(normalized.configs)) {
+      normalized.configs = normalized.configs.map(
+        (item) => normalizeConfigKeys(item as Record<string, unknown>) as DwJsonConfig,
+      );
+    }
+
+    const config = selectConfig(normalized, options.instance);
     if (!config) {
       return undefined;
     }
