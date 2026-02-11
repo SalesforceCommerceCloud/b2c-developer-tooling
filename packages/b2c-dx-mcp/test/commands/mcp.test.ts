@@ -330,62 +330,78 @@ describe('McpServerCommand', () => {
       });
 
       it('returns project default when no env override', () => {
-        const originalDisable = process.env.SFCC_DISABLE_TELEMETRY;
+        const originalSfDisable = process.env.SF_DISABLE_TELEMETRY;
+        const originalSfccDisable = process.env.SFCC_DISABLE_TELEMETRY;
         const originalKey = process.env.SFCC_APP_INSIGHTS_KEY;
         try {
+          delete process.env.SF_DISABLE_TELEMETRY;
           delete process.env.SFCC_DISABLE_TELEMETRY;
           delete process.env.SFCC_APP_INSIGHTS_KEY;
           expect(Telemetry.getConnectionString('default-key')).to.equal('default-key');
         } finally {
-          if (originalDisable !== undefined) process.env.SFCC_DISABLE_TELEMETRY = originalDisable;
-          if (originalKey !== undefined) process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
+          if (originalSfDisable === undefined) delete process.env.SF_DISABLE_TELEMETRY;
+          else process.env.SF_DISABLE_TELEMETRY = originalSfDisable;
+          if (originalSfccDisable === undefined) delete process.env.SFCC_DISABLE_TELEMETRY;
+          else process.env.SFCC_DISABLE_TELEMETRY = originalSfccDisable;
+          if (originalKey === undefined) delete process.env.SFCC_APP_INSIGHTS_KEY;
+          else process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
         }
       });
 
       it('returns env override when SFCC_APP_INSIGHTS_KEY is set', () => {
-        const originalDisable = process.env.SFCC_DISABLE_TELEMETRY;
+        const originalSfDisable = process.env.SF_DISABLE_TELEMETRY;
+        const originalSfccDisable = process.env.SFCC_DISABLE_TELEMETRY;
         const originalKey = process.env.SFCC_APP_INSIGHTS_KEY;
         try {
+          delete process.env.SF_DISABLE_TELEMETRY;
           delete process.env.SFCC_DISABLE_TELEMETRY;
           process.env.SFCC_APP_INSIGHTS_KEY = 'env-override-key';
           expect(Telemetry.getConnectionString('default-key')).to.equal('env-override-key');
         } finally {
-          if (originalDisable !== undefined) process.env.SFCC_DISABLE_TELEMETRY = originalDisable;
-          if (originalKey === undefined) {
-            delete process.env.SFCC_APP_INSIGHTS_KEY;
-          } else {
-            process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
-          }
+          if (originalSfDisable === undefined) delete process.env.SF_DISABLE_TELEMETRY;
+          else process.env.SF_DISABLE_TELEMETRY = originalSfDisable;
+          if (originalSfccDisable === undefined) delete process.env.SFCC_DISABLE_TELEMETRY;
+          else process.env.SFCC_DISABLE_TELEMETRY = originalSfccDisable;
+          if (originalKey === undefined) delete process.env.SFCC_APP_INSIGHTS_KEY;
+          else process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
         }
       });
 
       it('returns undefined when no default and no env override', () => {
-        const originalDisable = process.env.SFCC_DISABLE_TELEMETRY;
+        const originalSfDisable = process.env.SF_DISABLE_TELEMETRY;
+        const originalSfccDisable = process.env.SFCC_DISABLE_TELEMETRY;
         const originalKey = process.env.SFCC_APP_INSIGHTS_KEY;
         try {
+          delete process.env.SF_DISABLE_TELEMETRY;
           delete process.env.SFCC_DISABLE_TELEMETRY;
           delete process.env.SFCC_APP_INSIGHTS_KEY;
           expect(Telemetry.getConnectionString()).to.be.undefined;
         } finally {
-          if (originalDisable !== undefined) process.env.SFCC_DISABLE_TELEMETRY = originalDisable;
-          if (originalKey !== undefined) process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
+          if (originalSfDisable === undefined) delete process.env.SF_DISABLE_TELEMETRY;
+          else process.env.SF_DISABLE_TELEMETRY = originalSfDisable;
+          if (originalSfccDisable === undefined) delete process.env.SFCC_DISABLE_TELEMETRY;
+          else process.env.SFCC_DISABLE_TELEMETRY = originalSfccDisable;
+          if (originalKey === undefined) delete process.env.SFCC_APP_INSIGHTS_KEY;
+          else process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
         }
       });
 
       it('returns env override even without project default', () => {
-        const originalDisable = process.env.SFCC_DISABLE_TELEMETRY;
+        const originalSfDisable = process.env.SF_DISABLE_TELEMETRY;
+        const originalSfccDisable = process.env.SFCC_DISABLE_TELEMETRY;
         const originalKey = process.env.SFCC_APP_INSIGHTS_KEY;
         try {
+          delete process.env.SF_DISABLE_TELEMETRY;
           delete process.env.SFCC_DISABLE_TELEMETRY;
           process.env.SFCC_APP_INSIGHTS_KEY = 'env-only-key';
           expect(Telemetry.getConnectionString()).to.equal('env-only-key');
         } finally {
-          if (originalDisable !== undefined) process.env.SFCC_DISABLE_TELEMETRY = originalDisable;
-          if (originalKey === undefined) {
-            delete process.env.SFCC_APP_INSIGHTS_KEY;
-          } else {
-            process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
-          }
+          if (originalSfDisable === undefined) delete process.env.SF_DISABLE_TELEMETRY;
+          else process.env.SF_DISABLE_TELEMETRY = originalSfDisable;
+          if (originalSfccDisable === undefined) delete process.env.SFCC_DISABLE_TELEMETRY;
+          else process.env.SFCC_DISABLE_TELEMETRY = originalSfccDisable;
+          if (originalKey === undefined) delete process.env.SFCC_APP_INSIGHTS_KEY;
+          else process.env.SFCC_APP_INSIGHTS_KEY = originalKey;
         }
       });
     });

@@ -24,6 +24,10 @@ class MockTelemetry {
     this.attributes = {...this.attributes, ...attrs};
   }
 
+  async flush(): Promise<void> {
+    // Mock flush - does nothing but allows tests to pass
+  }
+
   sendEvent(name: string, attributes: Record<string, unknown> = {}): void {
     this.events.push({name, attributes});
   }

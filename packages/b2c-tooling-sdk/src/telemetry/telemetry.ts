@@ -13,6 +13,20 @@ import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} fr
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
 /**
+ * Sanitize attributes to only include string, number, boolean (App Insights–safe).
+ * Aligns with sf CLI telemetry record() validation.
+ */
+function sanitizeAttributes(attributes: TelemetryAttributes): TelemetryAttributes {
+  const out: TelemetryAttributes = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+/**
  * Get the path to the persistent CLI ID file.
  * @param dataDir - oclif dataDir for persistent storage
  */
@@ -128,18 +142,35 @@ export class Telemetry {
   }
 
   /**
-   * Send a telemetry event.
+   * Send a telemetry event. Events are buffered until you call {@link flush} or
+   * {@link stop}. Use this for batching; use {@link sendEventAndFlush} when you
+   * need one event sent before continuing.
    *
    * @param eventName - Name of the event (e.g., 'SERVER_STATUS', 'TOOL_CALLED')
-   * @param attributes - Event-specific attributes
+   * @param attributes - Event-specific attributes (only string/number/boolean are sent)
    */
   sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
     try {
+      const name = eventName?.trim() || 'UNKNOWN';
       const eventProperties = this.buildEventProperties(attributes);
-      this.reporter?.sendTelemetryEvent(eventName, eventProperties);
+      this.reporter?.sendTelemetryEvent(name, eventProperties);
     } catch {
       // ignore send errors
     }
+  }
+
+  /**
+   * Send a telemetry event and flush immediately. Use this when you need the event
+   * delivered before continuing (e.g. after a tool call or server lifecycle event),
+   * so you don't have to remember to call {@link flush}. For batching multiple
+   * events and flushing once, use {@link sendEvent} and then {@link flush}.
+   *
+   * @param eventName - Name of the event (e.g., 'SERVER_STATUS', 'TOOL_CALLED')
+   * @param attributes - Event-specific attributes (only string/number/boolean are sent)
+   */
+  async sendEventAndFlush(eventName: string, attributes: TelemetryAttributes = {}): Promise<void> {
+    this.sendEvent(eventName, attributes);
+    await this.flush();
   }
 
   /**
@@ -150,7 +181,7 @@ export class Telemetry {
    */
   sendException(error: Error, attributes: TelemetryAttributes = {}): void {
     try {
-      const properties = this.buildEventProperties(attributes);
+      const properties = this.buildEventProperties(sanitizeAttributes(attributes));
       this.reporter?.sendTelemetryException(error, properties);
     } catch {
       // ignore send errors
@@ -184,18 +215,50 @@ export class Telemetry {
   }
 
   /**
-   * Stop the telemetry reporter and flush any pending events.
+   * Flush pending telemetry events without stopping the reporter.
+   * Use this for long-running processes that need to ensure events are sent periodically.
+   * Uses the native reporter.flush() as documented in https://github.com/forcedotcom/telemetry,
+   * and also flushes the App Insights client when present (SDK flush() only flushes O11y).
    */
-  stop(): void {
+  async flush(): Promise<void> {
+    if (!this.started || !this.reporter) return;
+
+    await this.reporter.flush();
+
+    // SDK flush() only flushes O11y; we use App Insights. Flush the underlying client.
+    try {
+      const client = this.reporter.getTelemetryClient();
+      if (client?.flush) {
+        await new Promise<void>((resolve) => {
+          client.flush({callback: () => resolve()});
+        });
+      }
+    } catch {
+      // getTelemetryClient() throws if App Insights not initialized
+    }
+  }
+
+  /**
+   * Stop the telemetry reporter and flush any pending events.
+   * Includes a delay to allow async HTTP requests to complete.
+   */
+  async stop(): Promise<void> {
     if (!this.started) return;
     this.started = false;
     this.reporter?.stop();
+
+    // Allow pending HTTP requests to flush before process exits.
+    // Application Insights SDK sends events asynchronously, so we need
+    // a delay to ensure events reach the server on fast exits.
+    // 300ms gives enough time for the HTTP request to complete even on
+    // cold starts when establishing the initial connection.
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
 
   private buildEventProperties(attributes: TelemetryAttributes = {}): TelemetryEventProperties {
+    const sanitized = sanitizeAttributes({...this.attributes, ...attributes});
     return {
-      ...this.attributes,
-      ...attributes,
+      ...sanitized,
       sessionId: this.sessionId,
       cliId: this.cliId,
       version: this.version,
@@ -215,7 +278,6 @@ export class Telemetry {
       project: this.project,
       key: this.appInsightsKey ?? '',
       userId: this.cliId,
-      waitForConnection: true,
     });
     this.reporter.start();
   }
