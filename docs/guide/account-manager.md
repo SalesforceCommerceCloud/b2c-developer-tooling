@@ -146,7 +146,7 @@ b2c am users delete developer@example.com --purge
 
 ### Auditing
 
-Review users, roles, and organization activity:
+Review users, roles, and organization details:
 
 ```bash
 # List all users
@@ -154,9 +154,6 @@ b2c am users list --extended
 
 # Get user details with expanded roles and organizations
 b2c am users get developer@example.com --expand-all
-
-# View organization audit logs
-b2c am orgs audit $ORG_ID
 ```
 
 ### API Client Provisioning
