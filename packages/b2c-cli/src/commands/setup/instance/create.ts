@@ -97,6 +97,13 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     const source = new DwJsonSource();
     const force = this.flags.force;
 
+    if (!force) {
+      ux.stdout('Create a new B2C Commerce instance configuration.');
+      ux.stdout('For more information on configuration, see:');
+      ux.stdout('  https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html');
+      ux.stdout('');
+    }
+
     // Get or prompt for instance name
     let name = this.args.name;
     if (!name) {
