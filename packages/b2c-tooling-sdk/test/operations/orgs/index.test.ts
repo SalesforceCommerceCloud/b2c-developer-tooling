@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from '../../../src/operations/orgs/index.js';
+import {getOrg, getOrgByName, listOrgs} from '../../../src/operations/orgs/index.js';
 import {createAccountManagerOrgsClient} from '../../../src/clients/am-api.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
@@ -209,65 +209,6 @@ describe('operations/orgs', () => {
       const result = await listOrgs(client, {all: true});
 
       expect(result.size).to.equal(5000);
-    });
-  });
-
-  describe('getOrgAuditLogs', () => {
-    it('should get audit logs for organization', async () => {
-      const mockLogs = {
-        content: [
-          {
-            timestamp: '2025-01-15T10:30:45Z',
-            authorDisplayName: 'John Doe',
-            authorEmail: 'john.doe@example.com',
-            eventType: 'USER_CREATED',
-            eventMessage: 'User created successfully',
-          },
-          {
-            timestamp: '2025-01-16T14:20:30Z',
-            authorDisplayName: 'Jane Smith',
-            authorEmail: 'jane.smith@example.com',
-            eventType: 'USER_UPDATED',
-            eventMessage: 'User updated',
-          },
-        ],
-        totalElements: 2,
-        totalPages: 1,
-        number: 0,
-        size: 25,
-      };
-
-      server.use(
-        http.get(`${BASE_URL}/organizations/org-123/audit-log-records`, () => {
-          return HttpResponse.json(mockLogs);
-        }),
-      );
-
-      const result = await getOrgAuditLogs(client, 'org-123');
-
-      expect(result).to.deep.equal(mockLogs);
-      expect(result.content).to.have.lengthOf(2);
-      expect(result.content[0].eventType).to.equal('USER_CREATED');
-    });
-
-    it('should handle empty audit logs', async () => {
-      const mockLogs = {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-        number: 0,
-        size: 25,
-      };
-
-      server.use(
-        http.get(`${BASE_URL}/organizations/org-123/audit-log-records`, () => {
-          return HttpResponse.json(mockLogs);
-        }),
-      );
-
-      const result = await getOrgAuditLogs(client, 'org-123');
-
-      expect(result.content).to.have.lengthOf(0);
     });
   });
 });

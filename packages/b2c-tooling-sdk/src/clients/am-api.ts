@@ -900,30 +900,6 @@ export interface OrganizationCollection {
 }
 
 /**
- * Account Manager audit log record.
- */
-export interface AuditLogRecord {
-  timestamp: string;
-  authorDisplayName: string;
-  authorEmail?: string;
-  eventType: string;
-  eventMessage: string;
-  [key: string]: unknown;
-}
-
-/**
- * Audit log collection response.
- */
-export interface AuditLogCollection {
-  content: AuditLogRecord[];
-  totalElements?: number;
-  totalPages?: number;
-  number?: number;
-  size?: number;
-  [key: string]: unknown;
-}
-
-/**
  * Options for listing organizations.
  */
 export interface ListOrgsOptions {
@@ -953,11 +929,6 @@ export interface AccountManagerOrgsClient {
    * List organizations with pagination.
    */
   listOrgs(options?: ListOrgsOptions): Promise<OrganizationCollection>;
-
-  /**
-   * Get audit logs for an organization.
-   */
-  getOrgAuditLogs(orgId: string): Promise<AuditLogCollection>;
 }
 
 /**
@@ -1192,12 +1163,6 @@ export function createAccountManagerOrgsClient(
         content: result.content.map((org) => toExternalOrg(org)),
       };
     },
-
-    async getOrgAuditLogs(orgId: string): Promise<AuditLogCollection> {
-      logger.debug({orgId}, '[AM-ORGS] Getting audit logs for organization');
-      const logs = await makeRequest<AuditLogCollection>(`/organizations/${orgId}/audit-log-records`);
-      return logs;
-    },
   };
 }
 
@@ -1314,8 +1279,6 @@ export interface AccountManagerClient {
   getOrgByName(name: string): Promise<AccountManagerOrganization>;
   /** List organizations with pagination */
   listOrgs(options?: ListOrgsOptions): Promise<OrganizationCollection>;
-  /** Get audit logs for an organization */
-  getOrgAuditLogs(orgId: string): Promise<AuditLogCollection>;
 }
 
 /**
@@ -1348,7 +1311,6 @@ export interface AccountManagerClient {
  * // Organizations API
  * const orgs = await client.listOrgs({ size: 25, page: 0 });
  * const org = await client.getOrg('org-id');
- * const auditLogs = await client.getOrgAuditLogs('org-id');
  */
 export function createAccountManagerClient(
   config: AccountManagerClientConfig,
@@ -1481,6 +1443,5 @@ export function createAccountManagerClient(
     getOrg: (orgId: string) => orgsClient.getOrg(orgId),
     getOrgByName: (name: string) => orgsClient.getOrgByName(name),
     listOrgs: (options?: ListOrgsOptions) => orgsClient.listOrgs(options),
-    getOrgAuditLogs: (orgId: string) => orgsClient.getOrgAuditLogs(orgId),
   };
 }

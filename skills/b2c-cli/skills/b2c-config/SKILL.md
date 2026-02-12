@@ -5,13 +5,13 @@ description: View and debug b2c CLI configuration and understand where credentia
 
 # B2C Config Skill
 
-Use the `b2c setup config` command to view the resolved configuration and understand where each value comes from. This is essential for debugging configuration issues and verifying that the CLI is using the correct settings.
+Use the `b2c setup inspect` command to view the resolved configuration and understand where each value comes from. This is essential for debugging configuration issues and verifying that the CLI is using the correct settings.
 
-> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli setup config`).
+> **Tip:** `b2c setup config` still works as an alias. If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli setup inspect`).
 
 ## When to Use
 
-Use `b2c setup config` when you need to:
+Use `b2c setup inspect` when you need to:
 
 - Verify which configuration file is being used
 - Check if environment variables are being read correctly
@@ -26,33 +26,33 @@ Use `b2c setup config` when you need to:
 
 ```bash
 # Display resolved configuration (sensitive values masked by default)
-b2c setup config
+b2c setup inspect
 
 # View configuration for a specific instance from dw.json
-b2c setup config -i staging
+b2c setup inspect -i staging
 
 # View configuration with a specific config file
-b2c setup config --config /path/to/dw.json
+b2c setup inspect --config /path/to/dw.json
 ```
 
 ### Debug Sensitive Values
 
 ```bash
 # Show actual passwords, secrets, and API keys (use with caution)
-b2c setup config --unmask
+b2c setup inspect --unmask
 ```
 
 ### JSON Output for Scripting
 
 ```bash
 # Output as JSON for parsing in scripts
-b2c setup config --json
+b2c setup inspect --json
 
 # Pretty-print with jq
-b2c setup config --json | jq '.config'
+b2c setup inspect --json | jq '.config'
 
 # Check which sources are loaded
-b2c setup config --json | jq '.sources'
+b2c setup inspect --json | jq '.sources'
 ```
 
 ## Understanding the Output

@@ -237,7 +237,7 @@ Use `--toolsets all` to enable all toolsets, or select specific ones with `--too
 
 #### CARTRIDGES
 Cartridge development, deployment, and code version management.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
@@ -245,7 +245,7 @@ Cartridge development, deployment, and code version management.
 
 #### MRT
 Managed Runtime operations for PWA Kit and Storefront Next deployments.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
@@ -304,23 +304,12 @@ The MCP server collects anonymous usage telemetry to help improve the developer 
 
 **Development mode**: Telemetry is automatically disabled when using `bin/dev.js`, so local development and testing won't pollute production data.
 
-### Disabling Telemetry
+### Configuring telemetry
 
-Set one of these environment variables to disable telemetry:
+Set options in the `env` object of your server entry in `.cursor/mcp.json` or `~/.cursor/mcp.json` (the client injects these when it starts the server):
 
-```bash
-# Salesforce CLI standard (recommended)
-SF_DISABLE_TELEMETRY=true
-
-# Or SFCC-specific
-SFCC_DISABLE_TELEMETRY=true
-```
-
-You can also override the telemetry connection string for testing:
-
-```bash
-SFCC_APP_INSIGHTS_KEY=your-connection-string
-```
+- **Disable**: `SF_DISABLE_TELEMETRY=true` or `SFCC_DISABLE_TELEMETRY=true`
+- **Custom endpoint**: `SFCC_APP_INSIGHTS_KEY=your-key`
 
 ### What We Collect
 

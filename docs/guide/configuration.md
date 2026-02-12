@@ -168,6 +168,7 @@ If no instance is specified, the config with `"active": true` is used.
 | `auth-methods` | Authentication methods in priority order (array of strings) |
 | `account-manager-host` | Account Manager hostname for OAuth |
 | `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
+| `content-library` | Default content library ID for `content export` and `content list` commands |
 | `tenant-id` | Organization/tenant ID for SCAPI |
 | `sandbox-api-host` | ODS (sandbox) API hostname |
 | `mrtApiKey` | MRT API key |
@@ -232,6 +233,7 @@ Only non-sensitive, project-level fields can be configured in `package.json`. Bo
 |-------|-------------|
 | `shortCode` | SCAPI short code |
 | `clientId` | OAuth client ID (for implicit login discovery) |
+| `contentLibrary` | Default content library ID for `content export` and `content list` commands |
 | `mrtProject` | MRT project slug |
 | `mrtOrigin` | MRT API origin URL override |
 | `accountManagerHost` | Account Manager hostname for OAuth |
@@ -330,17 +332,17 @@ The CLI will try each method in order until one succeeds.
 
 ## Debugging Configuration
 
-Use `b2c setup config` to view the resolved configuration and see which source provided each value:
+Use `b2c setup inspect` to view the resolved configuration and see which source provided each value:
 
 ```bash
 # Display resolved configuration (sensitive values masked)
-b2c setup config
+b2c setup inspect
 
 # Show actual sensitive values
-b2c setup config --unmask
+b2c setup inspect --unmask
 
 # Output as JSON
-b2c setup config --json
+b2c setup inspect --json
 ```
 
 This command helps troubleshoot issues like:
@@ -349,7 +351,7 @@ This command helps troubleshoot issues like:
 - Understanding credential source priority
 - Identifying hostname mismatch protection triggers
 
-See [setup config](/cli/setup#b2c-setup-config) for full documentation.
+See [setup inspect](/cli/setup#b2c-setup-inspect) for full documentation.
 
 ## Next Steps
 

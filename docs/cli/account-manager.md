@@ -13,19 +13,23 @@ These flags are available on all Account Manager commands:
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (e.g., `account.demandware.com`) |
+| `--user-auth` | — | Use browser-based user authentication (implicit OAuth flow) |
 
 ## Authentication
 
 Account Manager commands work out of the box using the CLI's built-in public client, which authenticates via browser login (implicit flow). No API client configuration is required for interactive use.
 
-For automation or CI/CD, you can provide your own API client credentials.
+For automation or CI/CD, you can provide your own API client credentials. Use `--user-auth` to force browser-based authentication when you have client credentials configured but want to use your user account's roles instead.
 
-### Required Roles
+### Required Roles by Subtopic
 
-| Auth Method | Role | Configured On |
-|-------------|------|---------------|
-| Built-in client (default) | Uses your user account's roles | Your user account |
-| Client Credentials | `User Administrator` or higher | The API client |
+Different Account Manager operations require different roles depending on the authentication method:
+
+| Subtopic | Client Credentials (roles on API client) | User Auth / built-in client (roles on user) |
+|----------|------------------------------------------|---------------------------------------------|
+| `users`, `roles` | User Administrator | Account Administrator or User Administrator |
+| `orgs` | Not supported — use `--user-auth` | Account Administrator |
+| `clients` | Not supported — use `--user-auth` | Account Administrator or API Administrator |
 
 ### Configuration
 
@@ -37,6 +41,9 @@ b2c am users list
 export SFCC_CLIENT_ID=my-client-id
 export SFCC_CLIENT_SECRET=my-client-secret
 b2c am users list
+
+# Force browser-based login even with client credentials configured
+b2c am users list --user-auth
 ```
 
 ---
@@ -723,70 +730,6 @@ When not using `--json`, displays formatted organization information including:
 - Organization can be identified by ID or name
 - If organization is not found, an error is returned
 - Name matching is case-sensitive and requires an exact match
-
----
-
-### b2c am orgs audit
-
-Get audit logs for an Account Manager organization.
-
-#### Usage
-
-```bash
-b2c am orgs audit <ORG> [FLAGS]
-```
-
-#### Arguments
-
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `ORG` | Organization ID or name | Yes |
-
-#### Flags
-
-| Flag | Description |
-|------|-------------|
-| `--columns` | Comma-separated list of columns to display |
-| `--extended`, `-x` | Show all available columns |
-| `--json` | Output results as JSON |
-
-#### Default Columns
-
-- Timestamp
-- Author
-- Email
-- Event Type
-- Message
-
-#### Examples
-
-```bash
-# Get audit logs for an organization by ID
-b2c am orgs audit org-123
-
-# Get audit logs for an organization by name
-b2c am orgs audit "My Organization"
-
-# Show all columns
-b2c am orgs audit org-123 --extended
-
-# Show only specific columns
-b2c am orgs audit org-123 --columns timestamp,eventType,eventMessage
-
-# Output as JSON
-b2c am orgs audit org-123 --json
-```
-
-#### Output
-
-Displays a table of audit log records with the selected columns. Timestamps are formatted as `MM/DD/YYYY HH:MM:SS` for readability.
-
-#### Notes
-
-- Organization can be identified by ID or name
-- If organization is not found, an error is returned
-- If no audit records are found, a message is displayed
-- Timestamps are displayed in a human-readable format with zero-padding for consistent spacing
 
 ---
 

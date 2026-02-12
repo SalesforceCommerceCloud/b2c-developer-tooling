@@ -59,6 +59,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       description: 'Organization/tenant ID',
       env: 'SFCC_TENANT_ID',
       helpGroup: 'AUTH',
+      aliases: ['tenant'],
     }),
     'auth-methods': Flags.string({
       description: 'Allowed auth methods in priority order (comma-separated)',
@@ -67,6 +68,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       multipleNonGreedy: true,
       delimiter: ',',
       options: ALL_AUTH_METHODS,
+      helpGroup: 'AUTH',
+      exclusive: ['user-auth'],
+    }),
+    'user-auth': Flags.boolean({
+      description: 'Use browser-based user authentication (implicit OAuth flow)',
+      default: false,
+      exclusive: ['auth-methods'],
       helpGroup: 'AUTH',
     }),
     'account-manager-host': Flags.string({
@@ -217,6 +225,10 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
         ),
       );
+    }
+    // Strip optional f_ecom_ prefix so users can pass either the organization ID or tenant ID
+    if (tenantId.startsWith('f_ecom_')) {
+      return tenantId.slice('f_ecom_'.length);
     }
     return tenantId;
   }

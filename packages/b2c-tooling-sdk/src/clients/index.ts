@@ -262,8 +262,6 @@ export type {
   AccountManagerOrgsClient,
   AccountManagerOrganization,
   OrganizationCollection,
-  AuditLogRecord,
-  AuditLogCollection,
   ListOrgsOptions,
 } from './am-api.js';
 
