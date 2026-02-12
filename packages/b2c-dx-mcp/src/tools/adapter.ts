@@ -72,6 +72,9 @@ import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
+import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type {ServerRequest, ServerNotification} from '@modelcontextprotocol/sdk/types.js';
+import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 
 /**
  * Context provided to tool execute functions.
@@ -96,6 +99,15 @@ export interface ToolExecutionContext {
    * Services instance for file system access and other utilities.
    */
   services: Services;
+
+  /**
+   * Function to send elicitation requests to the client.
+   * Used to request additional information from users during tool execution.
+   */
+  elicit?: (
+    message: string,
+    requestedSchema: Record<string, unknown>,
+  ) => Promise<{action: string; content?: Record<string, unknown>}>;
 }
 
 /**
@@ -247,6 +259,7 @@ function formatZodErrors(error: z.ZodError): string {
 export function createToolAdapter<TInput, TOutput>(
   options: ToolAdapterOptions<TInput, TOutput>,
   services: Services,
+  server?: McpServer,
 ): McpTool {
   const {
     name,
@@ -270,7 +283,10 @@ export function createToolAdapter<TInput, TOutput>(
     toolsets,
     isGA,
 
-    async handler(rawArgs: Record<string, unknown>): Promise<ToolResult> {
+    async handler(
+      rawArgs: Record<string, unknown>,
+      _extra?: RequestHandlerExtra<ServerRequest, ServerNotification>,
+    ): Promise<ToolResult> {
       // 1. Validate input with Zod
       const parseResult = zodSchema.safeParse(rawArgs);
       if (!parseResult.success) {
@@ -306,15 +322,53 @@ export function createToolAdapter<TInput, TOutput>(
           };
         }
 
-        // 4. Execute the operation
+        // 4. Create elicitation helper if server is available and client supports it
+        // Uses mcpServer.server.elicitInput() to request information from the client
+        // Note: Elicitation only works if BOTH server and client declare elicitation capability
+        let elicit: ToolExecutionContext['elicit'];
+        if (server) {
+          // Access the internal server instance via the 'server' property
+          const internalServer = (server as {server?: {elicitInput?: (options: unknown) => Promise<unknown>}}).server;
+          const elicitInputFn = internalServer?.elicitInput;
+          if (elicitInputFn && typeof elicitInputFn === 'function') {
+            elicit = async (message: string, requestedSchema: Record<string, unknown>) => {
+              try {
+                const result = await elicitInputFn({
+                  mode: 'form',
+                  message,
+                  requestedSchema: {
+                    type: 'object',
+                    properties: requestedSchema,
+                    required: Object.keys(requestedSchema),
+                  },
+                });
+                return result as {action: string; content?: Record<string, unknown>};
+              } catch (error) {
+                // If elicitation fails due to client not supporting it, provide helpful error
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                if (errorMessage.includes('_clientCapabilities') || errorMessage.includes('capabilities')) {
+                  throw new Error(
+                    'MCP Elicitation is not supported by the client. ' +
+                      'The MCP client (Cursor, Claude Desktop, etc.) must declare elicitation capability during initialization. ' +
+                      'Please provide the required parameter directly instead.',
+                  );
+                }
+                throw new Error(`Elicitation request failed: ${errorMessage}`);
+              }
+            };
+          }
+        }
+
+        // 5. Execute the operation
         const context: ToolExecutionContext = {
           b2cInstance,
           mrtConfig,
           services,
+          elicit,
         };
         const output = await execute(args, context);
 
-        // 5. Format output
+        // 6. Format output
         return formatOutput(output);
       } catch (error) {
         // Handle execution errors

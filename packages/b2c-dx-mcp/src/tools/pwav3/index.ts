@@ -90,7 +90,7 @@ function createPlaceholderTool(name: string, description: string, toolsets: Tool
  * @param services - MCP services
  * @returns Array of MCP tools
  */
-export function createPwav3Tools(services: Services): McpTool[] {
+export function createPwav3Tools(services: Services, _injections?: unknown, _server?: unknown): McpTool[] {
   return [
     // PWA Kit development tools
     createPlaceholderTool('pwakit_create_storefront', 'Create a new PWA Kit storefront project', ['PWAV3'], services),

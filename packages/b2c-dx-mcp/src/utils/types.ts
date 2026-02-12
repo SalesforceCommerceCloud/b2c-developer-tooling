@@ -6,6 +6,8 @@
 
 import type {z, ZodRawShape} from 'zod';
 import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type {ServerRequest, ServerNotification} from '@modelcontextprotocol/sdk/types.js';
 import type {Toolset} from './constants.js';
 
 /**
@@ -35,7 +37,10 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> {
  */
 export interface McpTool<T extends ZodRawShape = ZodRawShape> extends McpToolConfig<T> {
   /** Handler function that executes the tool */
-  handler: (args: z.infer<z.ZodObject<T>>) => Promise<ToolResult>;
+  handler: (
+    args: z.infer<z.ZodObject<T>>,
+    extra?: RequestHandlerExtra<ServerRequest, ServerNotification>,
+  ) => Promise<ToolResult>;
 }
 
 /**

@@ -12,6 +12,7 @@ import type {B2CDxMcpServer} from './server.js';
 import type {Services} from './services.js';
 import {createCartridgesTools} from './tools/cartridges/index.js';
 import {createMrtTools} from './tools/mrt/index.js';
+import {createPcoTools} from './tools/pco/index.js';
 import {createPwav3Tools} from './tools/pwav3/index.js';
 import {createScapiTools} from './tools/scapi/index.js';
 import {createStorefrontNextTools} from './tools/storefrontnext/index.js';
@@ -77,9 +78,10 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
  * a single tool to appear in multiple toolsets.
  *
  * @param services - Services instance for dependency injection
+ * @param server - Optional MCP server instance for elicitation support
  * @returns Complete tool registry
  */
-export function createToolRegistry(services: Services): ToolRegistry {
+export function createToolRegistry(services: Services, server?: B2CDxMcpServer): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
     MRT: [],
@@ -89,12 +91,14 @@ export function createToolRegistry(services: Services): ToolRegistry {
   };
 
   // Collect all tools from all factories
+  // Pass server instance for elicitation support
   const allTools: McpTool[] = [
-    ...createCartridgesTools(services),
-    ...createMrtTools(services),
-    ...createPwav3Tools(services),
-    ...createScapiTools(services),
-    ...createStorefrontNextTools(services),
+    ...createCartridgesTools(services, undefined, server),
+    ...createMrtTools(services, undefined, server),
+    ...createPcoTools(services, undefined, server),
+    ...createPwav3Tools(services, undefined, server),
+    ...createScapiTools(services, undefined, server),
+    ...createStorefrontNextTools(services, undefined, server),
   ];
 
   // Organize tools by their declared toolsets (supports multi-toolset)
@@ -176,7 +180,7 @@ export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServ
   const logger = getLogger();
 
   // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(services);
+  const toolRegistry = createToolRegistry(services, server);
 
   // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();
@@ -262,6 +266,6 @@ async function registerTools(tools: McpTool[], server: B2CDxMcpServer, allowNonG
 
     // Register the tool
     // TODO: Telemetry - Tool registration includes timing/error tracking
-    server.addTool(tool.name, tool.description, tool.inputSchema, async (args) => tool.handler(args));
+    server.addTool(tool.name, tool.description, tool.inputSchema, async (args, extra) => tool.handler(args, extra));
   }
 }

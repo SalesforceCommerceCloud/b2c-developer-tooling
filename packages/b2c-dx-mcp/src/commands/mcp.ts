@@ -331,6 +331,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         capabilities: {
           resources: {},
           tools: {},
+          experimental: {
+            elicitation: {},
+          },
         },
         telemetry: this.telemetry,
       },

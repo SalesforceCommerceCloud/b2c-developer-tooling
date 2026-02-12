@@ -97,7 +97,7 @@ function createPlaceholderTool(name: string, description: string, services: Serv
  * @param services - MCP services
  * @returns Array of MCP tools
  */
-export function createStorefrontNextTools(services: Services): McpTool[] {
+export function createStorefrontNextTools(services: Services, _injections?: unknown, _server?: unknown): McpTool[] {
   return [
     createDeveloperGuidelinesTool(services),
     createPlaceholderTool(

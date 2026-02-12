@@ -143,6 +143,6 @@ function createMrtBundlePushTool(services: Services, injections?: MrtToolInjecti
  * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createMrtTools(services: Services, injections?: MrtToolInjections): McpTool[] {
+export function createMrtTools(services: Services, injections?: MrtToolInjections, _server?: unknown): McpTool[] {
   return [createMrtBundlePushTool(services, injections)];
 }

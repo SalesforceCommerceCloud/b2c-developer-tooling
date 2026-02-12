@@ -145,6 +145,10 @@ function createCartridgeDeployTool(services: Services, injections?: CartridgeToo
  * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createCartridgesTools(services: Services, injections?: CartridgeToolInjections): McpTool[] {
+export function createCartridgesTools(
+  services: Services,
+  injections?: CartridgeToolInjections,
+  _server?: unknown,
+): McpTool[] {
   return [createCartridgeDeployTool(services, injections)];
 }

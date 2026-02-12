@@ -86,7 +86,7 @@ function createPlaceholderTool(name: string, description: string, toolsets: Tool
  * @param services - MCP services
  * @returns Array of MCP tools
  */
-export function createScapiTools(services: Services): McpTool[] {
+export function createScapiTools(services: Services, _injections?: unknown, _server?: unknown): McpTool[] {
   return [
     createPlaceholderTool(
       'scapi_discovery',
