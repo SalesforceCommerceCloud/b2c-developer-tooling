@@ -10,6 +10,7 @@ import {
   getPathKeys,
   getSchemaNames,
   getExampleNames,
+  getApiType,
   type OpenApiSchemaInput,
 } from '@salesforce/b2c-tooling-sdk/schemas';
 
@@ -253,6 +254,29 @@ describe('schemas', () => {
       };
       const names = getExampleNames(schemaWithNoExamples);
       expect(names).to.deep.equal([]);
+    });
+  });
+
+  describe('getApiType', () => {
+    it('returns "Admin" for AmOAuth2 security scheme', () => {
+      expect(getApiType('AmOAuth2')).to.equal('Admin');
+    });
+
+    it('returns "Shopper" for ShopperToken security scheme', () => {
+      expect(getApiType('ShopperToken')).to.equal('Shopper');
+    });
+
+    it('returns "-" for undefined security scheme', () => {
+      expect(getApiType(undefined)).to.equal('-');
+    });
+
+    it('returns the scheme itself for unknown security schemes', () => {
+      expect(getApiType('CustomScheme')).to.equal('CustomScheme');
+      expect(getApiType('BearerToken')).to.equal('BearerToken');
+    });
+
+    it('returns "-" for empty string', () => {
+      expect(getApiType('')).to.equal('-');
     });
   });
 });

@@ -19,7 +19,7 @@ import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
 import type {CustomApisComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
-import {getApiType} from '@salesforce/b2c-tooling-sdk/operations/scapi';
+import {getApiType} from '@salesforce/b2c-tooling-sdk/schemas';
 
 type CustomApiEndpoint = CustomApisComponents['schemas']['CustomApiEndpoint'];
 

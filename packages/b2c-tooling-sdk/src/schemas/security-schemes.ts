@@ -5,29 +5,20 @@
  */
 
 /**
- * SCAPI (Salesforce Commerce API) operations.
+ * Security scheme utilities for OpenAPI schemas.
  *
- * This module provides utility functions for working with custom SCAPI APIs.
+ * This module provides utility functions for processing security schemes
+ * from SCAPI (Salesforce Commerce API) schemas, particularly for custom
+ * API endpoints.
  *
- * ## Utility Functions
- *
- * - {@link getApiType} - Map security scheme to human-readable API type
- *
- * ## Usage
- *
- * ```typescript
- * import { getApiType } from '@salesforce/b2c-tooling-sdk/operations/scapi';
- *
- * // Map security scheme to API type
- * const apiType = getApiType('AmOAuth2');      // Returns 'Admin'
- * const shopperType = getApiType('ShopperToken');  // Returns 'Shopper'
- * ```
- *
- * @module operations/scapi
+ * @module schemas/security-schemes
  */
 
 /**
  * Maps security scheme to human-readable API type.
+ *
+ * This utility processes security schemes from SCAPI schemas (typically found
+ * in custom API endpoints) and maps them to user-friendly API type names.
  *
  * @param securityScheme - The security scheme from the custom API endpoint
  * @returns Human-readable API type (Admin, Shopper, or the scheme itself)

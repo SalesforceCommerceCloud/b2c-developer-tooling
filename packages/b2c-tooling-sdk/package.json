@@ -156,17 +156,6 @@
         "default": "./dist/cjs/operations/orgs/index.js"
       }
     },
-    "./operations/scapi": {
-      "development": "./src/operations/scapi/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/scapi/index.d.ts",
-        "default": "./dist/esm/operations/scapi/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/scapi/index.d.ts",
-        "default": "./dist/cjs/operations/scapi/index.js"
-      }
-    },
     "./operations/content": {
       "development": "./src/operations/content/index.ts",
       "import": {

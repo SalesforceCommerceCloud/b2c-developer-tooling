@@ -11,7 +11,7 @@ import {
   toOrganizationId,
   type CustomApisComponents,
 } from '@salesforce/b2c-tooling-sdk';
-import {getApiType} from '@salesforce/b2c-tooling-sdk/operations/scapi';
+import {getApiType} from '@salesforce/b2c-tooling-sdk/schemas';
 import {t, withDocs} from '../../../i18n/index.js';
 
 type CustomApiEndpoint = CustomApisComponents['schemas']['CustomApiEndpoint'];
