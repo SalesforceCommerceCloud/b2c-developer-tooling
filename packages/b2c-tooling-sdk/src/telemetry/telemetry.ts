@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {TelemetryReporter} from '@salesforce/telemetry';
 import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} from './types.js';
+import {getLogger, type Logger} from '../logging/index.js';
 
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
@@ -104,6 +105,7 @@ export class Telemetry {
   private started: boolean;
   private version: string;
   private appInsightsKey: string | undefined;
+  private traceLog: Logger | undefined;
 
   /**
    * Check if telemetry is disabled via environment variables.
@@ -132,12 +134,17 @@ export class Telemetry {
     this.sessionId = generateRandomId();
     this.started = false;
     this.version = options.version ?? '0.0.0';
+
+    if (process.env.SFCC_TELEMETRY_LOG === 'true') {
+      this.traceLog = getLogger().child({component: 'telemetry'});
+    }
   }
 
   /**
    * Add additional attributes to include with all future events.
    */
   addAttributes(attributes: TelemetryAttributes): void {
+    this.traceLog?.debug({attributes}, 'telemetry addAttributes');
     this.attributes = {...this.attributes, ...attributes};
   }
 
@@ -152,6 +159,7 @@ export class Telemetry {
   sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
     try {
       const name = eventName?.trim() || 'UNKNOWN';
+      this.traceLog?.debug({event: name, attributes}, 'telemetry sendEvent');
       const eventProperties = this.buildEventProperties(attributes);
       this.reporter?.sendTelemetryEvent(name, eventProperties);
     } catch {
@@ -181,6 +189,7 @@ export class Telemetry {
    */
   sendException(error: Error, attributes: TelemetryAttributes = {}): void {
     try {
+      this.traceLog?.debug({error: error.name, message: error.message}, 'telemetry sendException');
       const properties = this.buildEventProperties(sanitizeAttributes(attributes));
       this.reporter?.sendTelemetryException(error, properties);
     } catch {
@@ -198,6 +207,11 @@ export class Telemetry {
 
     // If no key provided, telemetry is disabled
     if (!this.appInsightsKey) return;
+
+    this.traceLog?.debug(
+      {project: this.project, sessionId: this.sessionId, cliId: this.cliId.slice(0, 8) + '...'},
+      'telemetry start',
+    );
 
     try {
       await this.createReporter();
@@ -244,6 +258,7 @@ export class Telemetry {
    */
   async stop(): Promise<void> {
     if (!this.started) return;
+    this.traceLog?.debug('telemetry stop');
     this.started = false;
     this.reporter?.stop();
 

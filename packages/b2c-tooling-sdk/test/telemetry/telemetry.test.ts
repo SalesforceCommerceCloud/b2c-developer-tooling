@@ -11,6 +11,7 @@ import path from 'node:path';
 import type {TelemetryReporter} from '@salesforce/telemetry';
 import * as telemetryModule from '@salesforce/telemetry';
 import {Telemetry, createTelemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
+import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 /** Type for TelemetryReporter.create options */
 interface ReporterCreateOptions {
@@ -982,6 +983,76 @@ describe('telemetry/telemetry', () => {
       expect(sessionId1).to.be.a('string');
       expect(sessionId2).to.be.a('string');
       expect(sessionId1).to.not.equal(sessionId2);
+    });
+  });
+
+  describe('debug logging (SFCC_TELEMETRY_LOG)', () => {
+    let originalTelemetryLog: string | undefined;
+    let tmpDir: string;
+
+    beforeEach(() => {
+      originalTelemetryLog = process.env.SFCC_TELEMETRY_LOG;
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'telemetry-log-test-'));
+    });
+
+    afterEach(() => {
+      if (originalTelemetryLog !== undefined) {
+        process.env.SFCC_TELEMETRY_LOG = originalTelemetryLog;
+      } else {
+        delete process.env.SFCC_TELEMETRY_LOG;
+      }
+      resetLogger();
+      fs.rmSync(tmpDir, {recursive: true, force: true});
+    });
+
+    it('logs telemetry events when SFCC_TELEMETRY_LOG=true', async () => {
+      process.env.SFCC_TELEMETRY_LOG = 'true';
+
+      const logFile = path.join(tmpDir, 'log.jsonl');
+      configureLogger({level: 'debug', json: true, fd: fs.openSync(logFile, 'w')});
+
+      const mockReporter = createMockReporter(sandbox);
+      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'test-key',
+      });
+
+      await telemetry.start();
+      telemetry.addAttributes({realm: 'zzpq'});
+      telemetry.sendEvent('COMMAND_START', {command: 'test'});
+      telemetry.sendException(new Error('test error'));
+      await telemetry.stop();
+
+      const logContent = fs.readFileSync(logFile, 'utf8');
+      expect(logContent).to.include('telemetry start');
+      expect(logContent).to.include('telemetry addAttributes');
+      expect(logContent).to.include('telemetry sendEvent');
+      expect(logContent).to.include('telemetry sendException');
+      expect(logContent).to.include('telemetry stop');
+    });
+
+    it('does not log when SFCC_TELEMETRY_LOG is not set', async () => {
+      delete process.env.SFCC_TELEMETRY_LOG;
+
+      const logFile = path.join(tmpDir, 'log.jsonl');
+      configureLogger({level: 'debug', json: true, fd: fs.openSync(logFile, 'w')});
+
+      const mockReporter = createMockReporter(sandbox);
+      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'test-key',
+      });
+
+      await telemetry.start();
+      telemetry.sendEvent('COMMAND_START');
+      await telemetry.stop();
+
+      const logContent = fs.readFileSync(logFile, 'utf8');
+      expect(logContent).to.not.include('telemetry');
     });
   });
 

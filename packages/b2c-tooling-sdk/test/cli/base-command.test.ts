@@ -37,6 +37,18 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
   public getTelemetry() {
     return this.telemetry;
   }
+
+  public getResolvedConfig() {
+    return this.resolvedConfig;
+  }
+
+  public setResolvedConfig(config: typeof this.resolvedConfig) {
+    this.resolvedConfig = config;
+  }
+
+  public testAddTelemetryContext() {
+    return this.addTelemetryContext();
+  }
 }
 
 describe('cli/base-command', () => {
@@ -451,6 +463,193 @@ describe('cli/base-command', () => {
           exitCode: 42,
           errorMessage: 'Test error',
         });
+      });
+    });
+
+    describe('addTelemetryContext', () => {
+      let telemetryAddAttributesStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        telemetryAddAttributesStub = sinon.stub(Telemetry.prototype, 'addAttributes');
+      });
+
+      function setupTelemetry(cmd: TestBaseCommand): void {
+        const telemetry = new Telemetry({project: 'test', appInsightsKey: 'test-key'});
+        (cmd as unknown as {telemetry: Telemetry}).telemetry = telemetry;
+      }
+
+      function setResolvedConfig(
+        cmd: TestBaseCommand,
+        values: Record<string, string | undefined>,
+        sources: {name: string; fields: string[]}[] = [],
+      ): void {
+        cmd.setResolvedConfig({
+          values: values as unknown as ReturnType<TestBaseCommand['getResolvedConfig']>['values'],
+          sources: sources as unknown as ReturnType<TestBaseCommand['getResolvedConfig']>['sources'],
+          warnings: [],
+          hasB2CInstanceConfig: () => false,
+          hasMrtConfig: () => false,
+          hasOAuthConfig: () => false,
+          hasBasicAuthConfig: () => false,
+          createB2CInstance: () => {
+            throw new Error('not implemented');
+          },
+          createBasicAuth: () => {
+            throw new Error('not implemented');
+          },
+          createOAuth: () => {
+            throw new Error('not implemented');
+          },
+          createMrtAuth: () => {
+            throw new Error('not implemented');
+          },
+          createWebDavAuth: () => {
+            throw new Error('not implemented');
+          },
+        });
+      }
+
+      it('adds realm and tenantId from tenantId config', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {tenantId: 'zzpq_019'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.realm).to.equal('zzpq');
+        expect(attrs.tenantId).to.equal('zzpq_019');
+      });
+
+      it('extracts realm from hostname when no tenantId', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {hostname: 'zzpq-019.dx.commercecloud.salesforce.com'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.realm).to.equal('zzpq');
+        expect(attrs.hostname).to.equal('zzpq-019.dx.commercecloud.salesforce.com');
+        expect(attrs.tenantId).to.be.undefined;
+      });
+
+      it('adds shortCode when available', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {tenantId: 'zzpq_019', shortCode: 'kv7kzm78'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.shortCode).to.equal('kv7kzm78');
+      });
+
+      it('adds hostname when available', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {tenantId: 'zzpq_019', hostname: 'zzpq-019.dx.commercecloud.salesforce.com'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.hostname).to.equal('zzpq-019.dx.commercecloud.salesforce.com');
+      });
+
+      it('adds clientId when available', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {tenantId: 'zzpq_019', clientId: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.clientId).to.equal('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+      });
+
+      it('adds configSources from resolved sources', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {tenantId: 'zzpq_019'}, [
+          {name: 'flags', fields: ['tenantId']},
+          {name: 'dw.json', fields: ['hostname']},
+        ]);
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.configSources).to.equal('flags, dw.json');
+      });
+
+      it('does not call addAttributes when no context available', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.called).to.be.false;
+      });
+
+      it('handles f_ecom_ prefixed tenantId', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {tenantId: 'f_ecom_zzpq_019'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.realm).to.equal('zzpq');
+        expect(attrs.tenantId).to.equal('f_ecom_zzpq_019');
+      });
+
+      it('handles unparseable tenantId (sets tenantId but not realm)', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {tenantId: 'some-custom-id-format'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.tenantId).to.equal('some-custom-id-format');
+        expect(attrs.realm).to.be.undefined;
+      });
+
+      it('does not throw when resolvedConfig has unexpected shape', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        // Force a broken resolvedConfig to simulate unexpected runtime state
+        command.setResolvedConfig(null as unknown as ReturnType<typeof command.getResolvedConfig>);
+
+        expect(() => command.testAddTelemetryContext()).to.not.throw();
+      });
+
+      it('does nothing when telemetry is not initialized', async () => {
+        stubParse(command);
+        await command.init();
+        setResolvedConfig(command, {tenantId: 'zzpq_019'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.called).to.be.false;
       });
     });
 
