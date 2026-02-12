@@ -332,17 +332,17 @@ The CLI will try each method in order until one succeeds.
 
 ## Debugging Configuration
 
-Use `b2c setup config` to view the resolved configuration and see which source provided each value:
+Use `b2c setup inspect` to view the resolved configuration and see which source provided each value:
 
 ```bash
 # Display resolved configuration (sensitive values masked)
-b2c setup config
+b2c setup inspect
 
 # Show actual sensitive values
-b2c setup config --unmask
+b2c setup inspect --unmask
 
 # Output as JSON
-b2c setup config --json
+b2c setup inspect --json
 ```
 
 This command helps troubleshoot issues like:
@@ -351,7 +351,7 @@ This command helps troubleshoot issues like:
 - Understanding credential source priority
 - Identifying hostname mismatch protection triggers
 
-See [setup config](/cli/setup#b2c-setup-config) for full documentation.
+See [setup inspect](/cli/setup#b2c-setup-inspect) for full documentation.
 
 ## Next Steps
 

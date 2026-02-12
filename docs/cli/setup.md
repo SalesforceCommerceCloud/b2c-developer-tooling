@@ -6,14 +6,16 @@ description: Commands for viewing configuration, installing AI agent skills, and
 
 Commands for viewing configuration and setting up the development environment.
 
-## b2c setup config
+## b2c setup inspect
 
 Display the resolved configuration from all sources, showing which values are set and where they came from. Useful for debugging configuration issues.
+
+**Alias:** `b2c setup config`
 
 ### Usage
 
 ```bash
-b2c setup config [FLAGS]
+b2c setup inspect [FLAGS]
 ```
 
 ### Flags
@@ -27,16 +29,16 @@ b2c setup config [FLAGS]
 
 ```bash
 # Display resolved configuration (sensitive values masked)
-b2c setup config
+b2c setup inspect
 
 # Display configuration with sensitive values unmasked
-b2c setup config --unmask
+b2c setup inspect --unmask
 
 # Output as JSON for scripting
-b2c setup config --json
+b2c setup inspect --json
 
 # Debug configuration with a specific instance
-b2c setup config -i staging
+b2c setup inspect -i staging
 ```
 
 ### Output
