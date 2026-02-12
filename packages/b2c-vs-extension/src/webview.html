@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: var(--vscode-font-family); padding: 1rem; color: var(--vscode-foreground); }
+      h1 { font-size: 1.25rem; margin-bottom: 1rem; text-align: center; }
+      h2 { font-size: 1rem; margin: 1.25rem 0 0.5rem; color: var(--vscode-descriptionForeground); }
+      #form { max-width: 32rem; margin-left: auto; margin-right: auto; border: 1px solid #ccc; border-radius: 8px; padding: 1rem; }
+      section { margin-bottom: 1rem; }
+      .form-group { margin-bottom: 0.75rem; }
+      label { display: block; margin-bottom: 0.25rem; font-size: 0.9em; }
+      input, textarea { width: 100%; max-width: 24rem; padding: 0.4rem; font-family: inherit; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 2px; }
+      textarea { min-height: 60px; resize: vertical; }
+      .region-block { padding: 0.75rem; margin-bottom: 0.75rem; border-radius: 4px; border: 1px solid var(--vscode-widget-border); }
+      .region-block h3 { margin: 0 0 0.5rem; font-size: 0.9rem; }
+      button { padding: 0.4rem 0.75rem; margin-right: 0.5rem; margin-top: 0.5rem; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; border-radius: 2px; }
+      button:hover { background: var(--vscode-button-hoverBackground); }
+      button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+      button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+      button.danger { background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-errorForeground); }
+      #regions-container { margin-top: 0.5rem; }
+      .region-id-name-row { display: flex; gap: 1rem; margin-bottom: 0.75rem; max-width: 24rem; }
+      .region-id-name-row .form-group { flex: 1; margin-bottom: 0; min-width: 0; }
+      .page-type-section { background: #f0f0f0; padding: 0.75rem; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+
+    <h1>Create a new page with page designer annotations</h1>
+    <form id="form">
+      <section class="page-type-section" aria-label="Page type">
+        <h2>PageType</h2>
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="supportedAspectTypes">Supported aspect types</label>
+          <input type="text" id="supportedAspectTypes" name="supportedAspectTypes" placeholder="e.g. type1, type2" />
+        </div>
+      </section>
+
+      <section aria-label="Region definition">
+        <h2>Regions</h2>
+        <div id="regions-container"></div>
+        <button type="button" id="add-region" class="secondary">Add region</button>
+      </section>
+
+      <section style="margin-top: 1.25rem;">
+        <button type="submit">Submit</button>
+      </section>
+    </form>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+
+      function createRegionFields(index) {
+        const block = document.createElement("div");
+        block.className = "region-block";
+        block.dataset.regionIndex = index;
+        block.innerHTML = `
+          <h3>Region ${index + 1}</h3>
+          <div class="region-id-name-row">
+            <div class="form-group">
+              <label>ID</label>
+              <input type="text" name="region_id" data-region-field="id" required />
+            </div>
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" name="region_name" data-region-field="name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea name="region_description" data-region-field="description" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Max components</label>
+            <input type="number" name="region_maxComponents" data-region-field="maxComponents" min="1" max="25" value="1" />
+          </div>
+          <button type="button" class="danger remove-region">Remove region</button>
+        `;
+        block.querySelector(".remove-region").addEventListener("click", () => {
+          block.remove();
+        });
+        return block;
+      }
+
+      const regionsContainer = document.getElementById("regions-container");
+      let regionCount = 0;
+
+      document.getElementById("add-region").addEventListener("click", () => {
+        regionsContainer.appendChild(createRegionFields(regionCount++));
+      });
+
+      // Add first region by default
+      regionsContainer.appendChild(createRegionFields(regionCount++));
+
+      function collectRegions() {
+        const blocks = regionsContainer.querySelectorAll(".region-block");
+        return Array.from(blocks).map((block) => ({
+          id: block.querySelector('[data-region-field="id"]').value,
+          name: block.querySelector('[data-region-field="name"]').value,
+          description: block.querySelector('[data-region-field="description"]').value,
+          maxComponents: parseInt(block.querySelector('[data-region-field="maxComponents"]').value, 10) || 1,
+        }));
+      }
+
+      document.getElementById("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const supportedAspectTypes = document.getElementById("supportedAspectTypes").value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const payload = {
+          type: "submitForm",
+          pageType: {
+            name: document.getElementById("name").value,
+            description: document.getElementById("description").value,
+            supportedAspectTypes,
+          },
+          regions: collectRegions(),
+        };
+        vscode.postMessage(payload);
+      });
+    </script>
+  </body>
+</html>
