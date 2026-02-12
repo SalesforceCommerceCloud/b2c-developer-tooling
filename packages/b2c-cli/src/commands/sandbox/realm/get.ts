@@ -80,6 +80,14 @@ export default class SandboxRealmGet extends OdsCommand<typeof SandboxRealmGet> 
     return response;
   }
 
+  private addFieldRows(ui: ReturnType<typeof cliui>, fields: [string, string | undefined][]): void {
+    for (const [label, value] of fields) {
+      if (value !== undefined) {
+        ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
+      }
+    }
+  }
+
   private printRealmDetails(realm: RealmModel, config?: RealmConfigurationModel): void {
     const ui = cliui({width: process.stdout.columns || 80});
 
@@ -94,12 +102,7 @@ export default class SandboxRealmGet extends OdsCommand<typeof SandboxRealmGet> 
       ['Name', realmAny.name],
       ['Enabled', realmAny.enabled === undefined ? undefined : String(realmAny.enabled)],
     ];
-
-    for (const [label, value] of metaFields) {
-      if (value !== undefined) {
-        ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
-      }
-    }
+    this.addFieldRows(ui, metaFields);
 
     // Configuration block (if available via expand)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -137,12 +140,7 @@ export default class SandboxRealmGet extends OdsCommand<typeof SandboxRealmGet> 
           configAny.sandbox?.localUsersAllowed === undefined ? undefined : String(configAny.sandbox.localUsersAllowed),
         ],
       ];
-
-      for (const [label, value] of configFields) {
-        if (value !== undefined) {
-          ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
-        }
-      }
+      this.addFieldRows(ui, configFields);
     }
 
     // Schedulers
