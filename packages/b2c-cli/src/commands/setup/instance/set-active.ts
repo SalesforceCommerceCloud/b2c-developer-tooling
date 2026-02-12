@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, ux} from '@oclif/core';
+import {search} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../../i18n/index.js';
@@ -23,7 +24,6 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
   static args = {
     name: Args.string({
       description: 'Instance name to set as active',
-      required: true,
     }),
   };
 
@@ -42,10 +42,28 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
 
   async run(): Promise<InstanceSetActiveResponse> {
     const source = new DwJsonSource();
-    const name = this.args.name;
-
-    // Check if instance exists
     const instances = source.listInstances({configPath: this.flags.config});
+
+    let name = this.args.name;
+
+    if (!name) {
+      if (instances.length === 0) {
+        this.error('No instances are configured. Use `b2c setup instance create` to add one.');
+      }
+
+      name = await search({
+        message: 'Select instance:',
+        source: (term) => {
+          const filtered = term ? instances.filter((i) => i.name.includes(term)) : instances;
+          const sorted = [...filtered].sort((a, b) => (a.active === b.active ? 0 : a.active ? -1 : 1));
+          return sorted.map((i) => ({
+            name: `${i.name}${i.hostname ? ` (${i.hostname})` : ''}${i.active ? ' [active]' : ''}`,
+            value: i.name,
+          }));
+        },
+      });
+    }
+
     const instance = instances.find((i) => i.name === name);
 
     if (!instance) {

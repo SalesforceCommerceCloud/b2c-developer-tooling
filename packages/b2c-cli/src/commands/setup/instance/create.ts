@@ -6,7 +6,8 @@
 import {Args, Flags, ux} from '@oclif/core';
 import {input, password, confirm, select} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {DwJsonSource, type NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {DwJsonSource, createInstanceFromConfig, type NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {withDocs} from '../../../i18n/index.js';
 
 /**
@@ -23,6 +24,19 @@ interface InstanceCreateResponse {
  * Auth type selection values.
  */
 type AuthType = 'basic' | 'both' | 'none' | 'oauth';
+
+/**
+ * Extract the hostname from a URL or return the input as-is if it's already a hostname.
+ */
+function parseHostname(input: string): string {
+  const trimmed = input.trim();
+  try {
+    const url = new URL(trimmed);
+    return url.hostname;
+  } catch {
+    return trimmed;
+  }
+}
 
 /**
  * Create a new B2C Commerce instance configuration.
@@ -101,27 +115,23 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       this.error(`Instance "${name}" already exists. Use a different name.`);
     }
 
-    // Get or prompt for hostname
+    // Get or prompt for hostname (accepts a URL or plain hostname)
     let hostname = this.flags.hostname;
     if (!hostname) {
       if (force) {
         this.error('Hostname is required in non-interactive mode. Use --hostname flag.');
       }
       hostname = await input({
-        message: 'Enter B2C instance hostname:',
+        message: 'Enter B2C instance hostname or URL:',
         validate: (v) => (v.trim() ? true : 'Hostname is required'),
       });
     }
+    hostname = parseHostname(hostname);
 
     // Build config
     const config: Partial<NormalizedConfig> = {
       hostname,
     };
-
-    // Code version
-    if (this.flags['code-version']) {
-      config.codeVersion = this.flags['code-version'];
-    }
 
     // Handle authentication - in non-interactive mode, use provided flags
     if (force) {
@@ -137,18 +147,17 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       // OAuth
       if (this.flags['client-id']) {
         config.clientId = this.flags['client-id'];
-        if (!this.flags['client-secret']) {
-          this.error('Client secret is required when client ID is provided in non-interactive mode.');
+        if (this.flags['client-secret']) {
+          config.clientSecret = this.flags['client-secret'];
         }
-        config.clientSecret = this.flags['client-secret'];
       }
     } else {
       // Interactive mode - prompt for auth type and credentials
       const authType = await select<AuthType>({
         message: 'Configure authentication:',
         choices: [
-          {name: 'Basic (username/password)', value: 'basic'},
-          {name: 'OAuth (client credentials)', value: 'oauth'},
+          {name: 'WebDAV (username/password or access key)', value: 'basic'},
+          {name: 'API Client (OAuth client credentials)', value: 'oauth'},
           {name: 'Both', value: 'both'},
           {name: 'Skip for now', value: 'none'},
         ],
@@ -163,11 +172,12 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
             validate: (v) => (v.trim() ? true : 'Username is required'),
           }));
 
+        const accessKeyUrl = `https://${hostname}/on/demandware.store/Sites-Site/default/ViewAccessKeys-List`;
         config.password =
           this.flags.password ||
           (await password({
-            message: 'Enter WebDAV password:',
-            validate: (v) => (v.trim() ? true : 'Password is required'),
+            message: `Enter WebDAV password or access key (${accessKeyUrl}):`,
+            validate: (v) => (v.trim() ? true : 'Password or access key is required'),
           }));
       }
 
@@ -180,12 +190,45 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
             validate: (v) => (v.trim() ? true : 'Client ID is required'),
           }));
 
-        config.clientSecret =
+        const clientSecret =
           this.flags['client-secret'] ||
           (await password({
-            message: 'Enter OAuth client secret:',
-            validate: (v) => (v.trim() ? true : 'Client secret is required'),
+            message: 'Enter OAuth client secret (leave blank for user auth):',
           }));
+
+        if (clientSecret.trim()) {
+          config.clientSecret = clientSecret.trim();
+        }
+      }
+    }
+
+    // Code version - use flag, or try to detect via OCAPI if OAuth credentials are available
+    if (this.flags['code-version']) {
+      config.codeVersion = this.flags['code-version'];
+    } else if (!force) {
+      let detectedVersion: string | undefined;
+
+      if (config.clientId) {
+        try {
+          const tempInstance = createInstanceFromConfig({
+            hostname,
+            clientId: config.clientId,
+            clientSecret: config.clientSecret,
+          });
+          const activeVersion = await getActiveCodeVersion(tempInstance);
+          detectedVersion = activeVersion?.id;
+        } catch {
+          // Detection failed - continue without a default
+        }
+      }
+
+      const codeVersion = await input({
+        message: 'Enter code version:',
+        default: detectedVersion,
+      });
+
+      if (codeVersion.trim()) {
+        config.codeVersion = codeVersion.trim();
       }
     }
 
