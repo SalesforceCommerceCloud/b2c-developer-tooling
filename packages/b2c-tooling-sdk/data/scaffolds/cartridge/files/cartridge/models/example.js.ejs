@@ -1,0 +1,14 @@
+'use strict';
+
+/**
+ * Example model for <%= cartridgeName %>
+ * @param {Object} data - The input data
+ * @constructor
+ */
+function ExampleModel(data) {
+    this.id = data.id || null;
+    this.name = data.name || '';
+    this.description = data.description || '';
+}
+
+module.exports = ExampleModel;

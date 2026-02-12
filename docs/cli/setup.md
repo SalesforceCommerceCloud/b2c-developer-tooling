@@ -10,6 +10,8 @@ Commands for viewing configuration and setting up the development environment.
 
 Display the resolved configuration from all sources, showing which values are set and where they came from. Useful for debugging configuration issues.
 
+**Alias:** `b2c setup config`
+
 ### Usage
 
 ```bash

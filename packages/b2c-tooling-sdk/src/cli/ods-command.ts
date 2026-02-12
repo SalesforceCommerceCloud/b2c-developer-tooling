@@ -5,8 +5,10 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
+import {loadConfig, extractOdsFlags} from './config.js';
+import type {ResolvedB2CConfig} from '../config/index.js';
 import {createOdsClient, type OdsClient} from '../clients/ods.js';
-import {DEFAULT_ODS_HOST} from '../defaults.js';
+import {DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from '../defaults.js';
 import {isUuid, parseFriendlySandboxId, SandboxNotFoundError} from '../operations/ods/sandbox-lookup.js';
 
 /**
@@ -31,15 +33,26 @@ import {isUuid, parseFriendlySandboxId, SandboxNotFoundError} from '../operation
  * }
  */
 export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<T> {
+  protected override getDefaultClientId(): string {
+    return DEFAULT_PUBLIC_CLIENT_ID;
+  }
+
   static baseFlags = {
     ...OAuthCommand.baseFlags,
     'sandbox-api-host': Flags.string({
-      description: 'ODS API hostname',
+      description: `ODS API hostname (default: ${DEFAULT_ODS_HOST})`,
       env: 'SFCC_SANDBOX_API_HOST',
-      default: DEFAULT_ODS_HOST,
       // helpGroup: 'ODS',
     }),
   };
+
+  protected override loadConfiguration(): ResolvedB2CConfig {
+    return loadConfig(
+      extractOdsFlags(this.flags as Record<string, unknown>),
+      this.getBaseConfigOptions(),
+      this.getPluginSources(),
+    );
+  }
 
   private _odsClient?: OdsClient;
 
@@ -81,7 +94,7 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
    * Gets the configured ODS API host.
    */
   protected get odsHost(): string {
-    return this.flags['sandbox-api-host'] ?? DEFAULT_ODS_HOST;
+    return this.resolvedConfig?.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
   }
 
   /**

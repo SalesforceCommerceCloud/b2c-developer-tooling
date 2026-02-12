@@ -41,17 +41,13 @@ describe('cli/ods-command', () => {
   });
 
   describe('odsClient', () => {
-    it('throws error when no OAuth credentials', async () => {
+    it('creates client using default public client ID when no explicit credentials', async () => {
       stubParse(command);
 
       await command.init();
-      try {
-        // Accessing odsClient getter will try to create client
-        command.testOdsClient();
-        expect.fail('Should have thrown');
-      } catch (error) {
-        expect(error).to.be.an('error');
-      }
+      // OdsCommand has a default client ID, so odsClient should not throw
+      const client = command.testOdsClient();
+      expect(client).to.exist;
     });
 
     it('creates ODS client lazily', async () => {

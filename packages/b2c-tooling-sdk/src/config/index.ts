@@ -115,7 +115,7 @@ export type {
 } from './types.js';
 
 // Instance creation utility (public API for CLI commands)
-export {createInstanceFromConfig} from './mapping.js';
+export {createInstanceFromConfig, normalizeConfigKeys} from './mapping.js';
 
 // Low-level dw.json API (still available for advanced use)
 export {

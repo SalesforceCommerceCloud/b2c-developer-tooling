@@ -88,7 +88,7 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 
 ## Documentation
 
-- Update docs in `./docs/` folder and relevant skills in `./plugins/b2c-cli/skills/` when updating or adding CLI commands.
+- Update docs in `./docs/` folder and relevant skills in `./skills/b2c-cli/skills/` when updating or adding CLI commands.
 
 See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
@@ -112,7 +112,7 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 
 ## Claude Code Skills
 
-**User-facing skills** (for CLI users): `./plugins/b2c-cli/skills/` - update when modifying CLI commands.
+**User-facing skills** (for CLI users): `./skills/b2c-cli/skills/` - update when modifying CLI commands.
 
 **Developer skills** (for contributors): `./.claude/skills/` - covers:
 - [CLI command development](./.claude/skills/cli-command-development/SKILL.md) - oclif commands, flags, table output
@@ -121,17 +121,33 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 - [Testing](./.claude/skills/testing/SKILL.md) - Mocha, Chai, MSW patterns
 - [Documentation](./.claude/skills/documentation/SKILL.md) - user guides, CLI reference, API docs
 
+## Pre-Commit Checks
+
+Before committing code, always run lint to catch formatting and style issues:
+
+```bash
+pnpm run lint:agent
+```
+
+This catches prettier formatting, import ordering, class member ordering (`perfectionist/sort-classes`), and other issues that will fail CI.
+
 ## Testing
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
 
 ## Changesets
 
-This project uses [Changesets](https://github.com/changesets/changesets) for version management. When making changes that affect users, create a changeset:
+This project uses [Changesets](https://github.com/changesets/changesets) for version management with **independent per-package versioning**. Each package versions independently based on its own changesets.
+
+**How it works:**
+- A changeset affecting only the SDK bumps only the SDK version
+- Packages that depend on a bumped package get an automatic patch bump (via `updateInternalDependencies: "patch"`) — e.g., if SDK bumps, CLI and MCP auto-get a patch bump because they depend on it
+- Only packages with a newer version than what's on npm get published
 
 Changeset guidelines:
-- Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests; 
+- Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests
 - a pull request can have multiple changesets; separate files for separate changes
+- Only list directly-changed packages in changeset frontmatter — do not include dependent packages (they get auto-bumped)
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - This is a pre-1.0 preview release, so there are no `major` breaking change bumps yet
 - Good changesets explain:
@@ -151,4 +167,4 @@ create a changeset file directly in `.changeset/` with a unique filename (e.g., 
 Description of the change explaining WHAT, WHY, and HOW to update
 ```
 
-- Include only the packages that were modified
+- Include only the packages that were directly modified

@@ -30,3 +30,4 @@ dw.json
 dw.json*
 .env
 .config/wt.toml
+.b2c/

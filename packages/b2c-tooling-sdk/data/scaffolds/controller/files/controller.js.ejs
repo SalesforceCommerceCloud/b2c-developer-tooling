@@ -1,0 +1,134 @@
+'use strict';
+
+/**
+ * <%= controllerName %> Controller
+ *
+ * @module controllers/<%= controllerName %>
+ */
+
+var server = require('server');
+<% if (useMiddleware) { %>
+var cache = require('*/cartridge/scripts/middleware/cache');
+var consentTracking = require('*/cartridge/scripts/middleware/consentTracking');
+var pageMetaData = require('*/cartridge/scripts/middleware/pageMetaData');
+<% } %>
+
+<% if (routes.includes('Show')) { %>
+/**
+ * <%= controllerName %>-Show : Renders the <%= controllerName.toLowerCase() %> page
+ * @name <%= controllerName %>-Show
+ * @function
+ * @memberof <%= controllerName %>
+<% if (useMiddleware) { %> * @param {middleware} - server.middleware.https
+ * @param {middleware} - consentTracking.consent
+ * @param {middleware} - cache.applyDefaultCache<% } %>
+ * @param {category} - sensitive
+ * @param {renders} - isml
+ * @param {serverfunction} - get
+ */
+server.get(
+    'Show',
+<% if (useMiddleware) { %>    server.middleware.https,
+    consentTracking.consent,
+    cache.applyDefaultCache,
+<% } %>    function (req, res, next) {
+        var viewData = {
+            title: '<%= controllerName %>',
+            message: 'Hello from <%= controllerName %>!'
+        };
+
+        res.render('<%= kebabCase(controllerName) %>/show', viewData);
+        next();
+    }
+);
+<% if (useMiddleware) { %>
+server.append('Show', pageMetaData.computedPageMetaData);
+<% } %>
+<% } %>
+<% if (routes.includes('Submit')) { %>
+/**
+ * <%= controllerName %>-Submit : Handles form submission for <%= controllerName.toLowerCase() %>
+ * @name <%= controllerName %>-Submit
+ * @function
+ * @memberof <%= controllerName %>
+<% if (useMiddleware) { %> * @param {middleware} - server.middleware.https<% } %>
+ * @param {httpparameter} - csrf_token - CSRF token
+ * @param {category} - sensitive
+ * @param {returns} - json
+ * @param {serverfunction} - post
+ */
+server.post(
+    'Submit',
+<% if (useMiddleware) { %>    server.middleware.https,
+<% } %>    function (req, res, next) {
+        var form = req.form;
+
+        // TODO: Process form data
+        var result = {
+            success: true,
+            message: 'Form submitted successfully'
+        };
+
+        res.json(result);
+        next();
+    }
+);
+<% } %>
+<% if (routes.includes('JSON')) { %>
+/**
+ * <%= controllerName %>-JSON : Returns JSON data for <%= controllerName.toLowerCase() %>
+ * @name <%= controllerName %>-JSON
+ * @function
+ * @memberof <%= controllerName %>
+<% if (useMiddleware) { %> * @param {middleware} - cache.applyDefaultCache<% } %>
+ * @param {category} - non-sensitive
+ * @param {returns} - json
+ * @param {serverfunction} - get
+ */
+server.get(
+    'JSON',
+<% if (useMiddleware) { %>    cache.applyDefaultCache,
+<% } %>    function (req, res, next) {
+        var data = {
+            success: true,
+            data: {
+                // TODO: Add your data here
+            }
+        };
+
+        res.json(data);
+        next();
+    }
+);
+<% } %>
+<% if (routes.includes('SubmitJSON')) { %>
+/**
+ * <%= controllerName %>-SubmitJSON : Handles AJAX form submission for <%= controllerName.toLowerCase() %>
+ * @name <%= controllerName %>-SubmitJSON
+ * @function
+ * @memberof <%= controllerName %>
+<% if (useMiddleware) { %> * @param {middleware} - server.middleware.https<% } %>
+ * @param {httpparameter} - csrf_token - CSRF token
+ * @param {category} - sensitive
+ * @param {returns} - json
+ * @param {serverfunction} - post
+ */
+server.post(
+    'SubmitJSON',
+<% if (useMiddleware) { %>    server.middleware.https,
+<% } %>    function (req, res, next) {
+        var form = req.form;
+
+        // TODO: Validate and process form data
+        var result = {
+            success: true,
+            redirectUrl: null
+        };
+
+        res.json(result);
+        next();
+    }
+);
+<% } %>
+
+module.exports = server.exports();

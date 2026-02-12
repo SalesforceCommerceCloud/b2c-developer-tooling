@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
+
 jobs:
   release:
     runs-on: ubuntu-latest

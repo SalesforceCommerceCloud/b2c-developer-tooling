@@ -120,11 +120,17 @@ export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
 
 export {
   createAuthMiddleware,
+  createRateLimitMiddleware,
   createLoggingMiddleware,
   createExtraParamsMiddleware,
   createUserAgentMiddleware,
 } from './middleware.js';
-export type {ExtraParamsConfig, LoggingMiddlewareConfig, UserAgentConfig} from './middleware.js';
+export type {
+  ExtraParamsConfig,
+  LoggingMiddlewareConfig,
+  UserAgentConfig,
+  RateLimitMiddlewareConfig,
+} from './middleware.js';
 
 // User-Agent provider (auto-registers on import)
 export {setUserAgent, getUserAgent, resetUserAgent, userAgentProvider} from './user-agent.js';
@@ -203,6 +209,61 @@ export type {
   paths as ScapiSchemasPaths,
   components as ScapiSchemasComponents,
 } from './scapi-schemas.js';
+
+export {
+  createAccountManagerClient,
+  createAccountManagerUsersClient,
+  getUser,
+  listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  purgeUser,
+  resetUser,
+  findUserByLogin,
+  mapToInternalRole,
+  mapFromInternalRole,
+  ROLE_NAMES_MAP,
+  ROLE_NAMES_MAP_REVERSE,
+  createAccountManagerRolesClient,
+  getRole,
+  listRoles,
+  createAccountManagerApiClientsClient,
+  createAccountManagerOrgsClient,
+  isValidRoleTenantFilter,
+  ROLE_TENANT_FILTER_PATTERN,
+} from './am-api.js';
+export type {
+  AccountManagerClient,
+  AccountManagerClientConfig,
+  AccountManagerUsersClient,
+  AccountManagerUser,
+  AccountManagerResponse,
+  AccountManagerError,
+  UserExpandOption,
+  UserCreate,
+  UserUpdate,
+  UserCollection,
+  UserState,
+  ListUsersOptions,
+  AccountManagerRolesClient,
+  AccountManagerRole,
+  AccountManagerRolesResponse,
+  AccountManagerRolesError,
+  RoleCollection,
+  ListRolesOptions,
+  AccountManagerApiClientsClient,
+  AccountManagerApiClient,
+  APIClientCreate,
+  APIClientUpdate,
+  APIClientCollection,
+  ApiClientExpandOption,
+  ListApiClientsOptions,
+  AccountManagerOrgsClient,
+  AccountManagerOrganization,
+  OrganizationCollection,
+  ListOrgsOptions,
+} from './am-api.js';
 
 export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
 export type {

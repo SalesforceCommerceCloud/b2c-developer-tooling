@@ -10,6 +10,7 @@ export function stubParse(
   command: unknown,
   flags: Record<string, unknown> = {},
   args: Record<string, unknown> = {},
+  argv: string[] = [],
 ): SinonStub {
   // Include silent log level by default to reduce test output noise
   const defaultFlags = {'log-level': 'silent'};
@@ -17,7 +18,7 @@ export function stubParse(
     args,
     flags: {...defaultFlags, ...flags},
     metadata: {},
-    argv: [],
+    argv,
     raw: [],
     nonExistentFlags: {},
   });

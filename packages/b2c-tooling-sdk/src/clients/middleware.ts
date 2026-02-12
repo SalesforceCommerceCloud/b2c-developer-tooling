@@ -38,23 +38,351 @@ function headersToObject(headers: Headers): Record<string, string> {
   return result;
 }
 
+// Track which requests have been retried to prevent infinite loops
+const retriedRequests = new WeakSet<Request>();
+
+// Store cloned request bodies for potential retry (body can only be read once)
+const requestBodies = new WeakMap<Request, ArrayBuffer | null>();
+
 /**
  * Creates authentication middleware for openapi-fetch.
  *
  * This middleware intercepts requests and adds OAuth authentication headers
- * using the provided AuthStrategy.
+ * using the provided AuthStrategy. It also handles 401 responses by invalidating
+ * the token and retrying the request once with a fresh token.
  *
  * @param auth - The authentication strategy to use
- * @returns Middleware that adds auth headers to requests
+ * @returns Middleware that adds auth headers to requests and retries on 401
  */
 export function createAuthMiddleware(auth: AuthStrategy): Middleware {
+  const logger = getLogger();
+  let hasHadSuccess = false;
+
   return {
     async onRequest({request}) {
       if (auth.getAuthorizationHeader) {
         const authHeader = await auth.getAuthorizationHeader();
         request.headers.set('Authorization', authHeader);
       }
+
+      // Clone the request body before it gets consumed, so we can retry if needed
+      if (request.body && auth.invalidateToken && auth.getAuthorizationHeader) {
+        const clonedRequest = request.clone();
+        const bodyBuffer = await clonedRequest.arrayBuffer();
+        requestBodies.set(request, bodyBuffer);
+      }
+
       return request;
+    },
+
+    async onResponse({request, response}) {
+      if (response.status !== 401) {
+        hasHadSuccess = true;
+      }
+
+      // Only retry on 401 if we have had a prior successful response (indicating
+      // token expiry rather than bad credentials), haven't already retried this
+      // request, and the strategy supports token invalidation
+      if (
+        response.status === 401 &&
+        hasHadSuccess &&
+        !retriedRequests.has(request) &&
+        auth.invalidateToken &&
+        auth.getAuthorizationHeader
+      ) {
+        logger.debug('[AuthMiddleware] Received 401, invalidating token and retrying');
+
+        // Mark this request as retried to prevent infinite loops
+        retriedRequests.add(request);
+
+        // Invalidate the cached token
+        auth.invalidateToken();
+
+        // Get a fresh token
+        const newAuthHeader = await auth.getAuthorizationHeader();
+
+        // Rebuild the request with the new auth header
+        const newHeaders = new Headers(request.headers);
+        newHeaders.set('Authorization', newAuthHeader);
+
+        // Get the saved body (if any)
+        const savedBody = requestBodies.get(request);
+
+        // Create a new request with the fresh token
+        const retryRequest = new Request(request.url, {
+          method: request.method,
+          headers: newHeaders,
+          body: savedBody,
+          // TypeScript doesn't know about duplex, but it's needed for streaming bodies
+          ...(savedBody ? {duplex: 'half'} : {}),
+        } as RequestInit);
+
+        // Retry the request
+        const retryResponse = await fetch(retryRequest);
+
+        logger.debug({status: retryResponse.status}, `[AuthMiddleware] Retry response: ${retryResponse.status}`);
+
+        return retryResponse;
+      }
+
+      return response;
+    },
+  };
+}
+
+/**
+ * Configuration for rate limiting middleware.
+ */
+export interface RateLimitMiddlewareConfig {
+  /**
+   * Maximum number of retry attempts when a rate limit response is received.
+   * Defaults to 3.
+   */
+  maxRetries?: number;
+
+  /**
+   * Base delay in milliseconds used for exponential backoff when no Retry-After
+   * header is present. Defaults to 1000ms.
+   */
+  baseDelayMs?: number;
+
+  /**
+   * Maximum delay in milliseconds between retries. Defaults to 30000ms.
+   */
+  maxDelayMs?: number;
+
+  /**
+   * HTTP status codes that should trigger rate limit handling.
+   * Defaults to [429]. 503 is often used for overload, but is not included
+   * by default to avoid surprising retries for maintenance windows.
+   */
+  statusCodes?: number[];
+
+  /**
+   * Optional log prefix (e.g., 'MRT') used in log messages.
+   */
+  prefix?: string;
+
+  /**
+   * Optional fetch implementation used for retries when the middleware context
+   * does not provide a re-dispatch helper.
+   */
+  fetch?: (request: Request) => Promise<Response>;
+}
+
+const DEFAULT_RATE_LIMIT_MAX_RETRIES = 3;
+const DEFAULT_RATE_LIMIT_BASE_DELAY_MS = 1000;
+const DEFAULT_RATE_LIMIT_MAX_DELAY_MS = 30000;
+const DEFAULT_RATE_LIMIT_STATUS_CODES = [429];
+const DEFAULT_RATE_LIMIT_JITTER_RATIO = 0.2;
+
+async function sleepWithAbort(ms: number, signal?: AbortSignal): Promise<boolean> {
+  if (ms <= 0) {
+    return true;
+  }
+
+  if (signal?.aborted) {
+    return false;
+  }
+
+  await new Promise<void>((resolve) => {
+    function onAbort() {
+      clearTimeout(timeout);
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }
+
+    const timeout = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+
+    signal?.addEventListener('abort', onAbort);
+  });
+
+  return !signal?.aborted;
+}
+
+/**
+ * Parses the Retry-After header into a delay in milliseconds.
+ * Supports both seconds and HTTP date formats. Returns undefined if
+ * the header is missing or invalid.
+ */
+function parseRetryAfter(headerValue: string | null): number | undefined {
+  if (!headerValue) {
+    return undefined;
+  }
+
+  const seconds = Number(headerValue);
+  if (!Number.isNaN(seconds)) {
+    return Math.max(0, Math.round(seconds * 1000));
+  }
+
+  const dateMs = Date.parse(headerValue);
+  if (!Number.isNaN(dateMs)) {
+    const diff = dateMs - Date.now();
+    return diff > 0 ? diff : 0;
+  }
+
+  return undefined;
+}
+
+/**
+ * Returns the next backoff delay based on attempt count.
+ */
+function computeBackoffDelayMs(attempt: number, baseDelayMs: number, maxDelayMs: number): number {
+  const delay = baseDelayMs * Math.pow(2, Math.max(0, attempt));
+  if (delay <= 0) {
+    return 0;
+  }
+
+  const jitter = Math.round(delay * DEFAULT_RATE_LIMIT_JITTER_RATIO * Math.random());
+  return Math.min(delay + jitter, maxDelayMs);
+}
+
+/**
+ * Creates rate limiting middleware for openapi-fetch clients.
+ *
+ * This middleware inspects responses for rate-limit status codes (by default
+ * 429 Too Many Requests), uses the Retry-After header when present to
+ * determine a delay, and retries the request up to a configurable limit.
+ *
+ * The middleware is generic and can be used by MRT and other clients. It does
+ * not currently read CLI configuration directly; callers should pass
+ * configuration via the factory function.
+ */
+export function createRateLimitMiddleware(config: RateLimitMiddlewareConfig = {}): Middleware {
+  const logger = getLogger();
+  const {
+    maxRetries = DEFAULT_RATE_LIMIT_MAX_RETRIES,
+    baseDelayMs = DEFAULT_RATE_LIMIT_BASE_DELAY_MS,
+    maxDelayMs = DEFAULT_RATE_LIMIT_MAX_DELAY_MS,
+    statusCodes = DEFAULT_RATE_LIMIT_STATUS_CODES,
+    prefix,
+    fetch: configFetch,
+  } = config;
+
+  const tag = prefix ? `[${prefix} RATE]` : '[RATE]';
+
+  return {
+    async onResponse(ctx) {
+      const {request, response} = ctx;
+      const ctxFetch = (ctx as {fetch?: (request: Request) => Promise<Response>}).fetch;
+      // Only handle configured status codes
+      if (!statusCodes.includes(response.status) || maxRetries <= 0) {
+        return response;
+      }
+
+      const fetchFn: ((request: Request) => Promise<Response>) | undefined =
+        ctxFetch ?? configFetch ?? (typeof fetch === 'function' ? fetch : undefined);
+
+      if (!fetchFn) {
+        return response;
+      }
+
+      const reqWithAttempt = request as Request & {_rateLimitAttempt?: number};
+      const startingAttempt = reqWithAttempt._rateLimitAttempt ?? 0;
+
+      // If openapi-fetch provides ctx.fetch, it typically re-enters the middleware chain.
+      // In that case, do a single retry and let subsequent attempts be handled by
+      // subsequent middleware invocations (guarded by _rateLimitAttempt).
+      if (ctxFetch) {
+        if (startingAttempt >= maxRetries) {
+          logger.debug(
+            {status: response.status, attempt: startingAttempt, maxRetries},
+            `${tag} Max retries reached, not retrying request`,
+          );
+          return response;
+        }
+
+        const retryAfterHeader = response.headers.get('Retry-After');
+        let delayMs = parseRetryAfter(retryAfterHeader);
+
+        if (delayMs === undefined) {
+          delayMs = computeBackoffDelayMs(startingAttempt, baseDelayMs, maxDelayMs);
+        }
+
+        logger.warn(
+          {
+            status: response.status,
+            attempt: startingAttempt + 1,
+            maxRetries,
+            delayMs,
+            retryAfter: retryAfterHeader ?? undefined,
+            url: request.url,
+          },
+          `${tag} Rate limit encountered, retrying request after ${delayMs}ms (attempt ${
+            startingAttempt + 1
+          }/${maxRetries})`,
+        );
+
+        const canRetry = await sleepWithAbort(delayMs, request.signal);
+        if (!canRetry) {
+          return response;
+        }
+
+        reqWithAttempt._rateLimitAttempt = startingAttempt + 1;
+
+        let retryRequest = request;
+        try {
+          retryRequest = request.clone();
+        } catch {
+          logger.debug({url: request.url}, `${tag} Could not clone request for retry; retrying with original request`);
+        }
+
+        return fetchFn(retryRequest);
+      }
+
+      // Fallback path: if ctx.fetch is not provided, handle retries in this invocation.
+      let lastResponse = response;
+      let attempt = startingAttempt;
+
+      while (statusCodes.includes(lastResponse.status) && attempt < maxRetries) {
+        const retryAfterHeader = lastResponse.headers.get('Retry-After');
+        let delayMs = parseRetryAfter(retryAfterHeader);
+
+        if (delayMs === undefined) {
+          delayMs = computeBackoffDelayMs(attempt, baseDelayMs, maxDelayMs);
+        }
+
+        logger.warn(
+          {
+            status: lastResponse.status,
+            attempt: attempt + 1,
+            maxRetries,
+            delayMs,
+            retryAfter: retryAfterHeader ?? undefined,
+            url: request.url,
+          },
+          `${tag} Rate limit encountered, retrying request after ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`,
+        );
+
+        const canRetry = await sleepWithAbort(delayMs, request.signal);
+        if (!canRetry) {
+          return lastResponse;
+        }
+
+        attempt += 1;
+        reqWithAttempt._rateLimitAttempt = attempt;
+
+        let retryRequest = request;
+        try {
+          retryRequest = request.clone();
+        } catch {
+          logger.debug({url: request.url}, `${tag} Could not clone request for retry; retrying with original request`);
+        }
+
+        lastResponse = await fetchFn(retryRequest);
+      }
+
+      if (statusCodes.includes(lastResponse.status) && attempt >= maxRetries) {
+        logger.debug(
+          {status: lastResponse.status, attempt, maxRetries},
+          `${tag} Max retries reached, not retrying request`,
+        );
+      }
+
+      return lastResponse;
     },
   };
 }

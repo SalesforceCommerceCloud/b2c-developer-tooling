@@ -20,6 +20,13 @@
  * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
  * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
  *
+ * ### Environment Variables for Telemetry
+ * | Env Variable | Description |
+ * |--------------|-------------|
+ * | `SF_DISABLE_TELEMETRY` | Set to `true` to disable telemetry (sf CLI standard) |
+ * | `SFCC_DISABLE_TELEMETRY` | Set to `true` to disable telemetry |
+ * | `SFCC_APP_INSIGHTS_KEY` | Override connection string from package.json |
+ *
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
  * |------|--------------|-------------|
@@ -152,6 +159,7 @@ import {TOOLSETS, type StartupFlags} from '../utils/index.js';
  * - Global flags for config, logging, and debugging
  * - Structured pino logging via `this.logger`
  * - Automatic dw.json loading via `this.resolvedConfig`
+ * - Automatic telemetry initialization via `this.telemetry`
  * - `this.config` - package.json metadata and standard config paths
  */
 export default class McpServerCommand extends BaseCommand<typeof McpServerCommand> {
@@ -211,6 +219,32 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     }),
   };
 
+  /** Signal that triggered shutdown (if any) - used to exit process after finally() */
+  private shutdownSignal?: string;
+
+  /** Promise that resolves when stdin closes (MCP client disconnects) */
+  private stdinClosePromise?: Promise<void>;
+
+  /**
+   * Override finally() to wait for stdin close before stopping telemetry.
+   * This ensures SERVER_STOPPED is sent before telemetry.stop() is called.
+   */
+  protected async finally(err: Error | undefined): Promise<void> {
+    // Wait for stdin to close and SERVER_STOPPED to be sent
+    // This keeps the command "running" until the MCP client disconnects
+    await this.stdinClosePromise;
+
+    // Now call super.finally() which sends COMMAND_SUCCESS and stops telemetry
+    await super.finally(err);
+
+    // Exit process if shutdown was triggered by a signal (SIGINT/SIGTERM)
+    // Catching these signals prevents Node's default exit behavior
+    if (this.shutdownSignal === 'SIGINT' || this.shutdownSignal === 'SIGTERM') {
+      // eslint-disable-next-line n/no-process-exit, unicorn/no-process-exit
+      process.exit(0);
+    }
+  }
+
   /**
    * Loads configuration from flags, environment variables, and config files.
    *
@@ -247,13 +281,13 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * Main entry point - starts the MCP server.
    *
    * Execution flow:
-   * 1. BaseCommand.init() parses flags and loads config
+   * 1. BaseCommand.init() parses flags, loads config, and initializes telemetry
    * 2. Filter and validate toolsets (invalid ones are skipped with warning)
-   * 3. Create B2CDxMcpServer instance
+   * 3. Create B2CDxMcpServer instance with telemetry from BaseCommand
    * 4. Create Services via Services.fromResolvedConfig() using already-resolved config
    * 5. Register tools based on --toolsets and --tools flags
    * 6. Connect to stdio transport (JSON-RPC over stdin/stdout)
-   * 7. Log startup message to stderr
+   * 7. Log startup message via structured logger
    *
    * @throws Never throws - invalid toolsets are filtered, not rejected
    *
@@ -261,6 +295,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * - `this.flags` - Parsed flags including global flags (config, debug, log-level, etc.)
    * - `this.resolvedConfig` - Loaded dw.json configuration
    * - `this.logger` - Structured pino logger
+   * - `this.telemetry` - Telemetry instance (auto-initialized from package.json config)
    *
    * oclif provides standard config paths via `this.config`:
    * - `this.config.configDir` - User config (~/.config/b2c-dx-mcp)
@@ -281,21 +316,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       workingDirectory: this.flags['working-directory'],
     };
 
-    // TODO: Telemetry - Initialize telemetry unless disabled
-    // if (!flags["no-telemetry"]) {
-    //   telemetry = new Telemetry({
-    //     toolsets: (startupFlags.toolsets ?? []).join(", "),
-    //     configDir,
-    //     version: this.config.version,
-    //   });
-    //   await telemetry.start();
-    //   process.stdin.on("close", (err) => {
-    //     telemetry?.sendEvent(err ? "SERVER_STOPPED_ERROR" : "SERVER_STOPPED_SUCCESS");
-    //     telemetry?.stop();
-    //   });
-    // }
+    // Add toolsets to telemetry attributes
+    if (this.telemetry && startupFlags.toolsets) {
+      this.telemetry.addAttributes({toolsets: startupFlags.toolsets.join(', ')});
+    }
 
-    // Create MCP server
+    // Create MCP server with telemetry from BaseCommand
     const server = new B2CDxMcpServer(
       {
         name: this.config.name,
@@ -306,6 +332,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
           resources: {},
           tools: {},
         },
+        telemetry: this.telemetry,
       },
     );
 
@@ -319,7 +346,28 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    // Log startup message using the structured logger
+    // Create promise that resolves when server stops (stdin close or signal)
+    // This allows finally() to wait for SERVER_STOPPED before stopping telemetry
+    this.stdinClosePromise = new Promise((resolve) => {
+      const sendStopAndResolve = (signal: string): void => {
+        this.shutdownSignal = signal;
+        this.telemetry?.sendEvent('SERVER_STOPPED', {signal});
+        // Flush telemetry before resolving to ensure SERVER_STOPPED is sent
+        // before finally() proceeds to stop telemetry
+        const flushPromise = this.telemetry?.flush() ?? Promise.resolve();
+        flushPromise.then(() => resolve()).catch(() => resolve());
+      };
+
+      // Handle stdin close (MCP client disconnects normally)
+      process.stdin.on('close', () => sendStopAndResolve('stdin_close'));
+
+      // Handle Ctrl+C
+      process.on('SIGINT', () => sendStopAndResolve('SIGINT'));
+
+      // Handle kill signal
+      process.on('SIGTERM', () => sendStopAndResolve('SIGTERM'));
+    });
+
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
   }
 }

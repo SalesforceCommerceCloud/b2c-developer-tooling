@@ -1,0 +1,83 @@
+{
+  "name": "service",
+  "displayName": "B2C Service",
+  "description": "Create a B2C Commerce web service using LocalServiceRegistry",
+  "category": "cartridge",
+  "parameters": [
+    {
+      "name": "serviceName",
+      "prompt": "What is the service name?",
+      "type": "string",
+      "required": true,
+      "pattern": "^[A-Z][a-zA-Z0-9]*$",
+      "validationMessage": "Service name must be PascalCase (e.g., ProductAPI, OrderSync)"
+    },
+    {
+      "name": "cartridgeName",
+      "prompt": "Which cartridge should contain this service?",
+      "type": "string",
+      "required": true,
+      "source": "cartridges",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "validationMessage": "Cartridge name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores"
+    },
+    {
+      "name": "serviceType",
+      "prompt": "What type of service?",
+      "type": "choice",
+      "required": true,
+      "choices": [
+        { "value": "HTTP", "label": "HTTP (REST API calls)" },
+        { "value": "SOAP", "label": "SOAP (WSDL-based web services)" },
+        { "value": "SFTP", "label": "SFTP (Secure file transfers)" }
+      ],
+      "default": "HTTP"
+    },
+    {
+      "name": "authType",
+      "prompt": "What authentication method?",
+      "type": "choice",
+      "required": false,
+      "choices": [
+        { "value": "NONE", "label": "None (no authentication)" },
+        { "value": "BASIC", "label": "Basic (username/password)" },
+        { "value": "BEARER", "label": "Bearer Token (OAuth/JWT)" },
+        { "value": "API_KEY", "label": "API Key (header-based)" }
+      ],
+      "default": "NONE",
+      "condition": "serviceType=HTTP"
+    },
+    {
+      "name": "includeErrorHandling",
+      "prompt": "Include robust error handling pattern?",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "includeMocking",
+      "prompt": "Include mock callback for testing?",
+      "type": "boolean",
+      "required": false,
+      "default": false
+    }
+  ],
+  "files": [
+    {
+      "template": "service-http.js.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/scripts/services/{{serviceName}}Service.js",
+      "condition": "serviceType=HTTP"
+    },
+    {
+      "template": "service-soap.js.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/scripts/services/{{serviceName}}Service.js",
+      "condition": "serviceType=SOAP"
+    },
+    {
+      "template": "service-sftp.js.ejs",
+      "destination": "{{cartridgeNamePath}}/cartridge/scripts/services/{{serviceName}}Service.js",
+      "condition": "serviceType=SFTP"
+    }
+  ],
+  "postInstructions": "Service '<%= serviceName %>Service' has been created in '<%= cartridgeName %>'.\n\nService Type: <%= serviceType %>\n<% if (serviceType === 'HTTP' && authType) { %>Authentication: <%= authType %>\n<% } %>\nNext steps:\n1. Configure the service in Business Manager:\n   - Go to Administration > Operations > Services\n   - Create a Service Configuration with ID: <%= cartridgeName %>.<%= serviceName.toLowerCase() %>\n   - Create a Service Credential with your endpoint URL<% if (serviceType === 'HTTP' && (authType === 'BASIC' || authType === 'API_KEY')) { %> and credentials<% } %>\n   - Create a Service Profile with timeout and rate limiting\n2. Deploy the cartridge to your instance\n3. Call the service:\n   var <%= serviceName %>Service = require('*/cartridge/scripts/services/<%= serviceName %>Service');\n   var result = <%= serviceName %>Service.call({ /* params */ });"
+}

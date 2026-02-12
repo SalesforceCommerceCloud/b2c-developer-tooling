@@ -1,0 +1,11 @@
+{
+  "endpoints": [
+<% if (includeExampleEndpoints) { %>
+    {"endpoint": "getHello", "schema": "schema.yaml", "implementation": "script"},
+    {"endpoint": "getItems", "schema": "schema.yaml", "implementation": "script"},
+    {"endpoint": "getItem", "schema": "schema.yaml", "implementation": "script"}
+<% } else { %>
+    {"endpoint": "getExample", "schema": "schema.yaml", "implementation": "script"}
+<% } %>
+  ]
+}

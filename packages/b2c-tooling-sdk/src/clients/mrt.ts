@@ -15,7 +15,7 @@
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './mrt.generated.js';
-import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
+import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 
 /**
@@ -171,6 +171,13 @@ export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): Mr
   for (const middleware of registry.getMiddleware('mrt')) {
     client.use(middleware);
   }
+
+  // Rate limiting middleware (retries on 429 using Retry-After/header-based backoff)
+  client.use(
+    createRateLimitMiddleware({
+      prefix: 'MRT',
+    }),
+  );
 
   // Logging middleware last (sees complete request with all modifications)
   client.use(

@@ -149,5 +149,47 @@ export const en = {
         ideNotes: 'See IDE documentation for skill configuration:',
       },
     },
+    scaffold: {
+      list: {
+        description: 'List available project scaffolds',
+        noScaffolds: 'No scaffolds found.',
+        foundScaffolds: 'Found {{count}} scaffold(s):',
+        error: 'Failed to list scaffolds: {{message}}',
+      },
+      generate: {
+        description: 'Generate files from a scaffold template',
+        scaffoldNotFound: 'Scaffold not found: {{id}}',
+        generating: 'Generating {{scaffold}} scaffold...',
+        dryRun: 'Dry run - no files will be written',
+        success: 'Successfully generated {{count}} file(s)',
+        skipped: 'Skipped {{count}} file(s)',
+        error: 'Failed to generate scaffold: {{message}}',
+        validationError: 'Invalid parameters: {{errors}}',
+      },
+      info: {
+        description: 'Show detailed information about a scaffold',
+        scaffoldNotFound: 'Scaffold not found: {{id}}',
+        error: 'Failed to get scaffold info: {{message}}',
+      },
+      index: {
+        description: 'Work with project scaffolds and templates',
+      },
+      search: {
+        description: 'Search for scaffolds by name, description, or tags',
+        noResults: 'No scaffolds found matching "{{query}}"',
+        foundScaffolds: 'Found {{count}} scaffold(s) matching "{{query}}":',
+        hint: 'Use "b2c scaffold info <id>" for more details',
+      },
+      init: {
+        description: 'Create a new custom scaffold template',
+        success: 'Scaffold "{{name}}" created successfully!',
+        alreadyExists: 'Scaffold already exists at {{path}}. Use --force to overwrite.',
+      },
+      validate: {
+        description: 'Validate a custom scaffold manifest and templates',
+        valid: 'Scaffold is valid.',
+        invalid: 'Validation failed',
+      },
+    },
   },
 };

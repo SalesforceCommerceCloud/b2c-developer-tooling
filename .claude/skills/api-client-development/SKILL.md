@@ -1,6 +1,8 @@
 ---
 name: api-client-development
 description: Creating API clients with OpenAPI specs, authentication, and OAuth scopes for SCAPI and similar APIs
+metadata:
+  internal: true
 ---
 
 # API Client Development

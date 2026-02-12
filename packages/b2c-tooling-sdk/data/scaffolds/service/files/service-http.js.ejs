@@ -1,0 +1,245 @@
+'use strict';
+
+/**
+ * <%= serviceName %> Service
+ *
+ * HTTP service for external API integration.
+ * Configure in Business Manager: Administration > Operations > Services
+ *
+ * Service ID: <%= cartridgeName %>.<%= serviceName.toLowerCase() %>
+ *
+ * @module scripts/services/<%= serviceName %>Service
+ */
+
+var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
+var Logger = require('dw/system/Logger');
+
+var log = Logger.getLogger('<%= serviceName %>Service', '<%= cartridgeName %>');
+
+/**
+ * Service ID - must match Business Manager configuration
+ * @type {string}
+ */
+var SERVICE_ID = '<%= cartridgeName %>.<%= serviceName.toLowerCase() %>';
+
+/**
+ * Create the <%= serviceName %> service instance
+ * @returns {dw.svc.HTTPService} The service instance
+ */
+function createService() {
+    return LocalServiceRegistry.createService(SERVICE_ID, {
+        /**
+         * Configure the HTTP request
+         * @param {dw.svc.HTTPService} svc - The service instance
+         * @param {Object} params - Parameters passed to service.call()
+         * @returns {string|null} Request body (null for GET/DELETE)
+         */
+        createRequest: function (svc, params) {
+            var method = params.method || 'GET';
+            svc.setRequestMethod(method);
+<% if (authType === 'BASIC') { %>
+            // Basic authentication - uses credentials from Business Manager
+            svc.setAuthentication('BASIC');
+<% } else if (authType === 'BEARER') { %>
+            // Bearer token authentication
+            svc.setAuthentication('NONE');
+            if (params.accessToken) {
+                svc.addHeader('Authorization', 'Bearer ' + params.accessToken);
+            }
+<% } else if (authType === 'API_KEY') { %>
+            // API key authentication - password field stores the API key
+            svc.setAuthentication('NONE');
+            var credential = svc.configuration.credential;
+            svc.addHeader('X-API-Key', credential.password);
+<% } else { %>
+            svc.setAuthentication('NONE');
+<% } %>
+
+            // Set headers
+            svc.addHeader('Accept', 'application/json');
+
+            // Append path to base URL if provided
+            if (params.path) {
+                svc.setURL(svc.URL + params.path);
+            }
+
+            // Add query parameters
+            if (params.queryParams) {
+                Object.keys(params.queryParams).forEach(function (key) {
+                    svc.addParam(key, String(params.queryParams[key]));
+                });
+            }
+
+            // Set request body for POST/PUT/PATCH
+            if (params.body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+                svc.addHeader('Content-Type', 'application/json');
+                return JSON.stringify(params.body);
+            }
+
+            return null;
+        },
+
+        /**
+         * Parse the HTTP response
+         * @param {dw.svc.HTTPService} svc - The service instance
+         * @param {dw.net.HTTPClient} client - The HTTP client with response
+         * @returns {Object} Parsed response
+         */
+        parseResponse: function (svc, client) {
+<% if (includeErrorHandling) { %>
+            var response = {
+                statusCode: client.statusCode,
+                success: client.statusCode >= 200 && client.statusCode < 300,
+                data: null,
+                errors: []
+            };
+
+            if (response.success) {
+                try {
+                    response.data = JSON.parse(client.text);
+                } catch (e) {
+                    response.data = client.text;
+                }
+            } else {
+                var errorBody = client.errorText || client.text;
+                try {
+                    var errorData = JSON.parse(errorBody);
+                    response.errors = errorData.errors || [errorData.message || errorData.error];
+                } catch (e) {
+                    response.errors = [errorBody || 'Unknown error (HTTP ' + client.statusCode + ')'];
+                }
+            }
+
+            return response;
+<% } else { %>
+            if (client.statusCode >= 200 && client.statusCode < 300) {
+                return JSON.parse(client.text);
+            }
+            return null;
+<% } %>
+        },
+<% if (includeMocking) { %>
+
+        /**
+         * Mock response for testing (when service is in mock mode)
+         * @param {dw.svc.HTTPService} svc - The service instance
+         * @param {Object} params - Parameters passed to service.call()
+         * @returns {Object} Mock response
+         */
+        mockCall: function (svc, params) {
+            log.info('<%= serviceName %>Service mock call with params: ' + JSON.stringify(params));
+            return {
+                statusCode: 200,
+                text: JSON.stringify({
+                    success: true,
+                    message: 'Mock response from <%= serviceName %>Service',
+                    requestedPath: params.path,
+                    timestamp: new Date().toISOString()
+                })
+            };
+        },
+<% } %>
+
+        /**
+         * Filter sensitive data from log messages (required for production)
+         * @param {string} msg - The message to filter
+         * @returns {string} Filtered message
+         */
+        filterLogMessage: function (msg) {
+<% if (authType === 'BASIC') { %>
+            // Filter Basic auth header
+            msg = msg.replace(/Authorization:\s*Basic\s+[^\r\n]+/gi, 'Authorization: Basic ***');
+<% } else if (authType === 'BEARER') { %>
+            // Filter Bearer token
+            msg = msg.replace(/Bearer\s+[^\s\r\n]+/gi, 'Bearer ***');
+<% } else if (authType === 'API_KEY') { %>
+            // Filter API key header
+            msg = msg.replace(/X-API-Key:\s*[^\r\n]+/gi, 'X-API-Key: ***');
+<% } %>
+            // Filter common sensitive fields in JSON
+            msg = msg.replace(/"(password|secret|token|api_key|apiKey)"\s*:\s*"[^"]+"/gi, '"$1":"***"');
+            return msg;
+        }
+    });
+}
+
+/**
+ * Get or create the service instance
+ * @returns {dw.svc.HTTPService} The service instance
+ */
+function getService() {
+    return createService();
+}
+
+/**
+ * Call the <%= serviceName %> service
+ *
+ * @param {Object} params - Request parameters
+ * @param {string} [params.method='GET'] - HTTP method (GET, POST, PUT, DELETE, PATCH)
+ * @param {string} [params.path] - Path to append to base URL
+ * @param {Object} [params.queryParams] - Query string parameters
+ * @param {Object} [params.body] - Request body (for POST/PUT/PATCH)
+<% if (authType === 'BEARER') { %>
+ * @param {string} [params.accessToken] - Bearer token for authentication
+<% } %>
+ * @returns {dw.svc.Result} Service result
+ *
+ * @example
+ * // GET request
+ * var result = <%= serviceName %>Service.call({ path: '/items/123' });
+ *
+ * @example
+ * // POST request
+ * var result = <%= serviceName %>Service.call({
+ *     method: 'POST',
+ *     path: '/items',
+ *     body: { name: 'New Item' }
+ * });
+ */
+function call(params) {
+    var service = getService();
+    var result = service.call(params || {});
+
+    if (!result.ok) {
+        log.error('<%= serviceName %>Service call failed: ' + result.errorMessage +
+            ' (status: ' + result.status + ', unavailable: ' + result.unavailableReason + ')');
+    }
+
+    return result;
+}
+<% if (includeErrorHandling) { %>
+
+/**
+ * Call the service and return data or throw error
+ *
+ * @param {Object} params - Request parameters (see call() for details)
+ * @returns {Object} Response data
+ * @throws {Error} If service call fails
+ */
+function callOrThrow(params) {
+    var result = call(params);
+
+    if (!result.ok) {
+        var errorMsg = '<%= serviceName %>Service error: ' + result.errorMessage;
+        if (result.unavailableReason) {
+            errorMsg += ' (reason: ' + result.unavailableReason + ')';
+        }
+        throw new Error(errorMsg);
+    }
+
+    var response = result.object;
+    if (!response.success) {
+        throw new Error('<%= serviceName %>Service HTTP error ' + response.statusCode + ': ' +
+            (response.errors.length > 0 ? response.errors.join(', ') : 'Unknown error'));
+    }
+
+    return response.data;
+}
+<% } %>
+
+module.exports = {
+    SERVICE_ID: SERVICE_ID,
+    getService: getService,
+    call: call<% if (includeErrorHandling) { %>,
+    callOrThrow: callOrThrow<% } %>
+};

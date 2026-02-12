@@ -69,7 +69,7 @@ export class DwJsonSource implements ConfigSource {
     if (config.name) {
       instances.push({
         name: config.name,
-        hostname: config.hostname || config.server,
+        hostname: config.hostname,
         active: config.active,
         source: this.name,
         location: dwJsonPath,
@@ -82,7 +82,7 @@ export class DwJsonSource implements ConfigSource {
         if (c.name) {
           instances.push({
             name: c.name,
-            hostname: c.hostname || c.server,
+            hostname: c.hostname,
             active: c.active,
             source: this.name,
             location: dwJsonPath,

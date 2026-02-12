@@ -77,6 +77,10 @@ describe('setup inspect', () => {
     it('should have unmask flag', () => {
       expect(SetupInspect.flags).to.have.property('unmask');
     });
+
+    it('should have setup:config alias', () => {
+      expect(SetupInspect.aliases).to.include('setup:config');
+    });
   });
 
   describe('masking', () => {

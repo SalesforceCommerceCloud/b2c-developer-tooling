@@ -77,27 +77,30 @@ describe('config/dw-json', () => {
 
     it('loads basic dw.json config', () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
-      const config: DwJsonConfig = {
-        hostname: 'test.demandware.net',
-        'code-version': 'v1',
-        username: 'test-user',
-        password: 'test-pass',
-      };
-      fs.writeFileSync(dwJsonPath, JSON.stringify(config));
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          'code-version': 'v1',
+          username: 'test-user',
+          password: 'test-pass',
+        }),
+      );
 
       const result = loadDwJson();
-      expect(result?.config).to.deep.equal(config);
+      // Keys are normalized to camelCase
+      expect(result?.config.hostname).to.equal('test.demandware.net');
+      expect(result?.config.codeVersion).to.equal('v1');
+      expect(result?.config.username).to.equal('test-user');
+      expect(result?.config.password).to.equal('test-pass');
     });
 
     it('loads config from explicit path', () => {
       const customPath = path.join(tempDir, 'custom-dw.json');
-      const config: DwJsonConfig = {
-        hostname: 'custom.demandware.net',
-      };
-      fs.writeFileSync(customPath, JSON.stringify(config));
+      fs.writeFileSync(customPath, JSON.stringify({hostname: 'custom.demandware.net'}));
 
       const result = loadDwJson({path: customPath});
-      expect(result?.config).to.deep.equal(config);
+      expect(result?.config.hostname).to.equal('custom.demandware.net');
     });
 
     it('selects named instance from multi-config', () => {
@@ -173,32 +176,100 @@ describe('config/dw-json', () => {
       expect(result).to.be.undefined;
     });
 
-    it('handles OAuth credentials', () => {
+    it('handles OAuth credentials (kebab-case input)', () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
-      const config: DwJsonConfig = {
-        hostname: 'test.demandware.net',
-        'client-id': 'test-client',
-        'client-secret': 'test-secret',
-        'oauth-scopes': ['mail', 'roles'],
-      };
-      fs.writeFileSync(dwJsonPath, JSON.stringify(config));
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          'client-id': 'test-client',
+          'client-secret': 'test-secret',
+          'oauth-scopes': ['mail', 'roles'],
+        }),
+      );
 
       const result = loadDwJson();
-      expect(result?.config['client-id']).to.equal('test-client');
-      expect(result?.config['client-secret']).to.equal('test-secret');
-      expect(result?.config['oauth-scopes']).to.deep.equal(['mail', 'roles']);
+      // Kebab-case keys are normalized to camelCase
+      expect(result?.config.clientId).to.equal('test-client');
+      expect(result?.config.clientSecret).to.equal('test-secret');
+      expect(result?.config.oauthScopes).to.deep.equal(['mail', 'roles']);
+    });
+
+    it('handles OAuth credentials (camelCase input)', () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          clientId: 'test-client',
+          clientSecret: 'test-secret',
+          oauthScopes: ['mail', 'roles'],
+        }),
+      );
+
+      const result = loadDwJson();
+      expect(result?.config.clientId).to.equal('test-client');
+      expect(result?.config.clientSecret).to.equal('test-secret');
+      expect(result?.config.oauthScopes).to.deep.equal(['mail', 'roles']);
     });
 
     it('handles webdav-hostname', () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
-      const config: DwJsonConfig = {
-        hostname: 'test.demandware.net',
-        'webdav-hostname': 'webdav.test.com',
-      };
-      fs.writeFileSync(dwJsonPath, JSON.stringify(config));
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          'webdav-hostname': 'webdav.test.com',
+        }),
+      );
 
       const result = loadDwJson();
-      expect(result?.config['webdav-hostname']).to.equal('webdav.test.com');
+      // webdav-hostname normalizes to webdavHostname
+      expect(result?.config.webdavHostname).to.equal('webdav.test.com');
+    });
+
+    it('normalizes configs[] items', () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          configs: [
+            {
+              name: 'staging',
+              hostname: 'staging.demandware.net',
+              'client-id': 'staging-client',
+              'code-version': 'v2',
+            },
+          ],
+        }),
+      );
+
+      const result = loadDwJson({instance: 'staging'});
+      expect(result?.config.clientId).to.equal('staging-client');
+      expect(result?.config.codeVersion).to.equal('v2');
+    });
+
+    it('normalizes legacy aliases', () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          server: 'test.demandware.net',
+          secureHostname: 'webdav.test.com',
+          passphrase: 'cert-pass',
+          selfsigned: true,
+          cloudOrigin: 'https://cloud.example.com',
+          'scapi-shortcode': 'abc123',
+        }),
+      );
+
+      const result = loadDwJson();
+      expect(result?.config.hostname).to.equal('test.demandware.net');
+      expect(result?.config.webdavHostname).to.equal('webdav.test.com');
+      expect(result?.config.certificatePassphrase).to.equal('cert-pass');
+      expect(result?.config.selfSigned).to.equal(true);
+      expect(result?.config.mrtOrigin).to.equal('https://cloud.example.com');
+      expect(result?.config.shortCode).to.equal('abc123');
     });
   });
 

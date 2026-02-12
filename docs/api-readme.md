@@ -29,6 +29,7 @@ The SDK is organized into focused submodules that can be imported individually:
 ├── /operations/mrt  # Managed Runtime bundle operations
 ├── /operations/ods  # On-demand sandbox utilities
 │
+├── /scaffold        # Scaffold discovery, generation, and validation
 ├── /docs            # B2C Script API documentation search
 └── /schemas         # OpenAPI schema utilities
 ```
@@ -239,6 +240,273 @@ const { data, error } = await instance.ocapi.PATCH('/code_versions/{code_version
   body: { active: true },
 });
 ```
+
+## Account Manager Operations
+
+The SDK provides a unified client for managing users, roles, organizations, and API clients through the Account Manager API.
+
+### Authentication
+
+Account Manager operations use **OAuth implicit flow** by default, which opens a browser for interactive authentication. This is ideal for development and manual operations where you want to use roles assigned to your user account.
+
+For CI/CD and automation, you can also use **OAuth client credentials flow** (requires both client ID and secret).
+
+### Unified Client (Recommended)
+
+The recommended approach is to use the unified `createAccountManagerClient`, which provides access to all Account Manager APIs (users, roles, organizations, and API clients):
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager client with implicit OAuth (opens browser for login)
+const auth = new ImplicitOAuthStrategy({
+  clientId: 'your-client-id',
+  // No clientSecret needed for implicit flow
+});
+
+const client = createAccountManagerClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Users API
+const users = await client.listUsers({ size: 25, page: 0 });
+const user = await client.getUser('user-id');
+const userByLogin = await client.findUserByLogin('user@example.com');
+await client.createUser({
+  mail: 'newuser@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  organizations: ['org-id'],
+  primaryOrganization: 'org-id',
+});
+await client.updateUser('user-id', { firstName: 'Jane' });
+await client.grantRole('user-id', 'bm-admin', 'tenant1,tenant2');
+await client.revokeRole('user-id', 'bm-admin', 'tenant1');
+await client.resetUser('user-id');
+await client.deleteUser('user-id');
+
+// Roles API
+const roles = await client.listRoles({ size: 20, page: 0 });
+const role = await client.getRole('bm-admin');
+
+// Organizations API
+const orgs = await client.listOrgs({ size: 25, page: 0 });
+const org = await client.getOrg('org-id');
+const orgByName = await client.getOrgByName('My Organization');
+const auditLogs = await client.getOrgAuditLogs('org-id');
+
+// API Clients API (service accounts for programmatic access)
+const apiClients = await client.listApiClients({ size: 20, page: 0 });
+const apiClient = await client.getApiClient('api-client-uuid', ['organizations', 'roles']);
+await client.createApiClient({
+  name: 'my-client',
+  organizations: ['org-id'],
+  password: 'SecureP@ss12',
+  active: false,
+});
+await client.updateApiClient('api-client-uuid', { name: 'new-name', active: true });
+await client.changeApiClientPassword('api-client-uuid', 'oldPassword', 'newPassword12');
+await client.deleteApiClient('api-client-uuid'); // Client must be disabled 7+ days first
+```
+
+### Client Credentials Flow (Alternative)
+
+For automation and CI/CD, you can use client credentials flow:
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+// Create Account Manager client with client credentials OAuth
+const auth = new OAuthStrategy({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+
+const client = createAccountManagerClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Use the unified client as shown above
+```
+
+### Individual Clients
+
+If you only need access to a specific API, you can create individual clients:
+
+```typescript
+import {
+  createAccountManagerUsersClient,
+  createAccountManagerRolesClient,
+  createAccountManagerOrgsClient,
+  createAccountManagerApiClientsClient,
+} from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({
+  clientId: 'your-client-id',
+});
+
+// Users client
+const usersClient = createAccountManagerUsersClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Roles client
+const rolesClient = createAccountManagerRolesClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// Organizations client
+const orgsClient = createAccountManagerOrgsClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+
+// API Clients client (service accounts)
+const apiClientsClient = createAccountManagerApiClientsClient(
+  { accountManagerHost: 'account.demandware.com' },
+  auth,
+);
+```
+
+### User Operations
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// List users with pagination
+const users = await client.listUsers({ size: 25, page: 0 });
+
+// Get user by email/login
+const user = await client.findUserByLogin('user@example.com');
+
+// Get user with expanded organizations and roles
+const userExpanded = await client.getUser('user-id', ['organizations', 'roles']);
+
+// Create a new user
+const newUser = await client.createUser({
+  mail: 'newuser@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  organizations: ['org-id'],
+  primaryOrganization: 'org-id',
+});
+
+// Update a user
+await client.updateUser('user-id', { firstName: 'Jane' });
+
+// Grant a role to a user
+await client.grantRole('user-id', 'bm-admin', 'tenant1,tenant2'); // Optional tenant filter
+
+// Revoke a role from a user
+await client.revokeRole('user-id', 'bm-admin', 'tenant1'); // Optional: remove specific scope
+
+// Reset user to INITIAL state
+await client.resetUser('user-id');
+
+// Delete (disable) a user
+await client.deleteUser('user-id');
+```
+
+### Role Operations
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// Get role details by ID
+const role = await client.getRole('bm-admin');
+
+// List all roles with pagination
+const roles = await client.listRoles({ size: 25, page: 0 });
+
+// List roles filtered by target type
+const userRoles = await client.listRoles({
+  size: 25,
+  page: 0,
+  roleTargetType: 'User',
+});
+```
+
+### Organization Operations
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// Get organization by ID
+const org = await client.getOrg('org-123');
+
+// Get organization by name
+const orgByName = await client.getOrgByName('My Organization');
+
+// List organizations with pagination
+const orgs = await client.listOrgs({ size: 25, page: 0 });
+
+// List all organizations (uses max page size of 5000)
+const allOrgs = await client.listOrgs({ all: true });
+
+// Get audit logs for an organization
+const auditLogs = await client.getOrgAuditLogs('org-123');
+```
+
+### API Client Operations
+
+Manage Account Manager API clients (service accounts for programmatic access). API clients are created inactive by default and must be disabled for at least 7 days before deletion.
+
+```typescript
+import { createAccountManagerClient } from '@salesforce/b2c-tooling-sdk/clients';
+import { ImplicitOAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+
+const auth = new ImplicitOAuthStrategy({ clientId: 'your-client-id' });
+const client = createAccountManagerClient({}, auth);
+
+// List API clients with pagination
+const result = await client.listApiClients({ size: 20, page: 0 });
+
+// Get API client by ID (optionally expand organizations and roles)
+const apiClient = await client.getApiClient('api-client-uuid', ['organizations', 'roles']);
+
+// Create a new API client (created inactive by default)
+const newClient = await client.createApiClient({
+  name: 'my-client',
+  organizations: ['org-id'],
+  password: 'SecureP@ss12',
+  active: false,
+});
+
+// Update an API client (only provided fields are updated)
+await client.updateApiClient('api-client-uuid', { name: 'new-name', active: true });
+
+// Change API client password
+await client.changeApiClientPassword('api-client-uuid', 'oldPassword', 'newPassword12');
+
+// Delete an API client (must have been disabled for at least 7 days)
+await client.deleteApiClient('api-client-uuid');
+```
+
+### Required Permissions
+
+Account Manager operations require:
+- Account Manager hostname configuration
+- For implicit flow: roles configured on your **user account**
+- For client credentials flow: roles configured on the **API client**
 
 ## Logging
 

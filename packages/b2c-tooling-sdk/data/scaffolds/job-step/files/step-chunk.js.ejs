@@ -1,0 +1,136 @@
+'use strict';
+
+/**
+ * <%= stepId %> Job Step (Chunk-oriented)
+ *
+ * <%= stepDescription %>
+ *
+ * Chunk-oriented steps process data in batches with automatic
+ * transaction handling and checkpoint/restart capability.
+ *
+ * @module scripts/jobsteps/<%= camelCase(stepId) %>
+ */
+
+var Status = require('dw/system/Status');
+var Logger = require('dw/system/Logger');
+
+var log = Logger.getLogger('<%= camelCase(stepId) %>', 'job');
+
+/**
+ * Read the next item to process
+ *
+ * Called repeatedly until it returns null.
+ *
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ * @returns {Object|null} - The next item to process, or null when done
+ */
+exports.read = function (stepExecution, parameters) {
+    // TODO: Implement your read logic
+    // Examples:
+    // - Read next product from search results
+    // - Read next line from file
+    // - Read next record from database query
+
+    // Return null to signal end of data
+    return null;
+};
+
+/**
+ * Process a single item
+ *
+ * Called for each item returned by read().
+ * Processing happens within a transaction.
+ *
+ * @param {Object} item - The item to process (returned by read)
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ * @returns {Object} - The processed item (passed to write)
+ */
+exports.process = function (item, stepExecution, parameters) {
+    // TODO: Implement your processing logic
+    // Examples:
+    // - Transform product data
+    // - Validate and enrich records
+    // - Calculate values
+
+    return item;
+};
+
+/**
+ * Write processed items
+ *
+ * Called with a chunk of processed items.
+ * Chunk size is configured in steptypes.json.
+ *
+ * @param {dw.util.List} items - List of processed items
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ */
+exports.write = function (items, stepExecution, parameters) {
+    // TODO: Implement your write logic
+    // Examples:
+    // - Write records to database
+    // - Export to file
+    // - Send to external service
+
+    log.info('Wrote ' + items.size() + ' items');
+};
+
+/**
+ * Called before processing begins
+ *
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ */
+exports.beforeStep = function (stepExecution, parameters) {
+    log.info('<%= stepId %> chunk step started');
+    // TODO: Initialize resources (file handles, connections, etc.)
+};
+
+/**
+ * Called after all processing is complete
+ *
+ * @param {boolean} success - Whether the step completed successfully
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ */
+exports.afterStep = function (success, stepExecution, parameters) {
+    // TODO: Cleanup resources
+    log.info('<%= stepId %> chunk step ' + (success ? 'completed' : 'failed'));
+};
+
+/**
+ * Called before each chunk is processed
+ *
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ */
+exports.beforeChunk = function (stepExecution, parameters) {
+    // Optional: Pre-chunk initialization
+};
+
+/**
+ * Called after each chunk is processed
+ *
+ * @param {boolean} success - Whether the chunk completed successfully
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ */
+exports.afterChunk = function (success, stepExecution, parameters) {
+    // Optional: Post-chunk cleanup or logging
+};
+
+/**
+ * Get the total count of items to process (optional)
+ *
+ * Used for progress tracking in Business Manager.
+ *
+ * @param {dw.job.JobStepExecution} stepExecution - The step execution context
+ * @param {Object} parameters - Step parameters from job configuration
+ * @returns {Number} - Total number of items to process
+ */
+exports.getTotalCount = function (stepExecution, parameters) {
+    // TODO: Return total count if known, -1 if unknown
+    return -1;
+};

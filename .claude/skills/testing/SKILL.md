@@ -1,6 +1,8 @@
 ---
 name: testing
 description: Writing tests for the B2C CLI project using Mocha, Chai, and MSW
+metadata:
+  internal: true
 ---
 
 # Testing

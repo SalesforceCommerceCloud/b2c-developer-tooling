@@ -14,6 +14,7 @@ The B2C CLI can be extended with custom plugins using the [oclif plugin system](
 | [`b2c:http-middleware`](#http-middleware) | HTTP request/response middleware | Yes |
 | [`b2c:operation-lifecycle`](#operation-lifecycle-hooks) | Operation before/after callbacks | CLI only |
 | [`b2c:cartridge-providers`](#cartridge-providers) | Custom cartridge discovery | CLI only |
+| [`b2c:scaffold-providers`](#scaffold-providers) | Custom scaffold providers | Yes |
 
 **SDK Support** indicates whether the hook can be used programmatically without the CLI. Only HTTP middleware supports direct SDK registration via `globalMiddlewareRegistry`.
 
@@ -836,6 +837,133 @@ const envFilterTransformer: CartridgeTransformer = {
   },
 };
 ```
+
+## Scaffold Providers
+
+Plugins can provide custom scaffolds via the `b2c:scaffold-providers` hook, or register providers programmatically via the SDK's `scaffoldRegistry`.
+
+### Hook: `b2c:scaffold-providers`
+
+This hook is called during scaffold command initialization. Providers and transformers are collected and used during scaffold discovery.
+
+**Hook Options:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `flags` | `Record<string, unknown>` | Parsed CLI flags (read-only) |
+
+**Hook Result:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `providers` | `ScaffoldProvider[]` | Scaffold discovery providers |
+| `transformers` | `ScaffoldTransformer[]` | Scaffold mapping transformers |
+
+### ScaffoldProvider Interface
+
+```typescript
+import type {
+  ScaffoldProvider,
+  ScaffoldDiscoveryOptions,
+  Scaffold,
+} from '@salesforce/b2c-tooling-sdk/scaffold';
+
+const provider: ScaffoldProvider = {
+  name: 'my-scaffold-provider',
+  priority: 'after', // 'before' or 'after' default discovery
+
+  async getScaffolds(options: ScaffoldDiscoveryOptions): Promise<Scaffold[]> {
+    // Return scaffolds from custom source
+    return [
+      {
+        id: 'my-custom-scaffold',
+        displayName: 'My Custom Scaffold',
+        description: 'A custom scaffold from my plugin',
+        category: 'cartridge',
+        source: 'plugin',
+        path: '/path/to/scaffold',
+        manifest: { /* scaffold.json contents */ },
+      },
+    ];
+  },
+};
+```
+
+**Priority:**
+- `'before'` - Runs before default discovery (can be overridden by built-in/user/project scaffolds)
+- `'after'` - Runs after default discovery (overrides scaffolds with same ID)
+
+Scaffolds are deduplicated by ID (last provider wins for same ID).
+
+### ScaffoldTransformer Interface
+
+Transformers modify the final scaffold list after all providers have contributed:
+
+```typescript
+import type { ScaffoldTransformer, Scaffold } from '@salesforce/b2c-tooling-sdk/scaffold';
+
+const transformer: ScaffoldTransformer = {
+  name: 'scaffold-filter',
+
+  async transform(scaffolds: Scaffold[], options): Promise<Scaffold[]> {
+    // Filter or modify scaffolds
+    return scaffolds.filter(s => !s.id.startsWith('internal-'));
+  },
+};
+```
+
+### SDK Usage (without CLI)
+
+For programmatic SDK usage without the CLI, register providers directly with the scaffold registry:
+
+```typescript
+import { scaffoldRegistry } from '@salesforce/b2c-tooling-sdk/scaffold';
+
+// Add a custom provider
+scaffoldRegistry.addProviders([{
+  name: 'my-provider',
+  priority: 'after',
+  async getScaffolds(options) {
+    return [/* scaffolds */];
+  },
+}]);
+
+// Add a transformer
+scaffoldRegistry.addTransformers([{
+  name: 'my-transformer',
+  async transform(scaffolds, options) {
+    return scaffolds;
+  },
+}]);
+```
+
+### Example: Plugin Hook Implementation
+
+```typescript
+// src/hooks/scaffold-providers.ts
+import type { ScaffoldProvidersHook } from '@salesforce/b2c-tooling-sdk/cli';
+import type { ScaffoldProvider } from '@salesforce/b2c-tooling-sdk/scaffold';
+
+const hook: ScaffoldProvidersHook = async function(options) {
+  const customProvider: ScaffoldProvider = {
+    name: 'my-plugin-scaffolds',
+    priority: 'after',
+
+    async getScaffolds(discoveryOptions) {
+      // Load scaffolds from plugin's bundled templates
+      const scaffoldsDir = new URL('../scaffolds', import.meta.url).pathname;
+      // ... load and return scaffolds
+      return [];
+    },
+  };
+
+  return { providers: [customProvider] };
+};
+
+export default hook;
+```
+
+See [Scaffolding Guide](./scaffolding) for details on creating custom scaffolds.
 
 ## Adding Custom Commands
 
