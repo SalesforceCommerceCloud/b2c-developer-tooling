@@ -53,7 +53,7 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
 
       name = await search({
         message: 'Select instance:',
-        source: (term) => {
+        source(term) {
           const filtered = term ? instances.filter((i) => i.name.includes(term)) : instances;
           const sorted = [...filtered].sort((a, b) => (a.active === b.active ? 0 : a.active ? -1 : 1));
           return sorted.map((i) => ({

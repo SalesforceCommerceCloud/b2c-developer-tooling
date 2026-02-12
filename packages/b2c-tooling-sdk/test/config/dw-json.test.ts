@@ -15,7 +15,6 @@ import {
   addInstance,
   removeInstance,
   setActiveInstance,
-  type DwJsonConfig,
   type DwJsonMultiConfig,
 } from '@salesforce/b2c-tooling-sdk/config';
 
