@@ -97,9 +97,11 @@ describe('role revoke', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
+        }),
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json({content: [{id: 'bm-admin', roleEnumName: 'ECOM_ADMIN'}]});
         }),
       );
 
@@ -145,9 +147,11 @@ describe('role revoke', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
+        }),
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json({content: [{id: 'bm-admin', roleEnumName: 'ECOM_ADMIN'}]});
         }),
         http.get(`${BASE_URL}/users/user-123`, () => {
           return HttpResponse.json(mockUser);
@@ -184,14 +188,14 @@ describe('role revoke', () => {
         id: 'user-123',
         mail: 'user@example.com',
         roles: ['bm-admin'],
-        roleTenantFilter: 'bm-admin:tenant1,tenant2',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1,tenant2',
       };
 
       const updatedUser = {
         id: 'user-123',
         mail: 'user@example.com',
         roles: ['bm-admin'],
-        roleTenantFilter: 'bm-admin:tenant2',
+        roleTenantFilter: 'ECOM_ADMIN:tenant2',
       };
 
       server.use(
@@ -201,9 +205,11 @@ describe('role revoke', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
+        }),
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json({content: [{id: 'bm-admin', roleEnumName: 'ECOM_ADMIN'}]});
         }),
         http.get(`${BASE_URL}/users/user-123`, () => {
           return HttpResponse.json(mockUser);

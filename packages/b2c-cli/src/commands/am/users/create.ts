@@ -7,6 +7,8 @@ import {Flags} from '@oclif/core';
 import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerUser} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
+import {resolveOrgId} from '../../../utils/am/resolve-org.js';
+import {printUserDetails} from '../../../utils/am/user-display.js';
 
 /**
  * Command to create a new Account Manager user.
@@ -18,13 +20,13 @@ export default class UserCreate extends AmCommand<typeof UserCreate> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --org org-id --mail user@example.com --first-name John --last-name Doe',
-    '<%= config.bin %> <%= command.id %> --org org-id --mail user@example.com --first-name John --last-name Doe --json',
+    '<%= config.bin %> <%= command.id %> --org "My Organization" --mail user@example.com --first-name John --last-name Doe --json',
   ];
 
   static flags = {
     org: Flags.string({
       char: 'o',
-      description: 'Organization ID to create the user in',
+      description: 'Organization ID or name',
       required: true,
     }),
     mail: Flags.string({
@@ -43,16 +45,20 @@ export default class UserCreate extends AmCommand<typeof UserCreate> {
   };
 
   async run(): Promise<AccountManagerUser> {
-    const {org, mail, 'first-name': firstName, 'last-name': lastName} = this.flags;
+    const {org: orgInput, mail, 'first-name': firstName, 'last-name': lastName} = this.flags;
 
-    this.log(t('commands.user.create.creating', 'Creating user {{mail}} in organization {{org}}...', {mail, org}));
+    const orgId = await resolveOrgId(this.accountManagerClient, orgInput);
+
+    this.log(
+      t('commands.user.create.creating', 'Creating user {{mail}} in organization {{org}}...', {mail, org: orgId}),
+    );
 
     const user = await this.accountManagerClient.createUser({
       mail,
       firstName,
       lastName,
-      organizations: [org],
-      primaryOrganization: org,
+      organizations: [orgId],
+      primaryOrganization: orgId,
     });
 
     if (this.jsonEnabled()) {
@@ -60,8 +66,17 @@ export default class UserCreate extends AmCommand<typeof UserCreate> {
     }
 
     this.log(
-      t('commands.user.create.success', 'User {{mail}} created successfully in organization {{org}}.', {mail, org}),
+      t('commands.user.create.success', 'User {{mail}} created successfully in organization {{org}}.', {
+        mail,
+        org: orgId,
+      }),
     );
+
+    const [roleMapping, orgMapping] = await Promise.all([
+      this.accountManagerClient.getRoleMapping(),
+      this.accountManagerClient.getOrgMapping(),
+    ]);
+    printUserDetails(user, roleMapping, orgMapping);
 
     return user;
   }

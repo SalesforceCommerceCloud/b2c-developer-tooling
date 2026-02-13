@@ -93,24 +93,34 @@ export interface UpdateUserOptions {
 
 /**
  * Options for granting a role.
+ *
+ * The AM API uses mixed formats: role IDs (e.g. 'bm-admin') in the `roles` array,
+ * and roleEnumNames (e.g. 'ECOM_ADMIN') in the `roleTenantFilter` string.
+ * Both must be provided. Use `resolveToInternalRole` / `resolveFromInternalRole` to convert.
  */
 export interface GrantRoleOptions {
   /** User ID */
   userId: string;
-  /** Role to grant */
+  /** Role ID as used in the roles array (e.g. 'bm-admin'). */
   role: string;
+  /** Role enum name as used in roleTenantFilter (e.g. 'ECOM_ADMIN'). */
+  roleEnumName: string;
   /** Optional scope for the role (tenant IDs, comma-separated) */
   scope?: string;
 }
 
 /**
  * Options for revoking a role.
+ *
+ * See {@link GrantRoleOptions} for details on the mixed role ID formats.
  */
 export interface RevokeRoleOptions {
   /** User ID */
   userId: string;
-  /** Role to revoke */
+  /** Role ID as used in the roles array (e.g. 'bm-admin'). */
   role: string;
+  /** Role enum name as used in roleTenantFilter (e.g. 'ECOM_ADMIN'). */
+  roleEnumName: string;
   /** Optional scope to remove (if not provided, removes entire role) */
   scope?: string;
 }
@@ -175,16 +185,16 @@ export async function grantRole(
   client: AccountManagerUsersClient,
   options: GrantRoleOptions,
 ): Promise<AccountManagerUser> {
+  const {role, roleEnumName} = options;
+
   // First get the current user
   const user = await getUser(client, options.userId);
 
-  // Build updated roles
-  const currentRoles = Array.isArray(user.roles)
-    ? user.roles.map((r) => (typeof r === 'string' ? r : r.roleEnumName || ''))
-    : [];
-  const updatedRoles = currentRoles.includes(options.role) ? currentRoles : [...currentRoles, options.role];
+  // Build updated roles (uses role ID format, e.g. 'bm-admin')
+  const currentRoles = Array.isArray(user.roles) ? user.roles.map((r) => (typeof r === 'string' ? r : r.id || '')) : [];
+  const updatedRoles = currentRoles.includes(role) ? currentRoles : [...currentRoles, role];
 
-  // Build updated roleTenantFilter
+  // Build updated roleTenantFilter (uses roleEnumName format, e.g. 'ECOM_ADMIN')
   let roleTenantFilter = user.roleTenantFilter || '';
   if (options.scope) {
     const scopes = options.scope.split(',');
@@ -192,18 +202,18 @@ export async function grantRole(
     const filters = roleTenantFilter.split(';').filter(Boolean);
     const filterMap = new Map<string, string[]>();
     for (const filter of filters) {
-      const [role, tenants] = filter.split(':');
+      const [r, tenants] = filter.split(':');
       if (tenants) {
-        filterMap.set(role, tenants.split(','));
+        filterMap.set(r, tenants.split(','));
       }
     }
     // Add new scopes
-    const existingScopes = filterMap.get(options.role) || [];
+    const existingScopes = filterMap.get(roleEnumName) || [];
     const allScopes = [...new Set([...existingScopes, ...scopes])];
-    filterMap.set(options.role, allScopes);
+    filterMap.set(roleEnumName, allScopes);
     // Rebuild filter string
     roleTenantFilter = Array.from(filterMap.entries())
-      .map(([role, tenants]) => `${role}:${tenants.join(',')}`)
+      .map(([r, tenants]) => `${r}:${tenants.join(',')}`)
       .join(';');
   }
 
@@ -227,44 +237,44 @@ export async function revokeRole(
   client: AccountManagerUsersClient,
   options: RevokeRoleOptions,
 ): Promise<AccountManagerUser> {
+  const {role, roleEnumName} = options;
+
   // First get the current user
   const user = await getUser(client, options.userId);
 
-  // Build updated roles
-  const currentRoles = Array.isArray(user.roles)
-    ? user.roles.map((r) => (typeof r === 'string' ? r : r.roleEnumName || ''))
-    : [];
+  // Build updated roles (uses role ID format, e.g. 'bm-admin')
+  const currentRoles = Array.isArray(user.roles) ? user.roles.map((r) => (typeof r === 'string' ? r : r.id || '')) : [];
   let updatedRoles = currentRoles;
 
-  // Build updated roleTenantFilter
+  // Build updated roleTenantFilter (uses roleEnumName format, e.g. 'ECOM_ADMIN')
   let roleTenantFilter = user.roleTenantFilter || '';
 
   if (!options.scope) {
     // Remove entire role
-    updatedRoles = currentRoles.filter((r) => r !== options.role);
+    updatedRoles = currentRoles.filter((r) => r !== role);
     // Remove all scopes for this role
     const filters = roleTenantFilter.split(';').filter(Boolean);
-    roleTenantFilter = filters.filter((f) => !f.startsWith(`${options.role}:`)).join(';');
+    roleTenantFilter = filters.filter((f) => !f.startsWith(`${roleEnumName}:`)).join(';');
   } else {
     // Remove specific scope
     const scopes = options.scope.split(',');
     const filters = roleTenantFilter.split(';').filter(Boolean);
     const filterMap = new Map<string, string[]>();
     for (const filter of filters) {
-      const [role, tenants] = filter.split(':');
+      const [r, tenants] = filter.split(':');
       if (tenants) {
-        filterMap.set(role, tenants.split(','));
+        filterMap.set(r, tenants.split(','));
       }
     }
-    const existingScopes = filterMap.get(options.role) || [];
+    const existingScopes = filterMap.get(roleEnumName) || [];
     const updatedScopes = existingScopes.filter((s) => !scopes.includes(s));
     if (updatedScopes.length > 0) {
-      filterMap.set(options.role, updatedScopes);
+      filterMap.set(roleEnumName, updatedScopes);
     } else {
-      filterMap.delete(options.role);
+      filterMap.delete(roleEnumName);
     }
     roleTenantFilter = Array.from(filterMap.entries())
-      .map(([role, tenants]) => `${role}:${tenants.join(',')}`)
+      .map(([r, tenants]) => `${r}:${tenants.join(',')}`)
       .join(';');
   }
 

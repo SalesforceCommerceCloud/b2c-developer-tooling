@@ -92,9 +92,8 @@ describe('user update', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
       );
 
@@ -131,9 +130,8 @@ describe('user update', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
       );
 
@@ -181,9 +179,8 @@ describe('user update', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
         http.put(`${BASE_URL}/users/user-123`, async ({request}) => {
           const body = (await request.json()) as {firstName?: string};
@@ -232,9 +229,8 @@ describe('user update', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
         http.put(`${BASE_URL}/users/user-123`, async ({request}) => {
           const body = (await request.json()) as {lastName?: string};

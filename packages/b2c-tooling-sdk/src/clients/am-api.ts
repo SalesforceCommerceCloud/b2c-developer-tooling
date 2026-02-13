@@ -93,36 +93,83 @@ export interface ListUsersOptions {
 }
 
 /**
- * Role name mappings between external and internal formats.
+ * Role mapping built from the Account Manager roles API.
+ * Maps between role `id` (e.g., `bm-admin`) and `roleEnumName` (e.g., `ECOM_ADMIN`).
  */
-export const ROLE_NAMES_MAP: Record<string, string> = {
-  'bm-admin': 'ECOM_ADMIN',
-  'bm-user': 'ECOM_USER',
-};
-
-export const ROLE_NAMES_MAP_REVERSE: Record<string, string> = {
-  ECOM_ADMIN: 'bm-admin',
-  ECOM_USER: 'bm-user',
-};
+export interface RoleMapping {
+  /** Maps role id (e.g., 'bm-admin') to roleEnumName (e.g., 'ECOM_ADMIN') */
+  byId: Map<string, string>;
+  /** Maps roleEnumName (e.g., 'ECOM_ADMIN') to role id (e.g., 'bm-admin') */
+  byEnumName: Map<string, string>;
+  /** Maps roleEnumName (e.g., 'ECOM_ADMIN') to description (e.g., 'Business Manager Administrator') */
+  descriptions: Map<string, string>;
+}
 
 /**
- * Maps the role name to an internal role ID accepted by the API.
+ * Organization mapping built from the Account Manager organizations API.
+ * Maps organization ID to name.
  */
-export function mapToInternalRole(role: string): string {
-  if (ROLE_NAMES_MAP[role]) {
-    return ROLE_NAMES_MAP[role];
+export interface OrgMapping {
+  /** Maps organization ID to name */
+  byId: Map<string, string>;
+}
+
+/**
+ * Fetches all roles from the Account Manager roles API and builds a mapping
+ * between role `id` and `roleEnumName`.
+ *
+ * @param rolesClient - Account Manager Roles client
+ * @returns Role mapping
+ */
+export async function fetchRoleMapping(rolesClient: AccountManagerRolesClient): Promise<RoleMapping> {
+  const result = await listRoles(rolesClient, {size: 100});
+  const byId = new Map<string, string>();
+  const byEnumName = new Map<string, string>();
+  const descriptions = new Map<string, string>();
+
+  for (const role of result.content || []) {
+    if (role.id && role.roleEnumName) {
+      byId.set(role.id, role.roleEnumName);
+      byEnumName.set(role.roleEnumName, role.id);
+      if (role.description) {
+        descriptions.set(role.roleEnumName, role.description);
+      }
+    }
   }
+
+  return {byId, byEnumName, descriptions};
+}
+
+/**
+ * Resolves a role to its internal `roleEnumName` using an API-fetched role mapping.
+ * Accepts either the role `id` (e.g., `bm-admin`) or `roleEnumName` (e.g., `ECOM_ADMIN`).
+ * Falls back to a generic transform (uppercase + replace hyphens with underscores) for unknown roles.
+ */
+export function resolveToInternalRole(role: string, mapping: RoleMapping): string {
+  // Already a known roleEnumName
+  if (mapping.byEnumName.has(role)) {
+    return role;
+  }
+  // Known role id → roleEnumName
+  const enumName = mapping.byId.get(role);
+  if (enumName) {
+    return enumName;
+  }
+  // Fallback: generic transform
   return role.toUpperCase().replace(/-/g, '_');
 }
 
 /**
- * Maps the internal role ID to role name.
+ * Resolves an internal `roleEnumName` to its external role `id` using an API-fetched role mapping.
+ * Falls back to a generic transform (lowercase + replace underscores with hyphens) for unknown roles.
  */
-export function mapFromInternalRole(roleID: string): string {
-  if (ROLE_NAMES_MAP_REVERSE[roleID]) {
-    return ROLE_NAMES_MAP_REVERSE[roleID];
+export function resolveFromInternalRole(roleEnumName: string, mapping: RoleMapping): string {
+  const id = mapping.byEnumName.get(roleEnumName);
+  if (id) {
+    return id;
   }
-  return roleID.toLowerCase().replace(/_/g, '-');
+  // Fallback: generic transform
+  return roleEnumName.toLowerCase().replace(/_/g, '-');
 }
 
 /**
@@ -395,12 +442,12 @@ export async function resetUser(client: AccountManagerUsersClient, userId: strin
 }
 
 /**
- * Helper to find a user by login (email) from a list of users.
- * This is a convenience function since the API doesn't have a direct search by login endpoint.
+ * Finds a user by login (email) using the dedicated search endpoint.
  *
  * @param client - Account Manager Users client
  * @param login - User login (email)
- * @returns User if found, undefined otherwise
+ * @param expand - Optional array of fields to expand (organizations, roles)
+ * @returns User if found, undefined if not found
  * @throws Error if request fails
  */
 export async function findUserByLogin(
@@ -408,44 +455,31 @@ export async function findUserByLogin(
   login: string,
   expand?: UserExpandOption[],
 ): Promise<AccountManagerUser | undefined> {
-  // Search through paginated results
-  let page = 0;
-  const pageSize = 100;
+  const result = await client.GET('/dw/rest/v1/users/search/findByLogin', {
+    params: {
+      query: {login},
+    },
+  });
 
-  while (true) {
-    const result = await client.GET('/dw/rest/v1/users', {
-      params: {
-        query: {
-          pageable: {
-            page,
-            size: pageSize,
-          },
-        },
-      },
-    });
-
-    if (result.error) {
-      throw new Error(`Failed to search for user: ${JSON.stringify(result.error)}`);
-    }
-
-    const users = result.data?.content || [];
-    const found = users.find((u) => u.mail === login);
-
-    if (found) {
-      // If expand is requested, fetch the full user with expanded fields
-      if (expand && expand.length > 0 && found.id) {
-        return getUser(client, found.id, expand);
-      }
-      return found;
-    }
-
-    // If we got fewer results than page size, we've reached the end
-    if (users.length < pageSize) {
-      return undefined;
-    }
-
-    page++;
+  if (result.response?.status === 404) {
+    return undefined;
   }
+
+  if (result.error) {
+    throw new Error(`Failed to search for user: ${JSON.stringify(result.error)}`);
+  }
+
+  const found = result.data;
+  if (!found) {
+    return undefined;
+  }
+
+  // If expand is requested, fetch the full user with expanded fields
+  if (expand && expand.length > 0 && found.id) {
+    return getUser(client, found.id, expand);
+  }
+
+  return found;
 }
 
 // ============================================================================
@@ -1257,6 +1291,10 @@ export interface AccountManagerClient {
   getRole(roleId: string): Promise<AccountManagerRole>;
   /** List roles with pagination */
   listRoles(options?: ListRolesOptions): Promise<RoleCollection>;
+  /** Get the role mapping (id ↔ roleEnumName), lazily cached */
+  getRoleMapping(): Promise<RoleMapping>;
+  /** Get the org mapping (id → name), lazily cached */
+  getOrgMapping(): Promise<OrgMapping>;
 
   // API Clients API methods
   /** List API clients with pagination */
@@ -1316,13 +1354,38 @@ export function createAccountManagerClient(
   config: AccountManagerClientConfig,
   auth: AuthStrategy,
 ): AccountManagerClient {
-  // All three clients use the same config
+  const logger = getLogger();
 
   // Create internal clients (all use the same config, however, specifications are different)
   const usersClient = createAccountManagerUsersClient(config, auth);
   const rolesClient = createAccountManagerRolesClient(config, auth);
   const apiClientsClient = createAccountManagerApiClientsClient(config, auth);
   const orgsClient = createAccountManagerOrgsClient(config, auth);
+
+  // Lazily cached role mapping
+  let cachedRoleMapping: RoleMapping | undefined;
+  async function getRoleMapping(): Promise<RoleMapping> {
+    if (!cachedRoleMapping) {
+      cachedRoleMapping = await fetchRoleMapping(rolesClient);
+    }
+    return cachedRoleMapping;
+  }
+
+  // Lazily cached org mapping
+  let cachedOrgMapping: OrgMapping | undefined;
+  async function getOrgMapping(): Promise<OrgMapping> {
+    if (!cachedOrgMapping) {
+      const result = await orgsClient.listOrgs({all: true});
+      const byId = new Map<string, string>();
+      for (const org of result.content || []) {
+        if (org.id && org.name) {
+          byId.set(org.id, org.name);
+        }
+      }
+      cachedOrgMapping = {byId};
+    }
+    return cachedOrgMapping;
+  }
 
   // Return unified client with all methods
   return {
@@ -1335,98 +1398,107 @@ export function createAccountManagerClient(
     purgeUser: (userId: string) => purgeUser(usersClient, userId),
     resetUser: (userId: string) => resetUser(usersClient, userId),
     findUserByLogin: (login: string, expand?: UserExpandOption[]) => findUserByLogin(usersClient, login, expand),
-    grantRole: (userId: string, role: string, scope?: string) => {
-      // Import grantRole from operations - it uses getUser internally which needs the client
-      return getUser(usersClient, userId).then((user) => {
-        // Build updated roles
-        const currentRoles = Array.isArray(user.roles)
-          ? user.roles.map((r) => (typeof r === 'string' ? r : r.roleEnumName || ''))
-          : [];
-        const updatedRoles = currentRoles.includes(role) ? currentRoles : [...currentRoles, role];
+    grantRole: async (userId: string, role: string, scope?: string) => {
+      const roleMapping = await getRoleMapping();
+      // Resolve to both formats: role ID for roles array, roleEnumName for roleTenantFilter
+      const enumName = resolveToInternalRole(role, roleMapping);
+      const roleId = resolveFromInternalRole(enumName, roleMapping);
+      logger.debug({role, roleId, enumName}, `[AM] Resolved role '${role}' → id='${roleId}', enum='${enumName}'`);
+      const user = await getUser(usersClient, userId);
 
-        // Build updated roleTenantFilter
-        let roleTenantFilter = user.roleTenantFilter || '';
-        if (scope) {
-          const scopes = scope.split(',');
-          // Parse existing filter
-          const filters = roleTenantFilter.split(';').filter(Boolean);
-          const filterMap = new Map<string, string[]>();
-          for (const filter of filters) {
-            const [r, tenants] = filter.split(':');
-            if (tenants) {
-              filterMap.set(r, tenants.split(','));
-            }
+      // Build updated roles (uses role ID format, e.g. 'bm-admin')
+      const currentRoles = Array.isArray(user.roles)
+        ? user.roles.map((r) => (typeof r === 'string' ? r : r.id || ''))
+        : [];
+      const updatedRoles = currentRoles.includes(roleId) ? currentRoles : [...currentRoles, roleId];
+
+      // Build updated roleTenantFilter (uses roleEnumName format, e.g. 'ECOM_ADMIN')
+      let roleTenantFilter = user.roleTenantFilter || '';
+      if (scope) {
+        const scopes = scope.split(',');
+        // Parse existing filter
+        const filters = roleTenantFilter.split(';').filter(Boolean);
+        const filterMap = new Map<string, string[]>();
+        for (const filter of filters) {
+          const [r, tenants] = filter.split(':');
+          if (tenants) {
+            filterMap.set(r, tenants.split(','));
           }
-          // Add new scopes
-          const existingScopes = filterMap.get(role) || [];
-          const allScopes = [...new Set([...existingScopes, ...scopes])];
-          filterMap.set(role, allScopes);
-          // Rebuild filter string
-          roleTenantFilter = Array.from(filterMap.entries())
-            .map(([r, tenants]) => `${r}:${tenants.join(',')}`)
-            .join(';');
         }
+        // Add new scopes
+        const existingScopes = filterMap.get(enumName) || [];
+        const allScopes = [...new Set([...existingScopes, ...scopes])];
+        filterMap.set(enumName, allScopes);
+        // Rebuild filter string
+        roleTenantFilter = Array.from(filterMap.entries())
+          .map(([r, tenants]) => `${r}:${tenants.join(',')}`)
+          .join(';');
+      }
 
-        return updateUser(usersClient, userId, {
-          roles: updatedRoles,
-          roleTenantFilter: roleTenantFilter || undefined,
-        });
+      return updateUser(usersClient, userId, {
+        roles: updatedRoles,
+        roleTenantFilter: roleTenantFilter || undefined,
       });
     },
-    revokeRole: (userId: string, role: string, scope?: string) => {
-      // Import revokeRole logic - it uses getUser internally which needs the client
-      return getUser(usersClient, userId).then((user) => {
-        // Build updated roles
-        const currentRoles = Array.isArray(user.roles)
-          ? user.roles.map((r) => (typeof r === 'string' ? r : r.roleEnumName || ''))
-          : [];
-        let updatedRoles = currentRoles;
+    revokeRole: async (userId: string, role: string, scope?: string) => {
+      const roleMapping = await getRoleMapping();
+      const enumName = resolveToInternalRole(role, roleMapping);
+      const roleId = resolveFromInternalRole(enumName, roleMapping);
+      logger.debug({role, roleId, enumName}, `[AM] Resolved role '${role}' → id='${roleId}', enum='${enumName}'`);
+      const user = await getUser(usersClient, userId);
 
-        // Build updated roleTenantFilter
-        let roleTenantFilter = user.roleTenantFilter || '';
+      // Build updated roles (uses role ID format, e.g. 'bm-admin')
+      const currentRoles = Array.isArray(user.roles)
+        ? user.roles.map((r) => (typeof r === 'string' ? r : r.id || ''))
+        : [];
+      let updatedRoles = currentRoles;
 
-        if (!scope) {
-          // Remove entire role
-          updatedRoles = currentRoles.filter((r) => r !== role);
-          // Remove role from filter
-          const filters = roleTenantFilter.split(';').filter(Boolean);
-          roleTenantFilter = filters.filter((filter) => !filter.startsWith(`${role}:`)).join(';');
-        } else {
-          // Remove specific scope
-          const scopes = scope.split(',');
-          const filters = roleTenantFilter.split(';').filter(Boolean);
-          const filterMap = new Map<string, string[]>();
-          for (const filter of filters) {
-            const [r, tenants] = filter.split(':');
-            if (tenants) {
-              filterMap.set(r, tenants.split(','));
-            }
+      // Build updated roleTenantFilter (uses roleEnumName format, e.g. 'ECOM_ADMIN')
+      let roleTenantFilter = user.roleTenantFilter || '';
+
+      if (!scope) {
+        // Remove entire role
+        updatedRoles = currentRoles.filter((r) => r !== roleId);
+        // Remove role from filter
+        const filters = roleTenantFilter.split(';').filter(Boolean);
+        roleTenantFilter = filters.filter((filter) => !filter.startsWith(`${enumName}:`)).join(';');
+      } else {
+        // Remove specific scope
+        const scopes = scope.split(',');
+        const filters = roleTenantFilter.split(';').filter(Boolean);
+        const filterMap = new Map<string, string[]>();
+        for (const filter of filters) {
+          const [r, tenants] = filter.split(':');
+          if (tenants) {
+            filterMap.set(r, tenants.split(','));
           }
-          const existingScopes = filterMap.get(role) || [];
-          const remainingScopes = existingScopes.filter((s) => !scopes.includes(s));
-          if (remainingScopes.length === 0) {
-            // No scopes left, remove role entirely
-            updatedRoles = currentRoles.filter((r) => r !== role);
-            filterMap.delete(role);
-          } else {
-            filterMap.set(role, remainingScopes);
-          }
-          // Rebuild filter string
-          roleTenantFilter = Array.from(filterMap.entries())
-            .map(([r, tenants]) => `${r}:${tenants.join(',')}`)
-            .join(';');
         }
+        const existingScopes = filterMap.get(enumName) || [];
+        const remainingScopes = existingScopes.filter((s) => !scopes.includes(s));
+        if (remainingScopes.length === 0) {
+          // No scopes left, remove role entirely
+          updatedRoles = currentRoles.filter((r) => r !== roleId);
+          filterMap.delete(enumName);
+        } else {
+          filterMap.set(enumName, remainingScopes);
+        }
+        // Rebuild filter string
+        roleTenantFilter = Array.from(filterMap.entries())
+          .map(([r, tenants]) => `${r}:${tenants.join(',')}`)
+          .join(';');
+      }
 
-        return updateUser(usersClient, userId, {
-          roles: updatedRoles,
-          roleTenantFilter: roleTenantFilter || undefined,
-        });
+      return updateUser(usersClient, userId, {
+        roles: updatedRoles,
+        roleTenantFilter: roleTenantFilter || undefined,
       });
     },
 
     // Roles API methods
     getRole: (roleId: string) => getRole(rolesClient, roleId),
     listRoles: (options?: ListRolesOptions) => listRoles(rolesClient, options),
+    getRoleMapping: () => getRoleMapping(),
+    getOrgMapping: () => getOrgMapping(),
 
     // API Clients API methods
     listApiClients: (options?: ListApiClientsOptions) => listApiClients(apiClientsClient, options),

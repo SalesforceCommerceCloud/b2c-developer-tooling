@@ -42,7 +42,7 @@ Admin APIs use Account Manager OAuth with client credentials flow.
 b2c auth token
 
 # Get token with specific scopes
-b2c auth token --scope sfcc.orders --scope sfcc.products
+b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
 
 # Get token as JSON (includes expiration)
 b2c auth token --json
