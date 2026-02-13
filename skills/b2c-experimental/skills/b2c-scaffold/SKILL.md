@@ -1,6 +1,6 @@
 ---
 name: b2c-scaffold
-description: Generate B2C Commerce cartridges, controllers, hooks, custom APIs, job steps, and Page Designer components from scaffold templates.
+description: Generate B2C Commerce cartridges, controllers, hooks, custom APIs, job steps, and Page Designer components from scaffold templates. Use when starting a new cartridge, adding a controller to an existing cartridge, creating hook implementations, bootstrapping custom API endpoints, or generating job steps and Page Designer components.
 ---
 
 # B2C Scaffold Skill
