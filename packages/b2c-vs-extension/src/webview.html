@@ -1,33 +1,116 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <style>
-      * { box-sizing: border-box; }
-      body { font-family: var(--vscode-font-family); padding: 1rem; color: var(--vscode-foreground); }
-      h1 { font-size: 1.25rem; margin-bottom: 1rem; text-align: center; }
-      h2 { font-size: 1rem; margin: 1.25rem 0 0.5rem; color: var(--vscode-descriptionForeground); }
-      #form { max-width: 32rem; margin-left: auto; margin-right: auto; border: 1px solid #ccc; border-radius: 8px; padding: 1rem; }
-      section { margin-bottom: 1rem; }
-      .form-group { margin-bottom: 0.75rem; }
-      label { display: block; margin-bottom: 0.25rem; font-size: 0.9em; }
-      input, textarea { width: 100%; max-width: 24rem; padding: 0.4rem; font-family: inherit; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 2px; }
-      textarea { min-height: 60px; resize: vertical; }
-      .region-block { padding: 0.75rem; margin-bottom: 0.75rem; border-radius: 4px; border: 1px solid var(--vscode-widget-border); }
-      .region-block h3 { margin: 0 0 0.5rem; font-size: 0.9rem; }
-      button { padding: 0.4rem 0.75rem; margin-right: 0.5rem; margin-top: 0.5rem; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; border-radius: 2px; }
-      button:hover { background: var(--vscode-button-hoverBackground); }
-      button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-      button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
-      button.danger { background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-errorForeground); }
-      #regions-container { margin-top: 0.5rem; }
-      .region-id-name-row { display: flex; gap: 1rem; margin-bottom: 0.75rem; max-width: 24rem; }
-      .region-id-name-row .form-group { flex: 1; margin-bottom: 0; min-width: 0; }
-      .page-type-section { background: #f0f0f0; padding: 0.75rem; border-radius: 4px; }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--vscode-font-family);
+        padding: 1rem;
+        color: var(--vscode-foreground);
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+      h2 {
+        font-size: 1rem;
+        margin: 1.25rem 0 0.5rem;
+        color: var(--vscode-descriptionForeground);
+      }
+      #form {
+        max-width: 32rem;
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      section {
+        margin-bottom: 1rem;
+      }
+      .form-group {
+        margin-bottom: 0.75rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.9em;
+      }
+      input,
+      textarea {
+        width: 100%;
+        max-width: 24rem;
+        padding: 0.4rem;
+        font-family: inherit;
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 2px;
+      }
+      textarea {
+        min-height: 60px;
+        resize: vertical;
+      }
+      .region-block {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid var(--vscode-widget-border);
+      }
+      .region-block h3 {
+        margin: 0 0 0.5rem;
+        font-size: 0.9rem;
+      }
+      button {
+        padding: 0.4rem 0.75rem;
+        margin-right: 0.5rem;
+        margin-top: 0.5rem;
+        cursor: pointer;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 2px;
+      }
+      button:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
+      button.secondary {
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+      button.secondary:hover {
+        background: var(--vscode-button-secondaryHoverBackground);
+      }
+      button.danger {
+        background: var(--vscode-inputValidation-errorBackground);
+        color: var(--vscode-errorForeground);
+      }
+      #regions-container {
+        margin-top: 0.5rem;
+      }
+      .region-id-name-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+        max-width: 24rem;
+      }
+      .region-id-name-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+        min-width: 0;
+      }
+      .page-type-section {
+        background: #f0f0f0;
+        padding: 0.75rem;
+        border-radius: 4px;
+      }
     </style>
   </head>
   <body>
-
     <h1>Create a new page with page designer annotations</h1>
     <form id="form">
       <section class="page-type-section" aria-label="Page type">
@@ -52,7 +135,7 @@
         <button type="button" id="add-region" class="secondary">Add region</button>
       </section>
 
-      <section style="margin-top: 1.25rem;">
+      <section style="margin-top: 1.25rem">
         <button type="submit">Submit</button>
       </section>
     </form>
@@ -61,8 +144,8 @@
       const vscode = acquireVsCodeApi();
 
       function createRegionFields(index) {
-        const block = document.createElement("div");
-        block.className = "region-block";
+        const block = document.createElement('div');
+        block.className = 'region-block';
         block.dataset.regionIndex = index;
         block.innerHTML = `
           <h3>Region ${index + 1}</h3>
@@ -86,16 +169,16 @@
           </div>
           <button type="button" class="danger remove-region">Remove region</button>
         `;
-        block.querySelector(".remove-region").addEventListener("click", () => {
+        block.querySelector('.remove-region').addEventListener('click', () => {
           block.remove();
         });
         return block;
       }
 
-      const regionsContainer = document.getElementById("regions-container");
+      const regionsContainer = document.getElementById('regions-container');
       let regionCount = 0;
 
-      document.getElementById("add-region").addEventListener("click", () => {
+      document.getElementById('add-region').addEventListener('click', () => {
         regionsContainer.appendChild(createRegionFields(regionCount++));
       });
 
@@ -103,7 +186,7 @@
       regionsContainer.appendChild(createRegionFields(regionCount++));
 
       function collectRegions() {
-        const blocks = regionsContainer.querySelectorAll(".region-block");
+        const blocks = regionsContainer.querySelectorAll('.region-block');
         return Array.from(blocks).map((block) => ({
           id: block.querySelector('[data-region-field="id"]').value,
           name: block.querySelector('[data-region-field="name"]').value,
@@ -112,17 +195,18 @@
         }));
       }
 
-      document.getElementById("form").addEventListener("submit", (e) => {
+      document.getElementById('form').addEventListener('submit', (e) => {
         e.preventDefault();
-        const supportedAspectTypes = document.getElementById("supportedAspectTypes").value
-          .split(",")
+        const supportedAspectTypes = document
+          .getElementById('supportedAspectTypes')
+          .value.split(',')
           .map((s) => s.trim())
           .filter(Boolean);
         const payload = {
-          type: "submitForm",
+          type: 'submitForm',
           pageType: {
-            name: document.getElementById("name").value,
-            description: document.getElementById("description").value,
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
             supportedAspectTypes,
           },
           regions: collectRegions(),
