@@ -918,9 +918,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             'sfcc.shopper-baskets-orders.rw',
             'sfcc.shopper-categories',
             'sfcc.shopper-customers.login',
-            'sfcc.shopper-discovery-search',
             'sfcc.shopper-customers.register',
-             'sfcc.shopper-gift-certificates', 
+            'sfcc.shopper-discovery-search',
+            'sfcc.shopper-gift-certificates', 
             'sfcc.shopper-myaccount.addresses.rw',
             'sfcc.shopper-myaccount.baskets',
             'sfcc.shopper-myaccount.orders',
@@ -929,8 +929,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             'sfcc.shopper-myaccount.rw',
             'sfcc.shopper-promotions',
             'sfcc.shopper-product-search',
-            'sfcc.shopper-products',
             'sfcc.shopper-productlists',
+            'sfcc.shopper-products',
             'sfcc.shopper-stores',
           ];
           const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
