@@ -149,6 +149,12 @@ describe('user create', () => {
         http.post(`${BASE_URL}/users`, () => {
           return HttpResponse.json(mockUser, {status: 201});
         }),
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json({content: []});
+        }),
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: []});
+        }),
       );
 
       const result = await command.run();

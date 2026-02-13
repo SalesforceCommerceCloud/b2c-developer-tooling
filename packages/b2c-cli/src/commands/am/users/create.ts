@@ -8,6 +8,7 @@ import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerUser} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 import {resolveOrgId} from '../../../utils/am/resolve-org.js';
+import {printUserDetails} from '../../../utils/am/user-display.js';
 
 /**
  * Command to create a new Account Manager user.
@@ -70,6 +71,12 @@ export default class UserCreate extends AmCommand<typeof UserCreate> {
         org: orgId,
       }),
     );
+
+    const [roleMapping, orgMapping] = await Promise.all([
+      this.accountManagerClient.getRoleMapping(),
+      this.accountManagerClient.getOrgMapping(),
+    ]);
+    printUserDetails(user, roleMapping, orgMapping);
 
     return user;
   }
