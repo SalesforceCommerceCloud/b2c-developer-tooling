@@ -7,6 +7,7 @@ import {Args, Flags} from '@oclif/core';
 import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerUser} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
+import {printUserDetails} from '../../../utils/am/user-display.js';
 
 /**
  * Command to grant a role to an Account Manager user.
@@ -78,6 +79,12 @@ export default class RoleGrant extends AmCommand<typeof RoleGrant> {
       : t('commands.role.grant.success', 'User {{login}} granted role {{role}}.', {login, role});
 
     this.log(message);
+
+    const [roleMapping, orgMapping] = await Promise.all([
+      this.accountManagerClient.getRoleMapping(),
+      this.accountManagerClient.getOrgMapping(),
+    ]);
+    printUserDetails(updatedUser, roleMapping, orgMapping);
 
     return updatedUser;
   }

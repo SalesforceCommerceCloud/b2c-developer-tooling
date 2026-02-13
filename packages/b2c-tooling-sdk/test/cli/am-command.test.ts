@@ -356,6 +356,27 @@ describe('cli/am-command', () => {
       expect(errorMessage).to.include('--user-auth');
     });
 
+    it('should detect "Access is denied" as an auth error', async () => {
+      await setupCommandWithStrategy(command, 'client-credentials');
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('exit'));
+
+      try {
+        await command.testCatch(
+          new Error(
+            'Failed to search for user: {"errors":[{"message":"Access is denied","code":"AccessDeniedException"}]}',
+          ),
+        );
+      } catch {
+        // Expected
+      }
+
+      expect(errorStub.called).to.be.true;
+      const errorMessage = errorStub.firstCall.args[0] as string;
+      expect(errorMessage).to.include('Suggestion');
+      expect(errorMessage).to.include('--user-auth');
+    });
+
     it('should pass through non-auth errors unchanged', async () => {
       await setupCommandWithStrategy(command, 'client-credentials');
 

@@ -67,7 +67,7 @@ describe('Auth Token E2E Tests', function () {
       // Use only scopes your client actually has
       const extraScopes = ['profile', 'roles'];
 
-      const result = await runCLIWithRetry(['auth:token', '--scope', extraScopes.join(','), '--json'], {
+      const result = await runCLIWithRetry(['auth:token', '--auth-scope', extraScopes.join(','), '--json'], {
         timeout: TIMEOUTS.AUTH,
       });
 

@@ -44,10 +44,10 @@ describe('am clients create', () => {
   describe('command structure', () => {
     it('should have required flags', () => {
       expect(ClientCreate.flags).to.have.property('name');
-      expect(ClientCreate.flags).to.have.property('organizations');
+      expect(ClientCreate.flags).to.have.property('orgs');
       expect(ClientCreate.flags).to.have.property('password');
       expect(ClientCreate.flags.name.required).to.be.true;
-      expect(ClientCreate.flags.organizations.required).to.be.true;
+      expect(ClientCreate.flags.orgs.required).to.be.true;
       expect(ClientCreate.flags.password.required).to.be.true;
     });
 
@@ -66,7 +66,7 @@ describe('am clients create', () => {
       const command = new ClientCreate([], {} as any);
       (command as any).flags = {
         name: 'x'.repeat(201),
-        organizations: 'org-1',
+        orgs: 'org-1',
         password: 'ValidP@ssword12',
       };
       stubCommandConfigAndLogger(command);
@@ -85,7 +85,7 @@ describe('am clients create', () => {
       (command as any).flags = {
         name: 'My Client',
         description: 'x'.repeat(257),
-        organizations: 'org-1',
+        orgs: 'org-1',
         password: 'ValidP@ssword12',
       };
       stubCommandConfigAndLogger(command);
@@ -103,7 +103,7 @@ describe('am clients create', () => {
       const command = new ClientCreate([], {} as any);
       (command as any).flags = {
         name: 'My Client',
-        organizations: 'org-1',
+        orgs: 'org-1',
         password: 'Short1',
       };
       stubCommandConfigAndLogger(command);
@@ -121,7 +121,7 @@ describe('am clients create', () => {
       const command = new ClientCreate([], {} as any);
       (command as any).flags = {
         name: 'My Client',
-        organizations: 'org-1',
+        orgs: 'org-1',
         password: 'a'.repeat(129),
       };
       stubCommandConfigAndLogger(command);
@@ -139,7 +139,7 @@ describe('am clients create', () => {
       const command = new ClientCreate([], {} as any);
       (command as any).flags = {
         name: 'My Client',
-        organizations: 'org-1',
+        orgs: 'org-1',
         password: 'ValidP@ssword12',
         'role-tenant-filter': 'invalid-format',
       };
@@ -158,7 +158,7 @@ describe('am clients create', () => {
       const command = new ClientCreate([], {} as any);
       (command as any).flags = {
         name: 'My Client',
-        organizations: '  ,  ',
+        orgs: '  ,  ',
         password: 'ValidP@ssword12',
       };
       stubCommandConfigAndLogger(command);
@@ -168,7 +168,7 @@ describe('am clients create', () => {
         await command.run();
         expect.fail('Should have thrown');
       } catch (error: unknown) {
-        expect((error as Error).message).to.match(/At least one organization ID is required/);
+        expect((error as Error).message).to.match(/At least one organization is required/);
       }
     });
   });
@@ -178,7 +178,7 @@ describe('am clients create', () => {
       const command = new ClientCreate([], {} as any);
       (command as any).flags = {
         name: 'New Client',
-        organizations: 'org-123',
+        orgs: 'org-123',
         password: 'SecureP@ssword12',
       };
       stubCommandConfigAndLogger(command);
@@ -194,6 +194,9 @@ describe('am clients create', () => {
       };
 
       server.use(
+        http.get(`${BASE_URL}/organizations/org-123`, () => {
+          return HttpResponse.json({id: 'org-123', name: 'Test Org'});
+        }),
         http.post(`${BASE_URL}/apiclients`, async ({request}) => {
           const body = (await request.json()) as {name?: string; organizations?: string[]; password?: string};
           expect(body.name).to.equal('New Client');

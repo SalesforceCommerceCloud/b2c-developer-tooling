@@ -20,6 +20,8 @@ const AM_API_ADMIN = 'API Administrator';
 
 /** Patterns that indicate an authentication/authorization error */
 const AUTH_ERROR_PATTERNS = [
+  'access is denied',
+  'accessdeniedexception',
   'authentication invalid',
   'operation forbidden',
   '401',
