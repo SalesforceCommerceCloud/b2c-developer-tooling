@@ -94,7 +94,10 @@
     "@modelcontextprotocol/sdk": "1.26.0",
     "@oclif/core": "4.8.0",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "zod": "3.25.76"
+    "glob": "^11.0.0",
+    "ts-morph": "^24.0.0",
+    "zod": "3.25.76",
+    "zod-to-json-schema": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/compat": "^1",

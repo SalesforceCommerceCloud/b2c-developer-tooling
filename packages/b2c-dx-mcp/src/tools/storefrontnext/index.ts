@@ -28,6 +28,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {createDeveloperGuidelinesTool} from './developer-guidelines.js';
+import {createPageDesignerDecoratorTool} from '../page-designer-decorator/index.js';
 
 /**
  * Common input type for placeholder tools.
@@ -100,6 +101,7 @@ function createPlaceholderTool(name: string, description: string, services: Serv
 export function createStorefrontNextTools(services: Services): McpTool[] {
   return [
     createDeveloperGuidelinesTool(services),
+    createPageDesignerDecoratorTool(services),
     createPlaceholderTool(
       'storefront_next_site_theming',
       'Configure and manage site theming for Storefront Next',

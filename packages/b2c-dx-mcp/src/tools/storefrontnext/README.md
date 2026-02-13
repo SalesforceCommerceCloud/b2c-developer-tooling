@@ -80,6 +80,68 @@ MCP tools for Storefront Next development with React Server Components.
 }
 ```
 
+### `add_page_designer_decorator`
+
+Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefinition`) to existing React components for Storefront Next.
+
+**Status**: ✅ Implemented (non-GA - use `--allow-non-ga-tools` flag)
+
+**Use cases**:
+
+- Add Page Designer support to new components
+- Convert existing components to be Page Designer-compatible
+- Generate decorator code automatically or interactively
+- Configure component attributes and regions for Page Designer
+
+**Key features**:
+
+- **Name-Based Lookup**: Find components by name (e.g., "ProductCard") without knowing paths
+- **Auto Mode**: Automatically generates decorators with sensible defaults
+- **Interactive Mode**: Step-by-step workflow for fine-tuned control
+- **Auto-Discovery**: Searches common component directories automatically
+- **Type Inference**: Automatically infers Page Designer types from prop names
+
+**Parameters**:
+
+- `component` (required, string): Component name (e.g., "ProductCard") or file path
+- `autoMode` (optional, boolean): Enable auto mode for quick setup
+- `searchPaths` (optional, array): Additional directories to search for components
+- `componentId` (optional, string): Override component ID
+- `conversationContext` (optional, object): For interactive mode workflow steps
+
+**Modes**:
+
+- **Auto Mode**: Generates decorators immediately with sensible defaults
+- **Interactive Mode**: Multi-step workflow with user confirmation at each stage
+
+**Returns**: Generated decorator code and instructions for adding to component file
+
+**Example usage**:
+
+```json
+// Auto mode (quick setup)
+{
+  "name": "add_page_designer_decorator",
+  "arguments": {
+    "component": "ProductCard",
+    "autoMode": true
+  }
+}
+
+// Interactive mode (step-by-step)
+{
+  "name": "add_page_designer_decorator",
+  "arguments": {
+    "component": "Hero",
+    "conversationContext": {
+      "step": "analyze"
+    }
+  }
+}
+```
+
+**See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.
+
 ## Implementation Details
 
 ### Architecture
