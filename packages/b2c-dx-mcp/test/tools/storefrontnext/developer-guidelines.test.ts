@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import {createDeveloperGuidelinesTool} from '../../../src/tools/storefrontnext/developer-guidelines.js';
 import {Services} from '../../../src/services.js';
 import type {ToolResult} from '../../../src/utils/types.js';
+import {createMockResolvedConfig} from '../../test-helpers.js';
 
 /**
  * Helper to extract text from a ToolResult.
@@ -25,7 +26,7 @@ function getResultText(result: ToolResult): string {
  * Create a mock services instance for testing.
  */
 function createMockServices(): Services {
-  return new Services({});
+  return new Services({resolvedConfig: createMockResolvedConfig()});
 }
 
 describe('tools/storefrontnext/developer-guidelines', () => {

@@ -5,13 +5,13 @@ description: View and debug b2c CLI configuration and understand where credentia
 
 # B2C Config Skill
 
-Use the `b2c setup config` command to view the resolved configuration and understand where each value comes from. This is essential for debugging configuration issues and verifying that the CLI is using the correct settings.
+Use the `b2c setup inspect` command to view the resolved configuration and understand where each value comes from. Use the `b2c setup instance` commands to manage named instance configurations.
 
-> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli setup config`).
+> **Tip:** `b2c setup config` still works as an alias. If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli setup inspect`).
 
 ## When to Use
 
-Use `b2c setup config` when you need to:
+Use `b2c setup inspect` when you need to:
 
 - Verify which configuration file is being used
 - Check if environment variables are being read correctly
@@ -20,44 +20,103 @@ Use `b2c setup config` when you need to:
 - Identify hostname mismatch protection issues
 - Verify MRT API key is loaded from ~/.mobify
 
-## Examples
+Use `b2c setup instance` commands when you need to:
+
+- List all configured instances
+- Create a new instance configuration
+- Switch between instances (set active)
+- Remove an instance configuration
+
+## Inspecting Configuration
 
 ### View Current Configuration
 
 ```bash
 # Display resolved configuration (sensitive values masked by default)
-b2c setup config
+b2c setup inspect
 
 # View configuration for a specific instance from dw.json
-b2c setup config -i staging
+b2c setup inspect -i staging
 
 # View configuration with a specific config file
-b2c setup config --config /path/to/dw.json
+b2c setup inspect --config /path/to/dw.json
 ```
 
 ### Debug Sensitive Values
 
 ```bash
 # Show actual passwords, secrets, and API keys (use with caution)
-b2c setup config --unmask
+b2c setup inspect --unmask
 ```
 
 ### JSON Output for Scripting
 
 ```bash
 # Output as JSON for parsing in scripts
-b2c setup config --json
+b2c setup inspect --json
 
 # Pretty-print with jq
-b2c setup config --json | jq '.config'
+b2c setup inspect --json | jq '.config'
 
 # Check which sources are loaded
-b2c setup config --json | jq '.sources'
+b2c setup inspect --json | jq '.sources'
+```
+
+## Managing Instances
+
+### List Configured Instances
+
+```bash
+# Show all instances from dw.json
+b2c setup instance list
+
+# Output as JSON
+b2c setup instance list --json
+```
+
+### Create a New Instance
+
+```bash
+# Interactive mode - prompts for all values
+b2c setup instance create staging
+
+# With hostname
+b2c setup instance create staging --hostname staging.example.com
+
+# Create and set as active
+b2c setup instance create staging --hostname staging.example.com --active
+
+# Non-interactive mode (for scripts)
+b2c setup instance create staging \
+  --hostname staging.example.com \
+  --username admin \
+  --password secret \
+  --force
+```
+
+### Switch Active Instance
+
+```bash
+# Set staging as the default instance
+b2c setup instance set-active staging
+
+# Now commands use staging by default
+b2c code list  # Uses staging
+```
+
+### Remove an Instance
+
+```bash
+# Remove with confirmation prompt
+b2c setup instance remove staging
+
+# Remove without confirmation
+b2c setup instance remove staging --force
 ```
 
 ## Understanding the Output
 
-The command displays configuration organized by category:
+The `setup inspect` command displays configuration organized by category:
 
 - **Instance**: hostname, webdavHostname, codeVersion
 - **Authentication (Basic)**: username, password (for WebDAV)
@@ -116,7 +175,7 @@ Use `b2c auth token` to get an admin OAuth access token for Account Manager cred
 b2c auth token
 
 # Get token with specific scopes
-b2c auth token --scope sfcc.orders --scope sfcc.products
+b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
 
 # Get token as JSON (includes expiration and scopes)
 b2c auth token --json

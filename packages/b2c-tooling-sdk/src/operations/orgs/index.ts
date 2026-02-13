@@ -7,14 +7,13 @@
  * Account Manager organization management operations.
  *
  * This module provides high-level functions for managing organizations in Account Manager,
- * including retrieving organization details and audit logs.
+ * including retrieving organization details.
  *
  * ## Core Organization Functions
  *
  * - {@link getOrg} - Get organization details by ID
  * - {@link getOrgByName} - Get organization details by name
  * - {@link listOrgs} - List organizations with pagination
- * - {@link getOrgAuditLogs} - Get audit logs for an organization
  *
  * ## Usage
  *
@@ -23,7 +22,6 @@
  *   getOrg,
  *   getOrgByName,
  *   listOrgs,
- *   getOrgAuditLogs,
  * } from '@salesforce/b2c-tooling-sdk/operations/orgs';
  * import {createAccountManagerOrgsClient} from '@salesforce/b2c-tooling-sdk/clients';
  * import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
@@ -43,9 +41,6 @@
  *
  * // List organizations
  * const orgs = await listOrgs(client, {size: 25, page: 0});
- *
- * // Get audit logs
- * const logs = await getOrgAuditLogs(client, 'org-id');
  * ```
  *
  * ## Authentication
@@ -58,17 +53,11 @@ import type {
   AccountManagerOrgsClient,
   AccountManagerOrganization,
   OrganizationCollection,
-  AuditLogCollection,
   ListOrgsOptions,
 } from '../../clients/am-api.js';
 
 // Re-export types
-export type {
-  AccountManagerOrganization,
-  OrganizationCollection,
-  AuditLogCollection,
-  ListOrgsOptions,
-} from '../../clients/am-api.js';
+export type {AccountManagerOrganization, OrganizationCollection, ListOrgsOptions} from '../../clients/am-api.js';
 
 /**
  * Gets an organization by ID.
@@ -109,15 +98,4 @@ export async function listOrgs(
   options?: ListOrgsOptions,
 ): Promise<OrganizationCollection> {
   return client.listOrgs(options);
-}
-
-/**
- * Gets audit logs for an organization.
- *
- * @param client - Account Manager Organizations client
- * @param orgId - Organization ID
- * @returns Audit log collection
- */
-export async function getOrgAuditLogs(client: AccountManagerOrgsClient, orgId: string): Promise<AuditLogCollection> {
-  return client.getOrgAuditLogs(orgId);
 }

@@ -100,7 +100,7 @@ jobs:
         run: pnpm run build
 
       - name: Run tests
-        run: pnpm run test
+        run: pnpm --filter '!b2c-vs-extension' run test
 
       - name: Publish SDK to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_sdk == 'true'

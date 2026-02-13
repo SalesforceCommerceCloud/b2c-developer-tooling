@@ -7,6 +7,7 @@ import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
 import type {LoadConfigOptions, PluginSources} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
+import {parseFriendlySandboxId} from '../operations/ods/sandbox-lookup.js';
 import type {
   ConfigSourcesHookOptions,
   ConfigSourcesHookResult,
@@ -167,6 +168,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     await this.initTelemetryFromConfig();
 
     this.resolvedConfig = this.loadConfiguration();
+
+    this.addTelemetryContext();
   }
 
   /**
@@ -323,6 +326,63 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
   protected loadConfiguration(): ResolvedB2CConfig {
     return loadConfig({}, this.getBaseConfigOptions(), this.getPluginSources());
+  }
+
+  /**
+   * Enrich telemetry with realm/tenant context from the resolved configuration.
+   * Called after loadConfiguration() in init() so that COMMAND_SUCCESS and
+   * COMMAND_EXCEPTION events include organizational context.
+   */
+  protected addTelemetryContext(): void {
+    if (!this.telemetry) return;
+
+    try {
+      const attributes: TelemetryAttributes = {};
+      const {values, sources} = this.resolvedConfig;
+
+      // Extract realm from tenantId (e.g., "zzpq_019" or "f_ecom_zzpq_019")
+      if (values.tenantId) {
+        attributes.tenantId = values.tenantId;
+        const parsed = parseFriendlySandboxId(values.tenantId);
+        if (parsed) {
+          attributes.realm = parsed.realm;
+        }
+      }
+
+      // Fallback: extract realm from hostname (e.g., "zzpq-019.dx.commercecloud.salesforce.com")
+      if (!attributes.realm && values.hostname) {
+        const parsed = parseFriendlySandboxId(values.hostname.split('.')[0]);
+        if (parsed) {
+          attributes.realm = parsed.realm;
+        }
+      }
+
+      if (values.hostname) {
+        attributes.hostname = values.hostname;
+      }
+
+      if (values.clientId) {
+        attributes.clientId = values.clientId;
+      }
+
+      if (values.shortCode) {
+        attributes.shortCode = values.shortCode;
+      }
+
+      // Record which config sources contributed
+      if (sources.length > 0) {
+        attributes.configSources = sources.map((s) => s.name).join(', ');
+      }
+
+      if (Object.keys(attributes).length > 0) {
+        this.telemetry.addAttributes(attributes);
+        if (process.env.SFCC_TELEMETRY_LOG === 'true') {
+          this.logger.debug({attributes}, 'telemetry context enriched');
+        }
+      }
+    } catch {
+      // Best-effort: telemetry context enrichment must never prevent command execution
+    }
   }
 
   /**

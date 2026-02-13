@@ -6,14 +6,16 @@ description: Commands for viewing configuration, installing AI agent skills, and
 
 Commands for viewing configuration and setting up the development environment.
 
-## b2c setup config
+## b2c setup inspect
 
 Display the resolved configuration from all sources, showing which values are set and where they came from. Useful for debugging configuration issues.
+
+**Alias:** `b2c setup config`
 
 ### Usage
 
 ```bash
-b2c setup config [FLAGS]
+b2c setup inspect [FLAGS]
 ```
 
 ### Flags
@@ -27,16 +29,16 @@ b2c setup config [FLAGS]
 
 ```bash
 # Display resolved configuration (sensitive values masked)
-b2c setup config
+b2c setup inspect
 
 # Display configuration with sensitive values unmasked
-b2c setup config --unmask
+b2c setup inspect --unmask
 
 # Output as JSON for scripting
-b2c setup config --json
+b2c setup inspect --json
 
 # Debug configuration with a specific instance
-b2c setup config -i staging
+b2c setup inspect -i staging
 ```
 
 ### Output
@@ -102,6 +104,186 @@ Use `--unmask` to reveal the actual values when needed for debugging.
 ### See Also
 
 - [Configuration Guide](/guide/configuration) - How to configure the CLI
+
+## b2c setup instance list
+
+List all configured B2C Commerce instances from dw.json.
+
+### Usage
+
+```bash
+b2c setup instance list [FLAGS]
+```
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# List all configured instances
+b2c setup instance list
+
+# Output as JSON
+b2c setup instance list --json
+```
+
+### Output
+
+The command displays a table of configured instances:
+
+```
+Instances
+────────────────────────────────────────────────────────────
+Name           Hostname                          Source        Active
+production     prod.demandware.net               DwJsonSource
+staging        staging.demandware.net            DwJsonSource  ✓
+development    dev.demandware.net                DwJsonSource
+```
+
+## b2c setup instance create
+
+Create a new B2C Commerce instance configuration in dw.json.
+
+### Usage
+
+```bash
+b2c setup instance create [NAME] [FLAGS]
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `NAME` | Instance name | Yes (or prompted) |
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--hostname`, `-s` | B2C instance hostname | Prompted |
+| `--username` | WebDAV username | |
+| `--password` | WebDAV password | Prompted if username set |
+| `--client-id` | OAuth client ID | |
+| `--client-secret` | OAuth client secret | Prompted if client-id set |
+| `--code-version` | Code version | |
+| `--active` | Set as active instance | `false` |
+| `--force` | Non-interactive mode | `false` |
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# Interactive mode (prompts for all values)
+b2c setup instance create staging
+
+# Create with hostname
+b2c setup instance create staging --hostname staging.example.com
+
+# Create and set as active
+b2c setup instance create staging --hostname staging.example.com --active
+
+# Non-interactive mode (CI/CD)
+b2c setup instance create staging --hostname staging.example.com --username admin --password secret --force
+```
+
+### Interactive Mode
+
+When run without `--force`, the command provides an interactive experience:
+
+1. Prompts for instance name (if not provided)
+2. Prompts for hostname (if not provided)
+3. Prompts for authentication type (Basic, OAuth, Both, or Skip)
+4. Prompts for credentials based on selection
+5. Asks whether to set as active instance
+6. Shows summary and confirms before creating
+
+## b2c setup instance remove
+
+Remove a B2C Commerce instance configuration from dw.json.
+
+### Usage
+
+```bash
+b2c setup instance remove NAME [FLAGS]
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `NAME` | Instance name to remove | Yes |
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--force` | Skip confirmation prompt | `false` |
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# Remove with confirmation
+b2c setup instance remove staging
+
+# Remove without confirmation
+b2c setup instance remove staging --force
+```
+
+## b2c setup instance set-active
+
+Set a B2C Commerce instance as the default (active) instance.
+
+### Usage
+
+```bash
+b2c setup instance set-active NAME [FLAGS]
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `NAME` | Instance name to set as active | Yes |
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# Set staging as the active instance
+b2c setup instance set-active staging
+
+# Set production as active
+b2c setup instance set-active production
+```
+
+### How Active Instance Works
+
+The active instance is used as the default when no `--instance` or `-i` flag is provided to other commands. This allows you to work with multiple instances without specifying which one to use each time.
+
+Example workflow:
+
+```bash
+# Configure multiple instances
+b2c setup instance create staging --hostname staging.example.com
+b2c setup instance create production --hostname prod.example.com
+
+# Set staging as active
+b2c setup instance set-active staging
+
+# Commands now use staging by default
+b2c code list              # Uses staging
+b2c code list -i production # Uses production
+```
 
 ## b2c setup skills
 

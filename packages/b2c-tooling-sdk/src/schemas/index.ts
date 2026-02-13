@@ -38,7 +38,8 @@
  * import {
  *   getPathKeys,
  *   getSchemaNames,
- *   isCollapsedSchema
+ *   isCollapsedSchema,
+ *   getApiType
  * } from '@salesforce/b2c-tooling-sdk/schemas';
  *
  * // Get available paths
@@ -51,6 +52,9 @@
  * if (isCollapsedSchema(schema)) {
  *   console.log('Schema is in collapsed form');
  * }
+ *
+ * // Map security scheme to API type
+ * const apiType = getApiType('AmOAuth2'); // Returns 'Admin'
  * ```
  *
  * @module schemas
@@ -58,6 +62,8 @@
 
 // Collapse utilities
 export {collapseOpenApiSchema, isCollapsedSchema, getPathKeys, getSchemaNames, getExampleNames} from './collapse.js';
+// Security scheme utilities
+export {getApiType} from './security-schemes.js';
 
 // Types
 export type {SchemaCollapseOptions, OpenApiSchemaInput, CollapsedOpenApiSchema, CollapsedPath} from './collapse.js';

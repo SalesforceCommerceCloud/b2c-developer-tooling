@@ -12,11 +12,13 @@ import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {createMockResolvedConfig} from '../test-helpers.js';
 
 // Create a mock services instance for testing
 function createMockServices(options?: {mrtAuth?: AuthStrategy}): Services {
   return new Services({
     mrtConfig: options?.mrtAuth ? {auth: options.mrtAuth} : undefined,
+    resolvedConfig: createMockResolvedConfig(),
   });
 }
 

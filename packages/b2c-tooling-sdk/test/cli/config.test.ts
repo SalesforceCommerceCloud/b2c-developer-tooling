@@ -190,7 +190,7 @@ describe('cli/config', () => {
         'short-code': 'abc123',
         'tenant-id': 'my-tenant_001',
         'account-manager-host': 'account.demandware.com',
-        scope: ['sfcc.products', 'sfcc.orders'],
+        'auth-scope': ['sfcc.products', 'sfcc.orders'],
       };
 
       const result = extractOAuthFlags(flags);

@@ -107,23 +107,22 @@ export function formatApiError(error: unknown, response: Response): string {
  */
 export abstract class SlasClientCommand<T extends typeof Command> extends OAuthCommand<T> {
   /**
-   * Ensure tenant exists, creating it if necessary.
-   * This is required before creating SLAS clients.
+   * Check if a tenant exists.
+   * Returns true if the tenant exists, false if not found.
+   * Throws (via this.error) if an unexpected error occurs.
    */
-  protected async ensureTenantExists(slasClient: SlasClient, tenantId: string): Promise<void> {
-    // Try to get the tenant first
+  protected async checkTenantExists(slasClient: SlasClient, tenantId: string): Promise<boolean> {
     const {error, response} = await slasClient.GET('/tenants/{tenantId}', {
       params: {
         path: {tenantId},
       },
     });
 
-    // If tenant exists, we're done
     if (!error) {
-      return;
+      this.logger.debug({tenantId}, 'Tenant exists');
+      return true;
     }
 
-    // Check if this is a "tenant not found" error (SLAS returns 400 with TenantNotFoundException)
     const isTenantNotFound =
       response.status === 404 ||
       (response.status === 400 &&
@@ -132,13 +131,27 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
         'exception_name' in error &&
         (error as {exception_name?: string}).exception_name === 'TenantNotFoundException');
 
-    // If it's not a tenant-not-found error, something else went wrong
-    if (!isTenantNotFound) {
-      this.error(
-        t('commands.slas.client.create.tenantError', 'Failed to check tenant: {{message}}', {
-          message: formatApiError(error, response),
-        }),
-      );
+    if (isTenantNotFound) {
+      this.logger.debug({tenantId, status: response.status}, 'Tenant not found');
+      return false;
+    }
+
+    this.error(
+      t('commands.slas.client.create.tenantError', 'Failed to check tenant: {{message}}', {
+        message: formatApiError(error, response),
+      }),
+    );
+  }
+
+  /**
+   * Ensure tenant exists, creating it if necessary.
+   * This is required before creating SLAS clients.
+   */
+  protected async ensureTenantExists(slasClient: SlasClient, tenantId: string): Promise<void> {
+    const tenantExists = await this.checkTenantExists(slasClient, tenantId);
+
+    if (tenantExists) {
+      return;
     }
 
     // Tenant doesn't exist, create it with placeholder values

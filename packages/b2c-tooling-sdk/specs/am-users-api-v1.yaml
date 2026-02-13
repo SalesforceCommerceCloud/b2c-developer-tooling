@@ -182,6 +182,46 @@ paths:
                 roles:
                   - "bm-user"
                 roleTenantFilter: "ECOM_USER:abcd_prd"
+  /dw/rest/v1/users/search/findByLogin:
+    get:
+      operationId: findUserByLogin
+      summary: Find user by login.
+      description: Search for a user by their login (email address). Returns the user if found.
+      parameters:
+        - name: login
+          in: query
+          required: true
+          description: The user's login (email address).
+          schema:
+            type: string
+      responses:
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "404":
+          description: A user with this login was not found.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRead"
   /dw/rest/v1/users/{userId}:
     get:
       operationId: getUser
