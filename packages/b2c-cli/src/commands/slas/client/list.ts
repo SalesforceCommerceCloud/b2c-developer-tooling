@@ -69,11 +69,16 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
     });
 
     if (error) {
-      this.error(
-        t('commands.slas.client.list.error', 'Failed to list SLAS clients: {{message}}', {
-          message: formatApiError(error, response),
-        }),
-      );
+      const tenantExists = await this.checkTenantExists(slasClient, tenantId);
+      if (tenantExists) {
+        this.error(
+          t('commands.slas.client.list.error', 'Failed to list SLAS clients: {{message}}', {
+            message: formatApiError(error, response),
+          }),
+        );
+      }
+      // Tenant doesn't exist — no clients to list, fall through to empty handling
+      this.logger.debug({tenantId}, 'Tenant does not exist yet, returning empty client list');
     }
 
     const clients = ((data as {data?: Client[]})?.data ?? []).map((client) => normalizeClientResponse(client));

@@ -49,12 +49,16 @@ describe('slas client list', () => {
     expect(result.clients).to.deep.equal([]);
   });
 
-  it('calls command.error on API error', async () => {
+  it('calls command.error on API error when tenant exists', async () => {
     const command: any = await createCommand({'tenant-id': 'abcd_123'}, {});
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
 
-    const getStub = sinon.stub().resolves({data: undefined, error: {message: 'boom'}});
+    const getStub = sinon.stub();
+    // First call: list clients - returns error
+    getStub.onFirstCall().resolves({data: undefined, error: {message: 'boom'}, response: {status: 401}});
+    // Second call: check tenant - tenant exists
+    getStub.onSecondCall().resolves({data: {tenantId: 'abcd_123'}, error: undefined});
     sinon.stub(command, 'getSlasClient').returns({GET: getStub} as any);
 
     const errorStub = stubErrorToThrow(command);
@@ -65,5 +69,50 @@ describe('slas client list', () => {
     } catch {
       expect(errorStub.calledOnce).to.equal(true);
     }
+  });
+
+  it('returns empty clients list when list errors and tenant does not exist (404)', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123'}, {});
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+
+    const getStub = sinon.stub();
+    // First call: list clients - returns error
+    getStub.onFirstCall().resolves({data: undefined, error: {message: 'boom'}, response: {status: 401}});
+    // Second call: check tenant - tenant not found (404)
+    getStub.onSecondCall().resolves({error: {message: 'not found'}, response: {status: 404}});
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub} as any);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    const errorStub = sinon.stub(command, 'error');
+
+    const result = await command.run();
+
+    expect(result.clients).to.deep.equal([]);
+    expect(errorStub.called).to.equal(false);
+  });
+
+  it('returns empty clients list when list errors and tenant does not exist (400 TenantNotFoundException)', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123'}, {});
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+
+    const getStub = sinon.stub();
+    // First call: list clients - returns error
+    getStub.onFirstCall().resolves({data: undefined, error: {message: 'boom'}, response: {status: 401}});
+    // Second call: check tenant - tenant not found (400 + TenantNotFoundException)
+    getStub.onSecondCall().resolves({
+      error: {exception_name: 'TenantNotFoundException'},
+      response: {status: 400},
+    });
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub} as any);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    const errorStub = sinon.stub(command, 'error');
+
+    const result = await command.run();
+
+    expect(result.clients).to.deep.equal([]);
+    expect(errorStub.called).to.equal(false);
   });
 });

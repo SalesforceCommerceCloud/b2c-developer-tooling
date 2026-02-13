@@ -135,8 +135,6 @@ export type {
   AccountManagerOrgsClient,
   AccountManagerOrganization,
   OrganizationCollection,
-  AuditLogRecord,
-  AuditLogCollection,
   ListOrgsOptions,
   CdnZonesClient,
   CdnZonesClientConfig,
@@ -263,7 +261,7 @@ export {
 export {getRole, listRoles} from './operations/roles/index.js';
 
 // Operations - Organizations
-export {getOrg, getOrgByName, listOrgs, getOrgAuditLogs} from './operations/orgs/index.js';
+export {getOrg, getOrgByName, listOrgs} from './operations/orgs/index.js';
 
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from './defaults.js';
