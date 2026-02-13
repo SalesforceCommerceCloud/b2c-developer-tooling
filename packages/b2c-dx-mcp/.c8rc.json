@@ -1,7 +1,7 @@
 {
   "all": true,
   "src": ["src"],
-  "exclude": ["test/**", "**/*.d.ts"],
+  "exclude": ["test/**", "**/*.d.ts", "**/index.ts"],
   "reporter": ["text", "text-summary", "html", "lcov"],
   "report-dir": "coverage",
   "check-coverage": true,
