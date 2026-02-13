@@ -218,12 +218,31 @@ The tool uses direct function execution with no file I/O or compilation overhead
 
 ## ✅ Testing
 
+### Automated Tests
+
 ```bash
 pnpm build
 pnpm test
 ```
 
 Comprehensive test suite covers all workflow modes, component discovery, and error handling.
+
+### Manual Test Runner
+
+For quick manual verification, use the test runner script:
+
+```bash
+cd packages/b2c-dx-mcp
+pnpm build
+node test/tools/page-designer-decorator/index.test.mjs all
+```
+
+Run a specific test case:
+```bash
+node test/tools/page-designer-decorator/index.test.mjs TC-1.1
+```
+
+See [`test/tools/page-designer-decorator/README.md`](../../../test/tools/page-designer-decorator/README.md) for detailed testing instructions.
 
 ## 🎓 Learning Resources
 

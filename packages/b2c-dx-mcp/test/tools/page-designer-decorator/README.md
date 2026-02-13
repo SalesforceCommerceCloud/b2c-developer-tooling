@@ -50,7 +50,77 @@ npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga
   --args '{"component": "MyComponent"}'
 ```
 
-### 4. Manual Testing with Real Components
+### 4. Automated Manual Test Runner
+
+A test runner script is available to quickly verify the tool with various test scenarios:
+
+```bash
+cd packages/b2c-dx-mcp
+pnpm build  # Build the package first
+node test/tools/page-designer-decorator/index.test.mjs all
+```
+
+Run a specific test case:
+```bash
+node test/tools/page-designer-decorator/index.test.mjs TC-1.1
+```
+
+The script covers 24 automated test cases including:
+- Component discovery (name-based, path-based, nested, custom paths)
+- Auto mode (basic, type inference, complex props exclusion)
+- Interactive mode (mode selection, analyze step)
+- Error handling (invalid input, missing parameters)
+- Edge cases (no props, optional props, union types, collisions)
+- Environment variables (SFCC_WORKING_DIRECTORY)
+
+See the script's JSDoc header for a complete list of available test cases.
+
+#### Running Tests Against a Local Storefront Next Installation
+
+The test runner script supports two modes:
+
+**1. Temporary Directory Mode (Default)**
+Creates isolated test environments with temporary directories. Ideal for CI/CD and regression testing.
+
+```bash
+cd packages/b2c-dx-mcp
+pnpm build
+node test/tools/page-designer-decorator/index.test.mjs all
+```
+
+**2. Real Storefront Next Project Mode**
+Test against an existing Storefront Next installation by setting `SFCC_WORKING_DIRECTORY`:
+
+```bash
+cd packages/b2c-dx-mcp
+pnpm build
+SFCC_WORKING_DIRECTORY=/path/to/storefront-next \
+  node test/tools/page-designer-decorator/index.test.mjs all
+```
+
+Or set it as an environment variable:
+```bash
+export SFCC_WORKING_DIRECTORY=/path/to/storefront-next
+cd packages/b2c-dx-mcp
+pnpm build
+node test/tools/page-designer-decorator/index.test.mjs TC-1.1
+```
+
+**Important Notes for Real Project Mode**:
+- Component discovery searches in your real Storefront Next project (`SFCC_WORKING_DIRECTORY`)
+- Test components created by the script are placed in a temporary directory (not in your real project)
+- The script will **not** modify your real project files (read-only)
+- Tests will use existing components from your real project if they exist
+- If a test component doesn't exist in your real project, the test will show a "component not found" result (this is expected)
+- The real project directory is preserved after testing
+- To test with specific components, ensure they exist in your real project's `src/components/` directory
+
+**Alternative Testing Methods**:
+- **MCP Inspector**: Interactive UI testing (see section 2 above)
+- **CLI Testing**: Command-line testing (see section 3 above)
+- **Manual Test Plan**: Full integration testing including Business Manager and Page Designer (see [manual test plan](../../../../../Documents/page-designer-decorator-manual-test-plan.md) for TC-7.x tests)
+
+### 5. Manual Testing with Real Components
 
 1. Set up a Storefront Next project (or use an existing one)
 2. Create a test component:
@@ -74,7 +144,7 @@ export SFCC_WORKING_DIRECTORY=/path/to/storefront-next
 
 4. Use the tool via MCP Inspector or your IDE's MCP integration
 
-### 5. Test Scenarios
+### 6. Test Scenarios
 
 #### Mode Selection
 ```json
