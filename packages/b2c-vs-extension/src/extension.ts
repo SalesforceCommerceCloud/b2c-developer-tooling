@@ -915,16 +915,23 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const clientId = randomUUID().toLowerCase();
           const clientSecret = `sk_${randomUUID().replaceAll('-', '')}`;
           const defaultScopes = [
-            'sfcc.shopper-products',
-            'sfcc.shopper-productlists',
+            'sfcc.shopper-baskets-orders.rw',
             'sfcc.shopper-categories',
-            'sfcc.shopper-gift-certificates', 
+            'sfcc.shopper-customers.login',
+            'sfcc.shopper-discovery-search',
+            'sfcc.shopper-customers.register',
+             'sfcc.shopper-gift-certificates', 
             'sfcc.shopper-myaccount.addresses.rw',
             'sfcc.shopper-myaccount.baskets',
             'sfcc.shopper-myaccount.orders',
             'sfcc.shopper-myaccount.paymentinstruments.rw',
             'sfcc.shopper-myaccount.productlists.rw',
             'sfcc.shopper-myaccount.rw',
+            'sfcc.shopper-promotions',
+            'sfcc.shopper-product-search',
+            'sfcc.shopper-products',
+            'sfcc.shopper-productlists',
+            'sfcc.shopper-stores',
           ];
           const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
             params: {path: {tenantId, clientId}},
