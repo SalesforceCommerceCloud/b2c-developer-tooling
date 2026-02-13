@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import sinon from 'sinon';
+import {createSandbox, type SinonStub, type SinonSandbox} from 'sinon';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import McpServerCommand from '../../src/commands/mcp.js';
 import {B2CDxMcpServer} from '../../src/server.js';
@@ -101,12 +101,12 @@ describe('McpServerCommand', () => {
   });
 
   describe('telemetry initialization', () => {
-    let sandbox: sinon.SinonSandbox;
-    let serverConnectStub: sinon.SinonStub;
-    let addAttributesStub: sinon.SinonStub;
+    let sandbox: SinonSandbox;
+    let serverConnectStub: SinonStub;
+    let addAttributesStub: SinonStub;
 
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = createSandbox();
 
       // Stub Telemetry prototype methods - this works because BaseCommand creates
       // telemetry instances with `new Telemetry()`, so all instances use these stubs
@@ -408,10 +408,10 @@ describe('McpServerCommand', () => {
   });
 
   describe('telemetry lifecycle', () => {
-    let sandbox: sinon.SinonSandbox;
+    let sandbox: SinonSandbox;
 
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = createSandbox();
     });
 
     afterEach(() => {
@@ -460,6 +460,325 @@ describe('McpServerCommand', () => {
       const [sentError, attributes] = sendExceptionStub.firstCall.args as [Error, Record<string, unknown>];
       expect(sentError).to.equal(error);
       expect(attributes.context).to.equal('server shutdown');
+    });
+  });
+
+  describe('loadConfiguration', () => {
+    let sandbox: SinonSandbox;
+    let command: McpServerCommand;
+
+    beforeEach(() => {
+      sandbox = createSandbox();
+      command = new McpServerCommand([], {
+        name: 'test',
+        version: '1.0.0',
+        root: process.cwd(),
+        dataDir: '/tmp/test-data',
+      } as never);
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should combine MRT and instance flags', async () => {
+      // Stub init to set up flags
+      sandbox.stub(command, 'init').resolves();
+      (command as unknown as {flags: Record<string, unknown>}).flags = {
+        'api-key': 'test-mrt-key',
+        server: 'test-server',
+        username: 'test-user',
+      };
+
+      // Stub getBaseConfigOptions
+      sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+        configPath: undefined,
+        workingDirectory: process.cwd(),
+      });
+
+      // Call loadConfiguration via protected access
+      const config = (command as unknown as {loadConfiguration(): unknown}).loadConfiguration();
+
+      // Verify config was loaded (should return a ResolvedB2CConfig object)
+      expect(config).to.exist;
+      expect(config).to.have.property('values');
+    });
+  });
+
+  describe('finally', () => {
+    let sandbox: SinonSandbox;
+    let command: McpServerCommand;
+    let superFinallyStub: SinonStub;
+
+    beforeEach(() => {
+      sandbox = createSandbox();
+      command = new McpServerCommand([], {
+        name: 'test',
+        version: '1.0.0',
+        root: process.cwd(),
+        dataDir: '/tmp/test-data',
+      } as never);
+
+      // Stub BaseCommand.finally
+      superFinallyStub = sandbox.stub(Object.getPrototypeOf(Object.getPrototypeOf(command)), 'finally').resolves();
+
+      // Create a resolved promise for stdinClosePromise
+      (command as unknown as {stdinClosePromise: Promise<void>}).stdinClosePromise = Promise.resolve();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should wait for stdinClosePromise and call super.finally', async () => {
+      const finallyPromise = (command as unknown as {finally(err?: Error): Promise<void>}).finally();
+
+      await finallyPromise;
+
+      expect(superFinallyStub.calledOnce).to.be.true;
+    });
+
+    it('should exit process when shutdownSignal is SIGINT', async () => {
+      const exitStub = sandbox.stub(process, 'exit').throws(new Error('Exit called'));
+      (command as unknown as {shutdownSignal: string}).shutdownSignal = 'SIGINT';
+      (command as unknown as {stdinClosePromise: Promise<void>}).stdinClosePromise = Promise.resolve();
+
+      try {
+        await (command as unknown as {finally(err?: Error): Promise<void>}).finally();
+        expect.fail('Should have called process.exit');
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.equal('Exit called');
+      }
+
+      expect(exitStub.calledOnce).to.be.true;
+      expect(exitStub.firstCall.args[0]).to.equal(0);
+    });
+
+    it('should exit process when shutdownSignal is SIGTERM', async () => {
+      const exitStub = sandbox.stub(process, 'exit').throws(new Error('Exit called'));
+      (command as unknown as {shutdownSignal: string}).shutdownSignal = 'SIGTERM';
+      (command as unknown as {stdinClosePromise: Promise<void>}).stdinClosePromise = Promise.resolve();
+
+      try {
+        await (command as unknown as {finally(err?: Error): Promise<void>}).finally();
+        expect.fail('Should have called process.exit');
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.equal('Exit called');
+      }
+
+      expect(exitStub.calledOnce).to.be.true;
+      expect(exitStub.firstCall.args[0]).to.equal(0);
+    });
+
+    it('should not exit process when shutdownSignal is stdin_close', async () => {
+      const exitStub = sandbox.stub(process, 'exit');
+      (command as unknown as {shutdownSignal: string}).shutdownSignal = 'stdin_close';
+      (command as unknown as {stdinClosePromise: Promise<void>}).stdinClosePromise = Promise.resolve();
+
+      await (command as unknown as {finally(err?: Error): Promise<void>}).finally();
+
+      expect(exitStub.called).to.be.false;
+      expect(superFinallyStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('signal handling', () => {
+    let sandbox: SinonSandbox;
+    let command: McpServerCommand;
+    let sendEventStub: SinonStub;
+    let flushStub: SinonStub;
+    let stdinOnStub: SinonStub;
+    let processOnStub: SinonStub;
+
+    beforeEach(() => {
+      sandbox = createSandbox();
+      command = new McpServerCommand([], {
+        name: 'test',
+        version: '1.0.0',
+        root: process.cwd(),
+        dataDir: '/tmp/test-data',
+      } as never);
+
+      // Stub init
+      sandbox.stub(command, 'init').resolves();
+      (command as unknown as {flags: Record<string, unknown>}).flags = {
+        'allow-non-ga-tools': false,
+        'log-level': 'silent',
+      };
+
+      // Stub resolvedConfig
+      sandbox.stub(command as unknown as Record<string, unknown>, 'resolvedConfig').get(() => ({
+        values: {},
+        hasMrtConfig: () => false,
+        hasB2CInstanceConfig: () => false,
+        hasOAuth: () => false,
+        hasBasicAuth: () => false,
+      }));
+
+      // Stub logger
+      sandbox.stub(command as unknown as Record<string, unknown>, 'logger').get(() => ({info: sandbox.stub()}));
+
+      // Stub server.connect
+      sandbox.stub(B2CDxMcpServer.prototype, 'connect').resolves();
+
+      // Stub telemetry
+      const telemetryInstance = new Telemetry({
+        project: 'test',
+        appInsightsKey: 'test-key',
+      });
+      sandbox.stub(Telemetry.prototype, 'start').resolves();
+      sendEventStub = sandbox.stub(Telemetry.prototype, 'sendEvent');
+      flushStub = sandbox.stub(Telemetry.prototype, 'flush').resolves();
+      (command as unknown as {telemetry: Telemetry}).telemetry = telemetryInstance;
+
+      // Stub process.stdin.on and process.on to capture handlers
+      stdinOnStub = sandbox.stub(process.stdin, 'on').callsFake((event: string, handler: () => void) => {
+        if (event === 'close') {
+          // Store the handler for testing
+          (command as unknown as {_stdinCloseHandler?: () => void})._stdinCloseHandler = handler;
+        }
+        return process.stdin;
+      });
+
+      processOnStub = sandbox.stub(process, 'on').callsFake((event: string | symbol, handler: () => void) => {
+        if (event === 'SIGINT') {
+          (command as unknown as {_sigintHandler?: () => void})._sigintHandler = handler;
+        } else if (event === 'SIGTERM') {
+          (command as unknown as {_sigtermHandler?: () => void})._sigtermHandler = handler;
+        }
+        return process;
+      });
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should set up signal handlers when run() is called', async () => {
+      // Start the command to set up signal handlers
+      const runPromise = command.run();
+
+      // Wait a bit for run() to set up handlers
+      await new Promise((resolve) => {
+        void setTimeout(resolve, 10);
+      });
+
+      // Verify handlers were registered
+      expect(stdinOnStub.calledWith('close')).to.be.true;
+      expect(processOnStub.calledWith('SIGINT')).to.be.true;
+      expect(processOnStub.calledWith('SIGTERM')).to.be.true;
+
+      // Verify stdinClosePromise was created
+      const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
+      expect(stdinClosePromise).to.exist;
+
+      // Clean up - resolve the promise manually to prevent hanging
+      const sigintHandler = (command as unknown as {_sigintHandler?: () => void})._sigintHandler;
+      if (sigintHandler) {
+        sigintHandler();
+      }
+
+      // Wait for promise to resolve
+      if (stdinClosePromise) {
+        await stdinClosePromise.catch(() => {
+          // Ignore errors
+        });
+      }
+
+      // Cancel the run promise
+      runPromise.catch(() => {
+        // Ignore errors
+      });
+    });
+
+    it('should handle SIGINT signal and send SERVER_STOPPED event', async () => {
+      // Start the command to set up signal handlers
+      const runPromise = command.run();
+
+      // Wait a bit for handlers to be set up
+      await new Promise((resolve) => {
+        void setTimeout(resolve, 10);
+      });
+
+      // Get the SIGINT handler and call it directly
+      const sigintHandler = (command as unknown as {_sigintHandler?: () => void})._sigintHandler;
+      expect(sigintHandler).to.exist;
+
+      if (sigintHandler) {
+        sigintHandler();
+      }
+
+      // Wait a bit for the handler to run
+      await new Promise((resolve) => {
+        void setTimeout(resolve, 10);
+      });
+
+      // Verify SERVER_STOPPED event was sent
+      expect(sendEventStub.called).to.be.true;
+      const serverStoppedCall = sendEventStub.getCalls().find((call) => call.args[0] === 'SERVER_STOPPED');
+      expect(serverStoppedCall).to.exist;
+      expect(serverStoppedCall?.args[1]).to.deep.equal({signal: 'SIGINT'});
+
+      // Verify flush was called
+      expect(flushStub.called).to.be.true;
+
+      // Clean up - resolve stdinClosePromise
+      const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
+      if (stdinClosePromise) {
+        await stdinClosePromise.catch(() => {
+          // Ignore errors
+        });
+      }
+
+      runPromise.catch(() => {
+        // Ignore errors
+      });
+    });
+
+    it('should handle SIGTERM signal and send SERVER_STOPPED event', async () => {
+      // Start the command to set up signal handlers
+      const runPromise = command.run();
+
+      // Wait a bit for handlers to be set up
+      await new Promise((resolve) => {
+        void setTimeout(resolve, 10);
+      });
+
+      // Get the SIGTERM handler and call it directly
+      const sigtermHandler = (command as unknown as {_sigtermHandler?: () => void})._sigtermHandler;
+      expect(sigtermHandler).to.exist;
+
+      if (sigtermHandler) {
+        sigtermHandler();
+      }
+
+      // Wait a bit for the handler to run
+      await new Promise((resolve) => {
+        void setTimeout(resolve, 10);
+      });
+
+      // Verify SERVER_STOPPED event was sent
+      expect(sendEventStub.called).to.be.true;
+      const serverStoppedCall = sendEventStub.getCalls().find((call) => call.args[0] === 'SERVER_STOPPED');
+      expect(serverStoppedCall).to.exist;
+      expect(serverStoppedCall?.args[1]).to.deep.equal({signal: 'SIGTERM'});
+
+      // Verify flush was called
+      expect(flushStub.called).to.be.true;
+
+      // Clean up
+      const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
+      if (stdinClosePromise) {
+        await stdinClosePromise.catch(() => {
+          // Ignore errors
+        });
+      }
+
+      runPromise.catch(() => {
+        // Ignore errors
+      });
     });
   });
 });
