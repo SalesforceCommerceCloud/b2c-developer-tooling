@@ -85,7 +85,7 @@
     "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all --allow-non-ga-tools",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
-    "test:ci": "mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
+    "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",
