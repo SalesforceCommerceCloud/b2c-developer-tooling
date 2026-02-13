@@ -44,14 +44,6 @@ brew tap salesforcecommercecloud/tools
 brew install b2c-cli
 ```
 
-## Install from GitHub Releases
-
-Download the latest release tarball from [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) and install manually:
-
-```bash
-npm install -g ./salesforce-b2c-cli-<version>.tgz
-```
-
 ## Verify Installation
 
 After installation, verify the CLI is available:

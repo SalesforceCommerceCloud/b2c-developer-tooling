@@ -1,6 +1,7 @@
 import {h} from 'vue';
 import DefaultTheme from 'vitepress/theme';
 import './custom.css';
+import HomeQuickInstall from './HomeQuickInstall.vue';
 
 export default {
   extends: DefaultTheme,
@@ -16,6 +17,7 @@ export default {
             'Provide feedback',
           ),
         ]),
+      'home-features-before': () => h(HomeQuickInstall),
     });
   },
 };
