@@ -101,6 +101,9 @@ describe('user create', () => {
             expires_in: 1800,
           });
         }),
+        http.get(`${BASE_URL}/organizations/org-123`, () => {
+          return HttpResponse.json({id: 'org-123', name: 'Test Org'});
+        }),
         http.post(`${BASE_URL}/users`, async ({request}) => {
           const body = (await request.json()) as {mail?: string; firstName?: string; lastName?: string};
           expect(body.mail).to.equal('newuser@example.com');
@@ -140,8 +143,17 @@ describe('user create', () => {
             expires_in: 1800,
           });
         }),
+        http.get(`${BASE_URL}/organizations/org-123`, () => {
+          return HttpResponse.json({id: 'org-123', name: 'Test Org'});
+        }),
         http.post(`${BASE_URL}/users`, () => {
           return HttpResponse.json(mockUser, {status: 201});
+        }),
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json({content: []});
+        }),
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: []});
         }),
       );
 
@@ -168,6 +180,9 @@ describe('user create', () => {
             access_token: createMockJWT({sub: 'test-client'}),
             expires_in: 1800,
           });
+        }),
+        http.get(`${BASE_URL}/organizations/org-123`, () => {
+          return HttpResponse.json({id: 'org-123', name: 'Test Org'});
         }),
         http.post(`${BASE_URL}/users`, () => {
           return HttpResponse.json({error: {message: 'User already exists'}}, {status: 400});

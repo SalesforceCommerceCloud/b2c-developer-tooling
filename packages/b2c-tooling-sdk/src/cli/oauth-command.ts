@@ -42,7 +42,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       env: 'SFCC_CLIENT_SECRET',
       helpGroup: 'AUTH',
     }),
-    scope: Flags.string({
+    'auth-scope': Flags.string({
       description: 'OAuth scopes to request (comma-separated)',
       env: 'SFCC_OAUTH_SCOPES',
       multiple: true,

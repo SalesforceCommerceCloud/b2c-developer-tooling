@@ -129,9 +129,8 @@ describe('user get', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
       );
 
@@ -172,9 +171,14 @@ describe('user get', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
+        }),
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json({content: []});
+        }),
+        http.get(`${BASE_URL}/organizations`, () => {
+          return HttpResponse.json({content: []});
         }),
       );
 
@@ -206,9 +210,8 @@ describe('user get', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages - return empty result
-          return HttpResponse.json({content: []});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json({}, {status: 404});
         }),
       );
 
@@ -259,9 +262,8 @@ describe('user get', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          // findUserByLogin searches through pages and filters by mail
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
         http.get(`${BASE_URL}/users/user-123`, ({request}) => {
           // Verify expand parameter is passed
@@ -314,8 +316,8 @@ describe('user get', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
         http.get(`${BASE_URL}/users/user-123`, ({request}) => {
           const url = new URL(request.url);
@@ -368,8 +370,8 @@ describe('user get', () => {
             expires_in: 1800,
           });
         }),
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
         http.get(`${BASE_URL}/users/user-123`, ({request}) => {
           const url = new URL(request.url);

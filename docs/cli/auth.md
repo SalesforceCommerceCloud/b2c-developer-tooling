@@ -22,7 +22,7 @@ b2c auth token
 |------|---------------------|-------------|
 | `--client-id` | `SFCC_CLIENT_ID` | Client ID for OAuth |
 | `--client-secret` | `SFCC_CLIENT_SECRET` | Client Secret for OAuth |
-| `--scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
+| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com) |
 
 ### Examples
@@ -32,7 +32,7 @@ b2c auth token
 b2c auth token --client-id xxx --client-secret yyy
 
 # Get a token with specific scopes
-b2c auth token --scope sfcc.orders --scope sfcc.products
+b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
 
 # Output as JSON (useful for parsing)
 b2c auth token --json

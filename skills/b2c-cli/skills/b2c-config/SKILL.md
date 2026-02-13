@@ -175,7 +175,7 @@ Use `b2c auth token` to get an admin OAuth access token for Account Manager cred
 b2c auth token
 
 # Get token with specific scopes
-b2c auth token --scope sfcc.orders --scope sfcc.products
+b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
 
 # Get token as JSON (includes expiration and scopes)
 b2c auth token --json

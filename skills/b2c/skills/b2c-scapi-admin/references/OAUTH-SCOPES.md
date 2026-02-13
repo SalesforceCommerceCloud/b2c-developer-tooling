@@ -31,10 +31,10 @@ sfcc.products.rw # Read and write
 
 ```bash
 # Get token with specific scopes
-b2c auth token --scope sfcc.orders --scope sfcc.products
+b2c auth token --auth-scope sfcc.orders --scope sfcc.products
 
 # Get token with full scope string
-b2c auth token --scope "sfcc.orders sfcc.products.rw"
+b2c auth token --auth-scope "sfcc.orders sfcc.products.rw"
 ```
 
 ### Via cURL
@@ -232,10 +232,10 @@ Request only the scopes your integration needs:
 
 ```bash
 # Bad - too broad
-b2c auth token --scope "sfcc.catalogs.rw sfcc.products.rw sfcc.orders.rw sfcc.inventory.availability.rw"
+b2c auth token --auth-scope "sfcc.catalogs.rw sfcc.products.rw sfcc.orders.rw sfcc.inventory.availability.rw"
 
 # Good - only what's needed for order export
-b2c auth token --scope sfcc.orders
+b2c auth token --auth-scope sfcc.orders
 ```
 
 ### Separate Clients for Different Integrations
