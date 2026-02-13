@@ -164,7 +164,7 @@ Create and configure API clients for your team or automation:
 # Create an API client
 b2c am clients create \
   --name "CI/CD Pipeline" \
-  --organizations $ORG_ID \
+  --orgs $ORG_ID \
   --password "SecureP@ssword123" \
   --roles SALESFORCE_COMMERCE_API \
   --role-tenant-filter "SALESFORCE_COMMERCE_API:zzxy_prd"

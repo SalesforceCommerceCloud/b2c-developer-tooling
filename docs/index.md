@@ -58,30 +58,6 @@ features:
     linkText: Learn more
 ---
 
-## Quick Install
-
-Get started with the CLI in seconds:
-
-::: code-group
-
-```bash [npm]
-npm install -g @salesforce/b2c-cli
-```
-
-```bash [npx]
-npx @salesforce/b2c-cli --help
-```
-
-```bash [Homebrew]
-brew install SalesforceCommerceCloud/tools/b2c-cli
-
-# or
-brew tap SalesforceCommerceCloud/tools
-brew install b2c-cli
-```
-
-:::
-
 ## Packages
 
 | Package | Description |

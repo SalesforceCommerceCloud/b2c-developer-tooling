@@ -47,8 +47,8 @@ describe('operations/users', () => {
       };
 
       server.use(
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: [mockUser]});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
         }),
       );
 
@@ -59,8 +59,8 @@ describe('operations/users', () => {
 
     it('should throw error when user not found', async () => {
       server.use(
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: []});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json({}, {status: 404});
         }),
       );
 
@@ -155,12 +155,13 @@ describe('operations/users', () => {
         http.put(`${BASE_URL}/users/${userId}`, async ({request}) => {
           updateUserCallCount++;
           const body = (await request.json()) as {roles?: string[]};
+          // roles array uses role IDs
           expect(body.roles).to.include('bm-admin');
           return HttpResponse.json(updatedUser);
         }),
       );
 
-      const result = await grantRole(client, {userId, role: 'bm-admin'});
+      const result = await grantRole(client, {userId, role: 'bm-admin', roleEnumName: 'ECOM_ADMIN'});
 
       expect(result).to.deep.equal(updatedUser);
       expect(getUserCallCount).to.equal(1);
@@ -179,7 +180,7 @@ describe('operations/users', () => {
       const updatedUser = {
         ...mockUser,
         roles: ['bm-admin'],
-        roleTenantFilter: 'bm-admin:tenant1,tenant2',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1,tenant2',
       };
 
       server.use(
@@ -187,8 +188,10 @@ describe('operations/users', () => {
           return HttpResponse.json(mockUser);
         }),
         http.put(`${BASE_URL}/users/${userId}`, async ({request}) => {
-          const body = (await request.json()) as {roleTenantFilter?: string};
-          expect(body.roleTenantFilter).to.include('bm-admin:tenant1,tenant2');
+          const body = (await request.json()) as {roles?: string[]; roleTenantFilter?: string};
+          // roles array uses role IDs, roleTenantFilter uses roleEnumNames
+          expect(body.roles).to.include('bm-admin');
+          expect(body.roleTenantFilter).to.equal('ECOM_ADMIN:tenant1,tenant2');
           return HttpResponse.json(updatedUser);
         }),
       );
@@ -196,6 +199,7 @@ describe('operations/users', () => {
       const result = await grantRole(client, {
         userId,
         role: 'bm-admin',
+        roleEnumName: 'ECOM_ADMIN',
         scope: 'tenant1,tenant2',
       });
 
@@ -208,12 +212,12 @@ describe('operations/users', () => {
         id: userId,
         mail: 'user@example.com',
         roles: ['bm-admin'],
-        roleTenantFilter: 'bm-admin:tenant1',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1',
       };
 
       const updatedUser = {
         ...mockUser,
-        roleTenantFilter: 'bm-admin:tenant1,tenant2',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1,tenant2',
       };
 
       server.use(
@@ -221,9 +225,10 @@ describe('operations/users', () => {
           return HttpResponse.json(mockUser);
         }),
         http.put(`${BASE_URL}/users/${userId}`, async ({request}) => {
-          const body = (await request.json()) as {roleTenantFilter?: string};
-          expect(body.roleTenantFilter).to.include('tenant1');
-          expect(body.roleTenantFilter).to.include('tenant2');
+          const body = (await request.json()) as {roleTenantFilter?: string; roles?: string[]};
+          expect(body.roleTenantFilter).to.equal('ECOM_ADMIN:tenant1,tenant2');
+          // Should not duplicate the role (role ID format)
+          expect(body.roles).to.deep.equal(['bm-admin']);
           return HttpResponse.json(updatedUser);
         }),
       );
@@ -231,6 +236,7 @@ describe('operations/users', () => {
       await grantRole(client, {
         userId,
         role: 'bm-admin',
+        roleEnumName: 'ECOM_ADMIN',
         scope: 'tenant2',
       });
     });
@@ -243,7 +249,7 @@ describe('operations/users', () => {
         id: userId,
         mail: 'user@example.com',
         roles: ['bm-admin', 'bm-user'],
-        roleTenantFilter: 'bm-admin:tenant1',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1',
       };
 
       const updatedUser = {
@@ -264,7 +270,7 @@ describe('operations/users', () => {
         }),
       );
 
-      const result = await revokeRole(client, {userId, role: 'bm-admin'});
+      const result = await revokeRole(client, {userId, role: 'bm-admin', roleEnumName: 'ECOM_ADMIN'});
 
       expect(result).to.deep.equal(updatedUser);
     });
@@ -275,12 +281,12 @@ describe('operations/users', () => {
         id: userId,
         mail: 'user@example.com',
         roles: ['bm-admin'],
-        roleTenantFilter: 'bm-admin:tenant1,tenant2',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1,tenant2',
       };
 
       const updatedUser = {
         ...mockUser,
-        roleTenantFilter: 'bm-admin:tenant1',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1',
       };
 
       server.use(
@@ -289,8 +295,7 @@ describe('operations/users', () => {
         }),
         http.put(`${BASE_URL}/users/${userId}`, async ({request}) => {
           const body = (await request.json()) as {roleTenantFilter?: string};
-          expect(body.roleTenantFilter).to.include('tenant1');
-          expect(body.roleTenantFilter).to.not.include('tenant2');
+          expect(body.roleTenantFilter).to.equal('ECOM_ADMIN:tenant1');
           return HttpResponse.json(updatedUser);
         }),
       );
@@ -298,6 +303,7 @@ describe('operations/users', () => {
       await revokeRole(client, {
         userId,
         role: 'bm-admin',
+        roleEnumName: 'ECOM_ADMIN',
         scope: 'tenant2',
       });
     });
@@ -308,7 +314,7 @@ describe('operations/users', () => {
         id: userId,
         mail: 'user@example.com',
         roles: ['bm-admin'],
-        roleTenantFilter: 'bm-admin:tenant1',
+        roleTenantFilter: 'ECOM_ADMIN:tenant1',
       };
 
       const updatedUser = {
@@ -322,7 +328,7 @@ describe('operations/users', () => {
           return HttpResponse.json(mockUser);
         }),
         http.put(`${BASE_URL}/users/${userId}`, async ({request}) => {
-          const body = (await request.json()) as {roleTenantFilter?: string};
+          const body = (await request.json()) as {roles?: string[]; roleTenantFilter?: string};
           expect(body.roleTenantFilter).to.be.undefined;
           return HttpResponse.json(updatedUser);
         }),
@@ -331,6 +337,7 @@ describe('operations/users', () => {
       await revokeRole(client, {
         userId,
         role: 'bm-admin',
+        roleEnumName: 'ECOM_ADMIN',
         scope: 'tenant1',
       });
     });

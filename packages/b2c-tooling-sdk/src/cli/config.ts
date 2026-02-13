@@ -44,7 +44,7 @@ export type ParsedFlags = Record<string, unknown>;
  * ```
  */
 export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
-  const scopes = flags.scope as string[] | undefined;
+  const scopes = flags['auth-scope'] as string[] | undefined;
 
   // Parse auth methods from --auth-methods or --user-auth flag
   const authMethodValues = flags['auth-methods'] as string[] | undefined;

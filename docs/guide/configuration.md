@@ -153,6 +153,54 @@ b2c code deploy -i staging
 
 If no instance is specified, the config with `"active": true` is used.
 
+### Managing Instances with the CLI
+
+Instead of editing `dw.json` by hand, you can use `b2c setup instance` commands to create, list, remove, and switch between instance configurations.
+
+#### Quick Setup
+
+```bash
+# Interactive — prompts for hostname, auth, and code version
+b2c setup instance create staging
+
+# Non-interactive
+b2c setup instance create staging \
+  --hostname staging.example.com \
+  --client-id my-client-id \
+  --client-secret my-secret \
+  --force
+```
+
+The interactive mode auto-detects the active code version via OCAPI when OAuth credentials are provided, and the first instance you create is automatically set as active.
+
+#### Switching Instances
+
+```bash
+# Set a different instance as the default
+b2c setup instance set-active production
+
+# Or pick interactively (shows a searchable list)
+b2c setup instance set-active
+
+# Commands now use the active instance by default
+b2c code list                  # Uses production
+b2c code list -i staging       # Override for one command
+```
+
+#### Listing and Removing
+
+```bash
+# See all configured instances
+b2c setup instance list
+
+# Remove an instance
+b2c setup instance remove staging
+```
+
+::: tip
+For the full command reference with all flags, see [Setup Commands](/cli/setup).
+:::
+
 ### Supported Fields
 
 | Field | Description |
