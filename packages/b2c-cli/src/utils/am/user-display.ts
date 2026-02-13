@@ -57,7 +57,7 @@ function printBasicFields(ui: ReturnType<typeof cliui>, user: AccountManagerUser
 }
 
 function printOrganizations(ui: ReturnType<typeof cliui>, user: AccountManagerUser, orgMapping: OrgMapping): void {
-  if (user.organizations === undefined || user.organizations.length === 0) {
+  if (!user.organizations || user.organizations.length === 0) {
     return;
   }
 
@@ -72,7 +72,7 @@ function printOrganizations(ui: ReturnType<typeof cliui>, user: AccountManagerUs
 }
 
 function printRoles(ui: ReturnType<typeof cliui>, user: AccountManagerUser, roleMapping: RoleMapping): void {
-  if (user.roles === undefined || user.roles.length === 0) {
+  if (!user.roles || user.roles.length === 0) {
     return;
   }
 
@@ -87,7 +87,7 @@ function printRoles(ui: ReturnType<typeof cliui>, user: AccountManagerUser, role
 }
 
 function printRoleScopes(ui: ReturnType<typeof cliui>, user: AccountManagerUser): void {
-  if (user.roleTenantFilterMap === undefined || Object.keys(user.roleTenantFilterMap).length === 0) {
+  if (!user.roleTenantFilterMap || Object.keys(user.roleTenantFilterMap).length === 0) {
     return;
   }
 
