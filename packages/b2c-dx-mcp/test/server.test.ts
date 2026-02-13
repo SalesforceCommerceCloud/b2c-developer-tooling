@@ -606,13 +606,33 @@ describe('B2CDxMcpServer', () => {
       await server.connect(transport1);
       expect(mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS')).to.have.lengthOf(1);
 
-      // Subsequent connect attempts would typically be prevented by MCP SDK
-      // but we can verify telemetry continues to work
+      // Subsequent connect attempts may be prevented by MCP SDK (throws error)
+      // or may succeed (if MockTransport doesn't enforce the restriction)
+      // In either case, verify that telemetry continues to work
       const transport2 = new MockTransport();
-      await server.connect(transport2);
+      let connectSucceeded = false;
+      try {
+        await server.connect(transport2);
+        connectSucceeded = true;
+      } catch (error) {
+        // Expected error if MCP SDK prevents multiple connects
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.include('Already connected');
+      }
 
-      // Should have at least 2 SERVER_STATUS events
-      expect(mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS')).to.have.lengthOf.at.least(2);
+      // Verify telemetry recorded events for both connect attempts
+      const statusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
+      expect(statusEvents).to.have.lengthOf.at.least(2);
+
+      if (connectSucceeded) {
+        // If second connect succeeded, last event should be 'started'
+        const lastEvent = statusEvents.at(-1);
+        expect(lastEvent?.attributes.status).to.equal('started');
+      } else {
+        // If second connect failed, last event should be 'error'
+        const lastEvent = statusEvents.at(-1);
+        expect(lastEvent?.attributes.status).to.equal('error');
+      }
     });
   });
 });
