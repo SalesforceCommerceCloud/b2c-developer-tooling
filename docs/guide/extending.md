@@ -206,6 +206,129 @@ export class MyCustomSource implements ConfigSource {
 }
 ```
 
+### Instance Management Methods
+
+Config sources can optionally implement instance management methods to support the `b2c setup instance` commands. This enables plugins to store and manage instance configurations in custom locations (cloud config, global registry, etc.).
+
+```typescript
+import type {
+  ConfigSource,
+  ConfigLoadResult,
+  ResolveConfigOptions,
+  InstanceInfo,
+  CreateInstanceOptions,
+} from '@salesforce/b2c-tooling-sdk/config';
+
+export class MyInstanceSource implements ConfigSource {
+  readonly name = 'my-instance-source';
+
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+    // Standard config loading...
+  }
+
+  // List all instances from this source
+  listInstances(options?: ResolveConfigOptions): InstanceInfo[] {
+    return [
+      {
+        name: 'staging',
+        hostname: 'staging.example.com',
+        active: true,
+        source: this.name,
+        location: '/path/to/config',
+      },
+    ];
+  }
+
+  // Create a new instance
+  createInstance(options: CreateInstanceOptions & ResolveConfigOptions): void {
+    // Store the instance configuration
+  }
+
+  // Remove an instance
+  removeInstance(name: string, options?: ResolveConfigOptions): void {
+    // Delete the instance configuration
+  }
+
+  // Set an instance as active
+  setActiveInstance(name: string, options?: ResolveConfigOptions): void {
+    // Update the active flag
+  }
+}
+```
+
+When a source implements `listInstances()`, its instances appear in `b2c setup instance list`. The `InstanceManager` class aggregates instances from all sources.
+
+### Credential Storage Methods
+
+Config sources can optionally implement credential storage methods to securely store secrets. This is useful for keychain integrations, vault plugins, or other secure storage backends.
+
+```typescript
+import type {
+  ConfigSource,
+  NormalizedConfig,
+  ResolveConfigOptions,
+} from '@salesforce/b2c-tooling-sdk/config';
+
+export class KeychainSource implements ConfigSource {
+  readonly name = 'keychain';
+
+  // Declare which credential fields this source can store
+  readonly credentialFields: (keyof NormalizedConfig)[] = [
+    'password',
+    'clientSecret',
+  ];
+
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+    // Load credentials from keychain for the requested instance
+    const instanceName = options.instance || '_default';
+    const password = this.getFromKeychain(`b2c/${instanceName}/password`);
+    const clientSecret = this.getFromKeychain(`b2c/${instanceName}/clientSecret`);
+
+    if (!password && !clientSecret) {
+      return undefined;
+    }
+
+    return {
+      config: { password, clientSecret },
+      location: `keychain:b2c/${instanceName}`,
+    };
+  }
+
+  // Store a credential value for an instance
+  storeCredential(
+    instanceName: string,
+    field: keyof NormalizedConfig,
+    value: string,
+    options?: ResolveConfigOptions
+  ): void {
+    this.saveToKeychain(`b2c/${instanceName}/${String(field)}`, value);
+  }
+
+  // Remove a credential for an instance
+  removeCredential(
+    instanceName: string,
+    field: keyof NormalizedConfig,
+    options?: ResolveConfigOptions
+  ): void {
+    this.deleteFromKeychain(`b2c/${instanceName}/${String(field)}`);
+  }
+
+  private getFromKeychain(key: string): string | undefined {
+    // Keychain lookup implementation
+  }
+
+  private saveToKeychain(key: string, value: string): void {
+    // Keychain save implementation
+  }
+
+  private deleteFromKeychain(key: string): void {
+    // Keychain delete implementation
+  }
+}
+```
+
+When `b2c setup instance create` collects credentials, it checks for sources with `credentialFields` and can route secrets to secure storage instead of plaintext files.
+
 ### Error Handling
 
 If your `ConfigSource` encounters an error (e.g., malformed config file, network failure), you can:

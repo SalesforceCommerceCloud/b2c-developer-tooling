@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce Cloud developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -56,7 +56,6 @@
       }
     ]
   },
-
   "scripts": {
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",

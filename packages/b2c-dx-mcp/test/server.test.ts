@@ -30,6 +30,11 @@ class MockTelemetry {
     this.events.push({name, attributes});
   }
 
+  async sendEventAndFlush(name: string, attributes: Record<string, unknown> = {}): Promise<void> {
+    this.sendEvent(name, attributes);
+    await this.flush();
+  }
+
   async start(): Promise<void> {
     this.started = true;
   }
