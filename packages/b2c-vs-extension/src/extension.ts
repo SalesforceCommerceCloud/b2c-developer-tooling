@@ -8,6 +8,7 @@ import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-toolin
 import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {getPathKeys, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
 import {randomUUID} from 'node:crypto';
 
 /** Standard B2C Commerce WebDAV root directories. */
@@ -648,6 +649,115 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           return;
         }
 
+        if (msg.type === 'scapiFetchSchemaPaths') {
+          const tenantId = (msg.tenantId ?? '').trim();
+          const apiFamily = (msg.apiFamily ?? '').trim();
+          const apiName = (msg.apiName ?? '').trim();
+          log.appendLine(
+            `[SCAPI] Fetch schema paths: tenantId=${tenantId} apiFamily=${apiFamily} apiName=${apiName}`,
+          );
+          if (!tenantId || !apiFamily || !apiName) {
+            log.appendLine('[SCAPI] Fetch paths failed: Tenant Id, API Family, and API Name are required.');
+            panel.webview.postMessage({
+              type: 'scapiSchemaPathsResult',
+              success: false,
+              error: 'Tenant Id, API Family, and API Name are required.',
+            });
+            return;
+          }
+          try {
+            const config = getConfig();
+            const shortCode = config.values.shortCode;
+            if (!shortCode) {
+              log.appendLine('[SCAPI] Fetch paths failed: Short code not found.');
+              panel.webview.postMessage({
+                type: 'scapiSchemaPathsResult',
+                success: false,
+                error: 'Short code not found.',
+              });
+              return;
+            }
+            if (!config.hasOAuthConfig()) {
+              log.appendLine('[SCAPI] Fetch paths failed: OAuth credentials required.');
+              panel.webview.postMessage({
+                type: 'scapiSchemaPathsResult',
+                success: false,
+                error: 'OAuth credentials required.',
+              });
+              return;
+            }
+            const oauthStrategy = config.createOAuth();
+            const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
+            const orgId = toOrganizationId(tenantId);
+            const apiVersion = 'v1';
+            log.appendLine(`[SCAPI] GET schema: orgId=${orgId} ${apiFamily}/${apiName}/${apiVersion}`);
+            const {data, error, response} = await schemasClient.GET(
+              '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
+              {params: {path: {organizationId: orgId, apiFamily, apiName, apiVersion}}},
+            );
+            if (error) {
+              const errMsg = getApiErrorMessage(error, response);
+              log.appendLine(`[SCAPI] Fetch paths error: ${errMsg}`);
+              log.appendLine(`[SCAPI] Error detail: ${JSON.stringify({error, status: response?.status})}`);
+              panel.webview.postMessage({
+                type: 'scapiSchemaPathsResult',
+                success: false,
+                error: errMsg,
+              });
+              return;
+            }
+            const pathKeys = data && typeof data === 'object' ? getPathKeys(data as OpenApiSchemaInput) : [];
+            log.appendLine(
+              `[SCAPI] Schema response: hasData=${Boolean(data)} pathKeysCount=${pathKeys.length} pathKeys=${JSON.stringify(pathKeys.slice(0, 5))}${pathKeys.length > 5 ? '...' : ''}`,
+            );
+            const orgPathPrefix = 'organizations/{organizationId}';
+            const paths = pathKeys
+              .map((p) => {
+                if (typeof p !== 'string') return '';
+                const withoutLeadingSlash = p.replace(/^\//, '');
+                const suffix = withoutLeadingSlash.startsWith(orgPathPrefix + '/')
+                  ? withoutLeadingSlash.slice(orgPathPrefix.length + 1)
+                  : withoutLeadingSlash === orgPathPrefix
+                    ? ''
+                    : withoutLeadingSlash;
+                return suffix;
+              })
+              .filter(Boolean)
+              .sort();
+            log.appendLine(
+              `[SCAPI] Normalized paths (${paths.length}): ${JSON.stringify(paths.slice(0, 10))}${paths.length > 10 ? '...' : ''}`,
+            );
+            const schemaInfo = data && typeof data === 'object' && 'info' in data ? (data as {info?: Record<string, unknown>}).info : undefined;
+            const apiTypeRaw =
+              schemaInfo?.['x-api-type'] ?? schemaInfo?.['x-apiType'] ?? schemaInfo?.['x_api_type'];
+            const apiType = typeof apiTypeRaw === 'string' ? apiTypeRaw : undefined;
+            if (schemaInfo && !apiType) {
+              log.appendLine(
+                `[SCAPI] Schema info keys (no x-api-type): ${Object.keys(schemaInfo).join(', ')}`,
+              );
+            } else if (apiType) {
+              log.appendLine(`[SCAPI] API type: ${apiType}`);
+            }
+            panel.webview.postMessage({
+              type: 'scapiSchemaPathsResult',
+              success: true,
+              paths,
+              apiType: apiType ?? null,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error ? err.stack : '';
+            log.appendLine(`[SCAPI] Fetch paths exception: ${message}`);
+            if (stack) log.appendLine(`[SCAPI] Stack: ${stack}`);
+            panel.webview.postMessage({
+              type: 'scapiSchemaPathsResult',
+              success: false,
+              error: message,
+            });
+          }
+          return;
+        }
+
         if (msg.type === 'scapiExecuteCurl') {
           const curlText = (msg.curlText ?? '').trim();
           const urlMatch = curlText.match(/"https:\/\/[^"]+"/);
@@ -949,6 +1059,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             success: true,
             clientId,
             secret: clientSecret,
+            scopes: defaultScopes,
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
