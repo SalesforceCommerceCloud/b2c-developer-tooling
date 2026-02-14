@@ -14,9 +14,16 @@ import {withDocs} from '../../i18n/index.js';
  * - `b2c setup` with instance configured or non-TTY: shows topic help
  */
 export default class SetupIndex extends BaseCommand<typeof SetupIndex> {
-  static description = withDocs('Manage instances, view configuration, and install agent skills', '/cli/setup.html');
+  static description = withDocs(
+    'Manage instances, inspect configuration, install skills, and configure IDE integrations',
+    '/cli/setup.html',
+  );
 
-  static examples = ['<%= config.bin %> setup --help', '<%= config.bin %> setup instance create'];
+  static examples = [
+    '<%= config.bin %> setup --help',
+    '<%= config.bin %> setup instance create',
+    '<%= config.bin %> setup ide prophet',
+  ];
 
   async run(): Promise<void> {
     const hasInstance = this.resolvedConfig.hasB2CInstanceConfig();

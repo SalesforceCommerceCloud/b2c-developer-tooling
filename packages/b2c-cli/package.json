@@ -281,7 +281,12 @@
         }
       },
       "setup": {
-        "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html"
+        "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html",
+        "subtopics": {
+          "ide": {
+            "description": "Set up IDE integrations for B2C CLI configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.html"
+          }
+        }
       },
       "scaffold": {
         "description": "Generate project scaffolds for cartridges, APIs, and components\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.html"
