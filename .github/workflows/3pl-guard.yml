@@ -1,0 +1,203 @@
+name: 3PL Guard
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - labeled
+      - unlabeled
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  dependency-review:
+    name: Net-new 3PL check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Detect net-new dependencies and enforce review label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reviewLabel = 'needs-3pl-review';
+            const approvalLabel = '3pl-approved';
+            const localProtocols = ['workspace:', 'file:', 'link:'];
+            const dependencySections = [
+              'dependencies',
+              'devDependencies',
+              'peerDependencies',
+              'optionalDependencies',
+            ];
+
+            const pr = context.payload.pull_request;
+            const baseRepo = pr.base.repo;
+            const headRepo = pr.head.repo;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pullNumber = pr.number;
+
+            async function ensureLabel(name, color, description) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name,
+                  color,
+                  description,
+                });
+              }
+            }
+
+            async function removeLabelIfPresent(name) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: pullNumber,
+                  name,
+                });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+            }
+
+            async function addLabel(name) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: pullNumber,
+                labels: [name],
+              });
+            }
+
+            async function getPackageJson({ owner, repo, path, ref }) {
+              try {
+                const response = await github.rest.repos.getContent({
+                  owner,
+                  repo,
+                  path,
+                  ref,
+                });
+
+                if (!('content' in response.data)) return null;
+
+                const decoded = Buffer.from(response.data.content, 'base64').toString('utf8');
+                return JSON.parse(decoded);
+              } catch (error) {
+                if (error.status === 404) return null;
+                throw error;
+              }
+            }
+
+            function collectExternalDeps(packageJson) {
+              const deps = new Set();
+              if (!packageJson || typeof packageJson !== 'object') return deps;
+
+              for (const section of dependencySections) {
+                const values = packageJson[section];
+                if (!values || typeof values !== 'object') continue;
+
+                for (const [name, spec] of Object.entries(values)) {
+                  if (typeof spec !== 'string') continue;
+                  if (localProtocols.some((protocol) => spec.startsWith(protocol))) continue;
+                  deps.add(name);
+                }
+              }
+
+              return deps;
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pullNumber,
+              per_page: 100,
+            });
+
+            const changedPackageJsonFiles = files
+              .map((file) => file.filename)
+              .filter((filename) => filename.endsWith('package.json'));
+
+            const findings = [];
+
+            for (const path of changedPackageJsonFiles) {
+              const basePackageJson = await getPackageJson({
+                owner: baseRepo.owner.login,
+                repo: baseRepo.name,
+                path,
+                ref: pr.base.sha,
+              });
+              const headPackageJson = await getPackageJson({
+                owner: headRepo.owner.login,
+                repo: headRepo.name,
+                path,
+                ref: pr.head.sha,
+              });
+
+              const baseDeps = collectExternalDeps(basePackageJson);
+              const headDeps = collectExternalDeps(headPackageJson);
+              const added = [...headDeps].filter((dependency) => !baseDeps.has(dependency)).sort();
+
+              if (added.length > 0) {
+                findings.push({ path, added });
+              }
+            }
+
+            const allNetNewDeps = [...new Set(findings.flatMap((item) => item.added))].sort();
+            const hasApprovalLabel = pr.labels.some((label) => label.name === approvalLabel);
+
+            await ensureLabel(
+              reviewLabel,
+              'd73a4a',
+              'PR introduces net-new third-party dependencies and needs discussion',
+            );
+            await ensureLabel(
+              approvalLabel,
+              '0e8a16',
+              'Maintainer approved net-new third-party dependency additions',
+            );
+
+            core.summary.addHeading('3PL dependency guard');
+
+            if (allNetNewDeps.length === 0) {
+              await removeLabelIfPresent(reviewLabel);
+              await core.summary
+                .addRaw('No net-new third-party dependencies detected across changed package manifests.')
+                .write();
+              return;
+            }
+
+            const manifestLines = findings.map((finding) => {
+              const dependencies = finding.added.map((name) => `\`${name}\``).join(', ');
+              return `- \`${finding.path}\`: ${dependencies}`;
+            });
+
+            await core.summary
+              .addRaw('Net-new third-party dependencies detected:\n\n')
+              .addRaw(manifestLines.join('\n'))
+              .addRaw('\n\n')
+              .addRaw(`All net-new packages: ${allNetNewDeps.map((name) => `\`${name}\``).join(', ')}`)
+              .addRaw('\n\n')
+              .addRaw(
+                `Blocking until a maintainer adds the \`${approvalLabel}\` label after dependency review discussion.`,
+              )
+              .write();
+
+            if (hasApprovalLabel) {
+              await removeLabelIfPresent(reviewLabel);
+              return;
+            }
+
+            await addLabel(reviewLabel);
+            core.setFailed(
+              `Net-new third-party dependencies found: ${allNetNewDeps.join(', ')}. Add \`${approvalLabel}\` after review.`,
+            );
