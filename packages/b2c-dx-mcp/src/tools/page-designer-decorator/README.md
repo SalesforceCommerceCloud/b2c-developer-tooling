@@ -227,20 +227,22 @@ pnpm test
 
 Comprehensive test suite covers all workflow modes, component discovery, and error handling.
 
-### Manual Test Runner
+### Running Tests
 
-For quick manual verification, use the test runner script:
+Run the comprehensive Mocha test suite:
 
 ```bash
 cd packages/b2c-dx-mcp
-pnpm build
-node test/tools/page-designer-decorator/index.test.mjs all
+pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
 ```
 
-Run a specific test case:
-```bash
-node test/tools/page-designer-decorator/index.test.mjs TC-1.1
-```
+The test suite covers:
+- Component discovery (name-based, kebab-case, nested, path-based, custom paths, name collisions)
+- Auto mode (basic, type inference, complex props exclusion, UI-only props exclusion, edge cases)
+- Interactive mode (all steps: analyze, select_props, configure_attrs, configure_regions, confirm_generation)
+- Error handling (invalid input, invalid step name, missing parameters)
+- Edge cases (no props, only complex props, optional props, union types, already decorated components)
+- Environment variables (SFCC_WORKING_DIRECTORY)
 
 See [`test/tools/page-designer-decorator/README.md`](../../../test/tools/page-designer-decorator/README.md) for detailed testing instructions.
 

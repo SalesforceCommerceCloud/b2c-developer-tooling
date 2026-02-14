@@ -5,10 +5,15 @@
 The page-designer-decorator tool has comprehensive unit tests covering:
 - ✅ Tool metadata (name, description, toolsets, isGA)
 - ✅ Mode selection flow
-- ✅ Error handling
+- ✅ Auto mode (basic, type inference, complex/UI props exclusion, edge cases)
+- ✅ Interactive mode (all steps: analyze, select_props, configure_attrs, configure_regions, confirm_generation)
+- ✅ Component resolution (name-based, kebab-case, nested, path-based, custom searchPaths, name collisions)
+- ✅ Error handling (invalid input, invalid step name, missing parameters)
 - ✅ Input validation
+- ✅ Edge cases (no props, only complex props, optional props, union types, already decorated components)
+- ✅ Environment variables (SFCC_WORKING_DIRECTORY)
 
-Some integration tests may require actual component files in a real workspace to fully validate component resolution.
+All tests use the standard Mocha test framework and run with `pnpm test`.
 
 ## Testing Approaches
 
@@ -50,68 +55,28 @@ npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga
   --args '{"component": "MyComponent"}'
 ```
 
-### 4. Automated Manual Test Runner
+### 4. Running Tests Against a Local Storefront Next Installation
 
-A test runner script is available to quickly verify the tool with various test scenarios:
-
-```bash
-cd packages/b2c-dx-mcp
-pnpm build  # Build the package first
-node test/tools/page-designer-decorator/index.test.mjs all
-```
-
-Run a specific test case:
-```bash
-node test/tools/page-designer-decorator/index.test.mjs TC-1.1
-```
-
-The script covers 24 automated test cases including:
-- Component discovery (name-based, path-based, nested, custom paths)
-- Auto mode (basic, type inference, complex props exclusion)
-- Interactive mode (mode selection, analyze step)
-- Error handling (invalid input, missing parameters)
-- Edge cases (no props, optional props, union types, collisions)
-- Environment variables (SFCC_WORKING_DIRECTORY)
-
-See the script's JSDoc header for a complete list of available test cases.
-
-#### Running Tests Against a Local Storefront Next Installation
-
-The test runner script supports two modes:
-
-**1. Temporary Directory Mode (Default)**
-Creates isolated test environments with temporary directories. Ideal for CI/CD and regression testing.
+The Mocha test suite supports testing against a real Storefront Next installation by setting `SFCC_WORKING_DIRECTORY`:
 
 ```bash
 cd packages/b2c-dx-mcp
-pnpm build
-node test/tools/page-designer-decorator/index.test.mjs all
-```
-
-**2. Real Storefront Next Project Mode**
-Test against an existing Storefront Next installation by setting `SFCC_WORKING_DIRECTORY`:
-
-```bash
-cd packages/b2c-dx-mcp
-pnpm build
 SFCC_WORKING_DIRECTORY=/path/to/storefront-next \
-  node test/tools/page-designer-decorator/index.test.mjs all
+  pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
 ```
 
 Or set it as an environment variable:
 ```bash
 export SFCC_WORKING_DIRECTORY=/path/to/storefront-next
 cd packages/b2c-dx-mcp
-pnpm build
-node test/tools/page-designer-decorator/index.test.mjs TC-1.1
+pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
 ```
 
 **Important Notes for Real Project Mode**:
 - Component discovery searches in your real Storefront Next project (`SFCC_WORKING_DIRECTORY`)
-- Test components created by the script are placed in a temporary directory (not in your real project)
-- The script will **not** modify your real project files (read-only)
+- Tests create temporary directories for test components (not in your real project)
+- Tests will **not** modify your real project files (read-only)
 - Tests will use existing components from your real project if they exist
-- If a test component doesn't exist in your real project, the test will show a "component not found" result (this is expected)
 - The real project directory is preserved after testing
 - To test with specific components, ensure they exist in your real project's `src/components/` directory
 
