@@ -117,40 +117,61 @@ export default class ClientList extends AmCommand<typeof ClientList> {
       );
     }
 
-    this.log(t('commands.client.list.fetching', 'Fetching API clients...'));
+    try {
+      this.log(t('commands.client.list.fetching', 'Fetching API clients...'));
 
-    const result = await this.accountManagerClient.listApiClients({
-      size: pageSize,
-      page: pageNumber,
-    });
+      const result = await this.accountManagerClient.listApiClients({
+        size: pageSize,
+        page: pageNumber,
+      });
 
-    if (this.jsonEnabled()) {
+      if (this.jsonEnabled()) {
+        return result;
+      }
+
+      const clients = result.content || [];
+      if (clients.length === 0) {
+        this.log(t('commands.client.list.noClients', 'No API clients found.'));
+        return result;
+      }
+
+      const columns = this.getSelectedColumns();
+      tableRenderer.render(clients, columns);
+
+      if (clients.length === pageSize) {
+        const nextPage = pageNumber + 1;
+        this.log(
+          t(
+            'commands.client.list.moreClients',
+            'More API clients available. Use --page {{nextPage}} to view the next page.',
+            {
+              nextPage,
+            },
+          ),
+        );
+      }
+
       return result;
+    } catch (err) {
+      const tenantId = this.requireTenantId();
+      try {
+        await this.accountManagerClient.getOrg(tenantId);
+      } catch (orgErr) {
+        // Check if the error from getOrg indicates that the organization was not found.
+        // This check might need to be more robust depending on the specific error thrown by getOrg.
+        // Assuming getOrg throws an error with a status code or a specific message for 'not found'.
+        // For now, we'll assume a generic error implies the tenant might not exist if listApiClients also failed.
+        // A more specific check would be to inspect orgErr for a 404 status or a "not found" message.
+        if (orgErr instanceof Error && orgErr.message.includes('404')) {
+           throw new Errors.CLIError(t('commands.client.list.tenantNotFound', 'The specified tenant (organization) does not exist. Please ensure your tenant ID is correct.'));
+        } else {
+          // If getOrg threw a different error, re-throw the original error from listApiClients
+          throw err;
+        }
+      }
+      // If getOrg succeeded, it means the tenant exists, so re-throw the original error from listApiClients.
+      throw err;
     }
-
-    const clients = result.content || [];
-    if (clients.length === 0) {
-      this.log(t('commands.client.list.noClients', 'No API clients found.'));
-      return result;
-    }
-
-    const columns = this.getSelectedColumns();
-    tableRenderer.render(clients, columns);
-
-    if (clients.length === pageSize) {
-      const nextPage = pageNumber + 1;
-      this.log(
-        t(
-          'commands.client.list.moreClients',
-          'More API clients available. Use --page {{nextPage}} to view the next page.',
-          {
-            nextPage,
-          },
-        ),
-      );
-    }
-
-    return result;
   }
 
   private getSelectedColumns(): string[] {
