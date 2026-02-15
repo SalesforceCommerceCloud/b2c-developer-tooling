@@ -295,6 +295,17 @@ export type {
   components as MrtB2CComponents,
 } from './mrt-b2c.js';
 
+export {createCipClient, CipClient, DEFAULT_CIP_HOST} from './cip.js';
+export type {
+  CipClientConfig,
+  CipColumn,
+  CipExecuteResponse,
+  CipFetchResponse,
+  CipFrame,
+  CipQueryOptions,
+  CipQueryResult,
+} from './cip.js';
+
 export {getApiErrorMessage} from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';

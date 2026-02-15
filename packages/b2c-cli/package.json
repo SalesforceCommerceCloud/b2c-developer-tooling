@@ -107,6 +107,9 @@
       "content": {
         "description": "Export and manage Page Designer content libraries"
       },
+      "cip": {
+        "description": "Run CIP analytics SQL and curated reports\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.html"
+      },
       "docs": {
         "description": "Search and read Script API documentation"
       },

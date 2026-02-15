@@ -48,6 +48,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   selfsigned: 'selfSigned',
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
+  'cip-host': 'cipHost',
 };
 
 /**
@@ -116,6 +117,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     tenantId: json.tenantId,
     sandboxApiHost: json.sandboxApiHost,
     contentLibrary: json.contentLibrary,
+    cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
     accountManagerHost: json.accountManagerHost,
@@ -188,6 +190,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.accountManagerHost !== undefined) {
     result.accountManagerHost = config.accountManagerHost;
+  }
+  if (config.cipHost !== undefined) {
+    result.cipHost = config.cipHost;
   }
   if (config.mrtProject !== undefined) {
     result.mrtProject = config.mrtProject;
@@ -308,6 +313,7 @@ export function mergeConfigsWithProtection(
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
+      cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       instanceName: overrides.instanceName ?? base.instanceName,
       mrtProject: overrides.mrtProject ?? base.mrtProject,
