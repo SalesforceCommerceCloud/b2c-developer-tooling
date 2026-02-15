@@ -162,6 +162,31 @@ interface FrameLike {
 
 /**
  * CIP Avatica client with protobuf transport.
+ *
+ * Use this client for raw SQL execution against B2C Commerce Intelligence
+ * (CIP/CCAC) data.
+ *
+ * See {@link createCipClient} for the recommended construction helper.
+ *
+ * @example
+ * ```ts
+ * import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+ * import {createCipClient} from '@salesforce/b2c-tooling-sdk/clients';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: process.env.SFCC_CLIENT_ID!,
+ *   clientSecret: process.env.SFCC_CLIENT_SECRET!,
+ * });
+ *
+ * const cip = createCipClient({instance: 'zzxy_prd'}, auth);
+ *
+ * const result = await cip.query(
+ *   'SELECT submit_date, num_orders FROM ccdw_aggr_sales_summary LIMIT 10',
+ *   {fetchSize: 500},
+ * );
+ *
+ * console.log(result.rowCount, result.columns, result.rows[0]);
+ * ```
  */
 export class CipClient {
   private readonly baseUrl: string;
@@ -748,6 +773,20 @@ export class CipClient {
 
 /**
  * Creates a CIP client and ensures the required CIP scope on OAuth strategies.
+ *
+ * @example
+ * ```ts
+ * import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+ * import {createCipClient} from '@salesforce/b2c-tooling-sdk/clients';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: process.env.SFCC_CLIENT_ID!,
+ *   clientSecret: process.env.SFCC_CLIENT_SECRET!,
+ * });
+ *
+ * const cip = createCipClient({instance: 'zzxy_prd'}, auth);
+ * const query = await cip.query('SELECT submit_date FROM ccdw_aggr_sales_summary LIMIT 1');
+ * ```
  */
 export function createCipClient(config: CipClientConfig, auth: AuthStrategy): CipClient {
   const cipScope = `SALESFORCE_COMMERCE_API:${config.instance}`;

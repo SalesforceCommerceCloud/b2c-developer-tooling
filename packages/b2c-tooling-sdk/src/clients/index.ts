@@ -15,6 +15,7 @@
  * - {@link OcapiClient} - Data API operations via OCAPI (openapi-fetch Client)
  * - {@link SlasClient} - SLAS Admin API for managing tenants and clients
  * - {@link OdsClient} - On-Demand Sandbox API for managing developer sandboxes
+ * - {@link CipClient} - B2C Commerce Intelligence (CIP/CCAC) query client
  * - {@link CustomApisClient} - Custom APIs DX API for retrieving endpoint status
  * - {@link ScapiSchemasClient} - SCAPI Schemas API for discovering and retrieving OpenAPI schemas
  *

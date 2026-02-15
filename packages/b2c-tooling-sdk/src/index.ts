@@ -264,7 +264,10 @@ export {buildCipReportSql, executeCipReport, getCipReportByName, listCipReports}
 export type {
   CipReportDefinition,
   CipReportExecutionOptions,
+  CipReportParamType,
   CipReportParamDefinition,
+  CipReportQueryExecutor,
+  CipReportQueryResult,
   CipReportSqlResult,
 } from './operations/cip/index.js';
 

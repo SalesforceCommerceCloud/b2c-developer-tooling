@@ -13,17 +13,35 @@ import type {
   CipReportSqlResult,
 } from './types.js';
 
+/**
+ * Curated CIP report operations.
+ *
+ * This module exposes report catalog discovery, SQL generation, and
+ * report execution helpers on top of {@link CipClient}.
+ *
+ * @module operations/cip
+ */
+
 export type {
   CipReportDefinition,
   CipReportExecutionOptions,
+  CipReportParamType,
   CipReportParamDefinition,
+  CipReportQueryExecutor,
+  CipReportQueryResult,
   CipReportSqlResult,
 } from './types.js';
 
+/**
+ * Lists all curated CIP reports.
+ */
 export function listCipReports(): CipReportDefinition[] {
   return [...CIP_REPORTS];
 }
 
+/**
+ * Looks up a curated CIP report by name.
+ */
 export function getCipReportByName(name: string): CipReportDefinition | undefined {
   return CIP_REPORTS.find((report) => report.name === name);
 }
@@ -43,6 +61,9 @@ function validateReportParams(report: CipReportDefinition, params: Record<string
   }
 }
 
+/**
+ * Builds SQL for a curated report after validating provided parameters.
+ */
 export function buildCipReportSql(name: string, params: Record<string, string>): CipReportSqlResult {
   const report = getCipReportByName(name);
   if (!report) {
@@ -57,6 +78,9 @@ export function buildCipReportSql(name: string, params: Record<string, string>):
   };
 }
 
+/**
+ * Executes a curated report query and returns decoded rows.
+ */
 export async function executeCipReport(
   client: CipClient,
   reportName: string,
