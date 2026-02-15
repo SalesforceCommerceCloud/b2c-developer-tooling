@@ -84,13 +84,6 @@ b2c cip report sales-analytics \
   --to 2025-01-31
 ```
 
-`cip query` supports token substitution for date filters:
-
-- `<FROM>` -> value of `--from`
-- `<TO>` -> value of `--to`
-
-If your SQL does not include these tokens, the query is sent unchanged.
-
 Example output:
 
 ```text
@@ -142,6 +135,13 @@ b2c cip query \
    ORDER BY request_date, total_requests DESC
    LIMIT 5"
 ```
+
+`cip query` supports token substitution for date filters:
+
+- `<FROM>` -> value of `--from`
+- `<TO>` -> value of `--to`
+
+If your SQL does not include these tokens, the query is sent unchanged.
 
 Example output:
 
