@@ -67,7 +67,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
     }),
     json: Flags.boolean({
-      description: 'Output logs as JSON lines',
+      description: 'Output as JSON, including log messages as JSONL',
       default: false,
       helpGroup: 'GLOBAL',
     }),

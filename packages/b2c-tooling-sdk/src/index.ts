@@ -71,6 +71,7 @@ export {
   createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
   createCdnZonesClient,
+  createCipClient,
   toOrganizationId,
   toTenantId,
   buildTenantScope,
@@ -85,6 +86,8 @@ export {
   CUSTOM_APIS_DEFAULT_SCOPES,
   CDN_ZONES_READ_SCOPES,
   CDN_ZONES_RW_SCOPES,
+  DEFAULT_CIP_HOST,
+  DEFAULT_CIP_STAGING_HOST,
 } from './clients/index.js';
 export type {
   PropfindEntry,
@@ -150,6 +153,14 @@ export type {
   ZonesEnvelope,
   CdnZonesPaths,
   CdnZonesComponents,
+  CipClient,
+  CipClientConfig,
+  CipColumn,
+  CipExecuteResponse,
+  CipFetchResponse,
+  CipFrame,
+  CipQueryOptions,
+  CipQueryResult,
 } from './clients/index.js';
 
 // Operations - Code
@@ -247,6 +258,18 @@ export {
 } from './operations/ods/index.js';
 
 export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
+
+// Operations - CIP
+export {buildCipReportSql, executeCipReport, getCipReportByName, listCipReports} from './operations/cip/index.js';
+export type {
+  CipReportDefinition,
+  CipReportExecutionOptions,
+  CipReportParamType,
+  CipReportParamDefinition,
+  CipReportQueryExecutor,
+  CipReportQueryResult,
+  CipReportSqlResult,
+} from './operations/cip/index.js';
 
 // Operations - Users
 export {

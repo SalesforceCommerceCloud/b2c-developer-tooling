@@ -105,6 +105,7 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     hostname: flags.server as string | undefined,
     webdavHostname: flags['webdav-server'] as string | undefined,
     codeVersion: flags['code-version'] as string | undefined,
+    cipHost: flags['cip-host'] as string | undefined,
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
     // TLS/mTLS options

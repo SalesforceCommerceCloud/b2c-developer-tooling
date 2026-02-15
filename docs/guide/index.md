@@ -29,6 +29,7 @@ See [Installation](./installation) for more options.
 ## Next Steps
 
 - [Authentication Setup](./authentication) - Set up Account Manager, OCAPI, and WebDAV
+- [Analytics Reports (CIP/CCAC)](./analytics-reports-cip-ccac) - Run curated analytics reports and SQL queries
 - [Configuration](./configuration) - Configure instances and credentials
 - [CLI Reference](/cli/) - Browse available commands
 - [API Reference](/api/) - Explore the SDK API
