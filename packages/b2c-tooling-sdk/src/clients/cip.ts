@@ -17,6 +17,8 @@ const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/pa
 
 /** Default CIP Avatica host. */
 export const DEFAULT_CIP_HOST = 'jdbc.analytics.commercecloud.salesforce.com';
+/** Default CIP Avatica host for staging/non-production analytics. */
+export const DEFAULT_CIP_STAGING_HOST = 'jdbc.stg.analytics.commercecloud.salesforce.com';
 
 const CIP_CLIENT_VERSION = '2.11.0';
 const PROTOBUF_PREVIEW_BYTES = 48;

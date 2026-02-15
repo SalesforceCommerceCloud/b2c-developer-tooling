@@ -87,6 +87,7 @@ export {
   CDN_ZONES_READ_SCOPES,
   CDN_ZONES_RW_SCOPES,
   DEFAULT_CIP_HOST,
+  DEFAULT_CIP_STAGING_HOST,
 } from './clients/index.js';
 export type {
   PropfindEntry,

@@ -6,7 +6,12 @@
 
 import {Command, Flags} from '@oclif/core';
 import type {AuthMethod} from '@salesforce/b2c-tooling-sdk/auth';
-import {createCipClient, DEFAULT_CIP_HOST, type CipClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  createCipClient,
+  DEFAULT_CIP_HOST,
+  DEFAULT_CIP_STAGING_HOST,
+  type CipClient,
+} from '@salesforce/b2c-tooling-sdk/clients';
 import {extractOAuthFlags, loadConfig, OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {t} from '../../i18n/index.js';
@@ -29,12 +34,22 @@ function getDefaultToDate(): string {
   return toIsoDate(new Date());
 }
 
+function isLikelyProductionTenantId(tenantId: string): boolean {
+  return tenantId.toLowerCase().endsWith('_prd');
+}
+
 export abstract class CipCommand<T extends typeof Command> extends OAuthCommand<T> {
   static baseFlags = {
     ...OAuthCommand.baseFlags,
     'cip-host': Flags.string({
       description: `CIP host override (default: ${DEFAULT_CIP_HOST})`,
       env: 'SFCC_CIP_HOST',
+      helpGroup: 'QUERY',
+    }),
+    staging: Flags.boolean({
+      description: `Use staging analytics host (${DEFAULT_CIP_STAGING_HOST})`,
+      env: 'SFCC_CIP_STAGING',
+      default: false,
       helpGroup: 'QUERY',
     }),
     from: Flags.string({
@@ -65,7 +80,7 @@ export abstract class CipCommand<T extends typeof Command> extends OAuthCommand<
     this.validateCipAuthMethods();
 
     const cipInstance = this.requireTenantId();
-    const cipHost = this.flags['cip-host'] ?? this.resolvedConfig.values.cipHost;
+    const cipHost = this.resolveCipHost(cipInstance);
     return createCipClient(
       {
         instance: cipInstance,
@@ -102,6 +117,19 @@ export abstract class CipCommand<T extends typeof Command> extends OAuthCommand<
         ),
       );
     }
+  }
+
+  protected resolveCipHost(cipInstance: string): string {
+    const configuredHost = this.flags['cip-host'] ?? this.resolvedConfig.values.cipHost;
+    if (configuredHost) {
+      return configuredHost;
+    }
+
+    if (this.flags.staging || !isLikelyProductionTenantId(cipInstance)) {
+      return DEFAULT_CIP_STAGING_HOST;
+    }
+
+    return DEFAULT_CIP_HOST;
   }
 
   protected validateCipAuthMethods(): void {

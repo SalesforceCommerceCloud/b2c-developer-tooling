@@ -295,7 +295,7 @@ export type {
   components as MrtB2CComponents,
 } from './mrt-b2c.js';
 
-export {createCipClient, CipClient, DEFAULT_CIP_HOST} from './cip.js';
+export {createCipClient, CipClient, DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from './cip.js';
 export type {
   CipClientConfig,
   CipColumn,

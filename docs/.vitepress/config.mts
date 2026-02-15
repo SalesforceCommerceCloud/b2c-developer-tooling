@@ -49,6 +49,7 @@ const guideSidebar = [
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
       {text: 'Account Manager', link: '/guide/account-manager'},
+      {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Security', link: '/guide/security'},
       {text: 'Storefront Next', link: '/guide/storefront-next'},

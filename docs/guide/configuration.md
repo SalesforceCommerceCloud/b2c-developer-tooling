@@ -77,6 +77,7 @@ You can configure the CLI using environment variables:
 | `SFCC_SELFSIGNED`             | Allow self-signed server certificates                          |
 | `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                     |
 | `SFCC_CIP_HOST`               | CIP analytics host override                                    |
+| `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                |
 | `SFCC_MRT_API_KEY`            | MRT API key                                                    |
 | `SFCC_MRT_PROJECT`            | MRT project slug                                               |
 | `SFCC_MRT_ENVIRONMENT`        | MRT environment name                                           |
