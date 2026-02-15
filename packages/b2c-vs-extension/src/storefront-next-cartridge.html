@@ -1,61 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Storefront Next Cartridge</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: var(--vscode-font-family, system-ui, sans-serif);
-      font-size: var(--vscode-font-size, 13px);
-      color: var(--vscode-foreground);
-      background: var(--vscode-editor-background);
-      margin: 0;
-      padding: 1.5rem;
-    }
-    h1 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0 0 1.25rem;
-    }
-    .buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      max-width: 20rem;
-    }
-    .buttons button {
-      padding: 0.6rem 1rem;
-      font-size: 1em;
-      cursor: pointer;
-      background: var(--vscode-button-background);
-      color: var(--vscode-button-foreground);
-      border: none;
-      border-radius: 4px;
-      text-align: left;
-    }
-    .buttons button:hover {
-      background: var(--vscode-button-hoverBackground);
-    }
-  </style>
-</head>
-<body>
-  <h1>Storefront Next Cartridge</h1>
-  <div class="buttons">
-    <button type="button" id="create-cartridge-btn">Generate PageDesigner Metadata</button>
-    <button type="button" id="deploy-cartridge-btn">Deploy Cartridge</button>
-  </div>
-  <script>
-    (function() {
-      const vscode = acquireVsCodeApi();
-      document.getElementById("create-cartridge-btn").addEventListener("click", function() {
-        vscode.postMessage({ type: "createCartridge" });
-      });
-      document.getElementById("deploy-cartridge-btn").addEventListener("click", function() {
-        vscode.postMessage({ type: "deployCartridge" });
-      });
-    })();
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storefront Next Cartridge</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--vscode-font-family, system-ui, sans-serif);
+        font-size: var(--vscode-font-size, 13px);
+        color: var(--vscode-foreground);
+        background: var(--vscode-editor-background);
+        margin: 0;
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0 0 1.25rem;
+      }
+      .buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 20rem;
+      }
+      .buttons button {
+        padding: 0.6rem 1rem;
+        font-size: 1em;
+        cursor: pointer;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+        text-align: left;
+      }
+      .buttons button:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Storefront Next Cartridge</h1>
+    <div class="buttons">
+      <button type="button" id="create-cartridge-btn">Generate PageDesigner Metadata</button>
+      <button type="button" id="deploy-cartridge-btn">Deploy Cartridge</button>
+    </div>
+    <script>
+      (function () {
+        const vscode = acquireVsCodeApi();
+        document.getElementById('create-cartridge-btn').addEventListener('click', function () {
+          vscode.postMessage({type: 'createCartridge'});
+        });
+        document.getElementById('deploy-cartridge-btn').addEventListener('click', function () {
+          vscode.postMessage({type: 'deployCartridge'});
+        });
+      })();
+    </script>
+  </body>
 </html>

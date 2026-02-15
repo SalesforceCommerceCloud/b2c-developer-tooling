@@ -1,0 +1,2 @@
+# Template file contains ${placeholders} replaced at runtime; not valid syntax for Prettier
+src/template/

@@ -7,7 +7,6 @@
 
 Salesforce Commerce Cloud B2C Command Line Tools.
 
-
 > [!TIP]
 > **Just looking for the B2C CLI or MCP install instructions?** Visit the documentation site at [https://salesforcecommercecloud.github.io/b2c-developer-tooling/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the latest install guide and CLI reference.
 
@@ -15,11 +14,11 @@ Salesforce Commerce Cloud B2C Command Line Tools.
 
 This is a pnpm monorepo with the following packages:
 
-| Package | Description |
-|---------|-------------|
-| [`b2c-cli`](./packages/b2c-cli/README.md) | Command line interface built with oclif |
+| Package                                                   | Description                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`b2c-cli`](./packages/b2c-cli/README.md)                 | Command line interface built with oclif                                              |
 | [`b2c-tooling-sdk`](./packages/b2c-tooling-sdk/README.md) | SDK/library for B2C Commerce operations; supports the CLI and can be used standalone |
-| [`b2c-dx-mcp`](./packages/b2c-dx-mcp/README.md) | MCP server for B2C Commerce developer experience tools |
+| [`b2c-dx-mcp`](./packages/b2c-dx-mcp/README.md)           | MCP server for B2C Commerce developer experience tools                               |
 
 ## Development
 
@@ -85,6 +84,7 @@ pnpm mocha --grep "uploads a file" "test/**/*.test.ts"
 #### Coverage
 
 Coverage reports are generated in each package's `coverage/` directory:
+
 - `coverage/index.html` - HTML report
 - `coverage/lcov.info` - LCOV format for CI integration
 
@@ -184,9 +184,9 @@ Preview releases are available as tgz files on [GitHub Releases](https://github.
 The `@salesforce/b2c-tooling-sdk` package uses the `exports` field in package.json to define its public API surface. Each module is available as a subpath export:
 
 ```typescript
-import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk/auth';
-import { B2CInstance } from '@salesforce/b2c-tooling-sdk/instance';
-import { getLogger } from '@salesforce/b2c-tooling-sdk/logging';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 ```
 
 The `development` condition in exports enables direct TypeScript source resolution when using `--conditions=development`, which is how `bin/dev.js` works for local development.
@@ -194,6 +194,17 @@ The `development` condition in exports enables direct TypeScript source resoluti
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details on how to get started, submit pull requests, and our code of conduct.
+
+### Third-Party Dependency Review
+
+To prevent net-new third-party libraries from being added without discussion, PRs are checked by the `3PL Guard` workflow (`Net-new 3PL check`).
+
+- The check compares changed `package.json` files in the PR and detects net-new external dependencies.
+- If net-new dependencies are found, the PR is labeled `needs-3pl-review` and the check fails.
+- After discussion and approval, a maintainer adds the `3pl-approved` label to allow the check to pass.
+- If the net-new dependency is removed, `needs-3pl-review` is removed automatically.
+
+To enforce this as a merge gate, keep `Net-new 3PL check` as a required status check in branch protection.
 
 ## Security
 
