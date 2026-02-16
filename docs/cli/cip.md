@@ -63,14 +63,13 @@ Provide SQL from exactly one source:
 
 1. Positional argument (`b2c cip query "SELECT ..."`)
 2. `--file <path>`
-3. `--stdin`
+3. Piped stdin (for example `cat query.sql | b2c cip query ...`)
 
 ### Query-Specific Flags
 
-| Flag           | Description               |
-| -------------- | ------------------------- |
-| `--file`, `-f` | Read SQL query from file  |
-| `--stdin`      | Read SQL query from stdin |
+| Flag           | Description              |
+| -------------- | ------------------------ |
+| `--file`, `-f` | Read SQL query from file |
 
 ### Placeholders
 
@@ -101,7 +100,7 @@ b2c cip query \
 b2c cip query --file ./query.sql --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
 
 # Read SQL from stdin
-cat ./query.sql | b2c cip query --stdin --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
+cat ./query.sql | b2c cip query --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
 ```
 
 ## b2c cip report
@@ -126,7 +125,7 @@ Use `--sql` to pipe into `cip query`:
 
 ```bash
 b2c cip report sales-analytics --site-id Sites-RefArch-Site --sql \
-  | b2c cip query --stdin --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
+  | b2c cip query --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
 ```
 
 ### Report Commands

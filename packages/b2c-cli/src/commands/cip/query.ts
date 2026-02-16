@@ -36,15 +36,10 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
       description: 'Read SQL query from file',
       helpGroup: 'QUERY',
     }),
-    stdin: Flags.boolean({
-      description: 'Read SQL query from stdin',
-      default: false,
-      helpGroup: 'QUERY',
-    }),
   };
 
   async run(): Promise<CipQueryCommandResult> {
-    const sql = await this.resolveSql();
+    const sql = this.resolveSql();
 
     this.requireCipCredentials();
     const client = this.getCipClient();
@@ -69,21 +64,6 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
     return output;
   }
 
-  private async readSqlFromStdin(): Promise<string> {
-    const preBufferedInput = process.env.SFCC_CIP_QUERY_STDIN;
-    if (preBufferedInput !== undefined) {
-      return preBufferedInput;
-    }
-
-    let data = '';
-
-    for await (const chunk of process.stdin) {
-      data += typeof chunk === 'string' ? chunk : chunk.toString('utf8');
-    }
-
-    return data;
-  }
-
   private renderRows(columns: string[], rows: Array<Record<string, unknown>>, format: CipOutputFormat): void {
     if (format === 'csv') {
       process.stdout.write(`${toCsv(columns, rows)}\n`);
@@ -93,29 +73,21 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
     renderTable(columns, rows);
   }
 
-  private async resolveSql(): Promise<string> {
+  private resolveSql(): string {
     const positionalSql = this.args.sql;
     const hasPositional = Boolean(positionalSql);
     const hasFile = Boolean(this.flags.file);
-    const hasStdin = this.flags.stdin === true;
+    const sourceCount = [hasPositional, hasFile].filter(Boolean).length;
 
-    if (hasStdin && hasFile) {
-      this.error('Use either --stdin or --file, not both.');
+    if (sourceCount === 0) {
+      this.error('No SQL provided. Pass SQL as an argument, pipe SQL through stdin, or use --file.');
     }
 
-    if (!hasStdin && hasFile && hasPositional) {
-      this.error('Use either a positional SQL argument or --file, not both.');
+    if (sourceCount > 1) {
+      this.error('Provide SQL from exactly one source: positional argument/stdin, or --file.');
     }
 
-    if (!hasStdin && !hasFile && !hasPositional) {
-      this.error('No SQL provided. Pass SQL as an argument, or use --file / --stdin.');
-    }
-
-    const rawSql = hasStdin
-      ? await this.readSqlFromStdin()
-      : hasFile
-        ? fs.readFileSync(this.flags.file as string, 'utf8')
-        : positionalSql;
+    const rawSql = hasFile ? fs.readFileSync(this.flags.file as string, 'utf8') : positionalSql;
 
     if (!rawSql || rawSql.trim().length === 0) {
       this.error('SQL input is empty.');

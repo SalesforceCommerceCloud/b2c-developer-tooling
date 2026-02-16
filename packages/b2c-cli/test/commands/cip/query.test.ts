@@ -20,32 +20,15 @@ describe('cip query', () => {
     expect(error).to.be.undefined;
   });
 
-  it('requires one SQL source flag', async () => {
+  it('requires one SQL source', async () => {
     const {error} = await runCommand('cip query --tenant-id zzxy_prd --client-id test --client-secret secret');
     expect(error).to.not.be.undefined;
     expect(error?.message).to.include('No SQL provided');
   });
 
-  it('rejects conflicting file and stdin sources', async () => {
-    const {error} = await runCommand('cip query --stdin --file ./query.sql');
+  it('rejects positional SQL when --file is also set', async () => {
+    const {error} = await runCommand('cip query "SELECT 1" --file ./query.sql');
     expect(error).to.not.be.undefined;
-    expect(error?.message).to.include('either --stdin or --file');
-  });
-
-  it('prioritizes --stdin over positional SQL source', async () => {
-    const {error} = await runCommand('cip query "SELECT 1" --stdin');
-    expect(error).to.not.be.undefined;
-    expect(error?.message).to.include('SQL input is empty');
-  });
-
-  it('uses pre-buffered stdin fallback when stream is unavailable', async () => {
-    process.env.SFCC_CIP_QUERY_STDIN = 'SELECT 1';
-
-    const {error} = await runCommand(
-      'cip query --stdin --tenant-id zzxy_prd --client-id test --client-secret test --cip-host 127.0.0.1:9',
-    );
-
-    expect(error).to.not.be.undefined;
-    expect(error?.message).to.not.include('SQL input is empty');
+    expect(error?.message).to.include('exactly one source');
   });
 });

@@ -103,7 +103,7 @@ Pipe generated SQL into raw query execution:
 
 ```bash
 b2c cip report sales-analytics --tenant-id abcd_prd --site-id Sites-RefArch-Site --sql \
-  | b2c cip query --tenant-id abcd_prd --stdin
+  | b2c cip query --tenant-id abcd_prd
 
 # force staging analytics host
 b2c cip report sales-analytics --tenant-id abcd_prd --site-id Sites-RefArch-Site --staging --sql
