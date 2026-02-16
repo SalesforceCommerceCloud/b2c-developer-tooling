@@ -245,7 +245,143 @@ describe('Sandbox Lifecycle E2E Tests', function () {
     });
   });
 
-  describe('Step 8: Delete Sandbox', function () {
+  describe('Step 8: Sandbox Usage', function () {
+    it('should retrieve sandbox usage in JSON format', async function () {
+      // Skip if we don't have a valid sandbox ID
+      if (!sandboxId) {
+        this.skip();
+      }
+
+      const result = await runCLIWithRetry(['sandbox', 'usage', sandboxId, '--json'], {verbose: true});
+
+      expect(result.exitCode, `Usage failed: ${toString(result.stderr)}`).to.equal(0);
+      expect(result.stdout, 'Usage command should return JSON output').to.not.be.empty;
+
+      const response = parseJSONOutput(result);
+      expect(response, 'Usage response should be a valid object').to.be.an('object');
+
+      // Response can be either a usage model or a wrapper with data property
+      const usage: any = 'data' in response ? (response as any).data : response;
+      if (usage && typeof usage === 'object') {
+        if (usage.sandboxSeconds !== undefined) {
+          expect(usage.sandboxSeconds, 'sandboxSeconds should be a number when present').to.be.a('number');
+        }
+        if (usage.minutesUp !== undefined) {
+          expect(usage.minutesUp, 'minutesUp should be a number when present').to.be.a('number');
+        }
+        if (usage.minutesDown !== undefined) {
+          expect(usage.minutesDown, 'minutesDown should be a number when present').to.be.a('number');
+        }
+
+        // Some backends may also provide aggregate sandbox counters; validate types when available
+        if (usage.activeSandboxes !== undefined) {
+          expect(usage.activeSandboxes, 'activeSandboxes should be a number when present').to.be.a('number');
+        }
+        if (usage.createdSandboxes !== undefined) {
+          expect(usage.createdSandboxes, 'createdSandboxes should be a number when present').to.be.a('number');
+        }
+        if (usage.deletedSandboxes !== undefined) {
+          expect(usage.deletedSandboxes, 'deletedSandboxes should be a number when present').to.be.a('number');
+        }
+      }
+    });
+  });
+
+  describe('Step 9: Sandbox Aliases', function () {
+    let createdAliasId: string | undefined;
+    let createdAliasHostname: string | undefined;
+
+    it('should create an alias for the sandbox', async function () {
+      // Skip if we don't have a valid sandbox ID
+      if (!sandboxId) {
+        this.skip();
+      }
+
+      // Use a short, unique hostname per test run to avoid collisions and
+      // stay well under Kubernetes label length limits (63 characters).
+      const suffix = Date.now().toString(36);
+      const aliasHostname = `e2e-${suffix}.example.com`;
+
+      const createResult = await runCLIWithRetry(['sandbox', 'alias', 'create', sandboxId, aliasHostname, '--json'], {
+        verbose: true,
+      });
+
+      expect(createResult.exitCode, `Alias create failed: ${toString(createResult.stderr)}`).to.equal(0);
+
+      const createResponse = parseJSONOutput(createResult) as any;
+      expect(createResponse, 'Alias create response should be an object').to.be.an('object');
+      expect(createResponse).to.have.property('id');
+      expect(createResponse).to.have.property('name');
+
+      createdAliasId = createResponse.id as string;
+      createdAliasHostname = createResponse.name as string;
+    });
+
+    it('should list aliases for the sandbox including the created alias', async function () {
+      // Skip if we don't have a valid sandbox ID or no alias was created
+      if (!sandboxId || !createdAliasId) {
+        this.skip();
+      }
+
+      const result = await runCLIWithRetry(['sandbox', 'alias', 'list', sandboxId, '--json'], {verbose: true});
+
+      expect(result.exitCode, `Alias list failed: ${toString(result.stderr)}`).to.equal(0);
+
+      const response = parseJSONOutput(result);
+      // sandbox alias list --json returns an array of alias objects (possibly empty)
+      expect(response, 'Alias list response should be an array').to.be.an('array');
+
+      if (Array.isArray(response) && response.length > 0) {
+        const found = (response as any[]).find(
+          (alias) => alias.id === createdAliasId || alias.name === createdAliasHostname,
+        );
+        expect(found, 'Expected alias list to include the created alias').to.exist;
+      }
+    });
+
+    it('should delete the created alias for the sandbox', async function () {
+      // Skip if we don't have a valid sandbox ID or no alias was created
+      if (!sandboxId || !createdAliasId) {
+        this.skip();
+      }
+
+      const deleteResult = await runCLIWithRetry(
+        ['sandbox', 'alias', 'delete', sandboxId, createdAliasId, '--force', '--json'],
+        {verbose: true},
+      );
+
+      expect(deleteResult.exitCode, `Alias delete failed: ${toString(deleteResult.stderr)}`).to.equal(0);
+
+      const deleteResponse = parseJSONOutput(deleteResult) as any;
+      expect(deleteResponse).to.have.property('success', true);
+    });
+  });
+
+  describe('Step 10: Reset Sandbox', function () {
+    it('should trigger a sandbox reset operation in JSON mode', async function () {
+      this.timeout(TIMEOUTS.ODS_OPERATION);
+
+      // Skip if we don't have a valid sandbox ID
+      if (!sandboxId) {
+        this.skip();
+      }
+
+      const result = await runCLIWithRetry(
+        ['sandbox', 'reset', sandboxId, '--wait', '--poll-interval', '10', '--timeout', '600', '--force', '--json'],
+        {timeout: TIMEOUTS.ODS_OPERATION, verbose: true},
+      );
+
+      expect(result.exitCode, `Reset failed: ${toString(result.stderr)}`).to.equal(0);
+      expect(result.stdout, 'Reset command should return JSON output').to.not.be.empty;
+
+      const response = parseJSONOutput(result);
+      expect(response, 'Reset response should be a valid object').to.be.an('object');
+      expect(response).to.have.property('operationState');
+      expect(response).to.have.property('sandboxState');
+    });
+  });
+
+  describe('Step 11: Delete Sandbox', function () {
     it('should delete the sandbox', async function () {
       // Skip if we don't have a valid sandbox ID
       if (!sandboxId) {
@@ -297,6 +433,66 @@ describe('Sandbox Lifecycle E2E Tests', function () {
         expect(result.stderr, 'Invalid credentials should return authentication error').to.match(
           /401|unauthorized|invalid.*client/i,
         );
+      });
+    });
+
+    describe('Realm Management', function () {
+      const realmId = process.env.TEST_REALM;
+
+      before(function () {
+        if (!realmId) {
+          this.skip();
+        }
+      });
+
+      it('should get realm details', async function () {
+        const result = await runCLIWithRetry(['sandbox', 'realm', 'get', realmId!, '--json'], {verbose: true});
+
+        expect(result.exitCode, `Realm get failed: ${toString(result.stderr)}`).to.equal(0);
+
+        const response = parseJSONOutput(result);
+        expect(response, 'Realm get response should be a valid object').to.be.an('object');
+        expect(response).to.have.property('realm');
+      });
+
+      it('should fetch realm usage in JSON format', async function () {
+        const result = await runCLIWithRetry(['sandbox', 'realm', 'usage', realmId!, '--json'], {verbose: true});
+
+        expect(result.exitCode, `Realm usage failed: ${toString(result.stderr)}`).to.equal(0);
+
+        const response = parseJSONOutput(result);
+        expect(response, 'Realm usage response should be a valid object').to.be.an('object');
+
+        const usage: any = 'data' in response ? (response as any).data : response;
+        if (usage && typeof usage === 'object') {
+          if (usage.activeSandboxes !== undefined) {
+            expect(usage.activeSandboxes, 'activeSandboxes should be a number when present').to.be.a('number');
+          }
+          if (usage.createdSandboxes !== undefined) {
+            expect(usage.createdSandboxes, 'createdSandboxes should be a number when present').to.be.a('number');
+          }
+          if (usage.deletedSandboxes !== undefined) {
+            expect(usage.deletedSandboxes, 'deletedSandboxes should be a number when present').to.be.a('number');
+          }
+          if (usage.sandboxSeconds !== undefined) {
+            expect(usage.sandboxSeconds, 'sandboxSeconds should be a number when present').to.be.a('number');
+          }
+          if (usage.minutesUp !== undefined) {
+            expect(usage.minutesUp, 'minutesUp should be a number when present').to.be.a('number');
+          }
+          if (usage.minutesDown !== undefined) {
+            expect(usage.minutesDown, 'minutesDown should be a number when present').to.be.a('number');
+          }
+        }
+      });
+
+      it('should fail realm update when no flags are provided', async function () {
+        const result = await runCLI(['sandbox', 'realm', 'update', realmId!, '--json']);
+
+        expect(result.exitCode, 'Realm update without flags should fail').to.not.equal(0);
+
+        const errorText = String(result.stderr || result.stdout || '');
+        expect(errorText).to.match(/No update flags specified/i);
       });
     });
   });

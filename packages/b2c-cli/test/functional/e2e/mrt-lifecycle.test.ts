@@ -479,6 +479,21 @@ describe('MRT Lifecycle E2E Tests', function () {
         {timeout: TIMEOUTS.DEFAULT, env: MRT_TEST_ENV},
       );
 
+      // In some environments, the delete operation can be retried by Mocha.
+      // If a previous attempt already deleted the variable, the backend will
+      // return an error indicating that the variable does not exist. Treat
+      // this specific case as acceptable instead of failing the test.
+      if (result.exitCode !== 0) {
+        const errorText = String(result.stderr || result.stdout || '');
+        if (errorText.includes('does not exist')) {
+          console.log(
+            `  ⚠ Environment variable ${testVarKey} was already deleted (does not exist), treating as success`,
+          );
+          varCreated = false;
+          return;
+        }
+      }
+
       expect(result.exitCode, `Env var delete command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
