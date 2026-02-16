@@ -67,6 +67,7 @@ All Account Manager commands are under the `am` topic:
 
 ### Utilities
 
+- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
 - [Auth Commands](./auth) - Authentication and token management
 - [Logging](./logging) - Log levels, output formats, and environment variables
 
