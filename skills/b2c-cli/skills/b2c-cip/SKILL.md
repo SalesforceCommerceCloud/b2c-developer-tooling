@@ -74,6 +74,10 @@ For an efficient table catalog grouped by aggregate/dimension/fact families, use
 
 - `references/KNOWN_TABLES.md`
 
+For a general-purpose starter query pack with ready-to-run SQL patterns, use:
+
+- `references/STARTER_QUERIES.md`
+
 The list is derived from official JDBC documentation and intended as a quick discovery aid.
 
 ## Curated Report Examples
