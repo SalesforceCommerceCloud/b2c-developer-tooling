@@ -61,3 +61,59 @@ export type CipReportQueryExecutor = (
   client: CipClient,
   options: CipReportExecutionOptions,
 ) => Promise<CipReportQueryResult>;
+
+/**
+ * Table metadata record from CIP metadata catalog.
+ */
+export interface CipTableMetadata {
+  tableName: string;
+  tableSchema: string;
+  tableType: string;
+}
+
+/**
+ * Column metadata record from CIP metadata catalog.
+ */
+export interface CipColumnMetadata {
+  columnName: string;
+  dataType: string;
+  isNullable: boolean;
+  ordinalPosition: number;
+  tableName: string;
+  tableSchema: string;
+}
+
+/**
+ * Options for listing tables from metadata catalog.
+ */
+export interface CipListTablesOptions extends Pick<CipQueryOptions, 'fetchSize'> {
+  schema?: string;
+  tableNamePattern?: string;
+  tableType?: string;
+}
+
+/**
+ * Result for table listing operation.
+ */
+export interface CipListTablesResult {
+  schema?: string;
+  tableCount: number;
+  tables: CipTableMetadata[];
+}
+
+/**
+ * Options for describing table columns from metadata catalog.
+ */
+export interface CipDescribeTableOptions extends Pick<CipQueryOptions, 'fetchSize'> {
+  schema?: string;
+}
+
+/**
+ * Result for table describe operation.
+ */
+export interface CipDescribeTableResult {
+  columnCount: number;
+  columns: CipColumnMetadata[];
+  tableName: string;
+  tableSchema: string;
+}

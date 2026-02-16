@@ -6,10 +6,11 @@ description: User guide for running CIP/CCAC analytics reports and SQL queries w
 
 The B2C CLI includes a `cip` command family for **B2C Commerce Intelligence (CIP)**, also known as **Commerce Cloud Analytics (CCAC)** reporting.
 
-It is based on the **B2C Commerce Intelligence JDBC Driver** and gives you two workflows:
+It is based on the **B2C Commerce Intelligence JDBC Driver** and gives you three practical workflows:
 
 - curated report commands (`b2c cip report <report-command>`) for common analytics use cases
 - raw SQL (`b2c cip query`) for custom exploration
+- metadata discovery (`b2c cip tables`, `b2c cip describe`) for schema/table inspection
 
 Official JDBC reference:
 
@@ -154,6 +155,18 @@ request_date  api_name  total_requests
 
 Use `--format json` or `--format csv` when you need machine-readable output.
 
+### Metadata discovery (`cip tables`, `cip describe`)
+
+Use metadata commands to discover table names and inspect columns before writing larger SQL queries.
+
+```bash
+# list table names in warehouse schema
+b2c cip tables --tenant-id abcd_prd --pattern "ccdw_aggr_%"
+
+# inspect table columns
+b2c cip describe ccdw_aggr_ocapi_request --tenant-id abcd_prd
+```
+
 ## Choosing Query vs Report
 
 Use `cip report` when you want:
@@ -212,6 +225,7 @@ For scripting and automation, use:
 If you're building applications or automation directly in TypeScript/Node.js, the SDK exposes CIP support:
 
 - `createCipClient` for raw SQL execution
+- `listCipTables`, `describeCipTable` for table/column metadata discovery
 - `buildCipReportSql`, `listCipReports`, `executeCipReport` for curated report workflows
 
 Example:

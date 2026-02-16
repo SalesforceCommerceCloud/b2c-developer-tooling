@@ -260,8 +260,20 @@ export {
 export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
 
 // Operations - CIP
-export {buildCipReportSql, executeCipReport, getCipReportByName, listCipReports} from './operations/cip/index.js';
+export {
+  buildCipReportSql,
+  describeCipTable,
+  executeCipReport,
+  getCipReportByName,
+  listCipReports,
+  listCipTables,
+} from './operations/cip/index.js';
 export type {
+  CipColumnMetadata,
+  CipDescribeTableOptions,
+  CipDescribeTableResult,
+  CipListTablesOptions,
+  CipListTablesResult,
   CipReportDefinition,
   CipReportExecutionOptions,
   CipReportParamType,
@@ -269,6 +281,7 @@ export type {
   CipReportQueryExecutor,
   CipReportQueryResult,
   CipReportSqlResult,
+  CipTableMetadata,
 } from './operations/cip/index.js';
 
 // Operations - Users

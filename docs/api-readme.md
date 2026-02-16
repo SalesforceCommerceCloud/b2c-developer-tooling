@@ -213,10 +213,16 @@ These clients are created directly for platform-wide services:
 
 ### CIP Analytics (SDK)
 
-Use the CIP client directly for raw SQL, or combine it with curated report operations.
+Use the CIP client directly for raw SQL, or combine it with metadata + curated report operations.
 
 ```typescript
-import {OAuthStrategy, createCipClient, executeCipReport} from '@salesforce/b2c-tooling-sdk';
+import {
+  OAuthStrategy,
+  createCipClient,
+  describeCipTable,
+  executeCipReport,
+  listCipTables,
+} from '@salesforce/b2c-tooling-sdk';
 
 const auth = new OAuthStrategy({
   clientId: process.env.SFCC_CLIENT_ID!,
@@ -224,6 +230,10 @@ const auth = new OAuthStrategy({
 });
 
 const cip = createCipClient({instance: 'zzxy_prd'}, auth);
+
+// Metadata discovery
+const tables = await listCipTables(cip, {schema: 'warehouse', tableNamePattern: 'ccdw_aggr_%'});
+const columns = await describeCipTable(cip, 'ccdw_aggr_ocapi_request', {schema: 'warehouse'});
 
 // Curated report execution
 const report = await executeCipReport(cip, 'sales-analytics', {

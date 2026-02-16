@@ -14,6 +14,8 @@ By default, CIP uses the production analytics host for tenants ending in `_prd` 
 
 | Command                           | Description                                    |
 | --------------------------------- | ---------------------------------------------- |
+| `b2c cip tables`                  | List tables from the CIP metadata catalog      |
+| `b2c cip describe <table>`        | Describe columns for a CIP table               |
 | `b2c cip query`                   | Run raw SQL (argument, file, or stdin)         |
 | `b2c cip report`                  | Report topic help and report command discovery |
 | `b2c cip report <report-command>` | Run a curated report command                   |
@@ -34,18 +36,82 @@ CIP commands use **OAuth client credentials only**.
 
 Your API client must include the **Salesforce Commerce API** role with a tenant filter that includes your target instance.
 
-## Shared CIP Flags
+## Connection and Output Flags
 
-These flags are available on `cip query` and all `cip report <report-command>` commands:
+These flags are available on all CIP commands:
 
 | Flag           | Description                           | Default                                       |
 | -------------- | ------------------------------------- | --------------------------------------------- |
-| `--from`       | Inclusive start date (YYYY-MM-DD)     | First day of current month                    |
-| `--to`         | Inclusive end date (YYYY-MM-DD)       | Today                                         |
 | `--format`     | Output format: `table`, `csv`, `json` | `table`                                       |
 | `--fetch-size` | Frame fetch size for paging           | `1000`                                        |
 | `--cip-host`   | CIP host override                     | `jdbc.analytics.commercecloud.salesforce.com` |
 | `--staging`    | Use staging analytics host            | `false`                                       |
+
+## Query and Report Date Flags
+
+These flags are available on `cip query` and `cip report <report-command>` commands:
+
+| Flag     | Description                       | Default                    |
+| -------- | --------------------------------- | -------------------------- |
+| `--from` | Inclusive start date (YYYY-MM-DD) | First day of current month |
+| `--to`   | Inclusive end date (YYYY-MM-DD)   | Today                      |
+
+## b2c cip tables
+
+List tables from the CIP metadata catalog.
+
+### Usage
+
+```bash
+b2c cip tables [flags]
+```
+
+### Flags
+
+| Flag        | Description                                          |
+| ----------- | ---------------------------------------------------- |
+| `--schema`  | Metadata schema to inspect (default: `warehouse`)    |
+| `--pattern` | Table name pattern using SQL `LIKE` semantics        |
+| `--all`     | Include all table types (default filters to `TABLE`) |
+
+### Examples
+
+```bash
+# List warehouse tables
+b2c cip tables --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
+
+# Filter by table prefix
+b2c cip tables --tenant-id zzxy_prd --pattern "ccdw_aggr_%" --client-id <client-id> --client-secret <client-secret>
+
+# Include metadata/system tables
+b2c cip tables --tenant-id zzxy_prd --schema metadata --all --client-id <client-id> --client-secret <client-secret>
+```
+
+## b2c cip describe
+
+Describe table columns using CIP metadata catalog.
+
+### Usage
+
+```bash
+b2c cip describe <table> [flags]
+```
+
+### Flags
+
+| Flag       | Description                                                 |
+| ---------- | ----------------------------------------------------------- |
+| `--schema` | Metadata schema containing the table (default: `warehouse`) |
+
+### Examples
+
+```bash
+# Describe a warehouse table
+b2c cip describe ccdw_aggr_ocapi_request --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
+
+# Describe metadata system table
+b2c cip describe COLUMNS --schema metadata --tenant-id zzxy_prd --client-id <client-id> --client-secret <client-secret>
+```
 
 ## b2c cip query
 
