@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
-import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
+import {createOdsClient, createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
@@ -46,6 +46,11 @@ function getScapiExplorerWebviewContent(
   const prefillJson = prefill ? JSON.stringify(prefill) : 'null';
   html = html.replace('__SCAPI_PREFILL__', prefillJson);
   return html;
+}
+
+function getOdsManagementWebviewContent(context: vscode.ExtensionContext): string {
+  const htmlPath = path.join(context.extensionPath, 'src', 'ods-management.html');
+  return fs.readFileSync(htmlPath, 'utf-8');
 }
 
 const WEBDAV_ROOT_LABELS: Record<string, string> = {
@@ -172,6 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('b2c-dx.promptAgent', showActivationError),
       vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
       vscode.commands.registerCommand('b2c-dx.scapiExplorer', showActivationError),
+      vscode.commands.registerCommand('b2c-dx.odsManagement', showActivationError),
     );
   }
 }
@@ -653,9 +659,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const tenantId = (msg.tenantId ?? '').trim();
           const apiFamily = (msg.apiFamily ?? '').trim();
           const apiName = (msg.apiName ?? '').trim();
-          log.appendLine(
-            `[SCAPI] Fetch schema paths: tenantId=${tenantId} apiFamily=${apiFamily} apiName=${apiName}`,
-          );
+          log.appendLine(`[SCAPI] Fetch schema paths: tenantId=${tenantId} apiFamily=${apiFamily} apiName=${apiName}`);
           if (!tenantId || !apiFamily || !apiName) {
             log.appendLine('[SCAPI] Fetch paths failed: Tenant Id, API Family, and API Name are required.');
             panel.webview.postMessage({
@@ -727,14 +731,14 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             log.appendLine(
               `[SCAPI] Normalized paths (${paths.length}): ${JSON.stringify(paths.slice(0, 10))}${paths.length > 10 ? '...' : ''}`,
             );
-            const schemaInfo = data && typeof data === 'object' && 'info' in data ? (data as {info?: Record<string, unknown>}).info : undefined;
-            const apiTypeRaw =
-              schemaInfo?.['x-api-type'] ?? schemaInfo?.['x-apiType'] ?? schemaInfo?.['x_api_type'];
+            const schemaInfo =
+              data && typeof data === 'object' && 'info' in data
+                ? (data as {info?: Record<string, unknown>}).info
+                : undefined;
+            const apiTypeRaw = schemaInfo?.['x-api-type'] ?? schemaInfo?.['x-apiType'] ?? schemaInfo?.['x_api_type'];
             const apiType = typeof apiTypeRaw === 'string' ? apiTypeRaw : undefined;
             if (schemaInfo && !apiType) {
-              log.appendLine(
-                `[SCAPI] Schema info keys (no x-api-type): ${Object.keys(schemaInfo).join(', ')}`,
-              );
+              log.appendLine(`[SCAPI] Schema info keys (no x-api-type): ${Object.keys(schemaInfo).join(', ')}`);
             } else if (apiType) {
               log.appendLine(`[SCAPI] API type: ${apiType}`);
             }
@@ -1070,6 +1074,148 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     );
   });
 
+  const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
+
+  const odsManagementDisposable = vscode.commands.registerCommand('b2c-dx.odsManagement', () => {
+    const panel = vscode.window.createWebviewPanel(
+      'b2c-dx-ods-management',
+      'On Demand Sandbox (ODS) Management',
+      vscode.ViewColumn.One,
+      {enableScripts: true},
+    );
+    panel.webview.html = getOdsManagementWebviewContent(context);
+
+    async function getOdsConfig() {
+      const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(startDir);
+      return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+    }
+
+    function realmFromHostname(hostname: string | undefined): string {
+      if (!hostname || typeof hostname !== 'string') return '';
+      const firstSegment = hostname.split('.')[0] ?? '';
+      return firstSegment.split('-')[0] ?? '';
+    }
+
+    async function fetchSandboxList(): Promise<{sandboxes: unknown[]; error?: string}> {
+      try {
+        const config = await getOdsConfig();
+        if (!config.hasOAuthConfig()) {
+          return {sandboxes: [], error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.'};
+        }
+        const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+        const authStrategy = config.createOAuth();
+        const odsClient = createOdsClient({host}, authStrategy);
+        const result = await odsClient.GET('/sandboxes', {
+          params: {query: {include_deleted: false}},
+        });
+        if (result.error) {
+          return {
+            sandboxes: [],
+            error: getApiErrorMessage(result.error, result.response),
+          };
+        }
+        const sandboxes = result.data?.data ?? [];
+        return {sandboxes: sandboxes as unknown[]};
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {sandboxes: [], error: message};
+      }
+    }
+
+    panel.webview.onDidReceiveMessage(async (msg: {type: string; sandboxId?: string}) => {
+      if (msg.type === 'odsListRequest') {
+        const {sandboxes, error} = await fetchSandboxList();
+        panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+        return;
+      }
+      if (msg.type === 'odsDeleteClick' && msg.sandboxId) {
+        try {
+          const config = await getOdsConfig();
+          if (!config.hasOAuthConfig()) {
+            vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
+            return;
+          }
+          const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+          const authStrategy = config.createOAuth();
+          const odsClient = createOdsClient({host}, authStrategy);
+          const deleteResult = await odsClient.DELETE('/sandboxes/{sandboxId}', {
+            params: {path: {sandboxId: msg.sandboxId}},
+          });
+          if (deleteResult.error) {
+            vscode.window.showErrorMessage(
+              `B2C DX: Delete sandbox failed. ${getApiErrorMessage(deleteResult.error, deleteResult.response)}`,
+            );
+            return;
+          }
+          vscode.window.showInformationMessage('B2C DX: Sandbox deleted.');
+          const {sandboxes, error} = await fetchSandboxList();
+          panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(`B2C DX: ${message}`);
+        }
+        return;
+      }
+      if (msg.type === 'odsCreateClick') {
+        try {
+          const config = await getOdsConfig();
+          if (!config.hasOAuthConfig()) {
+            vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
+            return;
+          }
+          const hostname = config.values.hostname;
+          const defaultRealm = realmFromHostname(hostname as string | undefined);
+
+          const realm = await vscode.window.showInputBox({
+            title: 'Create ODS Sandbox',
+            prompt: 'Realm (four-letter ID)',
+            value: defaultRealm,
+            placeHolder: 'e.g. zyoc',
+          });
+          if (realm === undefined) return;
+
+          const ttlStr = await vscode.window.showInputBox({
+            title: 'Create ODS Sandbox',
+            prompt: 'TTL (hours). Sandbox lifetime in hours.',
+            value: '480',
+            placeHolder: '480',
+          });
+          if (ttlStr === undefined) return;
+
+          const ttl = parseInt(ttlStr.trim(), 10);
+          if (Number.isNaN(ttl) || ttl < 0) {
+            vscode.window.showErrorMessage('B2C DX: TTL must be a non-negative number.');
+            return;
+          }
+
+          const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+          const authStrategy = config.createOAuth();
+          const odsClient = createOdsClient({host}, authStrategy);
+          const createResult = await odsClient.POST('/sandboxes', {
+            body: {
+              realm: realm.trim(),
+              ttl: ttl === 0 ? undefined : ttl,
+              analyticsEnabled: false,
+            },
+          });
+          if (createResult.error) {
+            vscode.window.showErrorMessage(
+              `B2C DX: Create sandbox failed. ${getApiErrorMessage(createResult.error, createResult.response)}`,
+            );
+            return;
+          }
+          vscode.window.showInformationMessage('B2C DX: Sandbox creation started.');
+          const {sandboxes, error} = await fetchSandboxList();
+          panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(`B2C DX: ${message}`);
+        }
+      }
+    });
+  });
+
   const storefrontNextCartridgeDisposable = vscode.commands.registerCommand(
     'b2c-dx.handleStorefrontNextCartridge',
     () => {
@@ -1174,6 +1320,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     promptAgentDisposable,
     listWebDavDisposable,
     scapiExplorerDisposable,
+    odsManagementDisposable,
     storefrontNextCartridgeDisposable,
   );
   log.appendLine('B2C DX extension activated.');
