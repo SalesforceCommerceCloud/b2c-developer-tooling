@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress';
+import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 
 // Version configuration from environment
@@ -15,22 +15,22 @@ const basePath = isReleaseBuild ? `${siteBase}/release/` : `${siteBase}/`;
 function getVersionItems() {
   if (releaseVersion === 'unreleased') {
     // No release yet - only show dev
-    return [{ text: 'Development (main)', link: '/' }];
+    return [{text: 'Development (main)', link: '/'}];
   }
 
   if (isReleaseBuild) {
     // Release build: base is /b2c-developer-tooling/release/
     // Use ../ to navigate up to main docs
     return [
-      { text: 'Development (main)', link: '../' },
-      { text: 'Latest Release', link: '/' },
+      {text: 'Development (main)', link: '../'},
+      {text: 'Latest Release', link: '/'},
     ];
   }
 
   // Main build: base is /b2c-developer-tooling/
   return [
-    { text: 'Development (main)', link: '/' },
-    { text: 'Latest Release', link: '/release/' },
+    {text: 'Development (main)', link: '/'},
+    {text: 'Latest Release', link: '/release/'},
   ];
 }
 
@@ -38,50 +38,51 @@ const guideSidebar = [
   {
     text: 'Getting Started',
     items: [
-      { text: 'Introduction', link: '/guide/' },
-      { text: 'Installation', link: '/guide/installation' },
-      { text: 'Configuration', link: '/guide/configuration' },
-      { text: 'Agent Skills & Plugins', link: '/guide/agent-skills' },
+      {text: 'Introduction', link: '/guide/'},
+      {text: 'Installation', link: '/guide/installation'},
+      {text: 'Configuration', link: '/guide/configuration'},
+      {text: 'Agent Skills & Plugins', link: '/guide/agent-skills'},
     ],
   },
   {
     text: 'Guides',
     items: [
-      { text: 'Authentication Setup', link: '/guide/authentication' },
-      { text: 'Account Manager', link: '/guide/account-manager' },
-      { text: 'Scaffolding', link: '/guide/scaffolding' },
-      { text: 'Security', link: '/guide/security' },
-      { text: 'Storefront Next', link: '/guide/storefront-next' },
+      {text: 'Authentication Setup', link: '/guide/authentication'},
+      {text: 'Account Manager', link: '/guide/account-manager'},
+      {text: 'Scaffolding', link: '/guide/scaffolding'},
+      {text: 'Security', link: '/guide/security'},
+      {text: 'Storefront Next', link: '/guide/storefront-next'},
     ],
   },
   {
     text: 'Extending',
     items: [
-      { text: 'Custom Plugins', link: '/guide/extending' },
-      { text: '3rd Party Plugins', link: '/guide/third-party-plugins' },
+      {text: 'Custom Plugins', link: '/guide/extending'},
+      {text: '3rd Party Plugins', link: '/guide/third-party-plugins'},
     ],
   },
   {
     text: 'CLI Reference',
     items: [
-      { text: 'Overview', link: '/cli/' },
-      { text: 'Code Commands', link: '/cli/code' },
-      { text: 'Content Commands', link: '/cli/content' },
-      { text: 'Job Commands', link: '/cli/jobs' },
-      { text: 'Logs Commands', link: '/cli/logs' },
-      { text: 'Sites Commands', link: '/cli/sites' },
-      { text: 'WebDAV Commands', link: '/cli/webdav' },
-      { text: 'Sandbox Commands', link: '/cli/sandbox' },
-      { text: 'MRT Commands', link: '/cli/mrt' },
-      { text: 'eCDN Commands', link: '/cli/ecdn' },
-      { text: 'SLAS Commands', link: '/cli/slas' },
-      { text: 'Custom APIs', link: '/cli/custom-apis' },
-      { text: 'SCAPI Schemas', link: '/cli/scapi-schemas' },
-      { text: 'Setup Commands', link: '/cli/setup' },
-      { text: 'Scaffold Commands', link: '/cli/scaffold' },
-      { text: 'Auth Commands', link: '/cli/auth' },
-      { text: 'Account Manager Commands', link: '/cli/account-manager' },
-      { text: 'Logging', link: '/cli/logging' },
+      {text: 'Overview', link: '/cli/'},
+      {text: 'Code Commands', link: '/cli/code'},
+      {text: 'Content Commands', link: '/cli/content'},
+      {text: 'Job Commands', link: '/cli/jobs'},
+      {text: 'Logs Commands', link: '/cli/logs'},
+      {text: 'Sites Commands', link: '/cli/sites'},
+      {text: 'WebDAV Commands', link: '/cli/webdav'},
+      {text: 'Sandbox Commands', link: '/cli/sandbox'},
+      {text: 'MRT Commands', link: '/cli/mrt'},
+      {text: 'eCDN Commands', link: '/cli/ecdn'},
+      {text: 'SLAS Commands', link: '/cli/slas'},
+      {text: 'Custom APIs', link: '/cli/custom-apis'},
+      {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
+      {text: 'Setup Commands', link: '/cli/setup'},
+      {text: 'Scaffold Commands', link: '/cli/scaffold'},
+      {text: 'Docs Commands', link: '/cli/docs'},
+      {text: 'Auth Commands', link: '/cli/auth'},
+      {text: 'Account Manager Commands', link: '/cli/account-manager'},
+      {text: 'Logging', link: '/cli/logging'},
     ],
   },
 ];
@@ -122,7 +123,7 @@ export default defineConfig({
 
   // Show deeper heading levels in the outline
   markdown: {
-    toc: { level: [2, 3, 4] },
+    toc: {level: [2, 3, 4]},
   },
 
   themeConfig: {
@@ -131,9 +132,9 @@ export default defineConfig({
       level: [2, 3],
     },
     nav: [
-      { text: 'Guide', link: '/guide/' },
-      { text: 'CLI Reference', link: '/cli/' },
-      { text: 'API Reference', link: '/api/' },
+      {text: 'Guide', link: '/guide/'},
+      {text: 'CLI Reference', link: '/cli/'},
+      {text: 'API Reference', link: '/api/'},
       {
         text: isReleaseBuild ? 'Latest Release' : 'dev',
         items: getVersionItems(),
@@ -151,13 +152,13 @@ export default defineConfig({
       '/api/': [
         {
           text: 'API Reference',
-          items: [{ text: 'Overview', link: '/api/' }],
+          items: [{text: 'Overview', link: '/api/'}],
         },
         ...typedocSidebar,
       ],
     },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/SalesforceCommerceCloud/b2c-developer-tooling' }],
+    socialLinks: [{icon: 'github', link: 'https://github.com/SalesforceCommerceCloud/b2c-developer-tooling'}],
 
     search: {
       provider: 'local',
