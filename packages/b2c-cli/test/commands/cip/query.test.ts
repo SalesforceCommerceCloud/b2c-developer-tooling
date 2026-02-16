@@ -26,9 +26,15 @@ describe('cip query', () => {
     expect(error?.message).to.include('No SQL provided');
   });
 
-  it('rejects multiple SQL sources', async () => {
+  it('rejects conflicting file and stdin sources', async () => {
+    const {error} = await runCommand('cip query --stdin --file ./query.sql');
+    expect(error).to.not.be.undefined;
+    expect(error?.message).to.include('either --stdin or --file');
+  });
+
+  it('prioritizes --stdin over positional SQL source', async () => {
     const {error} = await runCommand('cip query "SELECT 1" --stdin');
     expect(error).to.not.be.undefined;
-    expect(error?.message).to.include('exactly one source');
+    expect(error?.message).to.include('SQL input is empty');
   });
 });

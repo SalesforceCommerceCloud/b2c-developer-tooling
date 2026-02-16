@@ -80,22 +80,27 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
 
   private resolveSql(): string {
     const positionalSql = this.args.sql;
-    const sources = [Boolean(positionalSql), Boolean(this.flags.file), Boolean(this.flags.stdin)].filter(
-      Boolean,
-    ).length;
+    const hasPositional = Boolean(positionalSql);
+    const hasFile = Boolean(this.flags.file);
+    const hasStdin = this.flags.stdin === true;
 
-    if (sources === 0) {
+    if (hasStdin && hasFile) {
+      this.error('Use either --stdin or --file, not both.');
+    }
+
+    if (!hasStdin && hasFile && hasPositional) {
+      this.error('Use either a positional SQL argument or --file, not both.');
+    }
+
+    if (!hasStdin && !hasFile && !hasPositional) {
       this.error('No SQL provided. Pass SQL as an argument, or use --file / --stdin.');
     }
 
-    if (sources > 1) {
-      this.error('Provide SQL from exactly one source: positional argument, --file, or --stdin.');
-    }
-
-    const rawSql =
-      positionalSql ??
-      (this.flags.file ? fs.readFileSync(this.flags.file, 'utf8') : undefined) ??
-      (this.flags.stdin ? fs.readFileSync(0, 'utf8') : undefined);
+    const rawSql = hasStdin
+      ? fs.readFileSync(0, 'utf8')
+      : hasFile
+        ? fs.readFileSync(this.flags.file as string, 'utf8')
+        : positionalSql;
 
     if (!rawSql || rawSql.trim().length === 0) {
       this.error('SQL input is empty.');
