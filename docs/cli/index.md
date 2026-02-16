@@ -12,25 +12,25 @@ These flags are available on all commands that interact with B2C instances:
 
 ### Instance Flags
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--server`, `-s` | `SFCC_SERVER` | B2C instance hostname |
-| `--webdav-server` | `SFCC_WEBDAV_SERVER` | Secure WebDAV hostname |
-| `--code-version`, `-v` | `SFCC_CODE_VERSION` | Code version |
+| Flag                   | Environment Variable | Description            |
+| ---------------------- | -------------------- | ---------------------- |
+| `--server`, `-s`       | `SFCC_SERVER`        | B2C instance hostname  |
+| `--webdav-server`      | `SFCC_WEBDAV_SERVER` | Secure WebDAV hostname |
+| `--code-version`, `-v` | `SFCC_CODE_VERSION`  | Code version           |
 
 ### Authentication Flags
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
-| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `--username`, `-u` | `SFCC_USERNAME` | Username for Basic Auth |
-| `--password`, `-p` | `SFCC_PASSWORD` | Password/access key for Basic Auth |
+| Flag               | Environment Variable | Description                        |
+| ------------------ | -------------------- | ---------------------------------- |
+| `--client-id`      | `SFCC_CLIENT_ID`     | OAuth client ID                    |
+| `--client-secret`  | `SFCC_CLIENT_SECRET` | OAuth client secret                |
+| `--username`, `-u` | `SFCC_USERNAME`      | Username for Basic Auth            |
+| `--password`, `-p` | `SFCC_PASSWORD`      | Password/access key for Basic Auth |
 
 ### Other Environment Variables
 
-| Environment Variable | Description |
-|---------------------|-------------|
+| Environment Variable         | Description                             |
+| ---------------------------- | --------------------------------------- |
 | `B2C_SKIP_NEW_VERSION_CHECK` | Skip the new version availability check |
 
 ## Command Topics
@@ -58,6 +58,7 @@ These flags are available on all commands that interact with B2C instances:
 - [Account Manager Commands](./account-manager) - Manage Account Manager users, roles, organizations, and API clients
 
 All Account Manager commands are under the `am` topic:
+
 - `b2c am users ...` - User management commands
 - `b2c am roles ...` - Role management commands
 - `b2c am orgs ...` - Organization management commands
@@ -65,6 +66,7 @@ All Account Manager commands are under the `am` topic:
 
 ### Utilities
 
+- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
 - [Auth Commands](./auth) - Authentication and token management
 - [Logging](./logging) - Log levels, output formats, and environment variables
 

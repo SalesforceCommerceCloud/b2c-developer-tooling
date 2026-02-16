@@ -1,454 +1,561 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>B2C WebDAV Browser</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: var(--vscode-font-family, system-ui, sans-serif);
-      font-size: var(--vscode-font-size, 13px);
-      color: var(--vscode-foreground);
-      background: var(--vscode-editor-background);
-      margin: 0;
-      padding: 1rem;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: row;
-      gap: 1rem;
-    }
-    .main-content {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    h1 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0 0 1rem;
-      color: var(--vscode-foreground);
-    }
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.25rem;
-      margin-bottom: 1rem;
-      font-size: 0.9em;
-      color: var(--vscode-descriptionForeground);
-    }
-    .breadcrumb a {
-      color: var(--vscode-textLink-foreground);
-      text-decoration: none;
-    }
-    .breadcrumb a:hover { text-decoration: underline; }
-    .breadcrumb span { margin: 0 0.25rem; }
-    .roots-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-      gap: 0.75rem;
-    }
-    .root-card {
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--vscode-widget-border);
-      border-radius: 6px;
-      background: var(--vscode-editor-inactiveSelectionBackground);
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .root-card:hover {
-      background: var(--vscode-list-hoverBackground);
-    }
-    .root-card .name { font-weight: 600; }
-    .root-card .desc { font-size: 0.85em; color: var(--vscode-descriptionForeground); margin-top: 0.25rem; }
-    .entries-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9em;
-    }
-    .entries-table th,
-    .entries-table td {
-      text-align: left;
-      padding: 0.4rem 0.75rem;
-      border-bottom: 1px solid var(--vscode-widget-border);
-    }
-    .entries-table th {
-      color: var(--vscode-descriptionForeground);
-      font-weight: 500;
-    }
-    .entries-table tr.entry-row { cursor: pointer; }
-    .entries-table tr.entry-row:hover { background: var(--vscode-list-hoverBackground); }
-    .entries-table tr.entry-row.dir .name::before {
-      content: "📁 ";
-    }
-    .entries-table tr.entry-row.file .name::before {
-      content: "📄 ";
-    }
-    .entries-table tr.entry-row.preview-selected {
-      background: var(--vscode-list-activeSelectionBackground);
-      color: var(--vscode-list-activeSelectionForeground);
-    }
-    .entries-table tr.entry-row.preview-selected:hover {
-      background: var(--vscode-list-activeSelectionBackground);
-    }
-    .entries-table .size { text-align: right; color: var(--vscode-descriptionForeground); }
-    .entries-table .actions { width: 4rem; text-align: right; }
-    .entries-table .btn-delete {
-      padding: 0.2rem 0.4rem;
-      font-size: 0.8em;
-      cursor: pointer;
-      background: transparent;
-      color: var(--vscode-errorForeground);
-      border: 1px solid var(--vscode-input-border);
-      border-radius: 3px;
-    }
-    .entries-table .btn-delete:hover { background: var(--vscode-inputValidation-errorBackground); }
-    .loading, .error {
-      padding: 1rem;
-      color: var(--vscode-descriptionForeground);
-    }
-    .error { color: var(--vscode-errorForeground); }
-    .back-link {
-      display: inline-block;
-      margin-bottom: 0.75rem;
-      color: var(--vscode-textLink-foreground);
-      text-decoration: none;
-      font-size: 0.9em;
-    }
-    .back-link:hover { text-decoration: underline; }
-    .toolbar { margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
-    .toolbar button {
-      padding: 0.35rem 0.65rem;
-      font-size: 0.9em;
-      cursor: pointer;
-      background: var(--vscode-button-background);
-      color: var(--vscode-button-foreground);
-      border: none;
-      border-radius: 4px;
-    }
-    .toolbar button:hover { background: var(--vscode-button-hoverBackground); }
-    #entries-view { flex: 1; min-height: 0; flex-direction: column; }
-    .entries-scroll { flex: 1; min-height: 0; overflow: auto; }
-    #preview-panel {
-      width: 42%;
-      min-width: 280px;
-      max-width: 560px;
-      border-left: 1px solid var(--vscode-widget-border);
-      padding-left: 1rem;
-      display: none;
-      flex-direction: column;
-      min-height: 0;
-    }
-    #preview-panel.visible { display: flex; }
-    #preview-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-      font-size: 0.9em;
-      color: var(--vscode-descriptionForeground);
-    }
-    #preview-header .preview-title { font-weight: 600; color: var(--vscode-foreground); }
-    #preview-content {
-      flex: 1;
-      min-height: 0;
-      overflow: auto;
-      background: var(--vscode-textCodeBlock-background);
-      border: 1px solid var(--vscode-widget-border);
-      border-radius: 4px;
-      padding: 0.75rem;
-    }
-    #preview-content img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      display: block;
-    }
-    #preview-content pre {
-      margin: 0;
-      font-family: var(--vscode-editor-font-family, monospace);
-      font-size: 11px;
-      line-height: 1.4;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    #preview-close {
-      padding: 0.2rem 0.5rem;
-      font-size: 0.85em;
-      cursor: pointer;
-      background: transparent;
-      color: var(--vscode-foreground);
-      border: 1px solid var(--vscode-input-border);
-      border-radius: 3px;
-    }
-    #preview-close:hover { background: var(--vscode-list-hoverBackground); }
-  </style>
-</head>
-<body>
-  <div class="main-content">
-  <h1>B2C WebDAV Browser</h1>
-  <div id="breadcrumb" class="breadcrumb" style="display: none;"></div>
-  <a id="back-link" class="back-link" style="display: none;">← Back</a>
-  <div id="roots-view" class="roots-grid"></div>
-  <div id="entries-view" style="display: none;">
-    <div id="entries-toolbar" class="toolbar">
-      <button type="button" id="new-folder-btn">New folder</button>
-      <button type="button" id="upload-btn">Upload</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>B2C WebDAV Browser</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--vscode-font-family, system-ui, sans-serif);
+        font-size: var(--vscode-font-size, 13px);
+        color: var(--vscode-foreground);
+        background: var(--vscode-editor-background);
+        margin: 0;
+        padding: 1rem;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+      }
+      .main-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      h1 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0 0 1rem;
+        color: var(--vscode-foreground);
+      }
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-bottom: 1rem;
+        font-size: 0.9em;
+        color: var(--vscode-descriptionForeground);
+      }
+      .breadcrumb a {
+        color: var(--vscode-textLink-foreground);
+        text-decoration: none;
+      }
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+      .breadcrumb span {
+        margin: 0 0.25rem;
+      }
+      .roots-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+        gap: 0.75rem;
+      }
+      .root-card {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 6px;
+        background: var(--vscode-editor-inactiveSelectionBackground);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .root-card:hover {
+        background: var(--vscode-list-hoverBackground);
+      }
+      .root-card .name {
+        font-weight: 600;
+      }
+      .root-card .desc {
+        font-size: 0.85em;
+        color: var(--vscode-descriptionForeground);
+        margin-top: 0.25rem;
+      }
+      .entries-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+      }
+      .entries-table th,
+      .entries-table td {
+        text-align: left;
+        padding: 0.4rem 0.75rem;
+        border-bottom: 1px solid var(--vscode-widget-border);
+      }
+      .entries-table th {
+        color: var(--vscode-descriptionForeground);
+        font-weight: 500;
+      }
+      .entries-table tr.entry-row {
+        cursor: pointer;
+      }
+      .entries-table tr.entry-row:hover {
+        background: var(--vscode-list-hoverBackground);
+      }
+      .entries-table tr.entry-row.dir .name::before {
+        content: '📁 ';
+      }
+      .entries-table tr.entry-row.file .name::before {
+        content: '📄 ';
+      }
+      .entries-table tr.entry-row.preview-selected {
+        background: var(--vscode-list-activeSelectionBackground);
+        color: var(--vscode-list-activeSelectionForeground);
+      }
+      .entries-table tr.entry-row.preview-selected:hover {
+        background: var(--vscode-list-activeSelectionBackground);
+      }
+      .entries-table .size {
+        text-align: right;
+        color: var(--vscode-descriptionForeground);
+      }
+      .entries-table .actions {
+        width: 4rem;
+        text-align: right;
+      }
+      .entries-table .btn-delete {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8em;
+        cursor: pointer;
+        background: transparent;
+        color: var(--vscode-errorForeground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 3px;
+      }
+      .entries-table .btn-delete:hover {
+        background: var(--vscode-inputValidation-errorBackground);
+      }
+      .loading,
+      .error {
+        padding: 1rem;
+        color: var(--vscode-descriptionForeground);
+      }
+      .error {
+        color: var(--vscode-errorForeground);
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        color: var(--vscode-textLink-foreground);
+        text-decoration: none;
+        font-size: 0.9em;
+      }
+      .back-link:hover {
+        text-decoration: underline;
+      }
+      .toolbar {
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .toolbar button {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.9em;
+        cursor: pointer;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+      }
+      .toolbar button:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
+      #entries-view {
+        flex: 1;
+        min-height: 0;
+        flex-direction: column;
+      }
+      .entries-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+      }
+      #preview-panel {
+        width: 42%;
+        min-width: 280px;
+        max-width: 560px;
+        border-left: 1px solid var(--vscode-widget-border);
+        padding-left: 1rem;
+        display: none;
+        flex-direction: column;
+        min-height: 0;
+      }
+      #preview-panel.visible {
+        display: flex;
+      }
+      #preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9em;
+        color: var(--vscode-descriptionForeground);
+      }
+      #preview-header .preview-title {
+        font-weight: 600;
+        color: var(--vscode-foreground);
+      }
+      #preview-content {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        background: var(--vscode-textCodeBlock-background);
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 4px;
+        padding: 0.75rem;
+      }
+      #preview-content img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+      #preview-content pre {
+        margin: 0;
+        font-family: var(--vscode-editor-font-family, monospace);
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      #preview-close {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.85em;
+        cursor: pointer;
+        background: transparent;
+        color: var(--vscode-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 3px;
+      }
+      #preview-close:hover {
+        background: var(--vscode-list-hoverBackground);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-content">
+      <h1>B2C WebDAV Browser</h1>
+      <div id="breadcrumb" class="breadcrumb" style="display: none"></div>
+      <a id="back-link" class="back-link" style="display: none">← Back</a>
+      <div id="roots-view" class="roots-grid"></div>
+      <div id="entries-view" style="display: none">
+        <div id="entries-toolbar" class="toolbar">
+          <button type="button" id="new-folder-btn">New folder</button>
+          <button type="button" id="upload-btn">Upload</button>
+        </div>
+        <div class="entries-scroll">
+          <table class="entries-table">
+            <thead>
+              <tr>
+                <th class="name">Name</th>
+                <th class="type">Type</th>
+                <th class="size">Size</th>
+                <th class="actions"></th>
+              </tr>
+            </thead>
+            <tbody id="entries-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="loading" class="loading" style="display: none">Loading…</div>
+      <div id="error" class="error" style="display: none"></div>
     </div>
-    <div class="entries-scroll">
-    <table class="entries-table">
-      <thead>
-        <tr><th class="name">Name</th><th class="type">Type</th><th class="size">Size</th><th class="actions"></th></tr>
-      </thead>
-      <tbody id="entries-body"></tbody>
-    </table>
+
+    <div id="preview-panel">
+      <div id="preview-header">
+        <span class="preview-title" id="preview-title">Preview</span>
+        <button type="button" id="preview-close">Close</button>
+      </div>
+      <div id="preview-content"></div>
     </div>
-  </div>
-  <div id="loading" class="loading" style="display: none;">Loading…</div>
-  <div id="error" class="error" style="display: none;"></div>
-  </div>
 
-  <div id="preview-panel">
-    <div id="preview-header">
-      <span class="preview-title" id="preview-title">Preview</span>
-      <button type="button" id="preview-close">Close</button>
-    </div>
-    <div id="preview-content"></div>
-  </div>
+    <script>
+      (function () {
+        const vscode = acquireVsCodeApi();
+        const roots = window.WEBDAV_ROOTS || [];
+        const rootsView = document.getElementById('roots-view');
+        const entriesView = document.getElementById('entries-view');
+        const entriesBody = document.getElementById('entries-body');
+        const breadcrumbEl = document.getElementById('breadcrumb');
+        const backLink = document.getElementById('back-link');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+        const entriesToolbar = document.getElementById('entries-toolbar');
+        const newFolderBtn = document.getElementById('new-folder-btn');
+        const uploadBtn = document.getElementById('upload-btn');
 
-  <script>
-    (function() {
-      const vscode = acquireVsCodeApi();
-      const roots = window.WEBDAV_ROOTS || [];
-      const rootsView = document.getElementById("roots-view");
-      const entriesView = document.getElementById("entries-view");
-      const entriesBody = document.getElementById("entries-body");
-      const breadcrumbEl = document.getElementById("breadcrumb");
-      const backLink = document.getElementById("back-link");
-      const loadingEl = document.getElementById("loading");
-      const errorEl = document.getElementById("error");
-      const entriesToolbar = document.getElementById("entries-toolbar");
-      const newFolderBtn = document.getElementById("new-folder-btn");
-      const uploadBtn = document.getElementById("upload-btn");
+        let currentPath = ''; // empty = showing roots; else e.g. "Cartridges" or "Cartridges/version1"
 
-      let currentPath = ""; // empty = showing roots; else e.g. "Cartridges" or "Cartridges/version1"
-
-      function showView(view) {
-        rootsView.style.display = view === "roots" ? "grid" : "none";
-        entriesView.style.display = view === "entries" ? "flex" : "none";
-        loadingEl.style.display = view === "loading" ? "block" : "none";
-        errorEl.style.display = "none";
-        entriesToolbar.style.display = view === "entries" ? "flex" : "none";
-      }
-
-      function setError(msg) {
-        errorEl.textContent = msg;
-        errorEl.style.display = "block";
-        loadingEl.style.display = "none";
-      }
-
-      function renderRoots() {
-        rootsView.innerHTML = roots.map(function(r) {
-          return '<div class="root-card" data-path="' + escapeHtml(r.path) + '">' +
-            '<div class="name">' + escapeHtml(r.key) + '</div>' +
-            '<div class="desc">' + escapeHtml(r.label) + '</div></div>';
-        }).join("");
-        rootsView.querySelectorAll(".root-card").forEach(function(el) {
-          el.addEventListener("click", function() {
-            currentPath = this.dataset.path;
-            loadPath(currentPath);
-          });
-        });
-        breadcrumbEl.style.display = "none";
-        backLink.style.display = "none";
-      }
-
-      function escapeHtml(s) {
-        const div = document.createElement("div");
-        div.textContent = s;
-        return div.innerHTML;
-      }
-
-      function renderBreadcrumb(path) {
-        const parts = path.split("/").filter(Boolean);
-        let html = '<a href="#" data-path="">Roots</a>';
-        let acc = "";
-        parts.forEach(function(p, i) {
-          acc += (acc ? "/" : "") + p;
-          const isLast = i === parts.length - 1;
-          if (isLast) {
-            html += ' <span>/</span> ' + escapeHtml(p);
-          } else {
-            html += ' <span>/</span> <a href="#" data-path="' + escapeHtml(acc) + '">' + escapeHtml(p) + "</a>";
-          }
-        });
-        breadcrumbEl.innerHTML = html;
-        breadcrumbEl.style.display = "flex";
-        breadcrumbEl.querySelectorAll("a").forEach(function(a) {
-          a.addEventListener("click", function(e) {
-            e.preventDefault();
-            currentPath = this.dataset.path || "";
-            if (currentPath) loadPath(currentPath);
-            else { showView("roots"); renderRoots(); }
-          });
-        });
-      }
-
-      function backPath(path) {
-        const idx = path.lastIndexOf("/");
-        return idx <= 0 ? "" : path.slice(0, idx);
-      }
-
-      backLink.addEventListener("click", function(e) {
-        e.preventDefault();
-        if (!currentPath) { showView("roots"); renderRoots(); return; }
-        const parent = backPath(currentPath);
-        currentPath = parent;
-        if (parent) loadPath(parent);
-        else { showView("roots"); renderRoots(); }
-      });
-
-      function loadPath(path) {
-        showView("loading");
-        setError("");
-        renderBreadcrumb(path);
-        backLink.style.display = "block";
-        backLink.textContent = path ? "← Back to " + (backPath(path) || "Roots") : "← Back";
-        vscode.postMessage({ type: "listPath", path: path });
-      }
-
-      function formatSize(bytes) {
-        if (bytes === undefined || bytes === null) return "—";
-        if (bytes === 0) return "0 B";
-        var u = ["B", "KB", "MB", "GB"];
-        var k = 1024;
-        var i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), u.length - 1);
-        return (bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1) + " " + u[i];
-      }
-
-      function renderEntries(data) {
-        const entries = data.entries || [];
-        entriesBody.innerHTML = entries.map(function(e) {
-          const type = e.isCollection ? "dir" : "file";
-          const rowClass = e.isCollection ? "entry-row dir" : "entry-row file";
-          const fullPath = currentPath ? currentPath + "/" + e.name : e.name;
-          return "<tr class=\"" + rowClass + "\" data-name=\"" + escapeHtml(e.name) + "\" data-path=\"" + escapeHtml(fullPath) + "\" data-dir=\"" + !!e.isCollection + "\">" +
-            "<td class=\"name\">" + escapeHtml(e.name) + "</td>" +
-            "<td class=\"type\">" + type + "</td>" +
-            "<td class=\"size\">" + formatSize(e.contentLength) + "</td>" +
-            "<td class=\"actions\"><button type=\"button\" class=\"btn-delete\" title=\"Delete\">Delete</button></td></tr>";
-        }).join("");
-        entriesBody.querySelectorAll(".entry-row.dir").forEach(function(row) {
-          row.addEventListener("click", function(ev) {
-            if (ev.target.closest(".btn-delete")) return;
-            document.getElementById("preview-panel").classList.remove("visible");
-            entriesBody.querySelectorAll(".entry-row.preview-selected").forEach(function(r) { r.classList.remove("preview-selected"); });
-            const name = this.dataset.name;
-            const nextPath = currentPath ? currentPath + "/" + name : name;
-            currentPath = nextPath;
-            loadPath(nextPath);
-          });
-        });
-        entriesBody.querySelectorAll(".entry-row.file").forEach(function(row) {
-          row.addEventListener("click", function(ev) {
-            if (ev.target.closest(".btn-delete")) return;
-            entriesBody.querySelectorAll(".entry-row.preview-selected").forEach(function(r) { r.classList.remove("preview-selected"); });
-            this.classList.add("preview-selected");
-            const fullPath = this.dataset.path;
-            const name = this.dataset.name;
-            const previewPanel = document.getElementById("preview-panel");
-            const previewContent = document.getElementById("preview-content");
-            const previewTitle = document.getElementById("preview-title");
-            previewTitle.textContent = name || fullPath;
-            previewContent.innerHTML = "<span class=\"loading\">Loading…</span>";
-            previewPanel.classList.add("visible");
-            vscode.postMessage({ type: "requestFileContent", path: fullPath, name: name });
-          });
-        });
-        entriesBody.querySelectorAll(".btn-delete").forEach(function(btn) {
-          btn.addEventListener("click", function(ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            const row = this.closest("tr");
-            const pathToDelete = row.dataset.path;
-            const name = row.dataset.name;
-            const isDir = row.dataset.dir === "true";
-            vscode.postMessage({ type: "requestDelete", path: pathToDelete, name: name, isCollection: isDir });
-          });
-        });
-        showView("entries");
-      }
-
-      newFolderBtn.addEventListener("click", function() {
-        if (!currentPath) return;
-        vscode.postMessage({ type: "requestMkdir", path: currentPath });
-      });
-
-      uploadBtn.addEventListener("click", function() {
-        if (!currentPath) return;
-        vscode.postMessage({ type: "requestUpload", path: currentPath });
-      });
-
-      window.addEventListener("message", function(event) {
-        const msg = event.data;
-        if (msg.type === "listResult") {
-          if (msg.error) {
-            setError(msg.error);
-            return;
-          }
-          currentPath = msg.path || currentPath;
-          renderEntries(msg);
-          renderBreadcrumb(currentPath);
-        } else if (msg.type === "mkdirResult") {
-          if (msg.error) {
-            setError(msg.error);
-            return;
-          }
-          loadPath(currentPath);
-        } else if (msg.type === "deleteResult") {
-          if (msg.error) {
-            setError(msg.error);
-            return;
-          }
-          loadPath(currentPath);
-        } else if (msg.type === "uploadResult") {
-          if (msg.error) {
-            setError(msg.error);
-            return;
-          }
-          loadPath(currentPath);
-        } else if (msg.type === "fileContent") {
-          const previewPanel = document.getElementById("preview-panel");
-          const previewContent = document.getElementById("preview-content");
-          const previewTitle = document.getElementById("preview-title");
-          if (msg.name) previewTitle.textContent = msg.name;
-          if (msg.error) {
-            previewContent.innerHTML = "<span class=\"error\">" + escapeHtml(msg.error) + "</span>";
-          } else if (msg.kind === "image" && msg.base64 && msg.contentType) {
-            previewContent.innerHTML = "<img src=\"data:" + escapeHtml(msg.contentType) + ";base64," + msg.base64 + "\" alt=\"" + escapeHtml(msg.name || "") + "\" />";
-          } else if (msg.kind === "text" && msg.text !== undefined) {
-            var pre = document.createElement("pre");
-            pre.textContent = msg.text;
-            previewContent.innerHTML = "";
-            previewContent.appendChild(pre);
-          } else if (msg.kind === "binary" && msg.error) {
-            previewContent.innerHTML = "<span class=\"error\">" + escapeHtml(msg.error) + "</span>";
-          } else {
-            previewContent.innerHTML = "<span class=\"loading\">No preview available.</span>";
-          }
-          previewPanel.classList.add("visible");
+        function showView(view) {
+          rootsView.style.display = view === 'roots' ? 'grid' : 'none';
+          entriesView.style.display = view === 'entries' ? 'flex' : 'none';
+          loadingEl.style.display = view === 'loading' ? 'block' : 'none';
+          errorEl.style.display = 'none';
+          entriesToolbar.style.display = view === 'entries' ? 'flex' : 'none';
         }
-      });
 
-      document.getElementById("preview-close").addEventListener("click", function() {
-        document.getElementById("preview-panel").classList.remove("visible");
-        entriesBody.querySelectorAll(".entry-row.preview-selected").forEach(function(r) { r.classList.remove("preview-selected"); });
-      });
+        function setError(msg) {
+          errorEl.textContent = msg;
+          errorEl.style.display = 'block';
+          loadingEl.style.display = 'none';
+        }
 
-      renderRoots();
-    })();
-  </script>
-</body>
+        function renderRoots() {
+          rootsView.innerHTML = roots
+            .map(function (r) {
+              return (
+                '<div class="root-card" data-path="' +
+                escapeHtml(r.path) +
+                '">' +
+                '<div class="name">' +
+                escapeHtml(r.key) +
+                '</div>' +
+                '<div class="desc">' +
+                escapeHtml(r.label) +
+                '</div></div>'
+              );
+            })
+            .join('');
+          rootsView.querySelectorAll('.root-card').forEach(function (el) {
+            el.addEventListener('click', function () {
+              currentPath = this.dataset.path;
+              loadPath(currentPath);
+            });
+          });
+          breadcrumbEl.style.display = 'none';
+          backLink.style.display = 'none';
+        }
+
+        function escapeHtml(s) {
+          const div = document.createElement('div');
+          div.textContent = s;
+          return div.innerHTML;
+        }
+
+        function renderBreadcrumb(path) {
+          const parts = path.split('/').filter(Boolean);
+          let html = '<a href="#" data-path="">Roots</a>';
+          let acc = '';
+          parts.forEach(function (p, i) {
+            acc += (acc ? '/' : '') + p;
+            const isLast = i === parts.length - 1;
+            if (isLast) {
+              html += ' <span>/</span> ' + escapeHtml(p);
+            } else {
+              html += ' <span>/</span> <a href="#" data-path="' + escapeHtml(acc) + '">' + escapeHtml(p) + '</a>';
+            }
+          });
+          breadcrumbEl.innerHTML = html;
+          breadcrumbEl.style.display = 'flex';
+          breadcrumbEl.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+              e.preventDefault();
+              currentPath = this.dataset.path || '';
+              if (currentPath) loadPath(currentPath);
+              else {
+                showView('roots');
+                renderRoots();
+              }
+            });
+          });
+        }
+
+        function backPath(path) {
+          const idx = path.lastIndexOf('/');
+          return idx <= 0 ? '' : path.slice(0, idx);
+        }
+
+        backLink.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (!currentPath) {
+            showView('roots');
+            renderRoots();
+            return;
+          }
+          const parent = backPath(currentPath);
+          currentPath = parent;
+          if (parent) loadPath(parent);
+          else {
+            showView('roots');
+            renderRoots();
+          }
+        });
+
+        function loadPath(path) {
+          showView('loading');
+          setError('');
+          renderBreadcrumb(path);
+          backLink.style.display = 'block';
+          backLink.textContent = path ? '← Back to ' + (backPath(path) || 'Roots') : '← Back';
+          vscode.postMessage({type: 'listPath', path: path});
+        }
+
+        function formatSize(bytes) {
+          if (bytes === undefined || bytes === null) return '—';
+          if (bytes === 0) return '0 B';
+          var u = ['B', 'KB', 'MB', 'GB'];
+          var k = 1024;
+          var i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), u.length - 1);
+          return (bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1) + ' ' + u[i];
+        }
+
+        function renderEntries(data) {
+          const entries = data.entries || [];
+          entriesBody.innerHTML = entries
+            .map(function (e) {
+              const type = e.isCollection ? 'dir' : 'file';
+              const rowClass = e.isCollection ? 'entry-row dir' : 'entry-row file';
+              const fullPath = currentPath ? currentPath + '/' + e.name : e.name;
+              return (
+                '<tr class="' +
+                rowClass +
+                '" data-name="' +
+                escapeHtml(e.name) +
+                '" data-path="' +
+                escapeHtml(fullPath) +
+                '" data-dir="' +
+                !!e.isCollection +
+                '">' +
+                '<td class="name">' +
+                escapeHtml(e.name) +
+                '</td>' +
+                '<td class="type">' +
+                type +
+                '</td>' +
+                '<td class="size">' +
+                formatSize(e.contentLength) +
+                '</td>' +
+                '<td class="actions"><button type="button" class="btn-delete" title="Delete">Delete</button></td></tr>'
+              );
+            })
+            .join('');
+          entriesBody.querySelectorAll('.entry-row.dir').forEach(function (row) {
+            row.addEventListener('click', function (ev) {
+              if (ev.target.closest('.btn-delete')) return;
+              document.getElementById('preview-panel').classList.remove('visible');
+              entriesBody.querySelectorAll('.entry-row.preview-selected').forEach(function (r) {
+                r.classList.remove('preview-selected');
+              });
+              const name = this.dataset.name;
+              const nextPath = currentPath ? currentPath + '/' + name : name;
+              currentPath = nextPath;
+              loadPath(nextPath);
+            });
+          });
+          entriesBody.querySelectorAll('.entry-row.file').forEach(function (row) {
+            row.addEventListener('click', function (ev) {
+              if (ev.target.closest('.btn-delete')) return;
+              entriesBody.querySelectorAll('.entry-row.preview-selected').forEach(function (r) {
+                r.classList.remove('preview-selected');
+              });
+              this.classList.add('preview-selected');
+              const fullPath = this.dataset.path;
+              const name = this.dataset.name;
+              const previewPanel = document.getElementById('preview-panel');
+              const previewContent = document.getElementById('preview-content');
+              const previewTitle = document.getElementById('preview-title');
+              previewTitle.textContent = name || fullPath;
+              previewContent.innerHTML = '<span class="loading">Loading…</span>';
+              previewPanel.classList.add('visible');
+              vscode.postMessage({type: 'requestFileContent', path: fullPath, name: name});
+            });
+          });
+          entriesBody.querySelectorAll('.btn-delete').forEach(function (btn) {
+            btn.addEventListener('click', function (ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              const row = this.closest('tr');
+              const pathToDelete = row.dataset.path;
+              const name = row.dataset.name;
+              const isDir = row.dataset.dir === 'true';
+              vscode.postMessage({type: 'requestDelete', path: pathToDelete, name: name, isCollection: isDir});
+            });
+          });
+          showView('entries');
+        }
+
+        newFolderBtn.addEventListener('click', function () {
+          if (!currentPath) return;
+          vscode.postMessage({type: 'requestMkdir', path: currentPath});
+        });
+
+        uploadBtn.addEventListener('click', function () {
+          if (!currentPath) return;
+          vscode.postMessage({type: 'requestUpload', path: currentPath});
+        });
+
+        window.addEventListener('message', function (event) {
+          const msg = event.data;
+          if (msg.type === 'listResult') {
+            if (msg.error) {
+              setError(msg.error);
+              return;
+            }
+            currentPath = msg.path || currentPath;
+            renderEntries(msg);
+            renderBreadcrumb(currentPath);
+          } else if (msg.type === 'mkdirResult') {
+            if (msg.error) {
+              setError(msg.error);
+              return;
+            }
+            loadPath(currentPath);
+          } else if (msg.type === 'deleteResult') {
+            if (msg.error) {
+              setError(msg.error);
+              return;
+            }
+            loadPath(currentPath);
+          } else if (msg.type === 'uploadResult') {
+            if (msg.error) {
+              setError(msg.error);
+              return;
+            }
+            loadPath(currentPath);
+          } else if (msg.type === 'fileContent') {
+            const previewPanel = document.getElementById('preview-panel');
+            const previewContent = document.getElementById('preview-content');
+            const previewTitle = document.getElementById('preview-title');
+            if (msg.name) previewTitle.textContent = msg.name;
+            if (msg.error) {
+              previewContent.innerHTML = '<span class="error">' + escapeHtml(msg.error) + '</span>';
+            } else if (msg.kind === 'image' && msg.base64 && msg.contentType) {
+              previewContent.innerHTML =
+                '<img src="data:' +
+                escapeHtml(msg.contentType) +
+                ';base64,' +
+                msg.base64 +
+                '" alt="' +
+                escapeHtml(msg.name || '') +
+                '" />';
+            } else if (msg.kind === 'text' && msg.text !== undefined) {
+              var pre = document.createElement('pre');
+              pre.textContent = msg.text;
+              previewContent.innerHTML = '';
+              previewContent.appendChild(pre);
+            } else if (msg.kind === 'binary' && msg.error) {
+              previewContent.innerHTML = '<span class="error">' + escapeHtml(msg.error) + '</span>';
+            } else {
+              previewContent.innerHTML = '<span class="loading">No preview available.</span>';
+            }
+            previewPanel.classList.add('visible');
+          }
+        });
+
+        document.getElementById('preview-close').addEventListener('click', function () {
+          document.getElementById('preview-panel').classList.remove('visible');
+          entriesBody.querySelectorAll('.entry-row.preview-selected').forEach(function (r) {
+            r.classList.remove('preview-selected');
+          });
+        });
+
+        renderRoots();
+      })();
+    </script>
+  </body>
 </html>

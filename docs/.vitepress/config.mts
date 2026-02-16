@@ -80,6 +80,7 @@ const guideSidebar = [
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
       {text: 'Setup Commands', link: '/cli/setup'},
       {text: 'Scaffold Commands', link: '/cli/scaffold'},
+      {text: 'Docs Commands', link: '/cli/docs'},
       {text: 'Auth Commands', link: '/cli/auth'},
       {text: 'Account Manager Commands', link: '/cli/account-manager'},
       {text: 'Logging', link: '/cli/logging'},

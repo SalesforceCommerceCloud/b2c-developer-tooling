@@ -7,10 +7,8 @@ import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk'
 import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
-import {
-  findAndDeployCartridges,
-  getActiveCodeVersion,
-} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {getPathKeys, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
 import {randomUUID} from 'node:crypto';
 
 /** Standard B2C Commerce WebDAV root directories. */
@@ -30,48 +28,48 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
-  const htmlPath = path.join(context.extensionPath, "src", "webview.html");
-  return fs.readFileSync(htmlPath, "utf-8");
+  const htmlPath = path.join(context.extensionPath, 'src', 'webview.html');
+  return fs.readFileSync(htmlPath, 'utf-8');
 }
 
 function getStorefrontNextCartridgeWebviewContent(context: vscode.ExtensionContext): string {
-  const htmlPath = path.join(context.extensionPath, "src", "storefront-next-cartridge.html");
-  return fs.readFileSync(htmlPath, "utf-8");
+  const htmlPath = path.join(context.extensionPath, 'src', 'storefront-next-cartridge.html');
+  return fs.readFileSync(htmlPath, 'utf-8');
 }
 
 function getScapiExplorerWebviewContent(
   context: vscode.ExtensionContext,
-  prefill?: { tenantId: string; channelId: string; shortCode?: string }
+  prefill?: {tenantId: string; channelId: string; shortCode?: string},
 ): string {
-  const htmlPath = path.join(context.extensionPath, "src", "scapi-explorer.html");
-  let html = fs.readFileSync(htmlPath, "utf-8");
-  const prefillJson = prefill ? JSON.stringify(prefill) : "null";
-  html = html.replace("__SCAPI_PREFILL__", prefillJson);
+  const htmlPath = path.join(context.extensionPath, 'src', 'scapi-explorer.html');
+  let html = fs.readFileSync(htmlPath, 'utf-8');
+  const prefillJson = prefill ? JSON.stringify(prefill) : 'null';
+  html = html.replace('__SCAPI_PREFILL__', prefillJson);
   return html;
 }
 
 const WEBDAV_ROOT_LABELS: Record<string, string> = {
-  impex: "Impex directory (default)",
-  temp: "Temporary files",
-  cartridges: "Code cartridges",
-  realmdata: "Realm data",
-  catalogs: "Product catalogs",
-  libraries: "Content libraries",
-  static: "Static resources",
-  logs: "Log files",
-  securitylogs: "Security log files",
+  impex: 'Impex directory (default)',
+  temp: 'Temporary files',
+  cartridges: 'Code cartridges',
+  realmdata: 'Realm data',
+  catalogs: 'Product catalogs',
+  libraries: 'Content libraries',
+  static: 'Static resources',
+  logs: 'Log files',
+  securitylogs: 'Security log files',
 };
 
 function getWebdavWebviewContent(
   context: vscode.ExtensionContext,
-  roots: { key: string; path: string; label: string }[]
+  roots: {key: string; path: string; label: string}[],
 ): string {
-  const htmlPath = path.join(context.extensionPath, "src", "webdav.html");
-  const raw = fs.readFileSync(htmlPath, "utf-8");
+  const htmlPath = path.join(context.extensionPath, 'src', 'webdav.html');
+  const raw = fs.readFileSync(htmlPath, 'utf-8');
   const rootsJson = JSON.stringify(roots);
   return raw.replace(
-    "const roots = window.WEBDAV_ROOTS || [];",
-    `window.WEBDAV_ROOTS = ${rootsJson};\n      const roots = window.WEBDAV_ROOTS;`
+    'const roots = window.WEBDAV_ROOTS || [];',
+    `window.WEBDAV_ROOTS = ${rootsJson};\n      const roots = window.WEBDAV_ROOTS;`,
   );
 }
 
@@ -81,22 +79,22 @@ function pageNameToPageId(pageName: string): string {
     .trim()
     .split(/\s+/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join("");
+    .join('');
 }
 
 /** camelCase for filename. e.g. "first page" → "firstPage" */
 function pageNameToFileNameId(pageName: string): string {
-  const pascal = pageNameToPageId(pageName || "Page");
+  const pascal = pageNameToPageId(pageName || 'Page');
   return pascal.charAt(0).toLowerCase() + pascal.slice(1);
 }
 
-type RegionForm = { id: string; name: string; description: string; maxComponents: number };
+type RegionForm = {id: string; name: string; description: string; maxComponents: number};
 
 type WebviewMessage =
-  | { type: 'openExternal' }
+  | {type: 'openExternal'}
   | {
       type: 'submitForm';
-      pageType: { name?: string; description?: string; supportedAspectTypes?: string[] };
+      pageType: {name?: string; description?: string; supportedAspectTypes?: string[]};
       regions: RegionForm[];
     };
 
@@ -105,11 +103,11 @@ function renderTemplate(
   pageName: string,
   pageDescription: string,
   supportedAspectTypes: string[],
-  regions: RegionForm[]
+  regions: RegionForm[],
 ): string {
-  const pageId = pageNameToPageId(pageName || "Page");
+  const pageId = pageNameToPageId(pageName || 'Page');
   const quoted = (s: string) => `'${String(s).replace(/'/g, "\\'")}'`;
-  const aspectsStr = `[${supportedAspectTypes.map((a) => quoted(a)).join(", ")}]`;
+  const aspectsStr = `[${supportedAspectTypes.map((a) => quoted(a)).join(', ')}]`;
   const regionsBlock = regions
     .map(
       (r) =>
@@ -118,16 +116,16 @@ function renderTemplate(
         name: ${quoted(r.name)},
         description: ${quoted(r.description)},
         maxComponents: ${r.maxComponents},
-    }`
+    }`,
     )
-    .join(",\n    ");
-  const firstRegionId = regions[0]?.id ?? "";
+    .join(',\n    ');
+  const firstRegionId = regions[0]?.id ?? '';
 
   return template
-    .replace(/\$\{pageName\}/g, quoted(pageName || ""))
-    .replace(/\$\{pageDescription\}/g, quoted(pageDescription || ""))
+    .replace(/\$\{pageName\}/g, quoted(pageName || ''))
+    .replace(/\$\{pageDescription\}/g, quoted(pageDescription || ''))
     .replace(/\$\{supportedAspectTypes\}/g, aspectsStr)
-    .replace("__REGIONS__", regionsBlock)
+    .replace('__REGIONS__', regionsBlock)
     .replace(/\$\{pageId\}/g, pageId)
     .replace(/\$\{pageName\}Data/g, `${pageId}Data`)
     .replace(/\$\{regions\[0\]\.id\}/g, firstRegionId);
@@ -173,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('b2c-dx.handleStorefrontNextCartridge', showActivationError),
       vscode.commands.registerCommand('b2c-dx.promptAgent', showActivationError),
       vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
-      vscode.commands.registerCommand('b2c-dx.scapiExplorer', showActivationError)
+      vscode.commands.registerCommand('b2c-dx.scapiExplorer', showActivationError),
     );
   }
 }
@@ -184,29 +182,29 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
 
     const panel = vscode.window.createWebviewPanel(
       'b2c-dx-page-designer-ui',
-      "My Extension UI",
+      'My Extension UI',
       vscode.ViewColumn.One,
-      { enableScripts: true }
+      {enableScripts: true},
     );
 
     panel.webview.html = getWebviewContent(context);
-    
+
     panel.webview.onDidReceiveMessage(async (msg: WebviewMessage) => {
       if (msg.type === 'openExternal') {
-        await vscode.env.openExternal(vscode.Uri.parse("https://example.com"));
+        await vscode.env.openExternal(vscode.Uri.parse('https://example.com'));
       }
       if (msg.type === 'submitForm') {
         try {
-          const { pageType, regions } = msg;
-          const pageName = pageType?.name ?? "";
-          const templatePath = path.join(context.extensionPath, "src", "template", "_app.pageId.tsx");
-          const template = fs.readFileSync(templatePath, "utf-8");
+          const {pageType, regions} = msg;
+          const pageName = pageType?.name ?? '';
+          const templatePath = path.join(context.extensionPath, 'src', 'template', '_app.pageId.tsx');
+          const template = fs.readFileSync(templatePath, 'utf-8');
           const content = renderTemplate(
             template,
             pageName,
-            pageType?.description ?? "",
+            pageType?.description ?? '',
             pageType?.supportedAspectTypes ?? [],
-            regions ?? []
+            regions ?? [],
           );
 
           const fileNameId = pageNameToFileNameId(pageName);
@@ -215,17 +213,16 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           let targetUri: vscode.Uri;
           if (vscode.workspace.workspaceFolders?.length) {
             const rootUri = vscode.workspace.workspaceFolders[0].uri;
-            const routesUri = vscode.Uri.joinPath(rootUri, "routes");
+            const routesUri = vscode.Uri.joinPath(rootUri, 'routes');
             const routesPath = routesUri.fsPath;
-            const hasRoutesFolder =
-              fs.existsSync(routesPath) && fs.statSync(routesPath).isDirectory();
+            const hasRoutesFolder = fs.existsSync(routesPath) && fs.statSync(routesPath).isDirectory();
             targetUri = hasRoutesFolder
               ? vscode.Uri.joinPath(routesUri, fileName)
               : vscode.Uri.joinPath(rootUri, fileName);
           } else {
             const picked = await vscode.window.showSaveDialog({
               defaultUri: vscode.Uri.joinPath(context.globalStorageUri, fileName),
-              saveLabel: "Create file",
+              saveLabel: 'Create file',
             });
             if (!picked) {
               return;
@@ -235,11 +232,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
 
           vscode.window.showInformationMessage(`Writing file to: ${targetUri.fsPath}`);
 
-          await vscode.workspace.fs.writeFile(targetUri, Buffer.from(content, "utf-8"));
-          await vscode.window.showInformationMessage(
-            `Saved to: ${targetUri.fsPath}`,
-            "Open"
-          );
+          await vscode.workspace.fs.writeFile(targetUri, Buffer.from(content, 'utf-8'));
+          await vscode.window.showInformationMessage(`Saved to: ${targetUri.fsPath}`, 'Open');
           const doc = await vscode.workspace.openTextDocument(targetUri);
           await vscode.window.showTextDocument(doc, {
             viewColumn: panel.viewColumn ?? vscode.ViewColumn.One,
@@ -256,41 +250,38 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
 
   const promptAgentDisposable = vscode.commands.registerCommand('b2c-dx.promptAgent', async () => {
     const prompt = await vscode.window.showInputBox({
-      title: "Prompt Agent",
-      placeHolder: "Enter your prompt for the agent...",
+      title: 'Prompt Agent',
+      placeHolder: 'Enter your prompt for the agent...',
     });
-    if (prompt === undefined || prompt === "") {
+    if (prompt === undefined || prompt === '') {
       return;
     }
     try {
       await vscode.env.clipboard.writeText(prompt);
-      await vscode.commands.executeCommand("composer.newAgentChat");
+      await vscode.commands.executeCommand('composer.newAgentChat');
       await new Promise((resolve) => setTimeout(resolve, 300));
-      await vscode.commands.executeCommand("editor.action.clipboardPasteAction");
+      await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       vscode.window.showWarningMessage(
-        `Could not open Cursor chat: ${message}. Run this extension in Cursor to send prompts to the agent.`
+        `Could not open Cursor chat: ${message}. Run this extension in Cursor to send prompts to the agent.`,
       );
     }
   });
 
-  type WebDavPropfindEntry = { href: string; displayName?: string; contentLength?: number; isCollection?: boolean };
+  type WebDavPropfindEntry = {href: string; displayName?: string; contentLength?: number; isCollection?: boolean};
 
   const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', async () => {
-    let startDir =
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+    let startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
     if (!startDir || startDir === '/' || !fs.existsSync(startDir)) {
       startDir = context.extensionPath;
     }
     const dwPath = findDwJson(startDir);
-    const config = dwPath
-      ? resolveConfig({}, {configPath: dwPath})
-      : resolveConfig({}, {startDir});
+    const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
 
     if (!config.hasB2CInstanceConfig()) {
       vscode.window.showErrorMessage(
-        'B2C DX: No instance config. Configure SFCC_* env vars or dw.json in the workspace.'
+        'B2C DX: No instance config. Configure SFCC_* env vars or dw.json in the workspace.',
       );
       return;
     }
@@ -305,12 +296,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       };
     });
 
-    const panel = vscode.window.createWebviewPanel(
-      'b2c-dx-webdav',
-      'B2C WebDAV Browser',
-      vscode.ViewColumn.One,
-      { enableScripts: true }
-    );
+    const panel = vscode.window.createWebviewPanel('b2c-dx-webdav', 'B2C WebDAV Browser', vscode.ViewColumn.One, {
+      enableScripts: true,
+    });
     panel.webview.html = getWebdavWebviewContent(context, roots);
 
     const instance = config.createB2CInstance() as {
@@ -327,7 +315,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       e.displayName ?? e.href.split('/').filter(Boolean).at(-1) ?? e.href;
 
     panel.webview.onDidReceiveMessage(
-      async (msg: { type: string; path?: string; name?: string; isCollection?: boolean }) => {
+      async (msg: {type: string; path?: string; name?: string; isCollection?: boolean}) => {
         if (msg.type === 'listPath' && msg.path !== undefined) {
           const listPath = msg.path as string;
           try {
@@ -335,10 +323,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             const normalizedPath = listPath.replace(/\/$/, '');
             const filtered = entries.filter((entry: WebDavPropfindEntry) => {
               const entryPath = decodeURIComponent(entry.href);
-              return (
-                !entryPath.endsWith(`/${normalizedPath}`) &&
-                !entryPath.endsWith(`/${normalizedPath}/`)
-              );
+              return !entryPath.endsWith(`/${normalizedPath}`) && !entryPath.endsWith(`/${normalizedPath}/`);
             });
             panel.webview.postMessage({
               type: 'listResult',
@@ -379,10 +364,10 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const fullPath = parentPath ? `${parentPath}/${trimmed}` : trimmed;
           try {
             await instance.webdav.mkcol(fullPath);
-            panel.webview.postMessage({ type: 'mkdirResult', success: true, path: fullPath });
+            panel.webview.postMessage({type: 'mkdirResult', success: true, path: fullPath});
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({ type: 'mkdirResult', success: false, error: message });
+            panel.webview.postMessage({type: 'mkdirResult', success: false, error: message});
           }
           return;
         }
@@ -390,22 +375,20 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const pathToDelete = msg.path as string;
           const name = msg.name ?? pathToDelete.split('/').pop() ?? pathToDelete;
           const isDir = msg.isCollection === true;
-          const detail = isDir
-            ? 'This directory and its contents will be deleted.'
-            : 'This file will be deleted.';
+          const detail = isDir ? 'This directory and its contents will be deleted.' : 'This file will be deleted.';
           const choice = await vscode.window.showWarningMessage(
             `Delete "${name}"? ${detail}`,
-            { modal: true },
+            {modal: true},
             'Delete',
-            'Cancel'
+            'Cancel',
           );
           if (choice !== 'Delete') return;
           try {
             await instance.webdav.delete(pathToDelete);
-            panel.webview.postMessage({ type: 'deleteResult', success: true });
+            panel.webview.postMessage({type: 'deleteResult', success: true});
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({ type: 'deleteResult', success: false, error: message });
+            panel.webview.postMessage({type: 'deleteResult', success: false, error: message});
           }
           return;
         }
@@ -436,10 +419,10 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             };
             const contentType = mime[ext];
             await instance.webdav.put(fullPath, content, contentType);
-            panel.webview.postMessage({ type: 'uploadResult', success: true, path: fullPath });
+            panel.webview.postMessage({type: 'uploadResult', success: true, path: fullPath});
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({ type: 'uploadResult', success: false, error: message });
+            panel.webview.postMessage({type: 'uploadResult', success: false, error: message});
           }
           return;
         }
@@ -449,8 +432,25 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const ext = path.extname(fileName).toLowerCase();
           const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']);
           const textExtensions = new Set([
-            '.json', '.js', '.ts', '.mjs', '.cjs', '.html', '.htm', '.css', '.xml', '.txt', '.md',
-            '.log', '.yml', '.yaml', '.env', '.sh', '.bat', '.csv', '.isml',
+            '.json',
+            '.js',
+            '.ts',
+            '.mjs',
+            '.cjs',
+            '.html',
+            '.htm',
+            '.css',
+            '.xml',
+            '.txt',
+            '.md',
+            '.log',
+            '.yml',
+            '.yaml',
+            '.env',
+            '.sh',
+            '.bat',
+            '.csv',
+            '.isml',
           ]);
           const isImage = imageExtensions.has(ext);
           const isText = textExtensions.has(ext) || ext === '';
@@ -479,7 +479,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
                 base64,
               });
             } else if (isText) {
-              const text = new TextDecoder('utf-8', { fatal: false }).decode(arr);
+              const text = new TextDecoder('utf-8', {fatal: false}).decode(arr);
               panel.webview.postMessage({
                 type: 'fileContent',
                 path: filePath,
@@ -507,69 +507,65 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             });
           }
         }
-      }
+      },
     );
   });
 
   function resolveStorefrontNextProjectDir(): string | undefined {
     const folder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!folder) return undefined;
-    const sub = path.join(folder, "storefront-next", "packages", "template-retail-rsc-app");
+    const sub = path.join(folder, 'storefront-next', 'packages', 'template-retail-rsc-app');
     if (fs.existsSync(sub) && fs.statSync(sub).isDirectory()) {
       return sub;
     }
     return folder;
   }
 
-  function resolveCliScript(context: vscode.ExtensionContext): { node: string; script: string } | null {
+  function resolveCliScript(context: vscode.ExtensionContext): {node: string; script: string} | null {
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (workspaceRoot) {
-      const distCli = path.join(workspaceRoot, "dist", "cli.js");
+      const distCli = path.join(workspaceRoot, 'dist', 'cli.js');
       if (fs.existsSync(distCli)) {
-        return { node: "node", script: distCli };
+        return {node: 'node', script: distCli};
       }
     }
-    const monorepoRoot = path.join(context.extensionPath, "..", "..");
-    const b2cCliRun = path.join(monorepoRoot, "packages", "b2c-cli", "bin", "run.js");
+    const monorepoRoot = path.join(context.extensionPath, '..', '..');
+    const b2cCliRun = path.join(monorepoRoot, 'packages', 'b2c-cli', 'bin', 'run.js');
     if (fs.existsSync(b2cCliRun)) {
-      return { node: "node", script: b2cCliRun };
+      return {node: 'node', script: b2cCliRun};
     }
     return null;
   }
 
-  const scapiExplorerDisposable = vscode.commands.registerCommand(
-    "b2c-dx.scapiExplorer",
-    () => {
-      const panel = vscode.window.createWebviewPanel(
-        "b2c-dx-scapi-explorer",
-        "SCAPI API Explorer",
-        vscode.ViewColumn.One,
-        { enableScripts: true }
-      );
-      let prefill: { tenantId: string; channelId: string; shortCode?: string } | undefined;
-      try {
-        const startDir =
-          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-        const dwPath = findDwJson(startDir);
-        const config = dwPath
-          ? resolveConfig({}, {configPath: dwPath})
-          : resolveConfig({}, {startDir});
-        const hostname = config.values.hostname;
-        const shortCode = config.values.shortCode;
-        const firstPart = hostname && typeof hostname === "string" ? hostname.split(".")[0] ?? "" : "";
-        const tenantId = firstPart ? firstPart.replace(/-/g, "_") : "";
-        if (tenantId || shortCode) {
-          prefill = {
-            tenantId: tenantId || "",
-            channelId: "RefArch",
-            shortCode: typeof shortCode === "string" ? shortCode : undefined,
-          };
-        }
-      } catch {
-        // Prefill is optional; leave undefined if config fails
+  const scapiExplorerDisposable = vscode.commands.registerCommand('b2c-dx.scapiExplorer', () => {
+    const panel = vscode.window.createWebviewPanel(
+      'b2c-dx-scapi-explorer',
+      'SCAPI API Explorer',
+      vscode.ViewColumn.One,
+      {enableScripts: true},
+    );
+    let prefill: {tenantId: string; channelId: string; shortCode?: string} | undefined;
+    try {
+      const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(startDir);
+      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+      const hostname = config.values.hostname;
+      const shortCode = config.values.shortCode;
+      const firstPart = hostname && typeof hostname === 'string' ? (hostname.split('.')[0] ?? '') : '';
+      const tenantId = firstPart ? firstPart.replace(/-/g, '_') : '';
+      if (tenantId || shortCode) {
+        prefill = {
+          tenantId: tenantId || '',
+          channelId: 'RefArch',
+          shortCode: typeof shortCode === 'string' ? shortCode : undefined,
+        };
       }
-      panel.webview.html = getScapiExplorerWebviewContent(context, prefill);
-      panel.webview.onDidReceiveMessage(async (msg: {
+    } catch {
+      // Prefill is optional; leave undefined if config fails
+    }
+    panel.webview.html = getScapiExplorerWebviewContent(context, prefill);
+    panel.webview.onDidReceiveMessage(
+      async (msg: {
         type: string;
         tenantId?: string;
         channelId?: string;
@@ -583,21 +579,18 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         curlText?: string;
       }) => {
         const getConfig = () => {
-          const startDir =
-            vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+          const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
           const dwPath = findDwJson(startDir);
-          return dwPath
-            ? resolveConfig({}, {configPath: dwPath})
-            : resolveConfig({}, {startDir});
+          return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
         };
 
-        if (msg.type === "scapiFetchSchemas") {
-          const tenantId = (msg.tenantId ?? "").trim();
+        if (msg.type === 'scapiFetchSchemas') {
+          const tenantId = (msg.tenantId ?? '').trim();
           if (!tenantId) {
             panel.webview.postMessage({
-              type: "scapiSchemasListResult",
+              type: 'scapiSchemasListResult',
               success: false,
-              error: "Tenant Id is required to load schemas.",
+              error: 'Tenant Id is required to load schemas.',
             });
             return;
           }
@@ -606,17 +599,17 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             const shortCode = config.values.shortCode;
             if (!shortCode) {
               panel.webview.postMessage({
-                type: "scapiSchemasListResult",
+                type: 'scapiSchemasListResult',
                 success: false,
-                error: "Short code not found. Set short-code in dw.json or SFCC_SHORTCODE.",
+                error: 'Short code not found. Set short-code in dw.json or SFCC_SHORTCODE.',
               });
               return;
             }
             if (!config.hasOAuthConfig()) {
               panel.webview.postMessage({
-                type: "scapiSchemasListResult",
+                type: 'scapiSchemasListResult',
                 success: false,
-                error: "OAuth credentials required. Set clientId and clientSecret in dw.json.",
+                error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.',
               });
               return;
             }
@@ -628,17 +621,19 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             });
             if (error) {
               panel.webview.postMessage({
-                type: "scapiSchemasListResult",
+                type: 'scapiSchemasListResult',
                 success: false,
                 error: getApiErrorMessage(error, response),
               });
               return;
             }
             const schemas = data?.data ?? [];
-            const apiFamilies = Array.from(new Set(schemas.map((s: {apiFamily?: string}) => s.apiFamily).filter(Boolean))) as string[];
+            const apiFamilies = Array.from(
+              new Set(schemas.map((s: {apiFamily?: string}) => s.apiFamily).filter(Boolean)),
+            ) as string[];
             apiFamilies.sort();
             panel.webview.postMessage({
-              type: "scapiSchemasListResult",
+              type: 'scapiSchemasListResult',
               success: true,
               schemas,
               apiFamilies,
@@ -646,7 +641,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             panel.webview.postMessage({
-              type: "scapiSchemasListResult",
+              type: 'scapiSchemasListResult',
               success: false,
               error: message,
             });
@@ -654,37 +649,146 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           return;
         }
 
-        if (msg.type === "scapiExecuteCurl") {
-          const curlText = (msg.curlText ?? "").trim();
+        if (msg.type === 'scapiFetchSchemaPaths') {
+          const tenantId = (msg.tenantId ?? '').trim();
+          const apiFamily = (msg.apiFamily ?? '').trim();
+          const apiName = (msg.apiName ?? '').trim();
+          log.appendLine(
+            `[SCAPI] Fetch schema paths: tenantId=${tenantId} apiFamily=${apiFamily} apiName=${apiName}`,
+          );
+          if (!tenantId || !apiFamily || !apiName) {
+            log.appendLine('[SCAPI] Fetch paths failed: Tenant Id, API Family, and API Name are required.');
+            panel.webview.postMessage({
+              type: 'scapiSchemaPathsResult',
+              success: false,
+              error: 'Tenant Id, API Family, and API Name are required.',
+            });
+            return;
+          }
+          try {
+            const config = getConfig();
+            const shortCode = config.values.shortCode;
+            if (!shortCode) {
+              log.appendLine('[SCAPI] Fetch paths failed: Short code not found.');
+              panel.webview.postMessage({
+                type: 'scapiSchemaPathsResult',
+                success: false,
+                error: 'Short code not found.',
+              });
+              return;
+            }
+            if (!config.hasOAuthConfig()) {
+              log.appendLine('[SCAPI] Fetch paths failed: OAuth credentials required.');
+              panel.webview.postMessage({
+                type: 'scapiSchemaPathsResult',
+                success: false,
+                error: 'OAuth credentials required.',
+              });
+              return;
+            }
+            const oauthStrategy = config.createOAuth();
+            const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
+            const orgId = toOrganizationId(tenantId);
+            const apiVersion = 'v1';
+            log.appendLine(`[SCAPI] GET schema: orgId=${orgId} ${apiFamily}/${apiName}/${apiVersion}`);
+            const {data, error, response} = await schemasClient.GET(
+              '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
+              {params: {path: {organizationId: orgId, apiFamily, apiName, apiVersion}}},
+            );
+            if (error) {
+              const errMsg = getApiErrorMessage(error, response);
+              log.appendLine(`[SCAPI] Fetch paths error: ${errMsg}`);
+              log.appendLine(`[SCAPI] Error detail: ${JSON.stringify({error, status: response?.status})}`);
+              panel.webview.postMessage({
+                type: 'scapiSchemaPathsResult',
+                success: false,
+                error: errMsg,
+              });
+              return;
+            }
+            const pathKeys = data && typeof data === 'object' ? getPathKeys(data as OpenApiSchemaInput) : [];
+            log.appendLine(
+              `[SCAPI] Schema response: hasData=${Boolean(data)} pathKeysCount=${pathKeys.length} pathKeys=${JSON.stringify(pathKeys.slice(0, 5))}${pathKeys.length > 5 ? '...' : ''}`,
+            );
+            const orgPathPrefix = 'organizations/{organizationId}';
+            const paths = pathKeys
+              .map((p) => {
+                if (typeof p !== 'string') return '';
+                const withoutLeadingSlash = p.replace(/^\//, '');
+                const suffix = withoutLeadingSlash.startsWith(orgPathPrefix + '/')
+                  ? withoutLeadingSlash.slice(orgPathPrefix.length + 1)
+                  : withoutLeadingSlash === orgPathPrefix
+                    ? ''
+                    : withoutLeadingSlash;
+                return suffix;
+              })
+              .filter(Boolean)
+              .sort();
+            log.appendLine(
+              `[SCAPI] Normalized paths (${paths.length}): ${JSON.stringify(paths.slice(0, 10))}${paths.length > 10 ? '...' : ''}`,
+            );
+            const schemaInfo = data && typeof data === 'object' && 'info' in data ? (data as {info?: Record<string, unknown>}).info : undefined;
+            const apiTypeRaw =
+              schemaInfo?.['x-api-type'] ?? schemaInfo?.['x-apiType'] ?? schemaInfo?.['x_api_type'];
+            const apiType = typeof apiTypeRaw === 'string' ? apiTypeRaw : undefined;
+            if (schemaInfo && !apiType) {
+              log.appendLine(
+                `[SCAPI] Schema info keys (no x-api-type): ${Object.keys(schemaInfo).join(', ')}`,
+              );
+            } else if (apiType) {
+              log.appendLine(`[SCAPI] API type: ${apiType}`);
+            }
+            panel.webview.postMessage({
+              type: 'scapiSchemaPathsResult',
+              success: true,
+              paths,
+              apiType: apiType ?? null,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error ? err.stack : '';
+            log.appendLine(`[SCAPI] Fetch paths exception: ${message}`);
+            if (stack) log.appendLine(`[SCAPI] Stack: ${stack}`);
+            panel.webview.postMessage({
+              type: 'scapiSchemaPathsResult',
+              success: false,
+              error: message,
+            });
+          }
+          return;
+        }
+
+        if (msg.type === 'scapiExecuteCurl') {
+          const curlText = (msg.curlText ?? '').trim();
           const urlMatch = curlText.match(/"https:\/\/[^"]+"/);
-          const url = urlMatch ? urlMatch[0].slice(1, -1) : "";
+          const url = urlMatch ? urlMatch[0].slice(1, -1) : '';
           const bearerMatch = curlText.match(/Authorization:\s*Bearer\s+([^"\\\s]+)/);
-          const token = bearerMatch ? bearerMatch[1].trim() : "";
+          const token = bearerMatch ? bearerMatch[1].trim() : '';
           if (!url) {
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: false,
-              error: "Could not parse URL from curl command. Expected a quoted https:// URL.",
+              error: 'Could not parse URL from curl command. Expected a quoted https:// URL.',
             });
             return;
           }
           if (!token) {
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: false,
-              error: "Could not parse Authorization: Bearer token from curl command.",
+              error: 'Could not parse Authorization: Bearer token from curl command.',
             });
             return;
           }
           try {
             const res = await fetch(url, {
-              method: "GET",
+              method: 'GET',
               headers: {Authorization: `Bearer ${token}`},
             });
             const text = await res.text();
             if (!res.ok) {
               panel.webview.postMessage({
-                type: "scapiExecuteApiResult",
+                type: 'scapiExecuteApiResult',
                 success: false,
                 error: `HTTP ${res.status}: ${text || res.statusText}`,
               });
@@ -697,14 +801,14 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
               // leave as string
             }
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: true,
               body,
             });
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: false,
               error: message,
             });
@@ -712,27 +816,27 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           return;
         }
 
-        if (msg.type === "scapiExecuteShopApi") {
-          const token = (msg.token ?? "").trim();
-          const tenantId = (msg.tenantId ?? "").trim();
-          const channelId = (msg.channelId ?? "").trim();
-          const apiFamily = (msg.apiFamily ?? "").trim();
-          const apiName = (msg.apiName ?? "").trim();
-          const apiPath = (msg.apiPath ?? "").trim();
-          const query = (msg.query ?? "").trim();
+        if (msg.type === 'scapiExecuteShopApi') {
+          const token = (msg.token ?? '').trim();
+          const tenantId = (msg.tenantId ?? '').trim();
+          const channelId = (msg.channelId ?? '').trim();
+          const apiFamily = (msg.apiFamily ?? '').trim();
+          const apiName = (msg.apiName ?? '').trim();
+          const apiPath = (msg.apiPath ?? '').trim();
+          const query = (msg.query ?? '').trim();
           if (!token) {
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: false,
-              error: "Bearer token is required. Generate a token first.",
+              error: 'Bearer token is required. Generate a token first.',
             });
             return;
           }
           if (!tenantId || !channelId || !apiFamily || !apiName) {
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: false,
-              error: "Tenant Id, Channel Id, API Family, and API Name are required.",
+              error: 'Tenant Id, Channel Id, API Family, and API Name are required.',
             });
             return;
           }
@@ -741,23 +845,23 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             const shortCode = config.values.shortCode;
             if (!shortCode) {
               panel.webview.postMessage({
-                type: "scapiExecuteApiResult",
+                type: 'scapiExecuteApiResult',
                 success: false,
-                error: "Short code not found. Set short-code in dw.json or SFCC_SHORTCODE.",
+                error: 'Short code not found. Set short-code in dw.json or SFCC_SHORTCODE.',
               });
               return;
             }
             const orgId = toOrganizationId(tenantId);
-            const pathPart = apiPath ? `/${apiPath.replace(/^\//, "")}` : "";
-            const url = `https://${shortCode}.api.commercecloud.salesforce.com/${apiFamily}/${apiName}/v1/organizations/${orgId}${pathPart}?siteId=${encodeURIComponent(channelId)}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+            const pathPart = apiPath ? `/${apiPath.replace(/^\//, '')}` : '';
+            const url = `https://${shortCode}.api.commercecloud.salesforce.com/${apiFamily}/${apiName}/v1/organizations/${orgId}${pathPart}?siteId=${encodeURIComponent(channelId)}${query ? `&q=${encodeURIComponent(query)}` : ''}`;
             const res = await fetch(url, {
-              method: "GET",
+              method: 'GET',
               headers: {Authorization: `Bearer ${token}`},
             });
             const text = await res.text();
             if (!res.ok) {
               panel.webview.postMessage({
-                type: "scapiExecuteApiResult",
+                type: 'scapiExecuteApiResult',
                 success: false,
                 error: `HTTP ${res.status}: ${text || res.statusText}`,
               });
@@ -770,14 +874,14 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
               // leave as string
             }
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: true,
               body,
             });
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             panel.webview.postMessage({
-              type: "scapiExecuteApiResult",
+              type: 'scapiExecuteApiResult',
               success: false,
               error: message,
             });
@@ -785,16 +889,16 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           return;
         }
 
-        if (msg.type === "scapiGenerateBearerToken") {
-          const clientId = (msg.clientId ?? "").trim();
-          const clientSecret = (msg.clientSecret ?? "").trim();
-          const tenantId = (msg.tenantId ?? "").trim();
-          const channelId = (msg.channelId ?? "").trim();
+        if (msg.type === 'scapiGenerateBearerToken') {
+          const clientId = (msg.clientId ?? '').trim();
+          const clientSecret = (msg.clientSecret ?? '').trim();
+          const tenantId = (msg.tenantId ?? '').trim();
+          const channelId = (msg.channelId ?? '').trim();
           if (!clientId || !clientSecret || !tenantId || !channelId) {
             panel.webview.postMessage({
-              type: "scapiGenerateBearerTokenResult",
+              type: 'scapiGenerateBearerTokenResult',
               success: false,
-              error: "SLAS Client Id, Client Secret, Tenant Id, and Channel Id are required.",
+              error: 'SLAS Client Id, Client Secret, Tenant Id, and Channel Id are required.',
             });
             return;
           }
@@ -802,29 +906,30 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const shortCode = config.values.shortCode;
           if (!shortCode) {
             panel.webview.postMessage({
-              type: "scapiGenerateBearerTokenResult",
+              type: 'scapiGenerateBearerTokenResult',
               success: false,
-              error: "Short code not found. Set short-code or scapi-shortcode in dw.json, or SFCC_SHORTCODE in the environment.",
+              error:
+                'Short code not found. Set short-code or scapi-shortcode in dw.json, or SFCC_SHORTCODE in the environment.',
             });
             return;
           }
           const orgId = toOrganizationId(tenantId);
           const tokenUrl = `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/token`;
-          const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+          const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
           try {
             const res = await fetch(tokenUrl, {
-              method: "POST",
+              method: 'POST',
               headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
+                'Content-Type': 'application/x-www-form-urlencoded',
                 Authorization: `Basic ${basicAuth}`,
               },
               body: `grant_type=client_credentials&channel_id=${encodeURIComponent(channelId)}`,
             });
-            const data = (await res.json()) as { access_token?: string; error?: string; error_description?: string };
+            const data = (await res.json()) as {access_token?: string; error?: string; error_description?: string};
             if (!res.ok) {
               const errMsg = data.error_description ?? data.error ?? res.statusText ?? String(res.status);
               panel.webview.postMessage({
-                type: "scapiGenerateBearerTokenResult",
+                type: 'scapiGenerateBearerTokenResult',
                 success: false,
                 error: errMsg,
               });
@@ -833,50 +938,47 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             const token = data.access_token;
             if (!token) {
               panel.webview.postMessage({
-                type: "scapiGenerateBearerTokenResult",
+                type: 'scapiGenerateBearerTokenResult',
                 success: false,
-                error: "No access_token in response.",
+                error: 'No access_token in response.',
               });
               return;
             }
             panel.webview.postMessage({
-              type: "scapiGenerateBearerTokenResult",
+              type: 'scapiGenerateBearerTokenResult',
               success: true,
               token,
             });
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             panel.webview.postMessage({
-              type: "scapiGenerateBearerTokenResult",
+              type: 'scapiGenerateBearerTokenResult',
               success: false,
               error: message,
             });
           }
           return;
         }
-        if (msg.type !== "scapiCreateSlasClient") return;
-        const tenantId = (msg.tenantId ?? "").trim();
-        const channelId = (msg.channelId ?? "").trim();
+        if (msg.type !== 'scapiCreateSlasClient') return;
+        const tenantId = (msg.tenantId ?? '').trim();
+        const channelId = (msg.channelId ?? '').trim();
         if (!tenantId || !channelId) {
-          vscode.window.showErrorMessage("B2C DX: Tenant Id and Channel Id are required to create a SLAS client.");
+          vscode.window.showErrorMessage('B2C DX: Tenant Id and Channel Id are required to create a SLAS client.');
           return;
         }
-        const startDir =
-          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+        const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
         const dwPath = findDwJson(startDir);
-        const config = dwPath
-          ? resolveConfig({}, {configPath: dwPath})
-          : resolveConfig({}, {startDir});
+        const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
         const shortCode = config.values.shortCode;
         if (!shortCode) {
           vscode.window.showErrorMessage(
-            "B2C DX: SCAPI short code required. Set short-code or scapi-shortcode in dw.json, or SFCC_SHORTCODE in the environment."
+            'B2C DX: SCAPI short code required. Set short-code or scapi-shortcode in dw.json, or SFCC_SHORTCODE in the environment.',
           );
           return;
         }
         if (!config.hasOAuthConfig()) {
           vscode.window.showErrorMessage(
-            "B2C DX: OAuth credentials required for SLAS. Set clientId and clientSecret in dw.json or SFCC_CLIENT_ID / SFCC_CLIENT_SECRET."
+            'B2C DX: OAuth credentials required for SLAS. Set clientId and clientSecret in dw.json or SFCC_CLIENT_ID / SFCC_CLIENT_SECRET.',
           );
           return;
         }
@@ -915,13 +1017,23 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const clientId = randomUUID().toLowerCase();
           const clientSecret = `sk_${randomUUID().replaceAll('-', '')}`;
           const defaultScopes = [
-            'sfcc.shopper-products',
-            'sfcc.shopper-product-search',
             'sfcc.shopper-baskets-orders.rw',
+            'sfcc.shopper-categories',
             'sfcc.shopper-customers.login',
-            'sfcc.shopper-discovery-search',
             'sfcc.shopper-customers.register',
+            'sfcc.shopper-discovery-search',
+            'sfcc.shopper-experience',
+            'sfcc.shopper-gift-certificates',
+            'sfcc.shopper-myaccount.addresses.rw',
+            'sfcc.shopper-myaccount.baskets',
+            'sfcc.shopper-myaccount.orders',
+            'sfcc.shopper-myaccount.paymentinstruments.rw',
+            'sfcc.shopper-myaccount.productlists.rw',
+            'sfcc.shopper-myaccount.rw',
             'sfcc.shopper-promotions',
+            'sfcc.shopper-product-search',
+            'sfcc.shopper-productlists',
+            'sfcc.shopper-products',
             'sfcc.shopper-stores',
           ];
           const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
@@ -938,49 +1050,46 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             },
           });
           if (error) {
-            vscode.window.showErrorMessage(
-              `B2C DX: Create SLAS client failed. ${getApiErrorMessage(error, response)}`
-            );
+            vscode.window.showErrorMessage(`B2C DX: Create SLAS client failed. ${getApiErrorMessage(error, response)}`);
             return;
           }
-          vscode.window.showInformationMessage("B2C DX: SLAS client created. See Explorer for Client ID and Secret.");
+          vscode.window.showInformationMessage('B2C DX: SLAS client created. See Explorer for Client ID and Secret.');
           panel.webview.postMessage({
             type: 'scapiCreateSlasClientResult',
             success: true,
             clientId,
             secret: clientSecret,
+            scopes: defaultScopes,
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           vscode.window.showErrorMessage(`B2C DX: Create SLAS client failed. ${message}`);
           panel.webview.postMessage({type: 'scapiCreateSlasClientResult', success: false, error: message});
         }
-      });
-    }
-  );
+      },
+    );
+  });
 
   const storefrontNextCartridgeDisposable = vscode.commands.registerCommand(
-    "b2c-dx.handleStorefrontNextCartridge",
+    'b2c-dx.handleStorefrontNextCartridge',
     () => {
       const projectDir = resolveStorefrontNextProjectDir();
       if (!projectDir) {
-        vscode.window.showErrorMessage(
-          "B2C DX: Open a workspace folder to use Storefront Next Cartridge."
-        );
+        vscode.window.showErrorMessage('B2C DX: Open a workspace folder to use Storefront Next Cartridge.');
         return;
       }
       const panel = vscode.window.createWebviewPanel(
-        "b2c-dx-storefront-next-cartridge",
-        "Storefront Next Cartridge",
+        'b2c-dx-storefront-next-cartridge',
+        'Storefront Next Cartridge',
         vscode.ViewColumn.One,
-        { enableScripts: true }
+        {enableScripts: true},
       );
       panel.webview.html = getStorefrontNextCartridgeWebviewContent(context);
 
-      panel.webview.onDidReceiveMessage(async (msg: { type: string }) => {
+      panel.webview.onDidReceiveMessage(async (msg: {type: string}) => {
         const projectDirectory = projectDir;
-        if (msg.type === "createCartridge") {
-          const cartridgesDir = path.join(projectDirectory, "cartridges");
+        if (msg.type === 'createCartridge') {
+          const cartridgesDir = path.join(projectDirectory, 'cartridges');
           if (!fs.existsSync(cartridgesDir) || !fs.statSync(cartridgesDir).isDirectory()) {
             const message =
               "B2C DX: This command must be run under a Storefront Next storefront template. No 'cartridges' directory found.";
@@ -988,15 +1097,15 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             vscode.window.showErrorMessage(message);
             return;
           }
-          const cmd = "pnpm sfnext generate-cartridge -d .";
+          const cmd = 'pnpm sfnext generate-cartridge -d .';
           const term = vscode.window.createTerminal({
-            name: "B2C Create Cartridge",
+            name: 'B2C Create Cartridge',
             cwd: projectDirectory,
           });
           term.show();
           term.sendText(cmd);
-        } else if (msg.type === "deployCartridge") {
-          const cartridgesDir = path.join(projectDirectory, "cartridges");
+        } else if (msg.type === 'deployCartridge') {
+          const cartridgesDir = path.join(projectDirectory, 'cartridges');
           if (!fs.existsSync(cartridgesDir) || !fs.statSync(cartridgesDir).isDirectory()) {
             const message =
               "B2C DX: Deploy is only supported for Storefront Next storefronts. No 'cartridges' folder found.";
@@ -1010,7 +1119,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             : resolveConfig({}, {startDir: projectDirectory});
           if (!config.hasB2CInstanceConfig()) {
             const message =
-              "B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.";
+              'B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.';
             log.appendLine(`[Storefront Next Cartridge] ${message}`);
             vscode.window.showErrorMessage(message);
             return;
@@ -1025,7 +1134,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             } catch (err) {
               const detail = err instanceof Error ? err.message : String(err);
               const message =
-                "B2C DX: No code version set and could not discover active version. Set code-version in dw.json or configure OAuth.";
+                'B2C DX: No code version set and could not discover active version. Set code-version in dw.json or configure OAuth.';
               log.appendLine(`[Storefront Next Cartridge] ${message} ${detail}`);
               vscode.window.showErrorMessage(message);
               return;
@@ -1033,22 +1142,22 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           }
           if (!instance.config.codeVersion) {
             const message =
-              "B2C DX: No active code version found. Set code-version in dw.json or ensure OAuth is configured.";
+              'B2C DX: No active code version found. Set code-version in dw.json or ensure OAuth is configured.';
             log.appendLine(`[Storefront Next Cartridge] ${message}`);
             vscode.window.showErrorMessage(message);
             return;
           }
           try {
             log.appendLine(
-              `[Storefront Next Cartridge] Deploying cartridges to ${instance.config.hostname} (${instance.config.codeVersion})...`
+              `[Storefront Next Cartridge] Deploying cartridges to ${instance.config.hostname} (${instance.config.codeVersion})...`,
             );
             const result = await findAndDeployCartridges(instance, cartridgesDir, {});
             console.log(result);
             log.appendLine(
-              `[Storefront Next Cartridge] Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`
+              `[Storefront Next Cartridge] Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`,
             );
             vscode.window.showInformationMessage(
-              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}. ${result.cartridges.join(', ')}  `
+              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}. ${result.cartridges.join(', ')}  `,
             );
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
@@ -1057,7 +1166,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           }
         }
       });
-    }
+    },
   );
 
   context.subscriptions.push(
@@ -1065,9 +1174,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     promptAgentDisposable,
     listWebDavDisposable,
     scapiExplorerDisposable,
-    storefrontNextCartridgeDisposable
+    storefrontNextCartridgeDisposable,
   );
   log.appendLine('B2C DX extension activated.');
 }
-
-
