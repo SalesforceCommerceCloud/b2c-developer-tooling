@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ODS Management</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--vscode-font-family, system-ui, sans-serif);
+        font-size: var(--vscode-font-size, 13px);
+        color: var(--vscode-foreground);
+        background: var(--vscode-editor-background);
+        margin: 0;
+        padding: 1rem;
+      }
+      h1 {
+        font-size: 1.1rem;
+        margin: 0 0 1rem;
+      }
+      .toolbar {
+        margin-bottom: 1rem;
+      }
+      button.primary {
+        padding: 0.5rem 1rem;
+        font-size: 1em;
+        cursor: pointer;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+      }
+      button.primary:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 4px;
+        background: var(--vscode-editor-background);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+      }
+      th,
+      td {
+        padding: 0.4rem 0.6rem;
+        text-align: left;
+        border-bottom: 1px solid var(--vscode-widget-border);
+      }
+      th {
+        background: var(--vscode-editor-inactiveSelectionBackground);
+        font-weight: 600;
+        color: var(--vscode-descriptionForeground);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .message {
+        padding: 1rem;
+        color: var(--vscode-descriptionForeground);
+      }
+      .error {
+        color: var(--vscode-errorForeground);
+        padding: 1rem;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .btn-delete {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85em;
+        cursor: pointer;
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: 1px solid var(--vscode-button-border);
+        border-radius: 4px;
+      }
+      .btn-delete:hover {
+        background: var(--vscode-button-secondaryHoverBackground);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>On Demand Sandbox (ODS) Management</h1>
+    <div class="toolbar">
+      <button type="button" class="primary" id="create-btn">Create</button>
+    </div>
+    <div id="message" class="message">Loading sandboxes…</div>
+    <div id="error" class="error hidden"></div>
+    <div id="table-wrap" class="table-wrap hidden">
+      <table id="ods-table">
+        <thead id="ods-thead"></thead>
+        <tbody id="ods-tbody"></tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        const vscode = acquireVsCodeApi();
+        const createBtn = document.getElementById('create-btn');
+        const messageEl = document.getElementById('message');
+        const errorEl = document.getElementById('error');
+        const tableWrap = document.getElementById('table-wrap');
+        const thead = document.getElementById('ods-thead');
+        const tbody = document.getElementById('ods-tbody');
+
+        const EXTENDED_COLUMNS = [
+          'realm',
+          'instance',
+          'state',
+          'profile',
+          'created',
+          'eol',
+          'id',
+          'hostname',
+          'createdBy',
+          'autoScheduled',
+        ];
+        const HEADERS = {
+          realm: 'Realm',
+          instance: 'Num',
+          state: 'State',
+          profile: 'Profile',
+          created: 'Created',
+          eol: 'EOL',
+          id: 'ID',
+          hostname: 'Hostname',
+          createdBy: 'Created By',
+          autoScheduled: 'Auto',
+        };
+        function showError(msg) {
+          errorEl.textContent = msg || '';
+          errorEl.classList.toggle('hidden', !msg);
+        }
+
+        function renderTable(sandboxes) {
+          if (!sandboxes || sandboxes.length === 0) {
+            messageEl.textContent = 'No sandboxes found.';
+            tableWrap.classList.add('hidden');
+            return;
+          }
+          messageEl.textContent = '';
+          tableWrap.classList.remove('hidden');
+          thead.innerHTML =
+            '<tr>' +
+            EXTENDED_COLUMNS.map(function (k) {
+              return '<th>' + escapeHtml(HEADERS[k] || k) + '</th>';
+            }).join('') +
+            '<th>Actions</th></tr>';
+
+          tbody.innerHTML = sandboxes
+            .map(function (s) {
+              const row = EXTENDED_COLUMNS.map(function (k) {
+                let val = '—';
+                if (k === 'realm') val = s.realm ?? '—';
+                else if (k === 'instance') val = s.instance ?? '—';
+                else if (k === 'state') val = s.state ?? '—';
+                else if (k === 'profile') val = s.resourceProfile ?? '—';
+                else if (k === 'created') val = s.createdAt ? String(s.createdAt).slice(0, 10) : '—';
+                else if (k === 'eol') val = s.eol ? String(s.eol).slice(0, 10) : '—';
+                else if (k === 'id') val = s.id ?? '—';
+                else if (k === 'hostname') val = s.hostName || s.hostname || '—';
+                else if (k === 'createdBy') val = s.createdBy ?? '—';
+                else if (k === 'autoScheduled') val = s.autoScheduled ? 'Yes' : 'No';
+                return '<td>' + escapeHtml(String(val)) + '</td>';
+              }).join('');
+              const sandboxId = (s.id ?? '').toString();
+              const deleteBtn = sandboxId
+                ? '<button type="button" class="btn-delete" data-sandbox-id="' +
+                  escapeHtml(sandboxId) +
+                  '" title="Delete">Delete</button>'
+                : '';
+              return '<tr>' + row + '<td>' + deleteBtn + '</td></tr>';
+            })
+            .join('');
+        }
+
+        function escapeHtml(s) {
+          const div = document.createElement('div');
+          div.textContent = s;
+          return div.innerHTML;
+        }
+
+        createBtn.addEventListener('click', function () {
+          vscode.postMessage({type: 'odsCreateClick'});
+        });
+
+        tbody.addEventListener('click', function (e) {
+          const btn = e.target && e.target.closest && e.target.closest('.btn-delete');
+          if (btn && btn.dataset.sandboxId) {
+            vscode.postMessage({type: 'odsDeleteClick', sandboxId: btn.dataset.sandboxId});
+          }
+        });
+
+        window.addEventListener('message', function (event) {
+          const msg = event.data;
+          if (msg.type === 'odsListResult') {
+            showError('');
+            if (msg.error) {
+              messageEl.textContent = '';
+              showError(msg.error);
+              tableWrap.classList.add('hidden');
+            } else {
+              renderTable(msg.sandboxes || []);
+            }
+          }
+        });
+
+        vscode.postMessage({type: 'odsListRequest'});
+      })();
+    </script>
+  </body>
+</html>

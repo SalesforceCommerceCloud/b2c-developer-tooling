@@ -5,6 +5,7 @@ src/**
 !src/webdav.html
 !src/storefront-next-cartridge.html
 !src/scapi-explorer.html
+!src/ods-management.html
 out/**
 **/node_modules/**
 

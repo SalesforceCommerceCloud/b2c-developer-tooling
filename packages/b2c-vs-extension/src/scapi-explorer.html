@@ -79,6 +79,15 @@
       .create-slas-form {
         flex: 0 0 auto;
       }
+      .create-slas-form-inline {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .create-slas-form-inline .form-row {
+        margin-bottom: 0;
+      }
       .create-slas-result {
         flex: 1 1 auto;
         min-width: 0;
@@ -174,7 +183,9 @@
         gap: 0.5rem;
         margin-bottom: 0.5rem;
       }
-      .token-heading-row h3 { margin: 0; }
+      .token-heading-row h3 {
+        margin: 0;
+      }
       .copy-icon-btn,
       .copy-token-btn {
         display: inline-flex;
@@ -190,7 +201,6 @@
         cursor: pointer;
         flex-shrink: 0;
       }
-      .copy-icon-btn:hover,
       .copy-token-btn:hover {
         background: var(--vscode-toolbar-hoverBackground);
       }
@@ -340,20 +350,27 @@
     <div id="create-slas-section" class="section">
       <div class="create-slas-row">
         <div class="create-slas-form">
-          <div class="form-row form-row-narrow">
-            <label for="tenant-id">Tenant Id</label>
-            <input type="text" id="tenant-id" placeholder="Tenant Id" />
+          <div class="create-slas-form-inline">
+            <div class="form-row form-row-narrow">
+              <label for="tenant-id">Tenant Id</label>
+              <input type="text" id="tenant-id" placeholder="Tenant Id" />
+            </div>
+            <div class="form-row form-row-narrow">
+              <label for="channel-id">Channel Id</label>
+              <input type="text" id="channel-id" placeholder="Channel Id" />
+            </div>
+            <button type="button" class="primary" id="create-slas-btn">Create SLAS client</button>
           </div>
-          <div class="form-row form-row-narrow">
-            <label for="channel-id">Channel Id</label>
-            <input type="text" id="channel-id" placeholder="Channel Id" />
-          </div>
-          <button type="button" class="primary" id="create-slas-btn">Create</button>
         </div>
         <div id="create-result-section" class="create-slas-result hidden">
           <span class="result-label">SLAS client created</span>
-          <div class="result-row-inline"><span class="result-label">Client ID:</span> <span class="result-value" id="result-client-id"></span></div>
-          <div class="result-row-inline"><span class="result-label">Client Secret:</span> <span class="result-value" id="result-client-secret"></span></div>
+          <div class="result-row-inline">
+            <span class="result-label">Client ID:</span> <span class="result-value" id="result-client-id"></span>
+          </div>
+          <div class="result-row-inline">
+            <span class="result-label">Client Secret:</span>
+            <span class="result-value" id="result-client-secret"></span>
+          </div>
         </div>
         <div id="create-scopes-section" class="create-slas-scopes hidden">
           <span class="result-label">Scopes</span>
@@ -376,7 +393,10 @@
           <div class="input-with-copy">
             <input type="text" id="slas-client-id" placeholder="SLAS Client Id" />
             <button type="button" class="copy-icon-btn" id="copy-client-id-btn" title="Copy">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
             </button>
           </div>
         </div>
@@ -385,7 +405,10 @@
           <div class="input-with-copy">
             <input type="text" id="slas-client-secret" placeholder="SLAS Client Secret" />
             <button type="button" class="copy-icon-btn" id="copy-client-secret-btn" title="Copy">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
             </button>
           </div>
         </div>
@@ -394,7 +417,10 @@
           <div class="token-display-with-copy">
             <div class="result-value bearer-result-value" id="bearer-result-value"></div>
             <button type="button" class="copy-icon-btn" id="copy-token-btn" title="Copy token">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
             </button>
           </div>
         </div>
@@ -450,7 +476,10 @@
           <div class="panel-heading-with-copy">
             <h4>Generated curl</h4>
             <button type="button" class="copy-icon-btn" id="copy-curl-btn" title="Copy">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
             </button>
           </div>
           <textarea
@@ -465,7 +494,10 @@
           <div class="panel-heading-with-copy">
             <h3>Response</h3>
             <button type="button" class="copy-icon-btn" id="copy-response-btn" title="Copy">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
             </button>
           </div>
           <textarea id="scapi-result-body" class="result-body" readonly></textarea>
@@ -729,7 +761,9 @@
             .then(function () {
               var t = btn.getAttribute('title') || fallbackTitle;
               btn.setAttribute('title', 'Copied!');
-              setTimeout(function () { btn.setAttribute('title', t); }, 2000);
+              setTimeout(function () {
+                btn.setAttribute('title', t);
+              }, 2000);
             })
             .catch(function () {});
         }
