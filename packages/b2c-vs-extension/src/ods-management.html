@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ODS Management</title>
     <style>
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         font-family: var(--vscode-font-family, system-ui, sans-serif);
         font-size: var(--vscode-font-size, 13px);
@@ -14,8 +16,13 @@
         margin: 0;
         padding: 1rem;
       }
-      h1 { font-size: 1.1rem; margin: 0 0 1rem; }
-      .toolbar { margin-bottom: 1rem; }
+      h1 {
+        font-size: 1.1rem;
+        margin: 0 0 1rem;
+      }
+      .toolbar {
+        margin-bottom: 1rem;
+      }
       button.primary {
         padding: 0.5rem 1rem;
         font-size: 1em;
@@ -25,7 +32,9 @@
         border: none;
         border-radius: 4px;
       }
-      button.primary:hover { background: var(--vscode-button-hoverBackground); }
+      button.primary:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
       .table-wrap {
         overflow-x: auto;
         border: 1px solid var(--vscode-widget-border);
@@ -37,7 +46,8 @@
         border-collapse: collapse;
         font-size: 0.9em;
       }
-      th, td {
+      th,
+      td {
         padding: 0.4rem 0.6rem;
         text-align: left;
         border-bottom: 1px solid var(--vscode-widget-border);
@@ -47,7 +57,9 @@
         font-weight: 600;
         color: var(--vscode-descriptionForeground);
       }
-      tr:last-child td { border-bottom: none; }
+      tr:last-child td {
+        border-bottom: none;
+      }
       .message {
         padding: 1rem;
         color: var(--vscode-descriptionForeground);
@@ -56,7 +68,9 @@
         color: var(--vscode-errorForeground);
         padding: 1rem;
       }
-      .hidden { display: none !important; }
+      .hidden {
+        display: none !important;
+      }
       .btn-delete {
         padding: 0.25rem 0.5rem;
         font-size: 0.85em;
@@ -95,8 +109,16 @@
         const tbody = document.getElementById('ods-tbody');
 
         const EXTENDED_COLUMNS = [
-          'realm', 'instance', 'state', 'profile', 'created', 'eol', 'id',
-          'hostname', 'createdBy', 'autoScheduled'
+          'realm',
+          'instance',
+          'state',
+          'profile',
+          'created',
+          'eol',
+          'id',
+          'hostname',
+          'createdBy',
+          'autoScheduled',
         ];
         const HEADERS = {
           realm: 'Realm',
@@ -108,7 +130,7 @@
           id: 'ID',
           hostname: 'Hostname',
           createdBy: 'Created By',
-          autoScheduled: 'Auto'
+          autoScheduled: 'Auto',
         };
         function showError(msg) {
           errorEl.textContent = msg || '';
@@ -123,31 +145,38 @@
           }
           messageEl.textContent = '';
           tableWrap.classList.remove('hidden');
-          thead.innerHTML = '<tr>' + EXTENDED_COLUMNS.map(function (k) {
-            return '<th>' + escapeHtml(HEADERS[k] || k) + '</th>';
-          }).join('') + '<th>Actions</th></tr>';
+          thead.innerHTML =
+            '<tr>' +
+            EXTENDED_COLUMNS.map(function (k) {
+              return '<th>' + escapeHtml(HEADERS[k] || k) + '</th>';
+            }).join('') +
+            '<th>Actions</th></tr>';
 
-          tbody.innerHTML = sandboxes.map(function (s) {
-            const row = EXTENDED_COLUMNS.map(function (k) {
-              let val = '—';
-              if (k === 'realm') val = s.realm ?? '—';
-              else if (k === 'instance') val = s.instance ?? '—';
-              else if (k === 'state') val = s.state ?? '—';
-              else if (k === 'profile') val = s.resourceProfile ?? '—';
-              else if (k === 'created') val = s.createdAt ? String(s.createdAt).slice(0, 10) : '—';
-              else if (k === 'eol') val = s.eol ? String(s.eol).slice(0, 10) : '—';
-              else if (k === 'id') val = s.id ?? '—';
-              else if (k === 'hostname') val = s.hostName || s.hostname || '—';
-              else if (k === 'createdBy') val = s.createdBy ?? '—';
-              else if (k === 'autoScheduled') val = s.autoScheduled ? 'Yes' : 'No';
-              return '<td>' + escapeHtml(String(val)) + '</td>';
-            }).join('');
-            const sandboxId = (s.id ?? '').toString();
-            const deleteBtn = sandboxId
-              ? '<button type="button" class="btn-delete" data-sandbox-id="' + escapeHtml(sandboxId) + '" title="Delete">Delete</button>'
-              : '';
-            return '<tr>' + row + '<td>' + deleteBtn + '</td></tr>';
-          }).join('');
+          tbody.innerHTML = sandboxes
+            .map(function (s) {
+              const row = EXTENDED_COLUMNS.map(function (k) {
+                let val = '—';
+                if (k === 'realm') val = s.realm ?? '—';
+                else if (k === 'instance') val = s.instance ?? '—';
+                else if (k === 'state') val = s.state ?? '—';
+                else if (k === 'profile') val = s.resourceProfile ?? '—';
+                else if (k === 'created') val = s.createdAt ? String(s.createdAt).slice(0, 10) : '—';
+                else if (k === 'eol') val = s.eol ? String(s.eol).slice(0, 10) : '—';
+                else if (k === 'id') val = s.id ?? '—';
+                else if (k === 'hostname') val = s.hostName || s.hostname || '—';
+                else if (k === 'createdBy') val = s.createdBy ?? '—';
+                else if (k === 'autoScheduled') val = s.autoScheduled ? 'Yes' : 'No';
+                return '<td>' + escapeHtml(String(val)) + '</td>';
+              }).join('');
+              const sandboxId = (s.id ?? '').toString();
+              const deleteBtn = sandboxId
+                ? '<button type="button" class="btn-delete" data-sandbox-id="' +
+                  escapeHtml(sandboxId) +
+                  '" title="Delete">Delete</button>'
+                : '';
+              return '<tr>' + row + '<td>' + deleteBtn + '</td></tr>';
+            })
+            .join('');
         }
 
         function escapeHtml(s) {
@@ -157,13 +186,13 @@
         }
 
         createBtn.addEventListener('click', function () {
-          vscode.postMessage({ type: 'odsCreateClick' });
+          vscode.postMessage({type: 'odsCreateClick'});
         });
 
         tbody.addEventListener('click', function (e) {
           const btn = e.target && e.target.closest && e.target.closest('.btn-delete');
           if (btn && btn.dataset.sandboxId) {
-            vscode.postMessage({ type: 'odsDeleteClick', sandboxId: btn.dataset.sandboxId });
+            vscode.postMessage({type: 'odsDeleteClick', sandboxId: btn.dataset.sandboxId});
           }
         });
 
@@ -181,7 +210,7 @@
           }
         });
 
-        vscode.postMessage({ type: 'odsListRequest' });
+        vscode.postMessage({type: 'odsListRequest'});
       })();
     </script>
   </body>
