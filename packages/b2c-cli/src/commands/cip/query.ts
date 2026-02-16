@@ -44,7 +44,7 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
   };
 
   async run(): Promise<CipQueryCommandResult> {
-    const sql = this.resolveSql();
+    const sql = await this.resolveSql();
 
     this.requireCipCredentials();
     const client = this.getCipClient();
@@ -69,6 +69,21 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
     return output;
   }
 
+  private async readSqlFromStdin(): Promise<string> {
+    const preBufferedInput = process.env.SFCC_CIP_QUERY_STDIN;
+    if (preBufferedInput !== undefined) {
+      return preBufferedInput;
+    }
+
+    let data = '';
+
+    for await (const chunk of process.stdin) {
+      data += typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+    }
+
+    return data;
+  }
+
   private renderRows(columns: string[], rows: Array<Record<string, unknown>>, format: CipOutputFormat): void {
     if (format === 'csv') {
       process.stdout.write(`${toCsv(columns, rows)}\n`);
@@ -78,7 +93,7 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
     renderTable(columns, rows);
   }
 
-  private resolveSql(): string {
+  private async resolveSql(): Promise<string> {
     const positionalSql = this.args.sql;
     const hasPositional = Boolean(positionalSql);
     const hasFile = Boolean(this.flags.file);
@@ -97,7 +112,7 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
     }
 
     const rawSql = hasStdin
-      ? fs.readFileSync(0, 'utf8')
+      ? await this.readSqlFromStdin()
       : hasFile
         ? fs.readFileSync(this.flags.file as string, 'utf8')
         : positionalSql;

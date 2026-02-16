@@ -37,4 +37,15 @@ describe('cip query', () => {
     expect(error).to.not.be.undefined;
     expect(error?.message).to.include('SQL input is empty');
   });
+
+  it('uses pre-buffered stdin fallback when stream is unavailable', async () => {
+    process.env.SFCC_CIP_QUERY_STDIN = 'SELECT 1';
+
+    const {error} = await runCommand(
+      'cip query --stdin --tenant-id zzxy_prd --client-id test --client-secret test --cip-host 127.0.0.1:9',
+    );
+
+    expect(error).to.not.be.undefined;
+    expect(error?.message).to.not.include('SQL input is empty');
+  });
 });
