@@ -118,8 +118,6 @@ describe('tools/cartridges', () => {
 
   describe('cartridge_deploy execution', () => {
     it('should call findAndDeployCartridges with instance and default directory', async () => {
-      const directory = '.';
-
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app_storefront_base', dest: 'app_storefront_base'}],
         codeVersion: 'v1',
@@ -143,7 +141,7 @@ describe('tools/cartridges', () => {
         DeployOptions,
       ];
       expect(instance).to.equal(mockInstance);
-      expect(dir).to.equal(directory);
+      expect(dir).to.equal(services.getWorkingDirectory());
       expect(options.include).to.be.undefined;
       expect(options.exclude).to.be.undefined;
       expect(options.reload).to.be.undefined;

@@ -236,10 +236,11 @@ export function loadConfig(
 ): ResolvedB2CConfig {
   const logger = getLogger();
 
-  // Preserve instanceName from options.instance if not already in flags
+  // Preserve instanceName and startDir from options if not already in flags
   const effectiveFlags = {
     ...flags,
     instanceName: flags.instanceName ?? options.instance,
+    startDir: flags.startDir ?? options.startDir,
   };
 
   const resolved = resolveConfig(effectiveFlags, {

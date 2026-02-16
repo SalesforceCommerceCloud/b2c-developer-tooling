@@ -106,7 +106,7 @@ function createCartridgeDeployTool(services: Services, injections?: CartridgeToo
         const instance = context.b2cInstance!;
 
         // Default directory to current directory
-        const directory = args.directory || '.';
+        const directory = args.directory || services.getWorkingDirectory();
 
         // Parse options
         const options: DeployOptions = {

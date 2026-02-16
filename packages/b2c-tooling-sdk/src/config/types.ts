@@ -79,6 +79,8 @@ export interface NormalizedConfig {
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
+  /** Starting directory for config file search and project-relative operations */
+  startDir?: string;
 
   // TLS/mTLS
   /** Path to PKCS12 certificate file for client mTLS (two-factor auth) */
