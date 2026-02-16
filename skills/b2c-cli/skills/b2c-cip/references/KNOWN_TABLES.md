@@ -1,8 +1,6 @@
 # Known CIP Tables
 
-This quick catalog is based on the official JDBC schema docs under:
-
-- `/Users/clavery/code/commerce-cloud-docs/content/en-us/b2c-commerce/guides/jdbc/*.md`
+This quick catalog is based on the official JDBC schema documentation.
 
 Use this as a starting point. Always verify actual availability in your tenant with:
 
