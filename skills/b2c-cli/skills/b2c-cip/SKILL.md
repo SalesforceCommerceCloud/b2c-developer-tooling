@@ -1,6 +1,6 @@
 ---
 name: b2c-cip
-description: Run Commerce Intelligence Platform (CIP/CCAC) analytics reports and SQL queries with the b2c cli. Use when users ask for sales/search/payment analytics, KPI validation, report exports, or custom SQL against B2C Commerce Intelligence data.
+description: Run Commerce Intelligence Platform (CIP/CCAC) analytics reports, metadata discovery, and SQL queries with the b2c cli. Use when users ask for sales/search/payment analytics, KPI validation, table discovery, schema inspection, report exports, or custom SQL against B2C Commerce Intelligence data.
 ---
 
 # B2C CIP Skill
@@ -67,6 +67,14 @@ b2c cip tables --tenant-id abcd_prd --pattern "ccdw_aggr_%" --client-id <client-
 # Describe table columns
 b2c cip describe ccdw_aggr_ocapi_request --tenant-id abcd_prd --client-id <client-id> --client-secret <client-secret>
 ```
+
+## Known Tables
+
+For an efficient table catalog grouped by aggregate/dimension/fact families, use:
+
+- `references/KNOWN_TABLES.md`
+
+The list is derived from official JDBC documentation and intended as a quick discovery aid.
 
 ## Curated Report Examples
 
