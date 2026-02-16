@@ -527,7 +527,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     return folder;
   }
 
-  function resolveCliScript(context: vscode.ExtensionContext): {node: string; script: string} | null {
+  function _resolveCliScript(context: vscode.ExtensionContext): {node: string; script: string} | null {
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (workspaceRoot) {
       const distCli = path.join(workspaceRoot, 'dist', 'cli.js');
@@ -1040,7 +1040,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             'sfcc.shopper-products',
             'sfcc.shopper-stores',
           ];
-          const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
+          const {error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
             params: {path: {tenantId, clientId}},
             body: {
               clientId,
