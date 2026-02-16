@@ -49,6 +49,7 @@ const guideSidebar = [
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
       {text: 'Account Manager', link: '/guide/account-manager'},
+      {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Security', link: '/guide/security'},
@@ -68,6 +69,7 @@ const guideSidebar = [
       {text: 'Overview', link: '/cli/'},
       {text: 'Code Commands', link: '/cli/code'},
       {text: 'Content Commands', link: '/cli/content'},
+      {text: 'CIP Commands', link: '/cli/cip'},
       {text: 'Job Commands', link: '/cli/jobs'},
       {text: 'Logs Commands', link: '/cli/logs'},
       {text: 'Sites Commands', link: '/cli/sites'},

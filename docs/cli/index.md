@@ -47,6 +47,7 @@ These flags are available on all commands that interact with B2C instances:
 - [Sandbox Commands](./sandbox) - Create and manage On-Demand Sandboxes
 - [MRT Commands](./mrt) - Manage Managed Runtime (MRT) projects and deployments
 - [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
+- [CIP Commands](./cip) - Run CIP SQL queries and curated analytics reports
 - [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
 
 ### Development

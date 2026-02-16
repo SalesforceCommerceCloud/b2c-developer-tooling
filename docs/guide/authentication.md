@@ -10,16 +10,17 @@ This guide covers setting up authentication for the B2C CLI, including Account M
 
 The CLI uses different authentication mechanisms depending on the operation:
 
-| Operation | Auth Method | Setup Required |
-|-----------|-------------|----------------|
-| [Code](/cli/code) deploy, watch (file upload) | WebDAV (Basic Auth or OAuth) | [WebDAV Access](#webdav-access) |
-| [Code](/cli/code) list, activate, delete | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
-| [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) |
-| SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) |
-| [SLAS](/cli/slas) client management | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
-| [Sandbox](/cli/sandbox) management | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
-| [Account Manager](/cli/account-manager) | OAuth | None (uses built-in client) or [API Client](#account-manager-api-client) |
-| [MRT](/cli/mrt) commands | MRT API Key | [MRT API Key](#managed-runtime-api-key) |
+| Operation                                                                                          | Auth Method                  | Setup Required                                                                           |
+| -------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| [Code](/cli/code) deploy, watch (file upload)                                                      | WebDAV (Basic Auth or OAuth) | [WebDAV Access](#webdav-access)                                                          |
+| [Code](/cli/code) list, activate, delete                                                           | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
+| [Jobs](/cli/jobs), [Sites](/cli/sites)                                                             | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
+| SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes         | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication)        |
+| [CIP analytics](/cli/cip) (`cip query`, `cip report`)                                              | OAuth + Client Credentials   | [API Client](#account-manager-api-client) + Salesforce Commerce API role + tenant filter |
+| [SLAS](/cli/slas) client management                                                                | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
+| [Sandbox](/cli/sandbox) management                                                                 | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
+| [Account Manager](/cli/account-manager)                                                            | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
+| [MRT](/cli/mrt) commands                                                                           | MRT API Key                  | [MRT API Key](#managed-runtime-api-key)                                                  |
 
 ::: tip Zero-Config for Platform Commands
 Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (implicit flow). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
@@ -37,10 +38,10 @@ Most CLI operations require an Account Manager API Client. This is configured in
 
 The CLI supports two authentication methods:
 
-| Method | When Used | Role Configuration |
-|--------|-----------|-------------------|
+| Method                  | When Used                                                                        | Role Configuration                        |
+| ----------------------- | -------------------------------------------------------------------------------- | ----------------------------------------- |
 | **User Authentication** | When `--user-auth` is passed, or when only `--client-id` is provided (no secret) | Roles configured on your **user account** |
-| **Client Credentials** | When both `--client-id` and `--client-secret` are provided | Roles configured on the **API client** |
+| **Client Credentials**  | When both `--client-id` and `--client-secret` are provided                       | Roles configured on the **API client**    |
 
 **User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods implicit` on any OAuth command.
 
@@ -69,11 +70,11 @@ Roles grant permission to perform specific operations. Roles are configured diff
 
 Most roles require a **tenant filter** that specifies which tenants/realms the role applies to. This is configured alongside the role assignment.
 
-| Role | Operations | Notes |
-|------|------------|-------|
-| `Salesforce Commerce API` | SCAPI commands (eCDN, schemas, custom-apis) | API Clients only. Requires tenant filter. |
-| `Sandbox API User` | ODS management, SLAS client management | Requires tenant filter with realm/org IDs. |
-| `SLAS Organization Administrator` | SLAS client management (user auth only) | User accounts only. Requires tenant filter. |
+| Role                              | Operations                                | Notes                                       |
+| --------------------------------- | ----------------------------------------- | ------------------------------------------- |
+| `Salesforce Commerce API`         | SCAPI commands and CIP analytics commands | API Clients only. Requires tenant filter.   |
+| `Sandbox API User`                | ODS management, SLAS client management    | Requires tenant filter with realm/org IDs.  |
+| `SLAS Organization Administrator` | SLAS client management (user auth only)   | User accounts only. Requires tenant filter. |
 
 #### For Client Credentials (roles on API Client)
 
@@ -92,21 +93,21 @@ In Account Manager, navigate to your user account and add roles. Note that some 
 
 Under **Allowed Scopes**, add the following scopes based on your needs:
 
-| Scope | Purpose |
-|-------|---------|
-| `mail` | Required for user info in authentication flows |
-| `roles` | Critical - returns role information in the token |
+| Scope          | Purpose                                                   |
+| -------------- | --------------------------------------------------------- |
+| `mail`         | Required for user info in authentication flows            |
+| `roles`        | Critical - returns role information in the token          |
 | `tenantFilter` | Critical - returns tenant access information in the token |
-| `openid` | Required for OpenID Connect |
+| `openid`       | Required for OpenID Connect                               |
 
 For SCAPI commands, also add the relevant API scopes:
 
-| Scope | Commands | Reference |
-|-------|----------|-----------|
-| `sfcc.cdn-zones` | eCDN read operations | [eCDN Commands](/cli/ecdn) |
-| `sfcc.cdn-zones.rw` | eCDN write operations | [eCDN Commands](/cli/ecdn) |
+| Scope                | Commands              | Reference                           |
+| -------------------- | --------------------- | ----------------------------------- |
+| `sfcc.cdn-zones`     | eCDN read operations  | [eCDN Commands](/cli/ecdn)          |
+| `sfcc.cdn-zones.rw`  | eCDN write operations | [eCDN Commands](/cli/ecdn)          |
 | `sfcc.scapi-schemas` | SCAPI schema browsing | [SCAPI Schemas](/cli/scapi-schemas) |
-| `sfcc.custom-apis` | Custom API status | [Custom APIs](/cli/custom-apis) |
+| `sfcc.custom-apis`   | Custom API status     | [Custom APIs](/cli/custom-apis)     |
 
 **Note:** Do NOT add `SALESFORCE_COMMERCE_API` as a scope. This is a role, not a scope.
 
@@ -136,9 +137,9 @@ These scopes ensure proper authentication and authorization for CLI operations.
 
 For **User Authentication** (implicit flow), configure redirect URLs in your API client:
 
-| Redirect URL | Purpose |
-|-------------|---------|
-| `http://localhost:8080` | Required for B2C CLI user authentication |
+| Redirect URL                                                         | Purpose                                                   |
+| -------------------------------------------------------------------- | --------------------------------------------------------- |
+| `http://localhost:8080`                                              | Required for B2C CLI user authentication                  |
 | `https://admin.dx.commercecloud.salesforce.com/oauth2-redirect.html` | Optional - enables ODS Swagger interface with same client |
 
 **Note:** Redirect URLs are not required for API clients using only Client Credentials authentication.
@@ -214,6 +215,7 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 ### Minimal Configuration by Feature
 
 **Code management only:**
+
 ```json
 {
   "resource_id": "/code_versions",
@@ -226,6 +228,7 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 ```
 
 **Job execution only:**
+
 ```json
 {
   "resource_id": "/jobs/*/executions",
@@ -242,6 +245,7 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 ```
 
 **Site listing only:**
+
 ```json
 {
   "resource_id": "/sites",
@@ -264,12 +268,12 @@ SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication w
 
 ### Scopes by Command
 
-| Command | Required Scope | Reference |
-|---------|---------------|-----------|
-| `b2c scapi schemas list/get` | `sfcc.scapi-schemas` | [SCAPI Schemas](/cli/scapi-schemas) |
-| `b2c scapi custom status` | `sfcc.custom-apis` | [Custom APIs](/cli/custom-apis) |
-| `b2c ecdn` (read operations) | `sfcc.cdn-zones` | [eCDN](/cli/ecdn) |
-| `b2c ecdn` (write operations) | `sfcc.cdn-zones.rw` | [eCDN](/cli/ecdn) |
+| Command                       | Required Scope       | Reference                           |
+| ----------------------------- | -------------------- | ----------------------------------- |
+| `b2c scapi schemas list/get`  | `sfcc.scapi-schemas` | [SCAPI Schemas](/cli/scapi-schemas) |
+| `b2c scapi custom status`     | `sfcc.custom-apis`   | [Custom APIs](/cli/custom-apis)     |
+| `b2c ecdn` (read operations)  | `sfcc.cdn-zones`     | [eCDN](/cli/ecdn)                   |
+| `b2c ecdn` (write operations) | `sfcc.cdn-zones.rw`  | [eCDN](/cli/ecdn)                   |
 
 The CLI automatically requests these scopes. Your API client must have them in the Allowed Scopes list.
 
@@ -323,9 +327,9 @@ If you prefer to use OAuth credentials for WebDAV (instead of basic auth), you m
     {
       "client_id": "your-client-id",
       "permissions": [
-        { "path": "/cartridges", "operations": ["read_write"] },
-        { "path": "/impex", "operations": ["read_write"] },
-        { "path": "/logs", "operations": ["read_write"] }
+        {"path": "/cartridges", "operations": ["read_write"]},
+        {"path": "/impex", "operations": ["read_write"]},
+        {"path": "/logs", "operations": ["read_write"]}
       ]
     }
   ]
@@ -334,12 +338,12 @@ If you prefer to use OAuth credentials for WebDAV (instead of basic auth), you m
 
 Common paths for CLI operations:
 
-| Path | Operations |
-|------|------------|
-| `/cartridges` | Code deployment |
-| `/impex` | Site import/export |
-| `/logs` | Log file access |
-| `/catalogs/<catalog-id>` | Catalog file access |
+| Path                      | Operations             |
+| ------------------------- | ---------------------- |
+| `/cartridges`             | Code deployment        |
+| `/impex`                  | Site import/export     |
+| `/logs`                   | Log file access        |
+| `/catalogs/<catalog-id>`  | Catalog file access    |
 | `/libraries/<library-id>` | Content library access |
 
 **Note:** This configuration is only needed when using OAuth for WebDAV. It is not required when using basic authentication with username/access key.
@@ -390,6 +394,7 @@ Add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration) 
 ### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
 
 Either:
+
 - Use your BM username + WebDAV access key (recommended), or
 - Configure WebDAV Client Permissions for OAuth
 
