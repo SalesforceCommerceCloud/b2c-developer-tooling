@@ -1,6 +1,6 @@
 ---
 name: b2c-mrt
-description: Deploy and manage (B2C/SFCC/Demandware) Managed Runtime (MRT) storefronts using the b2c cli. Use when deploying bundles, managing environments, setting environment variables, configuring redirects, or working with MRT CDN
+description: Deploy and manage (B2C/SFCC/Demandware) Managed Runtime (MRT) storefronts using the b2c cli. Always reference when using the CLI to deploy MRT bundles, manage MRT environments, set environment variables, configure redirects, or manage MRT projects and organizations.
 ---
 
 # B2C MRT Skill

@@ -55,31 +55,33 @@ See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=
 
 You can configure the CLI using environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `SFCC_WORKING_DIRECTORY` | Project working directory |
-| `SFCC_CONFIG` | Path to config file (dw.json format) |
-| `SFCC_INSTANCE` | Instance name from config file |
-| `SFCC_SERVER` | The B2C instance hostname |
-| `SFCC_WEBDAV_SERVER` | Separate hostname for WebDAV (if different from main hostname) |
-| `SFCC_CODE_VERSION` | Code version for deployments |
-| `SFCC_CLIENT_ID` | OAuth client ID |
-| `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `SFCC_OAUTH_SCOPES` | OAuth scopes to request |
-| `SFCC_AUTH_METHODS` | Comma-separated list of allowed auth methods |
-| `SFCC_SHORTCODE` | SCAPI short code |
-| `SFCC_TENANT_ID` | Organization/tenant ID for SCAPI |
-| `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname for OAuth |
-| `SFCC_USERNAME` | Basic auth username |
-| `SFCC_PASSWORD` | Basic auth password |
-| `SFCC_CERTIFICATE` | Path to PKCS12 certificate for two-factor auth (mTLS) |
-| `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate |
-| `SFCC_SELFSIGNED` | Allow self-signed server certificates |
-| `SFCC_SANDBOX_API_HOST` | ODS (sandbox) API hostname |
-| `SFCC_MRT_API_KEY` | MRT API key |
-| `SFCC_MRT_PROJECT` | MRT project slug |
-| `SFCC_MRT_ENVIRONMENT` | MRT environment name |
-| `SFCC_MRT_CLOUD_ORIGIN` | MRT API origin URL override |
+| Variable                      | Description                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| `SFCC_WORKING_DIRECTORY`      | Project working directory                                      |
+| `SFCC_CONFIG`                 | Path to config file (dw.json format)                           |
+| `SFCC_INSTANCE`               | Instance name from config file                                 |
+| `SFCC_SERVER`                 | The B2C instance hostname                                      |
+| `SFCC_WEBDAV_SERVER`          | Separate hostname for WebDAV (if different from main hostname) |
+| `SFCC_CODE_VERSION`           | Code version for deployments                                   |
+| `SFCC_CLIENT_ID`              | OAuth client ID                                                |
+| `SFCC_CLIENT_SECRET`          | OAuth client secret                                            |
+| `SFCC_OAUTH_SCOPES`           | OAuth scopes to request                                        |
+| `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                   |
+| `SFCC_SHORTCODE`              | SCAPI short code                                               |
+| `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                               |
+| `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
+| `SFCC_USERNAME`               | Basic auth username                                            |
+| `SFCC_PASSWORD`               | Basic auth password                                            |
+| `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |
+| `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate                                 |
+| `SFCC_SELFSIGNED`             | Allow self-signed server certificates                          |
+| `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                     |
+| `SFCC_CIP_HOST`               | CIP analytics host override                                    |
+| `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                |
+| `SFCC_MRT_API_KEY`            | MRT API key                                                    |
+| `SFCC_MRT_PROJECT`            | MRT project slug                                               |
+| `SFCC_MRT_ENVIRONMENT`        | MRT environment name                                           |
+| `SFCC_MRT_CLOUD_ORIGIN`       | MRT API origin URL override                                    |
 
 ## .env File
 
@@ -153,31 +155,80 @@ b2c code deploy -i staging
 
 If no instance is specified, the config with `"active": true` is used.
 
+### Managing Instances with the CLI
+
+Instead of editing `dw.json` by hand, you can use `b2c setup instance` commands to create, list, remove, and switch between instance configurations.
+
+#### Quick Setup
+
+```bash
+# Interactive — prompts for hostname, auth, and code version
+b2c setup instance create staging
+
+# Non-interactive
+b2c setup instance create staging \
+  --hostname staging.example.com \
+  --client-id my-client-id \
+  --client-secret my-secret \
+  --force
+```
+
+The interactive mode auto-detects the active code version via OCAPI when OAuth credentials are provided, and the first instance you create is automatically set as active.
+
+#### Switching Instances
+
+```bash
+# Set a different instance as the default
+b2c setup instance set-active production
+
+# Or pick interactively (shows a searchable list)
+b2c setup instance set-active
+
+# Commands now use the active instance by default
+b2c code list                  # Uses production
+b2c code list -i staging       # Override for one command
+```
+
+#### Listing and Removing
+
+```bash
+# See all configured instances
+b2c setup instance list
+
+# Remove an instance
+b2c setup instance remove staging
+```
+
+::: tip
+For the full command reference with all flags, see [Setup Commands](/cli/setup).
+:::
+
 ### Supported Fields
 
-| Field | Description |
-|-------|-------------|
-| `hostname` | B2C instance hostname. Also accepts `server`. |
-| `webdav-hostname` | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`. |
-| `code-version` | Code version for deployments |
-| `client-id` | OAuth client ID |
-| `client-secret` | OAuth client secret |
-| `username` | Basic auth username (WebDAV) |
-| `password` | Basic auth access key (WebDAV) |
-| `oauth-scopes` | OAuth scopes (array of strings) |
-| `auth-methods` | Authentication methods in priority order (array of strings) |
-| `account-manager-host` | Account Manager hostname for OAuth |
-| `shortCode` | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`. |
-| `content-library` | Default content library ID for `content export` and `content list` commands |
-| `tenant-id` | Organization/tenant ID for SCAPI |
-| `sandbox-api-host` | ODS (sandbox) API hostname |
-| `mrtApiKey` | MRT API key |
-| `mrtProject` | MRT project slug |
-| `mrtEnvironment` | MRT environment name |
-| `mrtOrigin` | MRT API origin URL override. Also accepts `cloudOrigin`. |
-| `certificate` | Path to PKCS12 certificate for two-factor auth (mTLS) |
-| `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`. |
-| `self-signed` | Allow self-signed server certificates. Also accepts `selfsigned`. |
+| Field                    | Description                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `hostname`               | B2C instance hostname. Also accepts `server`.                                                                                       |
+| `webdav-hostname`        | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`. |
+| `code-version`           | Code version for deployments                                                                                                        |
+| `client-id`              | OAuth client ID                                                                                                                     |
+| `client-secret`          | OAuth client secret                                                                                                                 |
+| `username`               | Basic auth username (WebDAV)                                                                                                        |
+| `password`               | Basic auth access key (WebDAV)                                                                                                      |
+| `oauth-scopes`           | OAuth scopes (array of strings)                                                                                                     |
+| `auth-methods`           | Authentication methods in priority order (array of strings)                                                                         |
+| `account-manager-host`   | Account Manager hostname for OAuth                                                                                                  |
+| `shortCode`              | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`.                                                                   |
+| `content-library`        | Default content library ID for `content export` and `content list` commands                                                         |
+| `tenant-id`              | Organization/tenant ID for SCAPI                                                                                                    |
+| `sandbox-api-host`       | ODS (sandbox) API hostname                                                                                                          |
+| `cip-host`               | CIP analytics host override                                                                                                         |
+| `mrtApiKey`              | MRT API key                                                                                                                         |
+| `mrtProject`             | MRT project slug                                                                                                                    |
+| `mrtEnvironment`         | MRT environment name                                                                                                                |
+| `mrtOrigin`              | MRT API origin URL override. Also accepts `cloudOrigin`.                                                                            |
+| `certificate`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                                               |
+| `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`.                                                                          |
+| `self-signed`            | Allow self-signed server certificates. Also accepts `selfsigned`.                                                                   |
 
 ### Two-Factor Authentication (mTLS)
 
@@ -203,10 +254,10 @@ MRT API key can also be loaded from `~/.mobify`. See [MRT API Key](#mrt-api-key)
 
 For multi-instance configurations, each config object also supports:
 
-| Field | Description |
-|-------|-------------|
-| `name` | Instance name for selection with `-i`/`--instance` |
-| `active` | Set to `true` to use this config by default |
+| Field    | Description                                        |
+| -------- | -------------------------------------------------- |
+| `name`   | Instance name for selection with `-i`/`--instance` |
+| `active` | Set to `true` to use this config by default        |
 
 ## Project Configuration (package.json)
 
@@ -229,15 +280,15 @@ You can store project-level defaults in your `package.json` file under the `b2c`
 
 Only non-sensitive, project-level fields can be configured in `package.json`. Both camelCase and kebab-case are accepted (e.g., `shortCode` or `short-code`):
 
-| Field | Description |
-|-------|-------------|
-| `shortCode` | SCAPI short code |
-| `clientId` | OAuth client ID (for implicit login discovery) |
-| `contentLibrary` | Default content library ID for `content export` and `content list` commands |
-| `mrtProject` | MRT project slug |
-| `mrtOrigin` | MRT API origin URL override |
-| `accountManagerHost` | Account Manager hostname for OAuth |
-| `sandboxApiHost` | ODS (sandbox) API hostname |
+| Field                | Description                                                                 |
+| -------------------- | --------------------------------------------------------------------------- |
+| `shortCode`          | SCAPI short code                                                            |
+| `clientId`           | OAuth client ID (for implicit login discovery)                              |
+| `contentLibrary`     | Default content library ID for `content export` and `content list` commands |
+| `mrtProject`         | MRT project slug                                                            |
+| `mrtOrigin`          | MRT API origin URL override                                                 |
+| `accountManagerHost` | Account Manager hostname for OAuth                                          |
+| `sandboxApiHost`     | ODS (sandbox) API hostname                                                  |
 
 ::: warning Security Note
 Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `mrtApiKey` are intentionally **not** supported in `package.json`. These should be configured via `dw.json` (which should be in `.gitignore`), environment variables, or secure credential stores.
@@ -272,6 +323,7 @@ To prevent mixing credentials from different sources, certain fields are treated
 If any field in a group is set by a higher-priority source, all fields in that group from lower-priority sources are ignored. This ensures credential pairs always come from the same source.
 
 **Example:**
+
 - dw.json provides `clientId` only
 - A plugin provides `clientSecret`
 - Result: Only `clientId` is used; the plugin's `clientSecret` is ignored to prevent mismatched credentials
@@ -346,6 +398,7 @@ b2c setup inspect --json
 ```
 
 This command helps troubleshoot issues like:
+
 - Verifying which configuration file is being used
 - Checking if environment variables are being read
 - Understanding credential source priority

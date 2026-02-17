@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {createCartridgesTools} from '../../../src/tools/cartridges/index.js';
 import {Services} from '../../../src/services.js';
+import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {DeployResult, DeployOptions} from '@salesforce/b2c-tooling-sdk/operations/code';
@@ -52,7 +53,16 @@ function createMockB2CInstance(): B2CInstance {
 function createMockServices(options?: {b2cInstance?: B2CInstance}): Services {
   return new Services({
     b2cInstance: options?.b2cInstance,
+    resolvedConfig: createMockResolvedConfig(),
   });
+}
+
+/**
+ * Create a loadServices function for testing.
+ */
+function createMockLoadServicesWrapper(options?: {b2cInstance?: B2CInstance}): () => Services {
+  const services = createMockServices(options);
+  return () => services;
 }
 
 describe('tools/cartridges', () => {
@@ -70,8 +80,8 @@ describe('tools/cartridges', () => {
 
   describe('createCartridgesTools', () => {
     it('should create cartridge_deploy tool', () => {
-      const services = createMockServices();
-      const tools = createCartridgesTools(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const tools = createCartridgesTools(loadServices);
 
       expect(tools).to.have.lengthOf(1);
       expect(tools[0].name).to.equal('cartridge_deploy');
@@ -79,13 +89,13 @@ describe('tools/cartridges', () => {
   });
 
   describe('cartridge_deploy tool metadata', () => {
-    let services: Services;
+    let loadServices: () => Services;
     let tool: ReturnType<typeof createCartridgesTools>[0];
 
     beforeEach(() => {
       const mockInstance = createMockB2CInstance();
-      services = createMockServices({b2cInstance: mockInstance});
-      tool = createCartridgesTools(services)[0];
+      loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      tool = createCartridgesTools(loadServices)[0];
     });
 
     it('should have correct tool name', () => {
@@ -116,8 +126,6 @@ describe('tools/cartridges', () => {
 
   describe('cartridge_deploy execution', () => {
     it('should call findAndDeployCartridges with instance and default directory', async () => {
-      const directory = '.';
-
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app_storefront_base', dest: 'app_storefront_base'}],
         codeVersion: 'v1',
@@ -126,8 +134,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -141,7 +149,8 @@ describe('tools/cartridges', () => {
         DeployOptions,
       ];
       expect(instance).to.equal(mockInstance);
-      expect(dir).to.equal(directory);
+      const services = loadServices();
+      expect(dir).to.equal(services.getWorkingDirectory());
       expect(options.include).to.be.undefined;
       expect(options.exclude).to.be.undefined;
       expect(options.reload).to.be.undefined;
@@ -161,8 +170,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -190,8 +199,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -214,8 +223,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -236,8 +245,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -263,8 +272,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -295,8 +304,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -314,10 +323,10 @@ describe('tools/cartridges', () => {
 
   describe('cartridge_deploy error handling', () => {
     it('should return error when instance is not configured', async () => {
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         // No instance configured
       });
-      const tool = createCartridgesTools(services)[0];
+      const tool = createCartridgesTools(loadServices)[0];
 
       const result = await tool.handler({});
 
@@ -333,8 +342,8 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.rejects(error);
 
       const mockInstance = createMockB2CInstance();
-      const services = createMockServices({b2cInstance: mockInstance});
-      const tool = createCartridgesTools(services, {
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
@@ -348,13 +357,13 @@ describe('tools/cartridges', () => {
   });
 
   describe('cartridge_deploy input validation', () => {
-    let services: Services;
+    let loadServices: () => Services;
     let tool: ReturnType<typeof createCartridgesTools>[0];
 
     beforeEach(() => {
       const mockInstance = createMockB2CInstance();
-      services = createMockServices({b2cInstance: mockInstance});
-      tool = createCartridgesTools(services)[0];
+      loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      tool = createCartridgesTools(loadServices)[0];
     });
 
     it('should validate input schema', async () => {

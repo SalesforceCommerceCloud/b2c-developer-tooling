@@ -9,6 +9,7 @@ import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {
   createAccountManagerUsersClient,
+  createAccountManagerRolesClient,
   getUser,
   listUsers,
   createUser,
@@ -16,8 +17,9 @@ import {
   deleteUser,
   resetUser,
   findUserByLogin,
-  mapToInternalRole,
-  mapFromInternalRole,
+  fetchRoleMapping,
+  resolveToInternalRole,
+  resolveFromInternalRole,
 } from '../../src/clients/am-api.js';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
@@ -252,28 +254,25 @@ describe('Account Manager Users API Client', () => {
 
   describe('findUserByLogin', () => {
     it('should find user by email', async () => {
-      const mockUsers = {
-        content: [{id: 'user-123', mail: 'user@example.com', firstName: 'John', lastName: 'Doe'}],
-      };
+      const mockUser = {id: 'user-123', mail: 'user@example.com', firstName: 'John', lastName: 'Doe'};
 
       server.use(
-        http.get(`${BASE_URL}/users`, ({request}) => {
+        http.get(`${BASE_URL}/users/search/findByLogin`, ({request}) => {
           const url = new URL(request.url);
-          // findUserByLogin searches through paginated results
-          expect(url.searchParams.get('size')).to.equal('100');
-          return HttpResponse.json(mockUsers);
+          expect(url.searchParams.get('login')).to.equal('user@example.com');
+          return HttpResponse.json(mockUser);
         }),
       );
 
       const user = await findUserByLogin(client, 'user@example.com');
 
-      expect(user).to.deep.equal(mockUsers.content[0]);
+      expect(user).to.deep.equal(mockUser);
     });
 
     it('should return undefined when user not found', async () => {
       server.use(
-        http.get(`${BASE_URL}/users`, () => {
-          return HttpResponse.json({content: []});
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json({}, {status: 404});
         }),
       );
 
@@ -282,50 +281,86 @@ describe('Account Manager Users API Client', () => {
       expect(result).to.be.undefined;
     });
 
-    it('should search through multiple pages', async () => {
-      // Create 100 users for page 1 (full page size)
-      const page1Users = {
-        content: Array.from({length: 100}, (_, i) => ({
-          id: `user-${i + 1}`,
-          mail: `user${i + 1}@example.com`,
-        })),
+    it('should fetch expanded user when expand is requested', async () => {
+      const mockUser = {id: 'user-123', mail: 'user@example.com', firstName: 'John', lastName: 'Doe'};
+      const expandedUser = {
+        ...mockUser,
+        organizations: [{id: 'org-1', name: 'Test Org'}],
       };
 
-      const page2Users = {
-        content: [{id: 'user-123', mail: 'user@example.com', firstName: 'John', lastName: 'Doe'}],
-      };
-
-      let callCount = 0;
       server.use(
-        http.get(`${BASE_URL}/users`, ({request}) => {
-          callCount++;
+        http.get(`${BASE_URL}/users/search/findByLogin`, () => {
+          return HttpResponse.json(mockUser);
+        }),
+        http.get(`${BASE_URL}/users/user-123`, ({request}) => {
           const url = new URL(request.url);
-          const page = Number(url.searchParams.get('page') || '0');
-          if (page === 0) {
-            return HttpResponse.json(page1Users);
-          }
-          return HttpResponse.json(page2Users);
+          expect(url.searchParams.get('expand')).to.equal('organizations');
+          return HttpResponse.json(expandedUser);
         }),
       );
 
-      const user = await findUserByLogin(client, 'user@example.com');
+      const user = await findUserByLogin(client, 'user@example.com', ['organizations']);
 
-      expect(user).to.deep.equal(page2Users.content[0]);
-      expect(callCount).to.equal(2);
+      expect(user).to.deep.equal(expandedUser);
     });
   });
 
   describe('role mapping', () => {
-    it('should map role name to internal role ID', () => {
-      expect(mapToInternalRole('bm-admin')).to.equal('ECOM_ADMIN');
-      expect(mapToInternalRole('bm-user')).to.equal('ECOM_USER');
-      expect(mapToInternalRole('custom-role')).to.equal('CUSTOM_ROLE');
+    const mockRoles = {
+      content: [
+        {id: 'bm-admin', roleEnumName: 'ECOM_ADMIN', description: 'Business Manager Administrator'},
+        {id: 'bm-user', roleEnumName: 'ECOM_USER', description: 'Business Manager User'},
+      ],
+    };
+
+    it('should fetch role mapping from the API', async () => {
+      server.use(
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json(mockRoles);
+        }),
+      );
+
+      const rolesClient = createAccountManagerRolesClient({hostname: TEST_HOST}, mockAuth);
+      const mapping = await fetchRoleMapping(rolesClient);
+
+      expect(mapping.byId.get('bm-admin')).to.equal('ECOM_ADMIN');
+      expect(mapping.byId.get('bm-user')).to.equal('ECOM_USER');
+      expect(mapping.byEnumName.get('ECOM_ADMIN')).to.equal('bm-admin');
+      expect(mapping.byEnumName.get('ECOM_USER')).to.equal('bm-user');
     });
 
-    it('should map internal role ID to role name', () => {
-      expect(mapFromInternalRole('bm-admin')).to.equal('bm-admin');
-      expect(mapFromInternalRole('bm-user')).to.equal('bm-user');
-      expect(mapFromInternalRole('CUSTOM_ROLE')).to.equal('custom-role');
+    it('should resolve role id to internal roleEnumName', async () => {
+      server.use(
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json(mockRoles);
+        }),
+      );
+
+      const rolesClient = createAccountManagerRolesClient({hostname: TEST_HOST}, mockAuth);
+      const mapping = await fetchRoleMapping(rolesClient);
+
+      expect(resolveToInternalRole('bm-admin', mapping)).to.equal('ECOM_ADMIN');
+      expect(resolveToInternalRole('bm-user', mapping)).to.equal('ECOM_USER');
+      // Accepts roleEnumName directly
+      expect(resolveToInternalRole('ECOM_ADMIN', mapping)).to.equal('ECOM_ADMIN');
+      // Falls back to generic transform for unknown roles
+      expect(resolveToInternalRole('custom-role', mapping)).to.equal('CUSTOM_ROLE');
+    });
+
+    it('should resolve internal roleEnumName to role id', async () => {
+      server.use(
+        http.get(`${BASE_URL}/roles`, () => {
+          return HttpResponse.json(mockRoles);
+        }),
+      );
+
+      const rolesClient = createAccountManagerRolesClient({hostname: TEST_HOST}, mockAuth);
+      const mapping = await fetchRoleMapping(rolesClient);
+
+      expect(resolveFromInternalRole('ECOM_ADMIN', mapping)).to.equal('bm-admin');
+      expect(resolveFromInternalRole('ECOM_USER', mapping)).to.equal('bm-user');
+      // Falls back to generic transform for unknown roles
+      expect(resolveFromInternalRole('CUSTOM_ROLE', mapping)).to.equal('custom-role');
     });
   });
 });

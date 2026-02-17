@@ -26,8 +26,7 @@ docs/.vitepress/cache
 # TypeDoc generated API docs (regenerated on build)
 docs/api/
 
-dw.json
-dw.json*
+*dw.json*
 .env
 .config/wt.toml
 .b2c/

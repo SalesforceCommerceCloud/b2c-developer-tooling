@@ -1,6 +1,6 @@
 ---
 name: b2c-slas
-description: Manage SLAS (Shopper Login and API Access Service) clients for B2C Commerce (SFCC/Demandware) with the b2c cli. Use when configuring shopper authentication, creating API clients for PWA/headless, managing OAuth scopes (including custom scopes like c_loyalty), or debugging token issues. SLAS is for shopper (customer) authentication, not admin APIs.
+description: Manage SLAS (Shopper Login and API Access Service) clients for B2C Commerce (SFCC/Demandware) with the b2c cli. Always reference when using the CLI to create, update, list, or delete SLAS clients, manage shopper OAuth scopes (including custom scopes like c_loyalty), or configure shopper authentication for PWA/headless. SLAS is for shopper (customer) authentication, not admin APIs.
 ---
 
 # B2C SLAS Skill
@@ -59,7 +59,7 @@ b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes 
 
 Note: By default, the tenant is automatically created if it doesn't exist.
 
-**Warning:** Use `--scopes` (plural) for client scopes, NOT `--scope` (singular). The `--scope` flag is a global authentication option and will cause errors if used here.
+**Warning:** Use `--scopes` (plural) for client scopes, NOT `--auth-scope` (singular). The `--auth-scope` flag is a global authentication option for OAuth scopes.
 
 ### Create Client for Custom API Testing
 

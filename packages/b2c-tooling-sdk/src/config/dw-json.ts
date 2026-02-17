@@ -69,6 +69,8 @@ export interface DwJsonConfig {
   sandboxApiHost?: string;
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
+  /** Optional CIP analytics host override */
+  cipHost?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
   /** Passphrase for the certificate */
@@ -94,7 +96,7 @@ export interface LoadDwJsonOptions {
   /** Explicit path to dw.json (skips searching if provided) */
   path?: string;
   /** Starting directory for search (defaults to cwd) */
-  startDir?: string;
+  workingDirectory?: string;
 }
 
 /**
@@ -110,7 +112,7 @@ export interface LoadDwJsonResult {
 /**
  * Finds dw.json by searching upward from the starting directory.
  *
- * @param startDir - Directory to start searching from (defaults to cwd)
+ * @param workingDirectory - Directory to start searching from (defaults to cwd)
  * @returns Path to dw.json if found, undefined otherwise
  *
  * @example
@@ -119,8 +121,8 @@ export interface LoadDwJsonResult {
  *   console.log(`Found dw.json at ${dwPath}`);
  * }
  */
-export function findDwJson(startDir: string = process.cwd()): string | undefined {
-  let dir = startDir;
+export function findDwJson(workingDirectory: string = process.cwd()): string | undefined {
+  let dir = workingDirectory;
   const root = path.parse(dir).root;
 
   while (dir !== root) {
@@ -197,10 +199,226 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
 }
 
 /**
+ * Load the raw dw.json file without selecting a specific instance.
+ *
+ * This is useful for instance management operations that need to work
+ * with the full configs array.
+ *
+ * @param options - Loading options
+ * @returns The raw multi-config structure and path, or undefined if not found
+ */
+export function loadFullDwJson(options: LoadDwJsonOptions = {}): {config: DwJsonMultiConfig; path: string} | undefined {
+  const logger = getLogger();
+  const dwJsonPath = options.path ?? path.join(options.workingDirectory || process.cwd(), 'dw.json');
+
+  logger.trace({path: dwJsonPath}, '[DwJsonSource] Checking for config file');
+
+  if (!fs.existsSync(dwJsonPath)) {
+    logger.trace({path: dwJsonPath}, '[DwJsonSource] No config file found');
+    return undefined;
+  }
+
+  try {
+    const content = fs.readFileSync(dwJsonPath, 'utf8');
+    const json = JSON.parse(content) as DwJsonMultiConfig;
+    return {config: json, path: dwJsonPath};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.trace({path: dwJsonPath, error: message}, '[DwJsonSource] Failed to parse config file');
+    throw error;
+  }
+}
+
+/**
+ * Save a dw.json configuration to disk.
+ *
+ * @param config - The configuration to save
+ * @param filePath - Path to save to
+ */
+export function saveDwJson(config: DwJsonMultiConfig, filePath: string): void {
+  const content = JSON.stringify(config, null, 2) + '\n';
+  fs.writeFileSync(filePath, content, 'utf8');
+}
+
+/**
+ * Options for adding an instance.
+ */
+export interface AddInstanceOptions {
+  /** Path to dw.json (defaults to ./dw.json) */
+  path?: string;
+  /** Starting directory for search */
+  workingDirectory?: string;
+  /** Whether to set as active instance */
+  setActive?: boolean;
+}
+
+/**
+ * Add a new instance to dw.json.
+ *
+ * If dw.json doesn't exist, creates a new one. If an instance with the same
+ * name already exists, throws an error.
+ *
+ * @param instance - The instance configuration to add
+ * @param options - Options for adding
+ * @throws Error if instance with same name already exists
+ */
+export function addInstance(instance: DwJsonConfig, options: AddInstanceOptions = {}): void {
+  const dwJsonPath = options.path ?? path.join(options.workingDirectory || process.cwd(), 'dw.json');
+
+  let existing: DwJsonMultiConfig = {};
+  if (fs.existsSync(dwJsonPath)) {
+    const content = fs.readFileSync(dwJsonPath, 'utf8');
+    existing = JSON.parse(content) as DwJsonMultiConfig;
+  }
+
+  // Check if instance name already exists
+  const instanceName = instance.name;
+  if (!instanceName) {
+    throw new Error('Instance must have a name');
+  }
+
+  // Check root config
+  if (existing.name === instanceName) {
+    throw new Error(`Instance "${instanceName}" already exists`);
+  }
+
+  // Check configs array
+  if (existing.configs?.some((c) => c.name === instanceName)) {
+    throw new Error(`Instance "${instanceName}" already exists`);
+  }
+
+  // Handle setActive - clear other active flags
+  if (options.setActive) {
+    instance.active = true;
+    // Clear active on root if it has it
+    if (existing.active !== undefined) {
+      existing.active = false;
+    }
+    // Clear active on all other configs
+    if (existing.configs) {
+      for (const c of existing.configs) {
+        if (c.active !== undefined) {
+          c.active = false;
+        }
+      }
+    }
+  }
+
+  // Initialize configs array if needed
+  if (!existing.configs) {
+    existing.configs = [];
+  }
+
+  // Add the new instance
+  existing.configs.push(instance);
+
+  saveDwJson(existing, dwJsonPath);
+}
+
+/**
+ * Options for removing an instance.
+ */
+export interface RemoveInstanceOptions {
+  /** Path to dw.json */
+  path?: string;
+  /** Starting directory for search */
+  workingDirectory?: string;
+}
+
+/**
+ * Remove an instance from dw.json.
+ *
+ * @param name - Name of the instance to remove
+ * @param options - Options for removal
+ * @throws Error if instance not found or dw.json doesn't exist
+ */
+export function removeInstance(name: string, options: RemoveInstanceOptions = {}): void {
+  const dwJsonPath = options.path ?? path.join(options.workingDirectory || process.cwd(), 'dw.json');
+
+  if (!fs.existsSync(dwJsonPath)) {
+    throw new Error('No dw.json file found');
+  }
+
+  const content = fs.readFileSync(dwJsonPath, 'utf8');
+  const existing = JSON.parse(content) as DwJsonMultiConfig;
+
+  // Check if trying to remove root config
+  if (existing.name === name) {
+    throw new Error(`Cannot remove root instance "${name}". Edit dw.json manually to remove root config.`);
+  }
+
+  // Find and remove from configs array
+  if (!existing.configs || !existing.configs.some((c) => c.name === name)) {
+    throw new Error(`Instance "${name}" not found`);
+  }
+
+  existing.configs = existing.configs.filter((c) => c.name !== name);
+
+  saveDwJson(existing, dwJsonPath);
+}
+
+/**
+ * Options for setting active instance.
+ */
+export interface SetActiveInstanceOptions {
+  /** Path to dw.json */
+  path?: string;
+  /** Starting directory for search */
+  workingDirectory?: string;
+}
+
+/**
+ * Set an instance as the active default.
+ *
+ * @param name - Name of the instance to set as active
+ * @param options - Options
+ * @throws Error if instance not found or dw.json doesn't exist
+ */
+export function setActiveInstance(name: string, options: SetActiveInstanceOptions = {}): void {
+  const dwJsonPath = options.path ?? path.join(options.workingDirectory || process.cwd(), 'dw.json');
+
+  if (!fs.existsSync(dwJsonPath)) {
+    throw new Error('No dw.json file found');
+  }
+
+  const content = fs.readFileSync(dwJsonPath, 'utf8');
+  const existing = JSON.parse(content) as DwJsonMultiConfig;
+
+  // Find the target instance
+  let found = false;
+
+  // Check root config
+  if (existing.name === name) {
+    found = true;
+    existing.active = true;
+  } else if (existing.active !== undefined) {
+    existing.active = false;
+  }
+
+  // Check and update configs array
+  if (existing.configs) {
+    for (const c of existing.configs) {
+      if (c.name === name) {
+        found = true;
+        c.active = true;
+      } else if (c.active !== undefined) {
+        c.active = false;
+      }
+    }
+  }
+
+  if (!found) {
+    throw new Error(`Instance "${name}" not found`);
+  }
+
+  saveDwJson(existing, dwJsonPath);
+}
+
+/**
  * Loads configuration from a dw.json file.
  *
  * If an explicit path is provided, uses that file. Otherwise, looks for dw.json
- * in the startDir (or cwd). Does NOT search parent directories.
+ * in the workingDirectory (or cwd). Does NOT search parent directories.
  *
  * Use `findDwJson()` if you need to search upward through parent directories.
  *
@@ -216,7 +434,7 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
  * }
  *
  * // Load from specific directory
- * const result = loadDwJson({ startDir: '/path/to/project' });
+ * const result = loadDwJson({ workingDirectory: '/path/to/project' });
  *
  * // Use named instance
  * const result = loadDwJson({ instance: 'staging' });
@@ -228,7 +446,7 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | 
   const logger = getLogger();
 
   // If explicit path provided, use it. Otherwise default to ./dw.json (no upward search)
-  const dwJsonPath = options.path ?? path.join(options.startDir || process.cwd(), 'dw.json');
+  const dwJsonPath = options.path ?? path.join(options.workingDirectory || process.cwd(), 'dw.json');
 
   logger.trace({path: dwJsonPath}, '[DwJsonSource] Checking for config file');
 

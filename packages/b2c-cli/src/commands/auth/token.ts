@@ -27,7 +27,7 @@ export default class AuthToken extends OAuthCommand<typeof AuthToken> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --scope sfcc.orders --scope sfcc.products',
+    '<%= config.bin %> <%= command.id %> --auth-scope sfcc.orders --auth-scope sfcc.products',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 

@@ -1,472 +1,831 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SCAPI API Explorer</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: var(--vscode-font-family, system-ui, sans-serif);
-      font-size: var(--vscode-font-size, 13px);
-      color: var(--vscode-foreground);
-      background: var(--vscode-editor-background);
-      margin: 0;
-      padding: 1.5rem;
-    }
-    h1 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0 0 1.25rem;
-    }
-    .radio-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-    }
-    .radio-group label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-    }
-    .radio-group input[type="radio"] {
-      margin: 0;
-    }
-    .section {
-      margin-top: 1rem;
-      padding: 1rem;
-      border: 1px solid var(--vscode-widget-border);
-      border-radius: 6px;
-      background: var(--vscode-editor-inactiveSelectionBackground);
-    }
-    .section.hidden { display: none; }
-    .form-row {
-      margin-bottom: 0.75rem;
-    }
-    .form-row label {
-      display: block;
-      margin-bottom: 0.25rem;
-      color: var(--vscode-descriptionForeground);
-      font-size: 0.9em;
-    }
-    .form-row input[type="text"] {
-      width: 100%;
-      max-width: 20rem;
-      padding: 0.4rem 0.6rem;
-      font-size: 1em;
-      color: var(--vscode-input-foreground);
-      background: var(--vscode-input-background);
-      border: 1px solid var(--vscode-input-border);
-      border-radius: 4px;
-    }
-    .form-row input:focus {
-      outline: 1px solid var(--vscode-focusBorder);
-    }
-    button.primary {
-      padding: 0.5rem 1rem;
-      font-size: 1em;
-      cursor: pointer;
-      background: var(--vscode-button-background);
-      color: var(--vscode-button-foreground);
-      border: none;
-      border-radius: 4px;
-    }
-    button.primary:hover {
-      background: var(--vscode-button-hoverBackground);
-    }
-    .result-section {
-      margin-top: 1rem;
-      padding: 1rem;
-      border: 1px solid var(--vscode-inputValidation-infoBorder);
-      border-radius: 6px;
-      background: var(--vscode-inputValidation-infoBackground);
-    }
-    .result-section.hidden { display: none; }
-    .result-section h3 { font-size: 0.95rem; margin: 0 0 0.5rem; }
-    .result-section .result-row { margin-bottom: 0.5rem; font-size: 0.9em; }
-    .result-section .result-label { font-weight: 600; color: var(--vscode-descriptionForeground); }
-    .result-section .result-value { font-family: var(--vscode-editor-font-family, monospace); word-break: break-all; }
-    select {
-      width: 100%;
-      max-width: 20rem;
-      padding: 0.4rem 0.6rem;
-      font-size: 1em;
-      color: var(--vscode-input-foreground);
-      background: var(--vscode-input-background);
-      border: 1px solid var(--vscode-input-border);
-      border-radius: 4px;
-    }
-    textarea.result-body { width: 100%; min-height: 46rem; font-family: var(--vscode-editor-font-family, monospace); font-size: 0.85em; white-space: pre-wrap; word-break: break-all; margin-top: 0.25rem; resize: vertical; }
-    .scapi-call-row {
-      display: flex;
-      gap: 1.5rem;
-      margin-top: 1rem;
-      align-items: flex-start;
-    }
-    .scapi-call-fields { flex: 0 0 auto; width: 18rem; }
-    .scapi-curl-panel {
-      flex: 1 1 0;
-      min-width: 20rem;
-      padding: 1rem;
-      border: 1px solid var(--vscode-widget-border);
-      border-radius: 6px;
-      background: var(--vscode-editor-background);
-    }
-    .scapi-curl-panel h4 { font-size: 0.9rem; margin: 0 0 0.5rem; color: var(--vscode-descriptionForeground); }
-    textarea.curl-textarea {
-      width: 100%;
-      min-height: 10rem;
-      margin: 0 0 0.5rem 0;
-      padding: 0.5rem;
-      font-family: var(--vscode-editor-font-family, monospace);
-      font-size: 0.8em;
-      white-space: pre;
-      resize: vertical;
-      color: var(--vscode-foreground);
-      background: var(--vscode-input-background);
-      border: 1px solid var(--vscode-input-border);
-      border-radius: 4px;
-    }
-    .scapi-response-row {
-      margin-top: 1rem;
-      width: 100%;
-    }
-  </style>
-</head>
-<body>
-  <h1>SCAPI API Explorer</h1>
-  <div class="radio-group">
-    <label>
-      <input type="radio" name="slas-mode" value="create" checked />
-      Create SLAS client
-    </label>
-    <label>
-      <input type="radio" name="slas-mode" value="existing" />
-      Use existing SLAS client
-    </label>
-  </div>
-
-  <div id="create-slas-section" class="section">
-    <div class="form-row">
-      <label for="tenant-id">Tenant Id</label>
-      <input type="text" id="tenant-id" placeholder="Tenant Id" />
-    </div>
-    <div class="form-row">
-      <label for="channel-id">Channel Id</label>
-      <input type="text" id="channel-id" placeholder="Channel Id" />
-    </div>
-    <button type="button" class="primary" id="create-slas-btn">Create</button>
-  </div>
-
-  <div id="existing-slas-section" class="section hidden">
-    <p style="color: var(--vscode-descriptionForeground); margin: 0;">Use existing SLAS client — options coming soon.</p>
-  </div>
-
-  <div id="create-result-section" class="result-section hidden">
-    <h3>SLAS client created</h3>
-    <div class="result-row"><span class="result-label">Client ID:</span><br /><span class="result-value" id="result-client-id"></span></div>
-    <div class="result-row"><span class="result-label">Client Secret:</span><br /><span class="result-value" id="result-client-secret"></span></div>
-  </div>
-
-  <div id="bearer-token-section" class="section">
-    <h3 style="margin-top: 0; font-size: 1rem;">Generate Bearer Token</h3>
-    <div class="form-row">
-      <label for="slas-client-id">SLAS Client Id</label>
-      <input type="text" id="slas-client-id" placeholder="SLAS Client Id" />
-    </div>
-    <div class="form-row">
-      <label for="slas-client-secret">SLAS Client Secret</label>
-      <input type="text" id="slas-client-secret" placeholder="SLAS Client Secret" />
-    </div>
-    <button type="button" class="primary" id="generate-bearer-btn">Generate Bear Token</button>
-    <div id="bearer-result" class="result-section hidden" style="margin-top: 1rem;">
-      <h3 class="bearer-result-title">Token</h3>
-      <div class="result-value bearer-result-value" id="bearer-result-value"></div>
-    </div>
-    <div id="bearer-error" class="result-section hidden" style="margin-top: 1rem; border-color: var(--vscode-inputValidation-errorBorder); background: var(--vscode-inputValidation-errorBackground);">
-      <h3 class="bearer-error-title">Error</h3>
-      <div class="result-value bearer-error-value" id="bearer-error-value"></div>
-    </div>
-  </div>
-
-  <div id="scapi-call-section" class="section">
-    <h3 style="margin-top: 0; font-size: 1rem;">SCAPI Shop API Call</h3>
-    <div class="scapi-call-row">
-      <div class="scapi-call-fields">
-        <div class="form-row">
-          <button type="button" class="primary" id="load-schemas-btn">Load Schemas</button>
-        </div>
-        <div class="form-row">
-          <label for="api-family">API Family</label>
-          <select id="api-family">
-            <option value="">-- Select API Family --</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label for="api-name">API Name</label>
-          <select id="api-name">
-            <option value="">-- Select API Name --</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label for="api-path">API path</label>
-          <input type="text" id="api-path" placeholder="e.g. products/search" value="product-search" />
-        </div>
-        <div class="form-row">
-          <label for="api-query">query</label>
-          <input type="text" id="api-query" placeholder="optional query" value="shirt" />
-        </div>
-        <button type="button" class="primary" id="execute-api-btn">Execute API</button>
-      </div>
-      <div class="scapi-curl-panel">
-        <h4>Generated curl</h4>
-        <textarea id="curl-display" class="curl-textarea" placeholder="Fill in the fields to see the curl request."></textarea>
-        <button type="button" class="primary" id="copy-curl-btn">Copy</button>
-      </div>
-    </div>
-    <div class="scapi-response-row">
-      <div id="scapi-result" class="result-section hidden">
-        <h3>Response</h3>
-        <textarea id="scapi-result-body" class="result-body" readonly></textarea>
-        <button type="button" class="primary" id="copy-response-btn" style="margin-top: 0.5rem;">Copy</button>
-      </div>
-      <div id="scapi-error" class="result-section hidden" style="border-color: var(--vscode-inputValidation-errorBorder); background: var(--vscode-inputValidation-errorBackground);">
-        <h3>Error</h3>
-        <div class="result-value" id="scapi-error-value"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    (function() {
-      const vscode = acquireVsCodeApi();
-      const SCAPI_PREFILL = __SCAPI_PREFILL__;
-      const createSection = document.getElementById("create-slas-section");
-      const existingSection = document.getElementById("existing-slas-section");
-      const radios = document.querySelectorAll('input[name="slas-mode"]');
-      const tenantIdInput = document.getElementById("tenant-id");
-      const channelIdInput = document.getElementById("channel-id");
-      const createBtn = document.getElementById("create-slas-btn");
-      const resultSection = document.getElementById("create-result-section");
-      const resultClientId = document.getElementById("result-client-id");
-      const resultClientSecret = document.getElementById("result-client-secret");
-      const slasClientIdInput = document.getElementById("slas-client-id");
-      const slasClientSecretInput = document.getElementById("slas-client-secret");
-      const generateBearerBtn = document.getElementById("generate-bearer-btn");
-      const bearerResult = document.getElementById("bearer-result");
-      const bearerResultValue = document.getElementById("bearer-result-value");
-      const bearerError = document.getElementById("bearer-error");
-      const bearerErrorValue = document.getElementById("bearer-error-value");
-      const loadSchemasBtn = document.getElementById("load-schemas-btn");
-      const apiFamilySelect = document.getElementById("api-family");
-      const apiNameSelect = document.getElementById("api-name");
-      const apiPathInput = document.getElementById("api-path");
-      const apiQueryInput = document.getElementById("api-query");
-      const executeApiBtn = document.getElementById("execute-api-btn");
-      const scapiResult = document.getElementById("scapi-result");
-      const scapiResultBody = document.getElementById("scapi-result-body");
-      const scapiError = document.getElementById("scapi-error");
-      const scapiErrorValue = document.getElementById("scapi-error-value");
-
-      var lastBearerToken = "";
-      var schemasList = [];
-      var shortCode = (SCAPI_PREFILL && SCAPI_PREFILL.shortCode) ? SCAPI_PREFILL.shortCode : "";
-
-      if (SCAPI_PREFILL) {
-        if (SCAPI_PREFILL.tenantId) tenantIdInput.value = SCAPI_PREFILL.tenantId;
-        if (SCAPI_PREFILL.channelId) channelIdInput.value = SCAPI_PREFILL.channelId;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCAPI API Explorer</title>
+    <style>
+      * {
+        box-sizing: border-box;
       }
-
-      function buildOrgId(tenantId) {
-        var t = (tenantId || "").trim();
-        return t.startsWith("f_ecom_") ? t : (t ? "f_ecom_" + t : "");
+      body {
+        font-family: var(--vscode-font-family, system-ui, sans-serif);
+        font-size: var(--vscode-font-size, 13px);
+        color: var(--vscode-foreground);
+        background: var(--vscode-editor-background);
+        margin: 0;
+        padding: 1.5rem;
       }
+      h1 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0 0 1.25rem;
+      }
+      .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+      }
+      .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+      }
+      .radio-group input[type='radio'] {
+        margin: 0;
+      }
+      .section {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 6px;
+        background: var(--vscode-editor-inactiveSelectionBackground);
+      }
+      .hidden {
+        display: none !important;
+      }
+      .section.hidden {
+        display: none;
+      }
+      .form-row {
+        margin-bottom: 0.75rem;
+      }
+      .form-row label {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.9em;
+      }
+      .form-row input[type='text'] {
+        width: 100%;
+        max-width: 20rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 1em;
+        color: var(--vscode-input-foreground);
+        background: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+      }
+      .form-row-narrow input[type='text'] {
+        max-width: 10rem;
+      }
+      .create-slas-row {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+      }
+      .create-slas-form {
+        flex: 0 0 auto;
+      }
+      .create-slas-form-inline {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .create-slas-form-inline .form-row {
+        margin-bottom: 0;
+      }
+      .create-slas-result {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.85em;
+        padding: 0.75rem;
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 4px;
+        background: #fff;
+      }
+      .create-slas-result .result-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+      .create-slas-result .result-row-inline {
+        margin-bottom: 0.15rem;
+        word-break: break-all;
+      }
+      .create-slas-result .result-row-inline .result-value {
+        font-family: var(--vscode-editor-font-family, monospace);
+      }
+      .create-slas-scopes {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.85em;
+        padding: 0.75rem;
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 4px;
+        background: #fff;
+      }
+      .create-slas-scopes .result-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+      .result-scopes-list {
+        font-size: 0.8em;
+        max-height: 7em;
+        overflow-y: auto;
+        word-break: break-all;
+        white-space: pre;
+      }
+      .form-row input:focus {
+        outline: 1px solid var(--vscode-focusBorder);
+      }
+      button.primary {
+        padding: 0.5rem 1rem;
+        font-size: 1em;
+        cursor: pointer;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+      }
+      button.primary:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
+      .result-section {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--vscode-inputValidation-infoBorder);
+        border-radius: 6px;
+        background: var(--vscode-inputValidation-infoBackground);
+      }
+      .result-section.hidden {
+        display: none;
+      }
+      .result-section h3 {
+        font-size: 0.95rem;
+        margin: 0 0 0.5rem;
+      }
+      .result-section .result-row {
+        margin-bottom: 0.5rem;
+        font-size: 0.9em;
+      }
+      .result-section .result-label {
+        font-weight: 600;
+        color: var(--vscode-descriptionForeground);
+      }
+      .result-section .result-value {
+        font-family: var(--vscode-editor-font-family, monospace);
+        word-break: break-all;
+      }
+      .bearer-result-value {
+        font-size: 0.75em;
+        line-height: 1.3;
+        max-height: 2.6em;
+        overflow-y: auto;
+      }
+      .token-heading-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .token-heading-row h3 {
+        margin: 0;
+      }
+      .copy-icon-btn,
+      .copy-token-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .copy-token-btn:hover {
+        background: var(--vscode-toolbar-hoverBackground);
+      }
+      .copy-icon-btn svg,
+      .copy-token-btn svg {
+        width: 0.9rem;
+        height: 0.9rem;
+      }
+      .input-with-copy {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      .input-with-copy input {
+        flex: 1;
+        min-width: 0;
+      }
+      .bearer-token-row {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+      }
+      .bearer-token-row .form-row {
+        margin-bottom: 0;
+        min-width: 0;
+      }
+      .bearer-token-row .bearer-token-cell {
+        flex: 1;
+        min-width: 8rem;
+      }
+      .token-display-with-copy {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.25rem;
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+        background: var(--vscode-input-background);
+        padding: 0.35rem 0.5rem;
+        min-height: 2.5rem;
+      }
+      .token-display-with-copy .bearer-result-value {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        border: none;
+        background: transparent;
+        padding: 0;
+        max-height: 2.6em;
+      }
+      .form-row-inline {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .form-row-inline .form-row {
+        flex: 1;
+        margin-bottom: 0;
+        min-width: 0;
+      }
+      .panel-heading-with-copy {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .panel-heading-with-copy h3,
+      .panel-heading-with-copy h4 {
+        margin: 0;
+      }
+      select {
+        width: 100%;
+        max-width: 20rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 1em;
+        color: var(--vscode-input-foreground);
+        background: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+      }
+      textarea.result-body {
+        width: 100%;
+        min-height: 46rem;
+        font-family: var(--vscode-editor-font-family, monospace);
+        font-size: 0.85em;
+        white-space: pre-wrap;
+        word-break: break-all;
+        margin-top: 0.25rem;
+        resize: vertical;
+      }
+      .scapi-call-row {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        align-items: flex-start;
+      }
+      .scapi-call-fields {
+        flex: 0 0 auto;
+        width: 18rem;
+      }
+      .scapi-curl-panel {
+        flex: 1 1 0;
+        min-width: 20rem;
+        padding: 1rem;
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 6px;
+        background: var(--vscode-editor-background);
+      }
+      .scapi-curl-panel h4 {
+        font-size: 0.9rem;
+        margin: 0 0 0.5rem;
+        color: var(--vscode-descriptionForeground);
+      }
+      textarea.curl-textarea {
+        width: 100%;
+        min-height: 10rem;
+        margin: 0 0 0.5rem 0;
+        padding: 0.5rem;
+        font-family: var(--vscode-editor-font-family, monospace);
+        font-size: 0.8em;
+        white-space: pre;
+        resize: vertical;
+        color: var(--vscode-foreground);
+        background: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+      }
+      .scapi-response-row {
+        margin-top: 1rem;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SCAPI API Explorer</h1>
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="slas-mode" value="create" checked />
+        Create SLAS client
+      </label>
+      <label>
+        <input type="radio" name="slas-mode" value="existing" />
+        Use existing SLAS client
+      </label>
+    </div>
 
-      function updateCurlDisplay() {
-        var curlEl = document.getElementById("curl-display");
-        var tenantId = (tenantIdInput.value || "").trim();
-        var channelId = (channelIdInput.value || "").trim();
-        var apiFamily = (apiFamilySelect.value || "").trim();
-        var apiName = (apiNameSelect.value || "").trim();
-        var apiPath = (apiPathInput.value || "").trim().replace(/^\//, "");
-        var query = (apiQueryInput.value || "").trim();
-        var orgId = buildOrgId(tenantId);
-        var sc = shortCode || "$SHORT_CODE";
-        var auth = lastBearerToken ? "Bearer " + lastBearerToken : "Bearer <generate_token_first>";
-        if (!sc || !orgId || !apiFamily || !apiName) {
-          curlEl.value = "Fill in Tenant Id, Channel Id, API Family, and API Name to see the curl request.";
-          return;
+    <div id="create-slas-section" class="section">
+      <div class="create-slas-row">
+        <div class="create-slas-form">
+          <div class="create-slas-form-inline">
+            <div class="form-row form-row-narrow">
+              <label for="tenant-id">Tenant Id</label>
+              <input type="text" id="tenant-id" placeholder="Tenant Id" />
+            </div>
+            <div class="form-row form-row-narrow">
+              <label for="channel-id">Channel Id</label>
+              <input type="text" id="channel-id" placeholder="Channel Id" />
+            </div>
+            <button type="button" class="primary" id="create-slas-btn">Create SLAS client</button>
+          </div>
+        </div>
+        <div id="create-result-section" class="create-slas-result hidden">
+          <span class="result-label">SLAS client created</span>
+          <div class="result-row-inline">
+            <span class="result-label">Client ID:</span> <span class="result-value" id="result-client-id"></span>
+          </div>
+          <div class="result-row-inline">
+            <span class="result-label">Client Secret:</span>
+            <span class="result-value" id="result-client-secret"></span>
+          </div>
+        </div>
+        <div id="create-scopes-section" class="create-slas-scopes hidden">
+          <span class="result-label">Scopes</span>
+          <div class="result-value result-scopes-list" id="result-scopes"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="existing-slas-section" class="section hidden">
+      <p style="color: var(--vscode-descriptionForeground); margin: 0">
+        Use existing SLAS client — options coming soon.
+      </p>
+    </div>
+
+    <div id="bearer-token-section" class="section">
+      <h3 style="margin-top: 0; font-size: 1rem">Generate Bearer Token</h3>
+      <div class="bearer-token-row">
+        <div class="form-row" style="flex: 0 1 14rem">
+          <label for="slas-client-id">SLAS Client Id</label>
+          <div class="input-with-copy">
+            <input type="text" id="slas-client-id" placeholder="SLAS Client Id" />
+            <button type="button" class="copy-icon-btn" id="copy-client-id-btn" title="Copy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="form-row" style="flex: 0 1 14rem">
+          <label for="slas-client-secret">SLAS Client Secret</label>
+          <div class="input-with-copy">
+            <input type="text" id="slas-client-secret" placeholder="SLAS Client Secret" />
+            <button type="button" class="copy-icon-btn" id="copy-client-secret-btn" title="Copy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="bearer-result" class="form-row bearer-token-cell">
+          <label>Token</label>
+          <div class="token-display-with-copy">
+            <div class="result-value bearer-result-value" id="bearer-result-value"></div>
+            <button type="button" class="copy-icon-btn" id="copy-token-btn" title="Copy token">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="primary" id="generate-bearer-btn">Generate Bear Token</button>
+      <div
+        id="bearer-error"
+        class="result-section hidden"
+        style="
+          margin-top: 1rem;
+          border-color: var(--vscode-inputValidation-errorBorder);
+          background: var(--vscode-inputValidation-errorBackground);
+        "
+      >
+        <h3 class="bearer-error-title">Error</h3>
+        <div class="result-value bearer-error-value" id="bearer-error-value"></div>
+      </div>
+    </div>
+
+    <div id="scapi-call-section" class="section">
+      <h3 style="margin-top: 0; font-size: 1rem">SCAPI Shop API Call</h3>
+      <div class="scapi-call-row">
+        <div class="scapi-call-fields">
+          <div class="form-row">
+            <label for="api-family">API Family</label>
+            <select id="api-family">
+              <option value="">-- Select API Family --</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="api-name">API Name</label>
+            <select id="api-name">
+              <option value="">-- Select API Name --</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>API type</label>
+            <span id="api-type-value" aria-live="polite">—</span>
+          </div>
+          <div class="form-row">
+            <label for="api-path">API path</label>
+            <select id="api-path">
+              <option value="">-- Select API path --</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="api-query">query</label>
+            <input type="text" id="api-query" placeholder="optional query" value="shirt" />
+          </div>
+          <button type="button" class="primary" id="execute-api-btn">Execute API</button>
+        </div>
+        <div class="scapi-curl-panel">
+          <div class="panel-heading-with-copy">
+            <h4>Generated curl</h4>
+            <button type="button" class="copy-icon-btn" id="copy-curl-btn" title="Copy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <textarea
+            id="curl-display"
+            class="curl-textarea"
+            placeholder="Fill in the fields to see the curl request."
+          ></textarea>
+        </div>
+      </div>
+      <div class="scapi-response-row">
+        <div id="scapi-result" class="result-section hidden">
+          <div class="panel-heading-with-copy">
+            <h3>Response</h3>
+            <button type="button" class="copy-icon-btn" id="copy-response-btn" title="Copy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <textarea id="scapi-result-body" class="result-body" readonly></textarea>
+        </div>
+        <div
+          id="scapi-error"
+          class="result-section hidden"
+          style="
+            border-color: var(--vscode-inputValidation-errorBorder);
+            background: var(--vscode-inputValidation-errorBackground);
+          "
+        >
+          <h3>Error</h3>
+          <div class="result-value" id="scapi-error-value"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const vscode = acquireVsCodeApi();
+        const SCAPI_PREFILL = __SCAPI_PREFILL__;
+        const createSection = document.getElementById('create-slas-section');
+        const existingSection = document.getElementById('existing-slas-section');
+        const radios = document.querySelectorAll('input[name="slas-mode"]');
+        const tenantIdInput = document.getElementById('tenant-id');
+        const channelIdInput = document.getElementById('channel-id');
+        const createBtn = document.getElementById('create-slas-btn');
+        const resultSection = document.getElementById('create-result-section');
+        const resultScopesSection = document.getElementById('create-scopes-section');
+        const resultClientId = document.getElementById('result-client-id');
+        const resultClientSecret = document.getElementById('result-client-secret');
+        const resultScopes = document.getElementById('result-scopes');
+        const slasClientIdInput = document.getElementById('slas-client-id');
+        const slasClientSecretInput = document.getElementById('slas-client-secret');
+        const generateBearerBtn = document.getElementById('generate-bearer-btn');
+        const bearerResult = document.getElementById('bearer-result');
+        const bearerResultValue = document.getElementById('bearer-result-value');
+        const bearerError = document.getElementById('bearer-error');
+        const bearerErrorValue = document.getElementById('bearer-error-value');
+        const apiFamilySelect = document.getElementById('api-family');
+        const apiNameSelect = document.getElementById('api-name');
+        const apiPathSelect = document.getElementById('api-path');
+        const apiQueryInput = document.getElementById('api-query');
+        const executeApiBtn = document.getElementById('execute-api-btn');
+        const scapiResult = document.getElementById('scapi-result');
+        const scapiResultBody = document.getElementById('scapi-result-body');
+        const scapiError = document.getElementById('scapi-error');
+        const scapiErrorValue = document.getElementById('scapi-error-value');
+
+        var lastBearerToken = '';
+        var schemasList = [];
+        var shortCode = SCAPI_PREFILL && SCAPI_PREFILL.shortCode ? SCAPI_PREFILL.shortCode : '';
+
+        if (SCAPI_PREFILL) {
+          if (SCAPI_PREFILL.tenantId) tenantIdInput.value = SCAPI_PREFILL.tenantId;
+          if (SCAPI_PREFILL.channelId) channelIdInput.value = SCAPI_PREFILL.channelId;
         }
-        var pathPart = apiPath ? "/" + apiPath : "";
-        var qs = "siteId=" + encodeURIComponent(channelId || "$SITE_ID");
-        if (query) qs += "&q=" + encodeURIComponent(query);
-        var url = "https://" + sc + ".api.commercecloud.salesforce.com/" + apiFamily + "/" + apiName + "/v1/organizations/" + orgId + pathPart + "?" + qs;
-        curlEl.value = 'curl -X GET "' + url + '" \\\n  -H "Authorization: ' + auth + '"';
-      }
 
-      function updateSections() {
-        const value = document.querySelector('input[name="slas-mode"]:checked').value;
-        if (value === "create") {
-          createSection.classList.remove("hidden");
-          existingSection.classList.add("hidden");
-        } else {
-          createSection.classList.add("hidden");
-          existingSection.classList.remove("hidden");
+        function buildOrgId(tenantId) {
+          var t = (tenantId || '').trim();
+          return t.startsWith('f_ecom_') ? t : t ? 'f_ecom_' + t : '';
         }
-      }
 
-      radios.forEach(function(r) {
-        r.addEventListener("change", updateSections);
-      });
-      updateSections();
+        function updateCurlDisplay() {
+          var curlEl = document.getElementById('curl-display');
+          var tenantId = (tenantIdInput.value || '').trim();
+          var channelId = (channelIdInput.value || '').trim();
+          var apiFamily = (apiFamilySelect.value || '').trim();
+          var apiName = (apiNameSelect.value || '').trim();
+          var apiPath = (apiPathSelect.value || '').trim().replace(/^\//, '');
+          var query = (apiQueryInput.value || '').trim();
+          var orgId = buildOrgId(tenantId);
+          var sc = shortCode || '$SHORT_CODE';
+          var auth = lastBearerToken ? 'Bearer ' + lastBearerToken : 'Bearer <generate_token_first>';
+          if (!sc || !orgId || !apiFamily || !apiName) {
+            curlEl.value = 'Fill in Tenant Id, Channel Id, API Family, and API Name to see the curl request.';
+            return;
+          }
+          var pathPart = apiPath ? '/' + apiPath : '';
+          var qs = 'siteId=' + encodeURIComponent(channelId || '$SITE_ID');
+          if (query) qs += '&q=' + encodeURIComponent(query);
+          var url =
+            'https://' +
+            sc +
+            '.api.commercecloud.salesforce.com/' +
+            apiFamily +
+            '/' +
+            apiName +
+            '/v1/organizations/' +
+            orgId +
+            pathPart +
+            '?' +
+            qs;
+          curlEl.value = 'curl -X GET "' + url + '" \\\n  -H "Authorization: ' + auth + '"';
+        }
 
-      createBtn.addEventListener("click", function() {
-        resultSection.classList.add("hidden");
-        const tenantId = (tenantIdInput.value || "").trim();
-        const channelId = (channelIdInput.value || "").trim();
-        vscode.postMessage({
-          type: "scapiCreateSlasClient",
-          tenantId: tenantId,
-          channelId: channelId
-        });
-      });
-
-      window.addEventListener("message", function(event) {
-        const msg = event.data;
-        if (msg.type === "scapiCreateSlasClientResult") {
-          if (msg.success && msg.clientId !== undefined) {
-            resultClientId.textContent = msg.clientId;
-            resultClientSecret.textContent = msg.secret !== undefined ? msg.secret : "";
-            resultSection.classList.remove("hidden");
-            slasClientIdInput.value = msg.clientId;
-            if (msg.secret !== undefined) slasClientSecretInput.value = msg.secret;
+        function updateSections() {
+          const value = document.querySelector('input[name="slas-mode"]:checked').value;
+          if (value === 'create') {
+            createSection.classList.remove('hidden');
+            existingSection.classList.add('hidden');
+          } else {
+            createSection.classList.add('hidden');
+            existingSection.classList.remove('hidden');
           }
         }
-        if (msg.type === "scapiGenerateBearerTokenResult") {
-          bearerResult.classList.add("hidden");
-          bearerError.classList.add("hidden");
-          if (msg.success && msg.token !== undefined) {
-            bearerResultValue.textContent = msg.token;
-            bearerResult.classList.remove("hidden");
-            lastBearerToken = msg.token;
+
+        radios.forEach(function (r) {
+          r.addEventListener('change', updateSections);
+        });
+        updateSections();
+
+        createBtn.addEventListener('click', function () {
+          resultSection.classList.add('hidden');
+          resultScopesSection.classList.add('hidden');
+          const tenantId = (tenantIdInput.value || '').trim();
+          const channelId = (channelIdInput.value || '').trim();
+          vscode.postMessage({
+            type: 'scapiCreateSlasClient',
+            tenantId: tenantId,
+            channelId: channelId,
+          });
+        });
+
+        window.addEventListener('message', function (event) {
+          const msg = event.data;
+          if (msg.type === 'scapiCreateSlasClientResult') {
+            if (msg.success && msg.clientId !== undefined) {
+              resultClientId.textContent = msg.clientId;
+              resultClientSecret.textContent = msg.secret !== undefined ? msg.secret : '';
+              if (msg.scopes && Array.isArray(msg.scopes)) {
+                resultScopes.textContent = msg.scopes.join('\n');
+              } else {
+                resultScopes.textContent = '';
+              }
+              resultSection.classList.remove('hidden');
+              resultScopesSection.classList.remove('hidden');
+              slasClientIdInput.value = msg.clientId;
+              if (msg.secret !== undefined) slasClientSecretInput.value = msg.secret;
+            }
+          }
+          if (msg.type === 'scapiGenerateBearerTokenResult') {
+            bearerError.classList.add('hidden');
+            if (msg.success && msg.token !== undefined) {
+              bearerResultValue.textContent = msg.token;
+              lastBearerToken = msg.token;
+              updateCurlDisplay();
+              var tenantId = (tenantIdInput.value || '').trim();
+              if (tenantId) vscode.postMessage({type: 'scapiFetchSchemas', tenantId: tenantId});
+            } else if (msg.error !== undefined) {
+              bearerErrorValue.textContent = msg.error;
+              bearerError.classList.remove('hidden');
+            }
+          }
+          if (msg.type === 'scapiSchemasListResult') {
+            if (msg.success && msg.schemas) {
+              schemasList = msg.schemas;
+              var apiTypeEl = document.getElementById('api-type-value');
+              if (apiTypeEl) apiTypeEl.textContent = '—';
+              var families = msg.apiFamilies || [];
+              apiFamilySelect.innerHTML = '<option value="">-- Select API Family --</option>';
+              families.forEach(function (f) {
+                var opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                apiFamilySelect.appendChild(opt);
+              });
+              apiNameSelect.innerHTML = '<option value="">-- Select API Name --</option>';
+              apiPathSelect.innerHTML = '<option value="">-- Select API path --</option>';
+            }
+          }
+          if (msg.type === 'scapiSchemaPathsResult') {
+            var apiTypeEl = document.getElementById('api-type-value');
+            if (apiTypeEl) apiTypeEl.textContent = msg.apiType && typeof msg.apiType === 'string' ? msg.apiType : '—';
+            var currentPath = (apiPathSelect.value || '').trim();
+            apiPathSelect.innerHTML = '<option value="">-- Select API path --</option>';
+            if (msg.success && msg.paths && Array.isArray(msg.paths)) {
+              msg.paths.forEach(function (p) {
+                var opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                apiPathSelect.appendChild(opt);
+                if (currentPath && p === currentPath) apiPathSelect.value = p;
+              });
+              if (!currentPath && msg.paths.length > 0) apiPathSelect.value = msg.paths[0];
+            }
             updateCurlDisplay();
-          } else if (msg.error !== undefined) {
-            bearerErrorValue.textContent = msg.error;
-            bearerError.classList.remove("hidden");
           }
-        }
-        if (msg.type === "scapiSchemasListResult") {
-          if (msg.success && msg.schemas) {
-            schemasList = msg.schemas;
-            var families = msg.apiFamilies || [];
-            apiFamilySelect.innerHTML = "<option value=\"\">-- Select API Family --</option>";
-            families.forEach(function(f) {
-              var opt = document.createElement("option");
-              opt.value = f;
-              opt.textContent = f;
-              apiFamilySelect.appendChild(opt);
+          if (msg.type === 'scapiExecuteApiResult') {
+            scapiResult.classList.add('hidden');
+            scapiError.classList.add('hidden');
+            if (msg.success && msg.body !== undefined) {
+              scapiResultBody.value = typeof msg.body === 'string' ? msg.body : JSON.stringify(msg.body, null, 2);
+              scapiResult.classList.remove('hidden');
+            } else if (msg.error !== undefined) {
+              scapiErrorValue.textContent = msg.error;
+              scapiError.classList.remove('hidden');
+            }
+          }
+        });
+
+        apiFamilySelect.addEventListener('change', function () {
+          var family = apiFamilySelect.value;
+          var apiTypeEl = document.getElementById('api-type-value');
+          if (apiTypeEl) apiTypeEl.textContent = '—';
+          apiNameSelect.innerHTML = '<option value="">-- Select API Name --</option>';
+          apiPathSelect.innerHTML = '<option value="">-- Select API path --</option>';
+          if (!family) {
+            updateCurlDisplay();
+            return;
+          }
+          var names = [];
+          schemasList.forEach(function (s) {
+            if (s.apiFamily === family && s.apiName && names.indexOf(s.apiName) === -1) names.push(s.apiName);
+          });
+          names.sort();
+          names.forEach(function (n) {
+            var opt = document.createElement('option');
+            opt.value = n;
+            opt.textContent = n;
+            apiNameSelect.appendChild(opt);
+          });
+          updateCurlDisplay();
+        });
+
+        function fetchSchemaPathsIfReady() {
+          var tenantId = (tenantIdInput.value || '').trim();
+          var apiFamily = (apiFamilySelect.value || '').trim();
+          var apiName = (apiNameSelect.value || '').trim();
+          var apiTypeEl = document.getElementById('api-type-value');
+          if (tenantId && apiFamily && apiName) {
+            vscode.postMessage({
+              type: 'scapiFetchSchemaPaths',
+              tenantId: tenantId,
+              apiFamily: apiFamily,
+              apiName: apiName,
             });
-            apiNameSelect.innerHTML = "<option value=\"\">-- Select API Name --</option>";
+          } else {
+            if (apiTypeEl) apiTypeEl.textContent = '—';
+            apiPathSelect.innerHTML = '<option value="">-- Select API path --</option>';
+            updateCurlDisplay();
           }
         }
-        if (msg.type === "scapiExecuteApiResult") {
-          scapiResult.classList.add("hidden");
-          scapiError.classList.add("hidden");
-          if (msg.success && msg.body !== undefined) {
-            scapiResultBody.value = typeof msg.body === "string" ? msg.body : JSON.stringify(msg.body, null, 2);
-            scapiResult.classList.remove("hidden");
-          } else if (msg.error !== undefined) {
-            scapiErrorValue.textContent = msg.error;
-            scapiError.classList.remove("hidden");
-          }
-        }
-      });
 
-      apiFamilySelect.addEventListener("change", function() {
-        var family = apiFamilySelect.value;
-        apiNameSelect.innerHTML = "<option value=\"\">-- Select API Name --</option>";
-        if (!family) return;
-        var names = [];
-        schemasList.forEach(function(s) {
-          if (s.apiFamily === family && s.apiName && names.indexOf(s.apiName) === -1) names.push(s.apiName);
+        apiNameSelect.addEventListener('change', function () {
+          fetchSchemaPathsIfReady();
+          updateCurlDisplay();
         });
-        names.sort();
-        names.forEach(function(n) {
-          var opt = document.createElement("option");
-          opt.value = n;
-          opt.textContent = n;
-          apiNameSelect.appendChild(opt);
+
+        [tenantIdInput, channelIdInput, apiQueryInput].forEach(function (el) {
+          el.addEventListener('input', updateCurlDisplay);
+          el.addEventListener('change', updateCurlDisplay);
         });
+        apiPathSelect.addEventListener('change', updateCurlDisplay);
+
+        function copyWithFeedback(btn, text, fallbackTitle) {
+          if (!text) return;
+          navigator.clipboard
+            .writeText(text)
+            .then(function () {
+              var t = btn.getAttribute('title') || fallbackTitle;
+              btn.setAttribute('title', 'Copied!');
+              setTimeout(function () {
+                btn.setAttribute('title', t);
+              }, 2000);
+            })
+            .catch(function () {});
+        }
+
+        var copyTokenBtn = document.getElementById('copy-token-btn');
+        copyTokenBtn.addEventListener('click', function () {
+          copyWithFeedback(copyTokenBtn, (bearerResultValue.textContent || '').trim(), 'Copy token');
+        });
+
+        var copyClientIdBtn = document.getElementById('copy-client-id-btn');
+        copyClientIdBtn.addEventListener('click', function () {
+          copyWithFeedback(copyClientIdBtn, (slasClientIdInput.value || '').trim(), 'Copy');
+        });
+
+        var copyClientSecretBtn = document.getElementById('copy-client-secret-btn');
+        copyClientSecretBtn.addEventListener('click', function () {
+          copyWithFeedback(copyClientSecretBtn, (slasClientSecretInput.value || '').trim(), 'Copy');
+        });
+
+        var copyCurlBtn = document.getElementById('copy-curl-btn');
+        copyCurlBtn.addEventListener('click', function () {
+          var text = (document.getElementById('curl-display').value || '').trim();
+          if (text.startsWith('Fill in ')) return;
+          copyWithFeedback(copyCurlBtn, text, 'Copy');
+        });
+
+        var copyResponseBtn = document.getElementById('copy-response-btn');
+        copyResponseBtn.addEventListener('click', function () {
+          copyWithFeedback(copyResponseBtn, (scapiResultBody.value || '').trim(), 'Copy');
+        });
+
+        executeApiBtn.addEventListener('click', function () {
+          var curlEl = document.getElementById('curl-display');
+          var curlText = (curlEl.value || '').trim();
+          if (!curlText || curlText.startsWith('Fill in ')) {
+            scapiResult.classList.add('hidden');
+            scapiErrorValue.textContent = 'Enter or generate a valid curl command in the curl box first.';
+            scapiError.classList.remove('hidden');
+            return;
+          }
+          vscode.postMessage({
+            type: 'scapiExecuteCurl',
+            curlText: curlText,
+          });
+        });
+
+        generateBearerBtn.addEventListener('click', function () {
+          const clientId = (slasClientIdInput.value || '').trim();
+          const clientSecret = (slasClientSecretInput.value || '').trim();
+          const tenantId = (tenantIdInput.value || '').trim();
+          const channelId = (channelIdInput.value || '').trim();
+          vscode.postMessage({
+            type: 'scapiGenerateBearerToken',
+            clientId: clientId,
+            clientSecret: clientSecret,
+            tenantId: tenantId,
+            channelId: channelId,
+          });
+        });
+
         updateCurlDisplay();
-      });
-
-      [tenantIdInput, channelIdInput, apiPathInput, apiQueryInput].forEach(function(el) {
-        el.addEventListener("input", updateCurlDisplay);
-        el.addEventListener("change", updateCurlDisplay);
-      });
-      apiNameSelect.addEventListener("change", updateCurlDisplay);
-
-      loadSchemasBtn.addEventListener("click", function() {
-        var tenantId = (tenantIdInput.value || "").trim();
-        vscode.postMessage({ type: "scapiFetchSchemas", tenantId: tenantId });
-      });
-
-      var copyCurlBtn = document.getElementById("copy-curl-btn");
-      copyCurlBtn.addEventListener("click", function() {
-        var curlEl = document.getElementById("curl-display");
-        var text = (curlEl.value || "").trim();
-        if (!text || text.startsWith("Fill in ")) return;
-        navigator.clipboard.writeText(text).then(function() {
-          var label = copyCurlBtn.textContent;
-          copyCurlBtn.textContent = "Copied!";
-          setTimeout(function() { copyCurlBtn.textContent = label; }, 2000);
-        }).catch(function() {});
-      });
-
-      var copyResponseBtn = document.getElementById("copy-response-btn");
-      copyResponseBtn.addEventListener("click", function() {
-        var text = (scapiResultBody.value || "").trim();
-        if (!text) return;
-        navigator.clipboard.writeText(text).then(function() {
-          var label = copyResponseBtn.textContent;
-          copyResponseBtn.textContent = "Copied!";
-          setTimeout(function() { copyResponseBtn.textContent = label; }, 2000);
-        }).catch(function() {});
-      });
-
-      executeApiBtn.addEventListener("click", function() {
-        var curlEl = document.getElementById("curl-display");
-        var curlText = (curlEl.value || "").trim();
-        if (!curlText || curlText.startsWith("Fill in ")) {
-          scapiResult.classList.add("hidden");
-          scapiErrorValue.textContent = "Enter or generate a valid curl command in the curl box first.";
-          scapiError.classList.remove("hidden");
-          return;
-        }
-        vscode.postMessage({
-          type: "scapiExecuteCurl",
-          curlText: curlText
-        });
-      });
-
-      generateBearerBtn.addEventListener("click", function() {
-        const clientId = (slasClientIdInput.value || "").trim();
-        const clientSecret = (slasClientSecretInput.value || "").trim();
-        const tenantId = (tenantIdInput.value || "").trim();
-        const channelId = (channelIdInput.value || "").trim();
-        vscode.postMessage({
-          type: "scapiGenerateBearerToken",
-          clientId: clientId,
-          clientSecret: clientSecret,
-          tenantId: tenantId,
-          channelId: channelId
-        });
-      });
-
-      updateCurlDisplay();
-    })();
-  </script>
-</body>
+      })();
+    </script>
+  </body>
 </html>

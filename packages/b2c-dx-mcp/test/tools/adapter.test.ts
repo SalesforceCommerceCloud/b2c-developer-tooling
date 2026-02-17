@@ -12,12 +12,20 @@ import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {createMockResolvedConfig} from '../test-helpers.js';
 
 // Create a mock services instance for testing
 function createMockServices(options?: {mrtAuth?: AuthStrategy}): Services {
   return new Services({
     mrtConfig: options?.mrtAuth ? {auth: options.mrtAuth} : undefined,
+    resolvedConfig: createMockResolvedConfig(),
   });
+}
+
+// Create a loadServices function for testing
+function createMockLoadServices(options?: {mrtAuth?: AuthStrategy}): () => Services {
+  const services = createMockServices(options);
+  return () => services;
 }
 
 /**
@@ -112,7 +120,7 @@ describe('tools/adapter', () => {
 
   describe('createToolAdapter', () => {
     it('should create a tool with correct metadata', () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -127,7 +135,7 @@ describe('tools/adapter', () => {
           execute: async () => 'result',
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       expect(tool.name).to.equal('test_tool');
@@ -137,7 +145,7 @@ describe('tools/adapter', () => {
     });
 
     it('should default isGA to true', () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -149,14 +157,14 @@ describe('tools/adapter', () => {
           execute: async () => 'result',
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       expect(tool.isGA).to.be.true;
     });
 
     it('should validate input using Zod schema', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -171,7 +179,7 @@ describe('tools/adapter', () => {
           execute: async (args: {name: string; count: number}) => `Received: ${args.name}, ${args.count}`,
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       // Test with valid input
@@ -192,7 +200,7 @@ describe('tools/adapter', () => {
     });
 
     it('should return error for invalid input', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -206,7 +214,7 @@ describe('tools/adapter', () => {
           execute: async (args: {email: string}) => args.email,
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       const result = await tool.handler({email: 'not-an-email'});
@@ -217,7 +225,7 @@ describe('tools/adapter', () => {
     });
 
     it('should handle execution errors', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -231,7 +239,7 @@ describe('tools/adapter', () => {
           },
           formatOutput: () => textResult('This should not be reached'),
         },
-        services,
+        loadServices,
       );
 
       const result = await tool.handler({});
@@ -242,7 +250,7 @@ describe('tools/adapter', () => {
     });
 
     it('should handle thrown errors gracefully', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -256,7 +264,7 @@ describe('tools/adapter', () => {
           },
           formatOutput: () => textResult('This should not be reached'),
         },
-        services,
+        loadServices,
       );
 
       const result = await tool.handler({});
@@ -267,7 +275,7 @@ describe('tools/adapter', () => {
     });
 
     it('should pass services to execute function', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
       let receivedServices: Services | undefined;
 
       const tool = createToolAdapter(
@@ -283,16 +291,17 @@ describe('tools/adapter', () => {
           },
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       await tool.handler({});
 
+      const services = loadServices();
       expect(receivedServices).to.equal(services);
     });
 
     it('should support tools that do not require instance', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
       let contextReceived: ToolExecutionContext | undefined;
 
       const tool = createToolAdapter(
@@ -310,7 +319,7 @@ describe('tools/adapter', () => {
           },
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       const result = await tool.handler({projectName: 'my-storefront'});
@@ -322,7 +331,7 @@ describe('tools/adapter', () => {
     });
 
     it('should use jsonResult for complex output', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -337,7 +346,7 @@ describe('tools/adapter', () => {
           }),
           formatOutput: (output) => jsonResult(output),
         },
-        services,
+        loadServices,
       );
 
       const result = await tool.handler({});
@@ -349,7 +358,7 @@ describe('tools/adapter', () => {
     });
 
     it('should support multiple toolsets', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -361,7 +370,7 @@ describe('tools/adapter', () => {
           execute: async () => 'multi-toolset result',
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       expect(tool.toolsets).to.include('PWAV3');
@@ -369,7 +378,7 @@ describe('tools/adapter', () => {
     });
 
     it('should handle optional schema fields', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -385,7 +394,7 @@ describe('tools/adapter', () => {
             `required: ${args.required}, optional: ${args.optional || 'not provided'}`,
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       // Without optional field
@@ -400,7 +409,7 @@ describe('tools/adapter', () => {
     });
 
     it('should handle array schema fields', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -414,7 +423,7 @@ describe('tools/adapter', () => {
           execute: async (args: {items: string[]}) => args.items.join(', '),
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       const result = await tool.handler({items: ['a', 'b', 'c']});
@@ -424,7 +433,7 @@ describe('tools/adapter', () => {
     });
 
     it('should provide detailed validation error messages', async () => {
-      const services = createMockServices();
+      const loadServices = createMockLoadServices();
 
       const tool = createToolAdapter(
         {
@@ -439,7 +448,7 @@ describe('tools/adapter', () => {
           execute: async () => 'success',
           formatOutput: (output) => textResult(output),
         },
-        services,
+        loadServices,
       );
 
       // Test with too short name
@@ -450,7 +459,7 @@ describe('tools/adapter', () => {
 
     describe('requiresInstance', () => {
       it('should default requiresInstance to false', async () => {
-        const services = createMockServices();
+        const loadServices = createMockLoadServices();
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -465,7 +474,7 @@ describe('tools/adapter', () => {
             },
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         // Default is now false, so tool should execute without instance
@@ -477,8 +486,7 @@ describe('tools/adapter', () => {
 
       it('should return error when B2C instance is not configured', async () => {
         // Services with no b2cInstance (resolution failed or not configured)
-        const services = createMockServices();
-
+        const loadServices = createMockLoadServices();
         const tool = createToolAdapter(
           {
             name: 'bad_config_tool',
@@ -489,7 +497,7 @@ describe('tools/adapter', () => {
             execute: async () => 'should not reach here',
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         const result = await tool.handler({});
@@ -508,7 +516,7 @@ describe('tools/adapter', () => {
       });
 
       it('should default requiresMrtAuth to false', async () => {
-        const services = createMockServices();
+        const loadServices = createMockLoadServices();
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -523,7 +531,7 @@ describe('tools/adapter', () => {
             },
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         const result = await tool.handler({});
@@ -533,9 +541,10 @@ describe('tools/adapter', () => {
       });
 
       it('should provide mrtConfig in context when auth is configured', async () => {
-        // Use resolveConfig + Services.fromResolvedConfig (simulating what mcp.ts does at startup)
+        // Use resolveConfig + Services.fromResolvedConfig (simulating what mcp.ts does)
         const config = resolveConfig({mrtApiKey: 'test-api-key-12345'});
         const services = Services.fromResolvedConfig(config);
+        const loadServices = () => services;
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -551,7 +560,7 @@ describe('tools/adapter', () => {
             },
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         const result = await tool.handler({});
@@ -567,6 +576,7 @@ describe('tools/adapter', () => {
         // Note: oclif handles env var fallback for --api-key flag, so we pass mrtApiKey explicitly here
         const config = resolveConfig({mrtApiKey: 'staging-api-key'}, {cloudOrigin: 'https://cloud-staging.mobify.com'});
         const services = Services.fromResolvedConfig(config);
+        const loadServices = () => services;
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -582,7 +592,7 @@ describe('tools/adapter', () => {
             },
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         const result = await tool.handler({});
@@ -600,6 +610,7 @@ describe('tools/adapter', () => {
           mrtOrigin: 'https://custom-cloud.mobify.com',
         });
         const services = Services.fromResolvedConfig(config);
+        const loadServices = () => services;
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -615,7 +626,7 @@ describe('tools/adapter', () => {
             },
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         const result = await tool.handler({});
@@ -626,7 +637,7 @@ describe('tools/adapter', () => {
       });
 
       it('should support both requiresInstance and requiresMrtAuth being false', async () => {
-        const services = createMockServices();
+        const loadServices = createMockLoadServices();
         let contextReceived: ToolExecutionContext | undefined;
 
         const tool = createToolAdapter(
@@ -643,7 +654,7 @@ describe('tools/adapter', () => {
             },
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         const result = await tool.handler({});
@@ -651,12 +662,13 @@ describe('tools/adapter', () => {
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.b2cInstance).to.be.undefined;
         expect(contextReceived?.mrtConfig?.auth).to.be.undefined;
+        const services = loadServices();
         expect(contextReceived?.services).to.equal(services);
       });
 
       it('should return error when requiresMrtAuth is true but no auth configured', async () => {
         // No mrtConfig.auth provided to Services
-        const services = createMockServices({});
+        const loadServices = createMockLoadServices({});
         const tool = createToolAdapter(
           {
             name: 'mrt_no_auth_tool',
@@ -669,7 +681,7 @@ describe('tools/adapter', () => {
             },
             formatOutput: (output) => textResult(output),
           },
-          services,
+          loadServices,
         );
 
         const result = await tool.handler({});
@@ -682,7 +694,7 @@ describe('tools/adapter', () => {
 
     describe('formatOutput variations', () => {
       it('should allow custom formatOutput logic', async () => {
-        const services = createMockServices();
+        const loadServices = createMockLoadServices();
 
         interface Item {
           id: number;
@@ -707,7 +719,7 @@ describe('tools/adapter', () => {
               return textResult(`Found ${items.length} items:\n${list}`);
             },
           },
-          services,
+          loadServices,
         );
 
         // Empty list
@@ -727,7 +739,7 @@ describe('tools/adapter', () => {
       });
 
       it('should allow conditional error/success in formatOutput', async () => {
-        const services = createMockServices();
+        const loadServices = createMockLoadServices();
 
         type OperationResult = {success: boolean; message: string};
 
@@ -753,7 +765,7 @@ describe('tools/adapter', () => {
               return textResult(result.message);
             },
           },
-          services,
+          loadServices,
         );
 
         const successResult = await tool.handler({operation: 'succeed'});

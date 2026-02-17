@@ -110,11 +110,35 @@ export type {
   ResolveConfigOptions,
   ResolvedB2CConfig,
   CreateOAuthOptions,
+  InstanceInfo,
+  CreateInstanceOptions,
 } from './types.js';
 
 // Instance creation utility (public API for CLI commands)
 export {createInstanceFromConfig, normalizeConfigKeys} from './mapping.js';
 
 // Low-level dw.json API (still available for advanced use)
-export {loadDwJson, findDwJson} from './dw-json.js';
-export type {DwJsonConfig, DwJsonMultiConfig, LoadDwJsonOptions, LoadDwJsonResult} from './dw-json.js';
+export {
+  loadDwJson,
+  loadFullDwJson,
+  findDwJson,
+  saveDwJson,
+  addInstance,
+  removeInstance,
+  setActiveInstance,
+} from './dw-json.js';
+export type {
+  DwJsonConfig,
+  DwJsonMultiConfig,
+  LoadDwJsonOptions,
+  LoadDwJsonResult,
+  AddInstanceOptions,
+  RemoveInstanceOptions,
+  SetActiveInstanceOptions,
+} from './dw-json.js';
+
+// Instance management
+export {InstanceManager, createInstanceManager} from './instance-manager.js';
+
+// Config sources (for direct use)
+export {DwJsonSource} from './sources/dw-json-source.js';

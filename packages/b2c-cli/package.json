@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce Commerce Cloud B2C CLI",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "8.2.0",
-    "@oclif/core": "4.8.0",
+    "@oclif/core": "catalog:",
     "@oclif/plugin-autocomplete": "3.2.39",
     "@oclif/plugin-help": "6.2.35",
     "@oclif/plugin-not-found": "3.2.72",
@@ -21,36 +21,36 @@
     "@oclif/plugin-version": "2.2.36",
     "@oclif/plugin-warn-if-update-available": "3.1.52",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "cliui": "9.0.1",
-    "glob": "13.0.0",
+    "cliui": "catalog:",
+    "glob": "catalog:",
     "marked": "15.0.12",
     "marked-terminal": "7.3.0",
-    "open": "11.0.0"
+    "open": "catalog:"
   },
   "devDependencies": {
-    "@eslint/compat": "^1",
-    "@oclif/prettier-config": "^0.2.1",
-    "@oclif/test": "^4",
-    "@salesforce/dev-config": "^4.3.2",
-    "@types/chai": "^4",
-    "@types/mocha": "^10",
-    "@types/node": "^22",
-    "c8": "^10.1.3",
-    "chai": "^4",
-    "eslint": "^9",
-    "eslint-config-oclif": "^6",
-    "eslint-config-prettier": "^10",
-    "eslint-plugin-header": "^3.1.1",
-    "eslint-plugin-prettier": "^5.5.4",
+    "@eslint/compat": "catalog:",
+    "@oclif/prettier-config": "catalog:",
+    "@oclif/test": "catalog:",
+    "@salesforce/dev-config": "catalog:",
+    "@types/chai": "catalog:",
+    "@types/mocha": "catalog:",
+    "@types/node": "catalog:",
+    "c8": "catalog:",
+    "chai": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-oclif": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-header": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
     "execa": "^9.6.1",
-    "mocha": "^10",
-    "msw": "^2.0.0",
-    "oclif": "^4",
-    "prettier": "^3.6.2",
-    "shx": "^0.3.3",
-    "sinon": "^21.0.1",
-    "tsx": "^4.20.6",
-    "typescript": "^5"
+    "mocha": "catalog:",
+    "msw": "catalog:",
+    "oclif": "catalog:",
+    "prettier": "catalog:",
+    "shx": "catalog:",
+    "sinon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=22.16.0"
@@ -106,6 +106,9 @@
       },
       "content": {
         "description": "Export and manage Page Designer content libraries"
+      },
+      "cip": {
+        "description": "Run CIP analytics SQL and curated reports\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.html"
       },
       "docs": {
         "description": "Search and read Script API documentation"
@@ -281,7 +284,12 @@
         }
       },
       "setup": {
-        "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html"
+        "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html",
+        "subtopics": {
+          "ide": {
+            "description": "Set up IDE integrations for B2C CLI configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.html"
+          }
+        }
       },
       "scaffold": {
         "description": "Generate project scaffolds for cartridges, APIs, and components\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.html"

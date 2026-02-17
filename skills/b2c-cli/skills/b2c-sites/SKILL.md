@@ -1,6 +1,6 @@
 ---
 name: b2c-sites
-description: List and inspect storefront sites on B2C Commerce (SFCC/Demandware) instances with the b2c cli. Use when finding site IDs, checking site configuration, or listing available sites. Helpful for determining site context when running other commands.
+description: List and inspect storefront sites on B2C Commerce (SFCC/Demandware) instances with the b2c cli. Always reference when using the CLI to list storefront sites, find site IDs, or check site configuration.
 ---
 
 # B2C Sites Skill

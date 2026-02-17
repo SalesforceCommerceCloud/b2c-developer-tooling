@@ -1,10 +1,10 @@
 ---
-description: Commands for viewing configuration, installing AI agent skills, and setting up the development environment.
+description: Commands for viewing configuration, managing instances, installing AI agent skills, and generating IDE integration scripts.
 ---
 
 # Setup Commands
 
-Commands for viewing configuration and setting up the development environment.
+Commands for viewing configuration, setting up the development environment, and generating IDE integration scripts.
 
 ## b2c setup inspect
 
@@ -20,10 +20,10 @@ b2c setup inspect [FLAGS]
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag       | Description                                                   | Default |
+| ---------- | ------------------------------------------------------------- | ------- |
 | `--unmask` | Show sensitive values unmasked (passwords, secrets, API keys) | `false` |
-| `--json` | Output results as JSON | `false` |
+| `--json`   | Output results as JSON                                        | `false` |
 
 ### Examples
 
@@ -105,6 +105,256 @@ Use `--unmask` to reveal the actual values when needed for debugging.
 
 - [Configuration Guide](/guide/configuration) - How to configure the CLI
 
+## b2c setup ide
+
+Show help for IDE integration setup commands.
+
+### Usage
+
+```bash
+b2c setup ide
+```
+
+### Examples
+
+```bash
+# Show setup ide subcommands
+b2c setup ide --help
+
+# Generate Prophet integration script
+b2c setup ide prophet
+```
+
+## b2c setup ide prophet
+
+Generate a `dw.js` script for the [Prophet VS Code extension](https://marketplace.visualstudio.com/items?itemName=SqrTT.prophet).
+
+The script runs `b2c setup inspect --json --unmask` at runtime and maps the resolved configuration into a `dw.json`-compatible structure that Prophet can consume.
+
+### Usage
+
+```bash
+b2c setup ide prophet [FLAGS]
+```
+
+### Flags
+
+| Flag             | Description                                | Default |
+| ---------------- | ------------------------------------------ | ------- |
+| `--output`, `-o` | Path for generated script file             | `dw.js` |
+| `--force`, `-f`  | Overwrite output file if it already exists | `false` |
+| `--json`         | Output results as JSON                     | `false` |
+
+### Examples
+
+```bash
+# Generate ./dw.js
+b2c setup ide prophet
+
+# Overwrite existing dw.js
+b2c setup ide prophet --force
+
+# Generate into .vscode folder
+b2c setup ide prophet --output .vscode/dw.js
+
+# Pin generated script to a specific instance context
+b2c setup ide prophet --instance staging
+```
+
+### Output
+
+The command creates a JavaScript file that:
+
+1. Executes `setup inspect --json --unmask`
+2. Reads resolved config values (including plugin-provided sources)
+3. Falls back to loading `dw.json` from `SFCC_CONFIG` or the `dw.js` directory if inspect cannot run
+4. Exports the final object via `module.exports = dwJson`
+5. Emits Prophet-compatible keys such as:
+   - `hostname`, `username`, `password`
+   - `code-version`
+   - `cartridgesPath`, `siteID`, `storefrontPassword` (when present)
+6. Logs diagnostics to both stdout and stderr when resolution fails
+
+## b2c setup instance list
+
+List all configured B2C Commerce instances from dw.json.
+
+### Usage
+
+```bash
+b2c setup instance list [FLAGS]
+```
+
+### Flags
+
+| Flag     | Description            | Default |
+| -------- | ---------------------- | ------- |
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# List all configured instances
+b2c setup instance list
+
+# Output as JSON
+b2c setup instance list --json
+```
+
+### Output
+
+The command displays a table of configured instances:
+
+```
+Instances
+────────────────────────────────────────────────────────────
+Name           Hostname                          Source        Active
+production     prod.demandware.net               DwJsonSource
+staging        staging.demandware.net            DwJsonSource  ✓
+development    dev.demandware.net                DwJsonSource
+```
+
+## b2c setup instance create
+
+Create a new B2C Commerce instance configuration in dw.json.
+
+### Usage
+
+```bash
+b2c setup instance create [NAME] [FLAGS]
+```
+
+### Arguments
+
+| Argument | Description   | Required          |
+| -------- | ------------- | ----------------- |
+| `NAME`   | Instance name | Yes (or prompted) |
+
+### Flags
+
+| Flag               | Description            | Default                   |
+| ------------------ | ---------------------- | ------------------------- |
+| `--hostname`, `-s` | B2C instance hostname  | Prompted                  |
+| `--username`       | WebDAV username        |                           |
+| `--password`       | WebDAV password        | Prompted if username set  |
+| `--client-id`      | OAuth client ID        |                           |
+| `--client-secret`  | OAuth client secret    | Prompted if client-id set |
+| `--code-version`   | Code version           |                           |
+| `--active`         | Set as active instance | `false`                   |
+| `--force`          | Non-interactive mode   | `false`                   |
+| `--json`           | Output results as JSON | `false`                   |
+
+### Examples
+
+```bash
+# Interactive mode (prompts for all values)
+b2c setup instance create staging
+
+# Create with hostname
+b2c setup instance create staging --hostname staging.example.com
+
+# Create and set as active
+b2c setup instance create staging --hostname staging.example.com --active
+
+# Non-interactive mode (CI/CD)
+b2c setup instance create staging --hostname staging.example.com --username admin --password secret --force
+```
+
+### Interactive Mode
+
+When run without `--force`, the command provides an interactive experience:
+
+1. Prompts for instance name (if not provided)
+2. Prompts for hostname (if not provided)
+3. Prompts for authentication type (Basic, OAuth, Both, or Skip)
+4. Prompts for credentials based on selection
+5. Asks whether to set as active instance
+6. Shows summary and confirms before creating
+
+## b2c setup instance remove
+
+Remove a B2C Commerce instance configuration from dw.json.
+
+### Usage
+
+```bash
+b2c setup instance remove NAME [FLAGS]
+```
+
+### Arguments
+
+| Argument | Description             | Required |
+| -------- | ----------------------- | -------- |
+| `NAME`   | Instance name to remove | Yes      |
+
+### Flags
+
+| Flag      | Description              | Default |
+| --------- | ------------------------ | ------- |
+| `--force` | Skip confirmation prompt | `false` |
+| `--json`  | Output results as JSON   | `false` |
+
+### Examples
+
+```bash
+# Remove with confirmation
+b2c setup instance remove staging
+
+# Remove without confirmation
+b2c setup instance remove staging --force
+```
+
+## b2c setup instance set-active
+
+Set a B2C Commerce instance as the default (active) instance.
+
+### Usage
+
+```bash
+b2c setup instance set-active NAME [FLAGS]
+```
+
+### Arguments
+
+| Argument | Description                    | Required |
+| -------- | ------------------------------ | -------- |
+| `NAME`   | Instance name to set as active | Yes      |
+
+### Flags
+
+| Flag     | Description            | Default |
+| -------- | ---------------------- | ------- |
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# Set staging as the active instance
+b2c setup instance set-active staging
+
+# Set production as active
+b2c setup instance set-active production
+```
+
+### How Active Instance Works
+
+The active instance is used as the default when no `--instance` or `-i` flag is provided to other commands. This allows you to work with multiple instances without specifying which one to use each time.
+
+Example workflow:
+
+```bash
+# Configure multiple instances
+b2c setup instance create staging --hostname staging.example.com
+b2c setup instance create production --hostname prod.example.com
+
+# Set staging as active
+b2c setup instance set-active staging
+
+# Commands now use staging by default
+b2c code list              # Uses staging
+b2c code list -i production # Uses production
+```
+
 ## b2c setup skills
 
 Install agent skills from the B2C Developer Tooling project to AI-powered IDEs.
@@ -119,34 +369,34 @@ b2c setup skills [SKILLSET]
 
 ### Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
+| Argument   | Description                              | Default                |
+| ---------- | ---------------------------------------- | ---------------------- |
 | `SKILLSET` | Skill set to install: `b2c` or `b2c-cli` | Prompted interactively |
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--list`, `-l` | List available skills without installing | `false` |
-| `--skill` | Install specific skill(s) (can be repeated) | |
-| `--ide` | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual | Auto-detect |
-| `--global`, `-g` | Install to user home directory (global scope) | `false` |
-| `--update`, `-u` | Update existing skills (overwrite) | `false` |
-| `--version` | Specific release version | `latest` |
-| `--force` | Skip confirmation prompts (non-interactive) | `false` |
-| `--json` | Output results as JSON | `false` |
+| Flag             | Description                                                                   | Default     |
+| ---------------- | ----------------------------------------------------------------------------- | ----------- |
+| `--list`, `-l`   | List available skills without installing                                      | `false`     |
+| `--skill`        | Install specific skill(s) (can be repeated)                                   |             |
+| `--ide`          | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual | Auto-detect |
+| `--global`, `-g` | Install to user home directory (global scope)                                 | `false`     |
+| `--update`, `-u` | Update existing skills (overwrite)                                            | `false`     |
+| `--version`      | Specific release version                                                      | `latest`    |
+| `--force`        | Skip confirmation prompts (non-interactive)                                   | `false`     |
+| `--json`         | Output results as JSON                                                        | `false`     |
 
 ### Supported IDEs
 
-| IDE Value | IDE Name | Project Path | Global Path |
-|-----------|----------|--------------|-------------|
-| `claude-code` | Claude Code | `.claude/skills/` | `~/.claude/skills/` |
-| `cursor` | Cursor | `.cursor/skills/` | `~/.cursor/skills/` |
-| `windsurf` | Windsurf | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| `vscode` | VS Code / GitHub Copilot | `.github/skills/` | `~/.copilot/skills/` |
-| `codex` | OpenAI Codex CLI | `.codex/skills/` | `~/.codex/skills/` |
-| `opencode` | OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` |
-| `manual` | Manual | `.claude/skills/` | `~/.claude/skills/` |
+| IDE Value     | IDE Name                 | Project Path        | Global Path                   |
+| ------------- | ------------------------ | ------------------- | ----------------------------- |
+| `claude-code` | Claude Code              | `.claude/skills/`   | `~/.claude/skills/`           |
+| `cursor`      | Cursor                   | `.cursor/skills/`   | `~/.cursor/skills/`           |
+| `windsurf`    | Windsurf                 | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| `vscode`      | VS Code / GitHub Copilot | `.github/skills/`   | `~/.copilot/skills/`          |
+| `codex`       | OpenAI Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`            |
+| `opencode`    | OpenCode                 | `.opencode/skills/` | `~/.config/opencode/skills/`  |
+| `manual`      | Manual                   | `.claude/skills/`   | `~/.claude/skills/`           |
 
 Use `manual` when you want to install to the Claude Code paths without marketplace recommendations.
 
@@ -210,6 +460,7 @@ claude plugin install b2c
 ```
 
 The marketplace provides:
+
 - Automatic updates when new versions are released
 - Centralized plugin management
 - Version tracking
@@ -218,14 +469,15 @@ Use `--ide manual` if you prefer manual installation to the same paths.
 
 ### Skill Sets
 
-| Skill Set | Description |
-|-----------|-------------|
-| `b2c` | B2C Commerce development patterns and practices |
-| `b2c-cli` | B2C CLI commands and operations |
+| Skill Set | Description                                     |
+| --------- | ----------------------------------------------- |
+| `b2c`     | B2C Commerce development patterns and practices |
+| `b2c-cli` | B2C CLI commands and operations                 |
 
 ### Output
 
 When installing, the command reports:
+
 - Successfully installed skills with paths
 - Skipped skills (already exist, use `--update` to overwrite)
 - Errors encountered during installation
@@ -247,10 +499,10 @@ Successfully installed 12 skill(s):
 
 Skills are downloaded from the GitHub releases of the [b2c-developer-tooling](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling) repository:
 
-| Artifact | Contents |
-|----------|----------|
-| `b2c-cli-skills.zip` | Skills for B2C CLI commands and operations |
-| `b2c-skills.zip` | Skills for B2C Commerce development patterns |
+| Artifact             | Contents                                     |
+| -------------------- | -------------------------------------------- |
+| `b2c-cli-skills.zip` | Skills for B2C CLI commands and operations   |
+| `b2c-skills.zip`     | Skills for B2C Commerce development patterns |
 
 Downloaded artifacts are cached locally at: `~/.cache/b2c-cli/skills/{version}/{skillset}/`
 

@@ -8,6 +8,8 @@ import {expect} from 'chai';
 import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
+import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
+import type {JSONRPCMessage} from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Mock telemetry for testing.
@@ -30,12 +32,45 @@ class MockTelemetry {
     this.events.push({name, attributes});
   }
 
+  async sendEventAndFlush(name: string, attributes: Record<string, unknown> = {}): Promise<void> {
+    this.sendEvent(name, attributes);
+    await this.flush();
+  }
+
   async start(): Promise<void> {
     this.started = true;
   }
 
   stop(): void {
     this.stopped = true;
+  }
+}
+
+/**
+ * Mock transport for testing connect() method.
+ */
+class MockTransport implements Transport {
+  public closeCalled = false;
+  public errorMessage = 'Transport error';
+  public onclose?: () => void;
+  public onerror?: (error: Error) => void;
+  public onmessage?: (message: JSONRPCMessage) => void;
+  public shouldThrow = false;
+  public startCalled = false;
+
+  async close(): Promise<void> {
+    this.closeCalled = true;
+  }
+
+  send(_message: JSONRPCMessage): Promise<void> {
+    return Promise.resolve();
+  }
+
+  async start(): Promise<void> {
+    this.startCalled = true;
+    if (this.shouldThrow) {
+      throw new Error(this.errorMessage);
+    }
   }
 }
 
@@ -63,6 +98,9 @@ const slowHandler = async () => {
   });
   return {content: [{type: 'text' as const, text: 'done'}]};
 };
+const handlerWithoutIsError = async () => ({
+  content: [{type: 'text' as const, text: 'result'}],
+});
 
 describe('B2CDxMcpServer', () => {
   describe('constructor', () => {
@@ -292,6 +330,309 @@ describe('B2CDxMcpServer', () => {
       // Should not throw even without telemetry
       await noTelemetryHandler!({}, {});
       expect(handlerCalled).to.be.true;
+    });
+  });
+
+  describe('oninitialized handler', () => {
+    it('should set up oninitialized handler in constructor', () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      // Verify the server has an oninitialized handler
+      expect(server.server.oninitialized).to.be.a('function');
+    });
+
+    it('should add client attributes when initialized with client info', () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      // Mock getClientVersion to return client info
+      server.server.getClientVersion = () => ({name: 'test-client', version: '2.0.0'});
+
+      // Call oninitialized handler
+      server.server.oninitialized?.();
+
+      // Verify telemetry attributes were added
+      expect(mockTelemetry.attributes.clientName).to.equal('test-client');
+      expect(mockTelemetry.attributes.clientVersion).to.equal('2.0.0');
+    });
+
+    it('should handle missing client info gracefully', () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      // Mock getClientVersion to return undefined (no client info)
+      server.server.getClientVersion = (): undefined => {};
+
+      // Call oninitialized handler - should not throw
+      expect(() => server.server.oninitialized?.()).to.not.throw();
+
+      // Verify no client attributes were added
+      expect(mockTelemetry.attributes.clientName).to.be.undefined;
+      expect(mockTelemetry.attributes.clientVersion).to.be.undefined;
+    });
+
+    it('should work without telemetry', () => {
+      const server = new B2CDxMcpServer({name: 'test-server', version: '1.0.0'});
+
+      // Mock getClientVersion
+      server.server.getClientVersion = () => ({name: 'test-client', version: '2.0.0'});
+
+      // Call oninitialized handler - should not throw
+      expect(() => server.server.oninitialized?.()).to.not.throw();
+    });
+  });
+
+  describe('connect', () => {
+    it('should successfully connect to transport', async () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      const transport = new MockTransport();
+      await server.connect(transport);
+
+      expect(transport.startCalled).to.be.true;
+      expect(server.isConnected()).to.be.true;
+    });
+
+    it('should send SERVER_STATUS event with status=started on successful connect', async () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      const transport = new MockTransport();
+      await server.connect(transport);
+
+      // Verify SERVER_STATUS event was sent
+      const serverStatusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
+      expect(serverStatusEvents).to.have.lengthOf(1);
+      expect(serverStatusEvents[0].attributes.status).to.equal('started');
+    });
+
+    it('should send SERVER_STATUS event with error when transport fails', async () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      const transport = new MockTransport();
+      transport.shouldThrow = true;
+      transport.errorMessage = 'Connection failed';
+
+      try {
+        await server.connect(transport);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.equal('Connection failed');
+      }
+
+      // Verify SERVER_STATUS event was sent with error
+      const serverStatusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
+      expect(serverStatusEvents).to.have.lengthOf(1);
+      expect(serverStatusEvents[0].attributes.status).to.equal('error');
+      expect(serverStatusEvents[0].attributes.errorMessage).to.equal('Connection failed');
+    });
+
+    it('should handle non-Error exceptions in connect', async () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      // Create a transport that throws a non-Error object
+      const transport = new MockTransport();
+      const stringError = 'string error';
+      transport.start = async () => {
+        throw new Error(stringError);
+      };
+
+      try {
+        await server.connect(transport);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.equal('string error');
+      }
+
+      // Verify SERVER_STATUS event was sent with error
+      const serverStatusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
+      expect(serverStatusEvents).to.have.lengthOf(1);
+      expect(serverStatusEvents[0].attributes.status).to.equal('error');
+      expect(serverStatusEvents[0].attributes.errorMessage).to.equal('string error');
+    });
+
+    it('should work without telemetry', async () => {
+      const server = new B2CDxMcpServer({name: 'test-server', version: '1.0.0'});
+
+      const transport = new MockTransport();
+      await server.connect(transport);
+
+      expect(server.isConnected()).to.be.true;
+    });
+
+    it('should handle connect error without telemetry', async () => {
+      const server = new B2CDxMcpServer({name: 'test-server', version: '1.0.0'});
+
+      const transport = new MockTransport();
+      transport.shouldThrow = true;
+
+      try {
+        await server.connect(transport);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+      }
+    });
+
+    it('should send error event if connected but isConnected returns false', async () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      // Override isConnected to return false even after connect
+      server.isConnected = () => false;
+
+      const transport = new MockTransport();
+      await server.connect(transport);
+
+      // Verify SERVER_STATUS event was sent with error
+      const serverStatusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
+      expect(serverStatusEvents).to.have.lengthOf(1);
+      expect(serverStatusEvents[0].attributes.status).to.equal('error');
+      expect(serverStatusEvents[0].attributes.errorMessage).to.equal('Server not connected after connect() call');
+    });
+  });
+
+  describe('addTool with telemetry disabled scenarios', () => {
+    it('should handle tool with missing isError field', async () => {
+      const mockTelemetry = new MockTelemetry();
+      let capturedHandler: ((args: Record<string, unknown>, extra: unknown) => Promise<unknown>) | null = null;
+
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      // Override registerTool to capture handler
+      const originalRegisterTool = server.registerTool.bind(server);
+      server.registerTool = (name, config, h) => {
+        capturedHandler = h as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
+        return originalRegisterTool(name, config, h);
+      };
+
+      server.addTool('test_tool', 'Test tool', {}, handlerWithoutIsError);
+      await capturedHandler!({}, {});
+
+      // Should default to isError=false
+      expect(mockTelemetry.events).to.have.lengthOf(1);
+      expect(mockTelemetry.events[0].attributes.isError).to.equal(false);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle undefined telemetry gracefully in all operations', async () => {
+      const server = new B2CDxMcpServer({name: 'test-server', version: '1.0.0'}, {telemetry: undefined});
+
+      // All operations should work without throwing
+      expect(() => {
+        server.addTool('test', 'Test', {}, successHandler);
+      }).to.not.throw();
+
+      const transport = new MockTransport();
+      // Connect should succeed without throwing
+      await server.connect(transport);
+      expect(server.isConnected()).to.be.true;
+    });
+
+    it('should preserve handler arguments and return values', async () => {
+      let capturedArgs: null | Record<string, unknown> = null;
+      let capturedHandler: ((args: Record<string, unknown>, extra: unknown) => Promise<unknown>) | null = null;
+
+      const server = new B2CDxMcpServer({name: 'test-server', version: '1.0.0'});
+
+      // Override registerTool to capture handler
+      const originalRegisterTool = server.registerTool.bind(server);
+      server.registerTool = (name, config, h) => {
+        capturedHandler = h as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
+        return originalRegisterTool(name, config, h);
+      };
+
+      const handler = async (args: Record<string, unknown>) => {
+        capturedArgs = args;
+        return {
+          content: [{type: 'text' as const, text: `Result: ${args.value}`}],
+        };
+      };
+
+      server.addTool('test_tool', 'Test', {}, handler);
+
+      const testArgs = {value: 'test-value'};
+      const result = await capturedHandler!(testArgs, {});
+
+      expect(capturedArgs).to.deep.equal(testArgs);
+      expect(result).to.deep.equal({
+        content: [{type: 'text', text: 'Result: test-value'}],
+      });
+    });
+
+    it('should handle multiple sequential connects', async () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+
+      // First connect
+      const transport1 = new MockTransport();
+      await server.connect(transport1);
+      expect(mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS')).to.have.lengthOf(1);
+
+      // Subsequent connect attempts may be prevented by MCP SDK (throws error)
+      // or may succeed (if MockTransport doesn't enforce the restriction)
+      // In either case, verify that telemetry continues to work
+      const transport2 = new MockTransport();
+      let connectSucceeded = false;
+      try {
+        await server.connect(transport2);
+        connectSucceeded = true;
+      } catch (error) {
+        // Expected error if MCP SDK prevents multiple connects
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.include('Already connected');
+      }
+
+      // Verify telemetry recorded events for both connect attempts
+      const statusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
+      expect(statusEvents).to.have.lengthOf.at.least(2);
+
+      if (connectSucceeded) {
+        // If second connect succeeded, last event should be 'started'
+        const lastEvent = statusEvents.at(-1);
+        expect(lastEvent?.attributes.status).to.equal('started');
+      } else {
+        // If second connect failed, last event should be 'error'
+        const lastEvent = statusEvents.at(-1);
+        expect(lastEvent?.attributes.status).to.equal('error');
+      }
     });
   });
 });

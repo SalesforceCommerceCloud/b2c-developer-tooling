@@ -9,10 +9,12 @@ import {createToolRegistry, registerToolsets} from '../src/registry.js';
 import {Services} from '../src/services.js';
 import {B2CDxMcpServer} from '../src/server.js';
 import type {StartupFlags} from '../src/utils/types.js';
+import {createMockResolvedConfig} from './test-helpers.js';
 
-// Create a mock services instance for testing
-function createMockServices(): Services {
-  return new Services({});
+// Create a loadServices function for testing
+function createMockLoadServicesWrapper(): () => Services {
+  const services = new Services({resolvedConfig: createMockResolvedConfig()});
+  return () => services;
 }
 
 // Create a mock server that tracks registered tools
@@ -31,8 +33,8 @@ function createMockServer(): B2CDxMcpServer & {registeredTools: string[]} {
 describe('registry', () => {
   describe('createToolRegistry', () => {
     it('should create a registry with all toolsets', () => {
-      const services = createMockServices();
-      const registry = createToolRegistry(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
 
       // Verify all expected toolsets exist
       expect(registry).to.have.property('CARTRIDGES');
@@ -43,8 +45,8 @@ describe('registry', () => {
     });
 
     it('should create CARTRIDGES tools', () => {
-      const services = createMockServices();
-      const registry = createToolRegistry(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
 
       expect(registry.CARTRIDGES).to.be.an('array');
       expect(registry.CARTRIDGES.length).to.be.greaterThan(0);
@@ -54,8 +56,8 @@ describe('registry', () => {
     });
 
     it('should create MRT tools', () => {
-      const services = createMockServices();
-      const registry = createToolRegistry(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
 
       expect(registry.MRT).to.be.an('array');
       expect(registry.MRT.length).to.be.greaterThan(0);
@@ -65,8 +67,8 @@ describe('registry', () => {
     });
 
     it('should create PWAV3 tools', () => {
-      const services = createMockServices();
-      const registry = createToolRegistry(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
 
       expect(registry.PWAV3).to.be.an('array');
       expect(registry.PWAV3.length).to.be.greaterThan(0);
@@ -80,21 +82,20 @@ describe('registry', () => {
     });
 
     it('should create SCAPI tools', () => {
-      const services = createMockServices();
-      const registry = createToolRegistry(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
 
       expect(registry.SCAPI).to.be.an('array');
       expect(registry.SCAPI.length).to.be.greaterThan(0);
 
       const toolNames = registry.SCAPI.map((t) => t.name);
-      expect(toolNames).to.include('scapi_discovery');
-      expect(toolNames).to.include('scapi_customapi_scaffold');
-      expect(toolNames).to.include('scapi_custom_api_discovery');
+      expect(toolNames).to.include('scapi_schemas_list');
+      expect(toolNames).to.include('scapi_custom_apis_status');
     });
 
     it('should create STOREFRONTNEXT tools', () => {
-      const services = createMockServices();
-      const registry = createToolRegistry(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
 
       expect(registry.STOREFRONTNEXT).to.be.an('array');
       expect(registry.STOREFRONTNEXT.length).to.be.greaterThan(0);
@@ -108,8 +109,8 @@ describe('registry', () => {
     });
 
     it('should assign correct toolsets to each tool', () => {
-      const services = createMockServices();
-      const registry = createToolRegistry(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
 
       // Verify tools have correct toolset assignments
       for (const tool of registry.CARTRIDGES) {
@@ -132,7 +133,6 @@ describe('registry', () => {
 
   describe('registerToolsets', () => {
     it('should auto-discover and register tools when no toolsets or tools provided', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       // Use a workspace path that won't match any patterns (should fall back to SCAPI)
       const flags: StartupFlags = {
@@ -142,14 +142,14 @@ describe('registry', () => {
 
       // When no flags provided, auto-discovery kicks in
       // With an unknown project, it falls back to SCAPI toolset
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
       expect(server.registeredTools.length).to.be.greaterThan(0);
       // SCAPI tools should be registered as fallback
-      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
     });
 
     it('should skip auto-discovery when empty toolsets array is explicitly provided', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: [],
@@ -157,35 +157,36 @@ describe('registry', () => {
       };
 
       // Empty toolsets array still triggers auto-discovery (length is 0)
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
       // Should have auto-discovered SCAPI as fallback
-      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
     });
 
     it('should register tools from a single toolset', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES'],
         allowNonGaTools: true,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should not include tools exclusive to other toolsets
-      expect(server.registeredTools).to.not.include('scapi_customapi_scaffold');
+      expect(server.registeredTools).to.not.include('scapi_custom_apis_status');
     });
 
     it('should register tools from multiple toolsets', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES', 'MRT'],
         allowNonGaTools: true,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Should include CARTRIDGES tools
       expect(server.registeredTools).to.include('cartridge_deploy');
@@ -196,32 +197,32 @@ describe('registry', () => {
     });
 
     it('should register all toolsets when ALL is specified', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['ALL'],
         allowNonGaTools: true,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Should include tools from all toolsets
       expect(server.registeredTools).to.include('cartridge_deploy');
       expect(server.registeredTools).to.include('mrt_bundle_push');
       expect(server.registeredTools).to.include('pwakit_create_storefront');
-      expect(server.registeredTools).to.include('scapi_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('storefront_next_development_guidelines');
     });
 
     it('should register individual tools via --tools flag', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         tools: ['cartridge_deploy', 'mrt_bundle_push'],
         allowNonGaTools: true,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       expect(server.registeredTools).to.have.lengthOf(2);
       expect(server.registeredTools).to.include('cartridge_deploy');
@@ -229,26 +230,25 @@ describe('registry', () => {
     });
 
     it('should combine toolsets and individual tools', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES'],
-        tools: ['scapi_customapi_scaffold'],
+        tools: ['scapi_custom_apis_status'],
         allowNonGaTools: true,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Should include all CARTRIDGES tools
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should also include the individual SCAPI tool
-      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
+      expect(server.registeredTools).to.include('scapi_custom_apis_status');
       // Should not include other SCAPI tools not in CARTRIDGES
-      expect(server.registeredTools).to.not.include('scapi_discovery');
+      expect(server.registeredTools).to.not.include('scapi_schemas_list');
     });
 
     it('should not duplicate tools when specified in both toolset and --tools', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES'],
@@ -256,7 +256,8 @@ describe('registry', () => {
         allowNonGaTools: true,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Should only have one instance of cartridge_deploy
       const cartridgeDeployCount = server.registeredTools.filter((t) => t === 'cartridge_deploy').length;
@@ -264,7 +265,6 @@ describe('registry', () => {
     });
 
     it('should warn and skip invalid tool names', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         tools: ['nonexistent_tool', 'cartridge_deploy'],
@@ -272,7 +272,8 @@ describe('registry', () => {
       };
 
       // Should not throw, just skip invalid tools
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Valid tool should be registered
       expect(server.registeredTools).to.include('cartridge_deploy');
@@ -281,7 +282,6 @@ describe('registry', () => {
     });
 
     it('should warn and skip invalid toolset names', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['INVALID_TOOLSET', 'CARTRIDGES'],
@@ -289,14 +289,14 @@ describe('registry', () => {
       };
 
       // Should not throw, just skip invalid toolsets
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Valid toolset's tools should be registered
       expect(server.registeredTools).to.include('cartridge_deploy');
     });
 
     it('should trigger auto-discovery when all toolsets are invalid', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['INVALID1', 'INVALID2'],
@@ -304,16 +304,15 @@ describe('registry', () => {
       };
 
       // Should not throw - triggers auto-discovery as fallback
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
-      expect(server.registeredTools).to.include('scapi_discovery');
-      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
-      expect(server.registeredTools).to.include('scapi_custom_api_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_apis_status');
     });
 
     it('should trigger auto-discovery when all individual tools are invalid', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         tools: ['nonexistent_tool', 'another_fake_tool'],
@@ -321,23 +320,23 @@ describe('registry', () => {
       };
 
       // Should not throw - triggers auto-discovery as fallback
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
-      expect(server.registeredTools).to.include('scapi_discovery');
-      expect(server.registeredTools).to.include('scapi_customapi_scaffold');
-      expect(server.registeredTools).to.include('scapi_custom_api_discovery');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_apis_status');
     });
 
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES'],
         allowNonGaTools: false,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // All current CARTRIDGES tools are non-GA (isGA: false)
       // So none should be registered
@@ -345,14 +344,14 @@ describe('registry', () => {
     });
 
     it('should register GA tools even when allowNonGaTools is false', async () => {
-      const services = createMockServices();
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['ALL'],
         allowNonGaTools: false,
       };
 
-      await registerToolsets(flags, server, services);
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
 
       // Currently all tools are non-GA placeholders
       // This test documents expected behavior for when GA tools exist
@@ -361,7 +360,6 @@ describe('registry', () => {
 
     describe('auto-discovery', () => {
       it('should use workingDirectory from flags for detection', async () => {
-        const services = createMockServices();
         const server = createMockServer();
         const flags: StartupFlags = {
           workingDirectory: '/some/workspace',
@@ -369,13 +367,13 @@ describe('registry', () => {
         };
 
         // Should not throw even with non-existent path
-        await registerToolsets(flags, server, services);
+        const loadServices = createMockLoadServicesWrapper();
+        await registerToolsets(flags, server, loadServices);
         // Falls back to SCAPI for unknown projects
-        expect(server.registeredTools).to.include('scapi_discovery');
+        expect(server.registeredTools).to.include('scapi_schemas_list');
       });
 
       it('should map detected project type to MCP toolsets', async () => {
-        const services = createMockServices();
         const server = createMockServer();
         // Use a path that doesn't exist - detection will return 'unknown' project type
         // which maps to SCAPI toolset
@@ -384,14 +382,14 @@ describe('registry', () => {
           allowNonGaTools: true,
         };
 
-        await registerToolsets(flags, server, services);
+        const loadServices = createMockLoadServicesWrapper();
+        await registerToolsets(flags, server, loadServices);
 
         // Only SCAPI tools should be registered (the fallback for unknown projects)
-        expect(server.registeredTools).to.include('scapi_discovery');
+        expect(server.registeredTools).to.include('scapi_schemas_list');
       });
 
       it('should not auto-discover when individual tools are provided', async () => {
-        const services = createMockServices();
         const server = createMockServer();
         const flags: StartupFlags = {
           tools: ['cartridge_deploy'],
@@ -399,7 +397,8 @@ describe('registry', () => {
           allowNonGaTools: true,
         };
 
-        await registerToolsets(flags, server, services);
+        const loadServices = createMockLoadServicesWrapper();
+        await registerToolsets(flags, server, loadServices);
 
         // Should only have the explicitly requested tool
         expect(server.registeredTools).to.have.lengthOf(1);
@@ -407,7 +406,6 @@ describe('registry', () => {
       });
 
       it('should not auto-discover when toolsets are explicitly provided', async () => {
-        const services = createMockServices();
         const server = createMockServer();
         const flags: StartupFlags = {
           toolsets: ['CARTRIDGES'],
@@ -415,7 +413,8 @@ describe('registry', () => {
           allowNonGaTools: true,
         };
 
-        await registerToolsets(flags, server, services);
+        const loadServices = createMockLoadServicesWrapper();
+        await registerToolsets(flags, server, loadServices);
 
         // Should only have CARTRIDGES tools, not auto-discovered toolsets
         expect(server.registeredTools).to.include('cartridge_deploy');

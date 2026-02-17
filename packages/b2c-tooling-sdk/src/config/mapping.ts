@@ -48,6 +48,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   selfsigned: 'selfSigned',
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
+  'cip-host': 'cipHost',
 };
 
 /**
@@ -116,6 +117,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     tenantId: json.tenantId,
     sandboxApiHost: json.sandboxApiHost,
     contentLibrary: json.contentLibrary,
+    cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
     accountManagerHost: json.accountManagerHost,
@@ -128,6 +130,90 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
   };
+}
+
+/**
+ * Maps normalized config to dw.json format.
+ *
+ * This is the reverse of mapDwJsonToNormalizedConfig. It converts normalized
+ * config (camelCase) back to dw.json format (kebab-case).
+ *
+ * @param config - The normalized configuration
+ * @param name - Optional instance name to include
+ * @returns DwJsonConfig structure
+ *
+ * @example
+ * ```typescript
+ * const config = { hostname: 'example.com', codeVersion: 'v1', clientId: 'abc' };
+ * const dwJson = mapNormalizedConfigToDwJson(config, 'staging');
+ * // { name: 'staging', hostname: 'example.com', 'code-version': 'v1', 'client-id': 'abc' }
+ * ```
+ */
+export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, name?: string): DwJsonConfig {
+  const result: DwJsonConfig = {};
+
+  if (name !== undefined) {
+    result.name = name;
+  }
+  if (config.hostname !== undefined) {
+    result.hostname = config.hostname;
+  }
+  if (config.webdavHostname !== undefined) {
+    result.webdavHostname = config.webdavHostname;
+  }
+  if (config.codeVersion !== undefined) {
+    result.codeVersion = config.codeVersion;
+  }
+  if (config.username !== undefined) {
+    result.username = config.username;
+  }
+  if (config.password !== undefined) {
+    result.password = config.password;
+  }
+  if (config.clientId !== undefined) {
+    result.clientId = config.clientId;
+  }
+  if (config.clientSecret !== undefined) {
+    result.clientSecret = config.clientSecret;
+  }
+  if (config.scopes !== undefined) {
+    result.oauthScopes = config.scopes;
+  }
+  if (config.shortCode !== undefined) {
+    result.shortCode = config.shortCode;
+  }
+  if (config.tenantId !== undefined) {
+    result.tenantId = config.tenantId;
+  }
+  if (config.authMethods !== undefined) {
+    result.authMethods = config.authMethods;
+  }
+  if (config.accountManagerHost !== undefined) {
+    result.accountManagerHost = config.accountManagerHost;
+  }
+  if (config.cipHost !== undefined) {
+    result.cipHost = config.cipHost;
+  }
+  if (config.mrtProject !== undefined) {
+    result.mrtProject = config.mrtProject;
+  }
+  if (config.mrtEnvironment !== undefined) {
+    result.mrtEnvironment = config.mrtEnvironment;
+  }
+  if (config.mrtOrigin !== undefined) {
+    result.mrtOrigin = config.mrtOrigin;
+  }
+  if (config.certificate !== undefined) {
+    result.certificate = config.certificate;
+  }
+  if (config.certificatePassphrase !== undefined) {
+    result.certificatePassphrase = config.certificatePassphrase;
+  }
+  if (config.selfSigned !== undefined) {
+    result.selfSigned = config.selfSigned;
+  }
+
+  return result;
 }
 
 /**
@@ -227,8 +313,10 @@ export function mergeConfigsWithProtection(
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
+      cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       instanceName: overrides.instanceName ?? base.instanceName,
+      workingDirectory: overrides.workingDirectory ?? base.workingDirectory,
       mrtProject: overrides.mrtProject ?? base.mrtProject,
       mrtEnvironment: overrides.mrtEnvironment ?? base.mrtEnvironment,
       mrtApiKey: overrides.mrtApiKey ?? base.mrtApiKey,

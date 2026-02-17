@@ -29,6 +29,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dw/rest/v1/users/search/findByLogin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find user by login.
+         * @description Search for a user by their login (email address). Returns the user if found.
+         */
+        get: operations["findUserByLogin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dw/rest/v1/users/{userId}": {
         parameters: {
             query?: never;
@@ -595,6 +615,49 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
+            };
+            429: components["responses"]["RateLimitedError"];
+        };
+    };
+    findUserByLogin: {
+        parameters: {
+            query: {
+                /** @description The user's login (email address). */
+                login: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "X-RateLimit-Limit": components["headers"]["X-RateLimit-Limit"];
+                    "X-RateLimit-Remaining": components["headers"]["X-RateLimit-Remaining"];
+                    "X-RateLimit-Reset": components["headers"]["X-RateLimit-Reset"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRead"];
+                };
+            };
+            /** @description Access token is missing or invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A user with this login was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             429: components["responses"]["RateLimitedError"];
         };

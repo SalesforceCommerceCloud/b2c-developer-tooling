@@ -49,6 +49,14 @@ import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  createCustomApisClient,
+  createScapiSchemasClient,
+  toOrganizationId,
+  WebDavClient,
+  type CustomApisClient,
+  type ScapiSchemasClient,
+} from '@salesforce/b2c-tooling-sdk/clients';
 
 /**
  * MRT (Managed Runtime) configuration.
@@ -73,8 +81,8 @@ export interface ServicesOptions {
   b2cInstance?: B2CInstance;
   /** Pre-resolved MRT configuration (auth, project, environment) */
   mrtConfig?: MrtConfig;
-  /** Project working directory for file operations */
-  workingDirectory?: string;
+  /** Resolved configuration for access to SCAPI settings */
+  resolvedConfig: ResolvedB2CConfig;
 }
 
 /**
@@ -92,7 +100,6 @@ export interface ServicesOptions {
  * services.b2cInstance;        // B2CInstance | undefined
  * services.mrtConfig.auth;     // AuthStrategy | undefined
  * services.mrtConfig.project;  // string | undefined
- * services.workingDirectory;   // string (project directory)
  * ```
  */
 export class Services {
@@ -110,33 +117,31 @@ export class Services {
   public readonly mrtConfig: MrtConfig;
 
   /**
-   * Project working directory for file operations.
-   * Used by tools to ensure they operate on the correct project directory,
-   * especially when MCP clients spawn servers from the home directory.
-   * Defaults to process.cwd() if not provided.
+   * Resolved configuration for accessing SCAPI settings.
+   * Provides access to shortCode, tenantId, and OAuth credentials.
+   * @private
    */
-  public readonly workingDirectory: string;
+  private readonly resolvedConfig: ResolvedB2CConfig;
 
-  public constructor(opts: ServicesOptions = {}) {
+  public constructor(opts: ServicesOptions) {
     this.b2cInstance = opts.b2cInstance;
     this.mrtConfig = opts.mrtConfig ?? {};
-    this.workingDirectory = opts.workingDirectory ?? process.cwd();
+    this.resolvedConfig = opts.resolvedConfig;
   }
 
   /**
    * Creates a Services instance from an already-resolved configuration.
    *
    * @param config - Already-resolved configuration from BaseCommand.resolvedConfig
-   * @param workingDirectory - Optional working directory (defaults to process.cwd())
    * @returns Services instance with resolved config
    *
    * @example
    * ```typescript
    * // In a command that extends BaseCommand
-   * const services = Services.fromResolvedConfig(this.resolvedConfig, this.flags['working-directory']);
+   * const services = Services.fromResolvedConfig(this.resolvedConfig);
    * ```
    */
-  public static fromResolvedConfig(config: ResolvedB2CConfig, workingDirectory?: string): Services {
+  public static fromResolvedConfig(config: ResolvedB2CConfig): Services {
     // Build MRT config using factory methods
     const mrtConfig: MrtConfig = {
       auth: config.hasMrtConfig() ? config.createMrtAuth() : undefined,
@@ -151,7 +156,7 @@ export class Services {
     return new Services({
       b2cInstance,
       mrtConfig,
-      workingDirectory,
+      resolvedConfig: config,
     });
   }
 
@@ -171,6 +176,34 @@ export class Services {
   }
 
   /**
+   * Get Custom APIs client for managing custom SCAPI endpoints.
+   * Requires shortCode, tenantId, and OAuth credentials to be configured.
+   *
+   * @throws Error if shortCode, tenantId, or OAuth credentials are missing
+   * @returns Typed Custom APIs client
+   */
+  public getCustomApisClient(): CustomApisClient {
+    const {shortCode, tenantId} = this.resolvedConfig.values;
+
+    if (!shortCode) {
+      throw new Error(
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+      );
+    }
+
+    if (!tenantId) {
+      throw new Error(
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+      );
+    }
+
+    // This will throw if OAuth credentials are missing
+    const oauthStrategy = this.getOAuthStrategy();
+
+    return createCustomApisClient({shortCode, tenantId}, oauthStrategy);
+  }
+
+  /**
    * Get the current working directory.
    */
   public getCwd(): string {
@@ -185,6 +218,25 @@ export class Services {
   }
 
   /**
+   * Get organization ID for SCAPI API calls.
+   * Ensures the tenant ID has the required f_ecom_ prefix.
+   *
+   * @throws Error if tenantId is not configured
+   * @returns Organization ID with f_ecom_ prefix
+   */
+  public getOrganizationId(): string {
+    const {tenantId} = this.resolvedConfig.values;
+
+    if (!tenantId) {
+      throw new Error(
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+      );
+    }
+
+    return toOrganizationId(tenantId);
+  }
+
+  /**
    * Get OS platform information.
    */
   public getPlatform(): NodeJS.Platform {
@@ -192,10 +244,86 @@ export class Services {
   }
 
   /**
+   * Get SCAPI Schemas client for discovering available SCAPI APIs.
+   * Requires shortCode, tenantId, and OAuth credentials to be configured.
+   *
+   * @throws Error if shortCode, tenantId, or OAuth credentials are missing
+   * @returns Typed SCAPI Schemas client
+   */
+  public getScapiSchemasClient(): ScapiSchemasClient {
+    const {shortCode, tenantId} = this.resolvedConfig.values;
+
+    if (!shortCode) {
+      throw new Error(
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+      );
+    }
+
+    if (!tenantId) {
+      throw new Error(
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+      );
+    }
+
+    // This will throw if OAuth credentials are missing
+    const oauthStrategy = this.getOAuthStrategy();
+
+    return createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
+  }
+
+  /**
+   * Get SCAPI shortCode from configuration.
+   * Returns undefined if not configured.
+   *
+   * @returns shortCode or undefined
+   */
+  public getShortCode(): string | undefined {
+    return this.resolvedConfig.values.shortCode;
+  }
+
+  /**
+   * Get tenant ID from configuration.
+   * Returns undefined if not configured.
+   *
+   * @returns tenantId or undefined
+   */
+  public getTenantId(): string | undefined {
+    return this.resolvedConfig.values.tenantId;
+  }
+
+  /**
    * Get system temporary directory.
    */
   public getTmpDir(): string {
     return os.tmpdir();
+  }
+
+  /**
+   * Get WebDAV client for file operations on B2C instances.
+   * Requires hostname and WebDAV credentials to be configured.
+   *
+   * @throws Error if hostname or B2C instance is missing
+   * @returns WebDAV client instance
+   */
+  public getWebDavClient(): WebDavClient {
+    if (!this.b2cInstance) {
+      throw new Error('B2C instance required for WebDAV operations. Configure hostname and authentication in dw.json.');
+    }
+
+    return this.b2cInstance.webdav;
+  }
+
+  /**
+   * Get the project working directory.
+   * Falls back to process.cwd() if not explicitly set.
+   *
+   * This is the directory where the project is located, which may differ from process.cwd()
+   * when MCP clients spawn servers from a different location (e.g., home directory).
+   *
+   * @returns Project working directory path
+   */
+  public getWorkingDirectory(): string {
+    return this.resolvedConfig.values.workingDirectory ?? process.cwd();
   }
 
   /**
@@ -217,6 +345,10 @@ export class Services {
   public listDirectory(dirPath: string): fs.Dirent[] {
     return fs.readdirSync(dirPath, {withFileTypes: true});
   }
+
+  // ============================================
+  // SCAPI Helper Methods
+  // ============================================
 
   /**
    * Read a file from the filesystem.
@@ -247,5 +379,23 @@ export class Services {
    */
   public stat(targetPath: string): fs.Stats {
     return fs.statSync(targetPath);
+  }
+
+  /**
+   * Get OAuth strategy from resolved configuration.
+   * Mirrors the pattern from OAuthCommand.getOAuthStrategy().
+   *
+   * @throws Error if OAuth credentials are not configured
+   * @returns OAuth auth strategy
+   * @private
+   */
+  private getOAuthStrategy(): AuthStrategy {
+    if (!this.resolvedConfig.hasOAuthConfig()) {
+      throw new Error('OAuth client ID required. Provide --client-id, set SFCC_CLIENT_ID, or configure in dw.json.');
+    }
+
+    // Use resolvedConfig factory to create OAuth strategy
+    // This handles client-credentials vs implicit flow automatically
+    return this.resolvedConfig.createOAuth();
   }
 }

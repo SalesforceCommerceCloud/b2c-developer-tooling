@@ -193,43 +193,6 @@ describe('Account Manager Operations E2E Tests', function () {
       expect(response).to.have.property('id').that.equals(orgId);
       expect(response).to.have.property('name');
     });
-
-    it('should get organization audit logs', async function () {
-      if (!hasOrgs) {
-        console.log('  ⚠ No organizations available, skipping test');
-        this.skip();
-      }
-
-      const result = await runCLIWithRetry(
-        ['am', 'orgs', 'audit', orgId, '--json', '--auth-methods', 'client-credentials'],
-        {
-          timeout: TIMEOUTS.DEFAULT,
-          verbose: true,
-          env: AM_AUTH_ENV,
-        },
-      );
-
-      // Skip if authentication/permission error (audit logs may require admin permissions)
-      if (result.exitCode !== 0) {
-        const errorText = String(result.stderr || result.stdout || '');
-        if (
-          errorText.includes('Authentication invalid') ||
-          errorText.includes('Access is denied') ||
-          errorText.includes('401') ||
-          errorText.includes('403')
-        ) {
-          console.log('  ⚠ Insufficient permissions for audit logs, skipping test');
-          this.skip();
-        }
-      }
-
-      expect(result.exitCode, `Org audit command failed: ${result.stderr}`).to.equal(0);
-
-      const response = parseJSONOutput(result);
-      // Org audit --json returns an AuditLogCollection with content array
-      expect(response).to.have.property('content');
-      expect(response.content).to.be.an('array');
-    });
   });
 
   describe('Step 2: Users', () => {

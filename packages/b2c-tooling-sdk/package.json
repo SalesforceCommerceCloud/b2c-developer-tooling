@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "description": "Core tooling library for Salesforce Commerce Cloud B2C CLI",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
@@ -167,6 +167,17 @@
         "default": "./dist/cjs/operations/content/index.js"
       }
     },
+    "./operations/cip": {
+      "development": "./src/operations/cip/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/cip/index.d.ts",
+        "default": "./dist/esm/operations/cip/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/cip/index.d.ts",
+        "default": "./dist/cjs/operations/cip/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {
@@ -308,33 +319,33 @@
     "generate:docs-index": "tsx scripts/generate-docs-index.ts"
   },
   "devDependencies": {
-    "@eslint/compat": "^1",
-    "@oclif/core": "^4",
-    "@oclif/prettier-config": "^0.2.1",
-    "@oclif/test": "^4.1.14",
-    "@salesforce/dev-config": "^4.3.2",
-    "@tony.ganchev/eslint-plugin-header": "^3.1.11",
+    "@eslint/compat": "catalog:",
+    "@oclif/core": "catalog:",
+    "@oclif/prettier-config": "catalog:",
+    "@oclif/test": "catalog:",
+    "@salesforce/dev-config": "catalog:",
     "@types/archiver": "^7.0.0",
-    "@types/chai": "^4.3.20",
+    "@types/chai": "catalog:",
     "@types/ejs": "^3.1.5",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^22",
-    "@types/sinon": "^21.0.0",
+    "@types/mocha": "catalog:",
+    "@types/node": "catalog:",
+    "@types/sinon": "catalog:",
     "@types/xml2js": "^0.4.14",
-    "c8": "^10.1.3",
-    "chai": "^4.5.0",
-    "eslint": "^9",
-    "eslint-config-prettier": "^10",
-    "eslint-plugin-prettier": "^5.5.4",
-    "mocha": "^10.8.2",
-    "msw": "^2.12.4",
+    "c8": "catalog:",
+    "chai": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-header": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "mocha": "catalog:",
+    "msw": "catalog:",
     "openapi-typescript": "^7.10.1",
-    "prettier": "^3.6.2",
-    "shx": "^0.3.3",
-    "sinon": "^21.0.1",
-    "tsx": "^4.20.6",
-    "typescript": "^5",
-    "typescript-eslint": "^8"
+    "prettier": "catalog:",
+    "shx": "catalog:",
+    "sinon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   },
   "peerDependencies": {
     "@oclif/core": "^4"
@@ -351,17 +362,18 @@
     "@salesforce/telemetry": "6.4.6",
     "archiver": "7.0.1",
     "chokidar": "5.0.0",
-    "cliui": "9.0.1",
+    "cliui": "catalog:",
     "ejs": "3.1.10",
     "fuse.js": "7.1.0",
-    "glob": "13.0.0",
+    "glob": "catalog:",
     "i18next": "25.7.4",
     "jszip": "3.10.1",
     "minimatch": "10.1.1",
-    "open": "11.0.0",
+    "open": "catalog:",
     "openapi-fetch": "0.15.0",
     "pino": "10.1.0",
     "pino-pretty": "13.1.2",
+    "protobufjs": "7.5.4",
     "undici": "7.19.2",
     "xml2js": "0.6.2"
   }

@@ -8,10 +8,15 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
-import {loadDwJson} from '../dw-json.js';
-import {getPopulatedFields} from '../mapping.js';
-import {mapDwJsonToNormalizedConfig} from '../mapping.js';
-import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '../types.js';
+import {loadDwJson, loadFullDwJson, addInstance, removeInstance, setActiveInstance} from '../dw-json.js';
+import {getPopulatedFields, mapDwJsonToNormalizedConfig, mapNormalizedConfigToDwJson} from '../mapping.js';
+import type {
+  ConfigSource,
+  ConfigLoadResult,
+  ResolveConfigOptions,
+  InstanceInfo,
+  CreateInstanceOptions,
+} from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -29,7 +34,7 @@ export class DwJsonSource implements ConfigSource {
     const result = loadDwJson({
       instance: options.instance,
       path: options.configPath,
-      startDir: options.startDir,
+      workingDirectory: options.workingDirectory,
     });
 
     if (!result) {
@@ -42,5 +47,82 @@ export class DwJsonSource implements ConfigSource {
     logger.trace({location: result.path, fields}, '[DwJsonSource] Loaded config');
 
     return {config, location: result.path};
+  }
+
+  /**
+   * List all instances from dw.json.
+   */
+  listInstances(options?: ResolveConfigOptions): InstanceInfo[] {
+    const result = loadFullDwJson({
+      path: options?.configPath,
+      workingDirectory: options?.workingDirectory,
+    });
+
+    if (!result) {
+      return [];
+    }
+
+    const instances: InstanceInfo[] = [];
+    const {config, path: dwJsonPath} = result;
+
+    // Add root config if it has a name
+    if (config.name) {
+      instances.push({
+        name: config.name,
+        hostname: config.hostname,
+        active: config.active,
+        source: this.name,
+        location: dwJsonPath,
+      });
+    }
+
+    // Add configs array entries
+    if (config.configs) {
+      for (const c of config.configs) {
+        if (c.name) {
+          instances.push({
+            name: c.name,
+            hostname: c.hostname,
+            active: c.active,
+            source: this.name,
+            location: dwJsonPath,
+          });
+        }
+      }
+    }
+
+    return instances;
+  }
+
+  /**
+   * Create a new instance in dw.json.
+   */
+  createInstance(options: CreateInstanceOptions & ResolveConfigOptions): void {
+    const dwJsonConfig = mapNormalizedConfigToDwJson(options.config, options.name);
+    addInstance(dwJsonConfig, {
+      path: options.configPath,
+      workingDirectory: options.workingDirectory,
+      setActive: options.setActive,
+    });
+  }
+
+  /**
+   * Remove an instance from dw.json.
+   */
+  removeInstance(name: string, options?: ResolveConfigOptions): void {
+    removeInstance(name, {
+      path: options?.configPath,
+      workingDirectory: options?.workingDirectory,
+    });
+  }
+
+  /**
+   * Set an instance as active in dw.json.
+   */
+  setActiveInstance(name: string, options?: ResolveConfigOptions): void {
+    setActiveInstance(name, {
+      path: options?.configPath,
+      workingDirectory: options?.workingDirectory,
+    });
   }
 }

@@ -71,17 +71,23 @@ export {
   createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
   createCdnZonesClient,
+  createCipClient,
   toOrganizationId,
   toTenantId,
   buildTenantScope,
   getApiErrorMessage,
   isValidRoleTenantFilter,
+  fetchRoleMapping,
+  resolveToInternalRole,
+  resolveFromInternalRole,
   ORGANIZATION_ID_PREFIX,
   ROLE_TENANT_FILTER_PATTERN,
   SCAPI_TENANT_SCOPE_PREFIX,
   CUSTOM_APIS_DEFAULT_SCOPES,
   CDN_ZONES_READ_SCOPES,
   CDN_ZONES_RW_SCOPES,
+  DEFAULT_CIP_HOST,
+  DEFAULT_CIP_STAGING_HOST,
 } from './clients/index.js';
 export type {
   PropfindEntry,
@@ -125,6 +131,8 @@ export type {
   AccountManagerRolesError,
   RoleCollection,
   ListRolesOptions,
+  RoleMapping,
+  OrgMapping,
   AccountManagerApiClientsClient,
   AccountManagerApiClient,
   APIClientCreate,
@@ -145,6 +153,14 @@ export type {
   ZonesEnvelope,
   CdnZonesPaths,
   CdnZonesComponents,
+  CipClient,
+  CipClientConfig,
+  CipColumn,
+  CipExecuteResponse,
+  CipFetchResponse,
+  CipFrame,
+  CipQueryOptions,
+  CipQueryResult,
 } from './clients/index.js';
 
 // Operations - Code
@@ -242,6 +258,31 @@ export {
 } from './operations/ods/index.js';
 
 export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
+
+// Operations - CIP
+export {
+  buildCipReportSql,
+  describeCipTable,
+  executeCipReport,
+  getCipReportByName,
+  listCipReports,
+  listCipTables,
+} from './operations/cip/index.js';
+export type {
+  CipColumnMetadata,
+  CipDescribeTableOptions,
+  CipDescribeTableResult,
+  CipListTablesOptions,
+  CipListTablesResult,
+  CipReportDefinition,
+  CipReportExecutionOptions,
+  CipReportParamType,
+  CipReportParamDefinition,
+  CipReportQueryExecutor,
+  CipReportQueryResult,
+  CipReportSqlResult,
+  CipTableMetadata,
+} from './operations/cip/index.js';
 
 // Operations - Users
 export {

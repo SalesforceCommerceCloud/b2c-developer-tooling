@@ -7,6 +7,7 @@ import {Flags} from '@oclif/core';
 import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {isValidRoleTenantFilter, type AccountManagerApiClient, type APIClientCreate} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
+import {resolveOrgId} from '../../../utils/am/resolve-org.js';
 
 function splitCommaSeparated(s: string): string[] {
   return s
@@ -24,8 +25,8 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> --name my-client --organizations org-id-1 --password "SecureP@ss123"',
-    '<%= config.bin %> <%= command.id %> --name my-client --organizations org-id-1 --password "SecureP@ss123" --roles SALESFORCE_COMMERCE_API',
+    '<%= config.bin %> <%= command.id %> --name my-client --orgs org-id-1 --password "SecureP@ss123"',
+    '<%= config.bin %> <%= command.id %> --name my-client --orgs "My Organization" --password "SecureP@ss123" --roles SALESFORCE_COMMERCE_API',
   ];
 
   static flags = {
@@ -38,9 +39,9 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
       char: 'd',
       description: 'Description of the API client',
     }),
-    organizations: Flags.string({
+    orgs: Flags.string({
       char: 'o',
-      description: 'Comma-separated organization IDs (required)',
+      description: 'Comma-separated organization IDs or names',
       required: true,
     }),
     password: Flags.string({
@@ -84,9 +85,11 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
   async run(): Promise<AccountManagerApiClient> {
     const flags = this.flags;
     const nameTrimmed = flags.name.trim();
-    const orgIds = splitCommaSeparated(flags.organizations);
+    const orgInputs = splitCommaSeparated(flags.orgs);
 
-    this.validateCreateInput(flags, nameTrimmed, orgIds);
+    this.validateCreateInput(flags, nameTrimmed, orgInputs);
+
+    const orgIds = await Promise.all(orgInputs.map((o) => resolveOrgId(this.accountManagerClient, o)));
 
     const body = this.buildCreateBody(flags, nameTrimmed, orgIds);
 
@@ -187,7 +190,7 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
       );
     }
     if (orgIds.length === 0) {
-      this.error(t('commands.client.create.noOrgs', 'At least one organization ID is required'));
+      this.error(t('commands.client.create.noOrgs', 'At least one organization is required'));
     }
   }
 }

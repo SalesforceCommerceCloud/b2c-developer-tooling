@@ -1,6 +1,6 @@
 ---
 name: sdk-module-development
-description: Adding new modules and exports to the @salesforce/b2c-tooling-sdk package
+description: Adding new modules and exports to the @salesforce/b2c-tooling-sdk package. Use when creating a new SDK module, adding barrel file exports, configuring package.json exports, or building client factory functions.
 metadata:
   internal: true
 ---

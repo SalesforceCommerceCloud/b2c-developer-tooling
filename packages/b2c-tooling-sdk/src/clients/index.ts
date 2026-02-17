@@ -15,6 +15,7 @@
  * - {@link OcapiClient} - Data API operations via OCAPI (openapi-fetch Client)
  * - {@link SlasClient} - SLAS Admin API for managing tenants and clients
  * - {@link OdsClient} - On-Demand Sandbox API for managing developer sandboxes
+ * - {@link CipClient} - B2C Commerce Intelligence (CIP/CCAC) query client
  * - {@link CustomApisClient} - Custom APIs DX API for retrieving endpoint status
  * - {@link ScapiSchemasClient} - SCAPI Schemas API for discovering and retrieving OpenAPI schemas
  *
@@ -221,10 +222,9 @@ export {
   purgeUser,
   resetUser,
   findUserByLogin,
-  mapToInternalRole,
-  mapFromInternalRole,
-  ROLE_NAMES_MAP,
-  ROLE_NAMES_MAP_REVERSE,
+  fetchRoleMapping,
+  resolveToInternalRole,
+  resolveFromInternalRole,
   createAccountManagerRolesClient,
   getRole,
   listRoles,
@@ -252,6 +252,8 @@ export type {
   AccountManagerRolesError,
   RoleCollection,
   ListRolesOptions,
+  RoleMapping,
+  OrgMapping,
   AccountManagerApiClientsClient,
   AccountManagerApiClient,
   APIClientCreate,
@@ -293,6 +295,17 @@ export type {
   paths as MrtB2CPaths,
   components as MrtB2CComponents,
 } from './mrt-b2c.js';
+
+export {createCipClient, CipClient, DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from './cip.js';
+export type {
+  CipClientConfig,
+  CipColumn,
+  CipExecuteResponse,
+  CipFetchResponse,
+  CipFrame,
+  CipQueryOptions,
+  CipQueryResult,
+} from './cip.js';
 
 export {getApiErrorMessage} from './error-utils.js';
 

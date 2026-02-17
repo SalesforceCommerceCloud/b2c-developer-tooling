@@ -191,42 +191,34 @@ Create a new user in Account Manager.
 #### Usage
 
 ```bash
-b2c am users create --org <ORG_ID> --mail <EMAIL> [FLAGS]
+b2c am users create --org <ORG> --mail <EMAIL> --first-name <NAME> --last-name <NAME> [FLAGS]
 ```
 
 #### Required Flags
 
 | Flag | Description |
 |------|-------------|
-| `--org` | Organization ID where the user will be created |
-| `--mail` | User email address (login) |
+| `--org`, `-o` | Organization ID or name |
+| `--mail`, `-m` | User email address (login) |
+| `--first-name` | User's first name |
+| `--last-name` | User's last name |
 
 #### Optional Flags
 
 | Flag | Description |
 |------|-------------|
-| `--first-name` | User's first name |
-| `--last-name` | User's last name |
-| `--display-name` | Display name |
-| `--preferred-locale` | Preferred locale (e.g., `en_US`) |
-| `--business-phone` | Business phone number |
-| `--home-phone` | Home phone number |
-| `--mobile-phone` | Mobile phone number |
 | `--json` | Output results as JSON |
 
 #### Examples
 
 ```bash
-# Create a basic user
+# Create a user by org ID
 b2c am users create --org org-123 --mail user@example.com \
   --first-name John --last-name Doe
 
-# Create a user with additional details
-b2c am users create --org org-123 --mail user@example.com \
-  --first-name John --last-name Doe \
-  --display-name "John Doe" \
-  --preferred-locale en_US \
-  --business-phone "+1-555-123-4567"
+# Create a user by org name
+b2c am users create --org "My Organization" --mail user@example.com \
+  --first-name John --last-name Doe
 
 # Output as JSON
 b2c am users create --org org-123 --mail user@example.com \
@@ -238,6 +230,7 @@ b2c am users create --org org-123 --mail user@example.com \
 - User will be created in INITIAL state
 - User must be assigned roles separately using `b2c am roles grant`
 - The user's primary organization is set to the specified `--org`
+- Organization can be specified by ID or friendly name
 
 ---
 
@@ -852,7 +845,7 @@ b2c am clients create [FLAGS]
 | Flag | Description |
 |------|-------------|
 | `--name`, `-n` | API client name (max 200 characters) |
-| `--organizations`, `-o` | Comma-separated organization IDs |
+| `--orgs`, `-o` | Comma-separated organization IDs or names |
 | `--password`, `-p` | Password (12–128 characters) |
 
 #### Optional Flags
@@ -874,8 +867,8 @@ b2c am clients create [FLAGS]
 #### Examples
 
 ```bash
-b2c am clients create --name my-client --organizations org-id-1 --password "SecureP@ss123"
-b2c am clients create -n my-client -o org-id-1 -p "SecureP@ss123" -r SALESFORCE_COMMERCE_API
+b2c am clients create --name my-client --orgs org-id-1 --password "SecureP@ss123"
+b2c am clients create -n my-client -o "My Organization" -p "SecureP@ss123" -r SALESFORCE_COMMERCE_API
 b2c am clients create -n my-client -o org-id-1 -p "SecureP@ss123" --scopes "mail,openid" --default-scopes "mail"
 ```
 

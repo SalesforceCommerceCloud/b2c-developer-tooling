@@ -158,6 +158,23 @@ b2c mrt bundle deploy -p <PROJECT> -e <ENVIRONMENT> \
 
 These patterns match the defaults used by `pnpm sfnext push`. The `--ssr-only` and `--ssr-shared` flags accept either a JSON array (for patterns with brace expansion) or a comma-separated string, and can be overridden if your project structure differs.
 
+## Step 6: Debugging with Log Tailing
+
+After deploying, you can tail application logs in real time to debug runtime issues.
+
+```bash
+# Tail all logs from your environment
+b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT>
+
+# Show only errors and warnings
+b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --level ERROR --level WARN
+
+# Search for specific patterns
+b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --search "timeout|500"
+```
+
+This is useful for diagnosing deployment failures, SSR errors, and API connectivity issues. See [MRT Commands](/cli/mrt#tail-logs) for all options.
+
 ## Summary
 
 | Step | Command | Required? |
@@ -167,6 +184,7 @@ These patterns match the defaults used by `pnpm sfnext push`. The `--ssr-only` a
 | 3. Create MRT Environment | `b2c mrt env create` | Yes |
 | 4. Set Environment Variables | `b2c mrt env var set` | Yes |
 | 5. Deploy | `pnpm sfnext push` or `b2c mrt bundle deploy` | Yes |
+| 6. Debug with Log Tailing | `b2c mrt tail-logs` | Optional |
 
 ## Next Steps
 

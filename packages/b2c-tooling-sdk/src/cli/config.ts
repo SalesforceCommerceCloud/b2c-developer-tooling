@@ -44,7 +44,7 @@ export type ParsedFlags = Record<string, unknown>;
  * ```
  */
 export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
-  const scopes = flags.scope as string[] | undefined;
+  const scopes = flags['auth-scope'] as string[] | undefined;
 
   // Parse auth methods from --auth-methods or --user-auth flag
   const authMethodValues = flags['auth-methods'] as string[] | undefined;
@@ -105,6 +105,7 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     hostname: flags.server as string | undefined,
     webdavHostname: flags['webdav-server'] as string | undefined,
     codeVersion: flags['code-version'] as string | undefined,
+    cipHost: flags['cip-host'] as string | undefined,
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
     // TLS/mTLS options
@@ -174,7 +175,7 @@ export interface LoadConfigOptions {
   /** Explicit path to config file (skips searching if provided) */
   configPath?: string;
   /** Starting directory for config file search (default: current working directory) */
-  startDir?: string;
+  workingDirectory?: string;
   /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
@@ -235,16 +236,17 @@ export function loadConfig(
 ): ResolvedB2CConfig {
   const logger = getLogger();
 
-  // Preserve instanceName from options.instance if not already in flags
+  // Preserve instanceName and workingDirectory from options if not already in flags
   const effectiveFlags = {
     ...flags,
     instanceName: flags.instanceName ?? options.instance,
+    workingDirectory: flags.workingDirectory ?? options.workingDirectory,
   };
 
   const resolved = resolveConfig(effectiveFlags, {
     instance: options.instance,
     configPath: options.configPath,
-    startDir: options.startDir,
+    workingDirectory: options.workingDirectory,
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,
