@@ -34,6 +34,8 @@ interface MrtBundlePushInput {
   ssrOnly?: string;
   /** Glob patterns for shared files (default: static/**\/*,client/**\/*) */
   ssrShared?: string;
+  /** Whether to deploy to an environment after push (default: false) */
+  deploy?: boolean;
 }
 
 /**
@@ -78,6 +80,11 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
           .string()
           .optional()
           .describe('Glob patterns for shared files, comma-separated (default: static/**/*,client/**/*)'),
+        deploy: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Whether to deploy to an environment after push (default: false)'),
       },
       async execute(args, context) {
         // Get project from --project flag (required)
@@ -89,7 +96,18 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
         }
 
         // Get environment from --environment flag (optional)
-        const environment = context.mrtConfig?.environment;
+        // When deploy is false, environment is undefined (bundle push only, no deployment)
+        // When deploy is true, environment is required
+        let environment: string | undefined;
+        if (args.deploy) {
+          environment = context.mrtConfig?.environment;
+          if (!environment) {
+            throw new Error(
+              'MRT deployment error: Environment is required when deploy=true. ' +
+                'Provide --environment flag, set SFCC_MRT_ENVIRONMENT environment variable, or set mrtEnvironment in dw.json.',
+            );
+          }
+        }
 
         // Get origin from --cloud-origin flag or mrtOrigin config (optional)
         const origin = context.mrtConfig?.origin;

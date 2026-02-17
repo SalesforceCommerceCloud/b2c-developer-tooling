@@ -175,7 +175,65 @@ describe('tools/mrt', () => {
       expect(jsonResult.bundleId).to.equal(123);
     });
 
-    it('should call pushBundle with environment as target when configured', async () => {
+    it('should not pass environment as target when deploy is false (default)', async () => {
+      const buildDir = './build';
+
+      const mockResult: PushResult = {
+        bundleId: 456,
+        projectSlug: 'my-project',
+        deployed: false,
+        message: 'Bundle created but not deployed',
+      };
+      pushBundleStub.resolves(mockResult);
+
+      const loadServices = createMockLoadServicesWrapper({
+        mrtAuth: new MockAuthStrategy(),
+        mrtProject: 'my-project',
+        mrtEnvironment: 'staging',
+      });
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+
+      const result = await tool.handler({buildDirectory: buildDir});
+
+      expect(result.isError).to.be.undefined;
+      expect(pushBundleStub.calledOnce).to.be.true;
+      const [options] = pushBundleStub.firstCall.args as [PushOptions];
+      expect(options.projectSlug).to.equal('my-project');
+      expect(options.target).to.be.undefined;
+      const jsonResult = getResultJson<PushResult>(result);
+      expect(jsonResult.deployed).to.be.false;
+    });
+
+    it('should not pass environment as target when deploy is explicitly false', async () => {
+      const buildDir = './build';
+
+      const mockResult: PushResult = {
+        bundleId: 789,
+        projectSlug: 'my-project',
+        deployed: false,
+        message: 'Bundle created but not deployed',
+      };
+      pushBundleStub.resolves(mockResult);
+
+      const loadServices = createMockLoadServicesWrapper({
+        mrtAuth: new MockAuthStrategy(),
+        mrtProject: 'my-project',
+        mrtEnvironment: 'staging',
+      });
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+
+      const result = await tool.handler({buildDirectory: buildDir, deploy: false});
+
+      expect(result.isError).to.be.undefined;
+      expect(pushBundleStub.calledOnce).to.be.true;
+      const [options] = pushBundleStub.firstCall.args as [PushOptions];
+      expect(options.projectSlug).to.equal('my-project');
+      expect(options.target).to.be.undefined;
+      const jsonResult = getResultJson<PushResult>(result);
+      expect(jsonResult.deployed).to.be.false;
+    });
+
+    it('should call pushBundle with environment as target when deploy is true and environment is configured', async () => {
       const buildDir = './build';
 
       const mockResult: PushResult = {
@@ -194,7 +252,7 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
-      const result = await tool.handler({buildDirectory: buildDir});
+      const result = await tool.handler({buildDirectory: buildDir, deploy: true});
 
       expect(result.isError).to.be.undefined;
       expect(pushBundleStub.calledOnce).to.be.true;
@@ -302,6 +360,26 @@ describe('tools/mrt', () => {
       const text = getResultText(result);
       expect(text).to.include('MRT project error');
       expect(text).to.include('Project is required');
+      expect(pushBundleStub.called).to.be.false;
+    });
+
+    it('should return error when deploy is true but environment is not configured', async () => {
+      const loadServices = createMockLoadServicesWrapper({
+        mrtAuth: new MockAuthStrategy(),
+        mrtProject: 'my-project',
+        // No environment configured
+      });
+      const tool = createMrtTools(loadServices)[0];
+
+      const result = await tool.handler({deploy: true});
+
+      expect(result.isError).to.be.true;
+      const text = getResultText(result);
+      expect(text).to.include('MRT deployment error');
+      expect(text).to.include('Environment is required when deploy=true');
+      expect(text).to.include('--environment flag');
+      expect(text).to.include('SFCC_MRT_ENVIRONMENT');
+      expect(text).to.include('mrtEnvironment');
       expect(pushBundleStub.called).to.be.false;
     });
 
