@@ -91,7 +91,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
       // Each section should be valid (tests that SECTIONS_METADATA is complete)
       for (const section of allSections) {
-        const result = tool.handler({sections: [section]});
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = tool.handler({sections: [section]}, {} as any);
         expect(result).to.be.a('promise');
       }
     });
@@ -158,7 +159,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
       // Each section should be valid and retrievable
       for (const section of allSections) {
-        const result = tool.handler({sections: [section]});
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = tool.handler({sections: [section]}, {} as any);
         expect(result).to.be.a('promise'); // Should not throw sync error
       }
     });
@@ -169,7 +171,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
 
       // Should work without providing sections parameter
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
       expect(result.isError).to.be.undefined;
       expect(getResultText(result)).to.not.be.empty;
     });
@@ -194,8 +197,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       ];
 
       for (const section of validSections) {
-        // eslint-disable-next-line no-await-in-loop
-        const result = await tool.handler({sections: [section]});
+        // eslint-disable-next-line no-await-in-loop, @typescript-eslint/no-explicit-any
+        const result = await tool.handler({sections: [section]}, {} as any);
         expect(result.isError).to.be.undefined;
       }
     });
@@ -204,7 +207,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
   describe('default behavior', () => {
     it('should return comprehensive guidelines by default when no sections specified', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -227,7 +231,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return empty string when sections array is explicitly empty', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: []});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: []}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -261,7 +266,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return quick-reference section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['quick-reference']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['quick-reference']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -270,7 +276,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return data-fetching section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['data-fetching']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['data-fetching']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -279,7 +286,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return state-management section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['state-management']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['state-management']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -288,7 +296,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return auth section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['auth']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['auth']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -297,7 +306,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return config section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['config']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['config']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -306,7 +316,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return i18n section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['i18n']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['i18n']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -315,7 +326,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return components section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['components']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['components']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -324,7 +336,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return page-designer section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['page-designer']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['page-designer']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -333,7 +346,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return performance section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['performance']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['performance']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -342,7 +356,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return testing section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['testing']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['testing']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -351,7 +366,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return extensions section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['extensions']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['extensions']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -360,7 +376,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should return pitfalls section', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['pitfalls']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['pitfalls']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -373,9 +390,13 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
 
       // Test related sections together (as mentioned in description)
-      const result = await tool.handler({
-        sections: ['data-fetching', 'state-management'],
-      });
+      const result = await tool.handler(
+        {
+          sections: ['data-fetching', 'state-management'],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -393,9 +414,13 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should combine three sections correctly', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({
-        sections: ['auth', 'config', 'i18n'],
-      });
+      const result = await tool.handler(
+        {
+          sections: ['auth', 'config', 'i18n'],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -413,9 +438,13 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
 
       // Request sections in specific order
-      const result = await tool.handler({
-        sections: ['auth', 'config'],
-      });
+      const result = await tool.handler(
+        {
+          sections: ['auth', 'config'],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -439,22 +468,26 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should handle all sections at once', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({
-        sections: [
-          'quick-reference',
-          'data-fetching',
-          'state-management',
-          'auth',
-          'config',
-          'i18n',
-          'components',
-          'page-designer',
-          'performance',
-          'testing',
-          'extensions',
-          'pitfalls',
-        ],
-      });
+      const result = await tool.handler(
+        {
+          sections: [
+            'quick-reference',
+            'data-fetching',
+            'state-management',
+            'auth',
+            'config',
+            'i18n',
+            'components',
+            'page-designer',
+            'performance',
+            'testing',
+            'extensions',
+            'pitfalls',
+          ],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -479,7 +512,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     it('should reject invalid section names', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({sections: ['invalid-section']} as any);
+      const result = await tool.handler({sections: ['invalid-section']} as any, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -489,7 +522,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     it('should reject empty strings in sections array', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({sections: ['']} as any);
+      const result = await tool.handler({sections: ['']} as any, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -499,7 +532,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     it('should reject non-array sections parameter', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({sections: 'quick-reference'} as any);
+      const result = await tool.handler({sections: 'quick-reference'} as any, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -510,7 +543,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
   describe('content verification', () => {
     it('should load actual markdown content from files', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['quick-reference']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['quick-reference']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -523,8 +557,10 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     it('should return different content for different sections', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
 
-      const result1 = await tool.handler({sections: ['data-fetching']});
-      const result2 = await tool.handler({sections: ['auth']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result1 = await tool.handler({sections: ['data-fetching']}, {} as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result2 = await tool.handler({sections: ['auth']}, {} as any);
 
       expect(result1.isError).to.be.undefined;
       expect(result2.isError).to.be.undefined;
@@ -550,8 +586,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       ];
 
       for (const {section, keywords} of topicTests) {
-        // eslint-disable-next-line no-await-in-loop
-        const result = await tool.handler({sections: [section]});
+        // eslint-disable-next-line no-await-in-loop, @typescript-eslint/no-explicit-any
+        const result = await tool.handler({sections: [section]}, {} as any);
         expect(result.isError).to.be.undefined;
 
         const text = getResultText(result).toLowerCase();
@@ -564,7 +600,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should provide non-negotiable architecture rules in quick-reference', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['quick-reference']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['quick-reference']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -583,7 +620,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should emphasize TypeScript-only approach', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: ['quick-reference']});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: ['quick-reference']}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -596,7 +634,8 @@ describe('tools/storefrontnext/developer-guidelines', () => {
   describe('edge cases', () => {
     it('should handle undefined sections parameter', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({sections: undefined});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({sections: undefined}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -609,7 +648,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     it('should handle sections parameter explicitly set to null', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({sections: null} as any);
+      const result = await tool.handler({sections: null} as any, {} as any);
 
       // null is not a valid array, should error
       expect(result.isError).to.be.true;
@@ -617,9 +656,13 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
     it('should handle duplicate sections in array', async () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      const result = await tool.handler({
-        sections: ['auth', 'auth'],
-      });
+      const result = await tool.handler(
+        {
+          sections: ['auth', 'auth'],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);

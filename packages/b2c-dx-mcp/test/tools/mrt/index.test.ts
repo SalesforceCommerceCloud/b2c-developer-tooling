@@ -163,7 +163,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
-      const result = await tool.handler({buildDirectory: buildDir});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({buildDirectory: buildDir}, {} as any);
 
       expect(result.isError).to.be.undefined;
       expect(pushBundleStub.calledOnce).to.be.true;
@@ -194,7 +195,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
-      const result = await tool.handler({buildDirectory: buildDir});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({buildDirectory: buildDir}, {} as any);
 
       expect(result.isError).to.be.undefined;
       expect(pushBundleStub.calledOnce).to.be.true;
@@ -225,7 +227,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
-      const result = await tool.handler({buildDirectory: buildDir});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({buildDirectory: buildDir}, {} as any);
 
       expect(result.isError).to.be.undefined;
       expect(pushBundleStub.calledOnce).to.be.true;
@@ -253,7 +256,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
-      await tool.handler({buildDirectory: buildDir, message: 'Custom deployment message'});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await tool.handler({buildDirectory: buildDir, message: 'Custom deployment message'}, {} as any);
 
       expect(pushBundleStub.calledOnce).to.be.true;
       const [options] = pushBundleStub.firstCall.args as [PushOptions];
@@ -277,7 +281,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
-      const result = await tool.handler({buildDirectory: buildDir, message: 'Release v1.0.0'});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({buildDirectory: buildDir, message: 'Release v1.0.0'}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const jsonResult = getResultJson<PushResult>(result);
@@ -296,7 +301,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices)[0];
 
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -312,7 +318,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices)[0];
 
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -333,7 +340,8 @@ describe('tools/mrt', () => {
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
-      const result = await tool.handler({buildDirectory: buildDir});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({buildDirectory: buildDir}, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -354,7 +362,7 @@ describe('tools/mrt', () => {
     it('should validate input schema', async () => {
       // Test that invalid input is rejected by the adapter
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({buildDirectory: 123} as any);
+      const result = await tool.handler({buildDirectory: 123} as any, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);

@@ -139,7 +139,8 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
 
       expect(result.isError).to.be.undefined;
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
@@ -175,7 +176,8 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      const result = await tool.handler({directory});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({directory}, {} as any);
 
       expect(result.isError).to.be.undefined;
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
@@ -204,7 +206,8 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      await tool.handler({cartridges});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await tool.handler({cartridges}, {} as any);
 
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
       const args = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
@@ -228,7 +231,8 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      await tool.handler({exclude});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await tool.handler({exclude}, {} as any);
 
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
       const args = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
@@ -250,7 +254,8 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      await tool.handler({reload: true});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await tool.handler({reload: true}, {} as any);
 
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
       const args = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
@@ -277,12 +282,16 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      await tool.handler({
-        directory,
-        cartridges,
-        exclude,
-        reload,
-      });
+      await tool.handler(
+        {
+          directory,
+          cartridges,
+          exclude,
+          reload,
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
 
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
       const [, dir, options] = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
@@ -309,7 +318,8 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
 
       expect(result.isError).to.be.undefined;
       const jsonResult = getResultJson<DeployResult>(result);
@@ -328,7 +338,8 @@ describe('tools/cartridges', () => {
       });
       const tool = createCartridgesTools(loadServices)[0];
 
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -347,7 +358,8 @@ describe('tools/cartridges', () => {
         findAndDeployCartridges: findAndDeployCartridgesStub,
       })[0];
 
-      const result = await tool.handler({});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler({}, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
@@ -369,7 +381,7 @@ describe('tools/cartridges', () => {
     it('should validate input schema', async () => {
       // Test that invalid input is rejected by the adapter
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({directory: 123} as any);
+      const result = await tool.handler({directory: 123} as any, {} as any);
 
       expect(result.isError).to.be.true;
       const text = getResultText(result);
