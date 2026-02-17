@@ -82,6 +82,7 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 ## Setup/Packaging
 
 - use `pnpm` over `npm` for package management
+- shared dependencies are managed via [pnpm catalogs](https://pnpm.io/catalogs) — versions are defined once in the `catalog:` section of `pnpm-workspace.yaml` and referenced as `"catalog:"` in each package.json. When adding or updating a dependency that is shared across packages, update the catalog entry rather than individual package.json files.
 - the `pnpm run test` commands also run the linter after tests
 - use `pnpm run -r format` (or individually in packages) to format code with prettier
 - use `exports` field in package.json files to define public API surface for packages; use `development` field for nodejs --conditions for development ergonomics (packages/b2c-cli/bin/dev.js will use this condition)
