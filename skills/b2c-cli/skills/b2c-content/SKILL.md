@@ -1,6 +1,6 @@
 ---
 name: b2c-content
-description: Export and list Page Designer pages from B2C Commerce content libraries. Use when exporting pages with components and assets, discovering page IDs, or working with content library XML.
+description: Export and list Page Designer pages from B2C Commerce content libraries. Always reference when using the CLI to export or list Page Designer content, discover page IDs, or work with content library assets.
 ---
 
 # B2C Content Skill

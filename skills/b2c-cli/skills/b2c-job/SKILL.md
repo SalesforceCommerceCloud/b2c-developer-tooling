@@ -1,6 +1,6 @@
 ---
 name: b2c-job
-description: Run and monitor existing (B2C/demandware/SFCC) jobs using the b2c cli, import/export site archives (IMPEX). Use when executing batch jobs, importing site data, running search indexing, checking job status, or viewing job logs. For creating new jobs, use b2c-custom-job-steps skill instead.
+description: Run and monitor existing (B2C/demandware/SFCC) jobs using the b2c cli, import/export site archives (IMPEX). Always reference when using the CLI to run jobs, import or export site archives, check job execution status, or trigger search indexing. For creating new jobs, use b2c-custom-job-steps skill instead.
 ---
 
 # B2C Job Skill

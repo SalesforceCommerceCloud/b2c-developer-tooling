@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: View and debug b2c CLI configuration and understand where credentials come from. Use when authentication fails, connection errors occur, wrong instance is used, or you need to verify dw.json settings, or OAuth credentials are loaded correctly.
+description: View and debug b2c CLI configuration and understand where credentials come from. Always reference when using the CLI to inspect configuration, manage instances, retrieve OAuth tokens, or set up IDE integration. Also use when authentication fails, connection errors occur, or the wrong instance is being used.
 ---
 
 # B2C Config Skill

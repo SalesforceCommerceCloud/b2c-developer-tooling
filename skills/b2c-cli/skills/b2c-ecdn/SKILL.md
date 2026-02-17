@@ -1,6 +1,6 @@
 ---
 name: b2c-ecdn
-description: Manage B2C Commerce eCDN (embedded CDN) settings with the b2c cli. Use when purging cache, configuring WAF rules, managing SSL certificates, setting rate limits, or creating CDN zones.
+description: Manage B2C Commerce eCDN (embedded CDN) settings with the b2c cli. Always reference when using the CLI to purge CDN cache, configure WAF rules, manage SSL certificates, set rate limits, manage firewall rules, or create CDN zones.
 ---
 
 # B2C eCDN Skill

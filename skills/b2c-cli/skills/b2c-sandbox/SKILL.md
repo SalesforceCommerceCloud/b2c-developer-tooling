@@ -1,6 +1,6 @@
 ---
 name: b2c-sandbox
-description: Create and manage (B2C/SFCC/Demandware) on-demand sandboxes (ODS) with the b2c cli. Use when provisioning development instances, starting/stopping sandboxes, checking sandbox status, or managing sandbox lifecycle.
+description: Create and manage (B2C/SFCC/Demandware) on-demand sandboxes (ODS) with the b2c cli. Always reference when using the CLI to create, start, stop, restart, delete, or list on-demand sandboxes (ODS) and development instances.
 ---
 
 # B2C Sandbox Skill

@@ -1,6 +1,6 @@
 ---
 name: b2c-logs
-description: Retrieve or monitor log from B2C Commerce instances with the b2c cli. When a user reports something like 'throwing an error,' 'broken,' or 'not working,' use this in addition to searching code. Use to fetch recent errors, searching log entries, filtering by level/time, or real-time tailing. Use when investigating issues with controllers, script APIs, custom API backend, jobs, or other SFCC server-side issues.
+description: Retrieve or monitor logs from B2C Commerce instances with the b2c cli. Always reference when using the CLI to fetch logs, search log entries, filter by level/time, or tail logs in real-time. Also use when a user reports errors, broken functionality, or issues with controllers, script APIs, custom API backends, jobs, or other SFCC server-side components.
 ---
 
 # B2C Logs Skill
