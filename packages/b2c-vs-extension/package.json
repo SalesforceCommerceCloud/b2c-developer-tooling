@@ -77,20 +77,20 @@
     "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
   },
   "devDependencies": {
-    "@eslint/compat": "^1",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^22",
+    "@eslint/compat": "catalog:",
+    "@types/mocha": "catalog:",
+    "@types/node": "catalog:",
     "@types/vscode": "^1.105.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.24.0",
-    "eslint": "^9",
-    "eslint-config-prettier": "^10",
-    "eslint-plugin-header": "^3.1.1",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.6.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0"
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-header": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

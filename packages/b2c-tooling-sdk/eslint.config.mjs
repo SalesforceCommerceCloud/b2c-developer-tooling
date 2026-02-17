@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {includeIgnoreFile} from '@eslint/compat';
-import headerPlugin from '@tony.ganchev/eslint-plugin-header';
+import headerPlugin from 'eslint-plugin-header';
 import tseslint from 'typescript-eslint';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -12,6 +12,7 @@ import {fileURLToPath} from 'node:url';
 import {copyrightHeader, sharedRules, chaiTestRules, prettierPlugin} from '../../eslint.config.mjs';
 
 const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.gitignore');
+headerPlugin.rules.header.meta.schema = false;
 
 export default [
   includeIgnoreFile(gitignorePath),
