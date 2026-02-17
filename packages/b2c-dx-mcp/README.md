@@ -165,7 +165,7 @@ Get registration status of custom API endpoints deployed on the instance (remote
 **Good prompts:**
 - ✅ "Use the MCP tool to build and push my Storefront Next bundle to staging."
 - ✅ "Use the MCP tool to push the bundle from ./build directory to Managed Runtime."
-- ✅ "Use the MCP tool to deploy my PWA Kit bundle to production with a deployment message."
+- ✅ "Use the MCP tool to deploy my PWA Kit or Storefront Next bundle to production with a deployment message."
 
 #### Tips for Better Results
 

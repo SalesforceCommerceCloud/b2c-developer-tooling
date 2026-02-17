@@ -47,7 +47,7 @@ interface MrtToolInjections {
 /**
  * Creates the mrt_bundle_push tool.
  *
- * Creates a bundle from a pre-built PWA Kit project and pushes it to
+ * Creates a bundle from a pre-built PWA Kit or Storefront Next project and pushes it to
  * Managed Runtime (MRT). Optionally deploys to a target environment after push.
  * Expects the project to already be built (e.g., `npm run build` completed).
  * Shared across MRT, PWAV3, and STOREFRONTNEXT toolsets.
@@ -62,7 +62,7 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
     {
       name: 'mrt_bundle_push',
       description:
-        'Bundle a pre-built PWA Kit project and push to Managed Runtime. Optionally deploy to a target environment.',
+        'Bundle a pre-built PWA Kit or Storefront Next project and push to Managed Runtime. Optionally deploy to a target environment.',
       toolsets: ['MRT', 'PWAV3', 'STOREFRONTNEXT'],
       isGA: false,
       // MRT operations use ApiKeyStrategy from SFCC_MRT_API_KEY or ~/.mobify
