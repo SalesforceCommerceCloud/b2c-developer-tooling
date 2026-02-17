@@ -52,11 +52,11 @@ interface CartridgeToolInjections {
  * 3. Uploads the zip to WebDAV and triggers server-side unzip
  * 4. Optionally reloads the code version after deploy
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @param injections - Optional dependency injections for testing
  * @returns The cartridge_deploy tool
  */
-function createCartridgeDeployTool(services: Services, injections?: CartridgeToolInjections): McpTool {
+function createCartridgeDeployTool(loadServices: () => Services, injections?: CartridgeToolInjections): McpTool {
   const findAndDeployCartridgesFn = injections?.findAndDeployCartridges || findAndDeployCartridges;
   return createToolAdapter<CartridgeDeployInput, DeployResult>(
     {
@@ -106,7 +106,7 @@ function createCartridgeDeployTool(services: Services, injections?: CartridgeToo
         const instance = context.b2cInstance!;
 
         // Default directory to current directory
-        const directory = args.directory || services.getWorkingDirectory();
+        const directory = args.directory || context.services.getWorkingDirectory();
 
         // Parse options
         const options: DeployOptions = {
@@ -134,17 +134,17 @@ function createCartridgeDeployTool(services: Services, injections?: CartridgeToo
       },
       formatOutput: (output) => jsonResult(output),
     },
-    services,
+    loadServices,
   );
 }
 
 /**
  * Creates all tools for the CARTRIDGES toolset.
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createCartridgesTools(services: Services, injections?: CartridgeToolInjections): McpTool[] {
-  return [createCartridgeDeployTool(services, injections)];
+export function createCartridgesTools(loadServices: () => Services, injections?: CartridgeToolInjections): McpTool[] {
+  return [createCartridgeDeployTool(loadServices, injections)];
 }

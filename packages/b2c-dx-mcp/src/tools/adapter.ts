@@ -9,22 +9,22 @@
  *
  * This module provides utilities for creating standardized MCP tools that:
  * - Validate input using Zod schemas
- * - Inject pre-resolved B2CInstance for WebDAV/OCAPI operations (requiresInstance)
- * - Inject pre-resolved MRT auth for MRT API operations (requiresMrtAuth)
+ * - Inject loaded B2CInstance for WebDAV/OCAPI operations (requiresInstance)
+ * - Inject loaded MRT auth for MRT API operations (requiresMrtAuth)
  * - Format output consistently (textResult, jsonResult, errorResult)
  *
  * ## Configuration Resolution
  *
- * Both B2C instance and MRT auth are resolved once at server startup via
- * {@link Services.fromResolvedConfig} and reused for all tool calls:
+ * Both B2C instance and MRT auth are loaded before each tool call via
+ * a loader function that calls {@link Services.fromResolvedConfig}:
  *
- * - **B2CInstance**: Resolved from flags + dw.json. Available when `requiresInstance: true`.
- * - **MRT Auth**: Resolved from --api-key → SFCC_MRT_API_KEY → ~/.mobify. Available when `requiresMrtAuth: true`.
+ * - **B2CInstance**: Loaded from flags + dw.json on each call. Available when `requiresInstance: true`.
+ * - **MRT Auth**: Loaded from --api-key → SFCC_MRT_API_KEY → ~/.mobify on each call. Available when `requiresMrtAuth: true`.
  *
- * This "resolve eagerly at startup" pattern provides:
- * - Fail-fast behavior (configuration errors surface at startup)
- * - Consistent mental model (both resolved the same way)
- * - Better performance (no resolution on each tool call)
+ * This "load on each call" pattern provides:
+ * - Fresh configuration on each tool invocation (picks up changes to config files)
+ * - Consistent mental model (both loaded the same way)
+ * - Tools can respond to configuration changes without server restart
  *
  * @module tools/adapter
  *
@@ -48,8 +48,11 @@
  *
  * @example MRT tool (MRT API)
  * ```typescript
- * // Services created from already-resolved config at startup
- * const services = Services.fromResolvedConfig(this.resolvedConfig);
+ * // Loader function that loads config and creates Services on each tool call
+ * const loadServices = () => {
+ *   const config = this.loadConfiguration();
+ *   return Services.fromResolvedConfig(config);
+ * };
  *
  * const mrtTool = createToolAdapter({
  *   name: 'mrt_bundle_push',
@@ -59,12 +62,12 @@
  *   inputSchema: {
  *     projectSlug: z.string().describe('MRT project slug'),
  *   },
- *   execute: async (args, { mrtAuth }) => {
- *     const result = await pushBundle({ projectSlug: args.projectSlug }, mrtAuth);
+ *   execute: async (args, { mrtConfig }) => {
+ *     const result = await pushBundle({ projectSlug: args.projectSlug }, mrtConfig.auth);
  *     return result;
  *   },
  *   formatOutput: (output) => jsonResult(output),
- * }, services);
+ * }, loadServices);
  * ```
  */
 
@@ -87,7 +90,7 @@ export interface ToolExecutionContext {
 
   /**
    * MRT configuration (auth, project, environment, origin).
-   * Pre-resolved at server startup.
+   * Loaded before each tool call.
    * Only populated when requiresMrtAuth is true.
    */
   mrtConfig?: MrtConfig;
@@ -222,7 +225,7 @@ function formatZodErrors(error: z.ZodError): string {
  * @template TInput - The validated input type (inferred from inputSchema)
  * @template TOutput - The output type from the execute function
  * @param options - Tool adapter configuration
- * @param services - Services instance for dependency injection
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns An McpTool ready for registration
  *
  * @example
@@ -230,23 +233,28 @@ function formatZodErrors(error: z.ZodError): string {
  * import { z } from 'zod';
  * import { createToolAdapter, jsonResult, errorResult } from './adapter.js';
  *
+ * const loadServices = () => {
+ *   const config = this.loadConfiguration();
+ *   return Services.fromResolvedConfig(config);
+ * };
+ *
  * const listCodeVersionsTool = createToolAdapter({
  *   name: 'code_version_list',
  *   description: 'List all code versions on the instance',
  *   toolsets: ['CARTRIDGES'],
  *   inputSchema: {},
- *   execute: async (_args, { instance }) => {
- *     const result = await instance.ocapi.GET('/code_versions', {});
+ *   execute: async (_args, { b2cInstance }) => {
+ *     const result = await b2cInstance.ocapi.GET('/code_versions', {});
  *     if (result.error) throw new Error(result.error.message);
  *     return result.data;
  *   },
  *   formatOutput: (data) => jsonResult(data),
- * }, services);
+ * }, loadServices);
  * ```
  */
 export function createToolAdapter<TInput, TOutput>(
   options: ToolAdapterOptions<TInput, TOutput>,
-  services: Services,
+  loadServices: () => Services,
 ): McpTool {
   const {
     name,
@@ -279,7 +287,10 @@ export function createToolAdapter<TInput, TOutput>(
       const args = parseResult.data as TInput;
 
       try {
-        // 2. Get B2CInstance if required (pre-resolved at startup)
+        // 2. Load Services to get fresh configuration (re-reads config files)
+        const services = loadServices();
+
+        // 3. Get B2CInstance if required (loaded on each call)
         let b2cInstance: B2CInstance | undefined;
         if (requiresInstance) {
           if (!services.b2cInstance) {
@@ -290,7 +301,7 @@ export function createToolAdapter<TInput, TOutput>(
           b2cInstance = services.b2cInstance;
         }
 
-        // 3. Get MRT config if required (pre-resolved at startup)
+        // 4. Get MRT config if required (loaded on each call)
         let mrtConfig: ToolExecutionContext['mrtConfig'];
         if (requiresMrtAuth) {
           if (!services.mrtConfig.auth) {
@@ -306,7 +317,7 @@ export function createToolAdapter<TInput, TOutput>(
           };
         }
 
-        // 4. Execute the operation
+        // 5. Execute the operation
         const context: ToolExecutionContext = {
           b2cInstance,
           mrtConfig,
@@ -314,7 +325,7 @@ export function createToolAdapter<TInput, TOutput>(
         };
         const output = await execute(args, context);
 
-        // 5. Format output
+        // 6. Format output
         return formatOutput(output);
       } catch (error) {
         // Handle execution errors

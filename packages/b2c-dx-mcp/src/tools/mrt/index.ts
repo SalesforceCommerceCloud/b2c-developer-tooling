@@ -52,11 +52,11 @@ interface MrtToolInjections {
  * Expects the project to already be built (e.g., `npm run build` completed).
  * Shared across MRT, PWAV3, and STOREFRONTNEXT toolsets.
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @param injections - Optional dependency injections for testing
  * @returns The mrt_bundle_push tool
  */
-function createMrtBundlePushTool(services: Services, injections?: MrtToolInjections): McpTool {
+function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtToolInjections): McpTool {
   const pushBundleFn = injections?.pushBundle || pushBundle;
   return createToolAdapter<MrtBundlePushInput, PushResult>(
     {
@@ -97,7 +97,7 @@ function createMrtBundlePushTool(services: Services, injections?: MrtToolInjecti
         // Parse comma-separated glob patterns (same as CLI defaults)
         const ssrOnly = (args.ssrOnly || 'ssr.js,ssr.mjs,server/**/*').split(',').map((s) => s.trim());
         const ssrShared = (args.ssrShared || 'static/**/*,client/**/*').split(',').map((s) => s.trim());
-        const buildDirectory = args.buildDirectory || path.join(services.getWorkingDirectory(), 'build');
+        const buildDirectory = args.buildDirectory || path.join(context.services.getWorkingDirectory(), 'build');
 
         // Log all computed variables before pushing bundle
         const logger = getLogger();
@@ -133,17 +133,17 @@ function createMrtBundlePushTool(services: Services, injections?: MrtToolInjecti
       },
       formatOutput: (output) => jsonResult(output),
     },
-    services,
+    loadServices,
   );
 }
 
 /**
  * Creates all tools for the MRT toolset.
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createMrtTools(services: Services, injections?: MrtToolInjections): McpTool[] {
-  return [createMrtBundlePushTool(services, injections)];
+export function createMrtTools(loadServices: () => Services, injections?: MrtToolInjections): McpTool[] {
+  return [createMrtBundlePushTool(loadServices, injections)];
 }

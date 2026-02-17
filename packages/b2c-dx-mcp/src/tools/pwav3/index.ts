@@ -48,10 +48,15 @@ interface PlaceholderOutput {
  * @param name - Tool name
  * @param description - Tool description
  * @param toolsets - Toolsets this tool belongs to
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-function createPlaceholderTool(name: string, description: string, toolsets: Toolset[], services: Services): McpTool {
+function createPlaceholderTool(
+  name: string,
+  description: string,
+  toolsets: Toolset[],
+  loadServices: () => Services,
+): McpTool {
   return createToolAdapter<PlaceholderInput, PlaceholderOutput>(
     {
       name,
@@ -76,7 +81,7 @@ function createPlaceholderTool(name: string, description: string, toolsets: Tool
       },
       formatOutput: (output) => jsonResult(output),
     },
-    services,
+    loadServices,
   );
 }
 
@@ -87,44 +92,54 @@ function createPlaceholderTool(name: string, description: string, toolsets: Tool
  * toolsets: ["MRT", "PWAV3", "STOREFRONTNEXT"] and will
  * automatically appear in PWAV3.
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createPwav3Tools(services: Services): McpTool[] {
+export function createPwav3Tools(loadServices: () => Services): McpTool[] {
   return [
     // PWA Kit development tools
-    createPlaceholderTool('pwakit_create_storefront', 'Create a new PWA Kit storefront project', ['PWAV3'], services),
-    createPlaceholderTool('pwakit_create_page', 'Create a new page component in PWA Kit project', ['PWAV3'], services),
+    createPlaceholderTool(
+      'pwakit_create_storefront',
+      'Create a new PWA Kit storefront project',
+      ['PWAV3'],
+      loadServices,
+    ),
+    createPlaceholderTool(
+      'pwakit_create_page',
+      'Create a new page component in PWA Kit project',
+      ['PWAV3'],
+      loadServices,
+    ),
     createPlaceholderTool(
       'pwakit_create_component',
       'Create a new React component in PWA Kit project',
       ['PWAV3'],
-      services,
+      loadServices,
     ),
     createPlaceholderTool(
       'pwakit_get_dev_guidelines',
       'Get PWA Kit development guidelines and best practices',
       ['PWAV3'],
-      services,
+      loadServices,
     ),
     createPlaceholderTool(
       'pwakit_recommend_hooks',
       'Recommend appropriate React hooks for PWA Kit use cases',
       ['PWAV3'],
-      services,
+      loadServices,
     ),
-    createPlaceholderTool('pwakit_run_site_test', 'Run site tests for PWA Kit project', ['PWAV3'], services),
+    createPlaceholderTool('pwakit_run_site_test', 'Run site tests for PWA Kit project', ['PWAV3'], loadServices),
     createPlaceholderTool(
       'pwakit_install_agent_rules',
       'Install AI agent rules for PWA Kit development',
       ['PWAV3'],
-      services,
+      loadServices,
     ),
     createPlaceholderTool(
       'pwakit_explore_scapi_shop_api',
       'Explore SCAPI Shop API endpoints and capabilities',
       ['PWAV3'],
-      services,
+      loadServices,
     ),
   ];
 }

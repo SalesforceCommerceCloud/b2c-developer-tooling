@@ -38,12 +38,12 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
   describe('tool metadata', () => {
     it('should have correct tool name', () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       expect(tool.name).to.equal('storefront_next_development_guidelines');
     });
 
     it('should have concise, action-oriented description', () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const desc = tool.description;
 
       // Should emphasize this is an essential first step (most important)
@@ -70,7 +70,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should list all sections in inputSchema description', () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       // The inputSchema should list all available sections for discoverability
       // This is better UX than burying them in the main description
@@ -101,7 +101,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       // Detailed topics should be in inputSchema.sections.describe()
       // This follows MCP best practices: main description = WHEN/WHY, inputSchema = HOW
 
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const desc = tool.description;
 
       // Main description should be concise, not list all topics
@@ -117,18 +117,18 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should be in STOREFRONTNEXT toolset', () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       expect(tool.toolsets).to.include('STOREFRONTNEXT');
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 
     it('should be GA (generally available)', () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       expect(tool.isGA).to.be.false;
     });
 
     it('should not require B2C instance', () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       // Guidelines are static content, no instance needed
       expect(tool).to.not.have.property('requiresInstance');
     });
@@ -154,7 +154,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
       ];
 
       // Create tool to verify derived _SECTIONS matches
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       // Each section should be valid and retrievable
       for (const section of allSections) {
@@ -166,7 +166,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
   describe('inputSchema behavior', () => {
     it('should have sections parameter that is optional', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       // Should work without providing sections parameter
       const result = await tool.handler({});
@@ -175,7 +175,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should accept array of valid section enums', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       // All valid sections from _SECTIONS constant
       const validSections = [
@@ -203,7 +203,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
   describe('default behavior', () => {
     it('should return comprehensive guidelines by default when no sections specified', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
@@ -226,7 +226,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return empty string when sections array is explicitly empty', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: []});
 
       expect(result.isError).to.be.undefined;
@@ -260,7 +260,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return quick-reference section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['quick-reference']});
 
       expect(result.isError).to.be.undefined;
@@ -269,7 +269,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return data-fetching section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['data-fetching']});
 
       expect(result.isError).to.be.undefined;
@@ -278,7 +278,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return state-management section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['state-management']});
 
       expect(result.isError).to.be.undefined;
@@ -287,7 +287,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return auth section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['auth']});
 
       expect(result.isError).to.be.undefined;
@@ -296,7 +296,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return config section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['config']});
 
       expect(result.isError).to.be.undefined;
@@ -305,7 +305,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return i18n section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['i18n']});
 
       expect(result.isError).to.be.undefined;
@@ -314,7 +314,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return components section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['components']});
 
       expect(result.isError).to.be.undefined;
@@ -323,7 +323,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return page-designer section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['page-designer']});
 
       expect(result.isError).to.be.undefined;
@@ -332,7 +332,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return performance section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['performance']});
 
       expect(result.isError).to.be.undefined;
@@ -341,7 +341,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return testing section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['testing']});
 
       expect(result.isError).to.be.undefined;
@@ -350,7 +350,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return extensions section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['extensions']});
 
       expect(result.isError).to.be.undefined;
@@ -359,7 +359,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return pitfalls section', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['pitfalls']});
 
       expect(result.isError).to.be.undefined;
@@ -370,7 +370,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
   describe('multiple section retrieval', () => {
     it('should support contextual learning with multiple sections', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       // Test related sections together (as mentioned in description)
       const result = await tool.handler({
@@ -392,7 +392,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should combine three sections correctly', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({
         sections: ['auth', 'config', 'i18n'],
       });
@@ -410,7 +410,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should maintain order of sections as requested', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       // Request sections in specific order
       const result = await tool.handler({
@@ -438,7 +438,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should handle all sections at once', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({
         sections: [
           'quick-reference',
@@ -477,7 +477,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
   describe('input validation', () => {
     it('should reject invalid section names', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await tool.handler({sections: ['invalid-section']} as any);
 
@@ -487,7 +487,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should reject empty strings in sections array', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await tool.handler({sections: ['']} as any);
 
@@ -497,7 +497,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should reject non-array sections parameter', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await tool.handler({sections: 'quick-reference'} as any);
 
@@ -509,7 +509,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
   describe('content verification', () => {
     it('should load actual markdown content from files', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['quick-reference']});
 
       expect(result.isError).to.be.undefined;
@@ -521,7 +521,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should return different content for different sections', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       const result1 = await tool.handler({sections: ['data-fetching']});
       const result2 = await tool.handler({sections: ['auth']});
@@ -537,7 +537,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should cover critical topics mentioned in description', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
 
       // Test that key topics from the description are covered in relevant sections
       const topicTests = [
@@ -563,7 +563,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should provide non-negotiable architecture rules in quick-reference', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['quick-reference']});
 
       expect(result.isError).to.be.undefined;
@@ -582,7 +582,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should emphasize TypeScript-only approach', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: ['quick-reference']});
 
       expect(result.isError).to.be.undefined;
@@ -595,7 +595,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
 
   describe('edge cases', () => {
     it('should handle undefined sections parameter', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({sections: undefined});
 
       expect(result.isError).to.be.undefined;
@@ -607,7 +607,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should handle sections parameter explicitly set to null', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await tool.handler({sections: null} as any);
 
@@ -616,7 +616,7 @@ describe('tools/storefrontnext/developer-guidelines', () => {
     });
 
     it('should handle duplicate sections in array', async () => {
-      const tool = createDeveloperGuidelinesTool(services);
+      const tool = createDeveloperGuidelinesTool(() => services);
       const result = await tool.handler({
         sections: ['auth', 'auth'],
       });

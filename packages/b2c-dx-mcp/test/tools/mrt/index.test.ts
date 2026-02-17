@@ -77,6 +77,19 @@ function createMockServices(options?: {
   });
 }
 
+/**
+ * Create a loadServices function for testing.
+ */
+function createMockLoadServicesWrapper(options?: {
+  mrtAuth?: AuthStrategy;
+  mrtProject?: string;
+  mrtEnvironment?: string;
+  mrtOrigin?: string;
+}): () => Services {
+  const services = createMockServices(options);
+  return () => services;
+}
+
 describe('tools/mrt', () => {
   let sandbox: sinon.SinonSandbox;
   let pushBundleStub: sinon.SinonStub;
@@ -92,8 +105,8 @@ describe('tools/mrt', () => {
 
   describe('createMrtTools', () => {
     it('should create mrt_bundle_push tool', () => {
-      const services = createMockServices();
-      const tools = createMrtTools(services);
+      const loadServices = createMockLoadServicesWrapper();
+      const tools = createMrtTools(loadServices);
 
       expect(tools).to.have.lengthOf(1);
       expect(tools[0].name).to.equal('mrt_bundle_push');
@@ -101,12 +114,12 @@ describe('tools/mrt', () => {
   });
 
   describe('mrt_bundle_push tool metadata', () => {
-    let services: Services;
+    let loadServices: () => Services;
     let tool: ReturnType<typeof createMrtTools>[0];
 
     beforeEach(() => {
-      services = createMockServices({mrtAuth: new MockAuthStrategy(), mrtProject: 'test-project'});
-      tool = createMrtTools(services)[0];
+      loadServices = createMockLoadServicesWrapper({mrtAuth: new MockAuthStrategy(), mrtProject: 'test-project'});
+      tool = createMrtTools(loadServices)[0];
     });
 
     it('should have correct tool name', () => {
@@ -144,11 +157,11 @@ describe('tools/mrt', () => {
       };
       pushBundleStub.resolves(mockResult);
 
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
       });
-      const tool = createMrtTools(services, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -174,12 +187,12 @@ describe('tools/mrt', () => {
       };
       pushBundleStub.resolves(mockResult);
 
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
         mrtEnvironment: 'staging',
       });
-      const tool = createMrtTools(services, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -205,12 +218,12 @@ describe('tools/mrt', () => {
       };
       pushBundleStub.resolves(mockResult);
 
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
         mrtOrigin: customOrigin,
       });
-      const tool = createMrtTools(services, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -234,11 +247,11 @@ describe('tools/mrt', () => {
       };
       pushBundleStub.resolves(mockResult);
 
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
       });
-      const tool = createMrtTools(services, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
       await tool.handler({buildDirectory: buildDir, message: 'Custom deployment message'});
 
@@ -258,11 +271,11 @@ describe('tools/mrt', () => {
       };
       pushBundleStub.resolves(mockResult);
 
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
       });
-      const tool = createMrtTools(services, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
       const result = await tool.handler({buildDirectory: buildDir, message: 'Release v1.0.0'});
 
@@ -277,11 +290,11 @@ describe('tools/mrt', () => {
 
   describe('mrt_bundle_push error handling', () => {
     it('should return error when project is not configured', async () => {
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         // No project configured
       });
-      const tool = createMrtTools(services)[0];
+      const tool = createMrtTools(loadServices)[0];
 
       const result = await tool.handler({});
 
@@ -293,11 +306,11 @@ describe('tools/mrt', () => {
     });
 
     it('should return error when requiresMrtAuth is true but no auth configured', async () => {
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         // No auth configured
         mrtProject: 'my-project',
       });
-      const tool = createMrtTools(services)[0];
+      const tool = createMrtTools(loadServices)[0];
 
       const result = await tool.handler({});
 
@@ -314,11 +327,11 @@ describe('tools/mrt', () => {
       const error = new Error('Failed to push bundle: Network error');
       pushBundleStub.rejects(error);
 
-      const services = createMockServices({
+      const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
       });
-      const tool = createMrtTools(services, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -330,12 +343,12 @@ describe('tools/mrt', () => {
   });
 
   describe('mrt_bundle_push input validation', () => {
-    let services: Services;
+    let loadServices: () => Services;
     let tool: ReturnType<typeof createMrtTools>[0];
 
     beforeEach(() => {
-      services = createMockServices({mrtAuth: new MockAuthStrategy(), mrtProject: 'my-project'});
-      tool = createMrtTools(services)[0];
+      loadServices = createMockLoadServicesWrapper({mrtAuth: new MockAuthStrategy(), mrtProject: 'my-project'});
+      tool = createMrtTools(loadServices)[0];
     });
 
     it('should validate input schema', async () => {

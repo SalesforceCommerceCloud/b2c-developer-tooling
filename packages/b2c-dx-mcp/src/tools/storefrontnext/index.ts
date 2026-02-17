@@ -55,10 +55,10 @@ interface PlaceholderOutput {
  *
  * @param name - Tool name
  * @param description - Tool description
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-function createPlaceholderTool(name: string, description: string, services: Services): McpTool {
+function createPlaceholderTool(name: string, description: string, loadServices: () => Services): McpTool {
   return createToolAdapter<PlaceholderInput, PlaceholderOutput>(
     {
       name,
@@ -83,7 +83,7 @@ function createPlaceholderTool(name: string, description: string, services: Serv
       },
       formatOutput: (output) => jsonResult(output),
     },
-    services,
+    loadServices,
   );
 }
 
@@ -94,37 +94,41 @@ function createPlaceholderTool(name: string, description: string, services: Serv
  * toolsets: ["MRT", "PWAV3", "STOREFRONTNEXT"] and will
  * automatically appear in STOREFRONTNEXT.
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createStorefrontNextTools(services: Services): McpTool[] {
+export function createStorefrontNextTools(loadServices: () => Services): McpTool[] {
   return [
-    createDeveloperGuidelinesTool(services),
+    createDeveloperGuidelinesTool(loadServices),
     createPlaceholderTool(
       'storefront_next_site_theming',
       'Configure and manage site theming for Storefront Next',
-      services,
+      loadServices,
     ),
     createPlaceholderTool(
       'storefront_next_figma_to_component_workflow',
       'Convert Figma designs to Storefront Next components',
-      services,
+      loadServices,
     ),
-    createPlaceholderTool('storefront_next_generate_component', 'Generate a new Storefront Next component', services),
+    createPlaceholderTool(
+      'storefront_next_generate_component',
+      'Generate a new Storefront Next component',
+      loadServices,
+    ),
     createPlaceholderTool(
       'storefront_next_map_tokens_to_theme',
       'Map design tokens to Storefront Next theme configuration',
-      services,
+      loadServices,
     ),
     createPlaceholderTool(
       'storefront_next_design_decorator',
       'Apply design decorators to Storefront Next components',
-      services,
+      loadServices,
     ),
     createPlaceholderTool(
       'storefront_next_generate_page_designer_metadata',
       'Generate Page Designer metadata for Storefront Next components',
-      services,
+      loadServices,
     ),
   ];
 }

@@ -128,7 +128,7 @@ interface CustomListOutput {
  * Mirrors CLI: b2c scapi custom status. All flags supported; agent chooses what to use.
  * See: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.html#b2c-scapi-custom-status
  */
-export function createScapiCustomApisStatusTool(services: Services): McpTool {
+export function createScapiCustomApisStatusTool(loadServices: () => Services): McpTool {
   return createToolAdapter<CustomListInput, CustomListOutput>(
     {
       name: 'scapi_custom_apis_status',
@@ -202,6 +202,6 @@ CLI: b2c scapi custom status`,
       },
       formatOutput: (output) => jsonResult(output),
     },
-    services,
+    loadServices,
   );
 }
