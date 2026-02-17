@@ -31,10 +31,11 @@ function getResultText(result: ToolResult): string {
 /**
  * Create a mock services instance for testing.
  *
+ * @param workingDirectory - Optional working directory (defaults to process.cwd())
  * @returns A new Services instance with empty configuration
  */
-function createMockServices(): Services {
-  return new Services({});
+function createMockServices(workingDirectory?: string): Services {
+  return new Services({workingDirectory});
 }
 
 /**
@@ -114,14 +115,13 @@ describe('tools/page-designer-decorator', () => {
   let originalCwd: string;
 
   beforeEach(() => {
-    services = createMockServices();
     // Create a temporary directory for test components
     testDir = path.join(tmpdir(), `b2c-mcp-test-${Date.now()}`);
     mkdirSync(testDir, {recursive: true});
     originalCwd = process.cwd();
     process.chdir(testDir);
-    // Set SFCC_WORKING_DIRECTORY to the test directory
-    process.env.SFCC_WORKING_DIRECTORY = testDir;
+    // Create services with workingDirectory set to test directory
+    services = createMockServices(testDir);
   });
 
   afterEach(() => {
@@ -129,7 +129,6 @@ describe('tools/page-designer-decorator', () => {
     if (existsSync(testDir)) {
       rmSync(testDir, {recursive: true, force: true});
     }
-    delete process.env.SFCC_WORKING_DIRECTORY;
   });
 
   describe('tool metadata', () => {
@@ -186,13 +185,14 @@ describe('tools/page-designer-decorator', () => {
       expect(text).to.include('TestComponent');
     });
 
-    it('should use SFCC_WORKING_DIRECTORY if set', async () => {
-      const tool = createPageDesignerDecoratorTool(services);
+    it('should use workingDirectory from Services', async () => {
       const customDir = path.join(tmpdir(), `b2c-mcp-test-custom-${Date.now()}`);
       mkdirSync(customDir, {recursive: true});
       createTestComponent(customDir, 'CustomComponent');
 
-      process.env.SFCC_WORKING_DIRECTORY = customDir;
+      // Create services with custom workingDirectory
+      const customServices = createMockServices(customDir);
+      const tool = createPageDesignerDecoratorTool(customServices);
 
       const result = await tool.handler({
         component: 'CustomComponent',

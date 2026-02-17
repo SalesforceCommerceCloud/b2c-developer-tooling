@@ -90,6 +90,9 @@ The tool automatically searches for components in these locations (in order):
 4. `src/**` (broader search)
 5. Custom paths (if provided via `searchPaths`)
 
+**Working Directory:**
+Component discovery uses the working directory resolved from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+
 **Examples:**
 
 - `"ProductCard"` → finds `src/components/product-tile/ProductCard.tsx`
@@ -101,6 +104,7 @@ The tool automatically searches for components in these locations (in order):
 - Use component name for portability
 - Use path for unusual locations
 - Add `searchPaths` for monorepos or non-standard structures
+- Ensure `--working-directory` flag or `SFCC_WORKING_DIRECTORY` env var is set correctly
 
 ## 🏗️ Architecture
 
@@ -242,7 +246,7 @@ The test suite covers:
 - Interactive mode (all steps: analyze, select_props, configure_attrs, configure_regions, confirm_generation)
 - Error handling (invalid input, invalid step name, missing parameters)
 - Edge cases (no props, only complex props, optional props, union types, already decorated components)
-- Environment variables (SFCC_WORKING_DIRECTORY)
+- Working directory resolution (from --working-directory flag or SFCC_WORKING_DIRECTORY env var via Services)
 
 See [`test/tools/page-designer-decorator/README.md`](../../../test/tools/page-designer-decorator/README.md) for detailed testing instructions.
 

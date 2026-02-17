@@ -599,59 +599,19 @@ function handleAutoMode(args: PageDesignerDecoratorInput, workspaceRoot: string)
 /**
  * Creates the Page Designer decorator tool for Storefront Next.
  *
- * @param _services - MCP services (not used by this tool)
+ * @param services - MCP services (provides workingDirectory for component search)
  * @returns The configured MCP tool
  */
-export function createPageDesignerDecoratorTool(_services: Services): McpTool {
+export function createPageDesignerDecoratorTool(services: Services): McpTool {
   return {
     name: 'add_page_designer_decorator',
 
-    description: `⚠️ MANDATORY: Add Page Designer decorators to an existing component (Template Literals Version).
-    
-    Analyzes component structure and guides through adding @Component, @AttributeDefinition, and @RegionDefinition decorators.
-    
-    ENVIRONMENT SETUP:
-    Set SFCC_WORKING_DIRECTORY environment variable to the Storefront Next repository path.
-    If not set, uses current working directory.
-    
-    INITIAL CALL - MODE SELECTION:
-    When called with ONLY the 'component' parameter (no autoMode, no conversationContext), the tool will:
-    - Analyze the component (automatically finds it by name)
-    - Present mode selection options to the user
-    - WAIT for user to choose between Auto Mode or Interactive Mode
-    - DO NOT proceed until user selects a mode
-    
-    MODES:
-    
-    **AUTO MODE** (set autoMode: true):
-    - Automatically analyzes component and generates decorators with sensible defaults
-    - Skips all interactive steps
-    - Auto-selects suitable props (excludes complex and UI-only props)
-    - Auto-infers types based on naming patterns
-    - Immediately generates code - no confirmation needed
-    - Best for: Quick setup, standard components, batch processing
-    
-    **INTERACTIVE MODE** (set conversationContext.step: "analyze"):
-    - Multi-step workflow with user confirmation at each stage
-    - Allows fine-tuned control over all settings
-    - MUST ask questions and WAIT for responses
-    - DO NOT generate code until user confirms configuration
-    - Best for: Complex components, custom requirements, learning
-    
-    WORKFLOW STEPS (Interactive Mode):
-    1. analyze: Parse component, identify props, provide recommendations
-    2. select_props: Confirm user's selections and prepare for configuration
-    3. configure_attrs: Set explicit types, names, defaults where needed
-    4. configure_regions: Configure nested content areas (optional)
-    5. confirm_generation: Generate final decorator code
-    
-    INTELLIGENT FEATURES:
-    - Auto-infers types when possible (string, number, boolean)
-    - Suggests explicit types when needed (url, image, enum, markup)
-    - Detects unsuitable props (complex types, UI-only props)
-    - Provides smart defaults based on naming patterns
-    
-    Use conversationContext parameter for multi-turn conversation (interactive mode only).`,
+    description:
+      'Adds Page Designer decorators (@Component, @AttributeDefinition, @RegionDefinition) to React components. ' +
+      'Two modes: autoMode=true for quick setup with defaults, or interactive mode via conversationContext.step. ' +
+      'Component discovery uses workingDirectory from flags/env. ' +
+      'Auto mode: selects suitable props, infers types, generates code immediately. ' +
+      'Interactive mode: multi-step workflow (analyze → select_props → configure_attrs → configure_regions → confirm_generation).',
 
     inputSchema: pageDesignerDecoratorSchema.shape as ZodRawShape,
     toolsets: ['STOREFRONTNEXT'],
@@ -661,10 +621,9 @@ export function createPageDesignerDecoratorTool(_services: Services): McpTool {
       try {
         // Validate and parse input
         const validatedArgs = pageDesignerDecoratorSchema.parse(args) as PageDesignerDecoratorInput;
-        // Workspace resolution:
-        // 1. SFCC_WORKING_DIRECTORY (Storefront Next convention, recommended)
-        // 2. process.cwd() (fallback)
-        const workspaceRoot = process.env.SFCC_WORKING_DIRECTORY || process.cwd();
+        // Use workingDirectory from services to ensure we search in the correct project directory
+        // This prevents searches in the home folder when MCP clients spawn servers from ~
+        const workspaceRoot = services.workingDirectory;
 
         if (validatedArgs.autoMode === undefined && !validatedArgs.conversationContext) {
           const fullPath = resolveComponent(validatedArgs.component, workspaceRoot, validatedArgs.searchPaths);

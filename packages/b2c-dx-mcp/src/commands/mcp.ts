@@ -337,7 +337,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     );
 
     // Create services from already-resolved config (BaseCommand.init() already resolved it)
-    const services = Services.fromResolvedConfig(this.resolvedConfig);
+    // Pass workingDirectory so tools can use it instead of process.cwd() (which may be ~)
+    const services = Services.fromResolvedConfig(this.resolvedConfig, startupFlags.workingDirectory);
 
     // Register toolsets
     await registerToolsets(startupFlags, server, services);

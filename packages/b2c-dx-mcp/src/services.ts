@@ -73,6 +73,8 @@ export interface ServicesOptions {
   b2cInstance?: B2CInstance;
   /** Pre-resolved MRT configuration (auth, project, environment) */
   mrtConfig?: MrtConfig;
+  /** Project working directory for file operations */
+  workingDirectory?: string;
 }
 
 /**
@@ -90,6 +92,7 @@ export interface ServicesOptions {
  * services.b2cInstance;        // B2CInstance | undefined
  * services.mrtConfig.auth;     // AuthStrategy | undefined
  * services.mrtConfig.project;  // string | undefined
+ * services.workingDirectory;   // string (project directory)
  * ```
  */
 export class Services {
@@ -106,24 +109,34 @@ export class Services {
    */
   public readonly mrtConfig: MrtConfig;
 
+  /**
+   * Project working directory for file operations.
+   * Used by tools to ensure they operate on the correct project directory,
+   * especially when MCP clients spawn servers from the home directory.
+   * Defaults to process.cwd() if not provided.
+   */
+  public readonly workingDirectory: string;
+
   public constructor(opts: ServicesOptions = {}) {
     this.b2cInstance = opts.b2cInstance;
     this.mrtConfig = opts.mrtConfig ?? {};
+    this.workingDirectory = opts.workingDirectory ?? process.cwd();
   }
 
   /**
    * Creates a Services instance from an already-resolved configuration.
    *
    * @param config - Already-resolved configuration from BaseCommand.resolvedConfig
+   * @param workingDirectory - Optional working directory (defaults to process.cwd())
    * @returns Services instance with resolved config
    *
    * @example
    * ```typescript
    * // In a command that extends BaseCommand
-   * const services = Services.fromResolvedConfig(this.resolvedConfig);
+   * const services = Services.fromResolvedConfig(this.resolvedConfig, this.flags['working-directory']);
    * ```
    */
-  public static fromResolvedConfig(config: ResolvedB2CConfig): Services {
+  public static fromResolvedConfig(config: ResolvedB2CConfig, workingDirectory?: string): Services {
     // Build MRT config using factory methods
     const mrtConfig: MrtConfig = {
       auth: config.hasMrtConfig() ? config.createMrtAuth() : undefined,
@@ -138,6 +151,7 @@ export class Services {
     return new Services({
       b2cInstance,
       mrtConfig,
+      workingDirectory,
     });
   }
 

@@ -603,7 +603,7 @@ export function resolveComponent(input: string, workspaceRoot: string, searchPat
         `Full path checked: ${fullPath}\n\n` +
         `Tips:\n` +
         `  1. Use component name instead (e.g., "ProductCard") for automatic discovery\n` +
-        `  2. If components are in a different repo, set: SFCC_WORKING_DIRECTORY=/path/to/storefront-next`,
+        `  2. If components are in a different repo, set --working-directory flag or SFCC_WORKING_DIRECTORY env var`,
     );
   }
 
@@ -630,7 +630,7 @@ export function resolveComponent(input: string, workspaceRoot: string, searchPat
         `  1. Provide full path: component: "src/components/ProductCard.tsx"\n` +
         `  2. Add custom search: searchPaths: ["packages/retail/src"]\n` +
         `  3. Check component name spelling and casing\n` +
-        `  4. If components are in a different repo, set: SFCC_WORKING_DIRECTORY=/path/to/storefront-next`,
+        `  4. If components are in a different repo, set --working-directory flag or SFCC_WORKING_DIRECTORY env var`,
     );
   }
 
