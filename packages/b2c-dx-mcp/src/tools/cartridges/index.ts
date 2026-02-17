@@ -109,49 +109,59 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
         const instance = context.b2cInstance!;
         const logger = getLogger();
 
-        // If no code version specified, get the active one
-        let codeVersion = instance.config.codeVersion;
-        if (!codeVersion) {
-          logger.debug('No code version specified, getting active version...');
-          const active = await getActiveCodeVersionFn(instance);
-          if (!active?.id) {
-            throw new Error(
-              'No code version specified and no active code version found. ' +
-                'Specify a code version using one of: ' +
-                '--code-version flag, SFCC_CODE_VERSION environment variable, ' +
-                'or code-version field in dw.json configuration file.',
-            );
+        try {
+          // If no code version specified, get the active one
+          let codeVersion = instance.config.codeVersion;
+          if (!codeVersion) {
+            logger.debug('No code version specified, getting active version...');
+            const active = await getActiveCodeVersionFn(instance);
+            if (!active?.id) {
+              throw new Error(
+                'No code version specified and no active code version found. ' +
+                  'Specify a code version using one of: ' +
+                  '--code-version flag, SFCC_CODE_VERSION environment variable, ' +
+                  'or code-version field in dw.json configuration file.',
+              );
+            }
+            codeVersion = active.id;
+            instance.config.codeVersion = codeVersion;
           }
-          codeVersion = active.id;
-          instance.config.codeVersion = codeVersion;
+
+          // Default directory to current directory
+          const directory = args.directory || context.services.getWorkingDirectory();
+
+          // Parse options
+          const options: DeployOptions = {
+            include: args.cartridges,
+            exclude: args.exclude,
+            reload: args.reload,
+          };
+
+          // Log all computed variables before deploying
+          logger.debug(
+            {
+              directory,
+              codeVersion,
+              include: options.include,
+              exclude: options.exclude,
+              reload: options.reload,
+            },
+            '[Cartridges] Deploying cartridges with computed options',
+          );
+
+          // Deploy cartridges
+          const result = await findAndDeployCartridgesFn(instance, directory, options);
+
+          return result;
+        } catch (error) {
+          // Handle communication and authentication errors
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(
+            `Failed to communicate with B2C instance. Check your authentication credentials and network connection. ` +
+              `If no code version is specified, ensure the instance is accessible and has an active code version. ` +
+              `Original error: ${errorMessage}`,
+          );
         }
-
-        // Default directory to current directory
-        const directory = args.directory || context.services.getWorkingDirectory();
-
-        // Parse options
-        const options: DeployOptions = {
-          include: args.cartridges,
-          exclude: args.exclude,
-          reload: args.reload,
-        };
-
-        // Log all computed variables before deploying
-        logger.debug(
-          {
-            directory,
-            codeVersion,
-            include: options.include,
-            exclude: options.exclude,
-            reload: options.reload,
-          },
-          '[Cartridges] Deploying cartridges with computed options',
-        );
-
-        // Deploy cartridges
-        const result = await findAndDeployCartridgesFn(instance, directory, options);
-
-        return result;
       },
       formatOutput: (output) => jsonResult(output),
     },
