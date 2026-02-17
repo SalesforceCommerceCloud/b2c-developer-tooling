@@ -73,6 +73,8 @@
 
 import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
+import type {ServerNotification, ServerRequest} from '@modelcontextprotocol/sdk/types.js';
+import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 
@@ -278,7 +280,10 @@ export function createToolAdapter<TInput, TOutput>(
     toolsets,
     isGA,
 
-    async handler(rawArgs: Record<string, unknown>): Promise<ToolResult> {
+    async handler(
+      rawArgs: Record<string, unknown>,
+      _mcpContext: RequestHandlerExtra<ServerRequest, ServerNotification>,
+    ): Promise<ToolResult> {
       // 1. Validate input with Zod
       const parseResult = zodSchema.safeParse(rawArgs);
       if (!parseResult.success) {
