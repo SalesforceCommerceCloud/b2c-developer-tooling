@@ -11,7 +11,7 @@ import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {DeployResult, DeployOptions} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {WebDavClient, OcapiClient} from '@salesforce/b2c-tooling-sdk/clients';
 
 /**
@@ -37,10 +37,12 @@ function getResultJson<T>(result: ToolResult): T {
 /**
  * Create a mock B2CInstance for testing.
  */
-function createMockB2CInstance(): B2CInstance {
+function createMockB2CInstance(options?: {codeVersion?: string}): B2CInstance {
+  // If codeVersion is explicitly provided (including undefined), use it; otherwise default to 'v1'
+  const codeVersion = options && 'codeVersion' in options ? options.codeVersion : 'v1';
   return {
     config: {
-      codeVersion: 'v1',
+      codeVersion,
     },
     webdav: {} as unknown as WebDavClient,
     ocapi: {} as unknown as OcapiClient,
@@ -68,10 +70,12 @@ function createMockLoadServicesWrapper(options?: {b2cInstance?: B2CInstance}): (
 describe('tools/cartridges', () => {
   let sandbox: sinon.SinonSandbox;
   let findAndDeployCartridgesStub: sinon.SinonStub;
+  let getActiveCodeVersionStub: sinon.SinonStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     findAndDeployCartridgesStub = sandbox.stub();
+    getActiveCodeVersionStub = sandbox.stub();
   });
 
   afterEach(() => {
@@ -137,6 +141,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       const result = await tool.handler({});
@@ -173,6 +178,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       const result = await tool.handler({directory});
@@ -202,6 +208,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       await tool.handler({cartridges});
@@ -226,6 +233,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       await tool.handler({exclude});
@@ -248,6 +256,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       await tool.handler({reload: true});
@@ -275,6 +284,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       await tool.handler({
@@ -307,6 +317,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       const result = await tool.handler({});
@@ -318,6 +329,105 @@ describe('tools/cartridges', () => {
       expect(jsonResult.reloaded).to.be.true;
       expect(jsonResult.cartridges[0].name).to.equal('app_storefront_base');
       expect(jsonResult.cartridges[1].name).to.equal('app_core');
+    });
+  });
+
+  describe('cartridge_deploy codeVersion resolution', () => {
+    it('should use active code version when codeVersion is not specified', async () => {
+      const mockResult: DeployResult = {
+        cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
+        codeVersion: 'v2',
+        reloaded: false,
+      };
+      findAndDeployCartridgesStub.resolves(mockResult);
+
+      const activeCodeVersion: CodeVersion = {id: 'v2', active: true} as CodeVersion;
+      getActiveCodeVersionStub.resolves(activeCodeVersion);
+
+      const mockInstance = createMockB2CInstance({codeVersion: undefined});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
+        findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
+      })[0];
+
+      const result = await tool.handler({});
+
+      expect(result.isError).to.be.undefined;
+      expect(getActiveCodeVersionStub.calledOnce).to.be.true;
+      expect(getActiveCodeVersionStub.calledWith(mockInstance)).to.be.true;
+      expect(mockInstance.config.codeVersion).to.equal('v2');
+      expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
+      const jsonResult = getResultJson<DeployResult>(result);
+      expect(jsonResult.codeVersion).to.equal('v2');
+    });
+
+    it('should use existing codeVersion when already specified', async () => {
+      const mockResult: DeployResult = {
+        cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
+        codeVersion: 'v1',
+        reloaded: false,
+      };
+      findAndDeployCartridgesStub.resolves(mockResult);
+
+      const mockInstance = createMockB2CInstance({codeVersion: 'v1'});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
+        findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
+      })[0];
+
+      const result = await tool.handler({});
+
+      expect(result.isError).to.be.undefined;
+      expect(getActiveCodeVersionStub.called).to.be.false;
+      expect(mockInstance.config.codeVersion).to.equal('v1');
+      expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
+    });
+
+    it('should throw error when no codeVersion and no active version found', async () => {
+      getActiveCodeVersionStub.resolves(undefined);
+
+      const mockInstance = createMockB2CInstance({codeVersion: undefined});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
+        findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
+      })[0];
+
+      const result = await tool.handler({});
+
+      expect(result.isError).to.be.true;
+      expect(getActiveCodeVersionStub.calledOnce).to.be.true;
+      expect(findAndDeployCartridgesStub.called).to.be.false;
+      const text = getResultText(result);
+      expect(text).to.include('No code version specified and no active code version found');
+      expect(text).to.include('--code-version flag');
+      expect(text).to.include('SFCC_CODE_VERSION environment variable');
+      expect(text).to.include('dw.json configuration file');
+    });
+
+    it('should throw error when no codeVersion and active version has no id', async () => {
+      const activeCodeVersion = {active: true} as CodeVersion; // Missing id
+      getActiveCodeVersionStub.resolves(activeCodeVersion);
+
+      const mockInstance = createMockB2CInstance({codeVersion: undefined});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
+        findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
+      })[0];
+
+      const result = await tool.handler({});
+
+      expect(result.isError).to.be.true;
+      expect(getActiveCodeVersionStub.calledOnce).to.be.true;
+      expect(findAndDeployCartridgesStub.called).to.be.false;
+      const text = getResultText(result);
+      expect(text).to.include('No code version specified and no active code version found');
+      expect(text).to.include('--code-version flag');
+      expect(text).to.include('SFCC_CODE_VERSION environment variable');
+      expect(text).to.include('dw.json configuration file');
     });
   });
 
@@ -345,6 +455,7 @@ describe('tools/cartridges', () => {
       const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
       })[0];
 
       const result = await tool.handler({});
@@ -363,7 +474,9 @@ describe('tools/cartridges', () => {
     beforeEach(() => {
       const mockInstance = createMockB2CInstance();
       loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
-      tool = createCartridgesTools(loadServices)[0];
+      tool = createCartridgesTools(loadServices, {
+        getActiveCodeVersion: getActiveCodeVersionStub,
+      })[0];
     });
 
     it('should validate input schema', async () => {

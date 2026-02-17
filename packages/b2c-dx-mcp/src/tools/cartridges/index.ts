@@ -16,8 +16,8 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import {findAndDeployCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
-import type {DeployResult, DeployOptions} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
@@ -41,6 +41,8 @@ interface CartridgeDeployInput {
 interface CartridgeToolInjections {
   /** Mock findAndDeployCartridges function for testing */
   findAndDeployCartridges?: (instance: B2CInstance, directory: string, options: DeployOptions) => Promise<DeployResult>;
+  /** Mock getActiveCodeVersion function for testing */
+  getActiveCodeVersion?: (instance: B2CInstance) => Promise<CodeVersion | undefined>;
 }
 
 /**
@@ -58,6 +60,7 @@ interface CartridgeToolInjections {
  */
 function createCartridgeDeployTool(loadServices: () => Services, injections?: CartridgeToolInjections): McpTool {
   const findAndDeployCartridgesFn = injections?.findAndDeployCartridges || findAndDeployCartridges;
+  const getActiveCodeVersionFn = injections?.getActiveCodeVersion || getActiveCodeVersion;
   return createToolAdapter<CartridgeDeployInput, DeployResult>(
     {
       name: 'cartridge_deploy',
@@ -104,6 +107,24 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
       async execute(args, context) {
         // Get instance from context (guaranteed by adapter when requiresInstance is true)
         const instance = context.b2cInstance!;
+        const logger = getLogger();
+
+        // If no code version specified, get the active one
+        let codeVersion = instance.config.codeVersion;
+        if (!codeVersion) {
+          logger.debug('No code version specified, getting active version...');
+          const active = await getActiveCodeVersionFn(instance);
+          if (!active?.id) {
+            throw new Error(
+              'No code version specified and no active code version found. ' +
+                'Specify a code version using one of: ' +
+                '--code-version flag, SFCC_CODE_VERSION environment variable, ' +
+                'or code-version field in dw.json configuration file.',
+            );
+          }
+          codeVersion = active.id;
+          instance.config.codeVersion = codeVersion;
+        }
 
         // Default directory to current directory
         const directory = args.directory || context.services.getWorkingDirectory();
@@ -116,10 +137,10 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
         };
 
         // Log all computed variables before deploying
-        const logger = getLogger();
         logger.debug(
           {
             directory,
+            codeVersion,
             include: options.include,
             exclude: options.exclude,
             reload: options.reload,
