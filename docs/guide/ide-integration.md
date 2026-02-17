@@ -1,5 +1,5 @@
 ---
-description: Configure IDE tooling like Prophet VS Code extension to consume resolved B2C CLI configuration via a generated dw.js bridge script.
+description: Configure IDE tooling like Prophet VS Code extension and IntelliJ SFCC plugin to consume resolved B2C CLI configuration.
 ---
 
 # IDE Integration
@@ -10,29 +10,14 @@ This guide explains how to connect IDE extensions to your B2C CLI configuration.
 
 [Prophet](https://marketplace.visualstudio.com/items?itemName=SqrTT.prophet) can load `dw.json`-compatible configuration by executing a local `dw.js` script in your working directory.
 
-### Why Use `dw.js` with B2C CLI
+### Benefits
 
-Using `dw.js` lets Prophet consume the same resolved configuration used by `b2c` commands, including values resolved from:
+The generated `dw.js` bridge lets Prophet automatically consume the same resolved configuration used by `b2c` commands — including `dw.json`, environment variables, `.env` files, active instance selection, and configuration plugins. No manual syncing required.
 
-- `dw.json`
-- environment variables and `.env`
-- active instance selection
-- configuration plugins registered with the CLI
-
-The script resolves configuration at runtime by running:
+### Setup
 
 ```bash
-b2c setup inspect --json --unmask
-```
-
-Then it maps the resolved config into Prophet-friendly `dw.json`-style keys.
-
-If `setup inspect` cannot be executed in the extension runtime, the script falls back to loading `dw.json` from `SFCC_CONFIG` or the `dw.js` directory.
-
-### Generate `dw.js` Automatically (Recommended)
-
-```bash
-# Generate ./dw.js
+# Generate ./dw.js in your project root
 b2c setup ide prophet
 
 # Overwrite an existing file
@@ -41,6 +26,13 @@ b2c setup ide prophet --force
 # Write to a custom location
 b2c setup ide prophet --output .vscode/dw.js
 ```
+
+### Switching Active Instances
+
+Prophet evaluates `dw.js` when VS Code starts. If you switch the active instance with `b2c setup instance set-active`, you need to reload the VS Code window for Prophet to pick up the new configuration:
+
+1. Open the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
+2. Run **Developer: Reload Window**
 
 ### Manual `dw.js` Example
 
@@ -119,6 +111,20 @@ It also passes through Prophet-specific fields when available:
 
 - The generated script uses `--unmask` at runtime, so secrets are exposed to Prophet as needed for connection.
 - You can regenerate the file any time with `b2c setup ide prophet --force`.
-- Dynamic cartridge path discovery can be layered on later. For now, `cartridgesPath` is passed through when available.
-- When inspect/fallback resolution fails, the script logs diagnostic messages to both stdout and stderr and exports `{}`.
-- The generated script resolves the project root from `SFCC_WORKING_DIRECTORY`, `SFCC_CONFIG`, or the script directory (`__dirname`) before falling back to `process.cwd()`.
+- If the CLI cannot be executed in the extension runtime, the script falls back to loading `dw.json` directly.
+
+## IntelliJ SFCC Plugin
+
+The [IntelliJ SFCC plugin](https://plugins.jetbrains.com/plugin/13668-salesforce-b2c-commerce-sfcc-) manages its own connection settings in `.idea/misc.xml`. A community B2C CLI plugin lets you share that configuration with the CLI so both tools stay in sync.
+
+### Setup
+
+Install the [b2c-plugin-intellij-sfcc-config](https://github.com/sfcc-solutions-share/b2c-plugin-intellij-sfcc-config) plugin:
+
+```bash
+b2c plugins install sfcc-solutions-share/b2c-plugin-intellij-sfcc-config
+```
+
+Once installed, run CLI commands from your IntelliJ project directory and the plugin will automatically load connection settings from `.idea/misc.xml`.
+
+See the [3rd Party Plugins](./third-party-plugins#intellij-sfcc-config-plugin) guide for full details on environment variables, credential decryption, and instance selection.
