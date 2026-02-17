@@ -75,6 +75,13 @@ jobs:
         working-directory: packages/b2c-cli
         run: pnpm run pretest && pnpm run test:ci && pnpm run lint
 
+      - name: Run VS Extension lint
+        id: vs-extension-test
+        if: always() && steps.vs-extension-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-vs-extension
+        # Testing not currently supported on CI
+        run: pnpm run lint
+
       - name: Test Report
         uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0
         if: always() && steps.sdk-test.conclusion != 'cancelled'
