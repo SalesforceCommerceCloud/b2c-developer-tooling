@@ -58,10 +58,10 @@ export class EnvFileSource implements ConfigSource {
    *
    * File location priority:
    * 1. B2C_ENV_FILE_PATH environment variable (explicit override)
-   * 2. .env.b2c in startDir (from options)
+   * 2. .env.b2c in workingDirectory (from options)
    * 3. .env.b2c in current working directory
    *
-   * @param options - Resolution options (startDir used for file lookup)
+   * @param options - Resolution options (workingDirectory used for file lookup)
    * @returns Parsed configuration and location, or undefined if file not found
    */
   load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
@@ -71,7 +71,7 @@ export class EnvFileSource implements ConfigSource {
     if (envOverride) {
       envFilePath = envOverride;
     } else {
-      const searchDir = options.startDir ?? process.cwd();
+      const searchDir = options.workingDirectory ?? process.cwd();
       envFilePath = join(searchDir, '.env.b2c');
     }
 

@@ -323,7 +323,7 @@ export class Services {
    * @returns Project working directory path
    */
   public getWorkingDirectory(): string {
-    return this.resolvedConfig.values.startDir ?? process.cwd();
+    return this.resolvedConfig.values.workingDirectory ?? process.cwd();
   }
 
   /**

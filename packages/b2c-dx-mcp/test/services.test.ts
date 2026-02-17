@@ -175,7 +175,7 @@ describe('services', () => {
   describe('getWorkingDirectory', () => {
     it('should return working directory when provided in config', () => {
       const workingDir = '/path/to/project';
-      const config = createMockResolvedConfig({startDir: workingDir});
+      const config = createMockResolvedConfig({workingDirectory: workingDir});
       const services = new Services({resolvedConfig: config});
 
       expect(services.getWorkingDirectory()).to.equal(workingDir);
@@ -190,7 +190,7 @@ describe('services', () => {
 
     it('should return working directory from fromResolvedConfig when provided in config', () => {
       const workingDir = '/path/to/project';
-      const config = createMockResolvedConfig({startDir: workingDir});
+      const config = createMockResolvedConfig({workingDirectory: workingDir});
       const services = Services.fromResolvedConfig(config);
 
       expect(services.getWorkingDirectory()).to.equal(workingDir);
