@@ -552,7 +552,7 @@ describe('config/sources', () => {
 
       // Use PackageJsonSource directly to test in isolation
       const source = new PackageJsonSource();
-      const result = source.load({startDir: tempDir});
+      const result = source.load({workingDirectory: tempDir});
 
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');
@@ -683,7 +683,7 @@ describe('config/sources', () => {
       );
 
       const source = new PackageJsonSource();
-      const result = source.load({startDir: tempDir});
+      const result = source.load({workingDirectory: tempDir});
 
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');
@@ -709,7 +709,7 @@ describe('config/sources', () => {
       );
 
       const source = new PackageJsonSource();
-      const result = source.load({startDir: tempDir});
+      const result = source.load({workingDirectory: tempDir});
 
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');

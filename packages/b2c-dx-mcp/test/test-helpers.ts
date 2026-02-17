@@ -11,6 +11,7 @@
 import type {NormalizedConfig, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import type {Services} from '../src/services.js';
 
 /**
  * Creates a minimal mock ResolvedB2CConfig for testing.
@@ -42,4 +43,15 @@ export function createMockResolvedConfig(values: Partial<NormalizedConfig> = {})
     },
   };
   return config;
+}
+
+/**
+ * Creates a loadServices function for testing.
+ * Returns a function that always returns the same Services instance.
+ *
+ * @param services - Services instance to return
+ * @returns Function that returns the Services instance
+ */
+export function createMockLoadServices(services: Services): () => Services {
+  return () => services;
 }

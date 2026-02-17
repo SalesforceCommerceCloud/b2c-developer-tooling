@@ -21,9 +21,9 @@ import {createScapiCustomApisStatusTool} from './scapi-custom-apis-status.js';
 /**
  * Creates all tools for the SCAPI toolset.
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createScapiTools(services: Services): McpTool[] {
-  return [createScapiSchemasListTool(services), createScapiCustomApisStatusTool(services)];
+export function createScapiTools(loadServices: () => Services): McpTool[] {
+  return [createScapiSchemasListTool(loadServices), createScapiCustomApisStatusTool(loadServices)];
 }

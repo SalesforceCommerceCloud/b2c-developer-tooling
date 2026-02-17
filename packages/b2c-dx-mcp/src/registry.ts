@@ -76,10 +76,10 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
  * Tools are organized by their declared `toolsets` array, allowing
  * a single tool to appear in multiple toolsets.
  *
- * @param services - Services instance for dependency injection
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Complete tool registry
  */
-export function createToolRegistry(services: Services): ToolRegistry {
+export function createToolRegistry(loadServices: () => Services): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
     MRT: [],
@@ -90,11 +90,11 @@ export function createToolRegistry(services: Services): ToolRegistry {
 
   // Collect all tools from all factories
   const allTools: McpTool[] = [
-    ...createCartridgesTools(services),
-    ...createMrtTools(services),
-    ...createPwav3Tools(services),
-    ...createScapiTools(services),
-    ...createStorefrontNextTools(services),
+    ...createCartridgesTools(loadServices),
+    ...createMrtTools(loadServices),
+    ...createPwav3Tools(loadServices),
+    ...createScapiTools(loadServices),
+    ...createStorefrontNextTools(loadServices),
   ];
 
   // Organize tools by their declared toolsets (supports multi-toolset)
@@ -167,16 +167,20 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
  *
  * @param flags - Startup flags from CLI
  * @param server - B2CDxMcpServer instance
- * @param services - Services instance
+ * @param loadServices - Function that loads configuration and returns Services instance
  */
-export async function registerToolsets(flags: StartupFlags, server: B2CDxMcpServer, services: Services): Promise<void> {
+export async function registerToolsets(
+  flags: StartupFlags,
+  server: B2CDxMcpServer,
+  loadServices: () => Services,
+): Promise<void> {
   const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];
   const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
 
   // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(services);
+  const toolRegistry = createToolRegistry(loadServices);
 
   // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();

@@ -289,10 +289,10 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
  * Mirrors CLI: b2c scapi schemas list (discovery) and b2c scapi schemas get (fetch).
  * Lists or fetches SCAPI schema specifications; includes standard SCAPI and custom API as schema types.
  *
- * @param services - MCP services instance
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns MCP tool for listing/fetching SCAPI schemas
  */
-export function createScapiSchemasListTool(services: Services): McpTool {
+export function createScapiSchemasListTool(loadServices: () => Services): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
@@ -359,6 +359,6 @@ export function createScapiSchemasListTool(services: Services): McpTool {
       },
       formatOutput: (output) => jsonResult(output),
     },
-    services,
+    loadServices,
   );
 }

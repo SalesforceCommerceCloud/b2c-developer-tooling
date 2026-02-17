@@ -100,10 +100,10 @@ const DEFAULT_SECTIONS: SectionKey[] = ['quick-reference', 'data-fetching', 'com
 /**
  * Creates the developer guidelines tool for Storefront Next.
  *
- * @param services - MCP services
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-export function createDeveloperGuidelinesTool(services: Services): McpTool {
+export function createDeveloperGuidelinesTool(loadServices: () => Services): McpTool {
   return createToolAdapter<DeveloperGuidelinesInput, string>(
     {
       name: 'storefront_next_development_guidelines',
@@ -170,6 +170,6 @@ export function createDeveloperGuidelinesTool(services: Services): McpTool {
       },
       formatOutput: (output) => textResult(output),
     },
-    services,
+    loadServices,
   );
 }

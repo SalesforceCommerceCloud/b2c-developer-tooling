@@ -94,7 +94,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
 
   describe('createScapiCustomApisStatusTool', () => {
     it('should create scapi_custom_apis_status tool with correct metadata', () => {
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
 
       expect(tool).to.exist;
       expect(tool.name).to.equal('scapi_custom_apis_status');
@@ -109,7 +109,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
     });
 
     it('should have optional input params: status, groupBy, columns', () => {
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
 
       expect(tool.inputSchema).to.have.property('status');
       expect(tool.inputSchema).to.have.property('groupBy');
@@ -123,7 +123,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       const mockEndpoints = createMockEndpoints();
       mockGet.resolves(createMockClientResponse(mockEndpoints, 'version1'));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
@@ -149,7 +149,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
     it('should pass status filter to SDK when provided', async () => {
       mockGet.resolves(createMockClientResponse([]));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       await tool.handler({status: 'active'});
 
       expect(mockGet.calledOnce).to.be.true;
@@ -163,7 +163,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       ]);
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -178,7 +178,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
     it('should return empty endpoints and message when no data returned', async () => {
       mockGet.resolves(createMockClientResponse([], 'v1'));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -194,7 +194,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
         response: {status: 400, statusText: 'Bad Request'},
       });
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -206,7 +206,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
     it('should handle SDK exceptions and return remoteError', async () => {
       mockGet.rejects(new Error('Network error'));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -221,7 +221,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       ]);
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({groupBy: 'type'});
       const {parsed} = parseResultContent(result);
 
@@ -240,7 +240,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       ]);
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({groupBy: 'site'});
       const {parsed} = parseResultContent(result);
 
@@ -255,7 +255,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       const mockEndpoints = createMockEndpoints();
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({columns: 'type,apiName,status'});
       const {parsed} = parseResultContent(result);
 
@@ -278,7 +278,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       ]);
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({
         columns:
           'type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id',
@@ -308,7 +308,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
     });
 
     it('should return validation error for invalid status value', async () => {
-      const tool = createScapiCustomApisStatusTool(services);
+      const tool = createScapiCustomApisStatusTool(() => services);
       const result = await tool.handler({status: 'invalid'});
 
       expect(result.isError).to.be.true;

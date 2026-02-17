@@ -60,8 +60,8 @@ export class PackageJsonSource implements ConfigSource {
   load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     const logger = getLogger();
 
-    // Only look in cwd (or startDir if provided)
-    const searchDir = options.startDir ?? process.cwd();
+    // Only look in cwd (or workingDirectory if provided)
+    const searchDir = options.workingDirectory ?? process.cwd();
     const packageJsonPath = path.join(searchDir, 'package.json');
 
     logger.trace({location: packageJsonPath}, '[PackageJsonSource] Checking for package.json');

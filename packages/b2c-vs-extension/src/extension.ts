@@ -278,12 +278,12 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
   type WebDavPropfindEntry = {href: string; displayName?: string; contentLength?: number; isCollection?: boolean};
 
   const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', async () => {
-    let startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-    if (!startDir || startDir === '/' || !fs.existsSync(startDir)) {
-      startDir = context.extensionPath;
+    let workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+    if (!workingDirectory || workingDirectory === '/' || !fs.existsSync(workingDirectory)) {
+      workingDirectory = context.extensionPath;
     }
-    const dwPath = findDwJson(startDir);
-    const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+    const dwPath = findDwJson(workingDirectory);
+    const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
 
     if (!config.hasB2CInstanceConfig()) {
       vscode.window.showErrorMessage(
@@ -552,9 +552,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     );
     let prefill: {tenantId: string; channelId: string; shortCode?: string} | undefined;
     try {
-      const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(startDir);
-      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(workingDirectory);
+      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
       const hostname = config.values.hostname;
       const shortCode = config.values.shortCode;
       const firstPart = hostname && typeof hostname === 'string' ? (hostname.split('.')[0] ?? '') : '';
@@ -585,9 +585,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         curlText?: string;
       }) => {
         const getConfig = () => {
-          const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-          const dwPath = findDwJson(startDir);
-          return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+          const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+          const dwPath = findDwJson(workingDirectory);
+          return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
         };
 
         if (msg.type === 'scapiFetchSchemas') {
@@ -970,9 +970,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           vscode.window.showErrorMessage('B2C DX: Tenant Id and Channel Id are required to create a SLAS client.');
           return;
         }
-        const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-        const dwPath = findDwJson(startDir);
-        const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+        const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+        const dwPath = findDwJson(workingDirectory);
+        const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
         const shortCode = config.values.shortCode;
         if (!shortCode) {
           vscode.window.showErrorMessage(
@@ -1086,9 +1086,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     panel.webview.html = getOdsManagementWebviewContent(context);
 
     async function getOdsConfig() {
-      const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(startDir);
-      return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(workingDirectory);
+      return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
     }
 
     function realmFromHostname(hostname: string | undefined): string {
@@ -1262,7 +1262,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const dwPath = findDwJson(projectDirectory);
           const config = dwPath
             ? resolveConfig({}, {configPath: dwPath})
-            : resolveConfig({}, {startDir: projectDirectory});
+            : resolveConfig({}, {workingDirectory: projectDirectory});
           if (!config.hasB2CInstanceConfig()) {
             const message =
               'B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.';

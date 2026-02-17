@@ -293,7 +293,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Gets base configuration options from common flags.
    *
    * Subclasses should spread these options when overriding loadConfiguration()
-   * to ensure common options like startDir are always included.
+   * to ensure common options like workingDirectory are always included.
    *
    * @example
    * ```typescript
@@ -310,7 +310,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return {
       instance: this.flags.instance,
       configPath: this.flags.config,
-      startDir: this.flags['working-directory'],
+      workingDirectory: this.flags['working-directory'],
     };
   }
 

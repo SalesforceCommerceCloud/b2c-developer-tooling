@@ -278,6 +278,20 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
   }
 
   /**
+   * Loads configuration and creates a new Services instance.
+   *
+   * This method loads configuration files (dw.json, ~/.mobify) on each call,
+   * allowing tools to pick up changes to configuration between invocations.
+   * Flags remain the same (parsed once at startup).
+   *
+   * @returns A new Services instance with loaded configuration
+   */
+  protected loadServices(): Services {
+    const config = this.loadConfiguration();
+    return Services.fromResolvedConfig(config);
+  }
+
+  /**
    * Main entry point - starts the MCP server.
    *
    * Execution flow:
@@ -336,11 +350,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       },
     );
 
-    // Create services from already-resolved config (BaseCommand.init() already resolved it)
-    const services = Services.fromResolvedConfig(this.resolvedConfig);
-
-    // Register toolsets
-    await registerToolsets(startupFlags, server, services);
+    // Register toolsets with loader function that loads config and creates Services on each tool call
+    // This allows tools to pick up changes to config files (dw.json, ~/.mobify) between invocations
+    await registerToolsets(startupFlags, server, this.loadServices.bind(this));
 
     // Connect to stdio transport
     const transport = new StdioServerTransport();

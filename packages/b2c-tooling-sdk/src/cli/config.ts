@@ -175,7 +175,7 @@ export interface LoadConfigOptions {
   /** Explicit path to config file (skips searching if provided) */
   configPath?: string;
   /** Starting directory for config file search (default: current working directory) */
-  startDir?: string;
+  workingDirectory?: string;
   /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
@@ -236,16 +236,17 @@ export function loadConfig(
 ): ResolvedB2CConfig {
   const logger = getLogger();
 
-  // Preserve instanceName from options.instance if not already in flags
+  // Preserve instanceName and workingDirectory from options if not already in flags
   const effectiveFlags = {
     ...flags,
     instanceName: flags.instanceName ?? options.instance,
+    workingDirectory: flags.workingDirectory ?? options.workingDirectory,
   };
 
   const resolved = resolveConfig(effectiveFlags, {
     instance: options.instance,
     configPath: options.configPath,
-    startDir: options.startDir,
+    workingDirectory: options.workingDirectory,
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,
