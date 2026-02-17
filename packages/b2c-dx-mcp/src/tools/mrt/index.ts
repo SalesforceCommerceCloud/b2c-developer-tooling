@@ -115,7 +115,11 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
         // Parse comma-separated glob patterns (same as CLI defaults)
         const ssrOnly = (args.ssrOnly || 'ssr.js,ssr.mjs,server/**/*').split(',').map((s) => s.trim());
         const ssrShared = (args.ssrShared || 'static/**/*,client/**/*').split(',').map((s) => s.trim());
-        const buildDirectory = args.buildDirectory || path.join(context.services.getWorkingDirectory(), 'build');
+        const buildDirectory = args.buildDirectory
+          ? path.isAbsolute(args.buildDirectory)
+            ? args.buildDirectory
+            : path.resolve(context.services.getWorkingDirectory(), args.buildDirectory)
+          : path.join(context.services.getWorkingDirectory(), 'build');
 
         // Log all computed variables before pushing bundle
         const logger = getLogger();

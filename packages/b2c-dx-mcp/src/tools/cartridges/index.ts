@@ -12,6 +12,7 @@
  * @module tools/cartridges
  */
 
+import path from 'node:path';
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
@@ -127,8 +128,12 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
             instance.config.codeVersion = codeVersion;
           }
 
-          // Default directory to current directory
-          const directory = args.directory || context.services.getWorkingDirectory();
+          // Resolve directory path: relative paths are resolved relative to working directory, absolute paths are used as-is
+          const directory = args.directory
+            ? path.isAbsolute(args.directory)
+              ? args.directory
+              : path.resolve(context.services.getWorkingDirectory(), args.directory)
+            : context.services.getWorkingDirectory();
 
           // Parse options
           const options: DeployOptions = {
