@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: Updating user guides, CLI reference, and API documentation for the B2C CLI project
+description: Updating user guides, CLI reference, and API documentation for the B2C CLI project. Use when adding or changing CLI command docs, writing JSDoc for TypeDoc generation, updating Vitepress sidebar config, or creating new guide pages.
 metadata:
   internal: true
 ---

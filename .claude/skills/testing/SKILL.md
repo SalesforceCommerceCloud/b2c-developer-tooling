@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Writing tests for the B2C CLI project using Mocha, Chai, and MSW
+description: Writing tests for the B2C CLI project using Mocha, Chai, and MSW. Use when writing unit or integration tests, mocking HTTP requests with MSW, testing CLI commands with oclif, isolating config in tests, or setting up test coverage.
 metadata:
   internal: true
 ---
@@ -438,71 +438,7 @@ it('handles server flag', async () => {
 
 ## Testing CLI Commands with oclif
 
-### Integration Tests with runCommand
-
-Use `@oclif/test`'s `runCommand()` for integration-style tests:
-
-```typescript
-import { runCommand } from '@oclif/test';
-import { expect } from 'chai';
-
-describe('ods list', () => {
-  it('runs without errors', async () => {
-    const { error } = await runCommand('ods list --help');
-    expect(error).to.be.undefined;
-  });
-});
-```
-
-### SDK Base Command Integration Tests
-
-The SDK includes a test fixture at `test/fixtures/test-cli/` for integration testing base command behavior. See `test/cli/base-command.integration.test.ts` for examples.
-
-### When to Use Each Approach
-
-| Approach | Use For |
-|----------|---------|
-| Unit tests with `stubParse` | Testing protected method logic in isolation |
-| Integration tests with fixture | Testing full command lifecycle, flag parsing |
-| `runCommand()` in b2c-cli | Testing actual CLI commands |
-
-## E2E Tests
-
-E2E tests run against real infrastructure and are skipped without credentials:
-
-```typescript
-describe('ODS Lifecycle E2E', function () {
-  this.timeout(360_000); // 6 minutes
-
-  const CLI_BIN = path.resolve(__dirname, '../../../bin/run.js');
-
-  before(function () {
-    if (!process.env.SFCC_CLIENT_ID || !process.env.SFCC_CLIENT_SECRET) {
-      this.skip();
-    }
-  });
-
-  async function runCLI(args: string[]) {
-    return execa('node', [CLI_BIN, ...args], {
-      env: { ...process.env, SFCC_LOG_LEVEL: 'silent' },
-      reject: false,
-    });
-  }
-
-  it('creates a sandbox', async function () {
-    this.timeout(300_000);
-
-    const result = await runCLI([
-      'ods', 'create',
-      '--realm', process.env.TEST_REALM!,
-      '--ttl', '24',
-      '--json',
-    ]);
-
-    expect(result.exitCode).to.equal(0);
-  });
-});
-```
+See [CLI Command Testing Patterns](./references/CLI-COMMAND-TESTING.md) for integration tests with `runCommand`, SDK base command fixture tests, E2E test patterns, and when to use each approach.
 
 ## Coverage
 
@@ -515,30 +451,19 @@ open coverage/index.html
 
 ## Test Helpers Reference
 
-### CLI Package (`packages/b2c-cli/test/helpers/`)
+See [Test Helpers Reference](./references/HELPERS.md) for a full list of helpers available in both the CLI and SDK packages.
 
-| Helper | Purpose |
-|--------|---------|
-| `runSilent(fn)` | Capture and suppress stdout/stderr from command execution |
-| `stubParse(command, flags, args)` | Stub oclif's parse method with flags (includes silent log level) |
-| `createTestCommand(CommandClass, config, flags, args)` | Create command instance with stubbed parse |
-| `createIsolatedConfigHooks()` | Mocha hooks for config isolation |
-| `createIsolatedEnvHooks()` | Mocha hooks for env var isolation |
+## Troubleshooting
 
-### SDK Package (`packages/b2c-tooling-sdk/test/helpers/`)
+**MSW handler not matching requests**: Verify the URL pattern in `http.get()`/`http.post()` matches the full URL including base path. Use `onUnhandledRequest: 'error'` in `server.listen()` to surface unmatched requests. Check that the HTTP method matches (e.g., `http.all()` for WebDAV methods like MKCOL/PROPFIND).
 
-| Helper | Purpose |
-|--------|---------|
-| `MockAuthStrategy` | Mock authentication for API clients |
-| `stubParse(command, flags, args)` | Stub oclif's parse method (includes silent log level) |
-| `createNullStream()` | Create a writable stream that discards output |
-| `CapturingStream` | Writable stream that captures output for assertions |
+**Config or env vars leaking between tests**: Always pair `isolateConfig()` with `restoreConfig()` in `beforeEach`/`afterEach`. Missing `restoreConfig()` causes subsequent tests to run with cleared env vars. Use `sinon.restore()` in `afterEach` to clean up all stubs.
 
-### SDK Test Utils (exported from package)
+**Import path errors ("module not found")**: Use package exports (`@salesforce/b2c-tooling-sdk/clients`) not relative paths. If a new export was added, ensure it's in `package.json` `exports` with the `development` condition pointing to the `.ts` source file.
 
-```typescript
-import { isolateConfig, restoreConfig } from '@salesforce/b2c-tooling-sdk/test-utils';
-```
+**Fake timers break MSW**: MSW v2 uses microtasks internally. Never use `@sinonjs/fake-timers` or `sinon.useFakeTimers()` in tests that use MSW. Use `pollInterval: 10` for fast polling tests instead.
+
+**Test output is noisy**: Use `runSilent()` to suppress stdout/stderr from commands. The `stubParse` helper automatically sets `'log-level': 'silent'` to quiet pino logger output.
 
 ## Writing Tests Checklist
 
