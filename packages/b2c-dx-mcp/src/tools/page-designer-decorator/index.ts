@@ -599,10 +599,10 @@ function handleAutoMode(args: PageDesignerDecoratorInput, workspaceRoot: string)
 /**
  * Creates the Page Designer decorator tool for Storefront Next.
  *
- * @param services - MCP services (provides workingDirectory for component search)
+ * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-export function createPageDesignerDecoratorTool(services: Services): McpTool {
+export function createPageDesignerDecoratorTool(loadServices: () => Services): McpTool {
   return {
     name: 'storefront_next_page_designer_decorator',
 
@@ -623,7 +623,8 @@ export function createPageDesignerDecoratorTool(services: Services): McpTool {
         const validatedArgs = pageDesignerDecoratorSchema.parse(args) as PageDesignerDecoratorInput;
         // Use workingDirectory from services to ensure we search in the correct project directory
         // This prevents searches in the home folder when MCP clients spawn servers from ~
-        const workspaceRoot = services.workingDirectory;
+        const services = loadServices();
+        const workspaceRoot = services.getWorkingDirectory();
 
         if (validatedArgs.autoMode === undefined && !validatedArgs.conversationContext) {
           const fullPath = resolveComponent(validatedArgs.component, workspaceRoot, validatedArgs.searchPaths);
