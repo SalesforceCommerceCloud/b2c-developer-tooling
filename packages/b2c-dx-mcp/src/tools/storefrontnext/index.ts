@@ -17,7 +17,6 @@
  * - `storefront_next_figma_to_component_workflow` - Convert Figma to components
  * - `storefront_next_generate_component` - Generate new components
  * - `storefront_next_map_tokens_to_theme` - Map design tokens
- * - `storefront_next_design_decorator` - Apply design decorators
  * - `storefront_next_generate_page_designer_metadata` - Generate Page Designer metadata
  *
  * @module tools/storefrontnext
@@ -116,11 +115,6 @@ export function createStorefrontNextTools(services: Services): McpTool[] {
     createPlaceholderTool(
       'storefront_next_map_tokens_to_theme',
       'Map design tokens to Storefront Next theme configuration',
-      services,
-    ),
-    createPlaceholderTool(
-      'storefront_next_design_decorator',
-      'Apply design decorators to Storefront Next components',
       services,
     ),
     createPlaceholderTool(

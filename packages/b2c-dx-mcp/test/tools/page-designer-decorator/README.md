@@ -37,7 +37,7 @@ pnpm run inspect:dev
 
 Then in the inspector:
 1. Click **Connect**
-2. Click **List Tools** - you should see `add_page_designer_decorator`
+2. Click **List Tools** - you should see `storefront_next_page_designer_decorator`
 3. Click on the tool to test it with real inputs
 
 ### 3. CLI Testing
@@ -45,13 +45,13 @@ Then in the inspector:
 Test via command line:
 
 ```bash
-# List all tools (should include add_page_designer_decorator)
+# List all tools (should include storefront_next_page_designer_decorator)
 npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga-tools --method tools/list
 
 # Call the tool
 npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga-tools \
   --method tools/call \
-  --tool-name add_page_designer_decorator \
+  --tool-name storefront_next_page_designer_decorator \
   --args '{"component": "MyComponent"}'
 ```
 

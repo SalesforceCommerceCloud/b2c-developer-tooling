@@ -134,7 +134,7 @@ describe('tools/page-designer-decorator', () => {
   describe('tool metadata', () => {
     it('should have correct tool name', () => {
       const tool = createPageDesignerDecoratorTool(services);
-      expect(tool.name).to.equal('add_page_designer_decorator');
+      expect(tool.name).to.equal('storefront_next_page_designer_decorator');
     });
 
     it('should have comprehensive description', () => {

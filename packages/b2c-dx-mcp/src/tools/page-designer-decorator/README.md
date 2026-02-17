@@ -41,19 +41,19 @@ page-designer-decorator/
 
 ```bash
 # By component name (automatically finds the file)
-add_page_designer_decorator({
+storefront_next_page_designer_decorator({
   component: "ProductCard",
   autoMode: true
 })
 
 # Interactive mode
-add_page_designer_decorator({
+storefront_next_page_designer_decorator({
   component: "Hero",
   conversationContext: { step: "analyze" }
 })
 
 # With custom search paths (for unusual locations)
-add_page_designer_decorator({
+storefront_next_page_designer_decorator({
   component: "ProductCard",
   searchPaths: ["packages/retail/src", "app/features"],
   autoMode: true
@@ -64,7 +64,7 @@ add_page_designer_decorator({
 
 ```bash
 # If you prefer to specify the exact path
-add_page_designer_decorator({
+storefront_next_page_designer_decorator({
   component: "src/components/ProductCard.tsx",
   autoMode: true
 })

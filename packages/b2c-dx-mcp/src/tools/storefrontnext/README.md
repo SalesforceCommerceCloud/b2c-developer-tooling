@@ -80,7 +80,7 @@ MCP tools for Storefront Next development with React Server Components.
 }
 ```
 
-### `add_page_designer_decorator`
+### `storefront_next_page_designer_decorator`
 
 Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefinition`) to existing React components for Storefront Next.
 
@@ -93,14 +93,6 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 - Generate decorator code automatically or interactively
 - Configure component attributes and regions for Page Designer
 
-**Key features**:
-
-- **Name-Based Lookup**: Find components by name (e.g., "ProductCard") without knowing paths
-- **Auto Mode**: Automatically generates decorators with sensible defaults
-- **Interactive Mode**: Step-by-step workflow for fine-tuned control
-- **Auto-Discovery**: Searches common component directories automatically
-- **Type Inference**: Automatically infers Page Designer types from prop names
-
 **Parameters**:
 
 - `component` (required, string): Component name (e.g., "ProductCard") or file path
@@ -109,11 +101,6 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 - `componentId` (optional, string): Override component ID
 - `conversationContext` (optional, object): For interactive mode workflow steps
 
-**Modes**:
-
-- **Auto Mode**: Generates decorators immediately with sensible defaults
-- **Interactive Mode**: Multi-step workflow with user confirmation at each stage
-
 **Returns**: Generated decorator code and instructions for adding to component file
 
 **Example usage**:
@@ -121,7 +108,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 ```json
 // Auto mode (quick setup)
 {
-  "name": "add_page_designer_decorator",
+  "name": "storefront_next_page_designer_decorator",
   "arguments": {
     "component": "ProductCard",
     "autoMode": true
@@ -130,7 +117,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 
 // Interactive mode (step-by-step)
 {
-  "name": "add_page_designer_decorator",
+  "name": "storefront_next_page_designer_decorator",
   "arguments": {
     "component": "Hero",
     "conversationContext": {
@@ -140,11 +127,11 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 }
 ```
 
-**See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.
-
 ## Implementation Details
 
 ### Architecture
+
+#### `storefront_next_development_guidelines`
 
 The tool loads content from markdown files in the `content/` directory:
 
@@ -153,7 +140,7 @@ The tool loads content from markdown files in the `content/` directory:
 - **Section-Based**: Individual markdown files per topic (~100-200 lines each)
 - **Default behavior**: Returns 4 sections by default for comprehensive coverage
 
-### Content Structure
+**Content Structure**:
 
 Each section markdown file includes:
 
@@ -162,20 +149,58 @@ Each section markdown file includes:
 - Quick reference snippets
 - Framework-specific patterns for React Server Components
 
-### Behavior
+**Behavior**:
 
 - **No sections specified**: Returns default comprehensive set (`quick-reference`, `data-fetching`, `components`, `testing`)
 - **Single section**: Returns content directly without separators
 - **Multiple sections**: Combines content with `---` separators and includes instructions for full content display
 - **Empty array**: Returns empty string
 
-### Benefits
+**Benefits**:
 
 ✅ **Token Efficient**: Returns only relevant content (200-500 lines vs 20K+ full doc)  
 ✅ **Modular**: Access specific sections as needed  
 ✅ **Multi-Select**: Combine related sections in a single call for contextual learning  
 ✅ **Always Current**: Content loaded from markdown files (easy to update)  
 ✅ **Comprehensive Default**: Returns key sections by default for immediate value
+
+#### `storefront_next_page_designer_decorator`
+
+The tool uses a rule-based architecture with TypeScript template literals for generating Page Designer decorators:
+
+- **Rule Rendering**: Pure TypeScript functions that return strings based on typed context
+- **Type Safety**: Every rule has a strongly-typed context interface checked at compile time
+- **Template Generation**: Code generation uses pure functions for decorator creation
+- **Component Discovery**: Automatically searches common component directories (e.g., `src/components/**`, `app/components/**`)
+
+**Key Features**:
+
+- **Name-Based Lookup**: Find components by name (e.g., "ProductCard") without knowing paths
+- **Auto-Discovery**: Searches common component directories automatically
+- **Type-Safe**: Full TypeScript type inference for all contexts
+- **Fast**: Direct function execution, no file I/O or compilation overhead
+- **Flexible Input**: Supports component names or file paths
+
+**Modes**:
+
+- **Auto Mode**: Generates decorators immediately with sensible defaults
+- **Interactive Mode**: Multi-step workflow with user confirmation at each stage
+
+**Component Discovery**:
+
+The tool automatically searches for components in these locations (in order):
+
+1. `src/components/**` (PascalCase and kebab-case)
+2. `app/components/**`
+3. `components/**`
+4. `src/**` (broader search)
+5. Custom paths (if provided via `searchPaths`)
+
+**Working Directory**:
+
+Component discovery uses the working directory resolved from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+
+**See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.
 
 ## Placeholder Tools
 
@@ -185,7 +210,6 @@ The following tools are placeholders awaiting implementation:
 - `storefront_next_figma_to_component_workflow` - Convert Figma designs to Storefront Next components
 - `storefront_next_generate_component` - Generate a new Storefront Next component
 - `storefront_next_map_tokens_to_theme` - Map design tokens to Storefront Next theme configuration
-- `storefront_next_design_decorator` - Apply design decorators to Storefront Next components
 - `storefront_next_generate_page_designer_metadata` - Generate Page Designer metadata for Storefront Next components
 
 Use `--allow-non-ga-tools` flag to enable placeholder tools.
