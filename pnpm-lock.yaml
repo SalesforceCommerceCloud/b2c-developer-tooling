@@ -261,6 +261,9 @@ importers:
       '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
+      glob:
+        specifier: 'catalog:'
+        version: 13.0.0
       ts-morph:
         specifier: ^27.0.0
         version: 27.0.2
