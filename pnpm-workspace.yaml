@@ -40,6 +40,9 @@ minimumReleaseAgeExclude: []
 
 nodeLinker: hoisted
 
+# Pin exact versions by default when adding dependencies (no ^ or ~ prefix)
+savePrefix: ''
+
 onlyBuiltDependencies:
   - unrs-resolver
   - yarn
@@ -58,8 +61,6 @@ overrides:
   mdast-util-to-hast@>=13.0.0 <13.2.1: '>=13.2.1'
   preact@>=10.27.0 <10.27.3: '>=10.27.3'
   qs@<6.14.1: '>=6.14.1'
-
-savePrefix: ''
 
 trustPolicy: no-downgrade
 
