@@ -13,6 +13,9 @@ on:
       - 'actions/**'
       - '.github/workflows/test-actions.yml'
 
+env:
+  SFCC_DISABLE_TELEMETRY: true
+
 jobs:
   # Smoke test: install CLI and verify
   setup-latest:
@@ -38,7 +41,6 @@ jobs:
           [ "$SFCC_CLIENT_ID" = "test-client-id" ] || (echo "SFCC_CLIENT_ID not set" && exit 1)
           [ "$SFCC_SERVER" = "test.example.com" ] || (echo "SFCC_SERVER not set" && exit 1)
           [ "$SFCC_CODE_VERSION" = "test_version" ] || (echo "SFCC_CODE_VERSION not set" && exit 1)
-          [ "$SFCC_DISABLE_TELEMETRY" = "true" ] || (echo "SFCC_DISABLE_TELEMETRY not set" && exit 1)
           [ "$NO_COLOR" = "1" ] || (echo "NO_COLOR not set" && exit 1)
           echo "All environment variables verified"
 

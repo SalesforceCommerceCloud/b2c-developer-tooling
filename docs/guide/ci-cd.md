@@ -324,5 +324,4 @@ Use `@v1` for the latest stable action version (recommended). The floating `v1` 
 
 All actions automatically configure:
 
-- **`SFCC_DISABLE_TELEMETRY=true`** — no telemetry in CI
 - **`NO_COLOR=1`** — clean log output without ANSI colors

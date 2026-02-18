@@ -113,7 +113,6 @@ All actions accept auth inputs directly or read from `SFCC_*` environment variab
 
 All actions automatically set:
 
-- `SFCC_DISABLE_TELEMETRY=true` — disables CLI telemetry in CI
 - `NO_COLOR=1` — disables color output for clean logs
 
 ## Outputs

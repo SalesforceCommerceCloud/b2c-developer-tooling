@@ -79,7 +79,6 @@ runs:
       shell: bash
       run: |
         # CI defaults
-        echo "SFCC_DISABLE_TELEMETRY=true" >> "$GITHUB_ENV"
         echo "NO_COLOR=1" >> "$GITHUB_ENV"
 
         # Auth and config — only set if provided
