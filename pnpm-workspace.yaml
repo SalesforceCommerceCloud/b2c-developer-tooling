@@ -41,11 +41,6 @@ minimumReleaseAgeExclude: []
 nodeLinker: hoisted
 
 onlyBuiltDependencies:
-  - '@vscode/vsce-sign'
-  - esbuild
-  - keytar
-  - msw
-  - protobufjs
   - unrs-resolver
   - yarn
 
