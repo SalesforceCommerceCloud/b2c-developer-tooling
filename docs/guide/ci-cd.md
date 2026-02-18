@@ -39,7 +39,7 @@ Store credentials as GitHub [repository secrets](https://docs.github.com/en/acti
 | `SFCC_MRT_PROJECT` | MRT project slug |
 | `SFCC_MRT_ENVIRONMENT` | MRT environment |
 
-Credentials can be passed per-action or set once with the **setup** action, which writes them to `$GITHUB_ENV` for all subsequent steps.
+Credentials can be passed per-action or set once with the **setup** action so they're available to all subsequent steps.
 
 ## Quick Start: Deploy Cartridges
 
