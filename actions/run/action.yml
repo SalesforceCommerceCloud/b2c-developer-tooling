@@ -39,23 +39,22 @@ runs:
           CMD="$CMD --json"
         fi
 
+        # Stream stdout to the step log in real-time while capturing it for the result output.
+        # Stderr (log messages) streams directly to the step log.
+        TMPFILE=$(mktemp)
         set +e
-        OUTPUT=$($CMD)
-        EXIT_CODE=$?
+        $CMD | tee "$TMPFILE"
+        EXIT_CODE=${PIPESTATUS[0]}
         set -e
 
         echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
 
-        # Write output using delimiter to handle multiline
+        # Write captured stdout using delimiter to handle multiline
         DELIMITER=$(openssl rand -hex 16)
         echo "result<<$DELIMITER" >> "$GITHUB_OUTPUT"
-        echo "$OUTPUT" >> "$GITHUB_OUTPUT"
+        cat "$TMPFILE" >> "$GITHUB_OUTPUT"
         echo "$DELIMITER" >> "$GITHUB_OUTPUT"
-
-        # Print stdout to the step log (stderr already streams directly)
-        if [ -n "$OUTPUT" ]; then
-          echo "$OUTPUT"
-        fi
+        rm -f "$TMPFILE"
 
         if [ $EXIT_CODE -ne 0 ]; then
           echo "::error::B2C CLI command failed with exit code $EXIT_CODE"
