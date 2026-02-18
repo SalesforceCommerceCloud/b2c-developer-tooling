@@ -48,13 +48,13 @@ const guideSidebar = [
     text: 'Guides',
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
+      {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Security', link: '/guide/security'},
       {text: 'Storefront Next', link: '/guide/storefront-next'},
-      {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
     ],
   },
   {
