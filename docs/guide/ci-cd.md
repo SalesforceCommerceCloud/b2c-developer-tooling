@@ -4,6 +4,8 @@ The B2C Developer Tooling project provides official GitHub Actions for automatin
 
 ## Overview
 
+Without these actions, automating B2C Commerce in GitHub Actions requires manually installing the right Node.js version, installing the CLI from npm, and mapping GitHub secrets to the `SFCC_*` environment variables the CLI expects. The official actions handle all of that setup and provide high-level, typed inputs for common operations — so your workflow files stay focused on *what* you want to deploy rather than *how* to configure the tooling.
+
 The actions are available from the `SalesforceCommerceCloud/b2c-developer-tooling` repository and support:
 
 - **Code deployment** — deploy cartridges with reload
@@ -11,6 +13,8 @@ The actions are available from the `SalesforceCommerceCloud/b2c-developer-toolin
 - **Job execution** — run B2C jobs with wait and timeout
 - **WebDAV uploads** — upload files for data import, content, etc.
 - **Any CLI command** — raw passthrough for operations not covered by high-level actions
+
+All actions are composite YAML — no compiled JavaScript, fully transparent and auditable. They cache the npm install across runs and expose structured JSON outputs for downstream workflow steps.
 
 ## Authentication
 
