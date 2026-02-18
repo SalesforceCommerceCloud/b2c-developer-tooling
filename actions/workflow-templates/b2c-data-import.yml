@@ -14,24 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
           server: ${{ vars.SFCC_SERVER }}
           username: ${{ secrets.SFCC_USERNAME }}
           password: ${{ secrets.SFCC_PASSWORD }}
-
-      - name: Upload import archive
-        uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/webdav-upload@v1
-        with:
-          local-path: ${{ github.event.inputs.import-file }}
-          remote-path: 'src/instance/'
-          root: IMPEX
-
-      - name: Run site import
-        uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
-        with:
-          job-id: 'sfcc-site-archive-import'
-          wait: true
+          target: ${{ github.event.inputs.import-file }}
           timeout: 600
