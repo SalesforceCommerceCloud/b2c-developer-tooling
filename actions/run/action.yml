@@ -40,7 +40,7 @@ runs:
         fi
 
         set +e
-        OUTPUT=$($CMD 2>&1)
+        OUTPUT=$($CMD)
         EXIT_CODE=$?
         set -e
 
@@ -51,9 +51,6 @@ runs:
         echo "result<<$DELIMITER" >> "$GITHUB_OUTPUT"
         echo "$OUTPUT" >> "$GITHUB_OUTPUT"
         echo "$DELIMITER" >> "$GITHUB_OUTPUT"
-
-        # Print output for the step log
-        echo "$OUTPUT"
 
         if [ $EXIT_CODE -ne 0 ]; then
           echo "::error::B2C CLI command failed with exit code $EXIT_CODE"
