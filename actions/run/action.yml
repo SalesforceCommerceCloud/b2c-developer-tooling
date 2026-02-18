@@ -1,0 +1,61 @@
+name: 'B2C CLI Run'
+description: 'Execute a B2C Commerce CLI command'
+branding:
+  icon: 'play'
+  color: 'blue'
+
+inputs:
+  command:
+    description: 'CLI command to run (e.g. "code deploy --reload")'
+    required: true
+  json:
+    description: 'Append --json flag and parse JSON output into the result output'
+    required: false
+    default: 'true'
+  working-directory:
+    description: 'Working directory for the command'
+    required: false
+    default: '.'
+
+outputs:
+  result:
+    description: 'Command output (JSON-parsed when json=true)'
+    value: ${{ steps.run.outputs.result }}
+  exit-code:
+    description: 'Command exit code'
+    value: ${{ steps.run.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run CLI command
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        CMD="b2c ${{ inputs.command }}"
+
+        if [ "${{ inputs.json }}" = "true" ]; then
+          CMD="$CMD --json"
+        fi
+
+        set +e
+        OUTPUT=$($CMD 2>&1)
+        EXIT_CODE=$?
+        set -e
+
+        echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+
+        # Write output using delimiter to handle multiline
+        DELIMITER=$(openssl rand -hex 16)
+        echo "result<<$DELIMITER" >> "$GITHUB_OUTPUT"
+        echo "$OUTPUT" >> "$GITHUB_OUTPUT"
+        echo "$DELIMITER" >> "$GITHUB_OUTPUT"
+
+        # Print output for the step log
+        echo "$OUTPUT"
+
+        if [ $EXIT_CODE -ne 0 ]; then
+          echo "::error::B2C CLI command failed with exit code $EXIT_CODE"
+          exit $EXIT_CODE
+        fi

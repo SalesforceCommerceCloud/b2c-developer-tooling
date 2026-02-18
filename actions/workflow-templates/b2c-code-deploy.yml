@@ -1,0 +1,21 @@
+name: B2C Code Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+        with:
+          client-id: ${{ secrets.SFCC_CLIENT_ID }}
+          client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+          server: ${{ vars.SFCC_SERVER }}
+          username: ${{ secrets.SFCC_USERNAME }}
+          password: ${{ secrets.SFCC_PASSWORD }}
+          code-version: ${{ vars.SFCC_CODE_VERSION }}
+          reload: true

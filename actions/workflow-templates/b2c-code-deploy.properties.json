@@ -1,0 +1,6 @@
+{
+  "name": "B2C Code Deploy",
+  "description": "Deploy B2C Commerce cartridges on push to main using the B2C CLI.",
+  "iconName": "salesforce-logo",
+  "categories": ["Deployment"]
+}

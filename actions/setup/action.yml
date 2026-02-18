@@ -1,0 +1,129 @@
+name: 'B2C CLI Setup'
+description: 'Install the Salesforce B2C Commerce CLI and configure authentication environment variables'
+branding:
+  icon: 'terminal'
+  color: 'blue'
+
+inputs:
+  version:
+    description: 'CLI version to install (e.g. "latest", "0.4.1", "nightly")'
+    required: false
+    default: 'latest'
+  node-version:
+    description: 'Node.js version to install'
+    required: false
+    default: '22'
+  client-id:
+    description: 'OAuth Client ID → SFCC_CLIENT_ID'
+    required: false
+  client-secret:
+    description: 'OAuth Client Secret → SFCC_CLIENT_SECRET'
+    required: false
+  server:
+    description: 'B2C instance hostname → SFCC_SERVER'
+    required: false
+  code-version:
+    description: 'Code version → SFCC_CODE_VERSION'
+    required: false
+  username:
+    description: 'WebDAV username → SFCC_USERNAME'
+    required: false
+  password:
+    description: 'WebDAV password/access key → SFCC_PASSWORD'
+    required: false
+  short-code:
+    description: 'SCAPI short code → SFCC_SHORTCODE'
+    required: false
+  tenant-id:
+    description: 'Tenant ID → SFCC_TENANT_ID'
+    required: false
+  mrt-api-key:
+    description: 'MRT API key → SFCC_MRT_API_KEY'
+    required: false
+  mrt-project:
+    description: 'MRT project slug → SFCC_MRT_PROJECT'
+    required: false
+  mrt-environment:
+    description: 'MRT environment → SFCC_MRT_ENVIRONMENT'
+    required: false
+  account-manager-host:
+    description: 'Account Manager hostname → SFCC_ACCOUNT_MANAGER_HOST'
+    required: false
+
+outputs:
+  cli-version:
+    description: 'Installed CLI version'
+    value: ${{ steps.verify.outputs.cli-version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Cache npm global packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: b2c-cli-${{ runner.os }}-${{ inputs.version }}
+        restore-keys: |
+          b2c-cli-${{ runner.os }}-
+
+    - name: Install B2C CLI
+      shell: bash
+      run: npm install -g @salesforce/b2c-cli@${{ inputs.version }}
+
+    - name: Set environment variables
+      shell: bash
+      run: |
+        # CI defaults
+        echo "SFCC_DISABLE_TELEMETRY=true" >> "$GITHUB_ENV"
+        echo "NO_COLOR=1" >> "$GITHUB_ENV"
+
+        # Auth and config — only set if provided
+        if [ -n "${{ inputs.client-id }}" ]; then
+          echo "SFCC_CLIENT_ID=${{ inputs.client-id }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.client-secret }}" ]; then
+          echo "SFCC_CLIENT_SECRET=${{ inputs.client-secret }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.server }}" ]; then
+          echo "SFCC_SERVER=${{ inputs.server }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.code-version }}" ]; then
+          echo "SFCC_CODE_VERSION=${{ inputs.code-version }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.username }}" ]; then
+          echo "SFCC_USERNAME=${{ inputs.username }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.password }}" ]; then
+          echo "SFCC_PASSWORD=${{ inputs.password }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.short-code }}" ]; then
+          echo "SFCC_SHORTCODE=${{ inputs.short-code }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.tenant-id }}" ]; then
+          echo "SFCC_TENANT_ID=${{ inputs.tenant-id }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.mrt-api-key }}" ]; then
+          echo "SFCC_MRT_API_KEY=${{ inputs.mrt-api-key }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.mrt-project }}" ]; then
+          echo "SFCC_MRT_PROJECT=${{ inputs.mrt-project }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.mrt-environment }}" ]; then
+          echo "SFCC_MRT_ENVIRONMENT=${{ inputs.mrt-environment }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.account-manager-host }}" ]; then
+          echo "SFCC_ACCOUNT_MANAGER_HOST=${{ inputs.account-manager-host }}" >> "$GITHUB_ENV"
+        fi
+
+    - name: Verify installation
+      id: verify
+      shell: bash
+      run: |
+        CLI_VERSION=$(b2c --version)
+        echo "cli-version=$CLI_VERSION" >> "$GITHUB_OUTPUT"
+        echo "B2C CLI installed: $CLI_VERSION"
