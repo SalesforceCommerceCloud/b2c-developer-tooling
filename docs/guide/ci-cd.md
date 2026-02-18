@@ -334,7 +334,53 @@ jobs:
 
 ### Using Outputs
 
-The `result` output contains the CLI's JSON output for downstream steps:
+When `json` is enabled (the default), the `result` output contains the command's structured JSON output. Use it in downstream steps with `fromJSON()` to extract fields.
+
+**Check which code version was deployed:**
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+  id: deploy
+  with:
+    code-version: v25_03_1
+    reload: true
+
+- name: Log deployed cartridges
+  run: |
+    echo "Code version: ${{ fromJSON(steps.deploy.outputs.result).codeVersion }}"
+    echo "Reloaded: ${{ fromJSON(steps.deploy.outputs.result).reloaded }}"
+```
+
+The code deploy result contains:
+
+```json
+{
+  "cartridges": [
+    { "name": "app_storefront_base", "dest": "app_storefront_base", "src": "..." },
+    { "name": "app_custom", "dest": "app_custom", "src": "..." }
+  ],
+  "codeVersion": "v25_03_1",
+  "reloaded": true
+}
+```
+
+**Check job execution status:**
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
+  id: job
+  with:
+    job-id: 'sfcc-site-archive-import'
+    wait: true
+
+- name: Log job result
+  run: |
+    echo "Job: ${{ fromJSON(steps.job.outputs.result).job_id }}"
+    echo "Status: ${{ fromJSON(steps.job.outputs.result).exit_status.code }}"
+    echo "Duration: ${{ fromJSON(steps.job.outputs.result).duration }}ms"
+```
+
+**Use any CLI command with the run action:**
 
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
@@ -342,8 +388,8 @@ The `result` output contains the CLI's JSON output for downstream steps:
   with:
     command: 'code list'
 
-- name: Use result
-  run: echo "${{ steps.code-list.outputs.result }}"
+- name: Show active code version count
+  run: echo "Code versions: ${{ fromJSON(steps.code-list.outputs.result).count }}"
 ```
 
 ## Version Pinning
@@ -377,7 +423,7 @@ env:
   SFCC_LOG_LEVEL: debug
 ```
 
-Logs are always human-readable (pino-pretty) on stderr. The `--json` flag only controls the structured result on stdout. If you need machine-readable log lines (e.g., for log aggregation), set `SFCC_JSON_LOGS=true`.
+Logs are always human-readable on stderr. The `--json` flag only controls the structured result on stdout. If you need machine-readable log lines (e.g., for log aggregation), set `SFCC_JSON_LOGS=true`.
 
 ## CI Defaults
 
