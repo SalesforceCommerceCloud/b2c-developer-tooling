@@ -5,8 +5,6 @@
  */
 
 import {z, type ZodRawShape} from 'zod';
-import type {ServerNotification, ServerRequest} from '@modelcontextprotocol/sdk/types.js';
-import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
 import {componentAnalyzer, generateTypeSuggestions, resolveComponent, type TypeSuggestion} from './analyzer.js';
 import {generateDecoratorCode, type AttributeContext, type MetadataContext} from './templates/decorator-generator.js';
 import {pageDesignerDecoratorRules} from './rules.js';
@@ -619,7 +617,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Services): M
     toolsets: ['STOREFRONTNEXT'],
     isGA: false,
 
-    async handler(args: Record<string, unknown>, _context: RequestHandlerExtra<ServerRequest, ServerNotification>) {
+    async handler(args: Record<string, unknown>) {
       try {
         // Validate and parse input
         const validatedArgs = pageDesignerDecoratorSchema.parse(args) as PageDesignerDecoratorInput;

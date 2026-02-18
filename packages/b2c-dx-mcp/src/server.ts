@@ -72,18 +72,15 @@ export class B2CDxMcpServer extends McpServer {
     name: string,
     description: string,
     inputSchema: ZodRawShape,
-    handler: (
-      args: Record<string, unknown>,
-      context: RequestHandlerExtra<ServerRequest, ServerNotification>,
-    ) => Promise<CallToolResult>,
+    handler: (args: Record<string, unknown>) => Promise<CallToolResult>,
   ): void {
     const wrappedHandler = async (
       args: Record<string, unknown>,
-      extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
+      _extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
     ): Promise<CallToolResult> => {
       const startTime = Date.now();
       try {
-        const result = await handler(args, extra);
+        const result = await handler(args);
         const runTimeMs = Date.now() - startTime;
 
         await this.telemetry

@@ -124,8 +124,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse(mockEndpoints, 'version1'));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
       const {parsed} = parseResultContent(result);
@@ -151,8 +150,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse([]));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await tool.handler({status: 'active'}, {} as any);
+      await tool.handler({status: 'active'});
 
       expect(mockGet.calledOnce).to.be.true;
       expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({status: 'active'});
@@ -166,8 +164,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
       const endpoints = parsed?.endpoints as Array<{type?: string; apiName?: string}>;
@@ -182,8 +179,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse([], 'v1'));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.endpoints).to.be.an('array').that.is.empty;
@@ -199,8 +195,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       });
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.total).to.equal(0);
@@ -212,8 +207,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.rejects(new Error('Network error'));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.total).to.equal(0);
@@ -228,8 +222,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({groupBy: 'type'}, {} as any);
+      const result = await tool.handler({groupBy: 'type'});
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.groups).to.exist;
@@ -248,8 +241,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({groupBy: 'site'}, {} as any);
+      const result = await tool.handler({groupBy: 'site'});
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.groups).to.exist;
@@ -264,8 +256,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({columns: 'type,apiName,status'}, {} as any);
+      const result = await tool.handler({columns: 'type,apiName,status'});
       const {parsed} = parseResultContent(result);
 
       const endpoint = (parsed?.endpoints as Record<string, unknown>[])?.[0];
@@ -288,14 +279,10 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
       mockGet.resolves(createMockClientResponse(mockEndpoints));
 
       const tool = createScapiCustomApisStatusTool(() => services);
-      const result = await tool.handler(
-        {
-          columns:
-            'type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        columns:
+          'type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id',
+      });
       const {parsed} = parseResultContent(result);
 
       const endpoint = (parsed?.endpoints as Record<string, unknown>[])?.[0];
@@ -322,8 +309,7 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
 
     it('should return validation error for invalid status value', async () => {
       const tool = createScapiCustomApisStatusTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({status: 'invalid'}, {} as any);
+      const result = await tool.handler({status: 'invalid'});
 
       expect(result.isError).to.be.true;
       const first = result.content?.[0] as undefined | {text?: string};

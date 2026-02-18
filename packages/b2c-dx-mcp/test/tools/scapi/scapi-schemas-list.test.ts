@@ -107,8 +107,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
       const {parsed} = parseResultContent(result);
@@ -141,16 +140,12 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      await tool.handler(
-        {
-          apiFamily: 'checkout',
-          apiName: 'shopper-baskets',
-          apiVersion: 'v1',
-          status: 'current',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      await tool.handler({
+        apiFamily: 'checkout',
+        apiName: 'shopper-baskets',
+        apiVersion: 'v1',
+        status: 'current',
+      });
 
       expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({
         apiFamily: 'checkout',
@@ -168,8 +163,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.schemas).to.be.an('array').that.is.empty;
@@ -186,8 +180,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({apiFamily: 'checkout', status: 'current'}, {} as any);
+      const result = await tool.handler({apiFamily: 'checkout', status: 'current'});
       const {parsed} = parseResultContent(result);
 
       expect(parsed?.message).to.include('No SCAPI schemas match the filters');
@@ -209,8 +202,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
       const first = (parsed?.schemas as Record<string, unknown>[])?.[0];
@@ -226,8 +218,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
 
       expect(result.isError).to.be.true;
       const first = result.content?.[0] as {text?: string};
@@ -246,16 +237,12 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      const result = await tool.handler(
-        {
-          apiFamily: 'product',
-          apiName: 'shopper-products',
-          apiVersion: 'v1',
-          includeSchemas: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'shopper-products',
+        apiVersion: 'v1',
+        includeSchemas: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const {parsed} = parseResultContent(result);
@@ -290,17 +277,13 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      const result = await tool.handler(
-        {
-          apiFamily: 'checkout',
-          apiName: 'shopper-baskets',
-          apiVersion: 'v1',
-          includeSchemas: true,
-          expandAll: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        apiFamily: 'checkout',
+        apiName: 'shopper-baskets',
+        apiVersion: 'v1',
+        includeSchemas: true,
+        expandAll: true,
+      });
 
       const {parsed} = parseResultContent(result);
       expect(parsed?.collapsed).to.be.false;
@@ -315,17 +298,13 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      const result = await tool.handler(
-        {
-          apiFamily: 'product',
-          apiName: 'shopper-products',
-          apiVersion: 'v1',
-          includeSchemas: true,
-          status: 'current',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'shopper-products',
+        apiVersion: 'v1',
+        includeSchemas: true,
+        status: 'current',
+      });
 
       const {parsed} = parseResultContent(result);
       expect(parsed?.warning).to.include('status');
@@ -340,16 +319,12 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      const result = await tool.handler(
-        {
-          apiFamily: 'product',
-          apiName: 'nonexistent-api',
-          apiVersion: 'v1',
-          includeSchemas: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'nonexistent-api',
+        apiVersion: 'v1',
+        includeSchemas: true,
+      });
 
       expect(result.isError).to.be.true;
       const first = result.content?.[0] as {text?: string};
@@ -378,16 +353,12 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => servicesWithoutShortCode);
-      const result = await tool.handler(
-        {
-          apiFamily: 'product',
-          apiName: 'shopper-products',
-          apiVersion: 'v1',
-          includeSchemas: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'shopper-products',
+        apiVersion: 'v1',
+        includeSchemas: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const {parsed} = parseResultContent(result);
@@ -398,15 +369,11 @@ describe('tools/scapi/scapi-schemas-list', () => {
   describe('handler (validation and errors)', () => {
     it('returns error result when includeSchemas true but missing apiFamily', async () => {
       const tool = createScapiSchemasListTool(() => services);
-      const result = await tool.handler(
-        {
-          apiName: 'shopper-baskets',
-          apiVersion: 'v1',
-          includeSchemas: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        apiName: 'shopper-baskets',
+        apiVersion: 'v1',
+        includeSchemas: true,
+      });
 
       expect(result.isError).to.be.true;
       const {raw} = parseResultContent(result);
@@ -416,23 +383,18 @@ describe('tools/scapi/scapi-schemas-list', () => {
 
     it('returns error result when includeSchemas true but missing apiVersion', async () => {
       const tool = createScapiSchemasListTool(() => services);
-      const result = await tool.handler(
-        {
-          apiFamily: 'checkout',
-          apiName: 'shopper-baskets',
-          includeSchemas: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        apiFamily: 'checkout',
+        apiName: 'shopper-baskets',
+        includeSchemas: true,
+      });
 
       expect(result.isError).to.be.true;
     });
 
     it('returns validation error for invalid status value', async () => {
       const tool = createScapiSchemasListTool(() => services);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({status: 'invalid' as 'current'}, {} as any);
+      const result = await tool.handler({status: 'invalid' as 'current'});
 
       expect(result.isError).to.be.true;
       const first = result.content?.[0] as {text?: string};

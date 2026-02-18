@@ -173,13 +173,9 @@ describe('tools/page-designer-decorator', () => {
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'TestComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'TestComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'TestComponent',
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -200,13 +196,9 @@ describe('tools/page-designer-decorator', () => {
       const customServices = createMockServices(customDir);
       const tool = createPageDesignerDecoratorTool(() => customServices);
 
-      const result = await tool.handler(
-        {
-          component: 'CustomComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'CustomComponent',
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -221,14 +213,10 @@ describe('tools/page-designer-decorator', () => {
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'AutoComponent', 'title: string;');
 
-      const result = await tool.handler(
-        {
-          component: 'AutoComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'AutoComponent',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -250,14 +238,10 @@ description: string;
 imageUrl: string;`,
       );
 
-      const result = await tool.handler(
-        {
-          component: 'MultiPropComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'MultiPropComponent',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -279,14 +263,10 @@ onClick: () => void;
 config: { key: string; value: number };`,
       );
 
-      const result = await tool.handler(
-        {
-          component: 'ComplexPropsComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'ComplexPropsComponent',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -313,14 +293,10 @@ className: string;
 style: React.CSSProperties;`,
       );
 
-      const result = await tool.handler(
-        {
-          component: 'UIPropsComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'UIPropsComponent',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -364,14 +340,10 @@ export default function DecoratedComponent({title}: DecoratedComponentProps) {
         'utf8',
       );
 
-      const result = await tool.handler(
-        {
-          component: 'DecoratedComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'DecoratedComponent',
+        autoMode: true,
+      });
 
       // Should handle already-decorated components gracefully
       // May return an error or provide guidance
@@ -392,14 +364,10 @@ export default function EmptyProps({}: EmptyPropsProps) { return <div>Empty</div
         'utf8',
       );
 
-      const result = await tool.handler(
-        {
-          component: 'EmptyProps',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'EmptyProps',
+        autoMode: true,
+      });
 
       // Should handle components with no props gracefully
       expect(result).to.exist;
@@ -419,14 +387,10 @@ config: { key: string };
 data: Array<{id: number}>;`,
       );
 
-      const result = await tool.handler(
-        {
-          component: 'ComplexOnlyComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'ComplexOnlyComponent',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -453,14 +417,10 @@ data: Array<{id: number}>;`,
 count?: number;`,
       );
 
-      const result = await tool.handler(
-        {
-          component: 'OptionalPropsComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'OptionalPropsComponent',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -481,14 +441,10 @@ count?: number;`,
 value: string | number;`,
       );
 
-      const result = await tool.handler(
-        {
-          component: 'UnionTypesComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'UnionTypesComponent',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -507,16 +463,12 @@ value: string | number;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'AnalyzeComponent', 'title: string;');
 
-        const result = await tool.handler(
-          {
-            component: 'AnalyzeComponent',
-            conversationContext: {
-              step: 'analyze',
-            },
+        const result = await tool.handler({
+          component: 'AnalyzeComponent',
+          conversationContext: {
+            step: 'analyze',
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         expect(result.isError).to.be.undefined;
         const text = getResultText(result);
@@ -538,16 +490,12 @@ onClick: () => void;
 className: string;`,
         );
 
-        const result = await tool.handler(
-          {
-            component: 'CategorizedComponent',
-            conversationContext: {
-              step: 'analyze',
-            },
+        const result = await tool.handler({
+          component: 'CategorizedComponent',
+          conversationContext: {
+            step: 'analyze',
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         expect(result.isError).to.be.undefined;
         const text = getResultText(result);
@@ -566,22 +514,18 @@ className: string;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'SelectPropsComponent', 'title: string; description: string;');
 
-        const result = await tool.handler(
-          {
-            component: 'SelectPropsComponent',
-            conversationContext: {
-              step: 'select_props',
-              selectedProps: ['title', 'description'],
-              componentMetadata: {
-                id: 'select-props-component',
-                name: 'Select Props Component',
-                description: 'Test component',
-              },
+        const result = await tool.handler({
+          component: 'SelectPropsComponent',
+          conversationContext: {
+            step: 'select_props',
+            selectedProps: ['title', 'description'],
+            componentMetadata: {
+              id: 'select-props-component',
+              name: 'Select Props Component',
+              description: 'Test component',
             },
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         expect(result.isError).to.be.undefined;
         const text = getResultText(result);
@@ -596,18 +540,14 @@ className: string;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'MissingMetadataComponent');
 
-        const result = await tool.handler(
-          {
-            component: 'MissingMetadataComponent',
-            conversationContext: {
-              step: 'select_props',
-              selectedProps: ['title'],
-              // Missing componentMetadata
-            },
+        const result = await tool.handler({
+          component: 'MissingMetadataComponent',
+          conversationContext: {
+            step: 'select_props',
+            selectedProps: ['title'],
+            // Missing componentMetadata
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         // Should return error when metadata is missing
         expect(result.isError).to.be.true;
@@ -621,17 +561,13 @@ className: string;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'ConfigureAttrsComponent', 'imageUrl: string; description: string;');
 
-        const result = await tool.handler(
-          {
-            component: 'ConfigureAttrsComponent',
-            conversationContext: {
-              step: 'configure_attrs',
-              selectedProps: ['imageUrl', 'description'],
-            },
+        const result = await tool.handler({
+          component: 'ConfigureAttrsComponent',
+          conversationContext: {
+            step: 'configure_attrs',
+            selectedProps: ['imageUrl', 'description'],
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         expect(result.isError).to.be.undefined;
         const text = getResultText(result);
@@ -646,17 +582,13 @@ className: string;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'TypeSuggestionsComponent', 'imageUrl: string; productId: string;');
 
-        const result = await tool.handler(
-          {
-            component: 'TypeSuggestionsComponent',
-            conversationContext: {
-              step: 'configure_attrs',
-              selectedProps: ['imageUrl', 'productId'],
-            },
+        const result = await tool.handler({
+          component: 'TypeSuggestionsComponent',
+          conversationContext: {
+            step: 'configure_attrs',
+            selectedProps: ['imageUrl', 'productId'],
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         expect(result.isError).to.be.undefined;
         const text = getResultText(result);
@@ -671,16 +603,12 @@ className: string;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'RegionsComponent');
 
-        const result = await tool.handler(
-          {
-            component: 'RegionsComponent',
-            conversationContext: {
-              step: 'configure_regions',
-            },
+        const result = await tool.handler({
+          component: 'RegionsComponent',
+          conversationContext: {
+            step: 'configure_regions',
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         expect(result.isError).to.be.undefined;
         const text = getResultText(result);
@@ -695,28 +623,24 @@ className: string;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'ConfirmComponent', 'title: string;');
 
-        const result = await tool.handler(
-          {
-            component: 'ConfirmComponent',
-            conversationContext: {
-              step: 'confirm_generation',
-              selectedProps: ['title'],
-              componentMetadata: {
-                id: 'confirm-component',
-                name: 'Confirm Component',
-                description: 'Test component',
-              },
-              attributeConfig: {
-                title: {
-                  type: 'string',
-                  name: 'Title',
-                },
+        const result = await tool.handler({
+          component: 'ConfirmComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            selectedProps: ['title'],
+            componentMetadata: {
+              id: 'confirm-component',
+              name: 'Confirm Component',
+              description: 'Test component',
+            },
+            attributeConfig: {
+              title: {
+                type: 'string',
+                name: 'Title',
               },
             },
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         expect(result.isError).to.be.undefined;
         const text = getResultText(result);
@@ -732,17 +656,13 @@ className: string;`,
         const tool = createPageDesignerDecoratorTool(() => services);
         createTestComponent(testDir, 'MissingMetadataConfirmComponent');
 
-        const result = await tool.handler(
-          {
-            component: 'MissingMetadataConfirmComponent',
-            conversationContext: {
-              step: 'confirm_generation',
-              // Missing componentMetadata
-            },
+        const result = await tool.handler({
+          component: 'MissingMetadataConfirmComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            // Missing componentMetadata
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        });
 
         // Should return error when metadata is missing
         expect(result.isError).to.be.true;
@@ -756,13 +676,9 @@ className: string;`,
     it('should handle non-existent component gracefully', async () => {
       const tool = createPageDesignerDecoratorTool(() => services);
 
-      const result = await tool.handler(
-        {
-          component: 'NonExistentComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'NonExistentComponent',
+      });
 
       // Should return an error result
       expect(result.isError).to.be.true;
@@ -774,13 +690,9 @@ className: string;`,
       const tool = createPageDesignerDecoratorTool(() => services);
 
       // Invalid input should be caught by zod validation
-      const result = await tool.handler(
-        {
-          component: 123, // Invalid type
-        } as unknown as Record<string, unknown>,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 123, // Invalid type
+      } as unknown as Record<string, unknown>);
 
       // Should return an error result
       expect(result.isError).to.be.true;
@@ -790,14 +702,10 @@ className: string;`,
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'TestComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'TestComponent',
-          conversationContext: {step: 'invalid_step'},
-        } as unknown as Record<string, unknown>,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'TestComponent',
+        conversationContext: {step: 'invalid_step'},
+      } as unknown as Record<string, unknown>);
 
       // Should return an error result for invalid step
       expect(result.isError).to.be.true;
@@ -806,8 +714,7 @@ className: string;`,
     it('should handle missing required parameter', async () => {
       const tool = createPageDesignerDecoratorTool(() => services);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({} as unknown as Record<string, unknown>, {} as any);
+      const result = await tool.handler({} as unknown as Record<string, unknown>);
 
       // Should return an error result
       expect(result.isError).to.be.true;
@@ -819,13 +726,9 @@ className: string;`,
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'StandardLocationComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'StandardLocationComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'StandardLocationComponent',
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -843,13 +746,9 @@ export default function ProductCard({title}: ProductCardProps) { return <div>{ti
         'utf8',
       );
 
-      const result = await tool.handler(
-        {
-          component: 'product-card',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'product-card',
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -867,13 +766,9 @@ export default function Hero({title}: HeroProps) { return <div>{title}</div>; }`
         'utf8',
       );
 
-      const result = await tool.handler(
-        {
-          component: 'Hero',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'Hero',
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -884,13 +779,9 @@ export default function Hero({title}: HeroProps) { return <div>{title}</div>; }`
       const tool = createPageDesignerDecoratorTool(() => services);
       const componentPath = createTestComponent(testDir, 'PathComponent');
 
-      const result = await tool.handler(
-        {
-          component: path.relative(testDir, componentPath),
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: path.relative(testDir, componentPath),
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -916,14 +807,10 @@ export default function CustomLocationComponent({title}: CustomLocationComponent
         'utf8',
       );
 
-      const result = await tool.handler(
-        {
-          component: 'CustomLocationComponent',
-          searchPaths: ['custom/components'],
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'CustomLocationComponent',
+        searchPaths: ['custom/components'],
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -944,13 +831,9 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
         'utf8',
       );
 
-      const result = await tool.handler(
-        {
-          component: 'CollisionComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'CollisionComponent',
+      });
 
       // Should find one of the components (likely the first one found)
       expect(result.isError).to.be.undefined;
@@ -964,13 +847,9 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'ValidComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'ValidComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'ValidComponent',
+      });
 
       // Should not error on valid input
       expect(result.isError).to.be.undefined;
@@ -980,13 +859,9 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       const tool = createPageDesignerDecoratorTool(() => services);
       const componentPath = createTestComponent(testDir, 'PathComponent');
 
-      const result = await tool.handler(
-        {
-          component: path.relative(testDir, componentPath),
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: path.relative(testDir, componentPath),
+      });
 
       // Should not error on valid path
       expect(result.isError).to.be.undefined;
@@ -996,14 +871,10 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'SearchComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'SearchComponent',
-          searchPaths: ['src/components'],
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'SearchComponent',
+        searchPaths: ['src/components'],
+      });
 
       // Should not error with searchPaths
       expect(result.isError).to.be.undefined;
@@ -1013,14 +884,10 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'AutoModeComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'AutoModeComponent',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'AutoModeComponent',
+        autoMode: true,
+      });
 
       // Should not error with autoMode
       expect(result.isError).to.be.undefined;
@@ -1030,15 +897,11 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'CustomIdComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'CustomIdComponent',
-          componentId: 'custom-component-id',
-          autoMode: true,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'CustomIdComponent',
+        componentId: 'custom-component-id',
+        autoMode: true,
+      });
 
       expect(result.isError).to.be.undefined;
       const text = getResultText(result);
@@ -1053,21 +916,12 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
 
       const results = await Promise.all(
         steps.map((step) =>
-          tool.handler(
-            {
-              component: 'ConversationComponent',
-              conversationContext: {
-                step: step as
-                  | 'analyze'
-                  | 'configure_attrs'
-                  | 'configure_regions'
-                  | 'confirm_generation'
-                  | 'select_props',
-              },
+          tool.handler({
+            component: 'ConversationComponent',
+            conversationContext: {
+              step: step as 'analyze' | 'configure_attrs' | 'configure_regions' | 'confirm_generation' | 'select_props',
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            {} as any,
-          ),
+          }),
         ),
       );
 
@@ -1090,13 +944,9 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       const tool = createPageDesignerDecoratorTool(() => services);
       createTestComponent(testDir, 'FormatComponent');
 
-      const result = await tool.handler(
-        {
-          component: 'FormatComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'FormatComponent',
+      });
 
       expect(result).to.have.property('content');
       expect(result.content).to.be.an('array');
@@ -1108,13 +958,9 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
     it('should return error format when component not found', async () => {
       const tool = createPageDesignerDecoratorTool(() => services);
 
-      const result = await tool.handler(
-        {
-          component: 'NonExistentComponent',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
-      );
+      const result = await tool.handler({
+        component: 'NonExistentComponent',
+      });
 
       expect(result.isError).to.be.true;
       expect(result.content).to.be.an('array');

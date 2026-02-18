@@ -96,7 +96,6 @@
     "@modelcontextprotocol/sdk": "1.26.0",
     "@oclif/core": "catalog:",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "glob": "catalog:",
     "ts-morph": "^27.0.0",
     "yaml": "2.8.1",
     "zod": "3.25.76"

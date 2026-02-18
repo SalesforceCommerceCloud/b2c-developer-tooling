@@ -183,21 +183,18 @@ describe('tools/adapter', () => {
       );
 
       // Test with valid input
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const validResult = await tool.handler({name: 'test', count: 5}, {} as any);
+      const validResult = await tool.handler({name: 'test', count: 5});
       expect(validResult.isError).to.be.undefined;
       expect(getResultText(validResult)).to.equal('Received: test, 5');
 
       // Test with missing required field
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const missingResult = await tool.handler({count: 5}, {} as any);
+      const missingResult = await tool.handler({count: 5});
       expect(missingResult.isError).to.be.true;
       expect(getResultText(missingResult)).to.include('Invalid input');
       expect(getResultText(missingResult)).to.include('name');
 
       // Test with invalid type
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const invalidTypeResult = await tool.handler({name: 'test', count: 'not-a-number'}, {} as any);
+      const invalidTypeResult = await tool.handler({name: 'test', count: 'not-a-number'});
       expect(invalidTypeResult.isError).to.be.true;
       expect(getResultText(invalidTypeResult)).to.include('Invalid input');
     });
@@ -220,8 +217,7 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({email: 'not-an-email'}, {} as any);
+      const result = await tool.handler({email: 'not-an-email'});
 
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('Invalid input');
@@ -246,8 +242,7 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
 
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('Execution error');
@@ -272,8 +267,7 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
 
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('Execution error');
@@ -300,8 +294,7 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await tool.handler({}, {} as any);
+      await tool.handler({});
 
       const services = loadServices();
       expect(receivedServices).to.equal(services);
@@ -329,8 +322,7 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({projectName: 'my-storefront'}, {} as any);
+      const result = await tool.handler({projectName: 'my-storefront'});
 
       expect(result.isError).to.be.undefined;
       expect(getResultText(result)).to.equal('Created project: my-storefront');
@@ -357,8 +349,7 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({}, {} as any);
+      const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
       const parsed = JSON.parse(getResultText(result));
@@ -407,14 +398,12 @@ describe('tools/adapter', () => {
       );
 
       // Without optional field
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result1 = await tool.handler({required: 'value'}, {} as any);
+      const result1 = await tool.handler({required: 'value'});
       expect(result1.isError).to.be.undefined;
       expect(getResultText(result1)).to.equal('required: value, optional: not provided');
 
       // With optional field
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result2 = await tool.handler({required: 'value', optional: 'present'}, {} as any);
+      const result2 = await tool.handler({required: 'value', optional: 'present'});
       expect(result2.isError).to.be.undefined;
       expect(getResultText(result2)).to.equal('required: value, optional: present');
     });
@@ -437,8 +426,7 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({items: ['a', 'b', 'c']}, {} as any);
+      const result = await tool.handler({items: ['a', 'b', 'c']});
 
       expect(result.isError).to.be.undefined;
       expect(getResultText(result)).to.equal('a, b, c');
@@ -464,8 +452,7 @@ describe('tools/adapter', () => {
       );
 
       // Test with too short name
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler({name: 'ab', age: 25}, {} as any);
+      const result = await tool.handler({name: 'ab', age: 25});
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('Name must be at least 3 characters');
     });
@@ -491,8 +478,7 @@ describe('tools/adapter', () => {
         );
 
         // Default is now false, so tool should execute without instance
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.b2cInstance).to.be.undefined;
@@ -514,8 +500,7 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.true;
         expect(getResultText(result)).to.include('B2C instance error');
@@ -549,8 +534,7 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.mrtConfig?.auth).to.be.undefined;
@@ -579,8 +563,7 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
@@ -612,8 +595,7 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
@@ -647,8 +629,7 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.mrtConfig?.auth).to.not.be.undefined;
@@ -676,8 +657,7 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.undefined;
         expect(contextReceived?.b2cInstance).to.be.undefined;
@@ -704,8 +684,7 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await tool.handler({}, {} as any);
+        const result = await tool.handler({});
 
         expect(result.isError).to.be.true;
         expect(getResultText(result)).to.include('MRT auth error');
@@ -744,21 +723,16 @@ describe('tools/adapter', () => {
         );
 
         // Empty list
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const emptyResult = await tool.handler({items: []}, {} as any);
+        const emptyResult = await tool.handler({items: []});
         expect(getResultText(emptyResult)).to.equal('No items found.');
 
         // With items
-        const itemsResult = await tool.handler(
-          {
-            items: [
-              {id: 1, name: 'First'},
-              {id: 2, name: 'Second'},
-            ],
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
-        );
+        const itemsResult = await tool.handler({
+          items: [
+            {id: 1, name: 'First'},
+            {id: 2, name: 'Second'},
+          ],
+        });
         expect(getResultText(itemsResult)).to.include('Found 2 items:');
         expect(getResultText(itemsResult)).to.include('1: First');
         expect(getResultText(itemsResult)).to.include('2: Second');
@@ -794,13 +768,11 @@ describe('tools/adapter', () => {
           loadServices,
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const successResult = await tool.handler({operation: 'succeed'}, {} as any);
+        const successResult = await tool.handler({operation: 'succeed'});
         expect(successResult.isError).to.be.undefined;
         expect(getResultText(successResult)).to.equal('Operation succeeded');
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const failResult = await tool.handler({operation: 'fail'}, {} as any);
+        const failResult = await tool.handler({operation: 'fail'});
         expect(failResult.isError).to.be.true;
         expect(getResultText(failResult)).to.equal('Operation failed');
       });
