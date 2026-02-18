@@ -390,6 +390,23 @@ Use the `version` input to pin the CLI version:
 
 Use `@v1` for the latest stable action version (recommended). The floating `v1` tag is updated on each backward-compatible release.
 
+## Plugins
+
+The CLI supports [plugins](/guide/extending) for custom configuration sources, HTTP middleware, and more. Install plugins in CI with the `plugins` input on the `setup` action:
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+  with:
+    client-id: ${{ secrets.SFCC_CLIENT_ID }}
+    client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+    server: ${{ vars.SFCC_SERVER }}
+    plugins: |
+      @myorg/b2c-plugin-custom
+      sfcc-solutions-share/b2c-plugin-intellij-sfcc-config
+```
+
+Each line is an npm package name or GitHub `owner/repo`. Plugins are installed after the CLI and cached across workflow runs.
+
 ## Logging
 
 The `setup` action accepts a `log-level` input that sets `SFCC_LOG_LEVEL` for all subsequent steps:
