@@ -17,6 +17,7 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
 | Action | Path | Description |
 |--------|------|-------------|
 | **Code Deploy** | `.../actions/code-deploy@v1` | Deploy cartridges with typed inputs |
+| **Data Import** | `.../actions/data-import@v1` | Import site archives |
 | **MRT Deploy** | `.../actions/mrt-deploy@v1` | Push/deploy MRT bundles |
 | **Job Run** | `.../actions/job-run@v1` | Execute B2C jobs |
 | **WebDAV Upload** | `.../actions/webdav-upload@v1` | Upload files via WebDAV |
@@ -50,27 +51,18 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
     cartridges: 'app_storefront_base,app_custom'
 ```
 
-### Multi-step pipeline
+### Data import
 
 ```yaml
-# Setup once
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+- uses: actions/checkout@v4
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
     server: ${{ vars.SFCC_SERVER }}
-
-# Upload data
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/webdav-upload@v1
-  with:
-    local-path: './export/site-import.zip'
-    remote-path: 'src/instance/'
-
-# Run import job
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
-  with:
-    job-id: 'sfcc-site-archive-import'
-    wait: true
+    username: ${{ secrets.SFCC_USERNAME }}
+    password: ${{ secrets.SFCC_PASSWORD }}
+    target: './export/site-import.zip'
     timeout: 300
 ```
 
@@ -108,6 +100,18 @@ All actions accept auth inputs directly or read from `SFCC_*` environment variab
 | `mrt-project` | `SFCC_MRT_PROJECT` | MRT operations |
 | `mrt-environment` | `SFCC_MRT_ENVIRONMENT` | MRT operations |
 | `account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager |
+
+## Logging
+
+Control log verbosity via the `log-level` input on the `setup` action:
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+  with:
+    log-level: debug
+```
+
+Levels: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`. You can also set `SFCC_LOG_LEVEL` directly as a workflow environment variable.
 
 ## CI Defaults
 

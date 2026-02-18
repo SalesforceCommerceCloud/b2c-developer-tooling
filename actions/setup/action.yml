@@ -49,6 +49,9 @@ inputs:
   account-manager-host:
     description: 'Account Manager hostname → SFCC_ACCOUNT_MANAGER_HOST'
     required: false
+  log-level:
+    description: 'CLI log level (trace, debug, info, warn, error, silent) → SFCC_LOG_LEVEL'
+    required: false
 
 outputs:
   cli-version:
@@ -117,6 +120,9 @@ runs:
         fi
         if [ -n "${{ inputs.account-manager-host }}" ]; then
           echo "SFCC_ACCOUNT_MANAGER_HOST=${{ inputs.account-manager-host }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.log-level }}" ]; then
+          echo "SFCC_LOG_LEVEL=${{ inputs.log-level }}" >> "$GITHUB_ENV"
         fi
 
     - name: Verify installation

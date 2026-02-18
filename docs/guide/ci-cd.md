@@ -4,11 +4,12 @@ The B2C Developer Tooling project provides official GitHub Actions for automatin
 
 ## Overview
 
-Without these actions, automating B2C Commerce in GitHub Actions requires manually installing the right Node.js version, installing the CLI from npm, and mapping GitHub secrets to the `SFCC_*` environment variables the CLI expects. The official actions handle all of that setup and provide high-level, typed inputs for common operations — so your workflow files stay focused on *what* you want to deploy rather than *how* to configure the tooling.
+The official actions handle CLI installation, credential configuration, and Node.js setup automatically — so your workflow files stay focused on *what* you want to deploy rather than *how* to configure the tooling. High-level actions provide typed inputs for common operations like code deployment and data import, while a raw command passthrough covers everything else.
 
 The actions are available from the `SalesforceCommerceCloud/b2c-developer-tooling` repository and support:
 
 - **Code deployment** — deploy cartridges with reload
+- **Data import** — import site archives in a single step
 - **MRT deployment** — push and deploy MRT storefront bundles
 - **Job execution** — run B2C jobs with wait and timeout
 - **WebDAV uploads** — upload files for data import, content, etc.
@@ -169,6 +170,33 @@ Deploy cartridges with typed inputs.
 | `exclude-cartridges` | — | Comma-separated cartridges to exclude |
 | `delete` | `false` | Delete existing cartridges first |
 
+### Data Import
+
+```
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
+```
+
+Import a site archive. Handles upload, job execution, waiting, and cleanup in one step.
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
+  with:
+    client-id: ${{ secrets.SFCC_CLIENT_ID }}
+    client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+    server: ${{ vars.SFCC_SERVER }}
+    username: ${{ secrets.SFCC_USERNAME }}
+    password: ${{ secrets.SFCC_PASSWORD }}
+    target: './export/site-import.zip'
+    timeout: 600
+```
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `target` | *(required)* | Local file, directory, or zip to import |
+| `timeout` | — | Timeout in seconds |
+| `keep-archive` | `false` | Keep archive on instance after import |
+| `show-log` | `true` | Show job log on failure |
+
 ### MRT Deploy
 
 ```
@@ -245,7 +273,7 @@ Upload files via WebDAV.
 
 ### Data Import Pipeline
 
-Upload a site archive and run the import job:
+Import a site archive:
 
 ```yaml
 name: Data Import
@@ -264,23 +292,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
           server: ${{ vars.SFCC_SERVER }}
           username: ${{ secrets.SFCC_USERNAME }}
           password: ${{ secrets.SFCC_PASSWORD }}
-
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/webdav-upload@v1
-        with:
-          local-path: ${{ github.event.inputs.import-file }}
-          remote-path: 'src/instance/'
-
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
-        with:
-          job-id: 'sfcc-site-archive-import'
-          wait: true
+          target: ${{ github.event.inputs.import-file }}
           timeout: 600
 ```
 
@@ -338,6 +357,27 @@ Use the `version` input to pin the CLI version:
 ```
 
 Use `@v1` for the latest stable action version (recommended). The floating `v1` tag is updated on each backward-compatible release.
+
+## Logging
+
+The `setup` action accepts a `log-level` input that sets `SFCC_LOG_LEVEL` for all subsequent steps:
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+  with:
+    log-level: debug
+```
+
+Available levels (most to least verbose): `trace`, `debug`, `info` (default), `warn`, `error`, `silent`.
+
+You can also set the environment variable directly in your workflow:
+
+```yaml
+env:
+  SFCC_LOG_LEVEL: debug
+```
+
+Logs are always human-readable (pino-pretty) on stderr. The `--json` flag only controls the structured result on stdout. If you need machine-readable log lines (e.g., for log aggregation), set `SFCC_JSON_LOGS=true`.
 
 ## CI Defaults
 
