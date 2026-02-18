@@ -52,6 +52,9 @@ inputs:
   log-level:
     description: 'CLI log level (trace, debug, info, warn, error, silent) → SFCC_LOG_LEVEL'
     required: false
+  plugins:
+    description: 'Plugins to install (one per line, npm package or GitHub owner/repo)'
+    required: false
 
 outputs:
   cli-version:
@@ -66,12 +69,15 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
 
-    - name: Cache npm global packages
+    - name: Cache npm and CLI data
       uses: actions/cache@v4
       with:
-        path: ~/.npm
-        key: b2c-cli-${{ runner.os }}-${{ inputs.version }}
+        path: |
+          ~/.npm
+          ~/.local/share/b2c
+        key: b2c-cli-${{ runner.os }}-${{ inputs.version }}-${{ inputs.plugins || 'no-plugins' }}
         restore-keys: |
+          b2c-cli-${{ runner.os }}-${{ inputs.version }}-
           b2c-cli-${{ runner.os }}-
 
     - name: Install B2C CLI
@@ -124,6 +130,18 @@ runs:
         if [ -n "${{ inputs.log-level }}" ]; then
           echo "SFCC_LOG_LEVEL=${{ inputs.log-level }}" >> "$GITHUB_ENV"
         fi
+
+    - name: Install plugins
+      if: inputs.plugins != ''
+      shell: bash
+      run: |
+        while IFS= read -r plugin; do
+          plugin=$(echo "$plugin" | xargs)
+          if [ -n "$plugin" ]; then
+            echo "Installing plugin: $plugin"
+            b2c plugins install "$plugin"
+          fi
+        done <<< "${{ inputs.plugins }}"
 
     - name: Verify installation
       id: verify

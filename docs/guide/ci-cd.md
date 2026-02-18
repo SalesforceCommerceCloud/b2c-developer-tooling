@@ -118,7 +118,12 @@ Installs the CLI and writes credentials to environment variables. Use this when 
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
     server: ${{ vars.SFCC_SERVER }}
+    plugins: |
+      @myorg/b2c-plugin-custom
+      sfcc-solutions-share/b2c-plugin-intellij-sfcc-config
 ```
+
+Plugins are installed after the CLI and cached across runs. Each line is an npm package name or GitHub `owner/repo`.
 
 ### Run
 

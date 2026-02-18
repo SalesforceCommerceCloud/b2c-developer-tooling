@@ -101,6 +101,20 @@ All actions accept auth inputs directly or read from `SFCC_*` environment variab
 | `mrt-environment` | `SFCC_MRT_ENVIRONMENT` | MRT operations |
 | `account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager |
 
+## Plugins
+
+Install CLI plugins via the `plugins` input on the `setup` action (one per line):
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+  with:
+    plugins: |
+      @myorg/b2c-plugin-custom
+      sfcc-solutions-share/b2c-plugin-intellij-sfcc-config
+```
+
+Each entry is an npm package name or GitHub `owner/repo`. Plugins are cached alongside the CLI.
+
 ## Logging
 
 Control log verbosity via the `log-level` input on the `setup` action:
