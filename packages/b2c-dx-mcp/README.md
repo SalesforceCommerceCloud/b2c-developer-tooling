@@ -22,7 +22,7 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
 
 > **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
 
-When using `"command": "node"`, the shebang in `bin/dev.js` is not run, so add `"env": { "NODE_OPTIONS": "--conditions development" }` so the server runs from source. Without it, auto-discovery can fail (e.g. **Storefront Next** in monorepos like [storefront-next](https://github.com/SalesforceCommerceCloud/storefront-next)); it will work if the project has been built to latest (`pnpm run build`).
+When using `"command": "node"`, the shebang in `bin/dev.js` is not run, so the server loads from built `dist/`. **Build the project to latest** (`pnpm run build` from the repo root) so auto-discovery works. Without a fresh build, auto-discovery can fail—notably **Storefront Next** in monorepos like [storefront-next](https://github.com/SalesforceCommerceCloud/storefront-next), because that detector is the only one that walks workspace packages. Optional: add `"env": { "NODE_OPTIONS": "--conditions development" }` to run from source instead (no build needed).
 
 <!-- TODO: Update command to use npx once published to npm -->
 
