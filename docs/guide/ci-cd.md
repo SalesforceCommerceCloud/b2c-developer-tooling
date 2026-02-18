@@ -43,8 +43,6 @@ Credentials can be passed per-action or set once with the **setup** action so th
 
 ## Quick Start: Deploy Cartridges
 
-The simplest way to deploy is the root action with a `command` input:
-
 ```yaml
 name: Deploy
 
@@ -58,16 +56,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
           server: ${{ vars.SFCC_SERVER }}
+          username: ${{ secrets.SFCC_USERNAME }}
+          password: ${{ secrets.SFCC_PASSWORD }}
+
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+        with:
           code-version: ${{ vars.SFCC_CODE_VERSION }}
-          command: 'code deploy --reload'
+          reload: true
 ```
 
-This installs the CLI, configures credentials, and runs the deploy in one step.
+The **setup** step installs the CLI and configures credentials for all subsequent steps. The **code-deploy** step only needs operation-specific inputs.
 
 ## Actions Reference
 
