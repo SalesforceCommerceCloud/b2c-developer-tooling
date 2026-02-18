@@ -52,6 +52,11 @@ runs:
         echo "$OUTPUT" >> "$GITHUB_OUTPUT"
         echo "$DELIMITER" >> "$GITHUB_OUTPUT"
 
+        # Print stdout to the step log (stderr already streams directly)
+        if [ -n "$OUTPUT" ]; then
+          echo "$OUTPUT"
+        fi
+
         if [ $EXIT_CODE -ne 0 ]; then
           echo "::error::B2C CLI command failed with exit code $EXIT_CODE"
           exit $EXIT_CODE

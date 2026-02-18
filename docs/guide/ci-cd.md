@@ -358,17 +358,18 @@ When `json` is enabled (the default), the `result` output contains the command's
 }
 ```
 
-Use `fromJSON()` when you need to extract a specific field in an expression:
+Actions exit with the CLI's exit code, so a failed job will fail the step. Use `continue-on-error` and `fromJSON()` when you need to inspect the result after a failure:
 
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
   id: job
+  continue-on-error: true
   with:
     job-id: 'sfcc-site-archive-import'
     wait: true
 
-- name: Check job status
-  if: fromJSON(steps.job.outputs.result).exit_status.code != 'OK'
+- name: Handle job failure
+  if: steps.job.outputs.exit-code != '0'
   run: echo "Job failed with status ${{ fromJSON(steps.job.outputs.result).exit_status.code }}"
 ```
 
