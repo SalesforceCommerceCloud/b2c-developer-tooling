@@ -13,9 +13,6 @@ on:
       - 'actions/**'
       - '.github/workflows/test-actions.yml'
 
-env:
-  SFCC_DISABLE_TELEMETRY: true
-
 jobs:
   # Smoke test: install CLI and verify
   setup-latest:
