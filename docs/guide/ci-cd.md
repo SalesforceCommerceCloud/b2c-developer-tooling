@@ -35,7 +35,6 @@ Store credentials as GitHub [repository secrets](https://docs.github.com/en/acti
 | Variable | Description |
 |----------|-------------|
 | `SFCC_SERVER` | B2C instance hostname |
-| `SFCC_CODE_VERSION` | Code version |
 | `SFCC_MRT_PROJECT` | MRT project slug |
 | `SFCC_MRT_ENVIRONMENT` | MRT environment |
 
