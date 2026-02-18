@@ -56,6 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Install the B2C CLI and configure credentials for subsequent steps
       - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
@@ -64,13 +65,25 @@ jobs:
           username: ${{ secrets.SFCC_USERNAME }}
           password: ${{ secrets.SFCC_PASSWORD }}
 
+      # Run your build steps as usual
+      - run: npm ci
+      - run: npm run build
+
+      # Generate a code version from the branch name and date
+      - name: Set code version
+        id: version
+        run: |
+          BRANCH=$(echo "$GITHUB_REF_NAME" | tr '/' '-')
+          echo "code-version=${BRANCH}-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      # Deploy cartridges — only operation-specific inputs needed
       - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
         with:
-          code-version: ${{ vars.SFCC_CODE_VERSION }}
+          code-version: ${{ steps.version.outputs.code-version }}
           reload: true
 ```
 
-The **setup** step installs the CLI and configures credentials for all subsequent steps. The **code-deploy** step only needs operation-specific inputs.
+The **setup** step installs the CLI and configures credentials for all subsequent steps. Everything after that — your build, version calculation, and deploy — can focus on your project's needs.
 
 ## Actions Reference
 
