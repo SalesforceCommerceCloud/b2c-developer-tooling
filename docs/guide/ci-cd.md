@@ -334,9 +334,7 @@ jobs:
 
 ### Using Outputs
 
-When `json` is enabled (the default), the `result` output contains the command's structured JSON output. Use it in downstream steps with `fromJSON()` to extract fields.
-
-**Check which code version was deployed:**
+When `json` is enabled (the default), the `result` output contains the command's structured JSON. Reference it directly in downstream steps:
 
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
@@ -345,13 +343,9 @@ When `json` is enabled (the default), the `result` output contains the command's
     code-version: v25_03_1
     reload: true
 
-- name: Log deployed cartridges
-  run: |
-    echo "Code version: ${{ fromJSON(steps.deploy.outputs.result).codeVersion }}"
-    echo "Reloaded: ${{ fromJSON(steps.deploy.outputs.result).reloaded }}"
+- name: Show deploy result
+  run: echo '${{ steps.deploy.outputs.result }}'
 ```
-
-The code deploy result contains:
 
 ```json
 {
@@ -364,7 +358,7 @@ The code deploy result contains:
 }
 ```
 
-**Check job execution status:**
+Use `fromJSON()` when you need to extract a specific field in an expression:
 
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
@@ -373,23 +367,9 @@ The code deploy result contains:
     job-id: 'sfcc-site-archive-import'
     wait: true
 
-- name: Log job result
-  run: |
-    echo "Job: ${{ fromJSON(steps.job.outputs.result).job_id }}"
-    echo "Status: ${{ fromJSON(steps.job.outputs.result).exit_status.code }}"
-    echo "Duration: ${{ fromJSON(steps.job.outputs.result).duration }}ms"
-```
-
-**Use any CLI command with the run action:**
-
-```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
-  id: code-list
-  with:
-    command: 'code list'
-
-- name: Show active code version count
-  run: echo "Code versions: ${{ fromJSON(steps.code-list.outputs.result).count }}"
+- name: Check job status
+  if: fromJSON(steps.job.outputs.result).exit_status.code != 'OK'
+  run: echo "Job failed with status ${{ fromJSON(steps.job.outputs.result).exit_status.code }}"
 ```
 
 ## Version Pinning
