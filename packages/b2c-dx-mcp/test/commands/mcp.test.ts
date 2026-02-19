@@ -9,6 +9,8 @@ import {createSandbox, type SinonStub, type SinonSandbox} from 'sinon';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import McpServerCommand from '../../src/commands/mcp.js';
 import {B2CDxMcpServer} from '../../src/server.js';
+import {Services} from '../../src/services.js';
+import {createMockResolvedConfig} from '../test-helpers.js';
 
 describe('McpServerCommand', () => {
   describe('static properties', () => {
@@ -502,6 +504,118 @@ describe('McpServerCommand', () => {
       // Verify config was loaded (should return a ResolvedB2CConfig object)
       expect(config).to.exist;
       expect(config).to.have.property('values');
+    });
+  });
+
+  describe('loadServices', () => {
+    let sandbox: SinonSandbox;
+    let command: McpServerCommand;
+    let loadConfigurationStub: SinonStub;
+    let fromResolvedConfigStub: SinonStub;
+
+    beforeEach(() => {
+      sandbox = createSandbox();
+      command = new McpServerCommand([], {
+        name: 'test',
+        version: '1.0.0',
+        root: process.cwd(),
+        dataDir: '/tmp/test-data',
+      } as never);
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should call loadConfiguration and Services.fromResolvedConfig', () => {
+      const mockConfig = createMockResolvedConfig();
+      const mockServices = new Services({
+        resolvedConfig: mockConfig,
+      });
+
+      // Stub loadConfiguration to return mock config
+      loadConfigurationStub = sandbox
+        .stub(command as unknown as Record<string, unknown>, 'loadConfiguration')
+        .returns(mockConfig);
+
+      // Stub Services.fromResolvedConfig to return mock services
+      fromResolvedConfigStub = sandbox.stub(Services, 'fromResolvedConfig').returns(mockServices);
+
+      // Call loadServices via protected access
+      const services = (command as unknown as {loadServices(): Services}).loadServices();
+
+      // Verify loadConfiguration was called
+      expect(loadConfigurationStub.calledOnce).to.be.true;
+
+      // Verify Services.fromResolvedConfig was called with the config from loadConfiguration
+      expect(fromResolvedConfigStub.calledOnce).to.be.true;
+      expect(fromResolvedConfigStub.firstCall.args[0]).to.equal(mockConfig);
+
+      // Verify the returned services instance
+      expect(services).to.equal(mockServices);
+    });
+
+    it('should return Services instance created from resolved config', () => {
+      const mockConfig = createMockResolvedConfig({
+        hostname: 'test-server',
+        mrtProject: 'test-project',
+      });
+      const mockServices = new Services({
+        resolvedConfig: mockConfig,
+      });
+
+      // Stub loadConfiguration
+      sandbox.stub(command as unknown as Record<string, unknown>, 'loadConfiguration').returns(mockConfig);
+
+      // Stub Services.fromResolvedConfig to return mock services
+      sandbox.stub(Services, 'fromResolvedConfig').returns(mockServices);
+
+      // Call loadServices
+      const services = (command as unknown as {loadServices(): Services}).loadServices();
+
+      // Verify the returned services instance
+      expect(services).to.equal(mockServices);
+      expect(services).to.be.instanceOf(Services);
+    });
+
+    it('should reload configuration on each call', () => {
+      const mockConfig1 = createMockResolvedConfig({hostname: 'server1'});
+      const mockConfig2 = createMockResolvedConfig({hostname: 'server2'});
+      const mockServices1 = new Services({resolvedConfig: mockConfig1});
+      const mockServices2 = new Services({resolvedConfig: mockConfig2});
+
+      // Stub loadConfiguration to return different configs on each call
+      const loadConfigurationStub = sandbox
+        .stub(command as unknown as Record<string, unknown>, 'loadConfiguration')
+        .onFirstCall()
+        .returns(mockConfig1)
+        .onSecondCall()
+        .returns(mockConfig2);
+
+      // Stub Services.fromResolvedConfig to return different services
+      const fromResolvedConfigStub = sandbox
+        .stub(Services, 'fromResolvedConfig')
+        .onFirstCall()
+        .returns(mockServices1)
+        .onSecondCall()
+        .returns(mockServices2);
+
+      // Call loadServices twice
+      const services1 = (command as unknown as {loadServices(): Services}).loadServices();
+      const services2 = (command as unknown as {loadServices(): Services}).loadServices();
+
+      // Verify loadConfiguration was called twice
+      expect(loadConfigurationStub.calledTwice).to.be.true;
+
+      // Verify Services.fromResolvedConfig was called with correct configs
+      expect(fromResolvedConfigStub.calledTwice).to.be.true;
+      expect(fromResolvedConfigStub.firstCall.args[0]).to.equal(mockConfig1);
+      expect(fromResolvedConfigStub.secondCall.args[0]).to.equal(mockConfig2);
+
+      // Verify different services instances were returned
+      expect(services1).to.equal(mockServices1);
+      expect(services2).to.equal(mockServices2);
+      expect(services1).to.not.equal(services2);
     });
   });
 
