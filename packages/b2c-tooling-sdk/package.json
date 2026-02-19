@@ -348,6 +348,7 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "conf": "^13.0.0",
     "@salesforce/telemetry": "6.4.6",
     "archiver": "7.0.1",
     "chokidar": "5.0.0",
