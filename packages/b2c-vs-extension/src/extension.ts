@@ -10,6 +10,10 @@ import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {getPathKeys, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
 import {randomUUID} from 'node:crypto';
+import {exec} from 'child_process';
+import {promisify} from 'util';
+
+const execAsync = promisify(exec);
 
 /** Standard B2C Commerce WebDAV root directories. */
 const WEBDAV_ROOTS: Record<string, string> = {
@@ -26,6 +30,27 @@ const WEBDAV_ROOTS: Record<string, string> = {
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
+/**
+ * Recursively finds all files under dir whose names end with .json (metadata files).
+ * Returns paths relative to dir.
+ */
+function findJsonFilesUnder(dir: string, baseDir: string = dir): string[] {
+  const results: string[] = [];
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    return results;
+  }
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name);
+    const rel = path.relative(baseDir, full);
+    if (fs.statSync(full).isDirectory()) {
+      results.push(...findJsonFilesUnder(full, baseDir));
+    } else if (name.endsWith('.json')) {
+      results.push(rel);
+    }
+  }
+  return results.sort();
+}
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
   const htmlPath = path.join(context.extensionPath, 'src', 'webview.html');
@@ -1291,15 +1316,47 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
               "B2C DX: This command must be run under a Storefront Next storefront template. No 'cartridges' directory found.";
             log.appendLine(`[Storefront Next Cartridge] ${message}`);
             vscode.window.showErrorMessage(message);
+            panel.webview.postMessage({
+              type: 'createCartridgeResult',
+              generatedFiles: [],
+              error: message,
+            });
             return;
           }
           const cmd = 'pnpm sfnext generate-cartridge -d .';
-          const term = vscode.window.createTerminal({
-            name: 'B2C Create Cartridge',
-            cwd: projectDirectory,
-          });
-          term.show();
-          term.sendText(cmd);
+          log.appendLine(`[Storefront Next Cartridge] Running: ${cmd}`);
+          panel.webview.postMessage({type: 'createCartridgeResult', generatedFiles: [], running: true});
+          try {
+            await execAsync(cmd, {cwd: projectDirectory, maxBuffer: 4 * 1024 * 1024});
+            const generatedFiles = findJsonFilesUnder(cartridgesDir).map((rel) =>
+              path.join('cartridges', rel).split(path.sep).join('/'),
+            );
+            log.appendLine(
+              `[Storefront Next Cartridge] Generated ${generatedFiles.length} metadata file(s):\n${generatedFiles.join('\n')}`,
+            );
+            panel.webview.postMessage({
+              type: 'createCartridgeResult',
+              generatedFiles,
+              error: undefined,
+              running: false,
+            });
+            vscode.window.showInformationMessage(
+              `B2C DX: Page Designer metadata generated. ${generatedFiles.length} file(s) under cartridges/.`,
+            );
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            const stderr =
+              err && typeof err === 'object' && 'stderr' in err ? String((err as {stderr?: string}).stderr) : '';
+            const errorText = stderr || message;
+            log.appendLine(`[Storefront Next Cartridge] Generate failed: ${errorText}`);
+            panel.webview.postMessage({
+              type: 'createCartridgeResult',
+              generatedFiles: [],
+              error: errorText,
+              running: false,
+            });
+            vscode.window.showErrorMessage(`B2C DX: Generate Page Designer metadata failed. ${message}`);
+          }
         } else if (msg.type === 'deployCartridge') {
           const cartridgesDir = path.join(projectDirectory, 'cartridges');
           if (!fs.existsSync(cartridgesDir) || !fs.statSync(cartridgesDir).isDirectory()) {
@@ -1347,17 +1404,32 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             log.appendLine(
               `[Storefront Next Cartridge] Deploying cartridges to ${instance.config.hostname} (${instance.config.codeVersion})...`,
             );
+            panel.webview.postMessage({type: 'deployResult', running: true});
             const result = await findAndDeployCartridges(instance, cartridgesDir, {});
-            console.log(result);
             log.appendLine(
               `[Storefront Next Cartridge] Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`,
             );
+            panel.webview.postMessage({
+              type: 'deployResult',
+              success: true,
+              running: false,
+              hostname: instance.config.hostname,
+              codeVersion: result.codeVersion,
+              reloaded: result.reloaded,
+              cartridges: result.cartridges.map((c) => c.name),
+            });
             vscode.window.showInformationMessage(
-              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}. ${result.cartridges.join(', ')}  `,
+              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}. ${result.cartridges.map((c) => c.name).join(', ')}  `,
             );
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             log.appendLine(`[Storefront Next Cartridge] Deploy failed: ${message}`);
+            panel.webview.postMessage({
+              type: 'deployResult',
+              success: false,
+              running: false,
+              error: message,
+            });
             vscode.window.showErrorMessage(`B2C DX: Deploy failed. ${message}`);
           }
         }
