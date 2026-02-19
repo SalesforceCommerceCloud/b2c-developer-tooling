@@ -7,6 +7,7 @@
     "./packages/b2c-tooling-sdk/src/instance/index.ts",
     "./packages/b2c-tooling-sdk/src/logging/index.ts",
     "./packages/b2c-tooling-sdk/src/operations/code/index.ts",
+    "./packages/b2c-tooling-sdk/src/operations/cip/index.ts",
     "./packages/b2c-tooling-sdk/src/operations/jobs/index.ts",
     "./packages/b2c-tooling-sdk/src/operations/logs/index.ts",
     "./packages/b2c-tooling-sdk/src/operations/mrt/index.ts",

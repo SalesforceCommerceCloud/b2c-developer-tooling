@@ -72,9 +72,15 @@ export interface NormalizedConfig {
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
 
+  // CIP
+  /** Optional CIP analytics host override */
+  cipHost?: string;
+
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
+  /** Starting directory for config file search and project-relative operations */
+  workingDirectory?: string;
 
   // TLS/mTLS
   /** Path to PKCS12 certificate file for client mTLS (two-factor auth) */
@@ -137,7 +143,7 @@ export interface ResolveConfigOptions {
   /** Explicit path to config file (defaults to auto-discover) */
   configPath?: string;
   /** Starting directory for config file search */
-  startDir?: string;
+  workingDirectory?: string;
   /** Whether to apply hostname mismatch protection (default: true) */
   hostnameProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */

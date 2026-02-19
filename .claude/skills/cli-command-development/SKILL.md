@@ -1,6 +1,6 @@
 ---
 name: cli-command-development
-description: Creating new CLI commands and topics for the B2C CLI using oclif
+description: Creating new CLI commands and topics for the B2C CLI using oclif. Use when adding a new command, creating a topic, adding flags or arguments, implementing table output, or extending BaseCommand/OAuthCommand/InstanceCommand.
 metadata:
   internal: true
 ---
@@ -322,6 +322,16 @@ if (error) {
 **Important:** Always destructure `response` alongside `error` when making API calls. The `getApiErrorMessage` utility extracts clean messages from ODS, OCAPI, and SCAPI error patterns, and falls back to HTTP status (e.g., "HTTP 521 Web Server Is Down") for non-JSON responses like HTML error pages.
 
 See [API Client Development](../api-client-development/SKILL.md#error-handling) for supported error patterns.
+
+## Troubleshooting
+
+**Command not found after creating file**: Ensure the file is in the correct `packages/b2c-cli/src/commands/` subdirectory matching the intended command path. Run `pnpm --filter @salesforce/b2c-cli run build` to regenerate the oclif manifest. For new topics, add the topic to `package.json` under `oclif.topics`.
+
+**Flag parsing errors**: Check that flag names use kebab-case in the `static flags` definition. The `char` shorthand must be a single character. If using `dependsOn`, the referenced flag must exist in the same command's flags.
+
+**Missing i18n keys**: The `t()` function falls back to the default string (second argument), so missing keys won't crash at runtime. However, keep key paths consistent with the `commands.<topic>.<command>.<key>` pattern for future localization.
+
+**"requireX" methods not available**: Verify the command extends the correct base class. `requireServer()` is on `InstanceCommand`, `requireOAuthCredentials()` is on `OAuthCommand`, `requireMrtCredentials()` is on `MrtCommand`. Check the class hierarchy if a method is missing.
 
 ## Creating a Command Checklist
 

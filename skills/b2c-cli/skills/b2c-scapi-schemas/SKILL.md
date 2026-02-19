@@ -1,6 +1,6 @@
 ---
 name: b2c-scapi-schemas
-description: Browse and retrieve (B2C/SFCC/Demandware) SCAPI OpenAPI schemas with the b2c cli. Use when exploring available SCAPI endpoints, checking API request/response formats, understanding SCAPI data models, or finding the right API for a task.
+description: Browse and retrieve (B2C/SFCC/Demandware) SCAPI OpenAPI schemas with the b2c cli. Always reference when using the CLI to browse SCAPI schemas, check API request/response formats, explore available endpoints, or understand SCAPI data models.
 ---
 
 # B2C SCAPI Schemas Skill

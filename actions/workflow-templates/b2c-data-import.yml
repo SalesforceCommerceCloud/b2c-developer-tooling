@@ -1,0 +1,25 @@
+name: B2C Data Import
+
+on:
+  workflow_dispatch:
+    inputs:
+      import-file:
+        description: 'Path to the site import archive'
+        required: true
+        default: 'export/site-import.zip'
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
+        with:
+          client-id: ${{ secrets.SFCC_CLIENT_ID }}
+          client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+          server: ${{ vars.SFCC_SERVER }}
+          username: ${{ secrets.SFCC_USERNAME }}
+          password: ${{ secrets.SFCC_PASSWORD }}
+          target: ${{ github.event.inputs.import-file }}
+          timeout: 600

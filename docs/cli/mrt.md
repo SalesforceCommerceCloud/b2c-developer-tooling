@@ -19,6 +19,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt env redirect` | `list`, `create`, `delete`, `clone` | Manage URL redirects |
 | `mrt env access-control` | `list` | Manage access control headers |
 | `mrt bundle` | `deploy`, `list`, `history`, `download` | Manage bundles and deployments |
+| `mrt tail-logs` | | Tail real-time application logs |
 | `mrt user` | `profile`, `api-key`, `email-prefs` | Manage user settings |
 
 ## Global MRT Flags
@@ -503,6 +504,38 @@ b2c mrt bundle download 12345 -p my-storefront -o ./artifacts/bundle.tgz
 # Get download URL only
 b2c mrt bundle download 12345 -p my-storefront --url-only
 ```
+
+---
+
+## Tail Logs
+
+### b2c mrt tail-logs
+
+Tail application logs from a Managed Runtime environment in real time. Connects via WebSocket and streams log entries until interrupted with Ctrl+C.
+
+```bash
+# Tail all logs
+b2c mrt tail-logs -p my-storefront -e staging
+
+# Filter by log level
+b2c mrt tail-logs -p my-storefront -e production --level ERROR --level WARN
+
+# Search with regex pattern
+b2c mrt tail-logs -p my-storefront -e staging --search "timeout"
+
+# Search with OR pattern
+b2c mrt tail-logs -p my-storefront -e staging --search "GET|POST"
+
+# Output as JSON
+b2c mrt tail-logs -p my-storefront -e staging --json
+```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--level` | Filter by log level (ERROR, WARN, INFO, DEBUG, etc.). Repeatable for multiple levels. |
+| `--search`, `-g` | Filter entries matching a regex pattern (case-insensitive) |
+| `--no-color` | Disable colored output |
 
 ---
 

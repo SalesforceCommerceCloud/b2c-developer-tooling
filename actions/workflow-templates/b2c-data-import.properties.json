@@ -1,0 +1,6 @@
+{
+  "name": "B2C Data Import",
+  "description": "Upload a site archive and run a data import job on a B2C Commerce instance using the B2C CLI.",
+  "iconName": "salesforce-logo",
+  "categories": ["Deployment"]
+}

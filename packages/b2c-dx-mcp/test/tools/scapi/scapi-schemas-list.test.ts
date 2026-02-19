@@ -54,7 +54,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
 
   describe('createScapiSchemasListTool', () => {
     it('creates tool with correct metadata', () => {
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
 
       expect(tool).to.exist;
       expect(tool.name).to.equal('scapi_schemas_list');
@@ -69,7 +69,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
     });
 
     it('has optional input params: apiFamily, apiName, apiVersion, status, includeSchemas, expandAll', () => {
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
 
       expect(tool.inputSchema).to.have.property('apiFamily');
       expect(tool.inputSchema).to.have.property('apiName');
@@ -106,7 +106,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
@@ -139,7 +139,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       await tool.handler({
         apiFamily: 'checkout',
         apiName: 'shopper-baskets',
@@ -162,7 +162,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -179,7 +179,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({apiFamily: 'checkout', status: 'current'});
       const {parsed} = parseResultContent(result);
 
@@ -201,7 +201,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({});
       const {parsed} = parseResultContent(result);
 
@@ -217,7 +217,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 401, statusText: 'Unauthorized'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({});
 
       expect(result.isError).to.be.true;
@@ -236,7 +236,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({
         apiFamily: 'product',
         apiName: 'shopper-products',
@@ -276,7 +276,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({
         apiFamily: 'checkout',
         apiName: 'shopper-baskets',
@@ -297,7 +297,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({
         apiFamily: 'product',
         apiName: 'shopper-products',
@@ -318,7 +318,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 404, statusText: 'Not Found'},
       });
 
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({
         apiFamily: 'product',
         apiName: 'nonexistent-api',
@@ -352,7 +352,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         response: {status: 200, statusText: 'OK'},
       });
 
-      const tool = createScapiSchemasListTool(servicesWithoutShortCode);
+      const tool = createScapiSchemasListTool(() => servicesWithoutShortCode);
       const result = await tool.handler({
         apiFamily: 'product',
         apiName: 'shopper-products',
@@ -368,7 +368,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
 
   describe('handler (validation and errors)', () => {
     it('returns error result when includeSchemas true but missing apiFamily', async () => {
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({
         apiName: 'shopper-baskets',
         apiVersion: 'v1',
@@ -382,7 +382,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
     });
 
     it('returns error result when includeSchemas true but missing apiVersion', async () => {
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({
         apiFamily: 'checkout',
         apiName: 'shopper-baskets',
@@ -393,7 +393,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
     });
 
     it('returns validation error for invalid status value', async () => {
-      const tool = createScapiSchemasListTool(services);
+      const tool = createScapiSchemasListTool(() => services);
       const result = await tool.handler({status: 'invalid' as 'current'});
 
       expect(result.isError).to.be.true;

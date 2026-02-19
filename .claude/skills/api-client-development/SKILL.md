@@ -1,6 +1,6 @@
 ---
 name: api-client-development
-description: Creating API clients with OpenAPI specs, authentication, and OAuth scopes for SCAPI and similar APIs
+description: Creating typed API clients with OpenAPI specs, authentication, and OAuth scopes for SCAPI and similar APIs. Use when adding a new SCAPI client, generating types from an OpenAPI spec, setting up OAuth middleware, or integrating a new Commerce API endpoint.
 metadata:
   internal: true
 ---
@@ -437,6 +437,16 @@ const {data, error} = await client.GET('/endpoint', {...});
 ```
 
 ---
+
+## Troubleshooting
+
+**OAuth scope errors (401/403 from SCAPI)**: Ensure the client factory calls `auth.withAdditionalScopes()` with both the domain scope (e.g., `sfcc.custom-apis`) and the tenant-specific scope (`SALESFORCE_COMMERCE_API:<tenantId>`). Use `buildTenantScope()` to strip the `f_ecom_` prefix from tenant IDs before building scopes.
+
+**Type generation failures**: Check that the OpenAPI spec in `specs/` is valid YAML/JSON. Run `pnpm --filter @salesforce/b2c-tooling-sdk run generate:types` and inspect the output. Common issues: spec references external files that aren't present, or uses OpenAPI features not supported by openapi-typescript.
+
+**Middleware ordering issues**: Auth middleware should be added first (`client.use(createAuthMiddleware(...))`), then logging. In openapi-fetch, middleware runs in reverse registration order for requests, so auth registered first means it runs last — ensuring the logging middleware sees the final request with auth headers.
+
+**`organizationId` mismatch**: SCAPI path parameters need the `f_ecom_` prefix (use `toOrganizationId()`), while OAuth scopes need the raw tenant ID (use `toTenantId()`). Mixing these up causes 404s or scope errors.
 
 ## Checklist: New SCAPI Client
 

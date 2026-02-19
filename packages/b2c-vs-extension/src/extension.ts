@@ -4,12 +4,16 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
-import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
+import {createOdsClient, createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {getPathKeys, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
 import {randomUUID} from 'node:crypto';
+import {exec} from 'child_process';
+import {promisify} from 'util';
+
+const execAsync = promisify(exec);
 
 /** Standard B2C Commerce WebDAV root directories. */
 const WEBDAV_ROOTS: Record<string, string> = {
@@ -26,6 +30,27 @@ const WEBDAV_ROOTS: Record<string, string> = {
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
+/**
+ * Recursively finds all files under dir whose names end with .json (metadata files).
+ * Returns paths relative to dir.
+ */
+function findJsonFilesUnder(dir: string, baseDir: string = dir): string[] {
+  const results: string[] = [];
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    return results;
+  }
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name);
+    const rel = path.relative(baseDir, full);
+    if (fs.statSync(full).isDirectory()) {
+      results.push(...findJsonFilesUnder(full, baseDir));
+    } else if (name.endsWith('.json')) {
+      results.push(rel);
+    }
+  }
+  return results.sort();
+}
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
   const htmlPath = path.join(context.extensionPath, 'src', 'webview.html');
@@ -45,6 +70,14 @@ function getScapiExplorerWebviewContent(
   let html = fs.readFileSync(htmlPath, 'utf-8');
   const prefillJson = prefill ? JSON.stringify(prefill) : 'null';
   html = html.replace('__SCAPI_PREFILL__', prefillJson);
+  return html;
+}
+
+function getOdsManagementWebviewContent(context: vscode.ExtensionContext, prefill?: {defaultRealm: string}): string {
+  const htmlPath = path.join(context.extensionPath, 'src', 'ods-management.html');
+  let html = fs.readFileSync(htmlPath, 'utf-8');
+  const defaultRealm = prefill?.defaultRealm ?? '';
+  html = html.replaceAll('__ODS_DEFAULT_REALM__', defaultRealm);
   return html;
 }
 
@@ -172,6 +205,7 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('b2c-dx.promptAgent', showActivationError),
       vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
       vscode.commands.registerCommand('b2c-dx.scapiExplorer', showActivationError),
+      vscode.commands.registerCommand('b2c-dx.odsManagement', showActivationError),
     );
   }
 }
@@ -272,12 +306,12 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
   type WebDavPropfindEntry = {href: string; displayName?: string; contentLength?: number; isCollection?: boolean};
 
   const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', async () => {
-    let startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-    if (!startDir || startDir === '/' || !fs.existsSync(startDir)) {
-      startDir = context.extensionPath;
+    let workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+    if (!workingDirectory || workingDirectory === '/' || !fs.existsSync(workingDirectory)) {
+      workingDirectory = context.extensionPath;
     }
-    const dwPath = findDwJson(startDir);
-    const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+    const dwPath = findDwJson(workingDirectory);
+    const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
 
     if (!config.hasB2CInstanceConfig()) {
       vscode.window.showErrorMessage(
@@ -521,7 +555,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     return folder;
   }
 
-  function resolveCliScript(context: vscode.ExtensionContext): {node: string; script: string} | null {
+  function _resolveCliScript(context: vscode.ExtensionContext): {node: string; script: string} | null {
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (workspaceRoot) {
       const distCli = path.join(workspaceRoot, 'dist', 'cli.js');
@@ -546,9 +580,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     );
     let prefill: {tenantId: string; channelId: string; shortCode?: string} | undefined;
     try {
-      const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(startDir);
-      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(workingDirectory);
+      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
       const hostname = config.values.hostname;
       const shortCode = config.values.shortCode;
       const firstPart = hostname && typeof hostname === 'string' ? (hostname.split('.')[0] ?? '') : '';
@@ -579,9 +613,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         curlText?: string;
       }) => {
         const getConfig = () => {
-          const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-          const dwPath = findDwJson(startDir);
-          return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+          const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+          const dwPath = findDwJson(workingDirectory);
+          return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
         };
 
         if (msg.type === 'scapiFetchSchemas') {
@@ -653,9 +687,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const tenantId = (msg.tenantId ?? '').trim();
           const apiFamily = (msg.apiFamily ?? '').trim();
           const apiName = (msg.apiName ?? '').trim();
-          log.appendLine(
-            `[SCAPI] Fetch schema paths: tenantId=${tenantId} apiFamily=${apiFamily} apiName=${apiName}`,
-          );
+          log.appendLine(`[SCAPI] Fetch schema paths: tenantId=${tenantId} apiFamily=${apiFamily} apiName=${apiName}`);
           if (!tenantId || !apiFamily || !apiName) {
             log.appendLine('[SCAPI] Fetch paths failed: Tenant Id, API Family, and API Name are required.');
             panel.webview.postMessage({
@@ -727,14 +759,14 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             log.appendLine(
               `[SCAPI] Normalized paths (${paths.length}): ${JSON.stringify(paths.slice(0, 10))}${paths.length > 10 ? '...' : ''}`,
             );
-            const schemaInfo = data && typeof data === 'object' && 'info' in data ? (data as {info?: Record<string, unknown>}).info : undefined;
-            const apiTypeRaw =
-              schemaInfo?.['x-api-type'] ?? schemaInfo?.['x-apiType'] ?? schemaInfo?.['x_api_type'];
+            const schemaInfo =
+              data && typeof data === 'object' && 'info' in data
+                ? (data as {info?: Record<string, unknown>}).info
+                : undefined;
+            const apiTypeRaw = schemaInfo?.['x-api-type'] ?? schemaInfo?.['x-apiType'] ?? schemaInfo?.['x_api_type'];
             const apiType = typeof apiTypeRaw === 'string' ? apiTypeRaw : undefined;
             if (schemaInfo && !apiType) {
-              log.appendLine(
-                `[SCAPI] Schema info keys (no x-api-type): ${Object.keys(schemaInfo).join(', ')}`,
-              );
+              log.appendLine(`[SCAPI] Schema info keys (no x-api-type): ${Object.keys(schemaInfo).join(', ')}`);
             } else if (apiType) {
               log.appendLine(`[SCAPI] API type: ${apiType}`);
             }
@@ -966,9 +998,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           vscode.window.showErrorMessage('B2C DX: Tenant Id and Channel Id are required to create a SLAS client.');
           return;
         }
-        const startDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-        const dwPath = findDwJson(startDir);
-        const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {startDir});
+        const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+        const dwPath = findDwJson(workingDirectory);
+        const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
         const shortCode = config.values.shortCode;
         if (!shortCode) {
           vscode.window.showErrorMessage(
@@ -1036,7 +1068,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             'sfcc.shopper-products',
             'sfcc.shopper-stores',
           ];
-          const {data, error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
+          const {error, response} = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
             params: {path: {tenantId, clientId}},
             body: {
               clientId,
@@ -1070,6 +1102,195 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     );
   });
 
+  const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
+
+  const odsManagementDisposable = vscode.commands.registerCommand('b2c-dx.odsManagement', async () => {
+    const panel = vscode.window.createWebviewPanel(
+      'b2c-dx-ods-management',
+      'On Demand Sandbox (ODS) Management',
+      vscode.ViewColumn.One,
+      {enableScripts: true},
+    );
+    let defaultRealm = '';
+    try {
+      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(workingDirectory);
+      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+      // First part of hostname, e.g. 'zyoc' from 'zyoc-003.unified.demandware.net'
+      const hostname = config.values.hostname;
+      const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
+      defaultRealm = firstSegment.split('-')[0] ?? '';
+    } catch {
+      // leave defaultRealm empty
+    }
+    panel.webview.html = getOdsManagementWebviewContent(context, {defaultRealm});
+
+    async function getOdsConfig() {
+      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(workingDirectory);
+      return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+    }
+
+    async function fetchSandboxList(): Promise<{sandboxes: unknown[]; error?: string}> {
+      try {
+        const config = await getOdsConfig();
+        if (!config.hasOAuthConfig()) {
+          return {sandboxes: [], error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.'};
+        }
+        const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+        const authStrategy = config.createOAuth();
+        const odsClient = createOdsClient({host}, authStrategy);
+        const result = await odsClient.GET('/sandboxes', {
+          params: {query: {include_deleted: false}},
+        });
+        if (result.error) {
+          return {
+            sandboxes: [],
+            error: getApiErrorMessage(result.error, result.response),
+          };
+        }
+        const sandboxes = result.data?.data ?? [];
+        return {sandboxes: sandboxes as unknown[]};
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {sandboxes: [], error: message};
+      }
+    }
+
+    panel.webview.onDidReceiveMessage(
+      async (msg: {type: string; sandboxId?: string; realm?: string; ttl?: number; url?: string}) => {
+        if (msg.type === 'odsListRequest') {
+          const {sandboxes, error} = await fetchSandboxList();
+          panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+          return;
+        }
+        if (msg.type === 'odsGetDefaultRealm') {
+          let defaultRealm = '';
+          try {
+            const config = await getOdsConfig();
+            const hostname = config.values.hostname;
+            const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
+            defaultRealm = firstSegment.split('-')[0] ?? '';
+          } catch {
+            // leave defaultRealm empty
+          }
+          panel.webview.postMessage({type: 'odsDefaultRealm', defaultRealm});
+          return;
+        }
+        if (msg.type === 'odsSandboxClick' && msg.sandboxId) {
+          try {
+            const config = await getOdsConfig();
+            if (!config.hasOAuthConfig()) {
+              panel.webview.postMessage({
+                type: 'odsSandboxDetailsError',
+                error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.',
+              });
+              return;
+            }
+            const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+            const authStrategy = config.createOAuth();
+            const odsClient = createOdsClient({host}, authStrategy);
+            const result = await odsClient.GET('/sandboxes/{sandboxId}', {
+              params: {path: {sandboxId: msg.sandboxId}},
+            });
+            if (result.error || !result.data?.data) {
+              panel.webview.postMessage({
+                type: 'odsSandboxDetailsError',
+                error: getApiErrorMessage(result.error, result.response) || 'Sandbox not found',
+              });
+              return;
+            }
+            panel.webview.postMessage({
+              type: 'odsSandboxDetails',
+              sandbox: result.data.data,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({type: 'odsSandboxDetailsError', error: message});
+          }
+          return;
+        }
+        if (msg.type === 'odsOpenLink' && msg.url) {
+          try {
+            await vscode.env.openExternal(vscode.Uri.parse(msg.url));
+          } catch {
+            // ignore
+          }
+          return;
+        }
+        if (msg.type === 'odsDeleteClick' && msg.sandboxId) {
+          try {
+            const config = await getOdsConfig();
+            if (!config.hasOAuthConfig()) {
+              vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
+              return;
+            }
+            const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+            const authStrategy = config.createOAuth();
+            const odsClient = createOdsClient({host}, authStrategy);
+            const deleteResult = await odsClient.DELETE('/sandboxes/{sandboxId}', {
+              params: {path: {sandboxId: msg.sandboxId}},
+            });
+            if (deleteResult.error) {
+              vscode.window.showErrorMessage(
+                `B2C DX: Delete sandbox failed. ${getApiErrorMessage(deleteResult.error, deleteResult.response)}`,
+              );
+              return;
+            }
+            vscode.window.showInformationMessage('B2C DX: Sandbox deleted.');
+            const {sandboxes, error} = await fetchSandboxList();
+            panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            vscode.window.showErrorMessage(`B2C DX: ${message}`);
+          }
+          return;
+        }
+        if (msg.type === 'odsCreateSandbox' && msg.realm !== undefined && msg.ttl !== undefined) {
+          try {
+            const config = await getOdsConfig();
+            if (!config.hasOAuthConfig()) {
+              vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
+              return;
+            }
+            const realm = String(msg.realm).trim();
+            if (!realm) {
+              vscode.window.showErrorMessage('B2C DX: Realm is required.');
+              return;
+            }
+            const ttl = Number(msg.ttl);
+            if (Number.isNaN(ttl) || ttl < 0) {
+              vscode.window.showErrorMessage('B2C DX: TTL must be a non-negative number.');
+              return;
+            }
+            const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+            const authStrategy = config.createOAuth();
+            const odsClient = createOdsClient({host}, authStrategy);
+            const createResult = await odsClient.POST('/sandboxes', {
+              body: {
+                realm,
+                ttl, // 0 means no expiration
+                analyticsEnabled: false,
+              },
+            });
+            if (createResult.error) {
+              vscode.window.showErrorMessage(
+                `B2C DX: Create sandbox failed. ${getApiErrorMessage(createResult.error, createResult.response)}`,
+              );
+              return;
+            }
+            vscode.window.showInformationMessage('B2C DX: Sandbox creation started.');
+            const {sandboxes, error} = await fetchSandboxList();
+            panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            vscode.window.showErrorMessage(`B2C DX: ${message}`);
+          }
+        }
+      },
+    );
+  });
+
   const storefrontNextCartridgeDisposable = vscode.commands.registerCommand(
     'b2c-dx.handleStorefrontNextCartridge',
     () => {
@@ -1095,15 +1316,47 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
               "B2C DX: This command must be run under a Storefront Next storefront template. No 'cartridges' directory found.";
             log.appendLine(`[Storefront Next Cartridge] ${message}`);
             vscode.window.showErrorMessage(message);
+            panel.webview.postMessage({
+              type: 'createCartridgeResult',
+              generatedFiles: [],
+              error: message,
+            });
             return;
           }
           const cmd = 'pnpm sfnext generate-cartridge -d .';
-          const term = vscode.window.createTerminal({
-            name: 'B2C Create Cartridge',
-            cwd: projectDirectory,
-          });
-          term.show();
-          term.sendText(cmd);
+          log.appendLine(`[Storefront Next Cartridge] Running: ${cmd}`);
+          panel.webview.postMessage({type: 'createCartridgeResult', generatedFiles: [], running: true});
+          try {
+            await execAsync(cmd, {cwd: projectDirectory, maxBuffer: 4 * 1024 * 1024});
+            const generatedFiles = findJsonFilesUnder(cartridgesDir).map((rel) =>
+              path.join('cartridges', rel).split(path.sep).join('/'),
+            );
+            log.appendLine(
+              `[Storefront Next Cartridge] Generated ${generatedFiles.length} metadata file(s):\n${generatedFiles.join('\n')}`,
+            );
+            panel.webview.postMessage({
+              type: 'createCartridgeResult',
+              generatedFiles,
+              error: undefined,
+              running: false,
+            });
+            vscode.window.showInformationMessage(
+              `B2C DX: Page Designer metadata generated. ${generatedFiles.length} file(s) under cartridges/.`,
+            );
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            const stderr =
+              err && typeof err === 'object' && 'stderr' in err ? String((err as {stderr?: string}).stderr) : '';
+            const errorText = stderr || message;
+            log.appendLine(`[Storefront Next Cartridge] Generate failed: ${errorText}`);
+            panel.webview.postMessage({
+              type: 'createCartridgeResult',
+              generatedFiles: [],
+              error: errorText,
+              running: false,
+            });
+            vscode.window.showErrorMessage(`B2C DX: Generate Page Designer metadata failed. ${message}`);
+          }
         } else if (msg.type === 'deployCartridge') {
           const cartridgesDir = path.join(projectDirectory, 'cartridges');
           if (!fs.existsSync(cartridgesDir) || !fs.statSync(cartridgesDir).isDirectory()) {
@@ -1116,7 +1369,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           const dwPath = findDwJson(projectDirectory);
           const config = dwPath
             ? resolveConfig({}, {configPath: dwPath})
-            : resolveConfig({}, {startDir: projectDirectory});
+            : resolveConfig({}, {workingDirectory: projectDirectory});
           if (!config.hasB2CInstanceConfig()) {
             const message =
               'B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.';
@@ -1151,17 +1404,32 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             log.appendLine(
               `[Storefront Next Cartridge] Deploying cartridges to ${instance.config.hostname} (${instance.config.codeVersion})...`,
             );
+            panel.webview.postMessage({type: 'deployResult', running: true});
             const result = await findAndDeployCartridges(instance, cartridgesDir, {});
-            console.log(result);
             log.appendLine(
               `[Storefront Next Cartridge] Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}.`,
             );
+            panel.webview.postMessage({
+              type: 'deployResult',
+              success: true,
+              running: false,
+              hostname: instance.config.hostname,
+              codeVersion: result.codeVersion,
+              reloaded: result.reloaded,
+              cartridges: result.cartridges.map((c) => c.name),
+            });
             vscode.window.showInformationMessage(
-              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}. ${result.cartridges.join(', ')}  `,
+              `B2C DX: Deployed ${result.cartridges.length} cartridge(s) to ${result.codeVersion}. ${result.cartridges.map((c) => c.name).join(', ')}  `,
             );
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             log.appendLine(`[Storefront Next Cartridge] Deploy failed: ${message}`);
+            panel.webview.postMessage({
+              type: 'deployResult',
+              success: false,
+              running: false,
+              error: message,
+            });
             vscode.window.showErrorMessage(`B2C DX: Deploy failed. ${message}`);
           }
         }
@@ -1174,6 +1442,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     promptAgentDisposable,
     listWebDavDisposable,
     scapiExplorerDisposable,
+    odsManagementDisposable,
     storefrontNextCartridgeDisposable,
   );
   log.appendLine('B2C DX extension activated.');

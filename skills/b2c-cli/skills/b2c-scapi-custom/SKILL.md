@@ -1,6 +1,6 @@
 ---
 name: b2c-scapi-custom
-description: Check Custom SCAPI (B2C/SFCC/Demandware) endpoint registration status with the b2c cli. Use when verifying custom API deployment, debugging "endpoint not found" errors, or checking if code activation registered new APIs. For creating new custom APIs, use b2c-custom-api-development skill instead.
+description: Check Custom SCAPI (B2C/SFCC/Demandware) endpoint registration status with the b2c cli. Always reference when using the CLI to check custom API endpoint status, verify custom API deployment, or debug "endpoint not found" errors. For creating new custom APIs, use b2c-custom-api-development skill instead.
 ---
 
 # B2C SCAPI Custom APIs Skill

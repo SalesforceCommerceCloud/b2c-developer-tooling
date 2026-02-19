@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: View and debug b2c CLI configuration and understand where credentials come from. Use when authentication fails, connection errors occur, wrong instance is used, or you need to verify dw.json settings, or OAuth credentials are loaded correctly.
+description: View and debug b2c CLI configuration and understand where credentials come from. Always reference when using the CLI to inspect configuration, manage instances, retrieve OAuth tokens, or set up IDE integration. Also use when authentication fails, connection errors occur, or the wrong instance is being used.
 ---
 
 # B2C Config Skill
@@ -61,6 +61,23 @@ b2c setup inspect --json | jq '.config'
 # Check which sources are loaded
 b2c setup inspect --json | jq '.sources'
 ```
+
+## IDE Integration (Prophet)
+
+Use `b2c setup ide prophet` to generate a `dw.js` bridge script for the Prophet VS Code extension.
+
+```bash
+# Generate ./dw.js in the current project
+b2c setup ide prophet
+
+# Overwrite existing file
+b2c setup ide prophet --force
+
+# Custom path
+b2c setup ide prophet --output .vscode/dw.js
+```
+
+The generated script runs `b2c setup inspect --json --unmask` at runtime, so Prophet sees the same resolved config as CLI commands, including configuration plugins. It maps values to `dw.json`-style keys and passes through Prophet fields like `cartridgesPath`, `siteID`, and `storefrontPassword` when present.
 
 ## Managing Instances
 
@@ -128,6 +145,7 @@ The `setup inspect` command displays configuration organized by category:
 - **Sources**: List of all configuration sources that were loaded
 
 Each value shows its source in brackets:
+
 - `[DwJsonSource]` - Value from dw.json file
 - `[MobifySource]` - Value from ~/.mobify file
 - `[SFCC_*]` - Value from environment variable
@@ -151,6 +169,7 @@ When troubleshooting, check the source column to understand which configuration 
 ### Missing Values
 
 If a value shows `-`, it means no source provided that configuration. Check:
+
 - Is the field spelled correctly in dw.json?
 - Is the environment variable set?
 - Does the plugin provide that value?
@@ -158,6 +177,7 @@ If a value shows `-`, it means no source provided that configuration. Check:
 ### Wrong Source Taking Precedence
 
 If a value comes from an unexpected source:
+
 - Higher priority sources override lower ones
 - Credential groups (username+password, clientId+clientSecret) are atomic
 - Hostname mismatch protection may discard values

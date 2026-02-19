@@ -172,6 +172,38 @@ describe('services', () => {
     });
   });
 
+  describe('getWorkingDirectory', () => {
+    it('should return working directory when provided in config', () => {
+      const workingDir = '/path/to/project';
+      const config = createMockResolvedConfig({workingDirectory: workingDir});
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.getWorkingDirectory()).to.equal(workingDir);
+    });
+
+    it('should fall back to process.cwd() when not provided', () => {
+      const config = createMockResolvedConfig();
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.getWorkingDirectory()).to.equal(process.cwd());
+    });
+
+    it('should return working directory from fromResolvedConfig when provided in config', () => {
+      const workingDir = '/path/to/project';
+      const config = createMockResolvedConfig({workingDirectory: workingDir});
+      const services = Services.fromResolvedConfig(config);
+
+      expect(services.getWorkingDirectory()).to.equal(workingDir);
+    });
+
+    it('should fall back to process.cwd() from fromResolvedConfig when not provided in config', () => {
+      const config = createMockResolvedConfig();
+      const services = Services.fromResolvedConfig(config);
+
+      expect(services.getWorkingDirectory()).to.equal(process.cwd());
+    });
+  });
+
   describe('getHomeDir', () => {
     it('should return home directory', () => {
       const config = createMockResolvedConfig();

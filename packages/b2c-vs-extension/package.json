@@ -24,7 +24,8 @@
     "onCommand:b2c-dx.handleStorefrontNextCartridge",
     "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
-    "onCommand:b2c-dx.scapiExplorer"
+    "onCommand:b2c-dx.scapiExplorer",
+    "onCommand:b2c-dx.odsManagement"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -53,6 +54,11 @@
         "command": "b2c-dx.scapiExplorer",
         "title": "SCAPI API Explorer",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.odsManagement",
+        "title": "On Demand Sandbox (ods) Management",
+        "category": "B2C DX"
       }
     ]
   },
@@ -67,23 +73,24 @@
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "test": "vscode-test",
+    "posttest": "pnpm run lint",
     "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
   },
   "devDependencies": {
-    "@eslint/compat": "^1",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^22",
+    "@eslint/compat": "catalog:",
+    "@types/mocha": "catalog:",
+    "@types/node": "catalog:",
     "@types/vscode": "^1.105.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.24.0",
-    "eslint": "^9",
-    "eslint-config-prettier": "^10",
-    "eslint-plugin-header": "^3.1.1",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.6.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0"
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-header": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

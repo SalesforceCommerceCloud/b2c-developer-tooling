@@ -7,7 +7,7 @@ import {includeIgnoreFile} from '@eslint/compat';
 import headerPlugin from 'eslint-plugin-header';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import typescriptEslint from 'typescript-eslint';
+import tseslint from 'typescript-eslint';
 
 import {copyrightHeader, sharedRules, prettierPlugin} from '../../eslint.config.mjs';
 
@@ -16,16 +16,18 @@ headerPlugin.rules.header.meta.schema = false;
 
 export default [
   includeIgnoreFile(gitignorePath),
-  ...typescriptEslint.config({
-    files: ['**/*.ts'],
-    languageOptions: {
-      parserOptions: {ecmaVersion: 2022, sourceType: 'module'},
-    },
-  }),
+  {
+    ignores: ['src/template/**'],
+  },
+  ...tseslint.configs.recommended,
   prettierPlugin,
   {
+    files: ['**/*.ts'],
     plugins: {
       header: headerPlugin,
+    },
+    languageOptions: {
+      parserOptions: {ecmaVersion: 2022, sourceType: 'module'},
     },
     rules: {
       'header/header': ['error', 'block', copyrightHeader],

@@ -41,6 +41,7 @@ interface TelemetryConfig {
  * Base command class for B2C CLI tools.
  *
  * Environment variables for logging:
+ * - SFCC_JSON_LOGS: Output log messages as JSON lines (for log aggregation)
  * - SFCC_LOG_TO_STDOUT: Send logs to stdout instead of stderr
  * - SFCC_LOG_COLORIZE: Force colors on/off (default: auto-detect TTY)
  * - SFCC_REDACT_SECRETS: Set to 'false' to disable secret redaction
@@ -67,7 +68,14 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
     }),
     json: Flags.boolean({
-      description: 'Output logs as JSON lines',
+      description: 'Output result as JSON',
+      default: false,
+      helpGroup: 'GLOBAL',
+    }),
+    jsonl: Flags.boolean({
+      aliases: ['json-logs'],
+      description: 'Output log messages as JSON lines',
+      env: 'SFCC_JSON_LOGS',
       default: false,
       helpGroup: 'GLOBAL',
     }),
@@ -263,7 +271,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       level,
       fd,
       baseContext: {command: this.id},
-      json: this.flags.json,
+      json: this.flags.jsonl,
       colorize: this.shouldColorize(),
       redact,
     });
@@ -293,7 +301,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Gets base configuration options from common flags.
    *
    * Subclasses should spread these options when overriding loadConfiguration()
-   * to ensure common options like startDir are always included.
+   * to ensure common options like workingDirectory are always included.
    *
    * @example
    * ```typescript
@@ -310,7 +318,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return {
       instance: this.flags.instance,
       configPath: this.flags.config,
-      startDir: this.flags['working-directory'],
+      workingDirectory: this.flags['working-directory'],
     };
   }
 
