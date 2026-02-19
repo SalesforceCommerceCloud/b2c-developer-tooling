@@ -18,10 +18,10 @@
       }
       h1 {
         font-size: 1.1rem;
-        margin: 0 0 1rem;
+        margin: 0 0 0.5rem;
       }
       .toolbar {
-        margin-bottom: 1rem;
+        margin-bottom: 0.25rem;
       }
       button.primary {
         padding: 0.5rem 1rem;
@@ -34,6 +34,10 @@
       }
       button.primary:hover {
         background: var(--vscode-button-hoverBackground);
+      }
+      .btn-create {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.875em;
       }
       .table-wrap {
         overflow-x: auto;
@@ -61,12 +65,13 @@
         border-bottom: none;
       }
       .message {
-        padding: 1rem;
+        padding: 0.25rem 0;
+        min-height: 0;
         color: var(--vscode-descriptionForeground);
       }
       .error {
         color: var(--vscode-errorForeground);
-        padding: 1rem;
+        padding: 0.25rem 0;
       }
       .hidden {
         display: none !important;
@@ -83,12 +88,140 @@
       .btn-delete:hover {
         background: var(--vscode-button-secondaryHoverBackground);
       }
+      .dialog-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .dialog-overlay.visible {
+        display: flex;
+      }
+      .dialog-box {
+        background: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 8px;
+        padding: 1.25rem;
+        min-width: 20rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+      .dialog-box h2 {
+        margin: 0 0 1rem;
+        font-size: 1rem;
+      }
+      .dialog-box .form-row {
+        margin-bottom: 0.75rem;
+      }
+      .dialog-box label {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.9em;
+      }
+      .dialog-box input {
+        width: 100%;
+        padding: 0.4rem 0.6rem;
+        font-size: 1em;
+        color: var(--vscode-input-foreground);
+        background: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+      }
+      .dialog-box .dialog-actions {
+        margin-top: 1.25rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+      tr.clickable-row {
+        cursor: pointer;
+      }
+      tr.clickable-row:hover {
+        background: var(--vscode-list-hoverBackground);
+      }
+      tr.clickable-row.selected {
+        background: var(--vscode-list-activeSelectionBackground);
+        color: var(--vscode-list-activeSelectionForeground);
+      }
+      .details-panel {
+        margin-top: 1rem;
+        border: 1px solid var(--vscode-widget-border);
+        border-radius: 4px;
+        padding: 1rem;
+        background: var(--vscode-editor-background);
+      }
+      .details-panel .detail-section {
+        margin-bottom: 1rem;
+      }
+      .details-panel .detail-section:last-child {
+        margin-bottom: 0;
+      }
+      .details-panel .detail-section h3 {
+        font-size: 0.9rem;
+        margin: 0 0 0.5rem;
+        color: var(--vscode-descriptionForeground);
+      }
+      .details-panel .detail-section hr {
+        border: none;
+        border-top: 1px solid var(--vscode-widget-border);
+        margin: 0 0 0.5rem;
+      }
+      .details-panel .detail-row {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        font-size: 0.9em;
+      }
+      .details-panel .detail-label {
+        flex: 0 0 8rem;
+        color: var(--vscode-descriptionForeground);
+      }
+      .details-panel .detail-value {
+        word-break: break-all;
+      }
+      .details-panel .link-row {
+        margin-bottom: 0.35rem;
+      }
+      .details-panel .link-btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.85em;
+        cursor: pointer;
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: 1px solid var(--vscode-button-border);
+        border-radius: 4px;
+        text-align: left;
+        width: 100%;
+      }
+      .details-panel .link-btn:hover {
+        background: var(--vscode-button-secondaryHoverBackground);
+      }
     </style>
   </head>
   <body>
+    <div id="create-dialog" class="dialog-overlay" role="dialog" aria-labelledby="create-dialog-title">
+      <div class="dialog-box">
+        <h2 id="create-dialog-title">Create ODS Sandbox</h2>
+        <div class="form-row">
+          <label for="create-realm">Realm (four-letter ID)</label>
+          <input type="text" id="create-realm" placeholder="e.g. zyoc" value="__ODS_DEFAULT_REALM__" />
+        </div>
+        <div class="form-row">
+          <label for="create-ttl">TTL (hours). 0 for no expiration.</label>
+          <input type="number" id="create-ttl" min="0" placeholder="480" value="480" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn-delete" id="create-dialog-cancel">Cancel</button>
+          <button type="button" class="primary" id="create-dialog-submit">Create</button>
+        </div>
+      </div>
+    </div>
     <h1>On Demand Sandbox (ODS) Management</h1>
     <div class="toolbar">
-      <button type="button" class="primary" id="create-btn">Create</button>
+      <button type="button" class="primary btn-create" id="create-btn">Create ODS instance</button>
     </div>
     <div id="message" class="message">Loading sandboxes…</div>
     <div id="error" class="error hidden"></div>
@@ -98,7 +231,11 @@
         <tbody id="ods-tbody"></tbody>
       </table>
     </div>
+    <div id="details-panel" class="details-panel hidden">
+      <div id="details-panel-body"></div>
+    </div>
     <script>
+      var ODS_DEFAULT_REALM = "__ODS_DEFAULT_REALM__";
       (function () {
         const vscode = acquireVsCodeApi();
         const createBtn = document.getElementById('create-btn');
@@ -107,6 +244,10 @@
         const tableWrap = document.getElementById('table-wrap');
         const thead = document.getElementById('ods-thead');
         const tbody = document.getElementById('ods-tbody');
+        const detailsPanel = document.getElementById('details-panel');
+        const detailsPanelBody = document.getElementById('details-panel-body');
+
+        var selectedSandboxId = null;
 
         const EXTENDED_COLUMNS = [
           'realm',
@@ -138,12 +279,16 @@
         }
 
         function renderTable(sandboxes) {
+          selectedSandboxId = null;
+          detailsPanel.classList.add('hidden');
           if (!sandboxes || sandboxes.length === 0) {
             messageEl.textContent = 'No sandboxes found.';
+            messageEl.classList.remove('hidden');
             tableWrap.classList.add('hidden');
             return;
           }
           messageEl.textContent = '';
+          messageEl.classList.add('hidden');
           tableWrap.classList.remove('hidden');
           thead.innerHTML =
             '<tr>' +
@@ -174,9 +319,19 @@
                   escapeHtml(sandboxId) +
                   '" title="Delete">Delete</button>'
                 : '';
-              return '<tr>' + row + '<td>' + deleteBtn + '</td></tr>';
+              const trClass = sandboxId ? ' class="clickable-row"' : '';
+              const trData = sandboxId ? ' data-sandbox-id="' + escapeHtml(sandboxId) + '"' : '';
+              return '<tr' + trClass + trData + '>' + row + '<td>' + deleteBtn + '</td></tr>';
             })
             .join('');
+        }
+
+        function setSelectedRow(sandboxId) {
+          selectedSandboxId = sandboxId;
+          const rows = tbody.querySelectorAll('tr.clickable-row');
+          rows.forEach(function (row) {
+            row.classList.toggle('selected', row.dataset.sandboxId === sandboxId);
+          });
         }
 
         function escapeHtml(s) {
@@ -185,23 +340,132 @@
           return div.innerHTML;
         }
 
+        const createDialog = document.getElementById('create-dialog');
+        const createRealmInput = document.getElementById('create-realm');
+        const createTtlInput = document.getElementById('create-ttl');
+        const createDialogCancel = document.getElementById('create-dialog-cancel');
+        const createDialogSubmit = document.getElementById('create-dialog-submit');
+
         createBtn.addEventListener('click', function () {
-          vscode.postMessage({type: 'odsCreateClick'});
+          createTtlInput.value = '480';
+          vscode.postMessage({type: 'odsGetDefaultRealm'});
+        });
+
+        createDialogCancel.addEventListener('click', function () {
+          createDialog.classList.remove('visible');
+        });
+
+        createDialogSubmit.addEventListener('click', function () {
+          const realm = (createRealmInput.value || '').trim();
+          const ttlNum = parseInt(createTtlInput.value, 10);
+          if (!realm) {
+            return;
+          }
+          if (Number.isNaN(ttlNum) || ttlNum < 0) {
+            return;
+          }
+          createDialog.classList.remove('visible');
+          vscode.postMessage({type: 'odsCreateSandbox', realm: realm, ttl: ttlNum});
         });
 
         tbody.addEventListener('click', function (e) {
           const btn = e.target && e.target.closest && e.target.closest('.btn-delete');
           if (btn && btn.dataset.sandboxId) {
+            e.stopPropagation();
             vscode.postMessage({type: 'odsDeleteClick', sandboxId: btn.dataset.sandboxId});
+            return;
+          }
+          const row = e.target && e.target.closest && e.target.closest('tr.clickable-row');
+          if (row && row.dataset.sandboxId) {
+            setSelectedRow(row.dataset.sandboxId);
+            detailsPanelBody.innerHTML = '<div class="message">Loading sandbox details…</div>';
+            detailsPanel.classList.remove('hidden');
+            vscode.postMessage({type: 'odsSandboxClick', sandboxId: row.dataset.sandboxId});
           }
         });
 
+        detailsPanelBody.addEventListener('click', function (e) {
+          const linkBtn = e.target && e.target.closest && e.target.closest('.link-btn[data-url]');
+          if (linkBtn && linkBtn.dataset.url) {
+            vscode.postMessage({type: 'odsOpenLink', url: linkBtn.dataset.url});
+          }
+        });
+
+        function renderSandboxDetails(sandbox) {
+          var createdAt = sandbox.createdAt ? new Date(sandbox.createdAt).toLocaleString() : '—';
+          var createdBy = sandbox.createdBy ?? '—';
+          var eol = sandbox.eol ? new Date(sandbox.eol).toLocaleString() : '—';
+          var appVer = (sandbox.versions && sandbox.versions.app) ? sandbox.versions.app : '—';
+          var webVer = (sandbox.versions && sandbox.versions.web) ? sandbox.versions.web : '—';
+          var rows = [
+            ['ID', sandbox.id],
+            ['Realm', sandbox.realm],
+            ['Instance', sandbox.instance],
+            ['State', sandbox.state],
+            ['Resource Profile', sandbox.resourceProfile],
+            ['Enabled', sandbox.enabled != null ? String(sandbox.enabled) : '—'],
+            ['Auto Scheduled', sandbox.autoScheduled != null ? String(sandbox.autoScheduled) : '—'],
+            ['Hostname', sandbox.hostName || sandbox.hostname || '—'],
+            ['Created At', createdAt],
+            ['Created By', createdBy],
+            ['EOL', eol],
+            ['App Version', appVer],
+            ['Web Version', webVer],
+          ];
+          var detailsHtml = '<div class="detail-section"><h3>Sandbox Details</h3><hr>';
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i][1] !== undefined && rows[i][1] !== '') {
+              detailsHtml +=
+                '<div class="detail-row"><span class="detail-label">' +
+                escapeHtml(rows[i][0]) + ':</span><span class="detail-value">' +
+                escapeHtml(String(rows[i][1])) + '</span></div>';
+            }
+          }
+          detailsHtml += '</div>';
+          if (sandbox.links) {
+            var linkLabels = [
+              ['Business Manager', sandbox.links.bm],
+              ['OCAPI', sandbox.links.ocapi],
+              ['Impex', sandbox.links.impex],
+              ['Code', sandbox.links.code],
+              ['Logs', sandbox.links.logs],
+            ];
+            detailsHtml += '<div class="detail-section"><h3>Links</h3><hr>';
+            for (var j = 0; j < linkLabels.length; j++) {
+              if (linkLabels[j][1]) {
+                detailsHtml +=
+                  '<div class="link-row"><button type="button" class="link-btn" data-url="' +
+                  escapeHtml(linkLabels[j][1]) + '">' + escapeHtml(linkLabels[j][0]) + ': ' +
+                  escapeHtml(linkLabels[j][1]) + '</button></div>';
+              }
+            }
+            detailsHtml += '</div>';
+          }
+          detailsPanelBody.innerHTML = detailsHtml;
+          detailsPanel.classList.remove('hidden');
+        }
+
         window.addEventListener('message', function (event) {
           const msg = event.data;
+          if (msg.type === 'odsDefaultRealm') {
+            createRealmInput.value = (msg.defaultRealm && typeof msg.defaultRealm === 'string') ? msg.defaultRealm : '';
+            createDialog.classList.add('visible');
+          }
+          if (msg.type === 'odsSandboxDetails') {
+            if (msg.sandbox) {
+              renderSandboxDetails(msg.sandbox);
+            }
+          }
+          if (msg.type === 'odsSandboxDetailsError') {
+            detailsPanelBody.innerHTML =
+              '<div class="error">' + escapeHtml(msg.error || 'Failed to load sandbox details.') + '</div>';
+            detailsPanel.classList.remove('hidden');
+          }
           if (msg.type === 'odsListResult') {
             showError('');
             if (msg.error) {
               messageEl.textContent = '';
+              messageEl.classList.add('hidden');
               showError(msg.error);
               tableWrap.classList.add('hidden');
             } else {

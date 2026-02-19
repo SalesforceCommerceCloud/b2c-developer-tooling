@@ -48,9 +48,15 @@ function getScapiExplorerWebviewContent(
   return html;
 }
 
-function getOdsManagementWebviewContent(context: vscode.ExtensionContext): string {
+function getOdsManagementWebviewContent(
+  context: vscode.ExtensionContext,
+  prefill?: {defaultRealm: string},
+): string {
   const htmlPath = path.join(context.extensionPath, 'src', 'ods-management.html');
-  return fs.readFileSync(htmlPath, 'utf-8');
+  let html = fs.readFileSync(htmlPath, 'utf-8');
+  const defaultRealm = prefill?.defaultRealm ?? '';
+  html = html.replaceAll('__ODS_DEFAULT_REALM__', defaultRealm);
+  return html;
 }
 
 const WEBDAV_ROOT_LABELS: Record<string, string> = {
@@ -1076,25 +1082,31 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
 
   const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 
-  const odsManagementDisposable = vscode.commands.registerCommand('b2c-dx.odsManagement', () => {
+  const odsManagementDisposable = vscode.commands.registerCommand('b2c-dx.odsManagement', async () => {
     const panel = vscode.window.createWebviewPanel(
       'b2c-dx-ods-management',
       'On Demand Sandbox (ODS) Management',
       vscode.ViewColumn.One,
       {enableScripts: true},
     );
-    panel.webview.html = getOdsManagementWebviewContent(context);
+    let defaultRealm = '';
+    try {
+      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
+      const dwPath = findDwJson(workingDirectory);
+      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+      // First part of hostname, e.g. 'zyoc' from 'zyoc-003.unified.demandware.net'
+      const hostname = config.values.hostname;
+      const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
+      defaultRealm = firstSegment.split('-')[0] ?? '';
+    } catch {
+      // leave defaultRealm empty
+    }
+    panel.webview.html = getOdsManagementWebviewContent(context, {defaultRealm});
 
     async function getOdsConfig() {
       const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
       const dwPath = findDwJson(workingDirectory);
       return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
-    }
-
-    function realmFromHostname(hostname: string | undefined): string {
-      if (!hostname || typeof hostname !== 'string') return '';
-      const firstSegment = hostname.split('.')[0] ?? '';
-      return firstSegment.split('-')[0] ?? '';
     }
 
     async function fetchSandboxList(): Promise<{sandboxes: unknown[]; error?: string}> {
@@ -1123,10 +1135,71 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       }
     }
 
-    panel.webview.onDidReceiveMessage(async (msg: {type: string; sandboxId?: string}) => {
+    panel.webview.onDidReceiveMessage(
+      async (msg: {
+        type: string;
+        sandboxId?: string;
+        realm?: string;
+        ttl?: number;
+        url?: string;
+      }) => {
       if (msg.type === 'odsListRequest') {
         const {sandboxes, error} = await fetchSandboxList();
         panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+        return;
+      }
+      if (msg.type === 'odsGetDefaultRealm') {
+        let defaultRealm = '';
+        try {
+          const config = await getOdsConfig();
+          const hostname = config.values.hostname;
+          const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
+          defaultRealm = firstSegment.split('-')[0] ?? '';
+        } catch {
+          // leave defaultRealm empty
+        }
+        panel.webview.postMessage({type: 'odsDefaultRealm', defaultRealm});
+        return;
+      }
+      if (msg.type === 'odsSandboxClick' && msg.sandboxId) {
+        try {
+          const config = await getOdsConfig();
+          if (!config.hasOAuthConfig()) {
+            panel.webview.postMessage({
+              type: 'odsSandboxDetailsError',
+              error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.',
+            });
+            return;
+          }
+          const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+          const authStrategy = config.createOAuth();
+          const odsClient = createOdsClient({host}, authStrategy);
+          const result = await odsClient.GET('/sandboxes/{sandboxId}', {
+            params: {path: {sandboxId: msg.sandboxId}},
+          });
+          if (result.error || !result.data?.data) {
+            panel.webview.postMessage({
+              type: 'odsSandboxDetailsError',
+              error: getApiErrorMessage(result.error, result.response) || 'Sandbox not found',
+            });
+            return;
+          }
+          panel.webview.postMessage({
+            type: 'odsSandboxDetails',
+            sandbox: result.data.data,
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          panel.webview.postMessage({type: 'odsSandboxDetailsError', error: message});
+        }
+        return;
+      }
+      if (msg.type === 'odsOpenLink' && msg.url) {
+        try {
+          await vscode.env.openExternal(vscode.Uri.parse(msg.url));
+        } catch {
+          // ignore
+        }
         return;
       }
       if (msg.type === 'odsDeleteClick' && msg.sandboxId) {
@@ -1157,45 +1230,30 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         }
         return;
       }
-      if (msg.type === 'odsCreateClick') {
+      if (msg.type === 'odsCreateSandbox' && msg.realm !== undefined && msg.ttl !== undefined) {
         try {
           const config = await getOdsConfig();
           if (!config.hasOAuthConfig()) {
             vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
             return;
           }
-          const hostname = config.values.hostname;
-          const defaultRealm = realmFromHostname(hostname as string | undefined);
-
-          const realm = await vscode.window.showInputBox({
-            title: 'Create ODS Sandbox',
-            prompt: 'Realm (four-letter ID)',
-            value: defaultRealm,
-            placeHolder: 'e.g. zyoc',
-          });
-          if (realm === undefined) return;
-
-          const ttlStr = await vscode.window.showInputBox({
-            title: 'Create ODS Sandbox',
-            prompt: 'TTL (hours). Sandbox lifetime in hours.',
-            value: '480',
-            placeHolder: '480',
-          });
-          if (ttlStr === undefined) return;
-
-          const ttl = parseInt(ttlStr.trim(), 10);
+          const realm = String(msg.realm).trim();
+          if (!realm) {
+            vscode.window.showErrorMessage('B2C DX: Realm is required.');
+            return;
+          }
+          const ttl = Number(msg.ttl);
           if (Number.isNaN(ttl) || ttl < 0) {
             vscode.window.showErrorMessage('B2C DX: TTL must be a non-negative number.');
             return;
           }
-
           const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
           const authStrategy = config.createOAuth();
           const odsClient = createOdsClient({host}, authStrategy);
           const createResult = await odsClient.POST('/sandboxes', {
             body: {
-              realm: realm.trim(),
-              ttl: ttl === 0 ? undefined : ttl,
+              realm,
+              ttl, // 0 means no expiration
               analyticsEnabled: false,
             },
           });
@@ -1213,7 +1271,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           vscode.window.showErrorMessage(`B2C DX: ${message}`);
         }
       }
-    });
+    },
+    );
   });
 
   const storefrontNextCartridgeDisposable = vscode.commands.registerCommand(
