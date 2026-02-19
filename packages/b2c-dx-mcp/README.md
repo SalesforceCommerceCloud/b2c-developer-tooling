@@ -123,7 +123,7 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 
 ##### SCAPI Discovery
 
-Use **scapi_schemas_list** for both standard SCAPI (Shop, Admin, Shopper APIs) and custom APIs. Use **scapi_custom_apis_status** for endpoint-level registration status (active/not_registered).
+Use **scapi_schemas_list** for both standard SCAPI (Shop, Admin, Shopper APIs) and custom APIs. Use **scapi_custom_apis_status** for endpoint-level registration status (active/not_registered). Use **scapi_customapi_scaffold** to generate a new custom API in an existing cartridge.
 
 **SCAPI Schemas (tool: `scapi_schemas_list`):**
 
@@ -139,6 +139,12 @@ Discover schema metadata and fetch OpenAPI specs for both standard and custom SC
 **Custom APIs (use apiFamily: "custom"):**
 - ✅ "Use the MCP tool to list custom API definitions." → list with apiFamily: custom.
 - ✅ "Use the MCP tool to show me the loyalty-points custom API schema." → apiFamily: custom, apiName: loyalty-points, apiVersion: v1, includeSchemas: true.
+
+**Custom API Scaffold (tool: `scapi_customapi_scaffold`):**
+
+Generate a new custom SCAPI endpoint in an existing cartridge (schema.yaml, api.json, script.js). Requires `apiName` (kebab-case) and `cartridgeName` (must exist in project). Optional: apiType (shopper|admin), apiDescription, includeExampleEndpoints, projectRoot, outputDir, dryRun, force. Set `--working-directory` (or SFCC_WORKING_DIRECTORY) so the MCP server discovers cartridges in your project.
+
+- ✅ "Use the MCP tool to scaffold a new custom API named my-products in cartridge app_custom."
 
 **Custom API Endpoint Status (tool: `scapi_custom_apis_status`):**
 
@@ -289,6 +295,7 @@ PWA Kit v3 development tools for building headless storefronts.
 | `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
+| `scapi_customapi_scaffold` | Generate a new custom SCAPI endpoint (OAS schema, api.json, script.js) in an existing cartridge. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 #### SCAPI
@@ -299,7 +306,7 @@ Salesforce Commerce API discovery and exploration.
 |------|-------------|
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
-| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API (not yet implemented) |
+| `scapi_customapi_scaffold` | Generate a new custom SCAPI endpoint (OAS schema, api.json, script.js) in an existing cartridge. |
 
 #### STOREFRONTNEXT
 Storefront Next development tools for building modern storefronts.
@@ -316,6 +323,7 @@ Storefront Next development tools for building modern storefronts.
 | `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
+| `scapi_customapi_scaffold` | Generate a new custom SCAPI endpoint (OAS schema, api.json, script.js) in an existing cartridge. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated.

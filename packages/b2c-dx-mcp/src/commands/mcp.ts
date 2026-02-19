@@ -268,10 +268,11 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       ...mrt.options,
     };
 
-    // Combine B2C instance flags and MRT config flags
+    // Combine B2C instance flags, MRT config, and working directory so tools use the configured project path
     const flagConfig = {
       ...extractInstanceFlags(this.flags as Record<string, unknown>),
       ...mrt.config,
+      workingDirectory: this.flags['working-directory'],
     };
 
     return loadConfig(flagConfig, options);
