@@ -122,7 +122,7 @@ b2c sandbox list --json
 Realm  Instance  State    Profile  Created     EOL
 ──────────────────────────────────────────────────────────────────────────
 abcd   001       started  medium   2024-12-20  2024-12-21
-abcd   002       stopped  large    2024-12-19  2024-12-20 09:30
+abcd   002       stopped  large    2024-12-19  2024-12-20 22:30
 ```
 
 The `EOL` column displays `YYYY-MM-DD` normally. When a sandbox expires within 24 hours (or is already expired), the time is also shown as `YYYY-MM-DD HH:mm` (UTC).
