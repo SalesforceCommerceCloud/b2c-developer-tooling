@@ -83,7 +83,7 @@
  * // Configure once at startup
  * configureLogger({
  *   level: 'debug',
- *   json: process.env.CI === 'true',
+ *   json: process.env.SFCC_JSON_LOGS === 'true',
  *   colorize: process.stdout.isTTY,
  * });
  *

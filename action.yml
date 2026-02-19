@@ -1,0 +1,104 @@
+name: 'B2C Commerce Developer Tooling'
+description: 'Setup the Salesforce B2C Commerce CLI and optionally run a command'
+branding:
+  icon: 'terminal'
+  color: 'blue'
+
+inputs:
+  command:
+    description: 'CLI command to run (omit for setup-only)'
+    required: false
+  version:
+    description: 'CLI version to install (e.g. "latest", "0.4.1", "nightly")'
+    required: false
+    default: 'latest'
+  node-version:
+    description: 'Node.js version to install'
+    required: false
+    default: '22'
+  json:
+    description: 'Append --json flag and parse JSON output into the result output'
+    required: false
+    default: 'true'
+  working-directory:
+    description: 'Working directory for the command'
+    required: false
+    default: '.'
+  client-id:
+    description: 'OAuth Client ID → SFCC_CLIENT_ID'
+    required: false
+  client-secret:
+    description: 'OAuth Client Secret → SFCC_CLIENT_SECRET'
+    required: false
+  server:
+    description: 'B2C instance hostname → SFCC_SERVER'
+    required: false
+  code-version:
+    description: 'Code version → SFCC_CODE_VERSION'
+    required: false
+  username:
+    description: 'WebDAV username → SFCC_USERNAME'
+    required: false
+  password:
+    description: 'WebDAV password/access key → SFCC_PASSWORD'
+    required: false
+  short-code:
+    description: 'SCAPI short code → SFCC_SHORTCODE'
+    required: false
+  tenant-id:
+    description: 'Tenant ID → SFCC_TENANT_ID'
+    required: false
+  mrt-api-key:
+    description: 'MRT API key → SFCC_MRT_API_KEY'
+    required: false
+  mrt-project:
+    description: 'MRT project slug → SFCC_MRT_PROJECT'
+    required: false
+  mrt-environment:
+    description: 'MRT environment → SFCC_MRT_ENVIRONMENT'
+    required: false
+  account-manager-host:
+    description: 'Account Manager hostname → SFCC_ACCOUNT_MANAGER_HOST'
+    required: false
+
+outputs:
+  cli-version:
+    description: 'Installed CLI version'
+    value: ${{ steps.setup.outputs.cli-version }}
+  result:
+    description: 'Command output (JSON-parsed when json=true)'
+    value: ${{ steps.command.outputs.result }}
+  exit-code:
+    description: 'Command exit code'
+    value: ${{ steps.command.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup B2C CLI
+      id: setup
+      uses: ./actions/setup
+      with:
+        version: ${{ inputs.version }}
+        node-version: ${{ inputs.node-version }}
+        client-id: ${{ inputs.client-id }}
+        client-secret: ${{ inputs.client-secret }}
+        server: ${{ inputs.server }}
+        code-version: ${{ inputs.code-version }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+        short-code: ${{ inputs.short-code }}
+        tenant-id: ${{ inputs.tenant-id }}
+        mrt-api-key: ${{ inputs.mrt-api-key }}
+        mrt-project: ${{ inputs.mrt-project }}
+        mrt-environment: ${{ inputs.mrt-environment }}
+        account-manager-host: ${{ inputs.account-manager-host }}
+
+    - name: Run command
+      id: command
+      if: inputs.command != ''
+      uses: ./actions/run
+      with:
+        command: ${{ inputs.command }}
+        json: ${{ inputs.json }}
+        working-directory: ${{ inputs.working-directory }}

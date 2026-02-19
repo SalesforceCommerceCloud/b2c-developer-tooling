@@ -1,0 +1,6 @@
+{
+  "name": "B2C MRT Deploy",
+  "description": "Build and deploy an MRT storefront bundle on release publish using the B2C CLI.",
+  "iconName": "salesforce-logo",
+  "categories": ["Deployment"]
+}

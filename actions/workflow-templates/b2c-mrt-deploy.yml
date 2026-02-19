@@ -1,0 +1,22 @@
+name: B2C MRT Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build storefront
+        run: npm run build
+
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v1
+        with:
+          mrt-api-key: ${{ secrets.SFCC_MRT_API_KEY }}
+          project: ${{ vars.SFCC_MRT_PROJECT }}
+          environment: ${{ vars.SFCC_MRT_ENVIRONMENT }}
+          build-directory: build
+          message: 'Release ${{ github.event.release.tag_name }}'

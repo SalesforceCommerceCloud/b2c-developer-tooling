@@ -41,6 +41,7 @@ interface TelemetryConfig {
  * Base command class for B2C CLI tools.
  *
  * Environment variables for logging:
+ * - SFCC_JSON_LOGS: Output log messages as JSON lines (for log aggregation)
  * - SFCC_LOG_TO_STDOUT: Send logs to stdout instead of stderr
  * - SFCC_LOG_COLORIZE: Force colors on/off (default: auto-detect TTY)
  * - SFCC_REDACT_SECRETS: Set to 'false' to disable secret redaction
@@ -67,7 +68,14 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
     }),
     json: Flags.boolean({
-      description: 'Output as JSON, including log messages as JSONL',
+      description: 'Output result as JSON',
+      default: false,
+      helpGroup: 'GLOBAL',
+    }),
+    jsonl: Flags.boolean({
+      aliases: ['json-logs'],
+      description: 'Output log messages as JSON lines',
+      env: 'SFCC_JSON_LOGS',
       default: false,
       helpGroup: 'GLOBAL',
     }),
@@ -263,7 +271,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       level,
       fd,
       baseContext: {command: this.id},
-      json: this.flags.json,
+      json: this.flags.jsonl,
       colorize: this.shouldColorize(),
       redact,
     });
