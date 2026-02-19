@@ -2,7 +2,7 @@
 
 MCP (Model Context Protocol) server for Salesforce B2C Commerce Cloud developer experience tools.
 
-> ⚠️ **Active Development**: This package is under active development. All tools are currently **placeholder implementations** that return mock responses. Tool implementations will be added incrementally.
+> ⚠️ **Active Development**: This package is under active development. Some tools are currently **placeholder implementations** that return mock responses. Tool implementations will be added incrementally.
 
 ## Overview
 
