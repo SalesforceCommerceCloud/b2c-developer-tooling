@@ -19,6 +19,9 @@ hero:
     - theme: alt
       text: API Reference
       link: /api/
+    - theme: alt
+      text: MCP Server
+      link: /mcp/
 
 features:
   - icon: "\U0001F680"
@@ -43,8 +46,8 @@ features:
     linkText: Learn more
   - icon: "\U0001F916"
     title: AI-Assisted Development
-    details: MCP Server for Claude, Cursor, and other AI tools to interact with your B2C instances. (Coming Soon!)
-    link: /guide/
+    details: MCP Server for Claude, Cursor, and other AI tools to interact with your B2C instances.
+    link: /mcp/
     linkText: Learn more
   - icon: "\U0001F4E6"
     title: SDK Library
