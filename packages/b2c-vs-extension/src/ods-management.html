@@ -235,7 +235,7 @@
       <div id="details-panel-body"></div>
     </div>
     <script>
-      var ODS_DEFAULT_REALM = "__ODS_DEFAULT_REALM__";
+      var ODS_DEFAULT_REALM = '__ODS_DEFAULT_REALM__';
       (function () {
         const vscode = acquireVsCodeApi();
         const createBtn = document.getElementById('create-btn');
@@ -395,8 +395,8 @@
           var createdAt = sandbox.createdAt ? new Date(sandbox.createdAt).toLocaleString() : '—';
           var createdBy = sandbox.createdBy ?? '—';
           var eol = sandbox.eol ? new Date(sandbox.eol).toLocaleString() : '—';
-          var appVer = (sandbox.versions && sandbox.versions.app) ? sandbox.versions.app : '—';
-          var webVer = (sandbox.versions && sandbox.versions.web) ? sandbox.versions.web : '—';
+          var appVer = sandbox.versions && sandbox.versions.app ? sandbox.versions.app : '—';
+          var webVer = sandbox.versions && sandbox.versions.web ? sandbox.versions.web : '—';
           var rows = [
             ['ID', sandbox.id],
             ['Realm', sandbox.realm],
@@ -417,8 +417,10 @@
             if (rows[i][1] !== undefined && rows[i][1] !== '') {
               detailsHtml +=
                 '<div class="detail-row"><span class="detail-label">' +
-                escapeHtml(rows[i][0]) + ':</span><span class="detail-value">' +
-                escapeHtml(String(rows[i][1])) + '</span></div>';
+                escapeHtml(rows[i][0]) +
+                ':</span><span class="detail-value">' +
+                escapeHtml(String(rows[i][1])) +
+                '</span></div>';
             }
           }
           detailsHtml += '</div>';
@@ -435,8 +437,12 @@
               if (linkLabels[j][1]) {
                 detailsHtml +=
                   '<div class="link-row"><button type="button" class="link-btn" data-url="' +
-                  escapeHtml(linkLabels[j][1]) + '">' + escapeHtml(linkLabels[j][0]) + ': ' +
-                  escapeHtml(linkLabels[j][1]) + '</button></div>';
+                  escapeHtml(linkLabels[j][1]) +
+                  '">' +
+                  escapeHtml(linkLabels[j][0]) +
+                  ': ' +
+                  escapeHtml(linkLabels[j][1]) +
+                  '</button></div>';
               }
             }
             detailsHtml += '</div>';
@@ -448,7 +454,7 @@
         window.addEventListener('message', function (event) {
           const msg = event.data;
           if (msg.type === 'odsDefaultRealm') {
-            createRealmInput.value = (msg.defaultRealm && typeof msg.defaultRealm === 'string') ? msg.defaultRealm : '';
+            createRealmInput.value = msg.defaultRealm && typeof msg.defaultRealm === 'string' ? msg.defaultRealm : '';
             createDialog.classList.add('visible');
           }
           if (msg.type === 'odsSandboxDetails') {

@@ -48,10 +48,7 @@ function getScapiExplorerWebviewContent(
   return html;
 }
 
-function getOdsManagementWebviewContent(
-  context: vscode.ExtensionContext,
-  prefill?: {defaultRealm: string},
-): string {
+function getOdsManagementWebviewContent(context: vscode.ExtensionContext, prefill?: {defaultRealm: string}): string {
   const htmlPath = path.join(context.extensionPath, 'src', 'ods-management.html');
   let html = fs.readFileSync(htmlPath, 'utf-8');
   const defaultRealm = prefill?.defaultRealm ?? '';
@@ -1136,142 +1133,136 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     }
 
     panel.webview.onDidReceiveMessage(
-      async (msg: {
-        type: string;
-        sandboxId?: string;
-        realm?: string;
-        ttl?: number;
-        url?: string;
-      }) => {
-      if (msg.type === 'odsListRequest') {
-        const {sandboxes, error} = await fetchSandboxList();
-        panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
-        return;
-      }
-      if (msg.type === 'odsGetDefaultRealm') {
-        let defaultRealm = '';
-        try {
-          const config = await getOdsConfig();
-          const hostname = config.values.hostname;
-          const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
-          defaultRealm = firstSegment.split('-')[0] ?? '';
-        } catch {
-          // leave defaultRealm empty
-        }
-        panel.webview.postMessage({type: 'odsDefaultRealm', defaultRealm});
-        return;
-      }
-      if (msg.type === 'odsSandboxClick' && msg.sandboxId) {
-        try {
-          const config = await getOdsConfig();
-          if (!config.hasOAuthConfig()) {
-            panel.webview.postMessage({
-              type: 'odsSandboxDetailsError',
-              error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.',
-            });
-            return;
-          }
-          const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
-          const authStrategy = config.createOAuth();
-          const odsClient = createOdsClient({host}, authStrategy);
-          const result = await odsClient.GET('/sandboxes/{sandboxId}', {
-            params: {path: {sandboxId: msg.sandboxId}},
-          });
-          if (result.error || !result.data?.data) {
-            panel.webview.postMessage({
-              type: 'odsSandboxDetailsError',
-              error: getApiErrorMessage(result.error, result.response) || 'Sandbox not found',
-            });
-            return;
-          }
-          panel.webview.postMessage({
-            type: 'odsSandboxDetails',
-            sandbox: result.data.data,
-          });
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          panel.webview.postMessage({type: 'odsSandboxDetailsError', error: message});
-        }
-        return;
-      }
-      if (msg.type === 'odsOpenLink' && msg.url) {
-        try {
-          await vscode.env.openExternal(vscode.Uri.parse(msg.url));
-        } catch {
-          // ignore
-        }
-        return;
-      }
-      if (msg.type === 'odsDeleteClick' && msg.sandboxId) {
-        try {
-          const config = await getOdsConfig();
-          if (!config.hasOAuthConfig()) {
-            vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
-            return;
-          }
-          const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
-          const authStrategy = config.createOAuth();
-          const odsClient = createOdsClient({host}, authStrategy);
-          const deleteResult = await odsClient.DELETE('/sandboxes/{sandboxId}', {
-            params: {path: {sandboxId: msg.sandboxId}},
-          });
-          if (deleteResult.error) {
-            vscode.window.showErrorMessage(
-              `B2C DX: Delete sandbox failed. ${getApiErrorMessage(deleteResult.error, deleteResult.response)}`,
-            );
-            return;
-          }
-          vscode.window.showInformationMessage('B2C DX: Sandbox deleted.');
+      async (msg: {type: string; sandboxId?: string; realm?: string; ttl?: number; url?: string}) => {
+        if (msg.type === 'odsListRequest') {
           const {sandboxes, error} = await fetchSandboxList();
           panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          vscode.window.showErrorMessage(`B2C DX: ${message}`);
+          return;
         }
-        return;
-      }
-      if (msg.type === 'odsCreateSandbox' && msg.realm !== undefined && msg.ttl !== undefined) {
-        try {
-          const config = await getOdsConfig();
-          if (!config.hasOAuthConfig()) {
-            vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
-            return;
+        if (msg.type === 'odsGetDefaultRealm') {
+          let defaultRealm = '';
+          try {
+            const config = await getOdsConfig();
+            const hostname = config.values.hostname;
+            const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
+            defaultRealm = firstSegment.split('-')[0] ?? '';
+          } catch {
+            // leave defaultRealm empty
           }
-          const realm = String(msg.realm).trim();
-          if (!realm) {
-            vscode.window.showErrorMessage('B2C DX: Realm is required.');
-            return;
-          }
-          const ttl = Number(msg.ttl);
-          if (Number.isNaN(ttl) || ttl < 0) {
-            vscode.window.showErrorMessage('B2C DX: TTL must be a non-negative number.');
-            return;
-          }
-          const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
-          const authStrategy = config.createOAuth();
-          const odsClient = createOdsClient({host}, authStrategy);
-          const createResult = await odsClient.POST('/sandboxes', {
-            body: {
-              realm,
-              ttl, // 0 means no expiration
-              analyticsEnabled: false,
-            },
-          });
-          if (createResult.error) {
-            vscode.window.showErrorMessage(
-              `B2C DX: Create sandbox failed. ${getApiErrorMessage(createResult.error, createResult.response)}`,
-            );
-            return;
-          }
-          vscode.window.showInformationMessage('B2C DX: Sandbox creation started.');
-          const {sandboxes, error} = await fetchSandboxList();
-          panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          vscode.window.showErrorMessage(`B2C DX: ${message}`);
+          panel.webview.postMessage({type: 'odsDefaultRealm', defaultRealm});
+          return;
         }
-      }
-    },
+        if (msg.type === 'odsSandboxClick' && msg.sandboxId) {
+          try {
+            const config = await getOdsConfig();
+            if (!config.hasOAuthConfig()) {
+              panel.webview.postMessage({
+                type: 'odsSandboxDetailsError',
+                error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.',
+              });
+              return;
+            }
+            const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+            const authStrategy = config.createOAuth();
+            const odsClient = createOdsClient({host}, authStrategy);
+            const result = await odsClient.GET('/sandboxes/{sandboxId}', {
+              params: {path: {sandboxId: msg.sandboxId}},
+            });
+            if (result.error || !result.data?.data) {
+              panel.webview.postMessage({
+                type: 'odsSandboxDetailsError',
+                error: getApiErrorMessage(result.error, result.response) || 'Sandbox not found',
+              });
+              return;
+            }
+            panel.webview.postMessage({
+              type: 'odsSandboxDetails',
+              sandbox: result.data.data,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            panel.webview.postMessage({type: 'odsSandboxDetailsError', error: message});
+          }
+          return;
+        }
+        if (msg.type === 'odsOpenLink' && msg.url) {
+          try {
+            await vscode.env.openExternal(vscode.Uri.parse(msg.url));
+          } catch {
+            // ignore
+          }
+          return;
+        }
+        if (msg.type === 'odsDeleteClick' && msg.sandboxId) {
+          try {
+            const config = await getOdsConfig();
+            if (!config.hasOAuthConfig()) {
+              vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
+              return;
+            }
+            const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+            const authStrategy = config.createOAuth();
+            const odsClient = createOdsClient({host}, authStrategy);
+            const deleteResult = await odsClient.DELETE('/sandboxes/{sandboxId}', {
+              params: {path: {sandboxId: msg.sandboxId}},
+            });
+            if (deleteResult.error) {
+              vscode.window.showErrorMessage(
+                `B2C DX: Delete sandbox failed. ${getApiErrorMessage(deleteResult.error, deleteResult.response)}`,
+              );
+              return;
+            }
+            vscode.window.showInformationMessage('B2C DX: Sandbox deleted.');
+            const {sandboxes, error} = await fetchSandboxList();
+            panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            vscode.window.showErrorMessage(`B2C DX: ${message}`);
+          }
+          return;
+        }
+        if (msg.type === 'odsCreateSandbox' && msg.realm !== undefined && msg.ttl !== undefined) {
+          try {
+            const config = await getOdsConfig();
+            if (!config.hasOAuthConfig()) {
+              vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
+              return;
+            }
+            const realm = String(msg.realm).trim();
+            if (!realm) {
+              vscode.window.showErrorMessage('B2C DX: Realm is required.');
+              return;
+            }
+            const ttl = Number(msg.ttl);
+            if (Number.isNaN(ttl) || ttl < 0) {
+              vscode.window.showErrorMessage('B2C DX: TTL must be a non-negative number.');
+              return;
+            }
+            const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
+            const authStrategy = config.createOAuth();
+            const odsClient = createOdsClient({host}, authStrategy);
+            const createResult = await odsClient.POST('/sandboxes', {
+              body: {
+                realm,
+                ttl, // 0 means no expiration
+                analyticsEnabled: false,
+              },
+            });
+            if (createResult.error) {
+              vscode.window.showErrorMessage(
+                `B2C DX: Create sandbox failed. ${getApiErrorMessage(createResult.error, createResult.response)}`,
+              );
+              return;
+            }
+            vscode.window.showInformationMessage('B2C DX: Sandbox creation started.');
+            const {sandboxes, error} = await fetchSandboxList();
+            panel.webview.postMessage({type: 'odsListResult', sandboxes, error});
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            vscode.window.showErrorMessage(`B2C DX: ${message}`);
+          }
+        }
+      },
     );
   });
 
