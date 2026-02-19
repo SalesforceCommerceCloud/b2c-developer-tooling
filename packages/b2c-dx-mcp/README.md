@@ -312,7 +312,7 @@ Storefront Next development tools for building modern storefronts.
 | `storefront_next_figma_to_component_workflow` | Convert Figma designs to Storefront Next components |
 | `storefront_next_generate_component` | Generate a new Storefront Next component |
 | `storefront_next_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
-| `storefront_next_design_decorator` | Apply design decorators to Storefront Next components |
+| `storefront_next_page_designer_decorator` | Add Page Designer decorators to Storefront Next components |
 | `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
@@ -415,7 +415,7 @@ npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools --me
 # Call a specific tool
 npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools \
   --method tools/call \
-  --tool-name storefront_next_design_decorator
+  --tool-name storefront_next_page_designer_decorator
 ```
 
 #### 2. IDE Integration

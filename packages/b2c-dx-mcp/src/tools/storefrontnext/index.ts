@@ -17,7 +17,6 @@
  * - `storefront_next_figma_to_component_workflow` - Convert Figma to components
  * - `storefront_next_generate_component` - Generate new components
  * - `storefront_next_map_tokens_to_theme` - Map design tokens
- * - `storefront_next_design_decorator` - Apply design decorators
  * - `storefront_next_generate_page_designer_metadata` - Generate Page Designer metadata
  *
  * @module tools/storefrontnext
@@ -28,6 +27,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {createDeveloperGuidelinesTool} from './developer-guidelines.js';
+import {createPageDesignerDecoratorTool} from '../page-designer-decorator/index.js';
 
 /**
  * Common input type for placeholder tools.
@@ -100,6 +100,7 @@ function createPlaceholderTool(name: string, description: string, loadServices: 
 export function createStorefrontNextTools(loadServices: () => Services): McpTool[] {
   return [
     createDeveloperGuidelinesTool(loadServices),
+    createPageDesignerDecoratorTool(loadServices),
     createPlaceholderTool(
       'storefront_next_site_theming',
       'Configure and manage site theming for Storefront Next',
@@ -118,11 +119,6 @@ export function createStorefrontNextTools(loadServices: () => Services): McpTool
     createPlaceholderTool(
       'storefront_next_map_tokens_to_theme',
       'Map design tokens to Storefront Next theme configuration',
-      loadServices,
-    ),
-    createPlaceholderTool(
-      'storefront_next_design_decorator',
-      'Apply design decorators to Storefront Next components',
       loadServices,
     ),
     createPlaceholderTool(

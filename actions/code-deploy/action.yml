@@ -1,0 +1,119 @@
+name: 'B2C Code Deploy'
+description: 'Deploy cartridges to a Salesforce B2C Commerce instance'
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  cartridge-path:
+    description: 'Path to cartridge source directory'
+    required: false
+    default: '.'
+  reload:
+    description: 'Activate/reload the code version after deploy'
+    required: false
+    default: 'true'
+  code-version:
+    description: 'Code version to deploy to (overrides SFCC_CODE_VERSION env var)'
+    required: false
+  cartridges:
+    description: 'Comma-separated cartridge names to include'
+    required: false
+  exclude-cartridges:
+    description: 'Comma-separated cartridge names to exclude'
+    required: false
+  delete:
+    description: 'Delete existing cartridges before upload'
+    required: false
+    default: 'false'
+  # Auth inputs for standalone use
+  client-id:
+    description: 'OAuth Client ID (falls back to SFCC_CLIENT_ID env var)'
+    required: false
+  client-secret:
+    description: 'OAuth Client Secret (falls back to SFCC_CLIENT_SECRET env var)'
+    required: false
+  server:
+    description: 'B2C instance hostname (falls back to SFCC_SERVER env var)'
+    required: false
+  username:
+    description: 'WebDAV username (falls back to SFCC_USERNAME env var)'
+    required: false
+  password:
+    description: 'WebDAV password/access key (falls back to SFCC_PASSWORD env var)'
+    required: false
+  # Setup inputs
+  version:
+    description: 'CLI version to install if not already set up'
+    required: false
+    default: 'latest'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '22'
+
+outputs:
+  result:
+    description: 'Deploy command JSON output'
+    value: ${{ steps.deploy.outputs.result }}
+  exit-code:
+    description: 'Command exit code'
+    value: ${{ steps.deploy.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Ensure CLI is installed
+      uses: ./actions/setup
+      with:
+        version: ${{ inputs.version }}
+        node-version: ${{ inputs.node-version }}
+        client-id: ${{ inputs.client-id }}
+        client-secret: ${{ inputs.client-secret }}
+        server: ${{ inputs.server }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+        code-version: ${{ inputs.code-version }}
+
+    - name: Build command
+      id: build-cmd
+      shell: bash
+      run: |
+        CMD="code deploy ${{ inputs.cartridge-path }}"
+
+        if [ "${{ inputs.reload }}" = "true" ]; then
+          CMD="$CMD --reload"
+        fi
+
+        if [ "${{ inputs.delete }}" = "true" ]; then
+          CMD="$CMD --delete"
+        fi
+
+        if [ -n "${{ inputs.cartridges }}" ]; then
+          IFS=',' read -ra CARTS <<< "${{ inputs.cartridges }}"
+          for cart in "${CARTS[@]}"; do
+            cart=$(echo "$cart" | xargs)
+            CMD="$CMD -c $cart"
+          done
+        fi
+
+        if [ -n "${{ inputs.exclude-cartridges }}" ]; then
+          IFS=',' read -ra XCARTS <<< "${{ inputs.exclude-cartridges }}"
+          for cart in "${XCARTS[@]}"; do
+            cart=$(echo "$cart" | xargs)
+            CMD="$CMD -x $cart"
+          done
+        fi
+
+        if [ -n "${{ inputs.code-version }}" ]; then
+          CMD="$CMD -v ${{ inputs.code-version }}"
+        fi
+
+        echo "cmd=$CMD" >> "$GITHUB_OUTPUT"
+
+    - name: Deploy cartridges
+      id: deploy
+      uses: ./actions/run
+      with:
+        command: ${{ steps.build-cmd.outputs.cmd }}
+        json: 'true'

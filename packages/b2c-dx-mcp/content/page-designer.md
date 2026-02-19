@@ -35,7 +35,7 @@ To add a new content page: define a page type and ID in Commerce Cloud, then in 
 
 - **Add a metadata class** with `@Component('typeId', { name, description })` and `@AttributeDefinition()` (and optionally `@AttributeDefinition({ type: 'image' })`, `type: 'url'`, etc.) for each prop you want editable in Page Designer. Use `@RegionDefinition([...])` if the component has nested regions (e.g. a grid with slots).
 - **Implement the React component** so it accepts those props (and strips Page Designer–only props like `component`, `page`, `componentData`, `designMetadata` before spreading to the DOM). If the component needs server data (e.g. products for a carousel), export a `loader({ componentData, context })` and optionally a `fallback` component; the registry calls the loader during `collectComponentDataPromises` and passes resolved data as the `data` prop.
-- **Use the MCP tool `storefront_next_design_decorator`** to generate decorators instead of writing them by hand. Example components: `components/hero/index.tsx`, `components/content-card/index.tsx`, `components/product-carousel/index.tsx`.
+- **Use the MCP tool `storefront_next_page_designer_decorator`** to generate decorators instead of writing them by hand. Example components: `components/hero/index.tsx`, `components/content-card/index.tsx`, `components/product-carousel/index.tsx`.
 
 ### After changes
 
@@ -50,7 +50,7 @@ To add a new content page: define a page type and ID in Commerce Cloud, then in 
 
 Use the **B2C DX MCP server** for Page Designer work instead of hand-writing decorators and metadata. Configure the B2C DX MCP server in your IDE (e.g. in MCP settings) so these tools are available.
 
-### 1. `storefront_next_design_decorator` (STOREFRONTNEXT toolset)
+### 1. `storefront_next_page_designer_decorator` (STOREFRONTNEXT toolset)
 
 Adds Page Designer decorators to an existing React component so it can be used in Business Manager. The tool analyzes the component, picks suitable props, infers types (e.g. `*Url`/`*Link` → url, `*Image` → image, `is*`/`show*` → boolean), and generates `@Component('typeId', { name, description })`, `@AttributeDefinition()` on a metadata class, and optionally `@RegionDefinition([...])` for nested regions. It skips complex or UI-only props (e.g. className, style, callbacks).
 
@@ -71,7 +71,7 @@ Packages the cartridge, uploads it to Commerce Cloud via WebDAV, and unpacks it 
 
 ### Typical workflow
 
-1. **`storefront_next_design_decorator`** — Add decorators to the component (use autoMode for a quick first pass).
+1. **`storefront_next_page_designer_decorator`** — Add decorators to the component (use autoMode for a quick first pass).
 2. **`storefront_next_generate_page_designer_metadata`** — Generate metadata JSON so the component and regions appear in Page Designer.
 3. **`cartridge_deploy`** — Deploy to Commerce Cloud so merchants can use the component in Business Manager.
 
@@ -81,6 +81,6 @@ Packages the cartridge, uploads it to Commerce Cloud via WebDAV, and unpacks it 
 2. **Use registry for components**: Register all Page Designer components with proper `typeId`
 3. **Handle design mode**: Adapt UI when `pageDesignerMode` is `'EDIT'` or `'PREVIEW'`
 4. **Rebuild after registry changes**: Static registry is generated at build time
-5. **Use MCP tools**: Leverage `storefront_next_design_decorator` and `storefront_next_generate_page_designer_metadata` for faster development
+5. **Use MCP tools**: Leverage `storefront_next_page_designer_decorator` and `storefront_next_generate_page_designer_metadata` for faster development
 
 **Reference:** See README.md for complete Page Designer documentation and MCP tool setup.

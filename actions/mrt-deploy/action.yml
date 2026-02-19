@@ -1,0 +1,91 @@
+name: 'B2C MRT Deploy'
+description: 'Push and deploy an MRT bundle to a Salesforce B2C Commerce environment'
+branding:
+  icon: 'package'
+  color: 'blue'
+
+inputs:
+  project:
+    description: 'MRT project slug (falls back to SFCC_MRT_PROJECT env var)'
+    required: false
+  environment:
+    description: 'Target environment (falls back to SFCC_MRT_ENVIRONMENT env var)'
+    required: false
+  build-directory:
+    description: 'Local build directory'
+    required: false
+    default: 'build'
+  message:
+    description: 'Bundle message/description'
+    required: false
+  bundle-id:
+    description: 'Deploy an existing bundle by ID instead of building a new one'
+    required: false
+  # Auth inputs for standalone use
+  mrt-api-key:
+    description: 'MRT API key (falls back to SFCC_MRT_API_KEY env var)'
+    required: false
+  # Setup inputs
+  version:
+    description: 'CLI version to install if not already set up'
+    required: false
+    default: 'latest'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '22'
+
+outputs:
+  result:
+    description: 'Deploy command JSON output'
+    value: ${{ steps.deploy.outputs.result }}
+  exit-code:
+    description: 'Command exit code'
+    value: ${{ steps.deploy.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Ensure CLI is installed
+      uses: ./actions/setup
+      with:
+        version: ${{ inputs.version }}
+        node-version: ${{ inputs.node-version }}
+        mrt-api-key: ${{ inputs.mrt-api-key }}
+        mrt-project: ${{ inputs.project }}
+        mrt-environment: ${{ inputs.environment }}
+
+    - name: Build command
+      id: build-cmd
+      shell: bash
+      run: |
+        CMD="mrt bundle deploy"
+
+        if [ -n "${{ inputs.bundle-id }}" ]; then
+          CMD="$CMD ${{ inputs.bundle-id }}"
+        fi
+
+        if [ -n "${{ inputs.project }}" ]; then
+          CMD="$CMD --project ${{ inputs.project }}"
+        fi
+
+        if [ -n "${{ inputs.environment }}" ]; then
+          CMD="$CMD --environment ${{ inputs.environment }}"
+        fi
+
+        if [ -z "${{ inputs.bundle-id }}" ]; then
+          CMD="$CMD -b ${{ inputs.build-directory }}"
+        fi
+
+        if [ -n "${{ inputs.message }}" ]; then
+          CMD="$CMD -m '${{ inputs.message }}'"
+        fi
+
+        echo "cmd=$CMD" >> "$GITHUB_OUTPUT"
+
+    - name: Deploy MRT bundle
+      id: deploy
+      uses: ./actions/run
+      with:
+        command: ${{ steps.build-cmd.outputs.cmd }}
+        json: 'true'
