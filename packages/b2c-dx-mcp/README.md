@@ -22,18 +22,14 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
 
 > **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
 
-When using `"command": "node"`, the shebang in `bin/dev.js` is not run, so the server loads from built `dist/`. **Build the project to latest** (`pnpm run build` from the repo root) so auto-discovery works. Without a fresh build, auto-discovery can fail—notably **Storefront Next** in monorepos like [storefront-next](https://github.com/SalesforceCommerceCloud/storefront-next), because that detector is the only one that walks workspace packages. Optional: add `"env": { "NODE_OPTIONS": "--conditions development" }` to run from source instead (no build needed).
-
-<!-- TODO: Update command to use npx once published to npm -->
-
 **Cursor** (supports `${workspaceFolder}`):
 
 ```json
 {
   "mcpServers": {
     "b2c-dx": {
-      "command": "node",
-      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }
@@ -45,8 +41,8 @@ When using `"command": "node"`, the shebang in `bin/dev.js` is not run, so the s
 {
   "mcpServers": {
     "b2c-dx": {
-      "command": "node",
-      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
     }
   }
 }

@@ -42,6 +42,10 @@ Use GitHub Issues page to submit issues, enhancement requests and discuss ideas.
 If you're new to our project and looking for some way to make your first contribution, look for
 Issues labelled `good first contribution`.
 
+# Running the MCP server from source
+
+When developing the B2C DX MCP package (`packages/b2c-dx-mcp`), use `node` with the path to `bin/dev.js` in args. Build to latest (`pnpm run build` from the repo root) so auto-discovery works.
+
 # Contribution Checklist
 
 - [x] Clean, simple, well styled code
