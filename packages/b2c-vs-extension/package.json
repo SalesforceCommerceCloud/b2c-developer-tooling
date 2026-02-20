@@ -132,12 +132,6 @@
         "title": "Open as Workspace Folder",
         "icon": "$(root-folder-opened)",
         "category": "B2C DX"
-      },
-      {
-        "command": "b2c-dx.webdav.unmountWorkspace",
-        "title": "Remove Workspace Folder",
-        "icon": "$(root-folder)",
-        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -145,16 +139,6 @@
         {
           "command": "b2c-dx.webdav.refresh",
           "when": "view == b2cWebdavExplorer",
-          "group": "navigation"
-        },
-        {
-          "command": "b2c-dx.webdav.mountWorkspace",
-          "when": "view == b2cWebdavExplorer && !b2c-dx.webdav.mounted",
-          "group": "navigation"
-        },
-        {
-          "command": "b2c-dx.webdav.unmountWorkspace",
-          "when": "view == b2cWebdavExplorer && b2c-dx.webdav.mounted",
           "group": "navigation"
         }
       ],
@@ -188,6 +172,11 @@
           "command": "b2c-dx.webdav.delete",
           "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
           "group": "2_destructive@1"
+        },
+        {
+          "command": "b2c-dx.webdav.mountWorkspace",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "group": "3_workspace@1"
         }
       ],
       "explorer/context": [
