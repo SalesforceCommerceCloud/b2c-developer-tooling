@@ -15,21 +15,10 @@ import {promisify} from 'util';
 
 const execAsync = promisify(exec);
 
-/** Standard B2C Commerce WebDAV root directories. */
-const WEBDAV_ROOTS: Record<string, string> = {
-  IMPEX: 'Impex',
-  TEMP: 'Temp',
-  CARTRIDGES: 'Cartridges',
-  REALMDATA: 'Realmdata',
-  CATALOGS: 'Catalogs',
-  LIBRARIES: 'Libraries',
-  STATIC: 'Static',
-  LOGS: 'Logs',
-  SECURITYLOGS: 'Securitylogs',
-};
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {registerWebDavTree} from './webdav-tree/index.js';
 
 /**
  * Recursively finds all files under dir whose names end with .json (metadata files).
@@ -79,31 +68,6 @@ function getOdsManagementWebviewContent(context: vscode.ExtensionContext, prefil
   const defaultRealm = prefill?.defaultRealm ?? '';
   html = html.replaceAll('__ODS_DEFAULT_REALM__', defaultRealm);
   return html;
-}
-
-const WEBDAV_ROOT_LABELS: Record<string, string> = {
-  impex: 'Impex directory (default)',
-  temp: 'Temporary files',
-  cartridges: 'Code cartridges',
-  realmdata: 'Realm data',
-  catalogs: 'Product catalogs',
-  libraries: 'Content libraries',
-  static: 'Static resources',
-  logs: 'Log files',
-  securitylogs: 'Security log files',
-};
-
-function getWebdavWebviewContent(
-  context: vscode.ExtensionContext,
-  roots: {key: string; path: string; label: string}[],
-): string {
-  const htmlPath = path.join(context.extensionPath, 'src', 'webdav.html');
-  const raw = fs.readFileSync(htmlPath, 'utf-8');
-  const rootsJson = JSON.stringify(roots);
-  return raw.replace(
-    'const roots = window.WEBDAV_ROOTS || [];',
-    `window.WEBDAV_ROOTS = ${rootsJson};\n      const roots = window.WEBDAV_ROOTS;`,
-  );
 }
 
 /** PascalCase for use in template content (class names, types, etc.). e.g. "first page" → "FirstPage" */
@@ -303,246 +267,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     }
   });
 
-  type WebDavPropfindEntry = {href: string; displayName?: string; contentLength?: number; isCollection?: boolean};
-
-  const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', async () => {
-    let workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-    if (!workingDirectory || workingDirectory === '/' || !fs.existsSync(workingDirectory)) {
-      workingDirectory = context.extensionPath;
-    }
-    const dwPath = findDwJson(workingDirectory);
-    const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
-
-    if (!config.hasB2CInstanceConfig()) {
-      vscode.window.showErrorMessage(
-        'B2C DX: No instance config. Configure SFCC_* env vars or dw.json in the workspace.',
-      );
-      return;
-    }
-
-    const roots = (Object.keys(WEBDAV_ROOTS) as string[]).map((key) => {
-      const pathVal = (WEBDAV_ROOTS as Record<string, string>)[key];
-      const keyLower = key.toLowerCase();
-      return {
-        key: keyLower,
-        path: pathVal,
-        label: WEBDAV_ROOT_LABELS[keyLower] ?? pathVal,
-      };
-    });
-
-    const panel = vscode.window.createWebviewPanel('b2c-dx-webdav', 'B2C WebDAV Browser', vscode.ViewColumn.One, {
-      enableScripts: true,
-    });
-    panel.webview.html = getWebdavWebviewContent(context, roots);
-
-    const instance = config.createB2CInstance() as {
-      webdav: {
-        propfind: (path: string, depth: '1') => Promise<WebDavPropfindEntry[]>;
-        mkcol: (path: string) => Promise<void>;
-        delete: (path: string) => Promise<void>;
-        put: (path: string, content: Buffer | Blob | string, contentType?: string) => Promise<void>;
-        get: (path: string) => Promise<ArrayBuffer>;
-      };
-    };
-
-    const getDisplayName = (e: WebDavPropfindEntry): string =>
-      e.displayName ?? e.href.split('/').filter(Boolean).at(-1) ?? e.href;
-
-    panel.webview.onDidReceiveMessage(
-      async (msg: {type: string; path?: string; name?: string; isCollection?: boolean}) => {
-        if (msg.type === 'listPath' && msg.path !== undefined) {
-          const listPath = msg.path as string;
-          try {
-            const entries = await instance.webdav.propfind(listPath, '1');
-            const normalizedPath = listPath.replace(/\/$/, '');
-            const filtered = entries.filter((entry: WebDavPropfindEntry) => {
-              const entryPath = decodeURIComponent(entry.href);
-              return !entryPath.endsWith(`/${normalizedPath}`) && !entryPath.endsWith(`/${normalizedPath}/`);
-            });
-            panel.webview.postMessage({
-              type: 'listResult',
-              path: listPath,
-              entries: filtered.map((e: WebDavPropfindEntry) => ({
-                name: getDisplayName(e),
-                isCollection: Boolean(e.isCollection),
-                contentLength: e.contentLength,
-              })),
-            });
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({
-              type: 'listResult',
-              path: listPath,
-              entries: [],
-              error: message,
-            });
-          }
-          return;
-        }
-        if (msg.type === 'requestMkdir' && msg.path !== undefined) {
-          const parentPath = msg.path as string;
-          const name = await vscode.window.showInputBox({
-            title: 'New folder',
-            prompt: parentPath ? `Create directory under ${parentPath}` : 'Create directory at root',
-            placeHolder: 'Folder name',
-            validateInput: (value: string) => {
-              const trimmed = value.trim();
-              if (!trimmed) return 'Enter a folder name';
-              if (/[\\/:*?"<>|]/.test(trimmed)) return 'Name cannot contain \\ / : * ? " < > |';
-              return null;
-            },
-          });
-          if (name === undefined) return;
-          const trimmed = name.trim();
-          if (!trimmed) return;
-          const fullPath = parentPath ? `${parentPath}/${trimmed}` : trimmed;
-          try {
-            await instance.webdav.mkcol(fullPath);
-            panel.webview.postMessage({type: 'mkdirResult', success: true, path: fullPath});
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({type: 'mkdirResult', success: false, error: message});
-          }
-          return;
-        }
-        if (msg.type === 'requestDelete' && msg.path !== undefined) {
-          const pathToDelete = msg.path as string;
-          const name = msg.name ?? pathToDelete.split('/').pop() ?? pathToDelete;
-          const isDir = msg.isCollection === true;
-          const detail = isDir ? 'This directory and its contents will be deleted.' : 'This file will be deleted.';
-          const choice = await vscode.window.showWarningMessage(
-            `Delete "${name}"? ${detail}`,
-            {modal: true},
-            'Delete',
-            'Cancel',
-          );
-          if (choice !== 'Delete') return;
-          try {
-            await instance.webdav.delete(pathToDelete);
-            panel.webview.postMessage({type: 'deleteResult', success: true});
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({type: 'deleteResult', success: false, error: message});
-          }
-          return;
-        }
-        if (msg.type === 'requestUpload' && msg.path !== undefined) {
-          const destPath = msg.path as string;
-          const uris = await vscode.window.showOpenDialog({
-            title: 'Select file to upload',
-            canSelectFiles: true,
-            canSelectMany: false,
-            canSelectFolders: false,
-          });
-          if (!uris?.length) return;
-          const uri = uris[0];
-          const fileName = path.basename(uri.fsPath);
-          const fullPath = destPath ? `${destPath}/${fileName}` : fileName;
-          try {
-            const content = fs.readFileSync(uri.fsPath);
-            const ext = path.extname(fileName).toLowerCase();
-            const mime: Record<string, string> = {
-              '.json': 'application/json',
-              '.xml': 'application/xml',
-              '.zip': 'application/zip',
-              '.js': 'application/javascript',
-              '.ts': 'application/typescript',
-              '.html': 'text/html',
-              '.css': 'text/css',
-              '.txt': 'text/plain',
-            };
-            const contentType = mime[ext];
-            await instance.webdav.put(fullPath, content, contentType);
-            panel.webview.postMessage({type: 'uploadResult', success: true, path: fullPath});
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({type: 'uploadResult', success: false, error: message});
-          }
-          return;
-        }
-        if (msg.type === 'requestFileContent' && msg.path !== undefined) {
-          const filePath = msg.path as string;
-          const fileName = msg.name ?? filePath.split('/').pop() ?? filePath;
-          const ext = path.extname(fileName).toLowerCase();
-          const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']);
-          const textExtensions = new Set([
-            '.json',
-            '.js',
-            '.ts',
-            '.mjs',
-            '.cjs',
-            '.html',
-            '.htm',
-            '.css',
-            '.xml',
-            '.txt',
-            '.md',
-            '.log',
-            '.yml',
-            '.yaml',
-            '.env',
-            '.sh',
-            '.bat',
-            '.csv',
-            '.isml',
-          ]);
-          const isImage = imageExtensions.has(ext);
-          const isText = textExtensions.has(ext) || ext === '';
-          try {
-            const buffer = await instance.webdav.get(filePath);
-            const arr = new Uint8Array(buffer);
-            if (isImage) {
-              const base64 = Buffer.from(arr).toString('base64');
-              const mime: Record<string, string> = {
-                '.png': 'image/png',
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.gif': 'image/gif',
-                '.webp': 'image/webp',
-                '.bmp': 'image/bmp',
-                '.ico': 'image/x-icon',
-                '.svg': 'image/svg+xml',
-              };
-              const contentType = mime[ext] ?? 'application/octet-stream';
-              panel.webview.postMessage({
-                type: 'fileContent',
-                path: filePath,
-                name: fileName,
-                kind: 'image',
-                contentType,
-                base64,
-              });
-            } else if (isText) {
-              const text = new TextDecoder('utf-8', {fatal: false}).decode(arr);
-              panel.webview.postMessage({
-                type: 'fileContent',
-                path: filePath,
-                name: fileName,
-                kind: 'text',
-                text,
-              });
-            } else {
-              panel.webview.postMessage({
-                type: 'fileContent',
-                path: filePath,
-                name: fileName,
-                kind: 'binary',
-                error: 'Binary file cannot be previewed.',
-              });
-            }
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({
-              type: 'fileContent',
-              path: filePath,
-              name: fileName,
-              kind: 'error',
-              error: message,
-            });
-          }
-        }
-      },
-    );
+  const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', () => {
+    vscode.commands.executeCommand('b2cWebdavExplorer.focus');
   });
 
   function resolveStorefrontNextProjectDir(): string | undefined {
@@ -1436,6 +1162,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       });
     },
   );
+
+  registerWebDavTree(context);
 
   context.subscriptions.push(
     disposable,

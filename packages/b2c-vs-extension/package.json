@@ -18,8 +18,7 @@
     "vscode": "^1.105.1"
   },
   "activationEvents": [
-    "*",
-    "onStartupFinished",
+    "onView:b2cWebdavExplorer",
     "onCommand:b2c-dx.openUI",
     "onCommand:b2c-dx.handleStorefrontNextCartridge",
     "onCommand:b2c-dx.promptAgent",
@@ -29,6 +28,31 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "b2c-dx",
+          "title": "B2C-DX WebDAV",
+          "icon": "media/b2c-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "b2c-dx": [
+        {
+          "id": "b2cWebdavExplorer",
+          "name": "Browser",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C Commerce"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "b2cWebdavExplorer",
+        "contents": "No B2C Commerce instance configured.\n\nCreate a dw.json file in your workspace or set SFCC_* environment variables.\n\n[Refresh](command:b2c-dx.webdav.refresh)"
+      }
+    ],
     "commands": [
       {
         "command": "b2c-dx.openUI",
@@ -59,8 +83,80 @@
         "command": "b2c-dx.odsManagement",
         "title": "On Demand Sandbox (ods) Management",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.newFolder",
+        "title": "New Folder",
+        "icon": "$(new-folder)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.uploadFile",
+        "title": "Upload File",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.delete",
+        "title": "Delete",
+        "icon": "$(trash)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.download",
+        "title": "Download",
+        "icon": "$(cloud-download)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.openFile",
+        "title": "Open File",
+        "icon": "$(go-to-file)",
+        "category": "B2C DX"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "b2c-dx.webdav.refresh",
+          "when": "view == b2cWebdavExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "b2c-dx.webdav.newFolder",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "group": "1_modification@1"
+        },
+        {
+          "command": "b2c-dx.webdav.uploadFile",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "group": "1_modification@2"
+        },
+        {
+          "command": "b2c-dx.webdav.openFile",
+          "when": "view == b2cWebdavExplorer && viewItem == file",
+          "group": "1_open@1"
+        },
+        {
+          "command": "b2c-dx.webdav.download",
+          "when": "view == b2cWebdavExplorer && viewItem == file",
+          "group": "1_open@2"
+        },
+        {
+          "command": "b2c-dx.webdav.delete",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
+          "group": "2_destructive@1"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "node scripts/esbuild-bundle.mjs",
