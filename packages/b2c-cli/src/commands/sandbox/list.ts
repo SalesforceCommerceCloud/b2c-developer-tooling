@@ -18,7 +18,7 @@ interface OdsListResponse {
   data: SandboxModel[];
 }
 
-const COLUMNS: Record<string, ColumnDef<SandboxModel>> = {
+export const COLUMNS: Record<string, ColumnDef<SandboxModel>> = {
   realm: {
     header: 'Realm',
     get: (s) => s.realm || '-',
@@ -41,7 +41,18 @@ const COLUMNS: Record<string, ColumnDef<SandboxModel>> = {
   },
   eol: {
     header: 'EOL',
-    get: (s) => (s.eol ? new Date(s.eol).toISOString().slice(0, 10) : '-'),
+    get(s) {
+      if (!s.eol) return '-';
+      const d = new Date(s.eol);
+      const date = d.toISOString().slice(0, 10);
+      const msUntilEol = d.getTime() - Date.now();
+      if (msUntilEol <= 24 * 60 * 60 * 1000) {
+        const hh = String(d.getUTCHours()).padStart(2, '0');
+        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${date} ${hh}:${mm}`;
+      }
+      return date;
+    },
   },
   id: {
     header: 'ID',
