@@ -1,5 +1,5 @@
 ---
-description: Check registration status of custom SCAPI endpoints deployed on your B2C instance.
+description: Check the registration status of custom SCAPI endpoints deployed on your B2C Commerce instance.
 ---
 
 # scapi_custom_apis_status
@@ -10,10 +10,10 @@ List custom SCAPI endpoint registration status (active/not_registered). Returns 
 
 The `scapi_custom_apis_status` tool checks the registration status of custom API endpoints deployed on your B2C Commerce instance. It:
 
-- Returns individual HTTP endpoints (e.g., `GET /hello`, `POST /items/{id}`)
-- Shows registration status: `active` or `not_registered`
-- Provides per-site details (one row per endpoint per site)
-- Supports filtering, grouping, and column selection
+- Returns individual HTTP endpoints (for example, `GET /hello`, `POST /items/{id}`).
+- Shows registration status: `active` or `not_registered`.
+- Provides per-site details (one row per endpoint per site).
+- Supports filtering, grouping, and column selection.
 
 **Important:** This tool is **remote only** - it queries your live instance. For schema definitions, use [`scapi_schemas_list`](./scapi-schemas-list) with `apiFamily: "custom"`.
 
@@ -44,8 +44,8 @@ Requires OAuth credentials. See [B2C Credentials](../configuration#b2c-credentia
 - `type` - API type (Admin/Shopper)
 - `apiName` - Custom API name
 - `cartridgeName` - Cartridge containing the endpoint
-- `endpointPath` - Endpoint path (e.g., `/hello`)
-- `httpMethod` - HTTP method (GET, POST, etc.)
+- `endpointPath` - Endpoint path (for example, `/hello`)
+- `httpMethod` - HTTP method (GET, POST, and so on)
 - `status` - Registration status (active/not_registered)
 - `siteId` - Site ID
 
@@ -188,7 +188,7 @@ Check the `message` field for detailed error information.
 
 ## Related Tools
 
-- Part of the **[SCAPI](../toolsets#scapi)**, **[PWAV3](../toolsets#pwav3)**, and **[STOREFRONTNEXT](../toolsets#storefrontnext)** toolsets
+- Part of the [SCAPI](../toolsets#scapi), [PWAV3](../toolsets#pwav3), and [STOREFRONTNEXT](../toolsets#storefrontnext) toolsets
 - Always enabled (base toolset)
 - For schema definitions, use [`scapi_schemas_list`](./scapi-schemas-list) with `apiFamily: "custom"`
 

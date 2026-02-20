@@ -4,10 +4,10 @@ description: Introduction to the B2C CLI, MCP Server, and SDK for Salesforce Com
 
 # Introduction
 
-The B2C Developer Tooling provides command-line and AI-assisted development tools for Salesforce Commerce Cloud B2C:
+The B2C Developer Tooling provides command-line and AI-assisted development tools for Salesforce Commerce Cloud B2C.
 
-- **B2C CLI** - Command-line interface to deploy code, manage sandboxes, run jobs, and more from the terminal
-- **MCP Server** - AI-assisted development tools for Cursor, Claude Desktop, and other AI assistants
+- **B2C CLI**: Command-line interface that you can use to deploy code, manage sandboxes, run jobs, and so on from the terminal.
+- **MCP Server**: AI-assisted development tools for Cursor, Claude Desktop, and other AI assistants.
 
 ## Quick CLI Install
 
@@ -27,7 +27,7 @@ brew install SalesforceCommerceCloud/tools/b2c-cli
 
 :::
 
-See the [CLI Installation guide](./installation) for more installation options.
+See the [CLI Installation Guide](./installation) for more installation options.
 
 ## Quick MCP Install
 
@@ -69,5 +69,5 @@ See the [MCP Server Installation Guide](/mcp/installation) for detailed setup in
 - [IDE Integration](./ide-integration) - Connect Prophet VS Code to B2C CLI configuration
 - [MCP Server](/mcp/) - AI-assisted development with Model Context Protocol
 - [CLI Reference](/cli/) - Browse available commands
-- [Tools Reference](/mcp/toolsets) - Explore MCP tools for cartridges, MRT, SCAPI, and more
+- [Tools Reference](/mcp/toolsets) - Explore MCP tools for cartridges, MRT, SCAPI, and so on
 - [API Reference](/api/) - Explore the SDK API

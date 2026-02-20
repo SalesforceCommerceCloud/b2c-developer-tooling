@@ -10,8 +10,8 @@ Adds Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDef
 
 The `storefront_next_page_designer_decorator` tool analyzes React components and generates Page Designer decorators that enable components to be used in Page Designer. It supports two modes:
 
-1. **Auto Mode**: Quick setup with sensible defaults - automatically selects suitable props, infers types, and generates decorators immediately
-2. **Interactive Mode**: Multi-step workflow for fine-tuned control over decorator configuration
+1. **Auto Mode**: Quick setup with sensible defaults-automatically selects suitable props, infers types, and generates decorators immediately.
+2. **Interactive Mode**: Multi-step workflow for fine-tuned control over decorator configuration.
 
 The tool uses component discovery to find components by name (e.g., "ProductCard") without requiring exact file paths, making it easy to add Page Designer support to existing components.
 
@@ -27,8 +27,8 @@ No authentication required. This tool operates on local files only.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `component` | string | Yes | Component name (e.g., `"ProductCard"`, `"Hero"`) or file path (e.g., `"src/components/ProductCard.tsx"`). When a name is provided, the tool automatically searches common component directories. |
-| `searchPaths` | string[] | No | Additional directories to search for components (e.g., `["packages/retail/src", "app/features"]`). Only used when component is specified by name (not path). |
+| `component` | string | Yes | Component name (for example, `"ProductCard"`, `"Hero"`) or file path (for example, `"src/components/ProductCard.tsx"`). When a name is provided, the tool automatically searches common component directories. |
+| `searchPaths` | string[] | No | Additional directories to search for components (for example, `["packages/retail/src", "app/features"]`). Only used when a component is specified by name (not path). |
 | `autoMode` | boolean | No | Auto-generate all configurations with sensible defaults (skip interactive workflow). When enabled, automatically selects suitable props, infers types, and generates decorators without user confirmation. |
 | `componentId` | string | No | Override component ID (default: auto-generated from component name). |
 | `conversationContext` | object | No | Context for interactive mode workflow. See [Interactive Mode](#interactive-mode) for details. |
@@ -216,7 +216,7 @@ export class ProductCardMetadata {
 
 ## Related Tools
 
-- Part of the **[STOREFRONTNEXT](../toolsets#storefrontnext)** toolset
+- Part of the [STOREFRONTNEXT](../toolsets#storefrontnext) toolset
 - Auto-enabled for Storefront Next projects
 - Related: [`storefront_next_generate_page_designer_metadata`](../toolsets#storefrontnext) - Generate Page Designer metadata
 

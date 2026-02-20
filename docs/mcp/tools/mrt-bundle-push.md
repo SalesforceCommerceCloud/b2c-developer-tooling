@@ -10,10 +10,10 @@ Creates a bundle from a pre-built PWA Kit or Storefront Next project and pushes 
 
 The `mrt_bundle_push` tool bundles a pre-built project and uploads it to Managed Runtime. It:
 
-1. Reads the build directory (default: `./build`)
-2. Creates a bundle with server-only files (SSR) and shared files
-3. Pushes the bundle to Managed Runtime
-4. Optionally deploys to a target environment (staging or production)
+1. Reads the build directory (default: `./build`).
+2. Creates a bundle with server-only files (SSR) and shared files.
+3. Pushes the bundle to Managed Runtime.
+4. Optionally deploys to a target environment (staging or production).
 
 **Important:** The project must already be built (e.g., `npm run build` completed) before using this tool.
 
@@ -91,17 +91,17 @@ Returns a push result object containing:
 
 ## Error Handling
 
-The tool will throw an error if:
+The tool throws an error if:
 
-- `project` is not provided (required)
-- `deploy: true` but `environment` is not provided
-- Build directory does not exist or is invalid
+- `project` isn’t provided (required)
+- `deploy: true` but `environment` isn’t provided
+- Build directory doesn’t exist or is invalid
 - MRT API authentication fails
 - Bundle push fails
 
 ## Related Tools
 
-- Part of the **[MRT](../toolsets#mrt)**, **[PWAV3](../toolsets#pwav3)**, and **[STOREFRONTNEXT](../toolsets#storefrontnext)** toolsets
+- Part of the [MRT](../toolsets#mrt), [PWAV3](../toolsets#pwav3), and [STOREFRONTNEXT](../toolsets#storefrontnext) toolsets
 - Auto-enabled for PWA Kit v3 and Storefront Next projects
 
 ## See Also

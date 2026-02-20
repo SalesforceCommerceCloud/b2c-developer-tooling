@@ -8,7 +8,7 @@ The B2C DX MCP Server supports multiple configuration methods for credentials, f
 
 ## Configuration Priority
 
-Credentials are resolved in the following priority order:
+Credentials are resolved in the following priority order.
 
 1. **Flags** (highest priority)
 2. **Environment variables**
