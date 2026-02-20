@@ -4,6 +4,7 @@ This is a monorepo project with the following packages:
 - `./packages/b2c-cli` - the command line interface built with oclif
 - `./packages/b2c-tooling-sdk` - the SDK/library for B2C Commerce operations; supports the CLI and can be used standalone
 - `./packages/b2c-dx-mcp` - Model Context Protocol server; also built with oclif
+- `./docs` - documentation site (private `@salesforce/b2c-dx-docs` workspace package; not published to npm)
 
 ## Common Commands
 
@@ -97,9 +98,32 @@ See [documentation skill](./.claude/skills/documentation/SKILL.md) for details o
 # Run docs dev server (from project root)
 pnpm run docs:dev
 
-# Build docs for production
+# Build docs for production (stable mode — root base path)
 pnpm run docs:build
+
+# Build docs in dev mode (/dev/ base path)
+IS_DEV_BUILD=true pnpm run docs:build
 ```
+
+### Docs workspace package
+
+The `./docs` directory is a private workspace package (`@salesforce/b2c-dx-docs`) with a dependency on `@salesforce/b2c-tooling-sdk`. This exists to support doc-only releases and changelog tracking via changesets, not for npm publishing. It has no build script — `pnpm -r run build` skips it.
+
+**Deployed URL structure:** stable/released docs are served at the root URL, dev docs (from `main`) live at `/dev/`.
+
+**Doc-only releases:** to release documentation changes without bumping CLI/SDK/MCP, create a changeset that targets only the docs package:
+
+```md
+---
+'@salesforce/b2c-dx-docs': patch
+---
+
+Improved authentication guide with step-by-step examples
+```
+
+This produces a `docs@<version>` tag and triggers a docs rebuild on merge of the version PR.
+
+**Automatic cascade:** because the docs package depends on the SDK, when the SDK version is bumped by a changeset, `updateInternalDependencies: "patch"` auto-bumps the docs version too — triggering a docs rebuild (correct since API docs are generated from the SDK).
 
 ## Logging
 
@@ -142,8 +166,9 @@ This project uses [Changesets](https://github.com/changesets/changesets) for ver
 
 **How it works:**
 - A changeset affecting only the SDK bumps only the SDK version
-- Packages that depend on a bumped package get an automatic patch bump (via `updateInternalDependencies: "patch"`) — e.g., if SDK bumps, CLI and MCP auto-get a patch bump because they depend on it
-- Only packages with a newer version than what's on npm get published
+- Packages that depend on a bumped package get an automatic patch bump (via `updateInternalDependencies: "patch"`) — e.g., if SDK bumps, CLI, MCP, and Docs all auto-get a patch bump
+- Only packages with a newer version than what's on npm get published (docs package is private and uses git tags instead)
+- A changeset targeting only `@salesforce/b2c-dx-docs` triggers a doc-only release — no npm packages are published, just a `docs@<version>` tag and docs rebuild
 
 Changeset guidelines:
 - Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests
