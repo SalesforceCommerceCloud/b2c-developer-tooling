@@ -439,9 +439,27 @@ describe('Sandbox Lifecycle E2E Tests', function () {
     describe('Realm Management', function () {
       const realmId = process.env.TEST_REALM;
 
-      before(function () {
+      before(async function () {
         if (!realmId) {
           this.skip();
+        }
+
+        // Perform a lightweight realm health check so all realm tests can
+        // assume the realm is basically available. If the realm is missing
+        // or misconfigured skip the Realm Management tests
+        const result = await runCLIWithRetry(['sandbox', 'realm', 'get', realmId!, '--json'], {verbose: true});
+
+        if (result.exitCode !== 0) {
+          const errorText = String(result.stderr || result.stdout || '');
+          if (
+            errorText.includes('Realm not found') ||
+            errorText.includes('Failed to fetch configuration for realm') ||
+            errorText.includes('ConnectTimeoutError') ||
+            errorText.includes('CronExpression')
+          ) {
+            console.log('  ⚠ Realm not available or misconfigured; skipping Realm Management tests:', errorText);
+            this.skip();
+          }
         }
       });
 
@@ -457,19 +475,6 @@ describe('Sandbox Lifecycle E2E Tests', function () {
 
       it('should fetch realm usage in JSON format', async function () {
         const result = await runCLIWithRetry(['sandbox', 'realm', 'usage', realmId!, '--json'], {verbose: true});
-
-        if (result.exitCode !== 0) {
-          const errorText = String(result.stderr || result.stdout || '');
-          if (
-            errorText.includes('Realm not found') ||
-            errorText.includes('Failed to fetch configuration for realm') ||
-            errorText.includes('Failed to fetch usage for realm') ||
-            errorText.includes('ConnectTimeoutError')
-          ) {
-            console.log('  ⚠ Realm usage not available or skipping realm usage test as realm not available');
-            this.skip();
-          }
-        }
 
         expect(result.exitCode, `Realm usage failed: ${toString(result.stderr)}`).to.equal(0);
 
