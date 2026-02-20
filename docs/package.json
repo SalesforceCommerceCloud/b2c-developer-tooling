@@ -3,7 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "description": "Documentation for B2C Developer Tooling",
+  "scripts": {
+    "docs:api": "typedoc",
+    "docs:dev": "pnpm run docs:api && vitepress dev",
+    "docs:build": "pnpm run docs:api && vitepress build",
+    "docs:preview": "vitepress preview"
+  },
   "devDependencies": {
-    "@salesforce/b2c-tooling-sdk": "workspace:*"
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "typedoc": "^0.28.14",
+    "typedoc-plugin-markdown": "^4.9.0",
+    "typedoc-vitepress-theme": "^1.1.2",
+    "vitepress": "^1.6.4"
   }
 }

@@ -122,6 +122,12 @@ importers:
       prettier:
         specifier: 'catalog:'
         version: 3.6.2
+
+  docs:
+    devDependencies:
+      '@salesforce/b2c-tooling-sdk':
+        specifier: workspace:*
+        version: link:../packages/b2c-tooling-sdk
       typedoc:
         specifier: ^0.28.14
         version: 0.28.14(typescript@5.9.3)
@@ -134,12 +140,6 @@ importers:
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.44.0)(@types/node@22.19.0)(change-case@5.4.4)(fuse.js@7.1.0)(postcss@8.5.6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(typescript@5.9.3)
-
-  docs:
-    devDependencies:
-      '@salesforce/b2c-tooling-sdk':
-        specifier: workspace:*
-        version: link:../packages/b2c-tooling-sdk
 
   packages/b2c-cli:
     dependencies:
