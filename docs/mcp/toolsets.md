@@ -115,35 +115,6 @@ Storefront Next development tools for building modern storefronts.
 
 Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
 
-## Prompting Tips
-
-### Start with Guidelines
-
-When learning a new framework, ask for development guidelines first:
-
-- ✅ "Use the MCP tool to get Storefront Next development guidelines."
-- ✅ "Use the MCP tool to show me PWA Kit best practices."
-
-### Combine Related Topics
-
-Ask for multiple related sections in one request:
-
-- ✅ "Use the MCP tool to show me data fetching and component patterns for Storefront Next."
-
-### Provide Project Context
-
-Mention your project type for better tool selection:
-
-- ✅ "I'm working on a Storefront Next project. Use the MCP tool to..."
-- ✅ "In my PWA Kit project, use the MCP tool to..."
-
-### Specify Operations Clearly
-
-For deployment operations, mention the target and what to deploy:
-
-- ✅ "Use the MCP tool to deploy my cartridges to the sandbox instance."
-- ✅ "Use the MCP tool to push my bundle to staging."
-
 ## Next Steps
 
 - [Configuration](./configuration) - Configure credentials and toolset selection

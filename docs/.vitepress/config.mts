@@ -61,6 +61,9 @@ const guideSidebar = [
     text: 'MCP Server',
     items: [
       {text: 'Overview', link: '/mcp/'},
+      {text: 'Installation', link: '/mcp/installation'},
+      {text: 'Configuration', link: '/mcp/configuration'},
+      {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
     ],
   },
   {
@@ -95,20 +98,8 @@ const guideSidebar = [
       {text: 'Logging', link: '/cli/logging'},
     ],
   },
-];
-
-const mcpSidebar = [
   {
-    text: 'MCP Server',
-    items: [
-      {text: 'Overview', link: '/mcp/'},
-      {text: 'Installation', link: '/mcp/installation'},
-      {text: 'Configuration', link: '/mcp/configuration'},
-      {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
-    ],
-  },
-  {
-    text: 'Tools',
+    text: 'Tools Reference',
     items: [
       {text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'},
       {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
@@ -182,7 +173,7 @@ export default defineConfig({
     sidebar: {
       '/guide/': guideSidebar,
       '/cli/': guideSidebar,
-      '/mcp/': mcpSidebar,
+      '/mcp/': guideSidebar,
       '/api/': [
         {
           text: 'API Reference',

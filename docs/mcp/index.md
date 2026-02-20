@@ -112,6 +112,8 @@ AI assistants automatically decide which MCP tools to use based on your prompts.
 4. **Use natural language**: Describe what you want to achieve, not the tool name
 5. **Provide context**: Mention your project type, what you're building, or what you need to learn
 6. **Ask for guidelines first**: When starting a new project or learning a framework, ask for development guidelines before writing code
+7. **Combine related topics**: Ask for multiple related sections in one request (e.g., "Use the MCP tool to show me data fetching and component patterns for Storefront Next")
+8. **Specify operations clearly**: For deployment operations, mention the target and what to deploy (e.g., "Use the MCP tool to deploy my cartridges to the sandbox instance")
 
 #### Example Prompts
 
