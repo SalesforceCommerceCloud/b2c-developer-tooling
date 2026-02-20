@@ -176,7 +176,7 @@ The server reads [`dw.json`](../guide/configuration#configuration-file) from you
 }
 ```
 
-See the [Configuration Guide](./configuration) for details on credential management.
+See the [Authentication Setup guide](../guide/authentication) for detailed instructions on setting up API clients, WebDAV access, and SCAPI authentication.
 
 ### 3. Scaffolding
 

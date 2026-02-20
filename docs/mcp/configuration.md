@@ -46,7 +46,7 @@ The server automatically loads this file when `--working-directory` points to yo
 | **PWAV3** | None (uses `--working-directory` only) |
 | **STOREFRONTNEXT** | None (uses `--working-directory` only) |
 
-**Note:** For `scapi_custom_apis_status`, OAuth credentials must include the `sfcc.custom-apis` scope.
+**Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
 
 #### MRT Credentials (`~/.mobify`)
 
@@ -231,6 +231,8 @@ Enable specific tools instead of entire toolsets:
 
 ## Credential Details
 
+For authentication setup instructions, see the [Authentication Setup guide](../guide/authentication) which covers API client creation, WebDAV access, SCAPI authentication, and MRT API keys.
+
 ### B2C Credentials
 
 #### Username/Password (WebDAV)
@@ -240,23 +242,30 @@ Enable specific tools instead of entire toolsets:
 
 **Used by:** CARTRIDGES toolset
 
+See the [Authentication Setup guide](../guide/authentication#webdav-access) for detailed WebDAV access configuration.
+
 #### OAuth Client Credentials
 
 - `client-id` - API client ID from Account Manager
 - `client-secret` - API client secret from Account Manager
 
-**Used by:** SCAPI toolset (required for `scapi_custom_apis_status`)
+**Used by:** SCAPI toolset
 
-**Required scopes:**
-- `sfcc.custom-apis` - For custom API endpoint status queries
+**Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
+
+See the [Authentication Setup guide](../guide/authentication#account-manager-api-client) for creating and configuring API clients, and [SCAPI Authentication](../guide/authentication#scapi-authentication) for SCAPI-specific setup.
 
 ### MRT Credentials
 
 - `api-key` - MRT API key from your Managed Runtime project
+- `project` - MRT project slug (required)
+- `environment` - MRT environment: `staging` or `production` (required when deploying)
 
 **Used by:** MRT toolset
 
 **Configuration location:** `~/.mobify` file
+
+See the [Authentication Setup guide](../guide/authentication#managed-runtime-api-key) for detailed MRT API key setup instructions.
 
 ## Telemetry Configuration
 

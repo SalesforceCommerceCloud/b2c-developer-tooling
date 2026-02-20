@@ -21,22 +21,12 @@ This tool is shared across the MRT, PWAV3, and STOREFRONTNEXT toolsets.
 
 ## Authentication
 
-Requires Managed Runtime (MRT) credentials:
-
-- `api-key` - MRT API key (from `~/.mobify` or `SFCC_MRT_API_KEY`)
-- `project` - MRT project slug (required, via `--project` flag or `SFCC_MRT_PROJECT`)
-- `environment` - MRT environment: `staging` or `production` (optional, required when `deploy: true`)
+Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configuration#mrt-credentials) for complete details.
 
 **Configuration priority:**
 1. Flags (`--api-key`, `--project`, `--environment`)
 2. Environment variables (`SFCC_MRT_API_KEY`, `SFCC_MRT_PROJECT`, `SFCC_MRT_ENVIRONMENT`)
 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
-
-You can also configure MRT credentials using the [B2C CLI](../../cli/mrt#b2c-mrt-config-set):
-
-```bash
-b2c mrt config set --api-key YOUR_API_KEY
-```
 
 ## Parameters
 
@@ -117,5 +107,6 @@ The tool will throw an error if:
 ## See Also
 
 - [MRT Toolset](../toolsets#mrt) - Overview of Managed Runtime tools
+- [Authentication Setup](../../guide/authentication#managed-runtime-api-key) - Set up MRT API key
 - [Configuration](../configuration) - Configure MRT credentials
 - [CLI Reference](../../cli/mrt) - Equivalent CLI command: `b2c mrt bundle push`
