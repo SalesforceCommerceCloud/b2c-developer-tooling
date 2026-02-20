@@ -19,6 +19,7 @@
   },
   "activationEvents": [
     "onView:b2cWebdavExplorer",
+    "onFileSystem:b2c-webdav",
     "onCommand:b2c-dx.openUI",
     "onCommand:b2c-dx.handleStorefrontNextCartridge",
     "onCommand:b2c-dx.promptAgent",
@@ -119,6 +120,24 @@
         "title": "Open File",
         "icon": "$(go-to-file)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.newFile",
+        "title": "New File",
+        "icon": "$(new-file)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.mountWorkspace",
+        "title": "Open as Workspace Folder",
+        "icon": "$(root-folder-opened)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.unmountWorkspace",
+        "title": "Remove Workspace Folder",
+        "icon": "$(root-folder)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -127,9 +146,24 @@
           "command": "b2c-dx.webdav.refresh",
           "when": "view == b2cWebdavExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.webdav.mountWorkspace",
+          "when": "view == b2cWebdavExplorer && !b2c-dx.webdav.mounted",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.webdav.unmountWorkspace",
+          "when": "view == b2cWebdavExplorer && b2c-dx.webdav.mounted",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
+        {
+          "command": "b2c-dx.webdav.newFile",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "group": "1_modification@0"
+        },
         {
           "command": "b2c-dx.webdav.newFolder",
           "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
@@ -154,6 +188,13 @@
           "command": "b2c-dx.webdav.delete",
           "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
           "group": "2_destructive@1"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "b2c-dx.webdav.download",
+          "when": "resourceScheme == b2c-webdav && !explorerResourceIsFolder",
+          "group": "navigation"
         }
       ]
     }
