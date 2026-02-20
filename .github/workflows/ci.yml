@@ -58,6 +58,9 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
+      - name: Build documentation
+        run: pnpm run docs:build
+
       - name: Run SDK tests
         id: sdk-test
         working-directory: packages/b2c-tooling-sdk
