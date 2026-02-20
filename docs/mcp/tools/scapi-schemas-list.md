@@ -17,11 +17,9 @@ This tool works with both standard SCAPI (Shop, Admin, Shopper APIs) and custom 
 
 ## Authentication
 
-Requires OAuth credentials with the `sfcc.scapi-schemas` scope:
+Requires OAuth credentials. See [B2C Credentials](../configuration#b2c-credentials) (OAuth Client Credentials section) for complete details.
 
-- `hostname` - B2C instance hostname
-- `client-id` - OAuth client ID
-- `client-secret` - OAuth client secret
+**Required scope:** `sfcc.scapi-schemas` (required for fetch mode)
 
 **Note:** OAuth credentials are optional for local schema discovery (list mode), but required for fetching full schemas.
 
@@ -166,5 +164,6 @@ Use the MCP tool to show me the full OpenAPI spec for shopper-products v1.
 
 - [SCAPI Toolset](../toolsets#scapi) - Overview of SCAPI discovery tools
 - [scapi_custom_apis_status](./scapi-custom-apis-status) - Check custom API endpoint registration status
+- [Authentication Setup](../../guide/authentication#scapi-authentication) - Set up SCAPI authentication with required roles and scopes
 - [Configuration](../configuration) - Configure OAuth credentials
 - [CLI Reference](../../cli/scapi-schemas) - Equivalent CLI commands: `b2c scapi schemas list` and `b2c scapi schemas get`

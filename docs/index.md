@@ -17,11 +17,11 @@ hero:
       text: CLI Reference
       link: /cli/
     - theme: alt
-      text: API Reference
-      link: /api/
-    - theme: alt
       text: MCP Server
       link: /mcp/
+    - theme: alt
+      text: API Reference
+      link: /api/
 
 features:
   - icon: "\U0001F680"

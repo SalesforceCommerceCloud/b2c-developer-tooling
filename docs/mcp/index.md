@@ -59,6 +59,8 @@ The server automatically detects your project type and loads configuration from 
 - Toolset selection (auto-discovery vs manual)
 - Required credentials per toolset
 
+For authentication setup instructions, see the [Authentication Setup guide](../guide/authentication) which covers API client creation, WebDAV access, SCAPI authentication, and MRT API keys.
+
 ### Available Toolsets
 
 The server provides five toolsets with specialized tools for different development workflows:

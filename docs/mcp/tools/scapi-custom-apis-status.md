@@ -19,12 +19,9 @@ The `scapi_custom_apis_status` tool checks the registration status of custom API
 
 ## Authentication
 
-Requires OAuth credentials with the `sfcc.custom-apis` scope:
+Requires OAuth credentials. See [B2C Credentials](../configuration#b2c-credentials) (OAuth Client Credentials section) for complete details.
 
-- `hostname` - B2C instance hostname
-- `client-id` - OAuth client ID
-- `client-secret` - OAuth client secret
-- OAuth scope: `sfcc.custom-apis` (required)
+**Required scope:** `sfcc.custom-apis`
 
 **Configuration priority:**
 1. Flags (`--server`, `--client-id`, `--client-secret`)
@@ -199,5 +196,6 @@ Check the `message` field for detailed error information.
 
 - [SCAPI Toolset](../toolsets#scapi) - Overview of SCAPI discovery tools
 - [scapi_schemas_list](./scapi-schemas-list) - List and fetch SCAPI schemas
+- [Authentication Setup](../../guide/authentication#scapi-authentication) - Set up SCAPI authentication with required roles and scopes
 - [Configuration](../configuration) - Configure OAuth credentials
 - [CLI Reference](../../cli/custom-apis) - Equivalent CLI command: `b2c scapi custom status`

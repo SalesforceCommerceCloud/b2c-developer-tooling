@@ -20,19 +20,10 @@ This tool is useful for deploying custom code cartridges for SFRA or other B2C C
 
 ## Authentication
 
-Requires B2C Commerce instance credentials. Supports two authentication methods:
+Supports two authentication methods:
 
-### Option 1: Basic Authentication (WebDAV)
-
-- `hostname` - B2C instance hostname
-- `username` - Username for Basic auth
-- `password` - Password or [WebDAV access key](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5)
-
-### Option 2: OAuth
-
-- `hostname` - B2C instance hostname
-- `client-id` - OAuth client ID from Account Manager
-- `client-secret` - OAuth client secret from Account Manager
+- **Basic Authentication (WebDAV)** - See [B2C Credentials](../configuration#b2c-credentials) (Username/Password section)
+- **OAuth** - See [B2C Credentials](../configuration#b2c-credentials) (OAuth Client Credentials section)
 
 **Configuration priority:**
 1. Flags (`--server`, `--username`, `--password`, `--client-id`, `--client-secret`)
@@ -106,5 +97,6 @@ Returns a deployment result object containing:
 ## See Also
 
 - [CARTRIDGES Toolset](../toolsets#cartridges) - Overview of cartridge development tools
+- [Authentication Setup](../../guide/authentication) - Set up WebDAV access and OAuth credentials
 - [Configuration](../configuration) - Configure credentials and instance settings
 - [CLI Reference](../../cli/code) - Equivalent CLI command: `b2c code deploy`

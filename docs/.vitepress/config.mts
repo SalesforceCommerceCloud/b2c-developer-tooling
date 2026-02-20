@@ -166,8 +166,8 @@ export default defineConfig({
     nav: [
       {text: 'Guide', link: '/guide/'},
       {text: 'CLI Reference', link: '/cli/'},
-      {text: 'API Reference', link: '/api/'},
       {text: 'MCP Server', link: '/mcp/'},
+      {text: 'API Reference', link: '/api/'},
       {
         text: isDevBuild ? 'dev' : `v${releaseVersion}`,
         items: getVersionItems(),

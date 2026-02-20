@@ -33,5 +33,5 @@ See [Installation](./installation) for more options.
 - [Configuration](./configuration) - Configure instances and credentials
 - [IDE Integration](./ide-integration) - Connect Prophet VS Code to B2C CLI configuration
 - [CLI Reference](/cli/) - Browse available commands
-- [API Reference](/api/) - Explore the SDK API
 - [MCP Server](/mcp/) - AI-assisted development with Model Context Protocol
+- [API Reference](/api/) - Explore the SDK API
