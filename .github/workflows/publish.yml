@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0 # Needed for docs tag detection
 
       - name: Determine release type
         id: release-type
@@ -80,6 +82,16 @@ jobs:
           check_package "@salesforce/b2c-tooling-sdk" "packages/b2c-tooling-sdk" "sdk"
           check_package "@salesforce/b2c-cli" "packages/b2c-cli" "cli"
           check_package "@salesforce/b2c-dx-mcp" "packages/b2c-dx-mcp" "mcp"
+
+          # Check if docs version changed (private package — not published to npm, uses git tag)
+          DOCS_VERSION=$(node -p "require('./docs/package.json').version")
+          if git rev-parse "docs@${DOCS_VERSION}" >/dev/null 2>&1; then
+            echo "publish_docs=false" >> $GITHUB_OUTPUT
+          else
+            echo "publish_docs=true" >> $GITHUB_OUTPUT
+            echo "version_docs=${DOCS_VERSION}" >> $GITHUB_OUTPUT
+          fi
+          echo "@salesforce/b2c-docs: version=${DOCS_VERSION}"
 
       - name: Create snapshot versions
         if: steps.release-type.outputs.type == 'nightly'
@@ -147,6 +159,14 @@ jobs:
             echo "No tags to create"
           fi
 
+      - name: Create docs tag if version changed
+        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_docs == 'true'
+        run: |
+          DOCS_TAG="docs@${{ steps.packages.outputs.version_docs }}"
+          git tag "$DOCS_TAG"
+          git push origin "$DOCS_TAG"
+          echo "Created docs tag: $DOCS_TAG"
+
       - name: Extract changelogs for release
         if: steps.release-type.outputs.type == 'stable'
         run: |
@@ -180,6 +200,13 @@ jobs:
               extract_latest packages/b2c-tooling-sdk/CHANGELOG.md
               echo ""
             fi
+
+            if [[ "${{ steps.packages.outputs.publish_docs }}" == "true" && -f docs/CHANGELOG.md ]]; then
+              echo "## Documentation"
+              echo ""
+              extract_latest docs/CHANGELOG.md
+              echo ""
+            fi
           } > /tmp/release-notes.md
 
       - name: Create GitHub Release
@@ -192,6 +219,8 @@ jobs:
             RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
           elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+          elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
+            RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
           else
             echo "No packages published, skipping release"
             exit 0
@@ -224,10 +253,16 @@ jobs:
           elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
           else
-            echo "No release to upload to"
+            echo "No package release to upload to"
             exit 0
           fi
 
           gh release upload "$RELEASE_TAG" b2c-skills.zip b2c-cli-skills.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger documentation deployment
+        if: steps.release-type.outputs.type == 'stable'
+        run: gh workflow run deploy-docs.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

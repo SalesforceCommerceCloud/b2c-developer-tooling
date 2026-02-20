@@ -1,0 +1,9 @@
+{
+  "name": "@salesforce/b2c-dx-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Documentation for B2C Developer Tooling",
+  "devDependencies": {
+    "@salesforce/b2c-tooling-sdk": "workspace:*"
+  }
+}
