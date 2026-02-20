@@ -5,19 +5,7 @@
  */
 import * as vscode from 'vscode';
 import type {WebDavConfigProvider} from './webdav-config.js';
-
-/** Standard B2C Commerce WebDAV root directories. */
-const WEBDAV_ROOTS: {key: string; path: string}[] = [
-  {key: 'Impex', path: 'Impex'},
-  {key: 'Temp', path: 'Temp'},
-  {key: 'Cartridges', path: 'Cartridges'},
-  {key: 'Realmdata', path: 'Realmdata'},
-  {key: 'Catalogs', path: 'Catalogs'},
-  {key: 'Libraries', path: 'Libraries'},
-  {key: 'Static', path: 'Static'},
-  {key: 'Logs', path: 'Logs'},
-  {key: 'Securitylogs', path: 'Securitylogs'},
-];
+import {type WebDavFileSystemProvider, WEBDAV_ROOTS, webdavPathToUri} from './webdav-fs-provider.js';
 
 function formatFileSize(bytes: number | undefined): string {
   if (bytes === undefined || bytes === null) return '';
@@ -44,20 +32,21 @@ export class WebDavTreeItem extends vscode.TreeItem {
     this.contextValue = nodeType;
     this.tooltip = webdavPath;
 
+    const resourceUri = webdavPathToUri(webdavPath);
+
     if (nodeType === 'root') {
-      this.iconPath = new vscode.ThemeIcon('database');
+      this.resourceUri = resourceUri;
     } else if (nodeType === 'directory') {
-      this.iconPath = vscode.ThemeIcon.Folder;
+      this.resourceUri = resourceUri;
     } else {
-      this.iconPath = vscode.ThemeIcon.File;
-      this.resourceUri = vscode.Uri.parse(`webdav://b2c/${webdavPath}`);
+      this.resourceUri = resourceUri;
       if (contentLength !== undefined) {
         this.description = formatFileSize(contentLength);
       }
       this.command = {
-        command: 'b2c-dx.webdav.openFile',
+        command: 'vscode.open',
         title: 'Open File',
-        arguments: [this],
+        arguments: [resourceUri],
       };
     }
   }
@@ -67,18 +56,19 @@ export class WebDavTreeDataProvider implements vscode.TreeDataProvider<WebDavTre
   private _onDidChangeTreeData = new vscode.EventEmitter<WebDavTreeItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private childrenCache = new Map<string, WebDavTreeItem[]>();
-
-  constructor(private configProvider: WebDavConfigProvider) {}
-
-  refresh(): void {
-    this.childrenCache.clear();
-    this._onDidChangeTreeData.fire();
+  constructor(
+    private configProvider: WebDavConfigProvider,
+    private fsProvider: WebDavFileSystemProvider,
+  ) {
+    // Auto-refresh the tree when the FS provider fires change events
+    this.fsProvider.onDidChangeFile(() => {
+      this._onDidChangeTreeData.fire();
+    });
   }
 
-  refreshNode(node: WebDavTreeItem): void {
-    this.childrenCache.delete(node.webdavPath);
-    this._onDidChangeTreeData.fire(node);
+  refresh(): void {
+    this.fsProvider.clearCache();
+    this._onDidChangeTreeData.fire();
   }
 
   getTreeItem(element: WebDavTreeItem): vscode.TreeItem {
@@ -94,39 +84,37 @@ export class WebDavTreeDataProvider implements vscode.TreeDataProvider<WebDavTre
       return WEBDAV_ROOTS.map((r) => new WebDavTreeItem('root', r.path, r.key, true));
     }
 
-    const cached = this.childrenCache.get(element.webdavPath);
-    if (cached) {
-      return cached;
-    }
-
-    const instance = this.configProvider.getInstance();
-    if (!instance) {
-      return [];
-    }
-
     try {
-      const entries = await instance.webdav.propfind(element.webdavPath, '1');
-      const normalizedPath = element.webdavPath.replace(/\/$/, '');
-      const filtered = entries.filter((entry) => {
-        const entryPath = decodeURIComponent(entry.href);
-        return !entryPath.endsWith(`/${normalizedPath}`) && !entryPath.endsWith(`/${normalizedPath}/`);
+      const uri = webdavPathToUri(element.webdavPath);
+      const entries = await this.fsProvider.readDirectory(uri);
+
+      const children: WebDavTreeItem[] = [];
+      for (const [name, fileType] of entries) {
+        const childPath = `${element.webdavPath}/${name}`;
+        const isCollection = fileType === vscode.FileType.Directory;
+        const nodeType = isCollection ? 'directory' : 'file';
+
+        let contentLength: number | undefined;
+        if (!isCollection) {
+          try {
+            const childStat = await this.fsProvider.stat(webdavPathToUri(childPath));
+            contentLength = childStat.size;
+          } catch {
+            // Stat may fail — show item without size
+          }
+        }
+
+        children.push(new WebDavTreeItem(nodeType, childPath, name, isCollection, contentLength));
+      }
+
+      // Sort: directories first, then alphabetical
+      children.sort((a, b) => {
+        if (a.isCollection !== b.isCollection) {
+          return a.isCollection ? -1 : 1;
+        }
+        return a.fileName.localeCompare(b.fileName);
       });
 
-      const children = filtered
-        .map((entry) => {
-          const displayName = entry.displayName ?? entry.href.split('/').filter(Boolean).at(-1) ?? entry.href;
-          const childPath = `${element.webdavPath}/${displayName}`;
-          const nodeType = entry.isCollection ? 'directory' : 'file';
-          return new WebDavTreeItem(nodeType, childPath, displayName, entry.isCollection, entry.contentLength);
-        })
-        .sort((a, b) => {
-          if (a.isCollection !== b.isCollection) {
-            return a.isCollection ? -1 : 1;
-          }
-          return a.fileName.localeCompare(b.fileName);
-        });
-
-      this.childrenCache.set(element.webdavPath, children);
       return children;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
