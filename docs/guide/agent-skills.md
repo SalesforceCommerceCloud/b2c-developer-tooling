@@ -12,10 +12,10 @@ These skills follow the [Agent Skills](https://agentskills.io/home) standard and
 
 When installed, the skills teach AI assistants about B2C Commerce development, CLI commands, and best practices, enabling them to help you with:
 
-- **CLI Operations** - Deploying cartridges, running jobs, managing sandboxes, WebDAV operations
-- **B2C Development** - Controllers, ISML templates, forms, localization, logging, metadata
-- **Web Services** - HTTP/SOAP/FTP integrations using the Service Framework
-- **Custom APIs** - Building SCAPI Custom APIs with contracts, implementations, and mappings
+- **CLI Operations**: Deploying cartridges, running jobs, managing sandboxes, WebDAV operations
+- **B2C Development**: Controllers, ISML templates, forms, localization, logging, metadata
+- **Web Services**: HTTP/SOAP/FTP integrations using the Service Framework
+- **Custom APIs**: Building SCAPI Custom APIs with contracts, implementations, and mappings
 
 ## Available Plugins
 
@@ -26,7 +26,7 @@ When installed, the skills teach AI assistants about B2C Commerce development, C
 
 ### Plugin: b2c-cli
 
-Skills for using the B2C CLI to manage your Commerce Cloud instances. Covers code deployment, job execution, site archive import/export, WebDAV file operations, On-Demand Sandbox management, and more.
+Skills for using the B2C CLI to manage your B2C Commerce instances. Covers code deployment, job execution, site archive import/export, WebDAV file operations, On-Demand Sandbox management, and more.
 
 Browse skills: [skills/b2c-cli/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-cli/skills)
 

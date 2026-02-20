@@ -1,5 +1,5 @@
 ---
-description: MCP Server for Salesforce Commerce Cloud B2C - AI-assisted development tools for Claude, Cursor, and other AI assistants.
+description: MCP Server for Salesforce B2C Commerce - AI-assisted development tools for Claude, Cursor, and other AI assistants.
 ---
 
 # MCP Server
@@ -12,11 +12,11 @@ The B2C DX MCP Server enables AI assistants (like Cursor, Claude Desktop, and ot
 
 The MCP server automatically detects your project type and enables relevant tools. It reads configuration from your project's configuration files and provides AI assistants with context-aware tools to help you:
 
-- Discover and explore Salesforce Commerce APIs (both standard and custom APIs)
-- Deploy cartridges and manage code versions on your B2C instances
-- Build and deploy bundles to Managed Runtime for PWA Kit and Storefront Next projects
-- Get development guidelines and best practices for PWA Kit v3 and Storefront Next
-- Generate components, pages, and scaffold new features with framework-specific patterns
+- Discover and explore Salesforce Commerce APIs (both standard and custom APIs).
+- Deploy cartridges and manage code versions on your B2C instances.
+- Build and deploy bundles to Managed Runtime for PWA Kit and Storefront Next projects.
+- Get development guidelines and best practices for PWA Kit v3 and Storefront Next.
+- Generate components, pages, and scaffold new features with framework-specific patterns.
 
 ## Quick Start
 
@@ -65,11 +65,11 @@ For authentication setup instructions, see the [Authentication Setup guide](../g
 
 The server provides five toolsets with specialized tools for different development workflows:
 
-- **[CARTRIDGES](./toolsets#cartridges)** - Cartridge deployment and code version management
-- **[MRT](./toolsets#mrt)** - Managed Runtime bundle operations
-- **[PWAV3](./toolsets#pwav3)** - PWA Kit v3 development tools
-- **[SCAPI](./toolsets#scapi)** - Salesforce Commerce API discovery
-- **[STOREFRONTNEXT](./toolsets#storefrontnext)** - Storefront Next development tools
+- [CARTRIDGES](./toolsets#cartridges) - Cartridge deployment and code version management
+- [MRT](./toolsets#mrt) - Managed Runtime bundle operations
+- [PWAV3](./toolsets#pwav3) - PWA Kit v3 development tools
+- [SCAPI](./toolsets#scapi) - Salesforce Commerce API discovery
+- [STOREFRONTNEXT](./toolsets#storefrontnext) - Storefront Next development tools
 
 See the [Toolsets & Tools Reference](./toolsets) for detailed descriptions of each toolset and its tools.
 
@@ -79,9 +79,9 @@ See the [Toolsets & Tools Reference](./toolsets) for detailed descriptions of ea
 
 The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_DIRECTORY`). It tells the server where your project is located, enabling:
 
-1. **Auto-discovery** - Detects your project type and enables appropriate toolsets
-2. **Configuration loading** - Reads [`dw.json`](../guide/configuration#configuration-file) from your project for credentials
-3. **Scaffolding** - Creates new files in the correct location
+1. **Auto-discovery** - Detects your project type and enables appropriate toolsets.
+2. **Configuration loading** - Reads [`dw.json`](../guide/configuration#configuration-file) from your project for credentials.
+3. **Scaffolding** - Creates new files in the correct location.
 
 > **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
 
@@ -113,7 +113,7 @@ AI assistants automatically decide which MCP tools to use based on your prompts.
 5. **Provide context**: Mention your project type, what you're building, or what you need to learn
 6. **Ask for guidelines first**: When starting a new project or learning a framework, ask for development guidelines before writing code
 7. **Combine related topics**: Ask for multiple related sections in one request (e.g., "Use the MCP tool to show me data fetching and component patterns for Storefront Next")
-8. **Specify operations clearly**: For deployment operations, mention the target and what to deploy (e.g., "Use the MCP tool to deploy my cartridges to the sandbox instance")
+8. **Specify operations clearly**: For deployment operations, mention the target and what to deploy (for example, "Use the MCP tool to deploy my cartridges to the sandbox instance")
 
 #### Example Prompts
 

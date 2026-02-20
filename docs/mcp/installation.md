@@ -82,7 +82,7 @@ The `--working-directory` flag is critical. Cursor spawns MCP servers from your 
 **Why this matters:**
 - Enables **auto-discovery** of your project type
 - Loads configuration from `dw.json` in your project root
-- Ensures scaffolding creates files in the correct location
+- Ensures that scaffolding creates files in the correct location
 
 ## Claude Desktop Configuration
 
@@ -111,8 +111,8 @@ Claude Desktop doesn't support workspace variables, so you must use an explicit 
 }
 ```
 
-4. Replace path `/absolute/path/to/your/project` with actual absolute path to your B2C Commerce project
-5. Restart Claude Desktop
+4. Replace path `/absolute/path/to/your/project` with actual absolute path to your B2C Commerce project.
+5. Restart Claude Desktop.
 
 ### Per-Project Configuration
 
@@ -263,15 +263,15 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 
 ### Server Not Starting
 
-- Verify Node.js version: `node --version` (must be 22.0.0+)
-- Check that the path to `bin/dev.js` is correct and absolute
-- Ensure the script is executable: `chmod +x bin/dev.js`
+- Verify Node.js version: `node --version` (must be 22.0.0+).
+- Check that the path to `bin/dev.js` is correct and absolute.
+- Ensure that the script is executable: `chmod +x bin/dev.js`.
 
 ### Tools Not Available
 
-- Ensure `--allow-non-ga-tools` flag is included (required for placeholder tools)
-- Check that `--working-directory` points to a valid project directory
-- Verify project type detection by checking your `package.json` or project structure
+- Ensure `--allow-non-ga-tools` flag is included (required for placeholder tools).
+- Check that `--working-directory` points to a valid project directory.
+- Verify project type detection by checking your `package.json` or project structure.
 
 ### Configuration Not Loading
 

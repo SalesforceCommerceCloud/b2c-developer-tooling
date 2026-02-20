@@ -8,10 +8,10 @@ List or fetch SCAPI schema metadata and OpenAPI specs for standard SCAPI (Shop/A
 
 ## Overview
 
-The `scapi_schemas_list` tool provides two modes of operation:
+The `scapi_schemas_list` tool provides two modes of operation.
 
-1. **List (Discovery)**: Browse available schemas without fetching full OpenAPI specs
-2. **Fetch**: Retrieve complete OpenAPI schema for a specific API
+1. **List (Discovery)**: Browse available schemas without fetching full OpenAPI specs.
+2. **Fetch**: Retrieve complete OpenAPI schema for a specific API.
 
 This tool works with both standard SCAPI (Shop, Admin, Shopper APIs) and custom APIs. For endpoint registration status, use [`scapi_custom_apis_status`](./scapi-custom-apis-status) instead.
 
@@ -32,12 +32,12 @@ Requires OAuth credentials. See [B2C Credentials](../configuration#b2c-credentia
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `apiFamily` | string | No | Filter by API family (e.g., `"shopper"`, `"product"`, `"checkout"`, `"custom"`). Use `"custom"` for custom APIs. |
-| `apiName` | string | No | Filter by API name (e.g., `"shopper-products"`, `"shopper-baskets"`). |
-| `apiVersion` | string | No | Filter by API version (e.g., `"v1"`, `"v2"`). |
+| `apiFamily` | string | No | Filter by API family (for example, `"shopper"`, `"product"`, `"checkout"`, `"custom"`). Use `"custom"` for custom APIs. |
+| `apiName` | string | No | Filter by API name (for example, `"shopper-products"`, `"shopper-baskets"`). |
+| `apiVersion` | string | No | Filter by API version (for example, `"v1"`, `"v2"`). |
 | `status` | `"current"` \| `"deprecated"` | No | Filter by schema status. Use `"current"` for active schemas, `"deprecated"` for phased-out schemas. Only works in list mode. |
 | `includeSchemas` | boolean | No | Include full OpenAPI schemas. Requires all three: `apiFamily`, `apiName`, and `apiVersion`. |
-| `expandAll` | boolean | No | Return full schema without collapsing. Only works when `includeSchemas: true`. |
+| `expandAll` | boolean | No | Return the full schema without collapsing. Only works when `includeSchemas: true`. |
 
 ## Operation Modes
 
@@ -156,7 +156,7 @@ Use the MCP tool to show me the full OpenAPI spec for shopper-products v1.
 
 ## Related Tools
 
-- Part of the **[SCAPI](../toolsets#scapi)**, **[PWAV3](../toolsets#pwav3)**, and **[STOREFRONTNEXT](../toolsets#storefrontnext)** toolsets
+- Part of the [SCAPI](../toolsets#scapi), [PWAV3](../toolsets#pwav3), and [STOREFRONTNEXT](../toolsets#storefrontnext) toolsets
 - Always enabled (base toolset)
 - For endpoint registration status, use [`scapi_custom_apis_status`](./scapi-custom-apis-status)
 

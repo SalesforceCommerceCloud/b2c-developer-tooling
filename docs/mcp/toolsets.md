@@ -13,11 +13,11 @@ The B2C DX MCP Server provides five toolsets with specialized tools for differen
 Toolsets are collections of related tools that work together to support specific development workflows. The server automatically enables toolsets based on your project type, or you can manually select toolsets using the `--toolsets` flag.
 
 **Available toolsets:**
-- **[CARTRIDGES](#cartridges)** - Cartridge deployment and code version management
-- **[MRT](#mrt)** - Managed Runtime bundle operations
-- **[PWAV3](#pwav3)** - PWA Kit v3 development tools
-- **[SCAPI](#scapi)** - Salesforce Commerce API discovery
-- **[STOREFRONTNEXT](#storefrontnext)** - Storefront Next development tools
+- [CARTRIDGES](#cartridges) - Cartridge deployment and code version management
+- [MRT](#mrt) - Managed Runtime bundle operations
+- [PWAV3](#pwav3) - PWA Kit v3 development tools
+- [SCAPI](#scapi) - Salesforce Commerce API discovery
+- [STOREFRONTNEXT](#storefrontnext) - Storefront Next development tools
 
 **Note:** The `SCAPI` toolset is always enabled, even if not explicitly specified.
 
@@ -62,8 +62,8 @@ PWA Kit v3 development tools for building headless storefronts.
 | Tool | Description | Documentation |
 |------|-------------|---------------|
 | `pwakit_create_storefront` | Create a new PWA Kit storefront project | — |
-| `pwakit_create_page` | Create a new page component in PWA Kit project | — |
-| `pwakit_create_component` | Create a new React component in PWA Kit project | — |
+| `pwakit_create_page` | Create a new page component in the PWA Kit project | — |
+| `pwakit_create_component` | Create a React component in the PWA Kit project | — |
 | `pwakit_get_dev_guidelines` | Get PWA Kit development guidelines and best practices | — |
 | `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases | — |
 | `pwakit_run_site_test` | Run site tests for PWA Kit project | — |
@@ -113,7 +113,7 @@ Storefront Next development tools for building modern storefronts.
 
 ## Tool Deduplication
 
-Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
+Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
 
 ## Next Steps
 
