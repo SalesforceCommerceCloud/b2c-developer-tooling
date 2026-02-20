@@ -2,7 +2,6 @@
 .vscode-test/**
 src/**
 !src/webview.html
-!src/webdav.html
 !src/storefront-next-cartridge.html
 !src/scapi-explorer.html
 !src/ods-management.html
