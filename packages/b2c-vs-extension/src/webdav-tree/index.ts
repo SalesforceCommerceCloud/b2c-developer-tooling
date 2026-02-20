@@ -9,11 +9,6 @@ import {WEBDAV_SCHEME, WebDavFileSystemProvider} from './webdav-fs-provider.js';
 import {WebDavTreeDataProvider} from './webdav-tree-provider.js';
 import {registerWebDavCommands} from './webdav-commands.js';
 
-function syncMountedContext(): void {
-  const mounted = (vscode.workspace.workspaceFolders ?? []).some((f) => f.uri.scheme === WEBDAV_SCHEME);
-  vscode.commands.executeCommand('setContext', 'b2c-dx.webdav.mounted', mounted);
-}
-
 export function registerWebDavTree(context: vscode.ExtensionContext): void {
   const configProvider = new WebDavConfigProvider();
   const fsProvider = new WebDavFileSystemProvider(configProvider);
@@ -31,9 +26,5 @@ export function registerWebDavTree(context: vscode.ExtensionContext): void {
 
   const commandDisposables = registerWebDavCommands(context, configProvider, treeProvider, fsProvider);
 
-  // Sync the mounted context key on activation and when workspace folders change
-  syncMountedContext();
-  const folderWatcher = vscode.workspace.onDidChangeWorkspaceFolders(() => syncMountedContext());
-
-  context.subscriptions.push(fsRegistration, treeView, folderWatcher, ...commandDisposables);
+  context.subscriptions.push(fsRegistration, treeView, ...commandDisposables);
 }

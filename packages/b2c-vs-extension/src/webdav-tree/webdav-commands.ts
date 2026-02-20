@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type {WebDavConfigProvider} from './webdav-config.js';
-import {type WebDavFileSystemProvider, WEBDAV_SCHEME, webdavPathToUri} from './webdav-fs-provider.js';
+import {type WebDavFileSystemProvider, webdavPathToUri} from './webdav-fs-provider.js';
 import type {WebDavTreeDataProvider, WebDavTreeItem} from './webdav-tree-provider.js';
 
 export function registerWebDavCommands(
@@ -176,20 +176,14 @@ export function registerWebDavCommands(
     );
   });
 
-  const mountWorkspace = vscode.commands.registerCommand('b2c-dx.webdav.mountWorkspace', () => {
+  const mountWorkspace = vscode.commands.registerCommand('b2c-dx.webdav.mountWorkspace', (node: WebDavTreeItem) => {
+    if (!node) return;
+    const uri = webdavPathToUri(node.webdavPath);
     vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length ?? 0, 0, {
-      uri: vscode.Uri.parse(`${WEBDAV_SCHEME}:/`),
-      name: 'B2C Commerce WebDAV',
+      uri,
+      name: `WebDAV: ${node.webdavPath}`,
     });
   });
 
-  const unmountWorkspace = vscode.commands.registerCommand('b2c-dx.webdav.unmountWorkspace', () => {
-    const folders = vscode.workspace.workspaceFolders ?? [];
-    const idx = folders.findIndex((f) => f.uri.scheme === WEBDAV_SCHEME);
-    if (idx >= 0) {
-      vscode.workspace.updateWorkspaceFolders(idx, 1);
-    }
-  });
-
-  return [refresh, newFolder, newFile, uploadFile, deleteItem, download, openFile, mountWorkspace, unmountWorkspace];
+  return [refresh, newFolder, newFile, uploadFile, deleteItem, download, openFile, mountWorkspace];
 }
