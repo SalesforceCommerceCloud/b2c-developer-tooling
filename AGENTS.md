@@ -182,7 +182,9 @@ Changeset guidelines:
   - HOW a consumer should update their code
 - Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
-create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
+Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/b2c-dx-docs`
+
+Create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 
 ```md
 ---
@@ -194,3 +196,4 @@ Description of the change explaining WHAT, WHY, and HOW to update
 ```
 
 - Include only the packages that were directly modified
+- For doc-only changes, target `@salesforce/b2c-dx-docs` instead of the CLI/SDK/MCP packages

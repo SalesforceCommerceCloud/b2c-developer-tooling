@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-dx-docs",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Documentation for B2C Developer Tooling",
   "scripts": {
