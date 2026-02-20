@@ -99,7 +99,7 @@ export function stubCommandConfigAndLogger(command: any, accountManagerHost = 'a
   });
 
   Object.defineProperty(command, 'logger', {
-    value: {info() {}, debug() {}, warn() {}, error() {}},
+    value: {trace() {}, info() {}, debug() {}, warn() {}, error() {}},
     configurable: true,
   });
 
