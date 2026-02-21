@@ -31,6 +31,12 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "submenus": [
+      {
+        "id": "b2c-dx.submenu",
+        "label": "B2C-DX"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -195,7 +201,7 @@
       },
       {
         "command": "b2c-dx.content.import",
-        "title": "B2C-DX: Import Site Archive",
+        "title": "Import Site Archive",
         "icon": "$(cloud-upload)",
         "category": "B2C DX"
       }
@@ -292,9 +298,15 @@
           "group": "navigation"
         },
         {
-          "command": "b2c-dx.content.import",
+          "submenu": "b2c-dx.submenu",
           "when": "explorerResourceIsFolder",
           "group": "7_modification@9"
+        }
+      ],
+      "b2c-dx.submenu": [
+        {
+          "command": "b2c-dx.content.import",
+          "when": "explorerResourceIsFolder"
         }
       ]
     }

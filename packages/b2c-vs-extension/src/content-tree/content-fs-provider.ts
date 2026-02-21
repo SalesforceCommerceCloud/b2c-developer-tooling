@@ -5,7 +5,7 @@
  */
 
 import type {Library, LibraryNode} from '@salesforce/b2c-tooling-sdk/operations/content';
-import {siteArchiveImport} from '@salesforce/b2c-tooling-sdk';
+import {siteArchiveImport, getJobLog, JobExecutionError} from '@salesforce/b2c-tooling-sdk';
 import JSZip from 'jszip';
 import * as xml2js from 'xml2js';
 import * as vscode from 'vscode';
@@ -145,16 +145,31 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     const xmlContent = Buffer.from(content).toString('utf-8');
     const archivePath = isSiteLibrary ? `sites/${libraryId}/library/library.xml` : `libraries/${libraryId}/library.xml`;
 
-    await vscode.window.withProgress(
-      {location: vscode.ProgressLocation.Notification, title: `Importing content to ${libraryId}...`},
-      async () => {
-        const archiveName = `content-update-${Date.now()}`;
-        const zip = new JSZip();
-        zip.file(archivePath, xmlContent);
-        const buffer = await zip.generateAsync({type: 'nodebuffer'});
-        await siteArchiveImport(instance, buffer, {archiveName});
-      },
-    );
+    try {
+      await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `Importing content to ${libraryId}...`},
+        async () => {
+          const archiveName = `content-update-${Date.now()}`;
+          const zip = new JSZip();
+          zip.file(archivePath, xmlContent);
+          const buffer = await zip.generateAsync({type: 'nodebuffer'});
+          await siteArchiveImport(instance, buffer, {archiveName});
+        },
+      );
+    } catch (err) {
+      // Show job log in editor on failure
+      if (err instanceof JobExecutionError && err.execution.is_log_file_existing) {
+        try {
+          const log = await getJobLog(instance, err.execution);
+          const doc = await vscode.workspace.openTextDocument({content: log, language: 'log'});
+          await vscode.window.showTextDocument(doc);
+        } catch {
+          // Fall through to generic error
+        }
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      throw vscode.FileSystemError.Unavailable(`Import failed: ${message}`);
+    }
 
     // Invalidate cache since the instance was updated
     this.configProvider.invalidateLibrary(libraryId);

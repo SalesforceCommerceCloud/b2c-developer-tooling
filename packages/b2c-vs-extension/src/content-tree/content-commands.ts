@@ -4,13 +4,28 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {siteArchiveImport} from '@salesforce/b2c-tooling-sdk';
+import {siteArchiveImport, getJobLog, JobExecutionError} from '@salesforce/b2c-tooling-sdk';
 import {exportContent} from '@salesforce/b2c-tooling-sdk/operations/content';
+import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
 import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
+
+async function showJobError(err: unknown, instance: B2CInstance, label: string): Promise<void> {
+  if (err instanceof JobExecutionError && err.execution.is_log_file_existing) {
+    try {
+      const log = await getJobLog(instance, err.execution);
+      const doc = await vscode.workspace.openTextDocument({content: log, language: 'log'});
+      await vscode.window.showTextDocument(doc);
+    } catch {
+      // Fall through to generic error
+    }
+  }
+  const message = err instanceof Error ? err.message : String(err);
+  vscode.window.showErrorMessage(`${label}: ${message}`);
+}
 
 export function registerContentCommands(
   _context: vscode.ExtensionContext,
@@ -192,8 +207,7 @@ export function registerContentCommands(
         },
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`Import failed: ${message}`);
+      await showJobError(err, instance, 'Import failed');
       return;
     }
 

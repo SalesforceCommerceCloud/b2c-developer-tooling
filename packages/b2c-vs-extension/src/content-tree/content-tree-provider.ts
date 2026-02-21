@@ -9,6 +9,7 @@ import {fetchContentLibrary} from '@salesforce/b2c-tooling-sdk/operations/conten
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import {contentItemUri} from './content-fs-provider.js';
+import {webdavPathToUri} from '../webdav-tree/webdav-fs-provider.js';
 
 type ContentNodeType = 'library' | 'page' | 'content' | 'component' | 'static';
 
@@ -72,7 +73,15 @@ export class ContentTreeItem extends vscode.TreeItem {
     }
 
     // Click command for openable items
-    if (nodeType !== 'library' && nodeType !== 'static') {
+    if (nodeType === 'static') {
+      const cleanPath = contentId.startsWith('/') ? contentId.slice(1) : contentId;
+      const webdavPath = `Libraries/${libraryId}/default/${cleanPath}`;
+      this.command = {
+        command: 'vscode.open',
+        title: 'Open Static Asset',
+        arguments: [webdavPathToUri(webdavPath)],
+      };
+    } else if (nodeType !== 'library') {
       const uri = contentItemUri(libraryId, isSiteLibrary, contentId);
       this.command = {
         command: 'vscode.open',
