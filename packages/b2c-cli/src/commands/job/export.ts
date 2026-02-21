@@ -6,10 +6,12 @@
 import {Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
+  siteArchiveExport,
   siteArchiveExportToPath,
   JobExecutionError,
   type SiteArchiveExportResult,
   type ExportDataUnitsConfiguration,
+  type WaitForJobOptions,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -100,10 +102,11 @@ export default class JobExport extends JobCommand<typeof JobExport> {
   };
 
   protected operations = {
+    siteArchiveExport,
     siteArchiveExportToPath,
   };
 
-  async run(): Promise<SiteArchiveExportResult & {localPath?: string}> {
+  async run(): Promise<SiteArchiveExportResult & {localPath?: string; archiveKept?: boolean}> {
     this.requireOAuthCredentials();
     this.requireWebDavCredentials();
 
@@ -167,8 +170,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       return {
         execution: {execution_status: 'finished', exit_status: {code: 'skipped'}},
         archiveFilename: '',
-        archiveKept: false,
-      } as unknown as SiteArchiveExportResult & {localPath?: string};
+      } as unknown as SiteArchiveExportResult & {localPath?: string; archiveKept?: boolean};
     }
 
     this.log(
@@ -179,25 +181,29 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     this.log(t('commands.job.export.dataUnits', 'Data units: {{dataUnits}}', {dataUnits: JSON.stringify(dataUnits)}));
 
+    const waitOptions: WaitForJobOptions = {
+      timeout: timeout ? timeout * 1000 : undefined,
+      onProgress: (exec, elapsed) => {
+        if (!this.jsonEnabled()) {
+          const elapsedSec = Math.floor(elapsed / 1000);
+          this.log(
+            t('commands.job.export.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
+              status: exec.execution_status,
+              elapsed: elapsedSec.toString(),
+            }),
+          );
+        }
+      },
+    };
+
     try {
-      const result = await this.operations.siteArchiveExportToPath(this.instance, dataUnits, output, {
-        keepArchive: keepArchive || noDownload,
-        extractZip: !zipOnly,
-        waitOptions: {
-          timeout: timeout ? timeout * 1000 : undefined,
-          onProgress: (exec, elapsed) => {
-            if (!this.jsonEnabled()) {
-              const elapsedSec = Math.floor(elapsed / 1000);
-              this.log(
-                t('commands.job.export.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.execution_status,
-                  elapsed: elapsedSec.toString(),
-                }),
-              );
-            }
-          },
-        },
-      });
+      const result: SiteArchiveExportResult & {localPath?: string; archiveKept?: boolean} = noDownload
+        ? await this.operations.siteArchiveExport(this.instance, dataUnits, {waitOptions})
+        : await this.operations.siteArchiveExportToPath(this.instance, dataUnits, output, {
+            keepArchive,
+            extractZip: !zipOnly,
+            waitOptions,
+          });
 
       const durationSec = result.execution.duration ? (result.execution.duration / 1000).toFixed(1) : 'N/A';
       this.log(
@@ -215,7 +221,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         );
       }
 
-      if (result.archiveKept) {
+      if (noDownload || result.archiveKept) {
         this.log(
           t('commands.job.export.archiveKept', 'Archive kept at: Impex/src/instance/{{filename}}', {
             filename: result.archiveFilename,

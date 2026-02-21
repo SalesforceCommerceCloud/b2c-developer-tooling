@@ -90,7 +90,12 @@ export type {
 } from './run.js';
 
 // Site archive import/export
-export {siteArchiveImport, siteArchiveExport, siteArchiveExportToPath} from './site-archive.js';
+export {
+  siteArchiveImport,
+  siteArchiveExport,
+  siteArchiveExportToBuffer,
+  siteArchiveExportToPath,
+} from './site-archive.js';
 
 export type {
   SiteArchiveImportOptions,

@@ -112,12 +112,11 @@ describe('job export', () => {
     expect(result.execution.exit_status.code).to.equal('skipped');
   });
 
-  it('passes keepArchive when --no-download is set', async () => {
+  it('calls siteArchiveExport (not siteArchiveExportToPath) when --no-download is set', async () => {
     const command: any = await createCommand({
       output: './export',
       'global-data': 'meta_data',
       'no-download': true,
-      'zip-only': true,
       json: true,
     });
     stubCommon(command);
@@ -128,15 +127,18 @@ describe('job export', () => {
     const exportStub = sinon.stub().resolves({
       execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
       archiveFilename: 'a.zip',
-      archiveKept: true,
     });
-    command.operations = {...command.operations, siteArchiveExportToPath: exportStub};
+    const exportToPathStub = sinon.stub().rejects(new Error('Should not be called'));
+    command.operations = {
+      ...command.operations,
+      siteArchiveExport: exportStub,
+      siteArchiveExportToPath: exportToPathStub,
+    };
 
     await command.run();
 
-    const options = exportStub.getCall(0).args[3];
-    expect(options.keepArchive).to.equal(true);
-    expect(options.extractZip).to.equal(false);
+    expect(exportStub.calledOnce).to.equal(true);
+    expect(exportToPathStub.called).to.equal(false);
   });
 
   it('shows job log and errors on JobExecutionError when show-log is true', async () => {
