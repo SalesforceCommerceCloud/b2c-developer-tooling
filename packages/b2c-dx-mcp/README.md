@@ -1,8 +1,8 @@
-# Salesforce Commerce Cloud B2C MCP Server
+# Salesforce B2C Commerce MCP Server
 
-MCP (Model Context Protocol) server for Salesforce B2C Commerce Cloud developer experience tools.
+MCP (Model Context Protocol) server for Salesforce B2C Commerce developer experience tools.
 
-> ⚠️ **Active Development**: This package is under active development. All tools are currently **placeholder implementations** that return mock responses. Tool implementations will be added incrementally.
+> ⚠️ **Active Development**: This package is under active development. Some tools are currently **placeholder implementations** that return mock responses. Tool implementations will be added incrementally.
 
 ## Overview
 
@@ -73,7 +73,7 @@ Override auto-discovery by specifying toolsets explicitly:
 
 AI assistants (like Cursor, Claude Desktop) automatically decide which MCP tools to use based on your prompts. To get the best results, use clear, specific prompts that describe what you want to accomplish.
 
-> ⚠️ **IMPORTANT**: **Explicitly mention "Use the MCP tool"** in your prompts for reliable tool usage. While AI assistants (like Cursor's Composer) can automatically select MCP tools based on context, explicit instructions ensure the assistant prioritizes MCP tools over general knowledge, especially when multiple approaches are possible. This is particularly important for getting project-specific, up-to-date information rather than generic responses.
+> ⚠️ **IMPORTANT**: **Explicitly mention "Use the MCP tool"** in your prompts for reliable tool usage. While AI assistants (like Cursor's Composer) can automatically select MCP tools based on context, explicit instructions ensure that the assistant prioritizes MCP tools over general knowledge, especially when multiple approaches are possible. This is particularly important for getting project-specific, up-to-date information rather than generic responses.
 
 #### Best Practices
 
@@ -435,7 +435,7 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 }
 ```
 
-> **Note:** Make sure the script is executable: `chmod +x /full/path/to/packages/b2c-dx-mcp/bin/dev.js`
+> **Note:** Make sure that the script is executable: `chmod +x /full/path/to/packages/b2c-dx-mcp/bin/dev.js`
 >
 > The script's shebang (`#!/usr/bin/env -S node --conditions development`) handles Node.js setup automatically.
 

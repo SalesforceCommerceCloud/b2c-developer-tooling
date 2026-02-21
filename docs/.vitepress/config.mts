@@ -58,6 +58,15 @@ const guideSidebar = [
     ],
   },
   {
+    text: 'MCP Server',
+    items: [
+      {text: 'Overview', link: '/mcp/'},
+      {text: 'Installation', link: '/mcp/installation'},
+      {text: 'Configuration', link: '/mcp/configuration'},
+      {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
+    ],
+  },
+  {
     text: 'Extending',
     items: [
       {text: 'Custom Plugins', link: '/guide/extending'},
@@ -87,6 +96,16 @@ const guideSidebar = [
       {text: 'Auth Commands', link: '/cli/auth'},
       {text: 'Account Manager Commands', link: '/cli/account-manager'},
       {text: 'Logging', link: '/cli/logging'},
+    ],
+  },
+  {
+    text: 'Tools Reference',
+    items: [
+      {text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'},
+      {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
+      {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
+      {text: 'scapi_custom_apis_status', link: '/mcp/tools/scapi-custom-apis-status'},
+      {text: 'storefront_next_page_designer_decorator', link: '/mcp/tools/storefront-next-page-designer-decorator'},
     ],
   },
 ];
@@ -138,6 +157,7 @@ export default defineConfig({
     nav: [
       {text: 'Guide', link: '/guide/'},
       {text: 'CLI Reference', link: '/cli/'},
+      {text: 'MCP Server', link: '/mcp/'},
       {text: 'API Reference', link: '/api/'},
       {
         text: isReleaseBuild ? 'Latest Release' : 'dev',
@@ -153,6 +173,7 @@ export default defineConfig({
     sidebar: {
       '/guide/': guideSidebar,
       '/cli/': guideSidebar,
+      '/mcp/': guideSidebar,
       '/api/': [
         {
           text: 'API Reference',
