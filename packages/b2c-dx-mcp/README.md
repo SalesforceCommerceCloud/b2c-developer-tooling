@@ -22,16 +22,14 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
 
 > **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
 
-<!-- TODO: Update command to use npx once published to npm -->
-
 **Cursor** (supports `${workspaceFolder}`):
 
 ```json
 {
   "mcpServers": {
     "b2c-dx": {
-      "command": "node",
-      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }
@@ -43,8 +41,8 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
 {
   "mcpServers": {
     "b2c-dx": {
-      "command": "node",
-      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
     }
   }
 }
