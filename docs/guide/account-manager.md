@@ -4,7 +4,7 @@ description: Manage Account Manager users, roles, organizations, and API clients
 
 # Account Manager Guide
 
-The B2C CLI provides commands for managing Account Manager resources--users, roles, organizations, and API clients--directly from the terminal. This guide covers authentication setup, common workflows, and CI/CD automation.
+The B2C CLI provides commands for managing Account Manager resources&mdash;users, roles, organizations, and API clients&mdash;directly from the terminal. This guide covers authentication setup, common workflows, and CI/CD automation.
 
 ::: tip
 For the full command reference with all flags and options, see [Account Manager Commands](/cli/account-manager).
@@ -12,7 +12,7 @@ For the full command reference with all flags and options, see [Account Manager 
 
 ## Authentication
 
-Account Manager commands work out of the box--no configuration is required. The CLI uses a built--in public client that authenticates via browser login. For automation, you can provide your own API client credentials.
+Account Manager commands work out of the box&mdash;no configuration is required. The CLI uses a built&mdash;in public client that authenticates via browser login. For automation, you can provide your own API client credentials.
 
 ### Zero-Config (Default)
 
@@ -110,7 +110,7 @@ export SFCC_CLIENT_SECRET=your-client-secret
 ```
 
 ::: tip
-Store the client secret in your CI/CD system's secrets manager—-never commit it to source control.
+Store the client secret in your CI/CD system's secrets manager&mdash;never commit it to source control.
 :::
 
 ## Common Workflows
