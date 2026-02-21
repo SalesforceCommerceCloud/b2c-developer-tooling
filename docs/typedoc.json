@@ -1,0 +1,37 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "../packages/b2c-tooling-sdk/src/config/index.ts",
+    "../packages/b2c-tooling-sdk/src/auth/index.ts",
+    "../packages/b2c-tooling-sdk/src/clients/index.ts",
+    "../packages/b2c-tooling-sdk/src/instance/index.ts",
+    "../packages/b2c-tooling-sdk/src/logging/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/code/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/cip/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/jobs/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/logs/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/mrt/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/ods/index.ts",
+    "../packages/b2c-tooling-sdk/src/scaffold/index.ts",
+    "../packages/b2c-tooling-sdk/src/docs/index.ts",
+    "../packages/b2c-tooling-sdk/src/schemas/index.ts",
+    "../packages/b2c-tooling-sdk/src/cli/index.ts",
+    "../packages/b2c-tooling-sdk/src/i18n/index.ts"
+  ],
+  "exclude": ["**/*.generated.ts"],
+  "out": "./api",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "tsconfig": "../packages/b2c-tooling-sdk/tsconfig.json",
+  "readme": "./api-readme.md",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "githubPages": false,
+  "entryPointStrategy": "resolve",
+  "docsRoot": ".",
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  }
+}

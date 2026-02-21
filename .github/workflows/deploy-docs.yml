@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -54,20 +54,44 @@ jobs:
       - name: Get latest release tag
         id: release
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          # Find the most recent package tag and docs tag
+          PKG_TAG=$(git describe --tags --abbrev=0 --match '@salesforce/*' 2>/dev/null || echo "")
+          DOCS_TAG=$(git describe --tags --abbrev=0 --match 'docs@*' 2>/dev/null || echo "")
+
+          # Pick whichever tag is closer to HEAD (fewer commits behind)
+          LATEST_TAG=""
+          if [[ -n "$PKG_TAG" && -n "$DOCS_TAG" ]]; then
+            PKG_DISTANCE=$(git rev-list --count "${PKG_TAG}..HEAD")
+            DOCS_DISTANCE=$(git rev-list --count "${DOCS_TAG}..HEAD")
+            if [[ "$DOCS_DISTANCE" -le "$PKG_DISTANCE" ]]; then
+              LATEST_TAG="$DOCS_TAG"
+            else
+              LATEST_TAG="$PKG_TAG"
+            fi
+          elif [[ -n "$PKG_TAG" ]]; then
+            LATEST_TAG="$PKG_TAG"
+          elif [[ -n "$DOCS_TAG" ]]; then
+            LATEST_TAG="$DOCS_TAG"
+          fi
+
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
           echo "exists=$([[ -n $LATEST_TAG ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
-      - name: Build main documentation
-        run: pnpm run docs:build
-        env:
-          RELEASE_VERSION: ${{ steps.release.outputs.tag }}
+      - name: Read CLI version for display
+        id: cli-version
+        run: |
+          CLI_VERSION=$(node -p "require('./packages/b2c-cli/package.json').version")
+          echo "version=$CLI_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build release documentation
+      - name: Build dev documentation
+        run: |
+          IS_DEV_BUILD=true RELEASE_VERSION=${{ steps.cli-version.outputs.version }} pnpm run docs:build
+          mv docs/.vitepress/dist docs/.vitepress/dist-dev
+
+      - name: Build stable documentation from release tag
         if: steps.release.outputs.exists == 'true'
         run: |
-          # Save main build and config (config has version dropdown code)
-          mv docs/.vitepress/dist docs/.vitepress/dist-main
+          # Save config from main (has version dropdown and dynamic base path)
           cp docs/.vitepress/config.mts /tmp/config.mts
 
           # Remove S3-extracted uxstudio files before checkout to avoid conflicts
@@ -87,14 +111,17 @@ jobs:
           # Restore config from main (has version dropdown and dynamic base path)
           cp /tmp/config.mts docs/.vitepress/config.mts
 
-          # Build at release tag with main's config
+          # Build at release tag with main's config (no IS_DEV_BUILD = stable at root)
           pnpm install --frozen-lockfile
           pnpm -r run build
-          RELEASE_VERSION=${{ steps.release.outputs.tag }} IS_RELEASE_BUILD=true pnpm run docs:build
+          RELEASE_VERSION=${{ steps.cli-version.outputs.version }} pnpm run docs:build
 
-          # Combine: main at root, release in /release/
-          mv docs/.vitepress/dist docs/.vitepress/dist-main/release
-          mv docs/.vitepress/dist-main docs/.vitepress/dist
+          # Combine: stable at root, dev in /dev/
+          mv docs/.vitepress/dist-dev docs/.vitepress/dist/dev
+
+      - name: Use dev as root when no release exists
+        if: steps.release.outputs.exists != 'true'
+        run: mv docs/.vitepress/dist-dev docs/.vitepress/dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
