@@ -11,6 +11,7 @@ import {
   JobExecutionError,
   type SiteArchiveExportResult,
   type ExportDataUnitsConfiguration,
+  type WaitForJobOptions,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -180,9 +181,9 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     this.log(t('commands.job.export.dataUnits', 'Data units: {{dataUnits}}', {dataUnits: JSON.stringify(dataUnits)}));
 
-    const waitOptions = {
+    const waitOptions: WaitForJobOptions = {
       timeout: timeout ? timeout * 1000 : undefined,
-      onProgress: (exec: {execution_status: string}, elapsed: number) => {
+      onProgress: (exec, elapsed) => {
         if (!this.jsonEnabled()) {
           const elapsedSec = Math.floor(elapsed / 1000);
           this.log(
