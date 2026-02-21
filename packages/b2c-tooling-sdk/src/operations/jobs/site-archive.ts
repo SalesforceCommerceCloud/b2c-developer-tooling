@@ -98,8 +98,9 @@ export async function siteArchiveImport(
     if (!archiveName) {
       throw new Error('archiveName is required when importing from a Buffer');
     }
-    zipFilename = archiveName.endsWith('.zip') ? archiveName : `${archiveName}.zip`;
-    archiveContent = target;
+    const baseName = archiveName.endsWith('.zip') ? archiveName.slice(0, -4) : archiveName;
+    zipFilename = `${baseName}.zip`;
+    archiveContent = await ensureArchiveStructure(target, baseName, logger);
   } else {
     // File path - check if directory or zip file
     const targetPath = target as string;
@@ -234,6 +235,62 @@ async function addDirectoryToZip(zipFolder: JSZip, dirPath: string): Promise<voi
       zipFolder.file(entry.name, content);
     }
   }
+}
+
+/**
+ * Ensures a zip buffer has the correct top-level directory structure required
+ * by B2C Commerce site archive import. The archive must contain a single
+ * top-level directory matching the archive name.
+ *
+ * If the zip is already correctly structured, the original buffer is returned.
+ * Otherwise, the contents are re-wrapped under the expected directory name.
+ */
+async function ensureArchiveStructure(
+  buffer: Buffer,
+  archiveDirName: string,
+  logger: ReturnType<typeof getLogger>,
+): Promise<Buffer> {
+  let zip: JSZip;
+  try {
+    zip = await JSZip.loadAsync(buffer);
+  } catch {
+    // If we can't parse the zip, pass it through as-is
+    logger.debug('Could not parse zip buffer for structure check; passing through as-is');
+    return buffer;
+  }
+
+  // Determine the unique top-level directory names
+  const topLevelEntries = new Set<string>();
+  for (const filePath of Object.keys(zip.files)) {
+    const topLevel = filePath.split('/')[0];
+    topLevelEntries.add(topLevel);
+  }
+
+  if (topLevelEntries.size === 1 && topLevelEntries.has(archiveDirName)) {
+    return buffer; // Already correctly structured
+  }
+
+  // Re-wrap all entries under archiveDirName/
+  logger.debug(
+    {archiveDirName, topLevelEntries: [...topLevelEntries]},
+    `Re-wrapping archive contents under ${archiveDirName}/`,
+  );
+
+  const newZip = new JSZip();
+  const rootFolder = newZip.folder(archiveDirName)!;
+
+  for (const [filePath, entry] of Object.entries(zip.files)) {
+    if (!entry.dir) {
+      const content = await entry.async('nodebuffer');
+      rootFolder.file(filePath, content);
+    }
+  }
+
+  return newZip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: {level: 9},
+  });
 }
 
 /**

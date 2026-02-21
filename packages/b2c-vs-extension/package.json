@@ -19,7 +19,9 @@
   },
   "activationEvents": [
     "onView:b2cWebdavExplorer",
+    "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
+    "onFileSystem:b2c-content",
     "onCommand:b2c-dx.openUI",
     "onCommand:b2c-dx.handleStorefrontNextCartridge",
     "onCommand:b2c-dx.promptAgent",
@@ -33,7 +35,7 @@
       "activitybar": [
         {
           "id": "b2c-dx",
-          "title": "B2C-DX WebDAV",
+          "title": "B2C-DX",
           "icon": "media/b2c-icon.svg"
         }
       ]
@@ -42,9 +44,15 @@
       "b2c-dx": [
         {
           "id": "b2cWebdavExplorer",
-          "name": "Browser",
+          "name": "WebDAV Browser",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C Commerce"
+        },
+        {
+          "id": "b2cContentExplorer",
+          "name": "Libraries",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C Commerce Content"
         }
       ]
     },
@@ -52,6 +60,10 @@
       {
         "view": "b2cWebdavExplorer",
         "contents": "No B2C Commerce instance configured.\n\nCreate a dw.json file in your workspace or set SFCC_* environment variables.\n\n[Refresh](command:b2c-dx.webdav.refresh)"
+      },
+      {
+        "view": "b2cContentExplorer",
+        "contents": "No content libraries configured.\n\nSet \"contentLibrary\" in dw.json or add a library manually.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
       }
     ],
     "commands": [
@@ -132,6 +144,60 @@
         "title": "Open as Workspace Folder",
         "icon": "$(root-folder-opened)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.addLibrary",
+        "title": "Add Library",
+        "icon": "$(add)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.removeLibrary",
+        "title": "Remove Library",
+        "icon": "$(remove)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.export",
+        "title": "Export",
+        "icon": "$(cloud-download)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.exportNoAssets",
+        "title": "Export without Assets",
+        "icon": "$(file-code)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.exportAssets",
+        "title": "Export Assets Only",
+        "icon": "$(file-media)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.filter",
+        "title": "Filter",
+        "icon": "$(filter)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.clearFilter",
+        "title": "Clear Filter",
+        "icon": "$(clear-all)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.import",
+        "title": "B2C-DX: Import Site Archive",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -139,6 +205,26 @@
         {
           "command": "b2c-dx.webdav.refresh",
           "when": "view == b2cWebdavExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.content.refresh",
+          "when": "view == b2cContentExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.content.addLibrary",
+          "when": "view == b2cContentExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.content.filter",
+          "when": "view == b2cContentExplorer && !b2cContentFilterActive",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.content.clearFilter",
+          "when": "view == b2cContentExplorer && b2cContentFilterActive",
           "group": "navigation"
         }
       ],
@@ -177,6 +263,26 @@
           "command": "b2c-dx.webdav.mountWorkspace",
           "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
           "group": "3_workspace@1"
+        },
+        {
+          "command": "b2c-dx.content.export",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "group": "1_export@1"
+        },
+        {
+          "command": "b2c-dx.content.exportNoAssets",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "group": "1_export@2"
+        },
+        {
+          "command": "b2c-dx.content.exportAssets",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "group": "1_export@3"
+        },
+        {
+          "command": "b2c-dx.content.removeLibrary",
+          "when": "view == b2cContentExplorer && viewItem == library",
+          "group": "2_manage@1"
         }
       ],
       "explorer/context": [
@@ -184,6 +290,11 @@
           "command": "b2c-dx.webdav.download",
           "when": "resourceScheme == b2c-webdav && !explorerResourceIsFolder",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.content.import",
+          "when": "explorerResourceIsFolder",
+          "group": "7_modification@9"
         }
       ]
     }
