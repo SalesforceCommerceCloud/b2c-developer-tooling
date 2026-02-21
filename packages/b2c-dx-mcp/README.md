@@ -30,7 +30,7 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
     "b2c-dx": {
       "command": "npx",
       "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
-     }
+    }
   }
 }
 ```
@@ -43,7 +43,7 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
     "b2c-dx": {
       "command": "npx",
       "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
-     }
+    }
   }
 }
 ```
