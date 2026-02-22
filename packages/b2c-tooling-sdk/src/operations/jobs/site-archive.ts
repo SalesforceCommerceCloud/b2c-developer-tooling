@@ -276,13 +276,19 @@ async function ensureArchiveStructure(
     `Re-wrapping archive contents under ${archiveDirName}/`,
   );
 
+  // When a single top-level directory exists with a different name, strip it
+  // to avoid nesting (e.g. newRoot/oldRoot/...).
+  const stripPrefix = topLevelEntries.size === 1 ? [...topLevelEntries][0] + '/' : undefined;
+
   const newZip = new JSZip();
   const rootFolder = newZip.folder(archiveDirName)!;
 
   for (const [filePath, entry] of Object.entries(zip.files)) {
     if (!entry.dir) {
       const content = await entry.async('nodebuffer');
-      rootFolder.file(filePath, content);
+      const adjustedPath =
+        stripPrefix && filePath.startsWith(stripPrefix) ? filePath.slice(stripPrefix.length) : filePath;
+      rootFolder.file(adjustedPath, content);
     }
   }
 

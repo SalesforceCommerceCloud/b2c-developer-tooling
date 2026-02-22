@@ -37,7 +37,7 @@ function parseContentUri(uri: vscode.Uri): ParsedContentUri {
 
 export function contentItemUri(libraryId: string, isSiteLibrary: boolean, contentId: string): vscode.Uri {
   const uriPath = isSiteLibrary ? `/site/${libraryId}/${contentId}.xml` : `/${libraryId}/${contentId}.xml`;
-  return vscode.Uri.parse(`${CONTENT_SCHEME}:${uriPath}`);
+  return vscode.Uri.from({scheme: CONTENT_SCHEME, path: uriPath});
 }
 
 /**

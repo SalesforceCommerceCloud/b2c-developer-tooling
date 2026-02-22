@@ -35,5 +35,10 @@ export function registerContentTree(context: vscode.ExtensionContext, configProv
 
   const commandDisposables = registerContentCommands(context, contentConfig, treeProvider, fsProvider);
 
+  configProvider.onDidReset(() => {
+    contentConfig.clearCache();
+    treeProvider.refresh();
+  });
+
   context.subscriptions.push(fsRegistration, treeView, ...commandDisposables);
 }

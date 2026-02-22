@@ -52,7 +52,7 @@ function uriToWebdavPath(uri: vscode.Uri): string {
 
 /** Build a b2c-webdav URI from a WebDAV path. */
 export function webdavPathToUri(webdavPath: string): vscode.Uri {
-  return vscode.Uri.parse(`${WEBDAV_SCHEME}:/${webdavPath}`);
+  return vscode.Uri.from({scheme: WEBDAV_SCHEME, path: `/${webdavPath}`});
 }
 
 function isStale(timestamp: number): boolean {
@@ -203,15 +203,26 @@ export class WebDavFileSystemProvider implements vscode.FileSystemProvider {
     }
   }
 
-  async writeFile(
-    uri: vscode.Uri,
-    content: Uint8Array,
-    _options: {create: boolean; overwrite: boolean},
-  ): Promise<void> {
+  async writeFile(uri: vscode.Uri, content: Uint8Array, options: {create: boolean; overwrite: boolean}): Promise<void> {
     const webdavPath = uriToWebdavPath(uri);
     const instance = this.configProvider.getInstance();
     if (!instance) {
       throw vscode.FileSystemError.Unavailable('No B2C Commerce instance configured');
+    }
+
+    // Honour create/overwrite flags per VS Code FileSystemProvider contract
+    let exists = false;
+    try {
+      await this.stat(uri);
+      exists = true;
+    } catch {
+      // stat throws FileNotFound when file doesn't exist
+    }
+    if (exists && !options.overwrite) {
+      throw vscode.FileSystemError.FileExists(uri);
+    }
+    if (!exists && !options.create) {
+      throw vscode.FileSystemError.FileNotFound(uri);
     }
 
     try {

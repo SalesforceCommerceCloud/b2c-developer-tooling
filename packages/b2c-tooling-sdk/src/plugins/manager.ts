@@ -25,6 +25,8 @@ export interface PluginHookOptions {
   instance?: string;
   /** Explicit config file path (if known) */
   configPath?: string;
+  /** Account Manager host override */
+  accountManagerHost?: string;
   /** CLI flags or equivalent options */
   flags?: Record<string, unknown>;
 }
@@ -38,6 +40,7 @@ export interface PluginHookOptions {
  */
 export class B2CPluginManager {
   private _initialized = false;
+  private _middlewareApplied = false;
   private _pluginNames: string[] = [];
   private _sourcesBefore: ConfigSource[] = [];
   private _sourcesAfter: ConfigSource[] = [];
@@ -84,6 +87,7 @@ export class B2CPluginManager {
             resolveOptions: {
               instance: hookOptions?.instance,
               configPath: hookOptions?.configPath,
+              accountManagerHost: hookOptions?.accountManagerHost,
             },
           };
           const result = await invokeHook<ConfigSourcesHookResult>(absPath, context, options, this.logger);
@@ -173,6 +177,9 @@ export class B2CPluginManager {
    * Registers collected middleware providers with the global registries.
    */
   applyMiddleware(): void {
+    if (this._middlewareApplied) return;
+    this._middlewareApplied = true;
+
     for (const provider of this._httpMiddleware) {
       globalMiddlewareRegistry.register(provider);
       this.logger?.debug(`Registered HTTP middleware provider: ${provider.name}`);
