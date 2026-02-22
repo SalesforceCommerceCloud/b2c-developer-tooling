@@ -1166,7 +1166,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   );
 
   registerWebDavTree(context, configProvider);
-  registerContentTree(context);
+  registerContentTree(context, configProvider);
 
   context.subscriptions.push(
     disposable,

@@ -5,21 +5,22 @@
  */
 
 import * as vscode from 'vscode';
+import type {B2CExtensionConfig} from '../config-provider.js';
 import {ContentConfigProvider} from './content-config.js';
 import {CONTENT_SCHEME, ContentFileSystemProvider} from './content-fs-provider.js';
 import {ContentTreeDataProvider} from './content-tree-provider.js';
 import {registerContentCommands} from './content-commands.js';
 
-export function registerContentTree(context: vscode.ExtensionContext): void {
-  const configProvider = new ContentConfigProvider();
-  const fsProvider = new ContentFileSystemProvider(configProvider);
+export function registerContentTree(context: vscode.ExtensionContext, configProvider: B2CExtensionConfig): void {
+  const contentConfig = new ContentConfigProvider(configProvider);
+  const fsProvider = new ContentFileSystemProvider(contentConfig);
 
   const fsRegistration = vscode.workspace.registerFileSystemProvider(CONTENT_SCHEME, fsProvider, {
     isCaseSensitive: true,
     isReadonly: false,
   });
 
-  const treeProvider = new ContentTreeDataProvider(configProvider);
+  const treeProvider = new ContentTreeDataProvider(contentConfig);
 
   const treeView = vscode.window.createTreeView('b2cContentExplorer', {
     treeDataProvider: treeProvider,
@@ -32,7 +33,7 @@ export function registerContentTree(context: vscode.ExtensionContext): void {
     treeView.description = filter ? `filter: ${filter}` : undefined;
   });
 
-  const commandDisposables = registerContentCommands(context, configProvider, treeProvider, fsProvider);
+  const commandDisposables = registerContentCommands(context, contentConfig, treeProvider, fsProvider);
 
   context.subscriptions.push(fsRegistration, treeView, ...commandDisposables);
 }
