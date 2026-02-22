@@ -5,7 +5,7 @@
  */
 import * as path from 'path';
 import * as vscode from 'vscode';
-import type {WebDavConfigProvider} from './webdav-config.js';
+import type {B2CExtensionConfig} from '../config-provider.js';
 
 export const WEBDAV_SCHEME = 'b2c-webdav';
 
@@ -82,7 +82,7 @@ export class WebDavFileSystemProvider implements vscode.FileSystemProvider {
   private statCache = new Map<string, CachedStat>();
   private dirCache = new Map<string, CachedDir>();
 
-  constructor(private configProvider: WebDavConfigProvider) {}
+  constructor(private configProvider: B2CExtensionConfig) {}
 
   watch(): vscode.Disposable {
     // WebDAV has no push notifications — return no-op disposable.

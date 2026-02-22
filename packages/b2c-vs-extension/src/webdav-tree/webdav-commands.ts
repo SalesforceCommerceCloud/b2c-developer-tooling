@@ -6,20 +6,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import type {WebDavConfigProvider} from './webdav-config.js';
+import type {B2CExtensionConfig} from '../config-provider.js';
 import {type WebDavFileSystemProvider, webdavPathToUri} from './webdav-fs-provider.js';
 import type {WebDavTreeDataProvider, WebDavTreeItem} from './webdav-tree-provider.js';
 
 export function registerWebDavCommands(
   _context: vscode.ExtensionContext,
-  configProvider: WebDavConfigProvider,
+  configProvider: B2CExtensionConfig,
   treeProvider: WebDavTreeDataProvider,
   fsProvider: WebDavFileSystemProvider,
 ): vscode.Disposable[] {
   const refresh = vscode.commands.registerCommand('b2c-dx.webdav.refresh', () => {
-    fsProvider.clearCache();
     configProvider.reset();
-    treeProvider.refresh();
   });
 
   const newFolder = vscode.commands.registerCommand('b2c-dx.webdav.newFolder', async (node: WebDavTreeItem) => {

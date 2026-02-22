@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as vscode from 'vscode';
-import type {WebDavConfigProvider} from './webdav-config.js';
+import type {B2CExtensionConfig} from '../config-provider.js';
 import {type WebDavFileSystemProvider, WEBDAV_ROOTS, webdavPathToUri} from './webdav-fs-provider.js';
 
 function formatFileSize(bytes: number | undefined): string {
@@ -57,7 +57,7 @@ export class WebDavTreeDataProvider implements vscode.TreeDataProvider<WebDavTre
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   constructor(
-    private configProvider: WebDavConfigProvider,
+    private configProvider: B2CExtensionConfig,
     private fsProvider: WebDavFileSystemProvider,
   ) {
     // Auto-refresh the tree when the FS provider fires change events
@@ -117,6 +117,11 @@ export class WebDavTreeDataProvider implements vscode.TreeDataProvider<WebDavTre
 
       return children;
     } catch (err) {
+      // Silently return empty for "not found" — happens when the tree re-expands
+      // after switching to a server where a previously-expanded path doesn't exist.
+      if (err instanceof vscode.FileSystemError && err.code === 'FileNotFound') {
+        return [];
+      }
       const message = err instanceof Error ? err.message : String(err);
       vscode.window.showErrorMessage(`WebDAV: Failed to list ${element.webdavPath}: ${message}`);
       return [];
