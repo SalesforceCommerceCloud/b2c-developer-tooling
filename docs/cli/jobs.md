@@ -275,9 +275,9 @@ In addition to [global flags](./index#global-flags):
 | `--site-data` | Site data types to export (comma-separated) | |
 | `--global-data` | Global data types to export (comma-separated) | |
 | `--catalog` | Catalog ID(s) to export (comma-separated) | |
-| `--pricebook` | Pricebook ID(s) to export (comma-separated) | |
+| `--price-book` | Pricebook ID(s) to export (comma-separated) | |
 | `--library` | Library ID(s) to export (comma-separated) | |
-| `--inventory` | Inventory list ID(s) to export (comma-separated) | |
+| `--inventory-list` | Inventory list ID(s) to export (comma-separated) | |
 | `--keep-archive`, `-k` | Keep archive on instance after download | `false` |
 | `--no-download` | Do not download archive (implies --keep-archive) | `false` |
 | `--zip-only` | Save as zip file without extracting | `false` |
