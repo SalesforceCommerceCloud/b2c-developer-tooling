@@ -11,6 +11,7 @@ import {
   MINIMAL_LIBRARY_XML,
   WILDCARD_ASSET_LIBRARY_XML,
   MISSING_LINK_LIBRARY_XML,
+  POSITION_LIBRARY_XML,
 } from './fixtures.js';
 
 describe('operations/content/library', () => {
@@ -423,6 +424,17 @@ describe('operations/content/library', () => {
       const ids = staticNodes.map((n) => n.id);
       expect(ids).to.include('/images/slide1.jpg');
       expect(ids).to.include('/images/slide2.jpg');
+    });
+  });
+
+  describe('content-link position sorting', () => {
+    it('should sort children by position rather than XML document order', async () => {
+      const library = await Library.parse(POSITION_LIBRARY_XML);
+      const page = library.tree.children.find((n) => n.id === 'ordered-page');
+      expect(page).to.exist;
+
+      const childIds = page!.children.map((n) => n.id);
+      expect(childIds).to.deep.equal(['comp-a', 'comp-b', 'comp-c', 'comp-d']);
     });
   });
 

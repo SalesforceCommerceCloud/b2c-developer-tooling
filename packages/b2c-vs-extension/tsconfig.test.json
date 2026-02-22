@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"module": "Node16",
+		"target": "ES2022",
+		"outDir": "out/test",
+		"lib": ["ES2022"],
+		"sourceMap": true,
+		"rootDir": "src/test",
+		"strict": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"include": ["src/test"]
+}

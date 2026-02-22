@@ -14,6 +14,7 @@ import * as path from 'node:path';
 import {WebDavClient} from '../../../src/clients/webdav.js';
 import {createOcapiClient} from '../../../src/clients/ocapi.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
+import JSZip from 'jszip';
 import {
   siteArchiveImport,
   siteArchiveExport,
@@ -266,6 +267,62 @@ describe('operations/jobs/site-archive', () => {
 
       expect(result.archiveKept).to.be.true;
       expect(deleteRequested).to.be.false;
+    });
+
+    it('should strip single existing top-level root when re-wrapping archive', async () => {
+      // Create a zip with a different top-level directory name
+      const srcZip = new JSZip();
+      srcZip.file('oldRoot/meta/system-objecttype-extensions.xml', '<metadata/>');
+      srcZip.file('oldRoot/sites/RefArch/site.xml', '<site/>');
+      const zipBuffer = await srcZip.generateAsync({type: 'nodebuffer'});
+
+      let uploadedZip: Buffer | null = null;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('Impex/src/instance/')) {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'DELETE') {
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
+        }),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
+          return HttpResponse.json({
+            id: 'exec-rewrap',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+          });
+        }),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-rewrap`, () => {
+          return HttpResponse.json({
+            id: 'exec-rewrap',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          });
+        }),
+      );
+
+      await siteArchiveImport(mockInstance, zipBuffer, {
+        archiveName: 'my-import',
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      expect(uploadedZip).to.not.be.null;
+
+      // Verify the uploaded archive has the correct structure:
+      // my-import/meta/... and my-import/sites/... (not my-import/oldRoot/...)
+      const resultZip = await JSZip.loadAsync(uploadedZip!);
+      const paths = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
+      expect(paths).to.include('my-import/meta/system-objecttype-extensions.xml');
+      expect(paths).to.include('my-import/sites/RefArch/site.xml');
+      // Ensure the old root was stripped
+      const hasOldRoot = paths.some((p) => p.includes('oldRoot'));
+      expect(hasOldRoot).to.be.false;
     });
 
     it('should throw error when archiveName is missing for Buffer', async () => {

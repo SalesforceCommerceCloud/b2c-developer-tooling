@@ -5,7 +5,6 @@
  */
 import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createOdsClient, createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
-import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {getPathKeys, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
@@ -15,21 +14,13 @@ import {promisify} from 'util';
 
 const execAsync = promisify(exec);
 
-/** Standard B2C Commerce WebDAV root directories. */
-const WEBDAV_ROOTS: Record<string, string> = {
-  IMPEX: 'Impex',
-  TEMP: 'Temp',
-  CARTRIDGES: 'Cartridges',
-  REALMDATA: 'Realmdata',
-  CATALOGS: 'Catalogs',
-  LIBRARIES: 'Libraries',
-  STATIC: 'Static',
-  LOGS: 'Logs',
-  SECURITYLOGS: 'Securitylogs',
-};
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {B2CExtensionConfig} from './config-provider.js';
+import {registerContentTree} from './content-tree/index.js';
+import {initializePlugins} from './plugins.js';
+import {registerWebDavTree} from './webdav-tree/index.js';
 
 /**
  * Recursively finds all files under dir whose names end with .json (metadata files).
@@ -79,31 +70,6 @@ function getOdsManagementWebviewContent(context: vscode.ExtensionContext, prefil
   const defaultRealm = prefill?.defaultRealm ?? '';
   html = html.replaceAll('__ODS_DEFAULT_REALM__', defaultRealm);
   return html;
-}
-
-const WEBDAV_ROOT_LABELS: Record<string, string> = {
-  impex: 'Impex directory (default)',
-  temp: 'Temporary files',
-  cartridges: 'Code cartridges',
-  realmdata: 'Realm data',
-  catalogs: 'Product catalogs',
-  libraries: 'Content libraries',
-  static: 'Static resources',
-  logs: 'Log files',
-  securitylogs: 'Security log files',
-};
-
-function getWebdavWebviewContent(
-  context: vscode.ExtensionContext,
-  roots: {key: string; path: string; label: string}[],
-): string {
-  const htmlPath = path.join(context.extensionPath, 'src', 'webdav.html');
-  const raw = fs.readFileSync(htmlPath, 'utf-8');
-  const rootsJson = JSON.stringify(roots);
-  return raw.replace(
-    'const roots = window.WEBDAV_ROOTS || [];',
-    `window.WEBDAV_ROOTS = ${rootsJson};\n      const roots = window.WEBDAV_ROOTS;`,
-  );
 }
 
 /** PascalCase for use in template content (class names, types, etc.). e.g. "first page" → "FirstPage" */
@@ -164,7 +130,7 @@ function renderTemplate(
     .replace(/\$\{regions\[0\]\.id\}/g, firstRegionId);
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
 
   try {
@@ -187,7 +153,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   try {
-    return activateInner(context, log);
+    return await activateInner(context, log);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
@@ -210,7 +176,15 @@ export function activate(context: vscode.ExtensionContext) {
   }
 }
 
-function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
+async function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
+  // Initialize b2c-cli plugins before registering commands/views.
+  // This ensures plugin config sources and middleware are available
+  // before the first resolveConfig() call. Failures are non-fatal.
+  await initializePlugins();
+
+  const configProvider = new B2CExtensionConfig(log);
+  context.subscriptions.push(configProvider);
+
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
     vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');
 
@@ -303,246 +277,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     }
   });
 
-  type WebDavPropfindEntry = {href: string; displayName?: string; contentLength?: number; isCollection?: boolean};
-
-  const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', async () => {
-    let workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-    if (!workingDirectory || workingDirectory === '/' || !fs.existsSync(workingDirectory)) {
-      workingDirectory = context.extensionPath;
-    }
-    const dwPath = findDwJson(workingDirectory);
-    const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
-
-    if (!config.hasB2CInstanceConfig()) {
-      vscode.window.showErrorMessage(
-        'B2C DX: No instance config. Configure SFCC_* env vars or dw.json in the workspace.',
-      );
-      return;
-    }
-
-    const roots = (Object.keys(WEBDAV_ROOTS) as string[]).map((key) => {
-      const pathVal = (WEBDAV_ROOTS as Record<string, string>)[key];
-      const keyLower = key.toLowerCase();
-      return {
-        key: keyLower,
-        path: pathVal,
-        label: WEBDAV_ROOT_LABELS[keyLower] ?? pathVal,
-      };
-    });
-
-    const panel = vscode.window.createWebviewPanel('b2c-dx-webdav', 'B2C WebDAV Browser', vscode.ViewColumn.One, {
-      enableScripts: true,
-    });
-    panel.webview.html = getWebdavWebviewContent(context, roots);
-
-    const instance = config.createB2CInstance() as {
-      webdav: {
-        propfind: (path: string, depth: '1') => Promise<WebDavPropfindEntry[]>;
-        mkcol: (path: string) => Promise<void>;
-        delete: (path: string) => Promise<void>;
-        put: (path: string, content: Buffer | Blob | string, contentType?: string) => Promise<void>;
-        get: (path: string) => Promise<ArrayBuffer>;
-      };
-    };
-
-    const getDisplayName = (e: WebDavPropfindEntry): string =>
-      e.displayName ?? e.href.split('/').filter(Boolean).at(-1) ?? e.href;
-
-    panel.webview.onDidReceiveMessage(
-      async (msg: {type: string; path?: string; name?: string; isCollection?: boolean}) => {
-        if (msg.type === 'listPath' && msg.path !== undefined) {
-          const listPath = msg.path as string;
-          try {
-            const entries = await instance.webdav.propfind(listPath, '1');
-            const normalizedPath = listPath.replace(/\/$/, '');
-            const filtered = entries.filter((entry: WebDavPropfindEntry) => {
-              const entryPath = decodeURIComponent(entry.href);
-              return !entryPath.endsWith(`/${normalizedPath}`) && !entryPath.endsWith(`/${normalizedPath}/`);
-            });
-            panel.webview.postMessage({
-              type: 'listResult',
-              path: listPath,
-              entries: filtered.map((e: WebDavPropfindEntry) => ({
-                name: getDisplayName(e),
-                isCollection: Boolean(e.isCollection),
-                contentLength: e.contentLength,
-              })),
-            });
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({
-              type: 'listResult',
-              path: listPath,
-              entries: [],
-              error: message,
-            });
-          }
-          return;
-        }
-        if (msg.type === 'requestMkdir' && msg.path !== undefined) {
-          const parentPath = msg.path as string;
-          const name = await vscode.window.showInputBox({
-            title: 'New folder',
-            prompt: parentPath ? `Create directory under ${parentPath}` : 'Create directory at root',
-            placeHolder: 'Folder name',
-            validateInput: (value: string) => {
-              const trimmed = value.trim();
-              if (!trimmed) return 'Enter a folder name';
-              if (/[\\/:*?"<>|]/.test(trimmed)) return 'Name cannot contain \\ / : * ? " < > |';
-              return null;
-            },
-          });
-          if (name === undefined) return;
-          const trimmed = name.trim();
-          if (!trimmed) return;
-          const fullPath = parentPath ? `${parentPath}/${trimmed}` : trimmed;
-          try {
-            await instance.webdav.mkcol(fullPath);
-            panel.webview.postMessage({type: 'mkdirResult', success: true, path: fullPath});
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({type: 'mkdirResult', success: false, error: message});
-          }
-          return;
-        }
-        if (msg.type === 'requestDelete' && msg.path !== undefined) {
-          const pathToDelete = msg.path as string;
-          const name = msg.name ?? pathToDelete.split('/').pop() ?? pathToDelete;
-          const isDir = msg.isCollection === true;
-          const detail = isDir ? 'This directory and its contents will be deleted.' : 'This file will be deleted.';
-          const choice = await vscode.window.showWarningMessage(
-            `Delete "${name}"? ${detail}`,
-            {modal: true},
-            'Delete',
-            'Cancel',
-          );
-          if (choice !== 'Delete') return;
-          try {
-            await instance.webdav.delete(pathToDelete);
-            panel.webview.postMessage({type: 'deleteResult', success: true});
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({type: 'deleteResult', success: false, error: message});
-          }
-          return;
-        }
-        if (msg.type === 'requestUpload' && msg.path !== undefined) {
-          const destPath = msg.path as string;
-          const uris = await vscode.window.showOpenDialog({
-            title: 'Select file to upload',
-            canSelectFiles: true,
-            canSelectMany: false,
-            canSelectFolders: false,
-          });
-          if (!uris?.length) return;
-          const uri = uris[0];
-          const fileName = path.basename(uri.fsPath);
-          const fullPath = destPath ? `${destPath}/${fileName}` : fileName;
-          try {
-            const content = fs.readFileSync(uri.fsPath);
-            const ext = path.extname(fileName).toLowerCase();
-            const mime: Record<string, string> = {
-              '.json': 'application/json',
-              '.xml': 'application/xml',
-              '.zip': 'application/zip',
-              '.js': 'application/javascript',
-              '.ts': 'application/typescript',
-              '.html': 'text/html',
-              '.css': 'text/css',
-              '.txt': 'text/plain',
-            };
-            const contentType = mime[ext];
-            await instance.webdav.put(fullPath, content, contentType);
-            panel.webview.postMessage({type: 'uploadResult', success: true, path: fullPath});
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({type: 'uploadResult', success: false, error: message});
-          }
-          return;
-        }
-        if (msg.type === 'requestFileContent' && msg.path !== undefined) {
-          const filePath = msg.path as string;
-          const fileName = msg.name ?? filePath.split('/').pop() ?? filePath;
-          const ext = path.extname(fileName).toLowerCase();
-          const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']);
-          const textExtensions = new Set([
-            '.json',
-            '.js',
-            '.ts',
-            '.mjs',
-            '.cjs',
-            '.html',
-            '.htm',
-            '.css',
-            '.xml',
-            '.txt',
-            '.md',
-            '.log',
-            '.yml',
-            '.yaml',
-            '.env',
-            '.sh',
-            '.bat',
-            '.csv',
-            '.isml',
-          ]);
-          const isImage = imageExtensions.has(ext);
-          const isText = textExtensions.has(ext) || ext === '';
-          try {
-            const buffer = await instance.webdav.get(filePath);
-            const arr = new Uint8Array(buffer);
-            if (isImage) {
-              const base64 = Buffer.from(arr).toString('base64');
-              const mime: Record<string, string> = {
-                '.png': 'image/png',
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.gif': 'image/gif',
-                '.webp': 'image/webp',
-                '.bmp': 'image/bmp',
-                '.ico': 'image/x-icon',
-                '.svg': 'image/svg+xml',
-              };
-              const contentType = mime[ext] ?? 'application/octet-stream';
-              panel.webview.postMessage({
-                type: 'fileContent',
-                path: filePath,
-                name: fileName,
-                kind: 'image',
-                contentType,
-                base64,
-              });
-            } else if (isText) {
-              const text = new TextDecoder('utf-8', {fatal: false}).decode(arr);
-              panel.webview.postMessage({
-                type: 'fileContent',
-                path: filePath,
-                name: fileName,
-                kind: 'text',
-                text,
-              });
-            } else {
-              panel.webview.postMessage({
-                type: 'fileContent',
-                path: filePath,
-                name: fileName,
-                kind: 'binary',
-                error: 'Binary file cannot be previewed.',
-              });
-            }
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            panel.webview.postMessage({
-              type: 'fileContent',
-              path: filePath,
-              name: fileName,
-              kind: 'error',
-              error: message,
-            });
-          }
-        }
-      },
-    );
+  const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', () => {
+    vscode.commands.executeCommand('b2cWebdavExplorer.focus');
   });
 
   function resolveStorefrontNextProjectDir(): string | undefined {
@@ -579,12 +315,10 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       {enableScripts: true},
     );
     let prefill: {tenantId: string; channelId: string; shortCode?: string} | undefined;
-    try {
-      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(workingDirectory);
-      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
-      const hostname = config.values.hostname;
-      const shortCode = config.values.shortCode;
+    const prefillConfig = configProvider.getConfig();
+    if (prefillConfig) {
+      const hostname = prefillConfig.values.hostname;
+      const shortCode = prefillConfig.values.shortCode;
       const firstPart = hostname && typeof hostname === 'string' ? (hostname.split('.')[0] ?? '') : '';
       const tenantId = firstPart ? firstPart.replace(/-/g, '_') : '';
       if (tenantId || shortCode) {
@@ -594,8 +328,6 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           shortCode: typeof shortCode === 'string' ? shortCode : undefined,
         };
       }
-    } catch {
-      // Prefill is optional; leave undefined if config fails
     }
     panel.webview.html = getScapiExplorerWebviewContent(context, prefill);
     panel.webview.onDidReceiveMessage(
@@ -613,9 +345,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         curlText?: string;
       }) => {
         const getConfig = () => {
-          const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-          const dwPath = findDwJson(workingDirectory);
-          return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+          const config = configProvider.getConfig();
+          if (!config) throw new Error('No B2C Commerce configuration found. Configure dw.json or SFCC_* env vars.');
+          return config;
         };
 
         if (msg.type === 'scapiFetchSchemas') {
@@ -998,9 +730,13 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           vscode.window.showErrorMessage('B2C DX: Tenant Id and Channel Id are required to create a SLAS client.');
           return;
         }
-        const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-        const dwPath = findDwJson(workingDirectory);
-        const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+        const config = configProvider.getConfig();
+        if (!config) {
+          vscode.window.showErrorMessage(
+            'B2C DX: No B2C Commerce configuration found. Configure dw.json or SFCC_* env vars.',
+          );
+          return;
+        }
         const shortCode = config.values.shortCode;
         if (!shortCode) {
           vscode.window.showErrorMessage(
@@ -1112,28 +848,23 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       {enableScripts: true},
     );
     let defaultRealm = '';
-    try {
-      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(workingDirectory);
-      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
-      // First part of hostname, e.g. 'zyoc' from 'zyoc-003.unified.demandware.net'
-      const hostname = config.values.hostname;
+    const odsConfig = configProvider.getConfig();
+    if (odsConfig) {
+      const hostname = odsConfig.values.hostname;
       const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
       defaultRealm = firstSegment.split('-')[0] ?? '';
-    } catch {
-      // leave defaultRealm empty
     }
     panel.webview.html = getOdsManagementWebviewContent(context, {defaultRealm});
 
-    async function getOdsConfig() {
-      const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(workingDirectory);
-      return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+    function getOdsConfig() {
+      const config = configProvider.getConfig();
+      if (!config) throw new Error('No B2C Commerce configuration found. Configure dw.json or SFCC_* env vars.');
+      return config;
     }
 
     async function fetchSandboxList(): Promise<{sandboxes: unknown[]; error?: string}> {
       try {
-        const config = await getOdsConfig();
+        const config = getOdsConfig();
         if (!config.hasOAuthConfig()) {
           return {sandboxes: [], error: 'OAuth credentials required. Set clientId and clientSecret in dw.json.'};
         }
@@ -1167,7 +898,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         if (msg.type === 'odsGetDefaultRealm') {
           let defaultRealm = '';
           try {
-            const config = await getOdsConfig();
+            const config = getOdsConfig();
             const hostname = config.values.hostname;
             const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
             defaultRealm = firstSegment.split('-')[0] ?? '';
@@ -1179,7 +910,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         }
         if (msg.type === 'odsSandboxClick' && msg.sandboxId) {
           try {
-            const config = await getOdsConfig();
+            const config = getOdsConfig();
             if (!config.hasOAuthConfig()) {
               panel.webview.postMessage({
                 type: 'odsSandboxDetailsError',
@@ -1220,7 +951,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         }
         if (msg.type === 'odsDeleteClick' && msg.sandboxId) {
           try {
-            const config = await getOdsConfig();
+            const config = getOdsConfig();
             if (!config.hasOAuthConfig()) {
               vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
               return;
@@ -1248,7 +979,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
         }
         if (msg.type === 'odsCreateSandbox' && msg.realm !== undefined && msg.ttl !== undefined) {
           try {
-            const config = await getOdsConfig();
+            const config = getOdsConfig();
             if (!config.hasOAuthConfig()) {
               vscode.window.showErrorMessage('B2C DX: OAuth credentials required for ODS. Configure dw.json.');
               return;
@@ -1366,10 +1097,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             vscode.window.showErrorMessage(message);
             return;
           }
-          const dwPath = findDwJson(projectDirectory);
-          const config = dwPath
-            ? resolveConfig({}, {configPath: dwPath})
-            : resolveConfig({}, {workingDirectory: projectDirectory});
+          const config = configProvider.resolveForDirectory(projectDirectory);
           if (!config.hasB2CInstanceConfig()) {
             const message =
               'B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.';
@@ -1436,6 +1164,9 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       });
     },
   );
+
+  registerWebDavTree(context, configProvider);
+  registerContentTree(context, configProvider);
 
   context.subscriptions.push(
     disposable,
