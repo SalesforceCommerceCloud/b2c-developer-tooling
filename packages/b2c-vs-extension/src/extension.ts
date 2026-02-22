@@ -5,7 +5,12 @@
  */
 import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createOdsClient, createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
-import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  resolveConfig,
+  type NormalizedConfig,
+  type ResolveConfigOptions,
+  type ResolvedB2CConfig,
+} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {getPathKeys, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
@@ -18,7 +23,23 @@ const execAsync = promisify(exec);
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {initializePlugins, getPluginConfigSources} from './plugins.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
+
+/**
+ * Resolves configuration with plugin sources automatically injected.
+ */
+function resolveConfigWithPlugins(
+  overrides: Partial<NormalizedConfig> = {},
+  options: ResolveConfigOptions = {},
+): ResolvedB2CConfig {
+  const {sourcesBefore, sourcesAfter} = getPluginConfigSources();
+  return resolveConfig(overrides, {
+    ...options,
+    sourcesBefore: [...sourcesBefore, ...(options.sourcesBefore ?? [])],
+    sourcesAfter: [...(options.sourcesAfter ?? []), ...sourcesAfter],
+  });
+}
 
 /**
  * Recursively finds all files under dir whose names end with .json (metadata files).
@@ -128,7 +149,7 @@ function renderTemplate(
     .replace(/\$\{regions\[0\]\.id\}/g, firstRegionId);
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
 
   try {
@@ -151,7 +172,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   try {
-    return activateInner(context, log);
+    return await activateInner(context, log);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
@@ -174,7 +195,12 @@ export function activate(context: vscode.ExtensionContext) {
   }
 }
 
-function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
+async function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
+  // Initialize b2c-cli plugins before registering commands/views.
+  // This ensures plugin config sources and middleware are available
+  // before the first resolveConfig() call. Failures are non-fatal.
+  await initializePlugins();
+
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
     vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');
 
@@ -307,8 +333,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     let prefill: {tenantId: string; channelId: string; shortCode?: string} | undefined;
     try {
       const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(workingDirectory);
-      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+      const config = resolveConfigWithPlugins({}, {workingDirectory});
       const hostname = config.values.hostname;
       const shortCode = config.values.shortCode;
       const firstPart = hostname && typeof hostname === 'string' ? (hostname.split('.')[0] ?? '') : '';
@@ -340,8 +365,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
       }) => {
         const getConfig = () => {
           const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-          const dwPath = findDwJson(workingDirectory);
-          return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+          return resolveConfigWithPlugins({}, {workingDirectory});
         };
 
         if (msg.type === 'scapiFetchSchemas') {
@@ -725,8 +749,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
           return;
         }
         const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-        const dwPath = findDwJson(workingDirectory);
-        const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+        const config = resolveConfigWithPlugins({}, {workingDirectory});
         const shortCode = config.values.shortCode;
         if (!shortCode) {
           vscode.window.showErrorMessage(
@@ -840,8 +863,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
     let defaultRealm = '';
     try {
       const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(workingDirectory);
-      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+      const config = resolveConfigWithPlugins({}, {workingDirectory});
       // First part of hostname, e.g. 'zyoc' from 'zyoc-003.unified.demandware.net'
       const hostname = config.values.hostname;
       const firstSegment = (hostname && typeof hostname === 'string' ? hostname : '').split('.')[0] ?? '';
@@ -853,8 +875,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
 
     async function getOdsConfig() {
       const workingDirectory = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? context.extensionPath;
-      const dwPath = findDwJson(workingDirectory);
-      return dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+      return resolveConfigWithPlugins({}, {workingDirectory});
     }
 
     async function fetchSandboxList(): Promise<{sandboxes: unknown[]; error?: string}> {
@@ -1092,10 +1113,7 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
             vscode.window.showErrorMessage(message);
             return;
           }
-          const dwPath = findDwJson(projectDirectory);
-          const config = dwPath
-            ? resolveConfig({}, {configPath: dwPath})
-            : resolveConfig({}, {workingDirectory: projectDirectory});
+          const config = resolveConfigWithPlugins({}, {workingDirectory: projectDirectory});
           if (!config.hasB2CInstanceConfig()) {
             const message =
               'B2C DX: No instance config for deploy. Configure SFCC_* env vars or dw.json in the project.';

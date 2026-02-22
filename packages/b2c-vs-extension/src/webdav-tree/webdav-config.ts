@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {findDwJson, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+import {getPluginConfigSources} from '../plugins.js';
 
 /**
  * Manages B2CInstance lifecycle for the WebDAV tree view.
@@ -45,8 +46,8 @@ export class WebDavConfigProvider {
       if (!workingDirectory || workingDirectory === '/' || !fs.existsSync(workingDirectory)) {
         workingDirectory = '';
       }
-      const dwPath = workingDirectory ? findDwJson(workingDirectory) : undefined;
-      const config = dwPath ? resolveConfig({}, {configPath: dwPath}) : resolveConfig({}, {workingDirectory});
+      const {sourcesBefore, sourcesAfter} = getPluginConfigSources();
+      const config = resolveConfig({}, {sourcesBefore, sourcesAfter, workingDirectory});
 
       if (!config.hasB2CInstanceConfig()) {
         this.configError = 'No B2C Commerce instance configured.';
