@@ -18,6 +18,7 @@ const execAsync = promisify(exec);
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {registerContentTree} from './content-tree/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
 
 /**
@@ -1164,6 +1165,8 @@ function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChann
   );
 
   registerWebDavTree(context);
+  registerContentTree(context);
+
 
   context.subscriptions.push(
     disposable,
