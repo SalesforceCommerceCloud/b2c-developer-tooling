@@ -1,5 +1,5 @@
 ---
-description: Developer experience tools for Salesforce Commerce Cloud B2C - CLI, MCP Server, and SDK for AI-assisted development, deployment, and automation.
+description: Developer experience tools for Salesforce B2C Commerce Cloud - CLI, MCP Server, and SDK for AI-assisted development, deployment, and automation.
 layout: home
 
 hero:

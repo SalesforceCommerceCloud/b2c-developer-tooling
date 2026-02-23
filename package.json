@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli-root",
   "version": "0.0.1-preview",
-  "description": "Salesforce Commerce Cloud B2C Command Line Tools",
+  "description": "Salesforce B2C Commerce Cloud Command Line Tools",
   "main": "index.js",
   "scripts": {
     "start": "pnpm --filter @salesforce/b2c-cli run dev",

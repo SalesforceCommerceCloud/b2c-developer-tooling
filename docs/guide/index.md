@@ -1,10 +1,10 @@
 ---
-description: Introduction to the B2C CLI, MCP Server, and SDK for Salesforce Commerce Cloud B2C code deployment, site management, and sandbox operations.
+description: Introduction to the B2C CLI, MCP Server, and SDK for Salesforce B2C Commerce Cloud code deployment, site management, and sandbox operations.
 ---
 
 # Introduction
 
-The B2C Developer Tooling provides command-line and AI-assisted development tools for Salesforce Commerce Cloud B2C.
+The B2C Developer Tooling provides command-line and AI-assisted development tools for Salesforce B2C Commerce Cloud.
 
 - **B2C CLI**: Command-line interface that you can use to deploy code, manage sandboxes, run jobs, and so on from the terminal.
 - **MCP Server**: AI-assisted development tools for Cursor, Claude Desktop, and other AI assistants.

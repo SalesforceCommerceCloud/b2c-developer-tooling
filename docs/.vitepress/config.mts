@@ -136,7 +136,7 @@ document.addEventListener('click', (e) => {
 
 export default defineConfig({
   title: 'B2C DX',
-  description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
+  description: 'Salesforce B2C Commerce Cloud Developer Experience - CLI, MCP Server, and SDK',
   base: basePath,
 
   head: [['script', {}, versionSwitchScript]],
