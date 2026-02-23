@@ -27,7 +27,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {createDeveloperGuidelinesTool} from './developer-guidelines.js';
-import {createPageDesignerDecoratorTool} from '../page-designer-decorator/index.js';
+import {createPageDesignerDecoratorTool} from './page-designer-decorator/index.js';
 
 /**
  * Common input type for placeholder tools.

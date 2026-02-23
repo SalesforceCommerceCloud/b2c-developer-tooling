@@ -237,7 +237,7 @@ Run the comprehensive Mocha test suite:
 
 ```bash
 cd packages/b2c-dx-mcp
-pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
+pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 The test suite covers:
@@ -248,7 +248,7 @@ The test suite covers:
 - Edge cases (no props, only complex props, optional props, union types, already decorated components)
 - Working directory resolution (from --working-directory flag or SFCC_WORKING_DIRECTORY env var via Services)
 
-See [`test/tools/page-designer-decorator/README.md`](../../../test/tools/page-designer-decorator/README.md) for detailed testing instructions.
+See [`test/tools/storefrontnext/page-designer-decorator/README.md`](../../../../test/tools/storefrontnext/page-designer-decorator/README.md) for detailed testing instructions.
 
 ## 🎓 Learning Resources
 

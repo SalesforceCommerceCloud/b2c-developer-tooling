@@ -5,13 +5,13 @@
  */
 
 import {expect} from 'chai';
-import {createPageDesignerDecoratorTool} from '../../../src/tools/page-designer-decorator/index.js';
-import {Services} from '../../../src/services.js';
-import type {ToolResult} from '../../../src/utils/types.js';
+import {createPageDesignerDecoratorTool} from '../../../../src/tools/storefrontnext/page-designer-decorator/index.js';
+import {Services} from '../../../../src/services.js';
+import type {ToolResult} from '../../../../src/utils/types.js';
 import {existsSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
-import {createMockResolvedConfig} from '../../test-helpers.js';
+import {createMockResolvedConfig} from '../../../test-helpers.js';
 
 /**
  * Helper to extract text from a ToolResult.
@@ -111,7 +111,7 @@ export default function ${componentName}({${propNames}}: ${componentName}Props) 
  * Tests use temporary directories and mock components to avoid dependencies
  * on real project files.
  */
-describe('tools/page-designer-decorator', () => {
+describe('tools/storefrontnext/page-designer-decorator', () => {
   let services: Services;
   let testDir: string;
   let originalCwd: string;

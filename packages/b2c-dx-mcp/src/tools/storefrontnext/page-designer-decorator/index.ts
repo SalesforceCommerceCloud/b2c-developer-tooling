@@ -8,8 +8,8 @@ import {z, type ZodRawShape} from 'zod';
 import {componentAnalyzer, generateTypeSuggestions, resolveComponent, type TypeSuggestion} from './analyzer.js';
 import {generateDecoratorCode, type AttributeContext, type MetadataContext} from './templates/decorator-generator.js';
 import {pageDesignerDecoratorRules} from './rules.js';
-import type {McpTool} from '../../utils/index.js';
-import type {Services} from '../../services.js';
+import type {McpTool} from '../../../utils/index.js';
+import type {Services} from '../../../services.js';
 
 // ============================================================================
 // SCHEMA DEFINITION
