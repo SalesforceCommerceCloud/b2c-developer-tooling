@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import SandboxList from '../../../src/commands/sandbox/list.js';
+import SandboxList, {COLUMNS} from '../../../src/commands/sandbox/list.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {runSilent} from '../../helpers/test-setup.js';
 
@@ -94,6 +94,44 @@ describe('sandbox list', () => {
       expect(columns).to.not.include('invalid');
       expect(columns).to.include('id');
       expect(columns).to.include('state');
+    });
+  });
+
+  describe('eol column formatting', () => {
+    const getEol = COLUMNS.eol.get;
+
+    it('returns "-" when eol is missing', () => {
+      expect(getEol({} as any)).to.equal('-');
+    });
+
+    it('returns YYYY-MM-DD when EOL is more than 24 hours away', () => {
+      const future = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      const result = getEol({eol: future} as any);
+      expect(result).to.match(/^\d{4}-\d{2}-\d{2}$/);
+    });
+
+    it('returns YYYY-MM-DD HH:mm when EOL is within 24 hours', () => {
+      const soon = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+      const result = getEol({eol: soon} as any);
+      expect(result).to.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+    });
+
+    it('returns YYYY-MM-DD HH:mm for an already-expired EOL', () => {
+      const past = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const result = getEol({eol: past} as any);
+      expect(result).to.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+    });
+
+    it('returns correct UTC time in YYYY-MM-DD HH:mm format', () => {
+      // Fixed timestamp: 2026-02-20T09:30:00Z — within 24h from now in the test
+      const eolTime = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes away
+      const d = new Date(eolTime);
+      const expectedDate = d.toISOString().slice(0, 10);
+      const expectedHH = String(d.getUTCHours()).padStart(2, '0');
+      const expectedMM = String(d.getUTCMinutes()).padStart(2, '0');
+
+      const result = getEol({eol: eolTime} as any);
+      expect(result).to.equal(`${expectedDate} ${expectedHH}:${expectedMM}`);
     });
   });
 
