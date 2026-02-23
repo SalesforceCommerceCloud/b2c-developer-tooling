@@ -12,11 +12,7 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
 - A B2C Commerce project (for project-specific toolsets)
 - MCP client (Cursor, Claude Desktop, or compatible client)
 
-## Installation Methods
-
-### Option 1: Published Package
-
-Once published to npm, you can use `npx`:
+## Install via npm (Recommended)
 
 ```json
 {
@@ -28,23 +24,6 @@ Once published to npm, you can use `npx`:
   }
 }
 ```
-
-### Option 2: Development Build (Local)
-
-For local development or testing, use the development build directly:
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "node",
-      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
-    }
-  }
-}
-```
-
-Replace `/path/to/packages/b2c-dx-mcp/bin/dev.js` with the actual path to your cloned repository.
 
 ## Cursor Configuration
 
@@ -220,44 +199,6 @@ If no B2C markers are found:
 
 Projects with multiple markers (e.g., cartridges + PWA Kit) get combined toolsets. For example:
 - Cartridges + PWA Kit → CARTRIDGES, PWAV3, MRT, SCAPI
-
-## Testing the MCP Server Locally
-
-### MCP Inspector
-
-Use MCP Inspector to browse tools and test them in a web UI:
-
-```bash
-cd packages/b2c-dx-mcp
-pnpm run inspect:dev
-```
-
-This runs TypeScript directly (no build needed). Open the localhost URL shown in the terminal, click **Connect**, then **List Tools** to see available tools.
-
-### IDE Integration
-
-Configure your IDE to use the local MCP server. Add this to your IDE's MCP configuration:
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx-local": {
-      "command": "node",
-      "args": [
-        "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
-        "--toolsets", "all",
-        "--allow-non-ga-tools"
-      ]
-    }
-  }
-}
-```
-
-> **Note:** When developing the B2C DX MCP package (`packages/b2c-dx-mcp`), use `node` with the path to `bin/dev.js` in args. Build to latest (`pnpm run build` from the repo root) so changes that require a rebuild are reflected when you run the server.
->
-> **Note:** Make sure the script is executable: `chmod +x /full/path/to/packages/b2c-dx-mcp/bin/dev.js`
->
-> **Note:** Restart the MCP server in your IDE to pick up code changes.
 
 ## Troubleshooting
 

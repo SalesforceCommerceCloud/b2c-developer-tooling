@@ -77,8 +77,8 @@ Use the MCP tool to push the bundle from ./dist directory to Managed Runtime.
 Returns a push result object containing:
 
 - `bundleId` - Unique identifier for the pushed bundle
-- `project` - MRT project slug
-- `environment` - Target environment (if deployed)
+- `projectSlug` - MRT project slug
+- `target` - Target environment (if deployed)
 - `deployed` - Whether the bundle was deployed (if `deploy: true`)
 - `message` - Deployment message (if provided)
 

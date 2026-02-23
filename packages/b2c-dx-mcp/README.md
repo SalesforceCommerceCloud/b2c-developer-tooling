@@ -90,7 +90,7 @@ AI assistants (like Cursor, Claude Desktop) automatically decide which MCP tools
 
 The `storefront_next_development_guidelines` tool provides critical architecture rules and best practices. **Use this tool first** when starting new Storefront Next development or when you need architecture guidance.
 
-**Good prompts:**
+**Prompt examples:**
 - ✅ "I'm new to Storefront Next. Use the MCP tool to show me the critical rules I need to know."
 - ✅ "I need to build a product detail page. Use the MCP tool to show me best practices for data fetching and component patterns."
 - ✅ "I need to build a checkout form with authentication and validation. Use the MCP tool to show me how to handle form submissions, authentication, and internationalized error messages."
@@ -114,7 +114,7 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 
 ##### PWA Kit Development
 
-**Good prompts:**
+**Prompt examples:**
 - ✅ "I'm starting a new PWA Kit project. Use the MCP tool to get the development guidelines."
 - ✅ "Use the MCP tool to create a new product listing page component in my PWA Kit project."
 - ✅ "Use the MCP tool to recommend React hooks for fetching product data in PWA Kit."
@@ -153,14 +153,14 @@ Get registration status of custom API endpoints deployed on the instance (remote
 
 ##### Cartridge Deployment
 
-**Good prompts:**
+**Prompt examples:**
 - ✅ "Use the MCP tool to deploy my cartridges to the sandbox instance."
 - ✅ "Use the MCP tool to deploy only the app_storefront_base cartridge to production."
 - ✅ "Use the MCP tool to deploy cartridges from the ./cartridges directory and reload the code version."
 
 ##### MRT Bundle Operations
 
-**Good prompts:**
+**Prompt examples:**
 - ✅ "Use the MCP tool to build and push my Storefront Next bundle to staging."
 - ✅ "Use the MCP tool to push the bundle from ./build directory to Managed Runtime."
 - ✅ "Use the MCP tool to deploy my PWA Kit or Storefront Next bundle to production with a deployment message."
