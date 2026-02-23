@@ -4,6 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import type {Library, LibraryNode} from '@salesforce/b2c-tooling-sdk/operations/content';
 import {siteArchiveImport, getJobLog, JobExecutionError} from '@salesforce/b2c-tooling-sdk';
 import JSZip from 'jszip';
@@ -149,11 +152,16 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Importing content to ${libraryId}...`},
         async () => {
-          const archiveName = `content-update-${Date.now()}`;
           const zip = new JSZip();
           zip.file(archivePath, xmlContent);
           const buffer = await zip.generateAsync({type: 'nodebuffer'});
-          await siteArchiveImport(instance, buffer, {archiveName});
+
+          // DEBUG: write archive to temp dir for inspection
+          const debugPath = path.join(os.tmpdir(), `content-update-${Date.now()}.zip`);
+          await fs.promises.writeFile(debugPath, buffer);
+          console.log(`[content-fs] Debug archive written to: ${debugPath}`);
+
+          await siteArchiveImport(instance, buffer);
         },
       );
     } catch (err) {

@@ -25,6 +25,7 @@ export function registerContentTree(context: vscode.ExtensionContext, configProv
   const treeView = vscode.window.createTreeView('b2cContentExplorer', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
+    canSelectMany: true,
   });
 
   // Show active filter in tree view description

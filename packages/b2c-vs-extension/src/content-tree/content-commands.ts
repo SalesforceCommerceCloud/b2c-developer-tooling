@@ -69,7 +69,7 @@ export function registerContentCommands(
   });
 
   async function runExport(
-    node: ContentTreeItem,
+    nodes: ContentTreeItem[],
     {offline, assetsOnly}: {offline: boolean; assetsOnly: boolean},
   ): Promise<void> {
     const instance = configProvider.getInstance();
@@ -77,6 +77,16 @@ export function registerContentCommands(
       vscode.window.showErrorMessage('No B2C Commerce instance configured.');
       return;
     }
+
+    // All selected nodes must be from the same library
+    const libraryId = nodes[0].libraryId;
+    const isSiteLibrary = nodes[0].isSiteLibrary;
+    if (nodes.some((n) => n.libraryId !== libraryId)) {
+      vscode.window.showErrorMessage('Cannot export content from different libraries at the same time.');
+      return;
+    }
+
+    const contentIds = nodes.map((n) => n.contentId);
 
     const dialogTitle = assetsOnly ? 'Select directory for static assets' : 'Select export directory';
     const folders = await vscode.window.showOpenDialog({
@@ -90,15 +100,16 @@ export function registerContentCommands(
 
     const outputPath = folders[0].fsPath;
     const label = assetsOnly ? 'static assets for' : offline ? '(without assets)' : '';
-    const progressTitle = `Exporting ${label ? `${label} ` : ''}${node.contentId}...`;
+    const itemLabel = contentIds.length === 1 ? contentIds[0] : `${contentIds.length} items`;
+    const progressTitle = `Exporting ${label ? `${label} ` : ''}${itemLabel}...`;
 
     let result;
     try {
       result = await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: progressTitle, cancellable: false},
         async (progress) => {
-          return exportContent(instance, [node.contentId], node.libraryId, outputPath, {
-            isSiteLibrary: node.isSiteLibrary,
+          return exportContent(instance, contentIds, libraryId, outputPath, {
+            isSiteLibrary,
             offline,
             onAssetProgress: (_asset, index, total) => {
               progress.report({
@@ -118,7 +129,7 @@ export function registerContentCommands(
     let msg: string;
     if (assetsOnly) {
       if (result.downloadedAssets.length === 0) {
-        vscode.window.showInformationMessage('No static assets found for this content item.');
+        vscode.window.showInformationMessage('No static assets found for the selected content.');
         return;
       }
       msg = `Downloaded ${result.downloadedAssets.length} static asset(s)`;
@@ -143,23 +154,32 @@ export function registerContentCommands(
     }
   }
 
-  const exportCmd = vscode.commands.registerCommand('b2c-dx.content.export', async (node: ContentTreeItem) => {
-    if (!node) return;
-    await runExport(node, {offline: false, assetsOnly: false});
-  });
-
-  const exportNoAssets = vscode.commands.registerCommand(
-    'b2c-dx.content.exportNoAssets',
-    async (node: ContentTreeItem) => {
-      if (!node) return;
-      await runExport(node, {offline: true, assetsOnly: false});
+  const exportCmd = vscode.commands.registerCommand(
+    'b2c-dx.content.export',
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
+      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+      if (!nodes.length) return;
+      await runExport(nodes, {offline: false, assetsOnly: false});
     },
   );
 
-  const exportAssets = vscode.commands.registerCommand('b2c-dx.content.exportAssets', async (node: ContentTreeItem) => {
-    if (!node) return;
-    await runExport(node, {offline: false, assetsOnly: true});
-  });
+  const exportNoAssets = vscode.commands.registerCommand(
+    'b2c-dx.content.exportNoAssets',
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
+      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+      if (!nodes.length) return;
+      await runExport(nodes, {offline: true, assetsOnly: false});
+    },
+  );
+
+  const exportAssets = vscode.commands.registerCommand(
+    'b2c-dx.content.exportAssets',
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
+      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+      if (!nodes.length) return;
+      await runExport(nodes, {offline: false, assetsOnly: true});
+    },
+  );
 
   const filter = vscode.commands.registerCommand('b2c-dx.content.filter', async () => {
     const current = treeProvider.getFilter();

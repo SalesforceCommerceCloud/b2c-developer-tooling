@@ -50,6 +50,14 @@ export interface SiteArchiveImportResult {
  * - A Buffer containing zip data
  * - A filename already on the instance (in Impex/src/instance/)
  *
+ * **Buffer handling:** When passing a Buffer, the `archiveName` option controls
+ * the contract:
+ * - **Without `archiveName`:** The buffer should contain archive entries without
+ *   a root directory (e.g. `libraries/mylib/library.xml`). The SDK generates
+ *   an archive name and wraps the contents under it.
+ * - **With `archiveName`:** The buffer must already be correctly structured with
+ *   `archiveName/` as the top-level directory. It is uploaded as-is.
+ *
  * @param instance - B2C instance to import to
  * @param target - Source to import (directory path, zip file path, Buffer, or remote filename)
  * @param options - Import options
@@ -64,9 +72,17 @@ export interface SiteArchiveImportResult {
  * // Import from a zip file
  * const result = await siteArchiveImport(instance, './export.zip');
  *
- * // Import from a buffer
- * const zipBuffer = await fs.promises.readFile('./export.zip');
- * const result = await siteArchiveImport(instance, zipBuffer, {
+ * // Import from a buffer (SDK wraps contents automatically)
+ * const zip = new JSZip();
+ * zip.file('libraries/mylib/library.xml', xmlContent);
+ * const buffer = await zip.generateAsync({type: 'nodebuffer'});
+ * const result = await siteArchiveImport(instance, buffer);
+ *
+ * // Import from a buffer with explicit archive name (caller owns structure)
+ * const zip = new JSZip();
+ * zip.file('my-import/libraries/mylib/library.xml', xmlContent);
+ * const buffer = await zip.generateAsync({type: 'nodebuffer'});
+ * const result = await siteArchiveImport(instance, buffer, {
  *   archiveName: 'my-import'
  * });
  *
@@ -94,13 +110,20 @@ export async function siteArchiveImport(
     zipFilename = target.remoteFilename;
     needsUpload = false;
   } else if (Buffer.isBuffer(target)) {
-    // Buffer - use provided archive name
-    if (!archiveName) {
-      throw new Error('archiveName is required when importing from a Buffer');
+    if (archiveName) {
+      // Caller provides name — buffer must already contain the correct
+      // top-level directory structure (archiveName/...).
+      const baseName = archiveName.endsWith('.zip') ? archiveName.slice(0, -4) : archiveName;
+      zipFilename = `${baseName}.zip`;
+      archiveContent = target;
+    } else {
+      // No name — SDK generates one and wraps the buffer contents under it.
+      // The buffer should contain archive entries without a root directory
+      // (e.g. libraries/mylib/library.xml, sites/RefArch/site.xml).
+      const archiveDirName = `import-${Date.now()}`;
+      zipFilename = `${archiveDirName}.zip`;
+      archiveContent = await wrapArchiveContents(target, archiveDirName, logger);
     }
-    const baseName = archiveName.endsWith('.zip') ? archiveName.slice(0, -4) : archiveName;
-    zipFilename = `${baseName}.zip`;
-    archiveContent = await ensureArchiveStructure(target, baseName, logger);
   } else {
     // File path - check if directory or zip file
     const targetPath = target as string;
@@ -238,47 +261,20 @@ async function addDirectoryToZip(zipFolder: JSZip, dirPath: string): Promise<voi
 }
 
 /**
- * Ensures a zip buffer has the correct top-level directory structure required
- * by B2C Commerce site archive import. The archive must contain a single
- * top-level directory matching the archive name.
+ * Wraps the contents of a zip buffer under a new top-level directory.
  *
- * If the zip is already correctly structured, the original buffer is returned.
- * Otherwise, the contents are re-wrapped under the expected directory name.
+ * The input buffer should contain archive entries without a root directory
+ * (e.g. `libraries/mylib/library.xml`). The output will have all entries
+ * nested under `archiveDirName/` (e.g. `archiveDirName/libraries/mylib/library.xml`).
  */
-async function ensureArchiveStructure(
+async function wrapArchiveContents(
   buffer: Buffer,
   archiveDirName: string,
   logger: ReturnType<typeof getLogger>,
 ): Promise<Buffer> {
-  let zip: JSZip;
-  try {
-    zip = await JSZip.loadAsync(buffer);
-  } catch {
-    // If we can't parse the zip, pass it through as-is
-    logger.debug('Could not parse zip buffer for structure check; passing through as-is');
-    return buffer;
-  }
+  const zip = await JSZip.loadAsync(buffer);
 
-  // Determine the unique top-level directory names
-  const topLevelEntries = new Set<string>();
-  for (const filePath of Object.keys(zip.files)) {
-    const topLevel = filePath.split('/')[0];
-    topLevelEntries.add(topLevel);
-  }
-
-  if (topLevelEntries.size === 1 && topLevelEntries.has(archiveDirName)) {
-    return buffer; // Already correctly structured
-  }
-
-  // Re-wrap all entries under archiveDirName/
-  logger.debug(
-    {archiveDirName, topLevelEntries: [...topLevelEntries]},
-    `Re-wrapping archive contents under ${archiveDirName}/`,
-  );
-
-  // When a single top-level directory exists with a different name, strip it
-  // to avoid nesting (e.g. newRoot/oldRoot/...).
-  const stripPrefix = topLevelEntries.size === 1 ? [...topLevelEntries][0] + '/' : undefined;
+  logger.debug({archiveDirName}, `Wrapping archive contents under ${archiveDirName}/`);
 
   const newZip = new JSZip();
   const rootFolder = newZip.folder(archiveDirName)!;
@@ -286,9 +282,7 @@ async function ensureArchiveStructure(
   for (const [filePath, entry] of Object.entries(zip.files)) {
     if (!entry.dir) {
       const content = await entry.async('nodebuffer');
-      const adjustedPath =
-        stripPrefix && filePath.startsWith(stripPrefix) ? filePath.slice(stripPrefix.length) : filePath;
-      rootFolder.file(adjustedPath, content);
+      rootFolder.file(filePath, content);
     }
   }
 

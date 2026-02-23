@@ -166,12 +166,25 @@ describe('operations/jobs/site-archive', () => {
       expect(uploadedZip).to.not.be.null;
     });
 
-    it('should import from a Buffer', async () => {
-      const zipBuffer = Buffer.from('PK\x03\x04test-data');
+    it('should import from a Buffer with archiveName (caller owns structure)', async () => {
+      // When archiveName is provided, the buffer is used as-is
+      const srcZip = new JSZip();
+      srcZip.file('buffer-import/libraries/mylib/library.xml', '<library/>');
+      const zipBuffer = await srcZip.generateAsync({type: 'nodebuffer'});
+
+      let uploadedZip: Buffer | null = null;
 
       server.use(
-        http.all(`${WEBDAV_BASE}/*`, async () => {
-          return new HttpResponse(null, {status: 201});
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('Impex/src/instance/')) {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'DELETE') {
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
         }),
         http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
           return HttpResponse.json({
@@ -196,7 +209,12 @@ describe('operations/jobs/site-archive', () => {
       });
 
       expect(result.execution.id).to.equal('exec-3');
-      expect(result.archiveFilename).to.include('buffer-import');
+      expect(result.archiveFilename).to.equal('buffer-import.zip');
+
+      // Buffer should be passed through as-is (no re-wrapping)
+      const resultZip = await JSZip.loadAsync(uploadedZip!);
+      const paths = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
+      expect(paths).to.include('buffer-import/libraries/mylib/library.xml');
     });
 
     it('should import from remote filename', async () => {
@@ -269,11 +287,10 @@ describe('operations/jobs/site-archive', () => {
       expect(deleteRequested).to.be.false;
     });
 
-    it('should strip single existing top-level root when re-wrapping archive', async () => {
-      // Create a zip with a different top-level directory name
+    it('should auto-wrap buffer contents when archiveName is omitted', async () => {
+      // Create a zip without a root directory (like the content FS provider does)
       const srcZip = new JSZip();
-      srcZip.file('oldRoot/meta/system-objecttype-extensions.xml', '<metadata/>');
-      srcZip.file('oldRoot/sites/RefArch/site.xml', '<site/>');
+      srcZip.file('libraries/mylib/library.xml', '<library/>');
       const zipBuffer = await srcZip.generateAsync({type: 'nodebuffer'});
 
       let uploadedZip: Buffer | null = null;
@@ -292,14 +309,14 @@ describe('operations/jobs/site-archive', () => {
         }),
         http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
           return HttpResponse.json({
-            id: 'exec-rewrap',
+            id: 'exec-wrap',
             execution_status: 'finished',
             exit_status: {code: 'OK'},
           });
         }),
-        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-rewrap`, () => {
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-wrap`, () => {
           return HttpResponse.json({
-            id: 'exec-rewrap',
+            id: 'exec-wrap',
             execution_status: 'finished',
             exit_status: {code: 'OK'},
             is_log_file_existing: false,
@@ -307,33 +324,19 @@ describe('operations/jobs/site-archive', () => {
         }),
       );
 
-      await siteArchiveImport(mockInstance, zipBuffer, {
-        archiveName: 'my-import',
+      const result = await siteArchiveImport(mockInstance, zipBuffer, {
         waitOptions: FAST_WAIT_OPTIONS,
       });
 
+      // SDK should auto-generate an import-{timestamp} archive name
+      expect(result.archiveFilename).to.match(/^import-\d+\.zip$/);
       expect(uploadedZip).to.not.be.null;
 
-      // Verify the uploaded archive has the correct structure:
-      // my-import/meta/... and my-import/sites/... (not my-import/oldRoot/...)
+      // Contents must be wrapped under the generated root directory
       const resultZip = await JSZip.loadAsync(uploadedZip!);
       const paths = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
-      expect(paths).to.include('my-import/meta/system-objecttype-extensions.xml');
-      expect(paths).to.include('my-import/sites/RefArch/site.xml');
-      // Ensure the old root was stripped
-      const hasOldRoot = paths.some((p) => p.includes('oldRoot'));
-      expect(hasOldRoot).to.be.false;
-    });
-
-    it('should throw error when archiveName is missing for Buffer', async () => {
-      const zipBuffer = Buffer.from('PK\x03\x04test-data');
-
-      try {
-        await siteArchiveImport(mockInstance, zipBuffer);
-        expect.fail('Should have thrown error');
-      } catch (error: any) {
-        expect(error.message).to.include('archiveName is required');
-      }
+      const archiveRoot = result.archiveFilename.replace(/\.zip$/, '');
+      expect(paths).to.include(`${archiveRoot}/libraries/mylib/library.xml`);
     });
 
     it('should throw JobExecutionError when import fails', async () => {
