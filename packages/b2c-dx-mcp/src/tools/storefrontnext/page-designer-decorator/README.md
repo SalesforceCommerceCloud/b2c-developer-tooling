@@ -241,6 +241,7 @@ pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.t
 ```
 
 The test suite covers:
+
 - Component discovery (name-based, kebab-case, nested, path-based, custom paths, name collisions)
 - Auto mode (basic, type inference, complex props exclusion, UI-only props exclusion, edge cases)
 - Interactive mode (all steps: analyze, select_props, configure_attrs, configure_regions, confirm_generation)

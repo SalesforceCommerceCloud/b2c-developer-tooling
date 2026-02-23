@@ -366,13 +366,64 @@ function handleConfigureRegionsStep(args: PageDesignerDecoratorInput, workspaceR
   };
 }
 
+function hasNonEmptyConfig(config: Record<string, unknown> | undefined): config is Record<string, unknown> {
+  return config !== null && config !== undefined && Object.keys(config).length > 0;
+}
+
+function buildAttributesFromProps(
+  selectedProps: string[],
+  props: {name: string; type: string; optional: boolean}[],
+  attributeConfig: Record<string, Record<string, unknown>>,
+): AttributeContext[] {
+  return selectedProps.flatMap((propName) => {
+    const prop = props.find((p) => p.name === propName);
+    if (!prop) return [];
+    const config = attributeConfig[propName];
+    return [
+      {
+        name: propName,
+        tsType: prop.type,
+        optional: prop.optional,
+        hasConfig: hasNonEmptyConfig(config),
+        config,
+      },
+    ];
+  });
+}
+
+function buildAttributesFromNewAttrs(
+  newAttributes: {name: string; required?: boolean}[],
+  attributeConfig: Record<string, Record<string, unknown>>,
+): AttributeContext[] {
+  return newAttributes.map((attr) => {
+    const config = attributeConfig[attr.name];
+    return {
+      name: attr.name,
+      tsType: 'string',
+      optional: !attr.required,
+      hasConfig: hasNonEmptyConfig(config),
+      config,
+    };
+  });
+}
+
+function resolveRegions(conversationContext: PageDesignerDecoratorInput['conversationContext']) {
+  const regionConfig = conversationContext?.regionConfig;
+  const enabled = Boolean(regionConfig?.enabled && regionConfig.regions?.length);
+  return {
+    hasRegions: enabled,
+    regions: enabled ? regionConfig!.regions! : [],
+    regionCount: enabled ? regionConfig!.regions!.length : 0,
+  };
+}
+
 function handleConfirmGenerationStep(args: PageDesignerDecoratorInput, workspaceRoot: string) {
   const {
     componentMetadata,
     selectedProps = [],
     newAttributes = [],
     attributeConfig = {},
-  } = args.conversationContext || {};
+  } = args.conversationContext ?? {};
 
   if (!componentMetadata) {
     return {
@@ -389,51 +440,25 @@ function handleConfirmGenerationStep(args: PageDesignerDecoratorInput, workspace
   const fullPath = resolveComponent(args.component, workspaceRoot, args.searchPaths);
   const componentInfo = componentAnalyzer.analyzeComponent(fullPath);
 
-  const attributes: AttributeContext[] = [];
+  const attributes = [
+    ...buildAttributesFromProps(selectedProps, componentInfo.props, attributeConfig),
+    ...buildAttributesFromNewAttrs(newAttributes, attributeConfig),
+  ];
 
-  for (const propName of selectedProps) {
-    const prop = componentInfo.props.find((p) => p.name === propName);
-    if (!prop) continue;
-
-    const config = attributeConfig[propName];
-    const hasConfig = config && Object.keys(config).length > 0;
-
-    attributes.push({
-      name: propName,
-      tsType: prop.type,
-      optional: prop.optional,
-      hasConfig,
-      config,
-    });
-  }
-
-  for (const attr of newAttributes) {
-    const config = attributeConfig[attr.name];
-    const hasConfig = config && Object.keys(config).length > 0;
-
-    attributes.push({
-      name: attr.name,
-      tsType: 'string',
-      optional: !attr.required,
-      hasConfig,
-      config,
-    });
-  }
-
-  const regionConfig = args.conversationContext?.regionConfig;
-  const hasRegions = regionConfig?.enabled && regionConfig.regions && regionConfig.regions.length > 0;
+  const {hasRegions, regions, regionCount} = resolveRegions(args.conversationContext);
+  const componentGroup = componentMetadata.group ?? 'odyssey_base';
 
   const context: MetadataContext = {
     needsImports: true,
     componentId: componentMetadata.id,
     componentName: componentMetadata.name,
     componentDescription: componentMetadata.description,
-    componentGroup: componentMetadata.group || 'odyssey_base',
+    componentGroup,
     metadataClassName: `${componentInfo.componentName}Metadata`,
     hasAttributes: attributes.length > 0,
-    hasRegions: hasRegions || false,
+    hasRegions,
     hasLoader: false,
-    regions: hasRegions ? regionConfig.regions || [] : [],
+    regions,
     attributes,
   };
 
@@ -443,11 +468,11 @@ function handleConfirmGenerationStep(args: PageDesignerDecoratorInput, workspace
     decoratorCode,
     componentName: componentInfo.componentName,
     componentId: componentMetadata.id,
-    componentGroup: componentMetadata.group || 'odyssey_base',
+    componentGroup,
     file: args.component,
     attributeCount: attributes.length,
-    hasRegions: hasRegions || false,
-    regionCount: hasRegions && regionConfig.regions ? regionConfig.regions.length : 0,
+    hasRegions,
+    regionCount,
   });
 
   return {
