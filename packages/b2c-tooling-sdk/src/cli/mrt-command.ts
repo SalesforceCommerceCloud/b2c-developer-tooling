@@ -44,11 +44,13 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       char: 'p',
       description: 'MRT project slug (or set mrtProject in dw.json)',
       env: 'SFCC_MRT_PROJECT',
+      default: async () => process.env.MRT_PROJECT || undefined,
     }),
     environment: Flags.string({
       char: 'e',
       description: 'MRT environment (e.g., staging, production; or set mrtEnvironment in dw.json)',
       env: 'SFCC_MRT_ENVIRONMENT',
+      default: async () => process.env.MRT_TARGET || undefined,
     }),
     'cloud-origin': Flags.string({
       description: `MRT cloud origin URL (or set mrtOrigin in dw.json; default: ${DEFAULT_MRT_ORIGIN})`,
