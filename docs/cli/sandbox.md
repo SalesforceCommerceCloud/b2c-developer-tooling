@@ -662,12 +662,12 @@ To run `b2c realm` commands, your user or API client must have **realm‑level a
 
 ### b2c realm list
 
-List realms eligible for sandbox management, optionally including a simple usage summary.
+List realms eligible for sandbox management.
 
 #### Usage
 
 ```bash
-b2c realm list [REALM] [--show-usage]
+b2c realm list [REALM]
 ```
 
 #### Arguments
