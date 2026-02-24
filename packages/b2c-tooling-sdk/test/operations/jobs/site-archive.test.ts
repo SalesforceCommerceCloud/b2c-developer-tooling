@@ -361,7 +361,9 @@ describe('operations/jobs/site-archive', () => {
       expect(content.toString()).to.include('test-export-data');
     });
 
-    it('should export without downloading when localPath is not provided', async () => {
+    it('should run export job without downloading the archive', async () => {
+      let webdavGetRequested = false;
+
       server.use(
         http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-export/executions`, () => {
           return HttpResponse.json({
@@ -379,13 +381,11 @@ describe('operations/jobs/site-archive', () => {
           });
         }),
         http.get(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
+          webdavGetRequested = true;
           return new HttpResponse(Buffer.from('PK\x03\x04test-data'), {
             status: 200,
             headers: {'Content-Type': 'application/zip'},
           });
-        }),
-        http.delete(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
-          return new HttpResponse(null, {status: 204});
         }),
       );
 
@@ -396,7 +396,8 @@ describe('operations/jobs/site-archive', () => {
       );
 
       expect(result.execution.id).to.equal('export-2');
-      expect(result.data).to.be.instanceOf(Buffer);
+      expect(webdavGetRequested).to.be.false;
+      expect(result).to.not.have.property('data');
     });
 
     it('should throw JobExecutionError when export fails', async () => {
@@ -448,15 +449,6 @@ describe('operations/jobs/site-archive', () => {
             exit_status: {code: 'OK'},
             is_log_file_existing: false,
           });
-        }),
-        http.get(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
-          return new HttpResponse(Buffer.from('PK\x03\x04test-data'), {
-            status: 200,
-            headers: {'Content-Type': 'application/zip'},
-          });
-        }),
-        http.delete(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
-          return new HttpResponse(null, {status: 204});
         }),
       );
 
