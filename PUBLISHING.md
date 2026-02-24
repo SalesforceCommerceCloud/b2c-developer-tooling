@@ -152,7 +152,7 @@ The documentation site serves two versions:
 - **Stable** (root URL) — built from the most recent release tag (across all branches)
 - **Dev** (`/dev/`) — built from `main`, updated on every push
 
-Stable docs are rebuilt after every stable or release branch publish. The `deploy-docs.yml` workflow finds the most recent release tag by creation date across all branches, so tags from release branches are picked up automatically.
+Stable docs are rebuilt after every stable or release branch publish. The `deploy-docs.yml` workflow builds from the highest semver release tag, so stable docs always reflect the latest release line. Maintenance patches on older minors do not affect stable docs.
 
 ## Local Testing
 
