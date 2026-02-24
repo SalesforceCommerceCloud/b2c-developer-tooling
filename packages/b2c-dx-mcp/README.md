@@ -2,7 +2,7 @@
 
 MCP (Model Context Protocol) server for Salesforce B2C Commerce Cloud developer experience tools.
 
-> ⚠️ **Active Development**: This package is under active development. All tools are currently **placeholder implementations** that return mock responses. Tool implementations will be added incrementally.
+> ⚠️ **Preview Release**: This package is in preview. Tools are functional but require `--allow-non-ga-tools` to enable. Additional tools will be added in future releases.
 
 ## Overview
 
@@ -90,7 +90,7 @@ AI assistants (like Cursor, Claude Desktop) automatically decide which MCP tools
 
 The `storefront_next_development_guidelines` tool provides critical architecture rules and best practices. **Use this tool first** when starting new Storefront Next development or when you need architecture guidance.
 
-**Good prompts:**
+**Example prompts:**
 - ✅ "I'm new to Storefront Next. Use the MCP tool to show me the critical rules I need to know."
 - ✅ "I need to build a product detail page. Use the MCP tool to show me best practices for data fetching and component patterns."
 - ✅ "I need to build a checkout form with authentication and validation. Use the MCP tool to show me how to handle form submissions, authentication, and internationalized error messages."
@@ -114,7 +114,7 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 
 ##### PWA Kit Development
 
-**Good prompts:**
+**Example prompts:**
 - ✅ "I'm starting a new PWA Kit project. Use the MCP tool to get the development guidelines."
 - ✅ "Use the MCP tool to create a new product listing page component in my PWA Kit project."
 - ✅ "Use the MCP tool to recommend React hooks for fetching product data in PWA Kit."
@@ -153,14 +153,14 @@ Get registration status of custom API endpoints deployed on the instance (remote
 
 ##### Cartridge Deployment
 
-**Good prompts:**
+**Example prompts:**
 - ✅ "Use the MCP tool to deploy my cartridges to the sandbox instance."
 - ✅ "Use the MCP tool to deploy only the app_storefront_base cartridge to production."
 - ✅ "Use the MCP tool to deploy cartridges from the ./cartridges directory and reload the code version."
 
 ##### MRT Bundle Operations
 
-**Good prompts:**
+**Example prompts:**
 - ✅ "Use the MCP tool to build and push my Storefront Next bundle to staging."
 - ✅ "Use the MCP tool to push the bundle from ./build directory to Managed Runtime."
 - ✅ "Use the MCP tool to deploy my PWA Kit or Storefront Next bundle to production with a deployment message."
@@ -183,6 +183,8 @@ Credentials can be provided via **config files** (recommended), **environment va
 | **MRT** | `api-key` + `project` (optionally `environment`) |
 | **PWAV3** | `--working-directory` only (+ MRT config for deployments) |
 | **STOREFRONTNEXT** | `--working-directory` only (+ MRT/CARTRIDGES config for those tools) |
+
+> **Note:** SCAPI and CARTRIDGES use the same `hostname` (your B2C instance). All B2C credentials are typically stored together in `dw.json`.
 
 **Option 1: Config files (recommended)**
 
@@ -254,7 +256,7 @@ See [Flag Reference](#flag-reference) for all available flags and env vars.
 
 Use `--toolsets all` to enable all toolsets, or select specific ones with `--toolsets CARTRIDGES,MRT`.
 
-> **Note:** All tools are currently placeholder implementations. Use `--allow-non-ga-tools` flag to enable them.
+> **Note:** Tools require `--allow-non-ga-tools` to enable (preview release).
 
 #### CARTRIDGES
 Cartridge development, deployment, and code version management.
@@ -274,17 +276,10 @@ Managed Runtime operations for PWA Kit and Storefront Next deployments.
 
 #### PWAV3
 PWA Kit v3 development tools for building headless storefronts.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access (PWA Kit-specific tools planned)
 
 | Tool | Description |
 |------|-------------|
-| `pwakit_create_storefront` | Create a new PWA Kit storefront project |
-| `pwakit_create_page` | Create a new page component in PWA Kit project |
-| `pwakit_create_component` | Create a new React component in PWA Kit project |
-| `pwakit_get_dev_guidelines` | Get PWA Kit development guidelines and best practices |
-| `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases |
-| `pwakit_run_site_test` | Run site tests for PWA Kit project |
-| `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
@@ -297,21 +292,15 @@ Salesforce Commerce API discovery and exploration.
 |------|-------------|
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
-| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API (not yet implemented) |
 
 #### STOREFRONTNEXT
 Storefront Next development tools for building modern storefronts.
-- **Status:** 🚧 Placeholder
+- **Status:** 🚧 Early Access
 
 | Tool | Description |
 |------|-------------|
 | `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices |
-| `storefront_next_site_theming` | Configure and manage site theming for Storefront Next |
-| `storefront_next_figma_to_component_workflow` | Convert Figma designs to Storefront Next components |
-| `storefront_next_generate_component` | Generate a new Storefront Next component |
-| `storefront_next_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
 | `storefront_next_page_designer_decorator` | Add Page Designer decorators to Storefront Next components |
-| `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
@@ -446,7 +435,7 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 Send raw MCP protocol messages:
 
 ```bash
-# List all tools (--allow-non-ga-tools required for placeholder tools)
+# List all tools (--allow-non-ga-tools required for preview tools)
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/dev.js --toolsets all --allow-non-ga-tools
 
 # Call a specific tool

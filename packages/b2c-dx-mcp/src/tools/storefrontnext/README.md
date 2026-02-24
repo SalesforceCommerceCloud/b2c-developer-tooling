@@ -201,15 +201,3 @@ The tool automatically searches for components in these locations (in order):
 Component discovery uses the working directory resolved from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.
-
-## Placeholder Tools
-
-The following tools are placeholders awaiting implementation:
-
-- `storefront_next_site_theming` - Configure and manage site theming for Storefront Next
-- `storefront_next_figma_to_component_workflow` - Convert Figma designs to Storefront Next components
-- `storefront_next_generate_component` - Generate a new Storefront Next component
-- `storefront_next_map_tokens_to_theme` - Map design tokens to Storefront Next theme configuration
-- `storefront_next_generate_page_designer_metadata` - Generate Page Designer metadata for Storefront Next components
-
-Use `--allow-non-ga-tools` flag to enable placeholder tools.

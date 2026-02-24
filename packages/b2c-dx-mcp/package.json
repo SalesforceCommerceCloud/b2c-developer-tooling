@@ -3,7 +3,7 @@
   "version": "0.4.1",
   "description": "MCP server for B2C Commerce Cloud developer experience tools",
   "author": "Salesforce",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "keywords": [
     "salesforce",
