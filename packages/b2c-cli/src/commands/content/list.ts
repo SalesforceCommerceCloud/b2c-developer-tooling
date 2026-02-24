@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Flags, ux} from '@oclif/core';
+import {Flags} from '@oclif/core';
+import {ux} from '@oclif/core';
 import {JobCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {fetchContentLibrary} from '@salesforce/b2c-tooling-sdk/operations/content';
 
