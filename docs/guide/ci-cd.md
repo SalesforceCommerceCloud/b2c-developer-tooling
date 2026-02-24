@@ -101,7 +101,7 @@ Combines setup and command execution. Pass a `command` to run a CLI command, or 
 | `version` | `latest` | CLI version to install |
 | `node-version` | `22` | Node.js version |
 | `json` | `true` | Parse JSON output |
-| `project-directory` | `.` | Project directory |
+| `working-directory` | `.` | Working directory |
 | Auth inputs | — | See [Authentication](#authentication) |
 
 ### Setup
@@ -143,7 +143,7 @@ Executes any CLI command. Pairs with the setup action.
 |-------|---------|-------------|
 | `command` | *(required)* | CLI command to run |
 | `json` | `true` | Append `--json` and parse output |
-| `project-directory` | `.` | Project directory |
+| `working-directory` | `.` | Working directory |
 
 ### Code Deploy
 
