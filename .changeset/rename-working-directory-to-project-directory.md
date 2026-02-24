@@ -1,6 +1,6 @@
 ---
-'@salesforce/b2c-cli': minor
-'@salesforce/b2c-tooling-sdk': minor
+'@salesforce/b2c-cli': patch
+'@salesforce/b2c-tooling-sdk': patch
 '@salesforce/b2c-dx-mcp': patch
 ---
 
