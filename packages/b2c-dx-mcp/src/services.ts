@@ -314,16 +314,16 @@ export class Services {
   }
 
   /**
-   * Get the project working directory.
+   * Get the project project directory.
    * Falls back to process.cwd() if not explicitly set.
    *
    * This is the directory where the project is located, which may differ from process.cwd()
    * when MCP clients spawn servers from a different location (e.g., home directory).
    *
-   * @returns Project working directory path
+   * @returns Project project directory path
    */
   public getWorkingDirectory(): string {
-    return this.resolvedConfig.values.workingDirectory ?? process.cwd();
+    return this.resolvedConfig.values.projectDirectory ?? process.cwd();
   }
 
   /**

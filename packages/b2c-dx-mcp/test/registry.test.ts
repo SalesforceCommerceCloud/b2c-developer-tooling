@@ -136,7 +136,7 @@ describe('registry', () => {
       const server = createMockServer();
       // Use a workspace path that won't match any patterns (should fall back to SCAPI)
       const flags: StartupFlags = {
-        workingDirectory: '/nonexistent/path',
+        projectDirectory: '/nonexistent/path',
         allowNonGaTools: true,
       };
 
@@ -359,10 +359,10 @@ describe('registry', () => {
     });
 
     describe('auto-discovery', () => {
-      it('should use workingDirectory from flags for detection', async () => {
+      it('should use projectDirectory from flags for detection', async () => {
         const server = createMockServer();
         const flags: StartupFlags = {
-          workingDirectory: '/some/workspace',
+          projectDirectory: '/some/workspace',
           allowNonGaTools: true,
         };
 
@@ -378,7 +378,7 @@ describe('registry', () => {
         // Use a path that doesn't exist - detection will return 'unknown' project type
         // which maps to SCAPI toolset
         const flags: StartupFlags = {
-          workingDirectory: '/nonexistent',
+          projectDirectory: '/nonexistent',
           allowNonGaTools: true,
         };
 
@@ -393,7 +393,7 @@ describe('registry', () => {
         const server = createMockServer();
         const flags: StartupFlags = {
           tools: ['cartridge_deploy'],
-          workingDirectory: '/some/workspace',
+          projectDirectory: '/some/workspace',
           allowNonGaTools: true,
         };
 
@@ -409,7 +409,7 @@ describe('registry', () => {
         const server = createMockServer();
         const flags: StartupFlags = {
           toolsets: ['CARTRIDGES'],
-          workingDirectory: '/some/workspace',
+          projectDirectory: '/some/workspace',
           allowNonGaTools: true,
         };
 

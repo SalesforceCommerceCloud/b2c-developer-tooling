@@ -6,11 +6,11 @@ description: User guide for running CIP/CCAC analytics reports and SQL queries w
 
 The B2C CLI includes a `cip` command family for **B2C Commerce Intelligence (CIP)**, also known as **Commerce Cloud Analytics (CCAC)** reporting.
 
-It is based on the **B2C Commerce Intelligence JDBC Driver** and gives you three practical workflows:
+It’s based on the **B2C Commerce Intelligence JDBC Driver** and gives you three practical workflows.
 
-- curated report commands (`b2c cip report <report-command>`) for common analytics use cases
-- raw SQL (`b2c cip query`) for custom exploration
-- metadata discovery (`b2c cip tables`, `b2c cip describe`) for schema/table inspection
+- Curated report commands (`b2c cip report <report-command>`) for common analytics use cases
+- Raw SQL (`b2c cip query`) for custom exploration
+- Metadata discovery (`b2c cip tables`, `b2c cip describe`) for schema/table inspection
 
 Official JDBC reference:
 
@@ -49,7 +49,7 @@ Starting with B2C Commerce release **26.1**, reports and dashboards data can als
 - Staging instances
 - Production instances in designated test realms (realms not serving live traffic)
 
-To enable this, turn on **Enable Reports & Dashboards Data Tracking** in Business Manager feature switches.
+To enable non-production support, turn on **Enable Reports & Dashboards Data Tracking** in Business Manager feature switches.
 
 - Reference: [Set Feature Switches (Toggles) in B2C Commerce](https://help.salesforce.com/s/articleView?id=cc.b2c_feature_switches.htm&type=5)
 - Provisioning can take up to **2 hours** after enabling
@@ -194,10 +194,10 @@ Always check the official documentation before designing high-volume workloads.
 
 Practical guidance:
 
-- prefer aggregate tables over large fact tables when possible
-- avoid `SELECT *`; request only required columns
-- keep date ranges narrow and run incremental windows
-- test with smaller windows first, then scale up
+- Prefer aggregate tables over large fact tables when possible.
+- Avoid `SELECT *`; request only required columns.
+- Keep date ranges narrow and run incremental windows.
+- Test with smaller windows first, then scale up.
 
 Reference source for limits and best practices:
 
