@@ -54,35 +54,17 @@ jobs:
       - name: Get latest release tag
         id: release
         run: |
-          # Find the highest-versioned package tag and docs tag (by semver, not
-          # creation date) so that maintenance patches on older minors never
-          # cause stable docs to regress to an older codebase.
-          pick_highest() {
-            node -e "
-              const lines = require('fs').readFileSync('/dev/stdin','utf8').trim().split('\n').filter(Boolean);
-              const parsed = lines.map(tag => {
-                const ver = tag.split('@').pop();
-                const [major, minor, patch] = ver.split('.').map(Number);
-                return { tag, major, minor, patch };
-              }).filter(t => !isNaN(t.major));
-              parsed.sort((a, b) => b.major - a.major || b.minor - a.minor || b.patch - a.patch);
-              if (parsed.length) console.log(parsed[0].tag);
-            "
-          }
+          # Find the most recent package tag and docs tag by creation date.
+          # This is safe because only @latest publishes and doc-only releases
+          # trigger this workflow — maintenance patches on older minors are
+          # excluded by the publish workflow gate.
+          PKG_TAG=$(git tag --list '@salesforce/*' --sort=-creatordate | head -n1)
+          DOCS_TAG=$(git tag --list 'docs@*' --sort=-creatordate | head -n1)
 
-          PKG_TAG=$(git tag --list '@salesforce/*' | pick_highest)
-          DOCS_TAG=$(git tag --list 'docs@*' | pick_highest)
-
-          # Pick whichever tag has the higher semver version
+          # Pick whichever tag was created more recently
           LATEST_TAG=""
           if [[ -n "$PKG_TAG" && -n "$DOCS_TAG" ]]; then
-            WINNER=$(node -e "
-              const a = '${PKG_TAG}'.split('@').pop().split('.').map(Number);
-              const b = '${DOCS_TAG}'.split('@').pop().split('.').map(Number);
-              const cmp = a[0]-b[0] || a[1]-b[1] || a[2]-b[2];
-              console.log(cmp >= 0 ? '${PKG_TAG}' : '${DOCS_TAG}');
-            ")
-            LATEST_TAG="$WINNER"
+            LATEST_TAG=$(git tag --list '@salesforce/*' --list 'docs@*' --sort=-creatordate | head -n1)
           elif [[ -n "$PKG_TAG" ]]; then
             LATEST_TAG="$PKG_TAG"
           elif [[ -n "$DOCS_TAG" ]]; then
