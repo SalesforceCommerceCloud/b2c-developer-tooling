@@ -42,7 +42,6 @@ export default class ClientUpdate extends AmCommand<typeof ClientUpdate> {
       description: 'API client name',
     }),
     description: Flags.string({
-      char: 'd',
       description: 'Description of the API client',
     }),
     organizations: Flags.string({

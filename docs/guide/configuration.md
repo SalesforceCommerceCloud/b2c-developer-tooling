@@ -57,7 +57,7 @@ You can configure the CLI using environment variables:
 
 | Variable                      | Description                                                    |
 | ----------------------------- | -------------------------------------------------------------- |
-| `SFCC_WORKING_DIRECTORY`      | Project working directory                                      |
+| `SFCC_PROJECT_DIRECTORY`      | Project directory                                              |
 | `SFCC_CONFIG`                 | Path to config file (dw.json format)                           |
 | `SFCC_INSTANCE`               | Instance name from config file                                 |
 | `SFCC_SERVER`                 | The B2C instance hostname                                      |

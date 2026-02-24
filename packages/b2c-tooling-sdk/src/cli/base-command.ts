@@ -95,9 +95,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       env: 'SFCC_INSTANCE',
       helpGroup: 'GLOBAL',
     }),
-    'working-directory': Flags.string({
-      description: 'Project working directory',
-      env: 'SFCC_WORKING_DIRECTORY',
+    'project-directory': Flags.string({
+      char: 'd',
+      aliases: ['working-directory'],
+      description: 'Project directory',
+      env: 'SFCC_PROJECT_DIRECTORY',
+      default: async () => process.env.SFCC_WORKING_DIRECTORY || undefined,
       helpGroup: 'GLOBAL',
     }),
     'extra-query': Flags.string({
@@ -318,7 +321,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return {
       instance: this.flags.instance,
       configPath: this.flags.config,
-      workingDirectory: this.flags['working-directory'],
+      workingDirectory: this.flags['project-directory'],
     };
   }
 
