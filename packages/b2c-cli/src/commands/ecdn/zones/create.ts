@@ -36,6 +36,7 @@ export default class EcdnZonesCreate extends EcdnCommand<typeof EcdnZonesCreate>
   static flags = {
     ...EcdnCommand.baseFlags,
     'domain-name': Flags.string({
+      char: 'd',
       description: t('flags.domainName.description', 'Domain name for the storefront zone'),
       required: true,
     }),

@@ -36,6 +36,7 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
       required: true,
     }),
     description: Flags.string({
+      char: 'd',
       description: 'Description of the API client',
     }),
     orgs: Flags.string({

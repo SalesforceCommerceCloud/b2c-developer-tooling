@@ -96,7 +96,6 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
     }),
     'project-directory': Flags.string({
-      char: 'd',
       aliases: ['working-directory'],
       description: 'Project directory',
       env: 'SFCC_PROJECT_DIRECTORY',

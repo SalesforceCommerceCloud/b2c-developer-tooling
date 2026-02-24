@@ -75,7 +75,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       description: 'Global data units to export (comma-separated: meta_data,custom_types,etc.)',
     }),
     'data-units': Flags.string({
-      char: 'u',
+      char: 'd',
       description: 'Full data units configuration as JSON string',
     }),
     'keep-archive': Flags.boolean({
