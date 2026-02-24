@@ -1,8 +1,7 @@
 import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 
-// Version configuration from environment
-const releaseVersion = process.env.RELEASE_VERSION || 'unreleased';
+// Build configuration from environment
 const isDevBuild = process.env.IS_DEV_BUILD === 'true';
 
 // Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
@@ -13,11 +12,6 @@ const basePath = isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`;
 // VitePress prepends base path to links starting with /, so we use relative paths
 // that work correctly for each build context
 function getVersionItems() {
-  if (releaseVersion === 'unreleased') {
-    // No release yet - only show dev
-    return [{text: 'Development (main)', link: '/'}];
-  }
-
   if (isDevBuild) {
     // Dev build: base is /b2c-developer-tooling/dev/
     // Use ../ to navigate up to stable docs at root
@@ -140,7 +134,7 @@ export default defineConfig({
       {text: 'CLI Reference', link: '/cli/'},
       {text: 'API Reference', link: '/api/'},
       {
-        text: isDevBuild ? 'dev' : `v${releaseVersion}`,
+        text: isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
       },
     ],

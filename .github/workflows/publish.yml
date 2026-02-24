@@ -1,12 +1,16 @@
 name: Publish to npm
 
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: ['release/**']
   schedule:
     - cron: '0 2 * * 1-5' # Weekdays at 2 AM UTC (Mon-Fri)
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Release type'
+        description: 'Release type (ignored for release branch workflow_run — always stable)'
         required: true
         default: 'nightly'
         type: choice
@@ -21,19 +25,24 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: write # For creating GitHub releases and tags
       id-token: write # Required for npm OIDC trusted publishers
+      pull-requests: write # For creating merge-back PRs
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || '' }}
           fetch-depth: 0 # Needed for docs tag detection
 
       - name: Determine release type
         id: release-type
         run: |
-          if [[ "${{ github.event.inputs.release_type }}" == "stable" ]]; then
+          if [[ "${{ github.event.inputs.release_type }}" == "stable" ]] || [[ "${{ github.event_name }}" == "workflow_run" ]]; then
             echo "type=stable" >> $GITHUB_OUTPUT
             echo "tag=latest" >> $GITHUB_OUTPUT
           else
@@ -41,10 +50,55 @@ jobs:
             echo "tag=nightly" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check for pending changesets
+        if: steps.release-type.outputs.type == 'stable'
+        id: changesets
+        run: |
+          PENDING=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
+          if [[ "$PENDING" -gt 0 ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "::notice::Found $PENDING pending changeset(s) — skipping publish"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Quick version check
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true'
+        id: quick-check
+        run: |
+          HAS_CHANGES=false
+          for spec in "@salesforce/b2c-tooling-sdk:packages/b2c-tooling-sdk" \
+                      "@salesforce/b2c-cli:packages/b2c-cli" \
+                      "@salesforce/b2c-dx-mcp:packages/b2c-dx-mcp"; do
+            PKG_NAME="${spec%%:*}"
+            PKG_PATH="${spec##*:}"
+            LOCAL=$(node -p "require('./${PKG_PATH}/package.json').version")
+            NPM=$(npm view "$PKG_NAME" version 2>/dev/null || echo "0.0.0")
+            if [ "$LOCAL" != "$NPM" ]; then
+              HAS_CHANGES=true
+              break
+            fi
+          done
+          # Also check docs tag
+          if [ "$HAS_CHANGES" = "false" ]; then
+            DOCS_VERSION=$(node -p "require('./docs/package.json').version")
+            if ! git rev-parse "docs@${DOCS_VERSION}" >/dev/null 2>&1; then
+              HAS_CHANGES=true
+            fi
+          fi
+          if [ "$HAS_CHANGES" = "false" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "::notice::All package versions match npm — nothing to publish"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup pnpm
+        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
 
       - name: Setup Node.js
+        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
@@ -52,13 +106,15 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for trusted publishing
+        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: npm install -g npm@latest
 
       - name: Install dependencies
+        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: pnpm install --frozen-lockfile
 
       - name: Determine packages to publish
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         id: packages
         run: |
           check_package() {
@@ -74,6 +130,19 @@ jobs:
             if [ "$LOCAL_VERSION" != "$NPM_VERSION" ]; then
               echo "publish_${output_key}=true" >> $GITHUB_OUTPUT
               echo "version_${output_key}=${LOCAL_VERSION}" >> $GITHUB_OUTPUT
+
+              # Determine appropriate npm dist-tag via semver comparison
+              IS_NEWER=$(node -e "
+                const [a,b,c] = '${LOCAL_VERSION}'.split('.').map(Number);
+                const [x,y,z] = '${NPM_VERSION}'.split('.').map(Number);
+                console.log(a>x||(a===x&&(b>y||(b===y&&c>z))));
+              ")
+              if [ "$IS_NEWER" = "true" ]; then
+                echo "tag_${output_key}=latest" >> $GITHUB_OUTPUT
+              else
+                MINOR=$(echo "$LOCAL_VERSION" | sed 's/\.[0-9]*$//')
+                echo "tag_${output_key}=release-${MINOR}" >> $GITHUB_OUTPUT
+              fi
             else
               echo "publish_${output_key}=false" >> $GITHUB_OUTPUT
             fi
@@ -109,25 +178,33 @@ jobs:
           echo "Set snapshot version: $SNAPSHOT"
 
       - name: Build packages
+        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: pnpm run build
 
       - name: Run tests
+        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: pnpm --filter '!b2c-vs-extension' run test
 
       - name: Publish SDK to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_sdk == 'true'
-        run: pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+        run: >-
+          pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks
+          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_sdk }}
 
       - name: Publish CLI to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_cli == 'true'
-        run: pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+        run: >-
+          pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks
+          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_cli }}
 
       - name: Publish MCP to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_mcp == 'true'
-        run: pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks --tag ${{ steps.release-type.outputs.tag }}
+        run: >-
+          pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks
+          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_mcp }}
 
       - name: Create git tags
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -160,7 +237,7 @@ jobs:
           fi
 
       - name: Create docs tag if version changed
-        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_docs == 'true'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_docs == 'true'
         run: |
           DOCS_TAG="docs@${{ steps.packages.outputs.version_docs }}"
           git tag "$DOCS_TAG"
@@ -168,7 +245,7 @@ jobs:
           echo "Created docs tag: $DOCS_TAG"
 
       - name: Extract changelogs for release
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
           # Function to extract the latest version section from a changelog
           extract_latest() {
@@ -210,7 +287,7 @@ jobs:
           } > /tmp/release-notes.md
 
       - name: Create GitHub Release
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
           # Determine the release tag — prefer CLI as the user-facing product
           if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
@@ -231,7 +308,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Package skills artifacts
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
           # Create b2c-skills.zip containing skills/b2c/skills/
           cd skills/b2c && zip -r ../../b2c-skills.zip skills/
@@ -243,7 +320,7 @@ jobs:
           ls -la *.zip
 
       - name: Upload skills to release
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
           # Determine the release tag (same logic as Create GitHub Release)
           if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
@@ -262,7 +339,32 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger documentation deployment
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: gh workflow run deploy-docs.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR to merge version bumps back to main
+        if: github.event_name == 'workflow_run'
+        run: |
+          if [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]] || \
+             [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]] || \
+             [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]] || \
+             [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
+            BRANCH="${{ github.event.workflow_run.head_branch }}"
+            gh pr create --base main --head "$BRANCH" \
+              --title "Merge version bumps from ${BRANCH}" \
+              --body "$(cat <<'EOF'
+          Auto-created after hotfix publish from `'"${BRANCH}"'`.
+
+          Merges version bump commits back to main to prevent version collisions on the next regular release.
+
+          **Review checklist:**
+          - [ ] Version bumps in package.json files look correct
+          - [ ] CHANGELOG entries are accurate
+          - [ ] No merge conflicts with pending changesets on main
+          EOF
+          )" || echo "::warning::PR already exists or could not be created"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -142,6 +142,14 @@ pnpm run docs:build
 pnpm run docs:preview
 ```
 
+### Deployed Documentation
+
+The documentation site serves two versions:
+- **Stable** (root URL) — built from the most recent release tag, updated on every stable release
+- **Dev** (`/dev/`) — built from the `main` branch, updated on every push to `main`
+
+Doc-only releases (without bumping CLI/SDK/MCP versions) are possible by creating a changeset targeting `@salesforce/b2c-dx-docs`. See [PUBLISHING.md](./PUBLISHING.md#documentation-deployment) for details.
+
 ### API Documentation
 
 API documentation is auto-generated from JSDoc comments in the `@salesforce/b2c-tooling-sdk` package. The entry points are defined in `typedoc.json`:
@@ -163,7 +171,13 @@ When adding new public APIs, ensure they have comprehensive JSDoc comments as th
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management and publishes to npm using [OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers).
 
-For detailed information about the release process, see [PUBLISHING.md](./PUBLISHING.md).
+| Release Type | npm Tag | Trigger |
+|-------------|---------|---------|
+| **Stable** | `@latest` | Merge version PR on `main` |
+| **Hotfix** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
+| **Nightly** | `@nightly` | Scheduled (weekdays) or manual |
+
+For detailed information about the release process, including hotfix releases from release branches, see [PUBLISHING.md](./PUBLISHING.md).
 
 ### Quick Reference
 
