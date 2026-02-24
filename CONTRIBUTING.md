@@ -103,7 +103,7 @@ You **don't need** a changeset for:
 
 - Changesets are optional - maintainers can add them later if needed
 - Multiple changesets can exist for separate changes
-- For **hotfix releases** (urgent patches while unrelated changesets are pending on `main`), maintainers use release branches — see [PUBLISHING.md](./PUBLISHING.md#hotfix-release) for details
+- For **release branches** (urgent patches while unrelated changesets are pending on `main`, or maintenance patches on older minors), see [PUBLISHING.md](./PUBLISHING.md#release-branches) for details
 - See [PUBLISHING.md](./PUBLISHING.md) for full release process details
 
 # Creating a Pull Request

@@ -19,7 +19,7 @@ When a dependency is bumped (e.g., the SDK), dependent packages automatically re
 | Type | npm Tag | Trigger |
 |------|---------|---------|
 | **Stable** | `@latest` | Merge version PR on `main` |
-| **Hotfix** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
+| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
 | **Nightly** | `@nightly` | Scheduled weekdays 2 AM UTC, or manual |
 
 Publishing uses [npm OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers) — no npm tokens are needed. Provenance attestations are generated automatically.
@@ -60,11 +60,18 @@ This is the normal release flow from `main`.
 
 No manual tagging or workflow dispatch is needed.
 
-## Hotfix Release
+## Release Branches
 
-Use when you need to ship an urgent fix while unrelated changesets are pending on `main`, or when patching an older minor version.
+Use when you need to ship a fix independently of `main`. There are two scenarios:
+
+1. **Hotfix from latest** — urgent patch while unrelated changesets are pending on `main`. Publishes to `@latest`.
+2. **Maintenance patch** — fix for an older minor version (e.g., patching `0.4.x` when `@latest` is `0.5.0`). Publishes to a scoped dist-tag like `@release-0.4`.
 
 **Why:** Changesets consumes all pending changesets atomically — you can't release one package while holding others. Release branches let you version and publish independently of `main`.
+
+Branch naming convention: `release/<major.minor>` (e.g., `release/0.5`). This is self-documenting and allows reuse for multiple patches to the same minor.
+
+### Steps
 
 1. **Find the tag to branch from:**
 
@@ -75,7 +82,11 @@ Use when you need to ship an urgent fix while unrelated changesets are pending o
 2. **Create a release branch:**
 
    ```bash
-   git checkout -b release/fix-description @salesforce/b2c-cli@0.4.0
+   # Hotfix from latest (e.g., latest is 0.5.0)
+   git checkout -b release/0.5 @salesforce/b2c-cli@0.5.0
+
+   # Maintenance patch on older minor (e.g., latest is 0.5.0, patching 0.4.x)
+   git checkout -b release/0.4 @salesforce/b2c-cli@0.4.2
    ```
 
 3. **Cherry-pick or apply the fix**, then create and consume a changeset:
@@ -90,18 +101,18 @@ Use when you need to ship an urgent fix while unrelated changesets are pending o
 4. **Push the branch:**
 
    ```bash
-   git push -u origin release/fix-description
+   git push -u origin release/0.5
    ```
 
 5. **Publishing happens automatically** — CI runs, and on success `publish.yml` triggers. No manual dispatch needed.
 
 6. **Review the auto-created PR** that merges version bumps back to `main`. Merge it to prevent version collisions on the next regular release.
 
-7. **Delete the release branch** after the merge-back PR is merged.
+7. **Delete the release branch** after the merge-back PR is merged (or keep it for future patches to the same minor).
 
 ### Older minor version patching
 
-When the hotfix targets an older minor (e.g., `0.4.1` when `@latest` is `0.5.0`), the publish workflow automatically uses a scoped dist-tag (`release-0.4`) instead of `@latest`, preventing `@latest` from moving backward. Users install with:
+When the release branch targets an older minor (e.g., `0.4.3` when `@latest` is `0.5.0`), the publish workflow automatically uses a scoped dist-tag (`release-0.4`) instead of `@latest`, preventing `@latest` from moving backward. Users install with:
 
 ```bash
 npm install @salesforce/b2c-cli@release-0.4
@@ -141,7 +152,7 @@ The documentation site serves two versions:
 - **Stable** (root URL) — built from the most recent release tag (across all branches)
 - **Dev** (`/dev/`) — built from `main`, updated on every push
 
-Stable docs are rebuilt after every stable or hotfix release. The `deploy-docs.yml` workflow finds the most recent release tag by creation date across all branches, so tags from hotfix release branches are picked up automatically.
+Stable docs are rebuilt after every stable or release branch publish. The `deploy-docs.yml` workflow finds the most recent release tag by creation date across all branches, so tags from release branches are picked up automatically.
 
 ## Local Testing
 

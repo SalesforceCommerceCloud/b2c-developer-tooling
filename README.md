@@ -174,10 +174,10 @@ This project uses [Changesets](https://github.com/changesets/changesets) for ver
 | Release Type | npm Tag | Trigger |
 |-------------|---------|---------|
 | **Stable** | `@latest` | Merge version PR on `main` |
-| **Hotfix** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
+| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
 | **Nightly** | `@nightly` | Scheduled (weekdays) or manual |
 
-For detailed information about the release process, including hotfix releases from release branches, see [PUBLISHING.md](./PUBLISHING.md).
+For detailed information about the release process, including release branches, see [PUBLISHING.md](./PUBLISHING.md).
 
 ### Quick Reference
 
