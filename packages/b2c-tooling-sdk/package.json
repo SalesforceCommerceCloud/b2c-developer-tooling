@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
-  "version": "0.4.1",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
+  "version": "0.5.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
