@@ -237,10 +237,11 @@ Run the comprehensive Mocha test suite:
 
 ```bash
 cd packages/b2c-dx-mcp
-pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
+pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 The test suite covers:
+
 - Component discovery (name-based, kebab-case, nested, path-based, custom paths, name collisions)
 - Auto mode (basic, type inference, complex props exclusion, UI-only props exclusion, edge cases)
 - Interactive mode (all steps: analyze, select_props, configure_attrs, configure_regions, confirm_generation)
@@ -248,7 +249,7 @@ The test suite covers:
 - Edge cases (no props, only complex props, optional props, union types, already decorated components)
 - Project directory resolution (from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` env var via Services)
 
-See [`test/tools/page-designer-decorator/README.md`](../../../test/tools/page-designer-decorator/README.md) for detailed testing instructions.
+See [`test/tools/storefrontnext/page-designer-decorator/README.md`](../../../../test/tools/storefrontnext/page-designer-decorator/README.md) for detailed testing instructions.
 
 ## 🎓 Learning Resources
 

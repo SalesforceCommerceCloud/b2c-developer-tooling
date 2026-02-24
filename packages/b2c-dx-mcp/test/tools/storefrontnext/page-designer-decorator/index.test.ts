@@ -5,13 +5,14 @@
  */
 
 import {expect} from 'chai';
-import {createPageDesignerDecoratorTool} from '../../../src/tools/page-designer-decorator/index.js';
-import {Services} from '../../../src/services.js';
-import type {ToolResult} from '../../../src/utils/types.js';
+import {createPageDesignerDecoratorTool} from '../../../../src/tools/storefrontnext/page-designer-decorator/index.js';
+import {generateDecoratorCode} from '../../../../src/tools/storefrontnext/page-designer-decorator/templates/decorator-generator.js';
+import {Services} from '../../../../src/services.js';
+import type {ToolResult} from '../../../../src/utils/types.js';
 import {existsSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
-import {createMockResolvedConfig} from '../../test-helpers.js';
+import {createMockResolvedConfig} from '../../../test-helpers.js';
 
 /**
  * Helper to extract text from a ToolResult.
@@ -111,10 +112,11 @@ export default function ${componentName}({${propNames}}: ${componentName}Props) 
  * Tests use temporary directories and mock components to avoid dependencies
  * on real project files.
  */
-describe('tools/page-designer-decorator', () => {
+describe('tools/storefrontnext/page-designer-decorator', () => {
   let services: Services;
   let testDir: string;
   let originalCwd: string;
+  const getServices = () => services;
 
   beforeEach(() => {
     // Create a temporary directory for test components
@@ -135,12 +137,12 @@ describe('tools/page-designer-decorator', () => {
 
   describe('tool metadata', () => {
     it('should have correct tool name', () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       expect(tool.name).to.equal('storefront_next_page_designer_decorator');
     });
 
     it('should have comprehensive description', () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       const desc = tool.description;
 
       // Should mention Page Designer
@@ -157,20 +159,20 @@ describe('tools/page-designer-decorator', () => {
     });
 
     it('should be in STOREFRONTNEXT toolset', () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       expect(tool.toolsets).to.include('STOREFRONTNEXT');
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 
     it('should not be GA (generally available)', () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       expect(tool.isGA).to.be.false;
     });
   });
 
   describe('mode selection', () => {
     it('should show mode selection when called with only component name', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'TestComponent');
 
       const result = await tool.handler({
@@ -210,7 +212,7 @@ describe('tools/page-designer-decorator', () => {
 
   describe('auto mode', () => {
     it('should generate decorators in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'AutoComponent', 'title: string;');
 
       const result = await tool.handler({
@@ -229,7 +231,7 @@ describe('tools/page-designer-decorator', () => {
     });
 
     it('should handle component with multiple props in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(
         testDir,
         'MultiPropComponent',
@@ -254,7 +256,7 @@ imageUrl: string;`,
     });
 
     it('should exclude complex props in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(
         testDir,
         'ComplexPropsComponent',
@@ -284,7 +286,7 @@ config: { key: string; value: number };`,
     });
 
     it('should exclude UI-only props in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(
         testDir,
         'UIPropsComponent',
@@ -314,7 +316,7 @@ style: React.CSSProperties;`,
     });
 
     it('should handle component already decorated in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       const decoratedPath = path.join(testDir, 'src', 'components', 'DecoratedComponent.tsx');
       mkdirSync(path.dirname(decoratedPath), {recursive: true});
       writeFileSync(
@@ -354,7 +356,7 @@ export default function DecoratedComponent({title}: DecoratedComponentProps) {
     });
 
     it('should handle component with no props in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       const emptyPath = path.join(testDir, 'src', 'components', 'EmptyProps.tsx');
       mkdirSync(path.dirname(emptyPath), {recursive: true});
       writeFileSync(
@@ -378,7 +380,7 @@ export default function EmptyProps({}: EmptyPropsProps) { return <div>Empty</div
     });
 
     it('should handle component with only complex props in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(
         testDir,
         'ComplexOnlyComponent',
@@ -409,7 +411,7 @@ data: Array<{id: number}>;`,
     });
 
     it('should handle component with optional props in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(
         testDir,
         'OptionalPropsComponent',
@@ -433,7 +435,7 @@ count?: number;`,
     });
 
     it('should handle component with union types in auto mode', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(
         testDir,
         'UnionTypesComponent',
@@ -455,12 +457,85 @@ value: string | number;`,
       expect(text).to.include('status');
       expect(text).to.include('value');
     });
+
+    it('should auto-configure URL and image type props', async () => {
+      const tool = createPageDesignerDecoratorTool(getServices);
+      createTestComponent(
+        testDir,
+        'UrlImageComponent',
+        `heroImageUrl: string;
+ctaUrl: string;
+backgroundPicture: string;`,
+      );
+
+      const result = await tool.handler({
+        component: 'UrlImageComponent',
+        autoMode: true,
+      });
+
+      expect(result.isError).to.be.undefined;
+      const text = getResultText(result);
+      expect(text).to.include('@Component');
+      expect(text).to.include('heroImageUrl');
+      expect(text).to.include('ctaUrl');
+      expect(text).to.include('backgroundPicture');
+    });
+
+    it('should handle named export component in auto mode', async () => {
+      const tool = createPageDesignerDecoratorTool(getServices);
+      const namedPath = path.join(testDir, 'src', 'components', 'NamedExportComponent.tsx');
+      mkdirSync(path.dirname(namedPath), {recursive: true});
+      writeFileSync(
+        namedPath,
+        `export interface NamedExportComponentProps {
+  title: string;
+}
+export function NamedExportComponent({title}: NamedExportComponentProps) {
+  return <div>{title}</div>;
+}`,
+        'utf8',
+      );
+
+      const result = await tool.handler({
+        component: 'NamedExportComponent',
+        autoMode: true,
+      });
+
+      expect(result.isError).to.be.undefined;
+      const text = getResultText(result);
+      expect(text).to.include('NamedExportComponent');
+    });
+
+    it('should handle const export component in auto mode', async () => {
+      const tool = createPageDesignerDecoratorTool(getServices);
+      const constPath = path.join(testDir, 'src', 'components', 'ConstExportComponent.tsx');
+      mkdirSync(path.dirname(constPath), {recursive: true});
+      writeFileSync(
+        constPath,
+        `export interface ConstExportComponentProps {
+  title: string;
+}
+export const ConstExportComponent = ({title}: ConstExportComponentProps) => {
+  return <div>{title}</div>;
+};`,
+        'utf8',
+      );
+
+      const result = await tool.handler({
+        component: 'ConstExportComponent',
+        autoMode: true,
+      });
+
+      expect(result.isError).to.be.undefined;
+      const text = getResultText(result);
+      expect(text).to.include('ConstExportComponent');
+    });
   });
 
   describe('interactive mode', () => {
     describe('analyze step', () => {
       it('should analyze component in analyze step', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'AnalyzeComponent', 'title: string;');
 
         const result = await tool.handler({
@@ -481,7 +556,7 @@ value: string | number;`,
       });
 
       it('should categorize props correctly', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(
           testDir,
           'CategorizedComponent',
@@ -507,11 +582,80 @@ className: string;`,
         // Should mention complex or UI props (may be described differently)
         expect(text).to.match(/complex|Complex|UI|ui|exclude|skip/i);
       });
+
+      it('should detect already-decorated component in analyze step', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        const decoratedPath = path.join(testDir, 'src', 'components', 'AlreadyDecoratedAnalyze.tsx');
+        mkdirSync(path.dirname(decoratedPath), {recursive: true});
+        writeFileSync(
+          decoratedPath,
+          `import {Component} from '@/lib/decorators/component';
+
+@Component('already-decorated', { name: 'Already Decorated' })
+export class AlreadyDecoratedAnalyzeMetadata {}
+
+export interface AlreadyDecoratedAnalyzeProps { title: string; }
+export default function AlreadyDecoratedAnalyze({title}: AlreadyDecoratedAnalyzeProps) {
+  return <div>{title}</div>;
+}`,
+          'utf8',
+        );
+
+        const result = await tool.handler({
+          component: 'AlreadyDecoratedAnalyze',
+          conversationContext: {step: 'analyze'},
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.match(/already|decorated|existing/i);
+      });
+
+      it('should analyze component with no editable props', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(
+          testDir,
+          'NoEditableComponent',
+          `onClick: () => void;
+className: string;`,
+        );
+
+        const result = await tool.handler({
+          component: 'NoEditableComponent',
+          conversationContext: {step: 'analyze'},
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.match(/No suitable|no suitable|⚠️/i);
+      });
+
+      it('should analyze component without a Props interface', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        const noInterfacePath = path.join(testDir, 'src', 'components', 'NoInterfaceComponent.tsx');
+        mkdirSync(path.dirname(noInterfacePath), {recursive: true});
+        writeFileSync(
+          noInterfacePath,
+          `export default function NoInterfaceComponent() {
+  return <div>Hello</div>;
+}`,
+          'utf8',
+        );
+
+        const result = await tool.handler({
+          component: 'NoInterfaceComponent',
+          conversationContext: {step: 'analyze'},
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('None found');
+      });
     });
 
     describe('select_props step', () => {
       it('should confirm selected props', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'SelectPropsComponent', 'title: string; description: string;');
 
         const result = await tool.handler({
@@ -537,7 +681,7 @@ className: string;`,
       });
 
       it('should require component metadata', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'MissingMetadataComponent');
 
         const result = await tool.handler({
@@ -554,11 +698,40 @@ className: string;`,
         const text = getResultText(result);
         expect(text).to.match(/metadata|Metadata/i);
       });
+
+      it('should confirm with new attributes and no selected props', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'NewAttrsSelectComponent');
+
+        const result = await tool.handler({
+          component: 'NewAttrsSelectComponent',
+          conversationContext: {
+            step: 'select_props',
+            selectedProps: [],
+            newAttributes: [
+              {name: 'ctaLabel', description: 'Call to action label', required: true},
+              {name: 'subtitle'},
+            ],
+            componentMetadata: {
+              id: 'new-attrs-select',
+              name: 'New Attrs Select',
+              description: 'Test with new attributes',
+              group: 'custom_group',
+            },
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('ctaLabel');
+        expect(text).to.include('Call to action label');
+        expect(text).to.include('None');
+      });
     });
 
     describe('configure_attrs step', () => {
       it('should provide attribute configuration instructions', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'ConfigureAttrsComponent', 'imageUrl: string; description: string;');
 
         const result = await tool.handler({
@@ -579,7 +752,7 @@ className: string;`,
       });
 
       it('should suggest types for props', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'TypeSuggestionsComponent', 'imageUrl: string; productId: string;');
 
         const result = await tool.handler({
@@ -596,11 +769,84 @@ className: string;`,
         // Should suggest appropriate types
         expect(text).to.match(/url|image|product/i);
       });
+
+      it('should handle mix of auto-inferred and needs-config attrs', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'MixedAttrsComponent', 'count: number; heroImage: string;');
+
+        const result = await tool.handler({
+          component: 'MixedAttrsComponent',
+          conversationContext: {
+            step: 'configure_attrs',
+            selectedProps: ['count', 'heroImage'],
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('count');
+        expect(text).to.include('heroImage');
+        expect(text).to.match(/auto|Auto|infer/i);
+      });
+
+      it('should handle new attributes in configure_attrs', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'NewAttrConfigComponent', 'title: string;');
+
+        const result = await tool.handler({
+          component: 'NewAttrConfigComponent',
+          conversationContext: {
+            step: 'configure_attrs',
+            selectedProps: ['title'],
+            newAttributes: [{name: 'categoryId', description: 'Category reference'}],
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('categoryId');
+        expect(text).to.match(/category/i);
+      });
+
+      it('should handle enum suggestion for array-type props', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'ArrayPropComponent', 'items: string[];');
+
+        const result = await tool.handler({
+          component: 'ArrayPropComponent',
+          conversationContext: {
+            step: 'configure_attrs',
+            selectedProps: ['items'],
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('items');
+      });
+
+      it('should handle non-enum suggestion for URL props', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'UrlOnlyComponent', 'pageUrl: string; title: string;');
+
+        const result = await tool.handler({
+          component: 'UrlOnlyComponent',
+          conversationContext: {
+            step: 'configure_attrs',
+            selectedProps: ['pageUrl', 'title'],
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('pageUrl');
+        expect(text).to.include('title');
+      });
     });
 
     describe('configure_regions step', () => {
       it('should provide region configuration instructions', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'RegionsComponent');
 
         const result = await tool.handler({
@@ -620,7 +866,7 @@ className: string;`,
 
     describe('confirm_generation step', () => {
       it('should generate decorator code when all context provided', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'ConfirmComponent', 'title: string;');
 
         const result = await tool.handler({
@@ -653,7 +899,7 @@ className: string;`,
       });
 
       it('should require component metadata', async () => {
-        const tool = createPageDesignerDecoratorTool(() => services);
+        const tool = createPageDesignerDecoratorTool(getServices);
         createTestComponent(testDir, 'MissingMetadataConfirmComponent');
 
         const result = await tool.handler({
@@ -669,12 +915,207 @@ className: string;`,
         const text = getResultText(result);
         expect(text).to.match(/metadata|Metadata/i);
       });
+
+      it('should generate code with regions', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'RegionGenComponent', 'title: string;');
+
+        const result = await tool.handler({
+          component: 'RegionGenComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            selectedProps: ['title'],
+            componentMetadata: {
+              id: 'region-gen-component',
+              name: 'Region Gen Component',
+              description: 'Test component with regions',
+            },
+            regionConfig: {
+              enabled: true,
+              regions: [
+                {
+                  id: 'main',
+                  name: 'Main Content',
+                  description: 'Primary content area',
+                  maxComponents: 5,
+                  componentTypeInclusions: ['text-block', 'image-block'],
+                  componentTypeExclusions: ['layout-grid'],
+                },
+                {
+                  id: 'sidebar',
+                  name: 'Sidebar',
+                },
+              ],
+            },
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('@Component');
+        expect(text).to.include('RegionDefinition');
+        expect(text).to.include('main');
+        expect(text).to.include('Main Content');
+        expect(text).to.include('Primary content area');
+        expect(text).to.include('maxComponents');
+        expect(text).to.include('componentTypeInclusions');
+        expect(text).to.include('componentTypeExclusions');
+        expect(text).to.include('sidebar');
+        expect(text).to.include('Sidebar');
+        expect(text).to.match(/region|Region/i);
+      });
+
+      it('should generate code with fully configured attributes', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'ConfiguredAttrComponent', 'heroImage: string; variant: string;');
+
+        const result = await tool.handler({
+          component: 'ConfiguredAttrComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            selectedProps: ['heroImage', 'variant'],
+            componentMetadata: {
+              id: 'configured-attr',
+              name: 'Configured Attr',
+              description: 'Test with full config',
+              group: 'custom_group',
+            },
+            attributeConfig: {
+              heroImage: {
+                type: 'image',
+                name: 'Hero Image',
+              },
+              variant: {
+                type: 'enum',
+                name: 'Variant',
+                defaultValue: 'primary',
+                values: ['primary', 'secondary', 'outline'],
+              },
+            },
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('@AttributeDefinition');
+        expect(text).to.include("type: 'image'");
+        expect(text).to.include('Hero Image');
+        expect(text).to.include("type: 'enum'");
+        expect(text).to.include("'primary'");
+        expect(text).to.include("'secondary'");
+        expect(text).to.include("'outline'");
+        expect(text).to.include('defaultValue');
+        expect(text).to.include('custom_group');
+      });
+
+      it('should generate code with new attributes only', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'NewAttrsComponent');
+
+        const result = await tool.handler({
+          component: 'NewAttrsComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            selectedProps: [],
+            newAttributes: [{name: 'ctaLabel', required: true}, {name: 'subtitle'}],
+            componentMetadata: {
+              id: 'new-attrs',
+              name: 'New Attrs',
+              description: 'Test with new attributes',
+            },
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('@Component');
+        expect(text).to.include('ctaLabel');
+        expect(text).to.include('subtitle');
+      });
+
+      it('should use default group when group is omitted', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'NoGroupComponent', 'title: string;');
+
+        const result = await tool.handler({
+          component: 'NoGroupComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            selectedProps: ['title'],
+            componentMetadata: {
+              id: 'no-group',
+              name: 'No Group',
+              description: 'Test without group',
+            },
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('odyssey_base');
+      });
+
+      it('should generate code with disabled region config', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'DisabledRegionComponent', 'title: string;');
+
+        const result = await tool.handler({
+          component: 'DisabledRegionComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            selectedProps: ['title'],
+            componentMetadata: {
+              id: 'disabled-region',
+              name: 'Disabled Region',
+              description: 'Test with disabled regions',
+            },
+            regionConfig: {
+              enabled: false,
+              regions: [{id: 'main', name: 'Main'}],
+            },
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('@Component');
+        expect(text).to.not.include('RegionDefinition');
+      });
+
+      it('should generate code with non-string defaultValue', async () => {
+        const tool = createPageDesignerDecoratorTool(getServices);
+        createTestComponent(testDir, 'DefaultValComponent', 'count: number;');
+
+        const result = await tool.handler({
+          component: 'DefaultValComponent',
+          conversationContext: {
+            step: 'confirm_generation',
+            selectedProps: ['count'],
+            componentMetadata: {
+              id: 'default-val',
+              name: 'Default Val',
+              description: 'Test with non-string default',
+            },
+            attributeConfig: {
+              count: {
+                type: 'integer',
+                name: 'Count',
+                defaultValue: 42,
+              },
+            },
+          },
+        });
+
+        expect(result.isError).to.be.undefined;
+        const text = getResultText(result);
+        expect(text).to.include('defaultValue: 42');
+      });
     });
   });
 
   describe('error handling', () => {
     it('should handle non-existent component gracefully', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
 
       const result = await tool.handler({
         component: 'NonExistentComponent',
@@ -687,7 +1128,7 @@ className: string;`,
     });
 
     it('should handle invalid input gracefully', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
 
       // Invalid input should be caught by zod validation
       const result = await tool.handler({
@@ -699,7 +1140,7 @@ className: string;`,
     });
 
     it('should handle invalid step name', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'TestComponent');
 
       const result = await tool.handler({
@@ -712,18 +1153,30 @@ className: string;`,
     });
 
     it('should handle missing required parameter', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
 
       const result = await tool.handler({} as unknown as Record<string, unknown>);
 
       // Should return an error result
       expect(result.isError).to.be.true;
     });
+
+    it('should handle path-based component not found', async () => {
+      const tool = createPageDesignerDecoratorTool(getServices);
+
+      const result = await tool.handler({
+        component: 'src/components/DoesNotExist.tsx',
+      });
+
+      expect(result.isError).to.be.true;
+      const text = getResultText(result);
+      expect(text).to.match(/not found|Error/i);
+    });
   });
 
   describe('component resolution', () => {
     it('should find component by name in standard location', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'StandardLocationComponent');
 
       const result = await tool.handler({
@@ -736,7 +1189,7 @@ className: string;`,
     });
 
     it('should find component by kebab-case name', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       const kebabPath = path.join(testDir, 'src', 'components', 'product-card.tsx');
       mkdirSync(path.dirname(kebabPath), {recursive: true});
       writeFileSync(
@@ -756,7 +1209,7 @@ export default function ProductCard({title}: ProductCardProps) { return <div>{ti
     });
 
     it('should find nested component by name', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       const nestedPath = path.join(testDir, 'src', 'components', 'hero', 'Hero.tsx');
       mkdirSync(path.dirname(nestedPath), {recursive: true});
       writeFileSync(
@@ -776,7 +1229,7 @@ export default function Hero({title}: HeroProps) { return <div>{title}</div>; }`
     });
 
     it('should find component by path', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       const componentPath = createTestComponent(testDir, 'PathComponent');
 
       const result = await tool.handler({
@@ -789,7 +1242,7 @@ export default function Hero({title}: HeroProps) { return <div>{title}</div>; }`
     });
 
     it('should use searchPaths when provided', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       // Create component in a custom location
       const customDir = path.join(testDir, 'custom', 'components');
       mkdirSync(customDir, {recursive: true});
@@ -818,7 +1271,7 @@ export default function CustomLocationComponent({title}: CustomLocationComponent
     });
 
     it('should handle component name collision', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       // Create component in src/components/
       createTestComponent(testDir, 'CollisionComponent', 'title: string;');
       // Create component with same name in app/components/
@@ -844,7 +1297,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
 
   describe('input validation', () => {
     it('should accept valid component name', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'ValidComponent');
 
       const result = await tool.handler({
@@ -856,7 +1309,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
     });
 
     it('should accept component path', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       const componentPath = createTestComponent(testDir, 'PathComponent');
 
       const result = await tool.handler({
@@ -868,7 +1321,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
     });
 
     it('should accept optional searchPaths', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'SearchComponent');
 
       const result = await tool.handler({
@@ -881,7 +1334,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
     });
 
     it('should accept optional autoMode flag', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'AutoModeComponent');
 
       const result = await tool.handler({
@@ -894,7 +1347,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
     });
 
     it('should accept optional componentId', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'CustomIdComponent');
 
       const result = await tool.handler({
@@ -909,7 +1362,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
     });
 
     it('should accept conversationContext with all steps', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'ConversationComponent');
 
       const steps = ['analyze', 'select_props', 'configure_attrs', 'configure_regions', 'confirm_generation'];
@@ -941,7 +1394,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
 
   describe('output format', () => {
     it('should return text content in ToolResult format', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'FormatComponent');
 
       const result = await tool.handler({
@@ -956,7 +1409,7 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
     });
 
     it('should return error format when component not found', async () => {
-      const tool = createPageDesignerDecoratorTool(() => services);
+      const tool = createPageDesignerDecoratorTool(getServices);
 
       const result = await tool.handler({
         component: 'NonExistentComponent',
@@ -965,6 +1418,161 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       expect(result.isError).to.be.true;
       expect(result.content).to.be.an('array');
       expect(result.content[0]).to.have.property('type', 'text');
+    });
+  });
+
+  describe('generateDecoratorCode', () => {
+    it('should skip imports when needsImports is false', () => {
+      const code = generateDecoratorCode({
+        needsImports: false,
+        componentId: 'test-comp',
+        componentName: 'Test Comp',
+        componentDescription: 'A test',
+        componentGroup: 'test_group',
+        metadataClassName: 'TestCompMetadata',
+        hasAttributes: false,
+        hasRegions: false,
+        hasLoader: false,
+        regions: [],
+        attributes: [],
+      });
+
+      expect(code).to.not.include('import');
+      expect(code).to.include('@Component');
+      expect(code).to.include('TestCompMetadata');
+    });
+
+    it('should omit group line when componentGroup is empty', () => {
+      const code = generateDecoratorCode({
+        needsImports: true,
+        componentId: 'no-group',
+        componentName: 'No Group',
+        componentDescription: 'Test',
+        componentGroup: '',
+        metadataClassName: 'NoGroupMetadata',
+        hasAttributes: false,
+        hasRegions: false,
+        hasLoader: false,
+        regions: [],
+        attributes: [],
+      });
+
+      expect(code).to.not.include('group:');
+    });
+
+    it('should generate configured attributes with required field', () => {
+      const code = generateDecoratorCode({
+        needsImports: true,
+        componentId: 'req-attr',
+        componentName: 'Req Attr',
+        componentDescription: 'Test',
+        metadataClassName: 'ReqAttrMetadata',
+        hasAttributes: true,
+        hasRegions: false,
+        hasLoader: false,
+        regions: [],
+        attributes: [
+          {
+            name: 'title',
+            tsType: 'string',
+            optional: false,
+            hasConfig: true,
+            config: {
+              name: 'Title',
+              type: 'string',
+              required: true,
+              description: 'The main title',
+              id: 'title-field',
+            },
+          },
+        ],
+      });
+
+      expect(code).to.include('required: true');
+      expect(code).to.include("id: 'title-field'");
+      expect(code).to.include("description: 'The main title'");
+    });
+
+    it('should generate regions with all optional fields', () => {
+      const code = generateDecoratorCode({
+        needsImports: true,
+        componentId: 'full-region',
+        componentName: 'Full Region',
+        componentDescription: 'Test',
+        metadataClassName: 'FullRegionMetadata',
+        hasAttributes: false,
+        hasRegions: true,
+        hasLoader: false,
+        regions: [
+          {
+            id: 'main',
+            name: 'Main',
+            description: 'Main content',
+            maxComponents: 10,
+            componentTypeInclusions: ['text-block'],
+            componentTypeExclusions: ['layout'],
+          },
+        ],
+        attributes: [],
+      });
+
+      expect(code).to.include('RegionDefinition');
+      expect(code).to.include("description: 'Main content'");
+      expect(code).to.include('maxComponents: 10');
+      expect(code).to.include("componentTypeInclusions: ['text-block']");
+      expect(code).to.include("componentTypeExclusions: ['layout']");
+    });
+
+    it('should fall back to simple attribute when hasConfig is true but config is undefined', () => {
+      const code = generateDecoratorCode({
+        needsImports: false,
+        componentId: 'fallback',
+        componentName: 'Fallback',
+        componentDescription: 'Test',
+        metadataClassName: 'FallbackMetadata',
+        hasAttributes: true,
+        hasRegions: false,
+        hasLoader: false,
+        regions: [],
+        attributes: [
+          {
+            name: 'title',
+            tsType: 'string',
+            optional: true,
+            hasConfig: true,
+            config: undefined,
+          },
+        ],
+      });
+
+      expect(code).to.include('@AttributeDefinition()');
+      expect(code).to.include('title?: string');
+    });
+
+    it('should handle optional configured attribute', () => {
+      const code = generateDecoratorCode({
+        needsImports: false,
+        componentId: 'opt-config',
+        componentName: 'Opt Config',
+        componentDescription: 'Test',
+        metadataClassName: 'OptConfigMetadata',
+        hasAttributes: true,
+        hasRegions: false,
+        hasLoader: false,
+        regions: [],
+        attributes: [
+          {
+            name: 'subtitle',
+            tsType: 'string',
+            optional: true,
+            hasConfig: true,
+            config: {type: 'text', name: 'Subtitle'},
+          },
+        ],
+      });
+
+      expect(code).to.include('subtitle?: string');
+      expect(code).to.include("type: 'text'");
     });
   });
 });
