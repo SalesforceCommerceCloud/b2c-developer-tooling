@@ -57,6 +57,10 @@ function loadDotEnv() {
 }
 
 function getWorkspaceRoot() {
+  if (process.env.SFCC_PROJECT_DIRECTORY && process.env.SFCC_PROJECT_DIRECTORY.trim()) {
+    return process.env.SFCC_PROJECT_DIRECTORY.trim();
+  }
+
   if (process.env.SFCC_WORKING_DIRECTORY && process.env.SFCC_WORKING_DIRECTORY.trim()) {
     return process.env.SFCC_WORKING_DIRECTORY.trim();
   }
@@ -86,11 +90,11 @@ function getWorkspaceRoot() {
 }
 
 function withWorkingDirectory(args, workingDirectory) {
-  if (!workingDirectory || args.indexOf('--working-directory') !== -1) {
+  if (!workingDirectory || args.indexOf('--project-directory') !== -1 || args.indexOf('--working-directory') !== -1) {
     return args.slice();
   }
 
-  return args.concat(['--working-directory', workingDirectory]);
+  return args.concat(['--project-directory', workingDirectory]);
 }
 
 function pickInspectConfig(parsed) {
@@ -332,8 +336,8 @@ export default class SetupIdeProphet extends BaseCommand<typeof SetupIdeProphet>
     if (this.flags.config) {
       args.push('--config', this.flags.config);
     }
-    if (this.flags['working-directory']) {
-      args.push('--working-directory', this.flags['working-directory']);
+    if (this.flags['project-directory']) {
+      args.push('--project-directory', this.flags['project-directory']);
     }
 
     return args;

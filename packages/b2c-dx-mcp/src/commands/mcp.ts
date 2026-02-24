@@ -48,7 +48,7 @@
  * ### Global Flags (inherited from BaseCommand)
  * | Flag | Env Variable | Description |
  * |------|--------------|-------------|
- * | `--working-directory` | `SFCC_WORKING_DIRECTORY` | Project working directory (see note below) |
+ * | `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory (see note below) |
  * | `--config` | `SFCC_CONFIG` | Path to dw.json config file (auto-discovered if not provided) |
  * | `--instance` | `SFCC_INSTANCE` | Instance name from configuration file |
  * | `--log-level` | `SFCC_LOG_LEVEL` | Set logging verbosity (trace, debug, info, warn, error, silent) |
@@ -56,13 +56,13 @@
  * | `--json` | - | Output logs as JSON lines |
  * | `--lang` | - | Language for messages |
  *
- * **Note on `--working-directory`**: Many MCP clients (Cursor, Claude Desktop) spawn servers from the
+ * **Note on `--project-directory`**: Many MCP clients (Cursor, Claude Desktop) spawn servers from the
  * user's home directory (`~`) rather than the project directory. This flag is used for:
  * - Auto-discovery (detecting project type when no `--toolsets` or `--tools` are provided)
  * - Scaffolding tools (creating files in the correct project location)
  * - Any tool that needs to operate on the project directory
  *
- * Use `--working-directory` or `SFCC_WORKING_DIRECTORY` env var to specify the actual project path.
+ * Use `--project-directory` or `SFCC_PROJECT_DIRECTORY` env var to specify the actual project path.
  *
  * ## Configuration
  *
@@ -258,7 +258,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * Priority (highest to lowest):
    * 1. CLI flags (--server, --username, --api-key, etc.)
    * 2. Environment variables (SFCC_SERVER, SFCC_USERNAME, SFCC_MRT_API_KEY, etc.)
-   * 3. dw.json file (via --config flag or auto-discovered from --working-directory)
+   * 3. dw.json file (via --config flag or auto-discovered from --project-directory)
    * 4. ~/.mobify file (for MRT API key)
    */
   protected override loadConfiguration(): ResolvedB2CConfig {
@@ -327,7 +327,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       allowNonGaTools: this.flags['allow-non-ga-tools'],
       configPath: this.flags.config,
       // Working directory for auto-discovery. oclif handles flag with env fallback.
-      workingDirectory: this.flags['working-directory'],
+      workingDirectory: this.flags['project-directory'],
     };
 
     // Add toolsets to telemetry attributes
