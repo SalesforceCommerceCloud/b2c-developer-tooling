@@ -1,36 +1,30 @@
 import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 
-// Version configuration from environment
-const releaseVersion = process.env.RELEASE_VERSION || 'unreleased';
-const isReleaseBuild = process.env.IS_RELEASE_BUILD === 'true';
+// Build configuration from environment
+const isDevBuild = process.env.IS_DEV_BUILD === 'true';
 
-// Base paths - release build lives in /release/ subdirectory
+// Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
-const basePath = isReleaseBuild ? `${siteBase}/release/` : `${siteBase}/`;
+const basePath = isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`;
 
 // Build version dropdown items
 // VitePress prepends base path to links starting with /, so we use relative paths
 // that work correctly for each build context
 function getVersionItems() {
-  if (releaseVersion === 'unreleased') {
-    // No release yet - only show dev
-    return [{text: 'Development (main)', link: '/'}];
-  }
-
-  if (isReleaseBuild) {
-    // Release build: base is /b2c-developer-tooling/release/
-    // Use ../ to navigate up to main docs
+  if (isDevBuild) {
+    // Dev build: base is /b2c-developer-tooling/dev/
+    // Use ../ to navigate up to stable docs at root
     return [
-      {text: 'Development (main)', link: '../'},
-      {text: 'Latest Release', link: '/'},
+      {text: 'Latest Release', link: '../'},
+      {text: 'Development (main)', link: '/'},
     ];
   }
 
-  // Main build: base is /b2c-developer-tooling/
+  // Stable build: base is /b2c-developer-tooling/
   return [
-    {text: 'Development (main)', link: '/'},
-    {text: 'Latest Release', link: '/release/'},
+    {text: 'Latest Release', link: '/'},
+    {text: 'Development (main)', link: '/dev/'},
   ];
 }
 
@@ -99,15 +93,15 @@ document.addEventListener('click', (e) => {
   if (!link) return;
   const href = link.getAttribute('href');
   // Check if this is a version switch link
-  if (href && (href.includes('/release/') || href === '../')) {
+  if (href && (href.includes('/dev/') || href === '../')) {
     e.preventDefault();
     e.stopPropagation();
     if (href === '../') {
-      // Navigate from /release/ back to main - construct path explicitly
+      // Navigate from /dev/ back to stable root - construct path explicitly
       // to avoid relative path issues with trailing slashes
       const path = window.location.pathname;
-      const mainPath = path.replace(/\\/release\\/.*$/, '/').replace(/\\/release$/, '/');
-      window.location.href = mainPath;
+      const stablePath = path.replace(/\\/dev\\/.*$/, '/').replace(/\\/dev$/, '/');
+      window.location.href = stablePath;
     } else {
       window.location.href = link.href;
     }
@@ -140,7 +134,7 @@ export default defineConfig({
       {text: 'CLI Reference', link: '/cli/'},
       {text: 'API Reference', link: '/api/'},
       {
-        text: isReleaseBuild ? 'Latest Release' : 'dev',
+        text: isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
       },
     ],
