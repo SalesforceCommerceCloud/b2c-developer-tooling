@@ -103,6 +103,50 @@ export const WILDCARD_ASSET_LIBRARY_XML = `<?xml version="1.0" encoding="UTF-8"?
 </library>`;
 
 /**
+ * Library XML with out-of-order content-link positions.
+ *
+ * The content-links are listed in XML order: comp-b, comp-d, comp-a, comp-c,
+ * but their positions specify: comp-a=1, comp-b=2, comp-c=3, comp-d=4.
+ */
+export const POSITION_LIBRARY_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31" library-id="PositionLib">
+  <content content-id="ordered-page">
+    <type>page.storePage</type>
+    <data xml:lang="x-default"><![CDATA[{"title": "Ordered"}]]></data>
+    <content-links>
+      <content-link content-id="comp-b" type="page.storePage.main">
+        <position>2.0</position>
+      </content-link>
+      <content-link content-id="comp-d" type="page.storePage.main">
+        <position>4.0</position>
+      </content-link>
+      <content-link content-id="comp-a" type="page.storePage.main">
+        <position>1.0</position>
+      </content-link>
+      <content-link content-id="comp-c" type="page.storePage.main">
+        <position>3.0</position>
+      </content-link>
+    </content-links>
+  </content>
+  <content content-id="comp-a">
+    <type>component.alpha</type>
+    <data xml:lang="x-default"><![CDATA[{"label": "A"}]]></data>
+  </content>
+  <content content-id="comp-b">
+    <type>component.beta</type>
+    <data xml:lang="x-default"><![CDATA[{"label": "B"}]]></data>
+  </content>
+  <content content-id="comp-c">
+    <type>component.gamma</type>
+    <data xml:lang="x-default"><![CDATA[{"label": "C"}]]></data>
+  </content>
+  <content content-id="comp-d">
+    <type>component.delta</type>
+    <data xml:lang="x-default"><![CDATA[{"label": "D"}]]></data>
+  </content>
+</library>`;
+
+/**
  * Library XML with a missing content-link target.
  */
 export const MISSING_LINK_LIBRARY_XML = `<?xml version="1.0" encoding="UTF-8"?>
