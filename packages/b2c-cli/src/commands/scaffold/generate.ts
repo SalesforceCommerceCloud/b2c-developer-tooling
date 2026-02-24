@@ -62,7 +62,7 @@ export default class ScaffoldGenerate extends BaseCommand<typeof ScaffoldGenerat
   };
 
   async run(): Promise<GenerateResponse | void> {
-    const projectRoot = this.flags['working-directory'] || process.cwd();
+    const projectRoot = this.flags['project-directory'] || process.cwd();
     const response = await executeScaffoldGenerate(
       {
         scaffoldId: this.args.scaffoldId,

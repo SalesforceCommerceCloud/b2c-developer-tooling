@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-dx-mcp",
   "description": "MCP server for B2C Commerce developer experience tools",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "author": "Salesforce",
   "license": "MIT",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
