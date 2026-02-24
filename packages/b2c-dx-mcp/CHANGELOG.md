@@ -1,5 +1,21 @@
 # @salesforce/b2c-dx-mcp
 
+## 0.4.0
+
+### Minor Changes
+
+- [#133](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/133) [`1485923`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1485923581c6f1cb01c48a2e560e369843952020) - # Add new MCP tools (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+  - `scapi-schemas-list`: List and fetch SCAPI schemas (standard and custom)
+  - `scapi-custom-apis-status`: Check custom API endpoint registration status
+  - `mrt_bundle_push`: Push and deploy a pre-built Storefront Next PWA Kit project to Managed Runtime
+  - `cartridge_deploy`: Find and deploy cartridges to a B2C Commerce instance via WebDAV
+  - `storefront_next_development_guidelines`: Get critical architecture rules, coding standards, and best practices for Storefront Next development
+
+### Patch Changes
+
+- Updated dependencies [[`55c81c3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55c81c3b3cdd8b85edfe5eb0070e28a96752ac83), [`87321c0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87321c0051c171d35ca53760d4cffa3f9ebe406c), [`556f916`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/556f916f74c43373c0da125af1b53721b2c193ec), [`1485923`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1485923581c6f1cb01c48a2e560e369843952020)]:
+  - @salesforce/b2c-tooling-sdk@0.5.0
+
 ## 0.3.2
 
 ### Patch Changes
