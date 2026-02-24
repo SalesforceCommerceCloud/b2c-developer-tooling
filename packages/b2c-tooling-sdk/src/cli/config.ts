@@ -259,19 +259,6 @@ export function loadConfig(
     sourcesAfter: pluginSources.after,
   });
 
-  // Log source summary
-  for (const source of resolved.sources) {
-    logger.trace(
-      {
-        source: source.name,
-        location: source.location,
-        fields: source.fields,
-        fieldsIgnored: source.fieldsIgnored,
-      },
-      `[${source.name}] Contributed fields`,
-    );
-  }
-
   // Log warnings (at warn level so users can see configuration issues)
   for (const warning of resolved.warnings) {
     logger.warn({warning}, `[Config] ${warning.message}`);

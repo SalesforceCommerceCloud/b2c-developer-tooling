@@ -266,6 +266,17 @@
         "default": "./dist/cjs/scaffold/index.js"
       }
     },
+    "./plugins": {
+      "development": "./src/plugins/index.ts",
+      "import": {
+        "types": "./dist/esm/plugins/index.d.ts",
+        "default": "./dist/esm/plugins/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/plugins/index.d.ts",
+        "default": "./dist/cjs/plugins/index.js"
+      }
+    },
     "./test-utils": {
       "development": "./src/test-utils/index.ts",
       "import": {
