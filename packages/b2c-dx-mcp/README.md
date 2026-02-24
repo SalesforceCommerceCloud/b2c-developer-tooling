@@ -14,13 +14,13 @@ The server automatically detects your project type and enables relevant tools. S
 
 ### Working Directory and Auto-Discovery
 
-The most important flag is **`--project-directory`** (or env var `SFCC_PROJECT_DIRECTORY`). It tells the server where your project is located, enabling:
+The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_DIRECTORY`). It tells the server where your project is located, enabling:
 
 1. **Auto-discovery** - Detects your project type and enables appropriate toolsets
 2. **Configuration loading** - Reads [`dw.json`](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html#configuration-file) from your project for credentials
 3. **Scaffolding** - Creates new files in the correct location
 
-> **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--project-directory`.
+> **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
 
 **Cursor** (supports `${workspaceFolder}`):
 
@@ -29,7 +29,7 @@ The most important flag is **`--project-directory`** (or env var `SFCC_PROJECT_D
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }
@@ -42,7 +42,7 @@ The most important flag is **`--project-directory`** (or env var `SFCC_PROJECT_D
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
     }
   }
 }
@@ -66,7 +66,7 @@ The **SCAPI** toolset is always enabled. Hybrid projects (e.g., cartridges + PWA
 Override auto-discovery by specifying toolsets explicitly:
 
 ```json
-"args": ["--project-directory", "${workspaceFolder}", "--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"]
+"args": ["--working-directory", "${workspaceFolder}", "--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"]
 ```
 
 ### Prompting Tips and Examples
@@ -181,8 +181,8 @@ Credentials can be provided via **config files** (recommended), **environment va
 | **SCAPI** | `hostname` + `client-id` + `client-secret` (for `scapi_custom_apis_status`: requires `sfcc.custom-apis` scope) |
 | **CARTRIDGES** | `hostname` + `username` + `password` (or OAuth) |
 | **MRT** | `api-key` + `project` (optionally `environment`) |
-| **PWAV3** | `--project-directory` only (+ MRT config for deployments) |
-| **STOREFRONTNEXT** | `--project-directory` only (+ MRT/CARTRIDGES config for those tools) |
+| **PWAV3** | `--working-directory` only (+ MRT config for deployments) |
+| **STOREFRONTNEXT** | `--working-directory` only (+ MRT/CARTRIDGES config for those tools) |
 
 **Option 1: Config files (recommended)**
 
@@ -220,7 +220,7 @@ See [Flag Reference](#flag-reference) for all available flags and env vars.
 
 | Flag | Env Variable | Description |
 |------|--------------|-------------|
-| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
+| `--working-directory` | `SFCC_WORKING_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
 | `--toolsets` | — | Comma-separated toolsets to enable |
 | `--tools` | — | Comma-separated individual tools to enable |
 | `--allow-non-ga-tools` | — | Enable experimental (non-GA) tools |

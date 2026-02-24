@@ -198,7 +198,7 @@ The tool automatically searches for components in these locations (in order):
 
 **Working Directory**:
 
-Component discovery uses the working directory resolved from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+Component discovery uses the working directory resolved from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.
 
