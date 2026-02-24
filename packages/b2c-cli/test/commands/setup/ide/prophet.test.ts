@@ -39,7 +39,7 @@ describe('setup ide prophet', () => {
       force: false,
       instance: undefined,
       config: undefined,
-      'working-directory': undefined,
+      'project-directory': undefined,
       ...flags,
     };
 
@@ -89,6 +89,7 @@ describe('setup ide prophet', () => {
       expect(content).to.include('support dwJson multi-config in prophet');
       expect(content).to.include("typeof workspace !== 'undefined'");
       expect(content).to.include("if (typeof __dirname === 'string' && __dirname)");
+      expect(content).to.include('process.env.SFCC_PROJECT_DIRECTORY');
       expect(content).to.include('process.env.SFCC_WORKING_DIRECTORY');
       expect(content).to.include('try {');
       expect(content).to.include('return {};');
@@ -137,7 +138,7 @@ describe('setup ide prophet', () => {
         output: outputPath,
         instance: 'staging',
         config: '/tmp/config/dw.json',
-        'working-directory': '/tmp/workspace',
+        'project-directory': '/tmp/workspace',
       });
 
       await runSilent(() => command.run());
@@ -147,7 +148,7 @@ describe('setup ide prophet', () => {
       expect(content).to.include('staging');
       expect(content).to.include('--config');
       expect(content).to.include('/tmp/config/dw.json');
-      expect(content).to.include('--working-directory');
+      expect(content).to.include('--project-directory');
       expect(content).to.include('/tmp/workspace');
     });
   });

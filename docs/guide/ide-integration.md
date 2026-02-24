@@ -60,10 +60,10 @@ function toProphetConfig(config) {
 
 function loadDwConfig() {
   try {
-    var workingDirectory = process.env.SFCC_WORKING_DIRECTORY || __dirname || process.cwd();
+    var workingDirectory = process.env.SFCC_PROJECT_DIRECTORY || process.env.SFCC_WORKING_DIRECTORY || __dirname || process.cwd();
     var stdout = childProcess.execFileSync(
       'b2c',
-      ['setup', 'inspect', '--json', '--unmask', '--working-directory', workingDirectory],
+      ['setup', 'inspect', '--json', '--unmask', '--project-directory', workingDirectory],
       {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],

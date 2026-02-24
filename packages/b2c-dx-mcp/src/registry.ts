@@ -118,16 +118,16 @@ export function createToolRegistry(loadServices: () => Services): ToolRegistry {
 async function performAutoDiscovery(flags: StartupFlags, reason: string): Promise<Toolset[]> {
   const logger = getLogger();
 
-  // Working directory from --working-directory flag or SFCC_WORKING_DIRECTORY env var
+  // Working directory from --project-directory flag or SFCC_PROJECT_DIRECTORY env var
   const workingDirectory = flags.workingDirectory ?? process.cwd();
 
   // Warn if working directory wasn't explicitly configured
   if (!flags.workingDirectory) {
     logger.warn(
       {cwd: workingDirectory},
-      'No --working-directory flag or SFCC_WORKING_DIRECTORY env var provided. ' +
+      'No --project-directory flag or SFCC_PROJECT_DIRECTORY env var provided. ' +
         'MCP clients like Cursor and Claude Desktop often spawn servers from ~ instead of the project directory. ' +
-        'Set --working-directory or SFCC_WORKING_DIRECTORY for reliable auto-discovery.',
+        'Set --project-directory or SFCC_PROJECT_DIRECTORY for reliable auto-discovery.',
     );
   }
 
