@@ -71,6 +71,10 @@ jobs:
             LATEST_TAG="$DOCS_TAG"
           fi
 
+          echo "Latest package tag: ${PKG_TAG:-<none>}"
+          echo "Latest docs tag: ${DOCS_TAG:-<none>}"
+          echo "Building stable docs from: ${LATEST_TAG:-<none>}"
+
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
           echo "exists=$([[ -n $LATEST_TAG ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
