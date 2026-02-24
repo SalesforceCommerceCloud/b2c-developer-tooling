@@ -321,6 +321,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       instance: this.flags.instance,
       configPath: this.flags.config,
       projectDirectory: this.flags['project-directory'],
+      workingDirectory: this.flags['project-directory'],
     };
   }
 

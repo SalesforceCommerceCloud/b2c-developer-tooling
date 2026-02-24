@@ -97,6 +97,8 @@ export interface LoadDwJsonOptions {
   path?: string;
   /** Starting directory for search (defaults to cwd) */
   projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
+  workingDirectory?: string;
 }
 
 /**
@@ -209,7 +211,8 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
  */
 export function loadFullDwJson(options: LoadDwJsonOptions = {}): {config: DwJsonMultiConfig; path: string} | undefined {
   const logger = getLogger();
-  const dwJsonPath = options.path ?? path.join(options.projectDirectory || process.cwd(), 'dw.json');
+  const dwJsonPath =
+    options.path ?? path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json');
 
   logger.trace({path: dwJsonPath}, '[DwJsonSource] Checking for config file');
 
@@ -248,6 +251,8 @@ export interface AddInstanceOptions {
   path?: string;
   /** Starting directory for search */
   projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
+  workingDirectory?: string;
   /** Whether to set as active instance */
   setActive?: boolean;
 }
@@ -263,7 +268,8 @@ export interface AddInstanceOptions {
  * @throws Error if instance with same name already exists
  */
 export function addInstance(instance: DwJsonConfig, options: AddInstanceOptions = {}): void {
-  const dwJsonPath = options.path ?? path.join(options.projectDirectory || process.cwd(), 'dw.json');
+  const dwJsonPath =
+    options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
   let existing: DwJsonMultiConfig = {};
   if (fs.existsSync(dwJsonPath)) {
@@ -323,6 +329,8 @@ export interface RemoveInstanceOptions {
   path?: string;
   /** Starting directory for search */
   projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
+  workingDirectory?: string;
 }
 
 /**
@@ -333,7 +341,8 @@ export interface RemoveInstanceOptions {
  * @throws Error if instance not found or dw.json doesn't exist
  */
 export function removeInstance(name: string, options: RemoveInstanceOptions = {}): void {
-  const dwJsonPath = options.path ?? path.join(options.projectDirectory || process.cwd(), 'dw.json');
+  const dwJsonPath =
+    options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
   if (!fs.existsSync(dwJsonPath)) {
     throw new Error('No dw.json file found');
@@ -365,6 +374,8 @@ export interface SetActiveInstanceOptions {
   path?: string;
   /** Starting directory for search */
   projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
+  workingDirectory?: string;
 }
 
 /**
@@ -375,7 +386,8 @@ export interface SetActiveInstanceOptions {
  * @throws Error if instance not found or dw.json doesn't exist
  */
 export function setActiveInstance(name: string, options: SetActiveInstanceOptions = {}): void {
-  const dwJsonPath = options.path ?? path.join(options.projectDirectory || process.cwd(), 'dw.json');
+  const dwJsonPath =
+    options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
   if (!fs.existsSync(dwJsonPath)) {
     throw new Error('No dw.json file found');
@@ -446,7 +458,8 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | 
   const logger = getLogger();
 
   // If explicit path provided, use it. Otherwise default to ./dw.json (no upward search)
-  const dwJsonPath = options.path ?? path.join(options.projectDirectory || process.cwd(), 'dw.json');
+  const dwJsonPath =
+    options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
   logger.trace({path: dwJsonPath}, '[DwJsonSource] Checking for config file');
 

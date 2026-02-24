@@ -176,6 +176,8 @@ export interface LoadConfigOptions {
   configPath?: string;
   /** Starting directory for config file search (default: current project directory) */
   projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
+  workingDirectory?: string;
   /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
@@ -241,12 +243,14 @@ export function loadConfig(
     ...flags,
     instanceName: flags.instanceName ?? options.instance,
     projectDirectory: flags.projectDirectory ?? options.projectDirectory,
+    workingDirectory: flags.workingDirectory ?? options.workingDirectory,
   };
 
   const resolved = resolveConfig(effectiveFlags, {
     instance: options.instance,
     configPath: options.configPath,
     projectDirectory: options.projectDirectory,
+    workingDirectory: options.workingDirectory,
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,

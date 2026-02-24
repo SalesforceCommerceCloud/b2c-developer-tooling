@@ -61,7 +61,7 @@ export class PackageJsonSource implements ConfigSource {
     const logger = getLogger();
 
     // Only look in cwd (or projectDirectory if provided)
-    const searchDir = options.projectDirectory ?? process.cwd();
+    const searchDir = options.projectDirectory ?? options.workingDirectory ?? process.cwd();
     const packageJsonPath = path.join(searchDir, 'package.json');
 
     logger.trace({location: packageJsonPath}, '[PackageJsonSource] Checking for package.json');

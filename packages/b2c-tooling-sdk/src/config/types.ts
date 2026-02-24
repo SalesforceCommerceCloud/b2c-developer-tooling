@@ -81,6 +81,8 @@ export interface NormalizedConfig {
   instanceName?: string;
   /** Starting directory for config file search and project-relative operations */
   projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
+  workingDirectory?: string;
 
   // TLS/mTLS
   /** Path to PKCS12 certificate file for client mTLS (two-factor auth) */
@@ -144,6 +146,8 @@ export interface ResolveConfigOptions {
   configPath?: string;
   /** Starting directory for config file search */
   projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
+  workingDirectory?: string;
   /** Whether to apply hostname mismatch protection (default: true) */
   hostnameProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */
