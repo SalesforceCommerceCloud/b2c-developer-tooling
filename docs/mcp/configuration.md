@@ -34,7 +34,7 @@ Create a [`dw.json`](../guide/configuration#configuration-file) file in your pro
 }
 ```
 
-The server automatically loads this file when `--working-directory` points to your project.
+The server automatically loads this file when `--project-directory` points to your project.
 
 **Required fields per toolset:**
 
@@ -43,8 +43,8 @@ The server automatically loads this file when `--working-directory` points to yo
 | **SCAPI** | `hostname`, `client-id`, `client-secret` |
 | **CARTRIDGES** | `hostname`, `username`, `password` (or OAuth) |
 | **MRT** | (loaded from `~/.mobify`) |
-| **PWAV3** | None (uses `--working-directory` only) |
-| **STOREFRONTNEXT** | None (uses `--working-directory` only) |
+| **PWAV3** | None (uses `--project-directory` only) |
+| **STOREFRONTNEXT** | None (uses `--project-directory` only) |
 
 **Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
 
@@ -75,7 +75,7 @@ Set environment variables in your MCP client configuration:
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"],
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"],
       "env": {
         "SFCC_SERVER": "xxx.demandware.net",
         "SFCC_USERNAME": "...",
@@ -96,7 +96,7 @@ Set environment variables in your MCP client configuration:
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/project", "--allow-non-ga-tools"],
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/project", "--allow-non-ga-tools"],
       "env": {
         "SFCC_SERVER": "xxx.demandware.net",
         "SFCC_USERNAME": "...",
@@ -119,7 +119,7 @@ Pass credentials directly as command-line flags:
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "${workspaceFolder}",
         "--server",
         "xxx.demandware.net",
@@ -146,7 +146,7 @@ Pass credentials directly as command-line flags:
 
 | Flag | Env Variable | Description |
 |------|--------------|-------------|
-| `--working-directory` | `SFCC_WORKING_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
+| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
 | `--toolsets` | — | Comma-separated toolsets to enable |
 | `--tools` | — | Comma-separated individual tools to enable |
 | `--allow-non-ga-tools` | — | Enable experimental (non-GA) tools |
@@ -192,7 +192,7 @@ Override auto-discovery by specifying toolsets explicitly:
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "${workspaceFolder}",
         "--toolsets",
         "CARTRIDGES,MRT",
@@ -220,7 +220,7 @@ Enable specific tools instead of entire toolsets:
 ```json
 {
   "args": [
-    "--working-directory",
+    "--project-directory",
     "${workspaceFolder}",
     "--tools",
     "cartridge_deploy,scapi_schemas_list",
@@ -344,7 +344,7 @@ Enable debug logging (equivalent to `--log-level debug`):
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "${workspaceFolder}",
         "--allow-non-ga-tools"
       ]
@@ -365,7 +365,7 @@ Requires `dw.json` in project root for B2C credentials.
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "${workspaceFolder}",
         "--allow-non-ga-tools"
       ],
@@ -390,7 +390,7 @@ Requires `dw.json` in project root for B2C credentials.
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "${workspaceFolder}",
         "--toolsets",
         "CARTRIDGES,SCAPI",

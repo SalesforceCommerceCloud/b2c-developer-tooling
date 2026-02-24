@@ -40,7 +40,7 @@ The B2C DX MCP Server enables AI assistants to help with B2C Commerce developmen
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }
@@ -53,7 +53,7 @@ The B2C DX MCP Server enables AI assistants to help with B2C Commerce developmen
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/your/project", "--allow-non-ga-tools"]
     }
   }
 }

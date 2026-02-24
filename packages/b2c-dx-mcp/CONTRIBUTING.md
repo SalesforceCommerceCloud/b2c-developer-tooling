@@ -11,7 +11,7 @@ For local development or testing, use the development build directly:
   "mcpServers": {
     "b2c-dx": {
       "command": "node",
-      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }

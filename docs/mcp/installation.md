@@ -19,7 +19,7 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }
@@ -43,7 +43,7 @@ Cursor supports the `${workspaceFolder}` variable, which automatically resolves 
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "${workspaceFolder}",
         "--allow-non-ga-tools"
       ]
@@ -54,9 +54,9 @@ Cursor supports the `${workspaceFolder}` variable, which automatically resolves 
 
 4. Restart Cursor or reload the MCP server
 
-### Working Directory
+### Project Directory
 
-The `--working-directory` flag is critical. Cursor spawns MCP servers from your home directory (`~`), not your project directory. The `${workspaceFolder}` variable ensures the server knows where your project is located.
+The `--project-directory` flag is critical. Cursor spawns MCP servers from your home directory (`~`), not your project directory. The `${workspaceFolder}` variable ensures the server knows where your project is located.
 
 **Why this matters:**
 - Enables **auto-discovery** of your project type
@@ -81,7 +81,7 @@ Claude Desktop doesn't support workspace variables, so you must use an explicit 
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "/absolute/path/to/your/project",
         "--allow-non-ga-tools"
       ]
@@ -105,7 +105,7 @@ If you work with multiple projects, you can create separate MCP server entries f
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "/path/to/project1",
         "--allow-non-ga-tools"
       ]
@@ -115,7 +115,7 @@ If you work with multiple projects, you can create separate MCP server entries f
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--working-directory",
+        "--project-directory",
         "/path/to/project2",
         "--allow-non-ga-tools"
       ]
@@ -124,9 +124,9 @@ If you work with multiple projects, you can create separate MCP server entries f
 }
 ```
 
-## Working Directory Setup
+## Project Directory Setup
 
-The `--working-directory` flag tells the server where your project is located. This enables:
+The `--project-directory` flag tells the server where your project is located. This enables:
 
 ### 1. Auto-Discovery
 
@@ -159,11 +159,11 @@ See the [Authentication Setup guide](../guide/authentication) for detailed instr
 
 ### 3. Scaffolding
 
-When creating new files (components, pages, cartridges), the server uses the working directory to place files in the correct location based on your project structure.
+When creating new files (components, pages, cartridges), the server uses the project directory to place files in the correct location based on your project structure.
 
 ## Project Type Detection
 
-The server automatically detects your project type by analyzing the working directory:
+The server automatically detects your project type by analyzing the project directory:
 
 ### PWA Kit v3
 
@@ -211,13 +211,13 @@ Projects with multiple markers (e.g., cartridges + PWA Kit) get combined toolset
 ### Tools Not Available
 
 - Ensure `--allow-non-ga-tools` flag is included (required for placeholder tools).
-- Check that `--working-directory` points to a valid project directory.
+- Check that `--project-directory` points to a valid project directory.
 - Verify project type detection by checking your `package.json` or project structure.
 
 ### Configuration Not Loading
 
 - Ensure `dw.json` exists in your project root
-- Verify `--working-directory` points to the correct directory
+- Verify `--project-directory` points to the correct directory
 - Check file permissions on `dw.json`
 
 ## Next Steps

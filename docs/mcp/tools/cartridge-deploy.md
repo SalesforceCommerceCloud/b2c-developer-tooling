@@ -34,7 +34,7 @@ Supports two authentication methods:
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `directory` | string | No | Working directory from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` env var (falls back to process.cwd()) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges. |
+| `directory` | string | No | Project directory from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` env var (falls back to process.cwd()) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges. |
 | `cartridges` | string[] | No | All found cartridges | Array of cartridge names to include in the deployment. Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some. If not specified, all cartridges found in the directory are deployed. |
 | `exclude` | string[] | No | None | Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, such as third-party or unchanged cartridges. Applied after the include filter. |
 | `reload` | boolean | No | `false` | Whether to reload the code version after deployment. When `true`, the tool triggers a code version reload on the instance. |

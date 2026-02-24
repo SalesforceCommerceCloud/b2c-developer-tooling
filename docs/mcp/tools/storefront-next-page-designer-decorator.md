@@ -20,7 +20,7 @@ The tool uses component discovery to find components by name (e.g., "ProductCard
 No authentication required. This tool operates on local files only.
 
 **Requirements:**
-- `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable (for component discovery)
+- `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (for component discovery)
 - Storefront Next project with React components
 
 ## Parameters
@@ -109,8 +109,8 @@ The tool automatically searches for components in these locations (in order):
 4. `src/**` (broader search)
 5. Custom paths (if provided via `searchPaths`)
 
-**Working Directory:**
-Component discovery uses the working directory resolved from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable. This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+**Project Directory:**
+Component discovery uses the project directory resolved from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable. This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **Examples:**
 
@@ -123,7 +123,7 @@ Component discovery uses the working directory resolved from `--working-director
 - Use component name for portability
 - Use path for unusual locations
 - Add `searchPaths` for monorepos or non-standard structures
-- Ensure `--working-directory` flag or `SFCC_WORKING_DIRECTORY` env var is set correctly
+- Ensure `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` env var is set correctly
 
 ## Usage Examples
 
@@ -202,7 +202,7 @@ export class ProductCardMetadata {
 
 - Storefront Next project
 - React component with TypeScript interfaces
-- `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable set
+- `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable set
 - Component must be discoverable in standard directories or via `searchPaths`
 
 ## Features
@@ -223,5 +223,5 @@ export class ProductCardMetadata {
 ## See Also
 
 - [STOREFRONTNEXT Toolset](../toolsets#storefrontnext) - Overview of Storefront Next development tools
-- [Configuration](../configuration) - Configure working directory
+- [Configuration](../configuration) - Configure project directory
 - [Storefront Next Guide](../../guide/storefront-next) - Storefront Next development guide

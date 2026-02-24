@@ -34,7 +34,7 @@ export class DwJsonSource implements ConfigSource {
     const result = loadDwJson({
       instance: options.instance,
       path: options.configPath,
-      workingDirectory: options.workingDirectory,
+      projectDirectory: options.projectDirectory,
     });
 
     if (!result) {
@@ -55,7 +55,7 @@ export class DwJsonSource implements ConfigSource {
   listInstances(options?: ResolveConfigOptions): InstanceInfo[] {
     const result = loadFullDwJson({
       path: options?.configPath,
-      workingDirectory: options?.workingDirectory,
+      projectDirectory: options?.projectDirectory,
     });
 
     if (!result) {
@@ -101,7 +101,7 @@ export class DwJsonSource implements ConfigSource {
     const dwJsonConfig = mapNormalizedConfigToDwJson(options.config, options.name);
     addInstance(dwJsonConfig, {
       path: options.configPath,
-      workingDirectory: options.workingDirectory,
+      projectDirectory: options.projectDirectory,
       setActive: options.setActive,
     });
   }
@@ -112,7 +112,7 @@ export class DwJsonSource implements ConfigSource {
   removeInstance(name: string, options?: ResolveConfigOptions): void {
     removeInstance(name, {
       path: options?.configPath,
-      workingDirectory: options?.workingDirectory,
+      projectDirectory: options?.projectDirectory,
     });
   }
 
@@ -122,7 +122,7 @@ export class DwJsonSource implements ConfigSource {
   setActiveInstance(name: string, options?: ResolveConfigOptions): void {
     setActiveInstance(name, {
       path: options?.configPath,
-      workingDirectory: options?.workingDirectory,
+      projectDirectory: options?.projectDirectory,
     });
   }
 }

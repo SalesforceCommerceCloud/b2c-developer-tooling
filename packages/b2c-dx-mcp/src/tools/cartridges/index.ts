@@ -79,7 +79,7 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
           .string()
           .optional()
           .describe(
-            'Path to directory to search for cartridges. Defaults to current working directory if not specified. ' +
+            'Path to directory to search for cartridges. Defaults to current project directory if not specified. ' +
               'The tool will recursively search this directory for .project files to identify cartridges.',
           ),
         cartridges: z
@@ -128,7 +128,7 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
             instance.config.codeVersion = codeVersion;
           }
 
-          // Resolve directory path: relative paths are resolved relative to working directory, absolute paths are used as-is
+          // Resolve directory path: relative paths are resolved relative to project directory, absolute paths are used as-is
           const directory = args.directory
             ? path.isAbsolute(args.directory)
               ? args.directory

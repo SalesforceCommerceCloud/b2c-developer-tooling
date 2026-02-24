@@ -20,8 +20,8 @@ inputs:
     description: 'Append --json flag and parse JSON output into the result output'
     required: false
     default: 'true'
-  working-directory:
-    description: 'Working directory for the command'
+  project-directory:
+    description: 'Project directory for the command'
     required: false
     default: '.'
   client-id:

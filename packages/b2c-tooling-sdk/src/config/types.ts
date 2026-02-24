@@ -80,7 +80,7 @@ export interface NormalizedConfig {
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
   /** Starting directory for config file search and project-relative operations */
-  workingDirectory?: string;
+  projectDirectory?: string;
 
   // TLS/mTLS
   /** Path to PKCS12 certificate file for client mTLS (two-factor auth) */
@@ -143,7 +143,7 @@ export interface ResolveConfigOptions {
   /** Explicit path to config file (defaults to auto-discover) */
   configPath?: string;
   /** Starting directory for config file search */
-  workingDirectory?: string;
+  projectDirectory?: string;
   /** Whether to apply hostname mismatch protection (default: true) */
   hostnameProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */

@@ -31,7 +31,7 @@ See the [Installation Guide](./installation) for detailed setup instructions for
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }
@@ -44,7 +44,7 @@ See the [Installation Guide](./installation) for detailed setup instructions for
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/your/project", "--allow-non-ga-tools"]
     }
   }
 }
@@ -75,19 +75,19 @@ See the [Toolsets & Tools Reference](./toolsets) for detailed descriptions of ea
 
 ## Usage
 
-### Working Directory
+### Project Directory
 
-The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_DIRECTORY`). It tells the server where your project is located, enabling:
+The most important flag is **`--project-directory`** (or env var `SFCC_PROJECT_DIRECTORY`). It tells the server where your project is located, enabling:
 
 1. **Auto-discovery** - Detects your project type and enables appropriate toolsets.
 2. **Configuration loading** - Reads [`dw.json`](../guide/configuration#configuration-file) from your project for credentials.
 3. **Scaffolding** - Creates new files in the correct location.
 
-> **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
+> **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--project-directory`.
 
 ### Project Type Detection
 
-The server analyzes your working directory and enables toolsets based on what it finds:
+The server analyzes your project directory and enables toolsets based on what it finds:
 
 | Project Type | Detection | Toolsets Enabled |
 |--------------|-----------|------------------|

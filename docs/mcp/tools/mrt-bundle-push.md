@@ -32,7 +32,7 @@ Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configurati
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `buildDirectory` | string | No | `./build` | Path to build directory containing the built project files. Can be absolute or relative to the working directory. |
+| `buildDirectory` | string | No | `./build` | Path to build directory containing the built project files. Can be absolute or relative to the project directory. |
 | `message` | string | No | None | Deployment message to include with the bundle push. Useful for tracking deployments. |
 | `ssrOnly` | string | No | `ssr.js,ssr.mjs,server/**/*` | Comma-separated glob patterns for server-only files (SSR). These files are only included in the server bundle. |
 | `ssrShared` | string | No | `static/**/*,client/**/*` | Comma-separated glob patterns for shared files. These files are included in both server and client bundles. |

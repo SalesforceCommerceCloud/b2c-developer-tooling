@@ -326,8 +326,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
       allowNonGaTools: this.flags['allow-non-ga-tools'],
       configPath: this.flags.config,
-      // Working directory for auto-discovery. oclif handles flag with env fallback.
-      workingDirectory: this.flags['project-directory'],
+      // Project directory for auto-discovery. oclif handles flag with env fallback.
+      projectDirectory: this.flags['project-directory'],
     };
 
     // Add toolsets to telemetry attributes

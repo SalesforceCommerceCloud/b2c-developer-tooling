@@ -495,7 +495,7 @@ describe('McpServerCommand', () => {
       // Stub getBaseConfigOptions
       sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
         configPath: undefined,
-        workingDirectory: process.cwd(),
+        projectDirectory: process.cwd(),
       });
 
       // Call loadConfiguration via protected access
