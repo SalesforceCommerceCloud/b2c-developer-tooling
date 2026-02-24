@@ -110,6 +110,88 @@ describe('am clients get', () => {
       expect(result.redirectUrls).to.deep.equal(['https://example.com/callback']);
     });
 
+    it('should display client details in non-JSON mode', async () => {
+      const command = new ClientGet([], {} as any);
+      (command as any).args = {'api-client-id': 'client-123'};
+      (command as any).flags = {};
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, false);
+      stubImplicitOAuthStrategy(command);
+
+      const fullClient = {
+        ...mockClient,
+        organizations: ['org-1', {id: 'org-2'}],
+        roles: ['ADMIN', {roleEnumName: 'USER', id: 'user-role'}],
+        roleTenantFilterMap: {ADMIN: 'f_ecom_zzxy_prd'},
+        roleTenantFilter: '',
+        defaultScopes: ['openid'],
+        versionControl: ['v1'],
+        disabledTimestamp: null,
+        lastAuthenticatedDate: '2025-01-15',
+        passwordModificationTimestamp: 1_706_200_000_000,
+      };
+
+      server.use(
+        http.get(`${BASE_URL}/apiclients/client-123`, () => {
+          return HttpResponse.json(fullClient);
+        }),
+      );
+
+      const result = await command.run();
+      expect(result.id).to.equal('client-123');
+    });
+
+    it('should display client with minimal fields in non-JSON mode', async () => {
+      const command = new ClientGet([], {} as any);
+      (command as any).args = {'api-client-id': 'client-456'};
+      (command as any).flags = {};
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, false);
+      stubImplicitOAuthStrategy(command);
+
+      const minimalClient = {
+        id: 'client-456',
+        name: 'Minimal Client',
+        active: false,
+        redirectUrls: [],
+        scopes: [],
+        defaultScopes: [],
+        organizations: [],
+        roles: [],
+        roleTenantFilterMap: {},
+        roleTenantFilter: 'ADMIN:zzxy_prd',
+      };
+
+      server.use(
+        http.get(`${BASE_URL}/apiclients/client-456`, () => {
+          return HttpResponse.json(minimalClient);
+        }),
+      );
+
+      const result = await command.run();
+      expect(result.id).to.equal('client-456');
+    });
+
+    it('should handle valid expand flag', async () => {
+      const command = new ClientGet([], {} as any);
+      (command as any).args = {'api-client-id': 'client-123'};
+      (command as any).flags = {expand: 'organizations,roles'};
+      stubCommandConfigAndLogger(command);
+      stubJsonEnabled(command, true);
+      stubImplicitOAuthStrategy(command);
+
+      server.use(
+        http.get(`${BASE_URL}/apiclients/client-123`, ({request}) => {
+          const url = new URL(request.url);
+          expect(url.searchParams.get('expand')).to.include('organizations');
+          return HttpResponse.json(mockClient);
+        }),
+      );
+
+      const result = await command.run();
+      expect(result.id).to.equal('client-123');
+    });
+
     it('should error when API client not found', async () => {
       const command = new ClientGet([], {} as any);
       (command as any).args = {'api-client-id': 'nonexistent'};

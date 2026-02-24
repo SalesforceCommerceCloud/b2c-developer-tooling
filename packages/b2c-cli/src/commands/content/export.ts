@@ -207,7 +207,15 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
         ux.stdout(library.getTreeString({colorize: ux.colorize}));
       }
 
-      this.log(formatSummary('Dry run', pageCount, contentCount, componentCount, assetPaths.length, outputPath));
+      this.log(
+        formatSummary('Dry run', {
+          pages: pageCount,
+          content: contentCount,
+          components: componentCount,
+          assets: assetPaths.length,
+          outputPath,
+        }),
+      );
 
       return {
         library,
@@ -239,14 +247,13 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
     }
 
     this.log(
-      formatSummary(
-        'Exported',
-        result.pageCount,
-        result.contentCount,
-        result.componentCount,
-        result.downloadedAssets.length,
-        result.outputPath,
-      ),
+      formatSummary('Exported', {
+        pages: result.pageCount,
+        content: result.contentCount,
+        components: result.componentCount,
+        assets: result.downloadedAssets.length,
+        outputPath: result.outputPath,
+      }),
     );
 
     return result;
@@ -255,19 +262,20 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
 
 const pluralS = (n: number) => (n === 1 ? '' : 's');
 
-function formatSummary(
-  prefix: string,
-  pages: number,
-  content: number,
-  components: number,
-  assets: number,
-  outputPath: string,
-): string {
+interface ExportSummary {
+  pages: number;
+  content: number;
+  components: number;
+  assets: number;
+  outputPath: string;
+}
+
+function formatSummary(prefix: string, summary: ExportSummary): string {
   const parts: string[] = [];
-  if (pages > 0) parts.push(`${pages} page${pluralS(pages)}`);
-  if (content > 0) parts.push(`${content} content asset${pluralS(content)}`);
-  if (components > 0) parts.push(`${components} component${pluralS(components)}`);
-  if (assets > 0) parts.push(`${assets} static asset${pluralS(assets)}`);
-  const suffix = prefix === 'Dry run' ? `would be exported to ${outputPath}` : `to ${outputPath}`;
+  if (summary.pages > 0) parts.push(`${summary.pages} page${pluralS(summary.pages)}`);
+  if (summary.content > 0) parts.push(`${summary.content} content asset${pluralS(summary.content)}`);
+  if (summary.components > 0) parts.push(`${summary.components} component${pluralS(summary.components)}`);
+  if (summary.assets > 0) parts.push(`${summary.assets} static asset${pluralS(summary.assets)}`);
+  const suffix = prefix === 'Dry run' ? `would be exported to ${summary.outputPath}` : `to ${summary.outputPath}`;
   return parts.length > 0 ? `${prefix}: ${parts.join(', ')} ${suffix}` : `${prefix}: nothing to export`;
 }
