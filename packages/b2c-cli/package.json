@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-cli",
-  "description": "A Salesforce B2C Commerce Cloud CLI",
+  "description": "A Salesforce B2C Commerce CLI",
   "version": "0.4.1",
   "author": "Charles Lavery",
   "bin": {
