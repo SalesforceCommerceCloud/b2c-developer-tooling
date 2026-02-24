@@ -47,10 +47,6 @@ interface ScaffoldCustomApiInput {
   projectRoot?: string;
   /** Output directory override. Default: scaffold default or project root */
   outputDir?: string;
-  /** If true, preview only (no files written). Default: false */
-  dryRun?: boolean;
-  /** If true, overwrite existing files. Default: false */
-  force?: boolean;
 }
 
 /**
@@ -82,7 +78,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
       name: 'scapi_customapi_scaffold',
       description: `Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. \
        Uses the same scaffold as CLI: b2c scaffold generate custom-api. \
-       Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin), apiDescription, includeExampleEndpoints, projectRoot, outputDir, dryRun, force. \
+       Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin), apiDescription, includeExampleEndpoints, projectRoot, outputDir. \
        cartridgeName must be one of the cartridges discovered under projectRoot (--working-directory or SFCC_WORKING_DIRECTORY). \
        Set projectRoot to override the working directory. \
        For faster runs, set --working-directory to your cartridge project root (same as where you would run the CLI from). \
@@ -117,8 +113,6 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
             'Project root for cartridge discovery. Default: working directory. Set to override the working directory.',
           ),
         outputDir: z.string().optional().describe('Output directory override. Default: project root'),
-        dryRun: z.boolean().optional().describe('If true, preview only (no files written). Default: false'),
-        force: z.boolean().optional().describe('If true, overwrite existing files. Default: false'),
       },
       async execute(args, {services}) {
         const projectRoot = path.resolve(args.projectRoot ?? services.getWorkingDirectory());
@@ -132,7 +126,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
           return {
             scaffold: CUSTOM_API_SCAFFOLD_ID,
             outputDir: projectRoot,
-            dryRun: args.dryRun ?? false,
+            dryRun: false,
             files: [],
             error: `Scaffold not found: ${CUSTOM_API_SCAFFOLD_ID}. Ensure @salesforce/b2c-tooling-sdk is installed.`,
           };
@@ -146,7 +140,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
             return {
               scaffold: CUSTOM_API_SCAFFOLD_ID,
               outputDir: projectRoot,
-              dryRun: args.dryRun ?? false,
+              dryRun: false,
               files: [],
               error:
                 'No cartridges found in project. Add a cartridge (directory with .project file) or pass cartridgeName explicitly.',
@@ -176,7 +170,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
           return {
             scaffold: CUSTOM_API_SCAFFOLD_ID,
             outputDir: projectRoot,
-            dryRun: args.dryRun ?? false,
+            dryRun: false,
             files: [],
             error: `Parameter validation failed: ${message}`,
           };
@@ -187,7 +181,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
           return {
             scaffold: CUSTOM_API_SCAFFOLD_ID,
             outputDir: projectRoot,
-            dryRun: args.dryRun ?? false,
+            dryRun: false,
             files: [],
             error: `Missing required parameter: ${missingRequired[0].name}. For cartridgeName, ensure the cartridge exists in the project (under projectRoot).`,
           };
@@ -203,8 +197,8 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
           const result = await generateFromScaffold(scaffold, {
             outputDir,
             variables: resolved.variables as Record<string, boolean | string>,
-            dryRun: args.dryRun ?? false,
-            force: args.force ?? false,
+            dryRun: false,
+            force: false,
           });
 
           return {
@@ -223,7 +217,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
           return {
             scaffold: CUSTOM_API_SCAFFOLD_ID,
             outputDir,
-            dryRun: args.dryRun ?? false,
+            dryRun: false,
             files: [],
             error: `Scaffold generation failed: ${message}`,
           };
