@@ -10,11 +10,11 @@
  */
 
 import {spawn, type ChildProcess} from 'node:child_process';
-import * as path from 'node:path';
+import {dirname, join, resolve} from 'node:path';
 import {createInterface} from 'node:readline';
 import {fileURLToPath} from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const DEFAULT_INIT_PARAMS = {
   protocolVersion: '2024-11-05',
@@ -56,17 +56,17 @@ export interface McpE2EClientOptions {
  * Use start() to perform MCP handshake (initialize + initialized), then request() for tools/list, tools/call, etc.
  */
 export class McpE2EClient {
-  private proc: ChildProcess | null = null;
-  private readline: ReturnType<typeof createInterface> | null = null;
-  private pending = new Map<number | string, {resolve: (r: JsonRpcResponse) => void; reject: (e: Error) => void}>();
   private nextId = 1;
   private readonly packageRoot: string;
+  private pending = new Map<number | string, {resolve: (r: JsonRpcResponse) => void; reject: (e: Error) => void}>();
+  private proc: ChildProcess | null = null;
+  private readline: null | ReturnType<typeof createInterface> = null;
   private readonly serverArgs: string[];
   private readonly serverCwd: string;
   private readonly serverEnv: NodeJS.ProcessEnv;
 
   constructor(options: McpE2EClientOptions = {}) {
-    this.packageRoot = path.resolve(__dirname, '../..');
+    this.packageRoot = resolve(__dirname, '../..');
     this.serverCwd = options.cwd ?? this.packageRoot;
     this.serverArgs = options.args ?? [];
     this.serverEnv = {
@@ -77,62 +77,18 @@ export class McpE2EClient {
   }
 
   /**
-   * Start the server process and perform MCP initialize handshake.
+   * Call request() with an auto-generated id and return result or throw on error.
    */
-  async start(): Promise<void> {
-    const runJs = path.join(this.packageRoot, 'bin', 'run.js');
-    this.proc = spawn(process.execPath, [runJs, ...this.serverArgs], {
-      cwd: this.serverCwd,
-      env: this.serverEnv,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      windowsHide: true,
-    });
-
-    let stderr = '';
-    this.proc.stderr?.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
-    });
-
-    this.proc.on('error', (err) => {
-      for (const [, {reject}] of this.pending) {
-        reject(err);
-      }
-      this.pending.clear();
-    });
-
-    this.proc.on('exit', (code, signal) => {
-      this.readline?.close();
-      this.readline = null;
-      if (this.pending.size > 0 && code !== 0 && signal !== null) {
-        const err = new Error(`Server exited with code=${code} signal=${signal}. stderr: ${stderr.slice(-500)}`);
-        for (const [, {reject}] of this.pending) {
-          reject(err);
-        }
-        this.pending.clear();
-      }
-    });
-
-    const rl = createInterface({input: this.proc.stdout!, crlfDelay: Number.POSITIVE_INFINITY});
-    this.readline = rl;
-    rl.on('line', (line) => {
-      if (!line.trim()) return;
-      try {
-        const msg = JSON.parse(line) as JsonRpcResponse | JsonRpcNotification;
-        if ('id' in msg && msg.id !== undefined && this.pending.has(msg.id)) {
-          const p = this.pending.get(msg.id)!;
-          this.pending.delete(msg.id);
-          p.resolve(msg as JsonRpcResponse);
-        }
-      } catch {
-        // ignore parse errors for non-response lines
-      }
-    });
-
-    const initResult = await this.request(this.nextId++, 'initialize', DEFAULT_INIT_PARAMS);
-    if (initResult.error) {
-      throw new Error(`Initialize failed: ${initResult.error.message}`);
+  async call(method: string, params?: unknown): Promise<unknown> {
+    const id = this.nextId++;
+    const res = await this.request(id, method, params);
+    if (res.error) {
+      const e = new Error(res.error.message) as Error & {code?: number; data?: unknown};
+      e.code = res.error.code;
+      e.data = res.error.data;
+      throw e;
     }
-    this.sendNotification('notifications/initialized', {});
+    return res.result;
   }
 
   /**
@@ -171,18 +127,62 @@ export class McpE2EClient {
   }
 
   /**
-   * Call request() with an auto-generated id and return result or throw on error.
+   * Start the server process and perform MCP initialize handshake.
    */
-  async call(method: string, params?: unknown): Promise<unknown> {
-    const id = this.nextId++;
-    const res = await this.request(id, method, params);
-    if (res.error) {
-      const e = new Error(res.error.message) as Error & {code?: number; data?: unknown};
-      e.code = res.error.code;
-      e.data = res.error.data;
-      throw e;
+  async start(): Promise<void> {
+    const runJs = join(this.packageRoot, 'bin', 'run.js');
+    this.proc = spawn(process.execPath, [runJs, ...this.serverArgs], {
+      cwd: this.serverCwd,
+      env: this.serverEnv,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
+
+    let stderr = '';
+    this.proc.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+
+    this.proc.on('error', (err) => {
+      for (const [, {reject}] of this.pending) {
+        reject(err);
+      }
+      this.pending.clear();
+    });
+
+    this.proc.on('exit', (code, signal) => {
+      this.readline?.close();
+      this.readline = null;
+      if (this.pending.size > 0 && code !== 0 && signal !== null) {
+        const err = new Error(`Server exited with code=${code} signal=${signal}. stderr: ${stderr.slice(-500)}`);
+        for (const [, {reject}] of this.pending) {
+          reject(err);
+        }
+        this.pending.clear();
+      }
+    });
+
+    const rl = createInterface({input: this.proc.stdout!, crlfDelay: Number.POSITIVE_INFINITY});
+    this.readline = rl;
+    rl.on('line', (line) => {
+      if (!line.trim()) return;
+      try {
+        const msg = JSON.parse(line) as JsonRpcNotification | JsonRpcResponse;
+        if ('id' in msg && msg.id !== undefined && this.pending.has(msg.id)) {
+          const p = this.pending.get(msg.id)!;
+          this.pending.delete(msg.id);
+          p.resolve(msg as JsonRpcResponse);
+        }
+      } catch {
+        // ignore parse errors for non-response lines
+      }
+    });
+
+    const initResult = await this.request(this.nextId++, 'initialize', DEFAULT_INIT_PARAMS);
+    if (initResult.error) {
+      throw new Error(`Initialize failed: ${initResult.error.message}`);
     }
-    return res.result;
+    this.sendNotification('notifications/initialized', {});
   }
 
   /**
