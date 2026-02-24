@@ -1,6 +1,6 @@
-# Salesforce Commerce Cloud B2C MCP Server
+# Salesforce B2C Commerce MCP Server
 
-MCP (Model Context Protocol) server for Salesforce B2C Commerce Cloud developer experience tools.
+MCP (Model Context Protocol) server for Salesforce B2C Commerce developer experience tools.
 
 > ⚠️ **Preview Release**: This package is in preview. Tools are functional but require `--allow-non-ga-tools` to enable. Additional tools will be added in future releases.
 
@@ -12,15 +12,15 @@ The server automatically detects your project type and enables relevant tools. S
 
 ## Usage
 
-### Working Directory and Auto-Discovery
+### Project Directory and Auto-Discovery
 
-The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_DIRECTORY`). It tells the server where your project is located, enabling:
+The most important flag is **`--project-directory`** (or env var `SFCC_PROJECT_DIRECTORY`). It tells the server where your project is located, enabling:
 
 1. **Auto-discovery** - Detects your project type and enables appropriate toolsets
 2. **Configuration loading** - Reads [`dw.json`](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html#configuration-file) from your project for credentials
 3. **Scaffolding** - Creates new files in the correct location
 
-> **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--working-directory`.
+> **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--project-directory`.
 
 **Cursor** (supports `${workspaceFolder}`):
 
@@ -29,7 +29,7 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
   }
 }
@@ -42,7 +42,7 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--working-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/your/project", "--allow-non-ga-tools"]
     }
   }
 }
@@ -50,7 +50,7 @@ The most important flag is **`--working-directory`** (or env var `SFCC_WORKING_D
 
 ### Project Type Detection
 
-The server analyzes your working directory and enables toolsets based on what it finds:
+The server analyzes your project directory and enables toolsets based on what it finds:
 
 | Project Type | Detection | Toolsets Enabled |
 |--------------|-----------|------------------|
@@ -66,14 +66,14 @@ The **SCAPI** toolset is always enabled. Hybrid projects (e.g., cartridges + PWA
 Override auto-discovery by specifying toolsets explicitly:
 
 ```json
-"args": ["--working-directory", "${workspaceFolder}", "--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"]
+"args": ["--project-directory", "${workspaceFolder}", "--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"]
 ```
 
 ### Prompting Tips and Examples
 
 AI assistants (like Cursor, Claude Desktop) automatically decide which MCP tools to use based on your prompts. To get the best results, use clear, specific prompts that describe what you want to accomplish.
 
-> ⚠️ **IMPORTANT**: **Explicitly mention "Use the MCP tool"** in your prompts for reliable tool usage. While AI assistants (like Cursor's Composer) can automatically select MCP tools based on context, explicit instructions ensure the assistant prioritizes MCP tools over general knowledge, especially when multiple approaches are possible. This is particularly important for getting project-specific, up-to-date information rather than generic responses.
+> ⚠️ **IMPORTANT**: **Explicitly mention "Use the MCP tool"** in your prompts for reliable tool usage. While AI assistants (like Cursor's Composer) can automatically select MCP tools based on context, explicit instructions ensure that the assistant prioritizes MCP tools over general knowledge, especially when multiple approaches are possible. This is particularly important for getting project-specific, up-to-date information rather than generic responses.
 
 #### Best Practices
 
@@ -90,7 +90,7 @@ AI assistants (like Cursor, Claude Desktop) automatically decide which MCP tools
 
 The `storefront_next_development_guidelines` tool provides critical architecture rules and best practices. **Use this tool first** when starting new Storefront Next development or when you need architecture guidance.
 
-**Example prompts:**
+**Prompt examples:**
 - ✅ "I'm new to Storefront Next. Use the MCP tool to show me the critical rules I need to know."
 - ✅ "I need to build a product detail page. Use the MCP tool to show me best practices for data fetching and component patterns."
 - ✅ "I need to build a checkout form with authentication and validation. Use the MCP tool to show me how to handle form submissions, authentication, and internationalized error messages."
@@ -114,7 +114,7 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 
 ##### PWA Kit Development
 
-**Example prompts:**
+**Prompt examples:**
 - ✅ "I'm starting a new PWA Kit project. Use the MCP tool to get the development guidelines."
 - ✅ "Use the MCP tool to create a new product listing page component in my PWA Kit project."
 - ✅ "Use the MCP tool to recommend React hooks for fetching product data in PWA Kit."
@@ -153,14 +153,14 @@ Get registration status of custom API endpoints deployed on the instance (remote
 
 ##### Cartridge Deployment
 
-**Example prompts:**
+**Prompt examples:**
 - ✅ "Use the MCP tool to deploy my cartridges to the sandbox instance."
 - ✅ "Use the MCP tool to deploy only the app_storefront_base cartridge to production."
 - ✅ "Use the MCP tool to deploy cartridges from the ./cartridges directory and reload the code version."
 
 ##### MRT Bundle Operations
 
-**Example prompts:**
+**Prompt examples:**
 - ✅ "Use the MCP tool to build and push my Storefront Next bundle to staging."
 - ✅ "Use the MCP tool to push the bundle from ./build directory to Managed Runtime."
 - ✅ "Use the MCP tool to deploy my PWA Kit or Storefront Next bundle to production with a deployment message."
@@ -181,8 +181,8 @@ Credentials can be provided via **config files** (recommended), **environment va
 | **SCAPI** | `hostname` + `client-id` + `client-secret` (for `scapi_custom_apis_status`: requires `sfcc.custom-apis` scope) |
 | **CARTRIDGES** | `hostname` + `username` + `password` (or OAuth) |
 | **MRT** | `api-key` + `project` (optionally `environment`) |
-| **PWAV3** | `--working-directory` only (+ MRT config for deployments) |
-| **STOREFRONTNEXT** | `--working-directory` only (+ MRT/CARTRIDGES config for those tools) |
+| **PWAV3** | `--project-directory` only (+ MRT config for deployments) |
+| **STOREFRONTNEXT** | `--project-directory` only (+ MRT/CARTRIDGES config for those tools) |
 
 > **Note:** SCAPI and CARTRIDGES use the same `hostname` (your B2C instance). All B2C credentials are typically stored together in `dw.json`.
 
@@ -222,7 +222,7 @@ See [Flag Reference](#flag-reference) for all available flags and env vars.
 
 | Flag | Env Variable | Description |
 |------|--------------|-------------|
-| `--working-directory` | `SFCC_WORKING_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
+| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
 | `--toolsets` | — | Comma-separated toolsets to enable |
 | `--tools` | — | Comma-separated individual tools to enable |
 | `--allow-non-ga-tools` | — | Enable experimental (non-GA) tools |
@@ -367,7 +367,7 @@ pnpm run lint
 pnpm run clean
 ```
 
-### Working Directory
+### Project Directory
 
 Commands should be run from the `packages/b2c-dx-mcp` directory:
 
@@ -424,7 +424,7 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 }
 ```
 
-> **Note:** Make sure the script is executable: `chmod +x /full/path/to/packages/b2c-dx-mcp/bin/dev.js`
+> **Note:** Make sure that the script is executable: `chmod +x /full/path/to/packages/b2c-dx-mcp/bin/dev.js`
 >
 > The script's shebang (`#!/usr/bin/env -S node --conditions development`) handles Node.js setup automatically.
 

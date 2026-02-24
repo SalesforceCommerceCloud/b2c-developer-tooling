@@ -8,7 +8,7 @@
  * MCP Server Command - Salesforce B2C Commerce Developer Experience
  *
  * This is the main entry point for the B2C DX MCP server, built with oclif.
- * It exposes B2C Commerce Cloud developer tools to AI assistants via the
+ * It exposes B2C Commerce developer tools to AI assistants via the
  * Model Context Protocol (MCP).
  *
  * ## Flags
@@ -164,7 +164,7 @@ import {TOOLSETS, type StartupFlags} from '../utils/index.js';
  */
 export default class McpServerCommand extends BaseCommand<typeof McpServerCommand> {
   static description =
-    'Salesforce B2C Commerce Cloud Developer Experience MCP Server - Expose B2C Commerce Developer Experience tools to AI assistants';
+    'Salesforce B2C Commerce Developer Experience MCP Server - Expose B2C Commerce Developer Experience tools to AI assistants';
 
   static examples = [
     {
@@ -326,8 +326,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
       allowNonGaTools: this.flags['allow-non-ga-tools'],
       configPath: this.flags.config,
-      // Working directory for auto-discovery. oclif handles flag with env fallback.
-      workingDirectory: this.flags['project-directory'],
+      // Project directory for auto-discovery. oclif handles flag with env fallback.
+      projectDirectory: this.flags['project-directory'],
     };
 
     // Add toolsets to telemetry attributes

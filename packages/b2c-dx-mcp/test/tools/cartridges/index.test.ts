@@ -53,11 +53,11 @@ function createMockB2CInstance(options?: {codeVersion?: string}): B2CInstance {
 /**
  * Create a mock services instance for testing.
  */
-function createMockServices(options?: {b2cInstance?: B2CInstance; workingDirectory?: string}): Services {
+function createMockServices(options?: {b2cInstance?: B2CInstance; projectDirectory?: string}): Services {
   return new Services({
     b2cInstance: options?.b2cInstance,
     resolvedConfig: createMockResolvedConfig({
-      workingDirectory: options?.workingDirectory,
+      projectDirectory: options?.projectDirectory,
     }),
   });
 }
@@ -67,7 +67,7 @@ function createMockServices(options?: {b2cInstance?: B2CInstance; workingDirecto
  */
 function createMockLoadServicesWrapper(options?: {
   b2cInstance?: B2CInstance;
-  workingDirectory?: string;
+  projectDirectory?: string;
 }): () => Services {
   const services = createMockServices(options);
   return () => services;
@@ -136,7 +136,7 @@ describe('tools/cartridges', () => {
 
   describe('cartridge_deploy execution', () => {
     it('should call findAndDeployCartridges with instance and default directory', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
 
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app_storefront_base', dest: 'app_storefront_base'}],
@@ -146,7 +146,7 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, workingDirectory: workingDir});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
         getActiveCodeVersion: getActiveCodeVersionStub,
@@ -162,7 +162,7 @@ describe('tools/cartridges', () => {
         DeployOptions,
       ];
       expect(instance).to.equal(mockInstance);
-      expect(dir).to.equal(workingDir);
+      expect(dir).to.equal(projectDir);
       expect(options.include).to.be.undefined;
       expect(options.exclude).to.be.undefined;
       expect(options.reload).to.be.undefined;
@@ -172,9 +172,9 @@ describe('tools/cartridges', () => {
     });
 
     it('should call findAndDeployCartridges with custom directory', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const directory = './cartridges';
-      const expectedResolvedPath = path.resolve(workingDir, directory);
+      const expectedResolvedPath = path.resolve(projectDir, directory);
 
       const mockResult: DeployResult = {
         cartridges: [{name: 'my_cartridge', src: '/path/to/my_cartridge', dest: 'my_cartridge'}],
@@ -184,7 +184,7 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, workingDirectory: workingDir});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
         getActiveCodeVersion: getActiveCodeVersionStub,
@@ -277,9 +277,9 @@ describe('tools/cartridges', () => {
     });
 
     it('should pass all options together', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const directory = './cartridges';
-      const expectedResolvedPath = path.resolve(workingDir, directory);
+      const expectedResolvedPath = path.resolve(projectDir, directory);
       const cartridges = ['app_storefront_base'];
       const exclude = ['test_cartridge'];
       const reload = true;
@@ -292,7 +292,7 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, workingDirectory: workingDir});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
         getActiveCodeVersion: getActiveCodeVersionStub,
@@ -342,13 +342,13 @@ describe('tools/cartridges', () => {
       expect(jsonResult.cartridges[1].name).to.equal('app_core');
     });
 
-    it('should resolve relative directory paths relative to working directory', async () => {
-      const workingDir = '/path/to/project';
+    it('should resolve relative directory paths relative to project directory', async () => {
+      const projectDir = '/path/to/project';
       const relativePaths = ['./cartridges', 'cartridges', '../cartridges', './src/cartridges'];
 
       for (const relativePath of relativePaths) {
         findAndDeployCartridgesStub.resetHistory();
-        const expectedResolvedPath = path.resolve(workingDir, relativePath);
+        const expectedResolvedPath = path.resolve(projectDir, relativePath);
 
         const mockResult: DeployResult = {
           cartridges: [{name: 'test_cartridge', src: '/path/to/test', dest: 'test_cartridge'}],
@@ -358,7 +358,7 @@ describe('tools/cartridges', () => {
         findAndDeployCartridgesStub.resolves(mockResult);
 
         const mockInstance = createMockB2CInstance();
-        const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, workingDirectory: workingDir});
+        const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
         const tool = createCartridgesTools(loadServices, {
           findAndDeployCartridges: findAndDeployCartridgesStub,
           getActiveCodeVersion: getActiveCodeVersionStub,
@@ -374,7 +374,7 @@ describe('tools/cartridges', () => {
     });
 
     it('should use absolute directory paths as-is', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const absolutePaths =
         process.platform === 'win32'
           ? [String.raw`C:\cartridges`, String.raw`D:\projects\cartridges`]
@@ -391,7 +391,7 @@ describe('tools/cartridges', () => {
         findAndDeployCartridgesStub.resolves(mockResult);
 
         const mockInstance = createMockB2CInstance();
-        const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, workingDirectory: workingDir});
+        const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
         const tool = createCartridgesTools(loadServices, {
           findAndDeployCartridges: findAndDeployCartridgesStub,
           getActiveCodeVersion: getActiveCodeVersionStub,
@@ -406,8 +406,8 @@ describe('tools/cartridges', () => {
       }
     });
 
-    it('should use working directory when directory is not provided', async () => {
-      const workingDir = '/path/to/project';
+    it('should use project directory when directory is not provided', async () => {
+      const projectDir = '/path/to/project';
 
       const mockResult: DeployResult = {
         cartridges: [{name: 'test_cartridge', src: '/path/to/test', dest: 'test_cartridge'}],
@@ -417,7 +417,7 @@ describe('tools/cartridges', () => {
       findAndDeployCartridgesStub.resolves(mockResult);
 
       const mockInstance = createMockB2CInstance();
-      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, workingDirectory: workingDir});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,
         getActiveCodeVersion: getActiveCodeVersionStub,
@@ -427,10 +427,10 @@ describe('tools/cartridges', () => {
 
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
       const [, dir] = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
-      expect(dir).to.equal(workingDir);
+      expect(dir).to.equal(projectDir);
     });
 
-    it('should use process.cwd() when workingDirectory is not configured', async () => {
+    it('should use process.cwd() when projectDirectory is not configured', async () => {
       const directory = './cartridges';
       const expectedResolvedPath = path.resolve(process.cwd(), directory);
 
@@ -444,7 +444,7 @@ describe('tools/cartridges', () => {
       const mockInstance = createMockB2CInstance();
       const loadServices = createMockLoadServicesWrapper({
         b2cInstance: mockInstance,
-        // No workingDirectory provided - should fall back to process.cwd()
+        // No projectDirectory provided - should fall back to process.cwd()
       });
       const tool = createCartridgesTools(loadServices, {
         findAndDeployCartridges: findAndDeployCartridgesStub,

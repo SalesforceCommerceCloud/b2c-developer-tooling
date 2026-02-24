@@ -66,7 +66,7 @@ function createMockServices(options?: {
   mrtProject?: string;
   mrtEnvironment?: string;
   mrtOrigin?: string;
-  workingDirectory?: string;
+  projectDirectory?: string;
 }): Services {
   return new Services({
     mrtConfig: {
@@ -76,7 +76,7 @@ function createMockServices(options?: {
       origin: options?.mrtOrigin,
     },
     resolvedConfig: createMockResolvedConfig({
-      workingDirectory: options?.workingDirectory,
+      projectDirectory: options?.projectDirectory,
     }),
   });
 }
@@ -89,7 +89,7 @@ function createMockLoadServicesWrapper(options?: {
   mrtProject?: string;
   mrtEnvironment?: string;
   mrtOrigin?: string;
-  workingDirectory?: string;
+  projectDirectory?: string;
 }): () => Services {
   const services = createMockServices(options);
   return () => services;
@@ -152,9 +152,9 @@ describe('tools/mrt', () => {
 
   describe('mrt_bundle_push execution', () => {
     it('should call pushBundle with project from mrtConfig', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
-      const expectedResolvedPath = path.resolve(workingDir, buildDir);
+      const expectedResolvedPath = path.resolve(projectDir, buildDir);
 
       const mockResult: PushResult = {
         bundleId: 123,
@@ -167,7 +167,7 @@ describe('tools/mrt', () => {
       const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -184,9 +184,9 @@ describe('tools/mrt', () => {
     });
 
     it('should not pass environment as target when deploy is false (default)', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
-      const expectedResolvedPath = path.resolve(workingDir, buildDir);
+      const expectedResolvedPath = path.resolve(projectDir, buildDir);
 
       const mockResult: PushResult = {
         bundleId: 456,
@@ -200,7 +200,7 @@ describe('tools/mrt', () => {
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
         mrtEnvironment: 'staging',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -217,9 +217,9 @@ describe('tools/mrt', () => {
     });
 
     it('should not pass environment as target when deploy is explicitly false', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
-      const expectedResolvedPath = path.resolve(workingDir, buildDir);
+      const expectedResolvedPath = path.resolve(projectDir, buildDir);
 
       const mockResult: PushResult = {
         bundleId: 789,
@@ -233,7 +233,7 @@ describe('tools/mrt', () => {
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
         mrtEnvironment: 'staging',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -250,9 +250,9 @@ describe('tools/mrt', () => {
     });
 
     it('should call pushBundle with environment as target when deploy is true and environment is configured', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
-      const expectedResolvedPath = path.resolve(workingDir, buildDir);
+      const expectedResolvedPath = path.resolve(projectDir, buildDir);
 
       const mockResult: PushResult = {
         bundleId: 456,
@@ -267,7 +267,7 @@ describe('tools/mrt', () => {
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
         mrtEnvironment: 'staging',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -285,9 +285,9 @@ describe('tools/mrt', () => {
     });
 
     it('should call pushBundle with custom origin when configured', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
-      const expectedResolvedPath = path.resolve(workingDir, buildDir);
+      const expectedResolvedPath = path.resolve(projectDir, buildDir);
 
       const customOrigin = 'https://custom-cloud.mobify.com';
       const mockResult: PushResult = {
@@ -302,7 +302,7 @@ describe('tools/mrt', () => {
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
         mrtOrigin: customOrigin,
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -319,9 +319,9 @@ describe('tools/mrt', () => {
     });
 
     it('should pass message parameter to pushBundle', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
-      const expectedResolvedPath = path.resolve(workingDir, buildDir);
+      const expectedResolvedPath = path.resolve(projectDir, buildDir);
 
       const mockResult: PushResult = {
         bundleId: 123,
@@ -334,7 +334,7 @@ describe('tools/mrt', () => {
       const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -347,9 +347,9 @@ describe('tools/mrt', () => {
     });
 
     it('should return PushResult as JSON', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
-      const expectedResolvedPath = path.resolve(workingDir, buildDir);
+      const expectedResolvedPath = path.resolve(projectDir, buildDir);
 
       const mockResult: PushResult = {
         bundleId: 12_345,
@@ -362,7 +362,7 @@ describe('tools/mrt', () => {
       const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -378,13 +378,13 @@ describe('tools/mrt', () => {
       expect(jsonResult.message).to.equal('Release v1.0.0');
     });
 
-    it('should resolve relative buildDirectory paths relative to working directory', async () => {
-      const workingDir = '/path/to/project';
+    it('should resolve relative buildDirectory paths relative to project directory', async () => {
+      const projectDir = '/path/to/project';
       const relativePaths = ['./build', 'build', '../build', './dist/build'];
 
       for (const relativePath of relativePaths) {
         pushBundleStub.resetHistory();
-        const expectedResolvedPath = path.resolve(workingDir, relativePath);
+        const expectedResolvedPath = path.resolve(projectDir, relativePath);
 
         const mockResult: PushResult = {
           bundleId: 999,
@@ -397,7 +397,7 @@ describe('tools/mrt', () => {
         const loadServices = createMockLoadServicesWrapper({
           mrtAuth: new MockAuthStrategy(),
           mrtProject: 'my-project',
-          workingDirectory: workingDir,
+          projectDirectory: projectDir,
         });
         const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -411,7 +411,7 @@ describe('tools/mrt', () => {
     });
 
     it('should use absolute buildDirectory paths as-is', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const absolutePaths =
         process.platform === 'win32'
           ? [String.raw`C:\build`, String.raw`D:\projects\build`]
@@ -431,7 +431,7 @@ describe('tools/mrt', () => {
         const loadServices = createMockLoadServicesWrapper({
           mrtAuth: new MockAuthStrategy(),
           mrtProject: 'my-project',
-          workingDirectory: workingDir,
+          projectDirectory: projectDir,
         });
         const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -445,8 +445,8 @@ describe('tools/mrt', () => {
     });
 
     it('should use default build directory when buildDirectory is not provided', async () => {
-      const workingDir = '/path/to/project';
-      const expectedDefaultPath = path.join(workingDir, 'build');
+      const projectDir = '/path/to/project';
+      const expectedDefaultPath = path.join(projectDir, 'build');
 
       const mockResult: PushResult = {
         bundleId: 888,
@@ -459,7 +459,7 @@ describe('tools/mrt', () => {
       const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -470,7 +470,7 @@ describe('tools/mrt', () => {
       expect(options.buildDirectory).to.equal(expectedDefaultPath);
     });
 
-    it('should use process.cwd() when workingDirectory is not configured', async () => {
+    it('should use process.cwd() when projectDirectory is not configured', async () => {
       const buildDir = './build';
       const expectedResolvedPath = path.resolve(process.cwd(), buildDir);
 
@@ -485,7 +485,7 @@ describe('tools/mrt', () => {
       const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
-        // No workingDirectory provided - should fall back to process.cwd()
+        // No projectDirectory provided - should fall back to process.cwd()
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 
@@ -551,7 +551,7 @@ describe('tools/mrt', () => {
     });
 
     it('should return error when pushBundle throws', async () => {
-      const workingDir = '/path/to/project';
+      const projectDir = '/path/to/project';
       const buildDir = './build';
 
       const error = new Error('Failed to push bundle: Network error');
@@ -560,7 +560,7 @@ describe('tools/mrt', () => {
       const loadServices = createMockLoadServicesWrapper({
         mrtAuth: new MockAuthStrategy(),
         mrtProject: 'my-project',
-        workingDirectory: workingDir,
+        projectDirectory: projectDir,
       });
       const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
 

@@ -634,7 +634,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Services): M
     description:
       'Adds Page Designer decorators (@Component, @AttributeDefinition, @RegionDefinition) to React components. ' +
       'Two modes: autoMode=true for quick setup with defaults, or interactive mode via conversationContext.step. ' +
-      'Component discovery uses workingDirectory from flags/env. ' +
+      'Component discovery uses projectDirectory from flags/env. ' +
       'Auto mode: selects suitable props, infers types, generates code immediately. ' +
       'Interactive mode: multi-step workflow (analyze → select_props → configure_attrs → configure_regions → confirm_generation).',
 
@@ -646,7 +646,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Services): M
       try {
         // Validate and parse input
         const validatedArgs = pageDesignerDecoratorSchema.parse(args) as PageDesignerDecoratorInput;
-        // Use workingDirectory from services to ensure we search in the correct project directory
+        // Use projectDirectory from services to ensure we search in the correct project directory
         // This prevents searches in the home folder when MCP clients spawn servers from ~
         const services = loadServices();
         const workspaceRoot = services.getWorkingDirectory();

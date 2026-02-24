@@ -44,7 +44,7 @@ Issues labelled `good first contribution`.
 
 # Running the MCP server from source
 
-When developing the B2C DX MCP package (`packages/b2c-dx-mcp`), use `node` with the path to `bin/dev.js` in args. Build to latest (`pnpm run build` from the repo root) so changes that require a rebuild are reflected when you run the server.
+For information on running the MCP server from source and local development, see [packages/b2c-dx-mcp/CONTRIBUTING.md](packages/b2c-dx-mcp/CONTRIBUTING.md).
 
 # Contribution Checklist
 

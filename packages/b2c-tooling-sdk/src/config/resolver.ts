@@ -13,6 +13,7 @@
  */
 import type {AuthCredentials} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
+import {getLogger} from '../logging/logger.js';
 import {mergeConfigsWithProtection, getPopulatedFields, createInstanceFromConfig} from './mapping.js';
 import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
@@ -220,6 +221,17 @@ export class ConfigResolver {
             fields,
             fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
           });
+
+          const logger = getLogger();
+          logger.trace(
+            {
+              source: source.name,
+              location,
+              fields,
+              fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
+            },
+            `[${source.name}] Contributed fields`,
+          );
 
           // Enrich options with accumulated config values for subsequent sources.
           // Only set if not already provided via CLI options.
