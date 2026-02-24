@@ -1,5 +1,13 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.5.2
+
+### Patch Changes
+
+- [`a9db7da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a9db7daf60a9071244c8e2e098dbd4f8fc58495d) - Add legacy env var fallbacks for MRT flags: `MRT_PROJECT` for --project and `MRT_TARGET` for --environment (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#186](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/186) [`dc7a25a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/dc7a25aedef047190250b696421e4a25c00cba15) - Add `@salesforce/b2c-tooling-sdk/plugins` module for discovering and loading b2c-cli plugins outside of oclif. Enables the VS Code extension and other non-CLI consumers to use installed plugins (keychain managers, config sources, middleware) without depending on `@oclif/core`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.5.1
 
 ### Patch Changes
