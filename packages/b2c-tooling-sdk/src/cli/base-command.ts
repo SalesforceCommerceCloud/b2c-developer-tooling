@@ -397,6 +397,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * - number → used directly
    */
   protected async collectPluginConfigSources(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
     // Access flags that may be defined in subclasses (OAuthCommand, InstanceCommand)
     const flags = this.flags as Record<string, unknown>;
 
@@ -453,6 +455,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Plugin middleware is registered with the global middleware registry.
    */
   protected async collectPluginHttpMiddleware(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
     const hookOptions: HttpMiddlewareHookOptions = {
       flags: this.flags as Record<string, unknown>,
     };
@@ -486,6 +490,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Plugin middleware is registered with the global auth middleware registry.
    */
   protected async collectPluginAuthMiddleware(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
     const hookOptions: AuthMiddlewareHookOptions = {
       flags: this.flags as Record<string, unknown>,
     };
