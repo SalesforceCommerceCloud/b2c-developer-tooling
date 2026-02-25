@@ -23,14 +23,51 @@
     "onFileSystem:b2c-webdav",
     "onFileSystem:b2c-content",
     "onCommand:b2c-dx.openUI",
-    "onCommand:b2c-dx.handleStorefrontNextCartridge",
     "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
     "onCommand:b2c-dx.scapiExplorer",
-    "onCommand:b2c-dx.odsManagement"
+    "onView:b2cSandboxExplorer"
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "B2C DX",
+      "properties": {
+        "b2c-dx.features.sandboxExplorer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Sandbox Explorer sidebar."
+        },
+        "b2c-dx.features.webdavBrowser": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the WebDAV Browser."
+        },
+        "b2c-dx.features.contentLibraries": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Content Libraries browser."
+        },
+        "b2c-dx.features.logTailing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable log tailing commands."
+        },
+        "b2c-dx.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["trace", "debug", "info", "warn", "error", "silent"],
+          "description": "Log verbosity level for the B2C DX output channel."
+        },
+        "b2c-dx.sandbox.pollingInterval": {
+          "type": "number",
+          "default": 10,
+          "minimum": 2,
+          "maximum": 300,
+          "description": "Seconds between polls during sandbox state transitions."
+        }
+      }
+    },
     "submenus": [
       {
         "id": "b2c-dx.submenu",
@@ -43,6 +80,11 @@
           "id": "b2c-dx",
           "title": "B2C-DX",
           "icon": "media/b2c-icon.svg"
+        },
+        {
+          "id": "b2c-dx-sandboxes",
+          "title": "B2C-DX Sandboxes",
+          "icon": "$(server-environment)"
         }
       ]
     },
@@ -52,13 +94,20 @@
           "id": "b2cWebdavExplorer",
           "name": "WebDAV Browser",
           "icon": "media/b2c-icon.svg",
-          "contextualTitle": "B2C Commerce"
+          "contextualTitle": "B2C-DX"
         },
         {
           "id": "b2cContentExplorer",
           "name": "Libraries",
           "icon": "media/b2c-icon.svg",
-          "contextualTitle": "B2C Commerce Content"
+          "contextualTitle": "B2C-DX"
+        }
+      ],
+      "b2c-dx-sandboxes": [
+        {
+          "id": "b2cSandboxExplorer",
+          "name": "Realm Explorer",
+          "contextualTitle": "B2C-DX"
         }
       ]
     },
@@ -70,17 +119,16 @@
       {
         "view": "b2cContentExplorer",
         "contents": "No content libraries configured.\n\nSet \"contentLibrary\" in dw.json or add a library manually.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
+      },
+      {
+        "view": "b2cSandboxExplorer",
+        "contents": "No sandbox realms configured.\n\nSet \"realm\" in dw.json or add a realm manually.\n\n[Add Realm](command:b2c-dx.sandbox.addRealm)"
       }
     ],
     "commands": [
       {
         "command": "b2c-dx.openUI",
         "title": "Open Page Designer Assistant UI",
-        "category": "B2C DX - Page Designer Assistant"
-      },
-      {
-        "command": "b2c-dx.handleStorefrontNextCartridge",
-        "title": "Storefront Next Cartridge",
         "category": "B2C DX - Page Designer Assistant"
       },
       {
@@ -99,9 +147,86 @@
         "category": "B2C DX"
       },
       {
-        "command": "b2c-dx.odsManagement",
-        "title": "On Demand Sandbox (ods) Management",
+        "command": "b2c-dx.sandbox.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.addRealm",
+        "title": "Add Realm",
+        "icon": "$(add)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.removeRealm",
+        "title": "Remove Realm",
+        "icon": "$(remove)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.create",
+        "title": "Create Sandbox",
+        "icon": "$(plus)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.delete",
+        "title": "Delete Sandbox",
+        "icon": "$(trash)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.start",
+        "title": "Start Sandbox",
+        "icon": "$(debug-start)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.stop",
+        "title": "Stop Sandbox",
+        "icon": "$(debug-stop)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.restart",
+        "title": "Restart Sandbox",
+        "icon": "$(debug-restart)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.viewDetails",
+        "title": "View Details",
+        "icon": "$(info)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.openBM",
+        "title": "Open Business Manager",
+        "icon": "$(link-external)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.instance.inspect",
+        "title": "B2C Instance Config",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.instance.switch",
+        "title": "Switch Active Instance",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.logs.startTail",
+        "title": "Start Tailing Logs",
+        "icon": "$(output)",
+        "category": "B2C DX - Logs"
+      },
+      {
+        "command": "b2c-dx.logs.stopTail",
+        "title": "Stop Tailing Logs",
+        "icon": "$(debug-stop)",
+        "category": "B2C DX - Logs"
       },
       {
         "command": "b2c-dx.webdav.refresh",
@@ -232,6 +357,16 @@
           "command": "b2c-dx.content.clearFilter",
           "when": "view == b2cContentExplorer && b2cContentFilterActive",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.sandbox.refresh",
+          "when": "view == b2cSandboxExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.sandbox.addRealm",
+          "when": "view == b2cSandboxExplorer",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -289,6 +424,46 @@
           "command": "b2c-dx.content.removeLibrary",
           "when": "view == b2cContentExplorer && viewItem == library",
           "group": "2_manage@1"
+        },
+        {
+          "command": "b2c-dx.sandbox.create",
+          "when": "view == b2cSandboxExplorer && viewItem == realm",
+          "group": "1_realm@1"
+        },
+        {
+          "command": "b2c-dx.sandbox.removeRealm",
+          "when": "view == b2cSandboxExplorer && viewItem == realm",
+          "group": "2_manage@1"
+        },
+        {
+          "command": "b2c-dx.sandbox.viewDetails",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "group": "1_info@1"
+        },
+        {
+          "command": "b2c-dx.sandbox.openBM",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "group": "1_info@2"
+        },
+        {
+          "command": "b2c-dx.sandbox.start",
+          "when": "view == b2cSandboxExplorer && viewItem == sandbox-stopped",
+          "group": "2_lifecycle@1"
+        },
+        {
+          "command": "b2c-dx.sandbox.stop",
+          "when": "view == b2cSandboxExplorer && viewItem == sandbox-started",
+          "group": "2_lifecycle@2"
+        },
+        {
+          "command": "b2c-dx.sandbox.restart",
+          "when": "view == b2cSandboxExplorer && viewItem == sandbox-started",
+          "group": "2_lifecycle@3"
+        },
+        {
+          "command": "b2c-dx.sandbox.delete",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "group": "3_destructive@1"
         }
       ],
       "explorer/context": [
