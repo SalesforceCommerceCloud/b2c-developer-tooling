@@ -123,9 +123,11 @@ jobs:
               per_page: 100,
             });
 
+            // Ignore package.json under test fixtures (e.g. e2e workspace-detection fixtures)
+            const fixtureManifestPattern = /[/\\]test[/\\].*[/\\]fixtures[/\\].*package\.json$/i;
             const changedPackageJsonFiles = files
               .map((file) => file.filename)
-              .filter((filename) => filename.endsWith('package.json'));
+              .filter((filename) => filename.endsWith('package.json') && !fixtureManifestPattern.test(filename));
 
             const findings = [];
 
