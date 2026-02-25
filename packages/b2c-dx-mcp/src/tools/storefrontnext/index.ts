@@ -50,6 +50,6 @@ export function createStorefrontNextTools(loadServices: () => Services): McpTool
     createPageDesignerDecoratorTool(loadServices),
     createFigmaToComponentTool(loadServices),
     createGenerateComponentTool(loadServices),
-    createMapTokensToThemeTool(loadServices)
+    createMapTokensToThemeTool(loadServices),
   ];
 }
