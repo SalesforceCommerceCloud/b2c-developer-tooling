@@ -67,6 +67,7 @@ export class ConfigSourceRegistry {
    * @param source - The config source to register
    */
   register(source: ConfigSource): void {
+    if (this.sources.some((s) => s.name === source.name)) return;
     this.sources.push(source);
   }
 

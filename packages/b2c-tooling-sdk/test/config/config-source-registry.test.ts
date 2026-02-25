@@ -29,6 +29,15 @@ describe('config/config-source-registry', () => {
     expect(registry.getSourceNames()).to.deep.equal(['s1', 's2']);
   });
 
+  it('register() silently ignores duplicate source names', () => {
+    const registry = new ConfigSourceRegistry();
+    registry.register(createStubSource('s1'));
+    registry.register(createStubSource('s1'));
+
+    expect(registry.size).to.equal(1);
+    expect(registry.getSourceNames()).to.deep.equal(['s1']);
+  });
+
   it('unregister() removes an existing source by name', () => {
     const registry = new ConfigSourceRegistry();
 
