@@ -307,9 +307,9 @@ Storefront Next development tools for building modern storefronts.
 |------|-------------|
 | `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices |
 | `storefront_next_site_theming` | Configure and manage site theming for Storefront Next |
-| `storefront_next_figma_to_component_workflow` | Convert Figma designs to Storefront Next components |
-| `storefront_next_generate_component` | Generate a new Storefront Next component |
-| `storefront_next_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration |
+| `storefront_next_figma_to_component_workflow` | Workflow orchestrator for Figma-to-component conversion. Parses Figma URL, returns step-by-step instructions for subsequent tool calls |
+| `storefront_next_generate_component` | Analyze Figma design and discovered components to recommend REUSE, EXTEND, or CREATE strategy |
+| `storefront_next_map_tokens_to_theme` | Map Figma design tokens to existing theme tokens in app.css with confidence scores and suggestions |
 | `storefront_next_page_designer_decorator` | Add Page Designer decorators to Storefront Next components |
 | `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
