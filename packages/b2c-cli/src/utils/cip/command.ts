@@ -102,7 +102,6 @@ export abstract class CipCommand<T extends typeof Command> extends OAuthCommand<
         cipHost: flags['cip-host'] as string | undefined,
       },
       this.getBaseConfigOptions(),
-      this.getPluginSources(),
     );
   }
 
