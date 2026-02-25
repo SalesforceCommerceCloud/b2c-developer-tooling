@@ -5,6 +5,7 @@
  */
 import * as path from 'node:path';
 import type {ConfigSource} from '../config/types.js';
+import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import type {HttpMiddlewareProvider} from '../clients/middleware-registry.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import type {AuthMiddlewareProvider} from '../auth/middleware.js';
@@ -174,7 +175,12 @@ export class B2CPluginManager {
   }
 
   /**
-   * Registers collected middleware providers with the global registries.
+   * Registers collected middleware providers and config sources with the global registries.
+   *
+   * After calling this method:
+   * - HTTP middleware is available to all SDK client factories via {@link globalMiddlewareRegistry}
+   * - Auth middleware is available to OAuth strategies via {@link globalAuthMiddlewareRegistry}
+   * - Config sources are available to {@link resolveConfig} via {@link globalConfigSourceRegistry}
    */
   applyMiddleware(): void {
     if (this._middlewareApplied) return;
@@ -188,6 +194,11 @@ export class B2CPluginManager {
     for (const provider of this._authMiddleware) {
       globalAuthMiddlewareRegistry.register(provider);
       this.logger?.debug(`Registered auth middleware provider: ${provider.name}`);
+    }
+
+    for (const source of [...this._sourcesBefore, ...this._sourcesAfter]) {
+      globalConfigSourceRegistry.register(source);
+      this.logger?.debug(`Registered config source: ${source.name}`);
     }
   }
 
