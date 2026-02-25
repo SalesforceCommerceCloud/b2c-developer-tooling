@@ -11,7 +11,6 @@
  *
  * @module operations/mrt/tail-logs
  */
-import {WebSocket} from 'undici';
 import type {AuthStrategy} from '../../auth/types.js';
 import {DEFAULT_MRT_ORIGIN} from '../../clients/mrt.js';
 import {getLogger} from '../../logging/logger.js';
@@ -264,7 +263,7 @@ export async function tailMrtLogs(options: TailMrtLogsOptions, auth: AuthStrateg
       logger.trace({intervalMs: HEARTBEAT_INTERVAL_MS}, '[MRT] Heartbeat timer started');
     });
 
-    ws.addEventListener('message', (event: {data: unknown}) => {
+    ws.addEventListener('message', (event) => {
       logger.trace({dataLength: String(event.data).length}, '[MRT] WebSocket message received');
       if (!onEntry) return;
 
@@ -293,7 +292,7 @@ export async function tailMrtLogs(options: TailMrtLogsOptions, auth: AuthStrateg
       logger.debug('[MRT] WebSocket error event fired (waiting for close event for details)');
     });
 
-    ws.addEventListener('close', (event: {code: number; reason: string}) => {
+    ws.addEventListener('close', (event) => {
       if (heartbeatTimer) {
         clearInterval(heartbeatTimer);
         logger.trace('[MRT] Heartbeat timer cleared');
