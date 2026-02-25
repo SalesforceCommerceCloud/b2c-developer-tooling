@@ -4,6 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * PostCSS dependency: Used to parse theme CSS (app.css) into an AST for reliable extraction of
+ * design tokens. Required for: (1) walking @theme at-rules and inline blocks, (2) distinguishing
+ * light/dark/shared tokens via selectors (e.g. [data-theme="light"], :root), (3) handling nested
+ * rules and var() references. Regex-based parsing would be brittle for real-world theme files.
+ */
+
 import {readFileSync, existsSync} from 'node:fs';
 import {join} from 'node:path';
 import postcss, {type AtRule, type Rule} from 'postcss';

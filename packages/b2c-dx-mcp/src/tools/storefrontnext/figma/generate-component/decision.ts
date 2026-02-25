@@ -8,10 +8,10 @@ import type {SimilarComponent, ComponentAnalysisResult} from './index.js';
 
 /**
  * Categorized differences between a matched component and Figma design
- * @property styling - Visual differences (Tailwind classes, inline styles, theme tokens)
- * @property structural - JSX hierarchy differences (elements, nesting, root element changes)
- * @property behavioral - Interaction differences (hooks, event handlers, client/server rendering)
- * @property props - Interface/prop definition differences (new props, type changes)
+ * @property {DifferenceDetail[]} styling - Visual differences (Tailwind classes, inline styles, theme tokens)
+ * @property {DifferenceDetail[]} structural - JSX hierarchy differences (elements, nesting, root element changes)
+ * @property {DifferenceDetail[]} behavioral - Interaction differences (hooks, event handlers, client/server rendering)
+ * @property {DifferenceDetail[]} props - Interface/prop definition differences (new props, type changes)
  */
 export interface ComponentDifferences {
   styling: DifferenceDetail[];
@@ -22,9 +22,9 @@ export interface ComponentDifferences {
 
 /**
  * Details about a specific difference between components
- * @property description - Explanation of the difference
- * @property severity - Impact level: 'minor' (1pt), 'moderate' (3pts), 'major' (5pts)
- * @property isBackwardCompatible - Whether existing code using the component would still work after this change
+ * @property {string} description - Explanation of the difference
+ * @property {'major'|'minor'|'moderate'} severity - Impact level: 'minor' (1pt), 'moderate' (3pts), 'major' (5pts)
+ * @property {boolean} isBackwardCompatible - Whether existing code using the component would still work after this change
  */
 export interface DifferenceDetail {
   description: string;
@@ -35,7 +35,9 @@ export interface DifferenceDetail {
 /**
  * Analyzes differences between matched component and Figma design.
  *
- * @param figmaMetadata - Reserved for future use (e.g., component hierarchy analysis).
+ * @param matchedComponent - The existing component to compare against
+ * @param figmaCode - The Figma-generated React code
+ * @param _figmaMetadata - Reserved for future use (e.g., component hierarchy analysis).
  *   Currently unused but kept in the signature to avoid a breaking change once metadata
  *   analysis is implemented.
  */
