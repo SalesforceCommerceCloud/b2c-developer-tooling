@@ -483,6 +483,27 @@
           "command": "b2c-dx.content.import",
           "when": "explorerResourceIsFolder"
         }
+      ],
+      "commandPalette": [
+        {"command": "b2c-dx.sandbox.removeRealm", "when": "false"},
+        {"command": "b2c-dx.sandbox.delete", "when": "false"},
+        {"command": "b2c-dx.sandbox.start", "when": "false"},
+        {"command": "b2c-dx.sandbox.stop", "when": "false"},
+        {"command": "b2c-dx.sandbox.restart", "when": "false"},
+        {"command": "b2c-dx.sandbox.viewDetails", "when": "false"},
+        {"command": "b2c-dx.sandbox.openBM", "when": "false"},
+        {"command": "b2c-dx.webdav.newFolder", "when": "false"},
+        {"command": "b2c-dx.webdav.uploadFile", "when": "false"},
+        {"command": "b2c-dx.webdav.delete", "when": "false"},
+        {"command": "b2c-dx.webdav.download", "when": "false"},
+        {"command": "b2c-dx.webdav.openFile", "when": "false"},
+        {"command": "b2c-dx.webdav.newFile", "when": "false"},
+        {"command": "b2c-dx.webdav.mountWorkspace", "when": "false"},
+        {"command": "b2c-dx.content.removeLibrary", "when": "false"},
+        {"command": "b2c-dx.content.export", "when": "false"},
+        {"command": "b2c-dx.content.exportNoAssets", "when": "false"},
+        {"command": "b2c-dx.content.exportAssets", "when": "false"},
+        {"command": "b2c-dx.content.clearFilter", "when": "false"}
       ]
     }
   },
