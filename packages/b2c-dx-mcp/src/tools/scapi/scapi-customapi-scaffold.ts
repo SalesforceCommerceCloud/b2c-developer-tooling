@@ -29,7 +29,7 @@ import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 const CUSTOM_API_SCAFFOLD_ID = 'custom-api';
 
 /**
- * Input schema for scapi_customapi_scaffold tool.
+ * Input schema for scapi_custom_api_scaffold tool.
  * Parameters match the custom-api scaffold: apiName, apiType, cartridgeName, etc.
  */
 interface ScaffoldCustomApiInput {
@@ -41,8 +41,6 @@ interface ScaffoldCustomApiInput {
   apiType?: 'admin' | 'shopper';
   /** Short description of the API. Default: "A custom B2C Commerce API" */
   apiDescription?: string;
-  /** Include example GET/POST endpoints in schema and script. Default: true */
-  includeExampleEndpoints?: boolean;
   /** Project root for cartridge discovery and output. Default: MCP working directory */
   projectRoot?: string;
   /** Output directory override. Default: scaffold default or project root */
@@ -50,7 +48,7 @@ interface ScaffoldCustomApiInput {
 }
 
 /**
- * Output schema for scapi_customapi_scaffold tool.
+ * Output schema for scapi_custom_api_scaffold tool.
  */
 interface ScaffoldCustomApiOutput {
   scaffold: string;
@@ -66,7 +64,7 @@ interface ScaffoldCustomApiOutput {
 }
 
 /**
- * Creates the scapi_customapi_scaffold tool.
+ * Creates the scapi_custom_api_scaffold tool.
  *
  * Uses @salesforce/b2c-tooling-sdk scaffold: registry, resolveScaffoldParameters,
  * resolveOutputDirectory, generateFromScaffold. cartridgeName must be a cartridge
@@ -75,7 +73,7 @@ interface ScaffoldCustomApiOutput {
 export function createScaffoldCustomApiTool(loadServices: () => Services): McpTool {
   return createToolAdapter<ScaffoldCustomApiInput, ScaffoldCustomApiOutput>(
     {
-      name: 'scapi_customapi_scaffold',
+      name: 'scapi_custom_api_scaffold',
       description: `Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. \
        Uses the same scaffold as CLI: b2c scaffold generate custom-api. \
        Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin), apiDescription, includeExampleEndpoints, projectRoot, outputDir. \
@@ -105,7 +103,6 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
           .optional()
           .describe('Admin (no siteId) or shopper (siteId, customer-facing). Default: shopper'),
         apiDescription: z.string().optional().describe('Short description of the API.'),
-        includeExampleEndpoints: z.boolean().optional().describe('Include example GET/POST endpoints. Default: true'),
         projectRoot: z
           .string()
           .nullish()
@@ -143,7 +140,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
               dryRun: false,
               files: [],
               error:
-                'No cartridges found in project. Add a cartridge (directory with .project file) or pass cartridgeName explicitly.',
+                'No cartridges found in project. Custom API scaffold requires an existing cartridge. Create a cartridge (directory with .project file) first. You can use the `b2c scaffold cartridge` command to create a cartridge.',
             };
           }
           cartridgeName = cartridges[0].name;
@@ -152,12 +149,10 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
         const providedVariables: Record<string, boolean | string> = {
           apiName: args.apiName,
           cartridgeName,
+          includeExampleEndpoints: true,
         };
         if (args.apiType !== undefined) providedVariables.apiType = args.apiType;
         if (args.apiDescription !== undefined) providedVariables.apiDescription = args.apiDescription;
-        if (args.includeExampleEndpoints !== undefined) {
-          providedVariables.includeExampleEndpoints = args.includeExampleEndpoints;
-        }
 
         const resolved = await resolveScaffoldParameters(scaffold, {
           providedVariables,

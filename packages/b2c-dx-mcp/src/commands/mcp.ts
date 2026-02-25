@@ -272,7 +272,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     const flagConfig = {
       ...extractInstanceFlags(this.flags as Record<string, unknown>),
       ...mrt.config,
-      workingDirectory: this.flags['working-directory'],
     };
 
     return loadConfig(flagConfig, options);
