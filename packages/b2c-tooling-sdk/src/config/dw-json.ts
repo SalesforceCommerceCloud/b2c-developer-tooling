@@ -67,6 +67,8 @@ export interface DwJsonConfig {
   tenantId?: string;
   /** ODS API hostname */
   sandboxApiHost?: string;
+  /** Default ODS realm for sandbox operations */
+  realm?: string;
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
   /** Optional CIP analytics host override */
