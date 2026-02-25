@@ -10,7 +10,7 @@
  * Provides critical development guidelines and best practices for building
  * Storefront Next applications with React Server Components.
  *
- * @module tools/storefrontnext/developer-guidelines
+ * @module tools/storefrontnext/sfnext-development-guidelines
  */
 
 import {readFileSync} from 'node:fs';
@@ -26,7 +26,7 @@ import {createToolAdapter, textResult} from '../adapter.js';
 // regardless of where this module is located in the build output
 const require = createRequire(import.meta.url);
 const packageRoot = path.dirname(require.resolve('@salesforce/b2c-dx-mcp/package.json'));
-const CONTENT_DIR = path.join(packageRoot, 'content');
+const CONTENT_DIR = path.join(packageRoot, 'content', 'sfnext');
 
 /**
  * Section metadata with key and optional description.

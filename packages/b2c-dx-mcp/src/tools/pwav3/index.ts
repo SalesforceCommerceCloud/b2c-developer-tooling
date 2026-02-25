@@ -20,6 +20,7 @@ import {z} from 'zod';
 import type {McpTool, Toolset} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {createDeveloperGuidelinesTool} from './pwa-kit-development-guidelines.js';
 
 /**
  * Common input type for placeholder tools.
@@ -98,6 +99,7 @@ function createPlaceholderTool(
 export function createPwav3Tools(loadServices: () => Services): McpTool[] {
   return [
     // PWA Kit development tools
+    createDeveloperGuidelinesTool(loadServices),
     createPlaceholderTool(
       'pwakit_create_storefront',
       'Create a new PWA Kit storefront project',
@@ -113,12 +115,6 @@ export function createPwav3Tools(loadServices: () => Services): McpTool[] {
     createPlaceholderTool(
       'pwakit_create_component',
       'Create a new React component in PWA Kit project',
-      ['PWAV3'],
-      loadServices,
-    ),
-    createPlaceholderTool(
-      'pwakit_get_dev_guidelines',
-      'Get PWA Kit development guidelines and best practices',
       ['PWAV3'],
       loadServices,
     ),
