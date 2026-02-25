@@ -1,6 +1,6 @@
 # B2C DX - VS Code Extension
 
-VS Code extension for B2C Commerce Cloud developer experience: Page Designer assistant, B2C CLI integration, and Cursor agent prompts.
+VS Code extension for B2C Commerce developer experience: Page Designer assistant, B2C CLI integration, and Cursor agent prompts.
 
 **Full documentation:** [IDE Support](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-support.html) in the B2C Developer Tooling docs (VitePress).
 

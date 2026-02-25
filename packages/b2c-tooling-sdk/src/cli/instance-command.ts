@@ -181,11 +181,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   }
 
   protected override loadConfiguration(): ResolvedB2CConfig {
-    return loadConfig(
-      extractInstanceFlags(this.flags as Record<string, unknown>),
-      this.getBaseConfigOptions(),
-      this.getPluginSources(),
-    );
+    return loadConfig(extractInstanceFlags(this.flags as Record<string, unknown>), this.getBaseConfigOptions());
   }
 
   /**

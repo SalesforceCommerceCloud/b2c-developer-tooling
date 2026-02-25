@@ -173,9 +173,9 @@ describe('services', () => {
   });
 
   describe('getWorkingDirectory', () => {
-    it('should return working directory when provided in config', () => {
+    it('should return project directory when provided in config', () => {
       const workingDir = '/path/to/project';
-      const config = createMockResolvedConfig({workingDirectory: workingDir});
+      const config = createMockResolvedConfig({projectDirectory: workingDir});
       const services = new Services({resolvedConfig: config});
 
       expect(services.getWorkingDirectory()).to.equal(workingDir);
@@ -188,12 +188,12 @@ describe('services', () => {
       expect(services.getWorkingDirectory()).to.equal(process.cwd());
     });
 
-    it('should return working directory from fromResolvedConfig when provided in config', () => {
-      const workingDir = '/path/to/project';
-      const config = createMockResolvedConfig({workingDirectory: workingDir});
+    it('should return project directory from fromResolvedConfig when provided in config', () => {
+      const projectDir = '/path/to/project';
+      const config = createMockResolvedConfig({projectDirectory: projectDir});
       const services = Services.fromResolvedConfig(config);
 
-      expect(services.getWorkingDirectory()).to.equal(workingDir);
+      expect(services.getWorkingDirectory()).to.equal(projectDir);
     });
 
     it('should fall back to process.cwd() from fromResolvedConfig when not provided in config', () => {

@@ -8,7 +8,7 @@ This guide explains how to connect IDE extensions to your B2C CLI configuration.
 
 ## Prophet VS Code Extension
 
-[Prophet](https://marketplace.visualstudio.com/items?itemName=SqrTT.prophet) can load `dw.json`-compatible configuration by executing a local `dw.js` script in your working directory.
+[Prophet](https://marketplace.visualstudio.com/items?itemName=SqrTT.prophet) can load `dw.json`-compatible configuration by executing a local `dw.js` script in your project directory.
 
 ### Benefits
 
@@ -60,14 +60,14 @@ function toProphetConfig(config) {
 
 function loadDwConfig() {
   try {
-    var workingDirectory = process.env.SFCC_PROJECT_DIRECTORY || process.env.SFCC_WORKING_DIRECTORY || __dirname || process.cwd();
+    var projectDirectory = process.env.SFCC_PROJECT_DIRECTORY || process.env.SFCC_WORKING_DIRECTORY || __dirname || process.cwd();
     var stdout = childProcess.execFileSync(
       'b2c',
-      ['setup', 'inspect', '--json', '--unmask', '--project-directory', workingDirectory],
+      ['setup', 'inspect', '--json', '--unmask', '--project-directory', projectDirectory],
       {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
-        cwd: workingDirectory,
+        cwd: projectDirectory,
       },
     );
 
