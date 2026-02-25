@@ -8,19 +8,17 @@
  * PWA Kit v3 toolset for B2C Commerce.
  *
  * This toolset provides MCP tools for PWA Kit v3 development.
- *
- * > ⚠️ **PLACEHOLDER - ACTIVE DEVELOPMENT**
- * > Tools in this module are placeholder implementations that return mock responses.
- * > Actual implementations are coming soon. Use `--allow-non-ga-tools` flag to enable.
+ * PWA Kit-specific tools are planned for future releases.
+ * mrt_bundle_push (from MRT toolset) is available for PWAV3 projects.
  *
  * @module tools/pwav3
  */
 
-import {z} from 'zod';
 import type {McpTool, Toolset} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {createDeveloperGuidelinesTool} from './pwa-kit-development-guidelines.js';
+import {z} from 'zod';
 
 /**
  * Common input type for placeholder tools.
@@ -89,12 +87,12 @@ function createPlaceholderTool(
 /**
  * Creates all tools for the PWAV3 toolset.
  *
- * Note: mrt_bundle_push is defined in the MRT toolset with
- * toolsets: ["MRT", "PWAV3", "STOREFRONTNEXT"] and will
- * automatically appear in PWAV3.
+ * PWA Kit-specific tools are not yet implemented. mrt_bundle_push is defined
+ * in the MRT toolset with toolsets: ["MRT", "PWAV3", "STOREFRONTNEXT"] and
+ * automatically appears in PWAV3 for bundle deployment.
  *
- * @param loadServices - Function that loads configuration and returns Services instance
- * @returns Array of MCP tools
+ * @param _loadServices - Function that loads configuration and returns Services instance
+ * @returns Array of MCP tools (empty until PWA Kit tools are implemented)
  */
 export function createPwav3Tools(loadServices: () => Services): McpTool[] {
   return [
