@@ -123,14 +123,14 @@ jobs:
               per_page: 100,
             });
 
-            // Ignore package.json under test fixtures (e.g. e2e workspace-detection fixtures)
-            const isTestFixtureManifest = (filename) =>
-              filename.endsWith('package.json') &&
-              filename.includes('/test/') &&
-              filename.includes('/fixtures/');
+            // Exclude package.json under test/fixtures/ (e.g. e2e workspace-detection fixtures)
+            const isUnderTestFixtures = (filename) =>
+              filename.includes('/test/') && filename.includes('/fixtures/');
             const changedPackageJsonFiles = files
               .map((file) => file.filename)
-              .filter((filename) => filename.endsWith('package.json') && !isTestFixtureManifest(filename));
+              .filter((filename) =>
+                filename.endsWith('package.json') && !isUnderTestFixtures(filename),
+              );
 
             const findings = [];
 
