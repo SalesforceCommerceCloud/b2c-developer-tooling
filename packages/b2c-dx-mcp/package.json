@@ -1,9 +1,9 @@
 {
   "name": "@salesforce/b2c-dx-mcp",
-  "version": "0.3.2",
-  "description": "MCP server for B2C Commerce Cloud developer experience tools",
+  "description": "MCP server for B2C Commerce developer experience tools",
+  "version": "0.4.4",
   "author": "Salesforce",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "keywords": [
     "salesforce",
@@ -96,6 +96,8 @@
     "@modelcontextprotocol/sdk": "1.26.0",
     "@oclif/core": "catalog:",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "glob": "catalog:",
+    "ts-morph": "^27.0.0",
     "yaml": "2.8.1",
     "zod": "3.25.76"
   },

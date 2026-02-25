@@ -53,14 +53,18 @@ For Account Manager operations that require user-level roles (organization and A
 
 ### Creating an API Client
 
-1. Log in to [Account Manager](https://account.demandware.com)
-2. Navigate to **API Client** in the left menu
-3. Click **Add API Client**
+1. Log in to [Account Manager](https://account.demandware.com).
+2. Navigate to **API Client** in the left menu.
+3. Click **Add API Client**.
 4. Fill in the required fields:
    - **Display Name**: A descriptive name (e.g., "B2C CLI")
    - **Password**: A strong client secret (save this securely for Client Credentials auth)
 5. Configure the **Token Endpoint Auth Method**:
-   - `client_secret_post` for client credentials flow
+   - `client_secret_basic` for client credentials flow
+
+::: warning
+The B2C CLI only supports `client_secret_basic` for the Token Endpoint Auth Method. `client_secret_post` and `private_key_jwt` aren't currently supported.
+:::
 
 ### Assigning Roles
 
@@ -72,16 +76,16 @@ Most roles require a **tenant filter** that specifies which tenants/realms the r
 
 | Role                              | Operations                                | Notes                                       |
 | --------------------------------- | ----------------------------------------- | ------------------------------------------- |
-| `Salesforce Commerce API`         | SCAPI commands and CIP analytics commands | API Clients only. Requires tenant filter.   |
+| `Salesforce Commerce API`         | SCAPI commands and CIP analytics commands | API clients only. Requires a tenant filter.   |
 | `Sandbox API User`                | ODS management, SLAS client management    | Requires tenant filter with realm/org IDs.  |
-| `SLAS Organization Administrator` | SLAS client management (user auth only)   | User accounts only. Requires tenant filter. |
+| `SLAS Organization Administrator` | SLAS client management (user auth only)   | User accounts only. Requires a tenant filter. |
 
-#### For Client Credentials (roles on API Client)
+#### For Client Credentials (Roles on API Client)
 
 Under the API Client's **Roles** section:
 
 1. Add roles needed for your operations
-2. For each role, configure the **tenant filter** with the tenant IDs (e.g., `zzxy_prd`) or realm IDs you need to access
+2. For each role, configure the **tenant filter** with the tenant IDs (for example, `zzxy_prd`) or realm IDs you need to access
 
 **Important:** The `Salesforce Commerce API` role is currently only available for API Clients, not user accounts.
 
@@ -91,7 +95,7 @@ In Account Manager, navigate to your user account and add roles. Note that some 
 
 ### Configuring Scopes
 
-Under **Allowed Scopes**, add the following scopes based on your needs:
+Under **Default Scopes**, add the following scopes based on your needs:
 
 | Scope          | Purpose                                                   |
 | -------------- | --------------------------------------------------------- |
@@ -118,20 +122,10 @@ See the individual CLI command pages for complete scope requirements.
 For ODS, SLAS, and SCAPI operations, your API client's roles must have a tenant filter configured:
 
 1. In Account Manager, go to the API Client settings
-2. Under each role (e.g., `Salesforce Commerce API`, `Sandbox API User`), find the **Tenant Filter**
-3. Add the tenant IDs (e.g., `zzxy_prd`) or organization IDs you need to access
+2. Under each role (for example, `Salesforce Commerce API`, `Sandbox API User`), find the **Tenant Filter**
+3. Add the tenant IDs (for example, `zzxy_prd`) or organization IDs you need to access
 
 The tenant filter restricts which tenants/realms the role applies to.
-
-### Default Scopes
-
-Under **Default Scopes**, set scopes that are automatically requested. Recommended configuration:
-
-```
-mail roles tenantFilter openid
-```
-
-These scopes ensure proper authentication and authorization for CLI operations.
 
 ### Redirect URLs
 
@@ -264,7 +258,7 @@ SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication w
 ### Required Setup
 
 1. **Role:** Assign the `Salesforce Commerce API` role to your API client with appropriate tenant filter
-2. **Scopes:** Add required SCAPI scopes to your API client's Allowed Scopes
+2. **Scopes:** Add required SCAPI scopes to your API client's Default Scopes
 
 ### Scopes by Command
 
@@ -275,7 +269,7 @@ SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication w
 | `b2c ecdn` (read operations)  | `sfcc.cdn-zones`     | [eCDN](/cli/ecdn)                   |
 | `b2c ecdn` (write operations) | `sfcc.cdn-zones.rw`  | [eCDN](/cli/ecdn)                   |
 
-The CLI automatically requests these scopes. Your API client must have them in the Allowed Scopes list.
+The CLI automatically requests these scopes. Your API client must have them in the Default Scopes list.
 
 ::: tip
 For detailed authentication requirements including specific scopes for each command, see the individual [CLI command reference pages](/cli/).
@@ -300,7 +294,7 @@ WebDAV is required for file upload operations (`code deploy`, `code watch`, `web
 
 ### Option A: Basic Authentication (Recommended)
 
-Use your Business Manager username and a WebDAV access key. This provides better performance for file operations.
+Use your Business Manager username and a WebDAV access key. These credentials provide better performance for file operations.
 
 1. In Business Manager, go to **Administration** > **Organization** > **Users**
 2. Select your user
@@ -346,7 +340,7 @@ Common paths for CLI operations:
 | `/catalogs/<catalog-id>`  | Catalog file access    |
 | `/libraries/<library-id>` | Content library access |
 
-**Note:** This configuration is only needed when using OAuth for WebDAV. It is not required when using basic authentication with username/access key.
+**Note:** This configuration is only needed when using OAuth for WebDAV. It isn’t required when using basic authentication with username/access key.
 
 ## Managed Runtime API Key
 
@@ -383,8 +377,7 @@ Here's a complete example for setting up CLI access:
    - **Roles**:
      - `Salesforce Commerce API` - add tenant filter with your tenant IDs
      - `Sandbox API User` - if using ODS (add tenant filter)
-   - **Allowed Scopes**: `mail roles tenantFilter openid sfcc.cdn-zones`
-   - **Default Scopes**: `mail roles tenantFilter openid`
+   - **Default Scopes**: `mail roles tenantFilter openid sfcc.cdn-zones`
    - **Redirect URLs**: `http://localhost:8080` (for user authentication)
 
 ### 2. Configure OCAPI (for code list/activate/delete, jobs, sites)
@@ -446,9 +439,9 @@ b2c scapi schemas list
 
 ### "Invalid scope" errors
 
-- Add the required scopes to your API client's Allowed Scopes
-- For SCAPI commands, ensure the relevant `sfcc.*` scopes are in Allowed Scopes
-- Verify Default Scopes includes `mail roles tenantFilter openid`
+- Add the required scopes to your API client's Default Scopes
+- For SCAPI commands, ensure the relevant `sfcc.*` scopes are in Default Scopes
+- Verify that Default Scopes includes `mail roles tenantFilter openid`
 
 ## Next Steps
 

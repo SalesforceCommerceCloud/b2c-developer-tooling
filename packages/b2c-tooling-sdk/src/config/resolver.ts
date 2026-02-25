@@ -13,6 +13,7 @@
  */
 import type {AuthCredentials} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
+import {getLogger} from '../logging/logger.js';
 import {mergeConfigsWithProtection, getPopulatedFields, createInstanceFromConfig} from './mapping.js';
 import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
@@ -26,6 +27,7 @@ import type {
   ResolvedB2CConfig,
 } from './types.js';
 import {ResolvedConfigImpl} from './resolved-config.js';
+import {globalConfigSourceRegistry} from './config-source-registry.js';
 
 /**
  * Credential groups that must come from the same source.
@@ -221,6 +223,17 @@ export class ConfigResolver {
             fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
           });
 
+          const logger = getLogger();
+          logger.trace(
+            {
+              source: source.name,
+              location,
+              fields,
+              fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
+            },
+            `[${source.name}] Contributed fields`,
+          );
+
           // Enrich options with accumulated config values for subsequent sources.
           // Only set if not already provided via CLI options.
           if (!enrichedOptions.accountManagerHost && baseConfig.accountManagerHost) {
@@ -377,21 +390,27 @@ export function resolveConfig(
   overrides: Partial<NormalizedConfig> = {},
   options: ResolveConfigOptions = {},
 ): ResolvedB2CConfig {
+  // Globally registered sources (from plugins via B2CPluginManager or direct SDK registration).
+  // Always included regardless of replaceDefaultSources — global sources are explicitly registered
+  // by plugins and should always participate, matching the middleware registry behavior.
+  const globalSources = globalConfigSourceRegistry.getSources();
+
   // Build sources list with priority ordering:
   // 1. sourcesBefore (high priority - override defaults)
   // 2. default sources (dw.json, ~/.mobify, package.json)
   // 3. sourcesAfter (low priority - fill gaps)
+  // 4. global registry sources (sorted by their own priority)
   let sources: ConfigSource[];
 
   if (options.replaceDefaultSources) {
     // Replace mode: only use provided sources (no default dw.json/~/.mobify/package.json)
-    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? [])];
+    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? []), ...globalSources];
   } else {
-    // Normal mode: before + defaults + after
+    // Normal mode: before + defaults + after + global
     const defaultSources: ConfigSource[] = [new DwJsonSource(), new MobifySource(), new PackageJsonSource()];
 
     // Combine all sources
-    sources = [...(options.sourcesBefore ?? []), ...defaultSources, ...(options.sourcesAfter ?? [])];
+    sources = [...(options.sourcesBefore ?? []), ...defaultSources, ...(options.sourcesAfter ?? []), ...globalSources];
   }
 
   // ConfigResolver constructor will sort by priority

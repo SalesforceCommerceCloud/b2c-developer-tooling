@@ -1,0 +1,95 @@
+name: 'B2C Data Import'
+description: 'Import a site archive to a Salesforce B2C Commerce instance'
+branding:
+  icon: 'database'
+  color: 'blue'
+
+inputs:
+  target:
+    description: 'Local file, directory, or zip to import'
+    required: true
+  timeout:
+    description: 'Timeout in seconds'
+    required: false
+  keep-archive:
+    description: 'Keep archive on instance after import'
+    required: false
+    default: 'false'
+  show-log:
+    description: 'Show job log on failure'
+    required: false
+    default: 'true'
+  # Auth inputs for standalone use
+  client-id:
+    description: 'OAuth Client ID (falls back to SFCC_CLIENT_ID env var)'
+    required: false
+  client-secret:
+    description: 'OAuth Client Secret (falls back to SFCC_CLIENT_SECRET env var)'
+    required: false
+  server:
+    description: 'B2C instance hostname (falls back to SFCC_SERVER env var)'
+    required: false
+  username:
+    description: 'WebDAV username (falls back to SFCC_USERNAME env var)'
+    required: false
+  password:
+    description: 'WebDAV password/access key (falls back to SFCC_PASSWORD env var)'
+    required: false
+  # Setup inputs
+  version:
+    description: 'CLI version to install if not already set up'
+    required: false
+    default: 'latest'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '22'
+
+outputs:
+  result:
+    description: 'Import command JSON output'
+    value: ${{ steps.import.outputs.result }}
+  exit-code:
+    description: 'Command exit code'
+    value: ${{ steps.import.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Ensure CLI is installed
+      uses: ./actions/setup
+      with:
+        version: ${{ inputs.version }}
+        node-version: ${{ inputs.node-version }}
+        client-id: ${{ inputs.client-id }}
+        client-secret: ${{ inputs.client-secret }}
+        server: ${{ inputs.server }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+
+    - name: Build command
+      id: build-cmd
+      shell: bash
+      run: |
+        CMD="job import ${{ inputs.target }}"
+
+        if [ "${{ inputs.keep-archive }}" = "true" ]; then
+          CMD="$CMD --keep-archive"
+        fi
+
+        if [ "${{ inputs.show-log }}" = "true" ]; then
+          CMD="$CMD --show-log"
+        fi
+
+        if [ -n "${{ inputs.timeout }}" ]; then
+          CMD="$CMD --timeout ${{ inputs.timeout }}"
+        fi
+
+        echo "cmd=$CMD" >> "$GITHUB_OUTPUT"
+
+    - name: Import data
+      id: import
+      uses: ./actions/run
+      with:
+        command: ${{ steps.build-cmd.outputs.cmd }}
+        json: 'true'

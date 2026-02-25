@@ -9,7 +9,7 @@ import * as path from 'node:path';
 import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
-import {siteArchiveExport} from '../jobs/site-archive.js';
+import {siteArchiveExportToBuffer} from '../jobs/site-archive.js';
 import {Library, LibraryNode} from './library.js';
 import type {
   FetchContentLibraryOptions,
@@ -68,10 +68,7 @@ export async function fetchContentLibrary(
 
     const dataUnits = isSiteLibrary ? {sites: {[libraryId]: {content: true}}} : {libraries: {[libraryId]: true}};
 
-    const result = await siteArchiveExport(instance, dataUnits, {waitOptions});
-    if (!result.data) {
-      throw new Error('No archive data returned from export');
-    }
+    const result = await siteArchiveExportToBuffer(instance, dataUnits, {waitOptions});
 
     archiveData = result.data;
     const zip = await JSZip.loadAsync(result.data);

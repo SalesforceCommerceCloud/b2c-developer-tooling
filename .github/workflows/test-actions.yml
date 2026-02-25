@@ -1,0 +1,225 @@
+name: Test GitHub Actions
+
+on:
+  pull_request:
+    paths:
+      - 'action.yml'
+      - 'actions/**'
+      - '.github/workflows/test-actions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'action.yml'
+      - 'actions/**'
+      - '.github/workflows/test-actions.yml'
+
+env:
+  SFCC_DISABLE_TELEMETRY: true
+  SFCC_LOG_LEVEL: trace
+
+jobs:
+  # Smoke test: install CLI and verify
+  setup-latest:
+    name: 'Setup (latest)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run setup action
+        id: setup
+        uses: ./actions/setup
+        with:
+          version: latest
+          client-id: test-client-id
+          server: test.example.com
+          code-version: test_version
+
+      - name: Verify CLI installed
+        run: b2c --version
+
+      - name: Verify env vars set
+        run: |
+          [ "$SFCC_CLIENT_ID" = "test-client-id" ] || (echo "SFCC_CLIENT_ID not set" && exit 1)
+          [ "$SFCC_SERVER" = "test.example.com" ] || (echo "SFCC_SERVER not set" && exit 1)
+          [ "$SFCC_CODE_VERSION" = "test_version" ] || (echo "SFCC_CODE_VERSION not set" && exit 1)
+          [ "$NO_COLOR" = "1" ] || (echo "NO_COLOR not set" && exit 1)
+          echo "All environment variables verified"
+
+  setup-nightly:
+    name: 'Setup (nightly)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run setup action with nightly
+        uses: ./actions/setup
+        with:
+          version: nightly
+
+      - name: Verify CLI installed
+        run: b2c --version
+
+  # Root action: setup + command
+  root-action:
+    name: 'Root action'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run root action with command
+        id: root
+        uses: ./
+        with:
+          command: '--help'
+          json: 'false'
+
+      - name: Verify output
+        run: |
+          echo "Exit code: ${{ steps.root.outputs.exit-code }}"
+          [ "${{ steps.root.outputs.exit-code }}" = "0" ] || exit 1
+
+  # Root action: setup only (no command)
+  root-setup-only:
+    name: 'Root action (setup only)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run root action without command
+        id: root
+        uses: ./
+        with:
+          server: test.example.com
+
+      - name: Verify CLI available
+        run: b2c --version
+
+      - name: Verify env var set
+        run: |
+          [ "$SFCC_SERVER" = "test.example.com" ] || exit 1
+
+  # Setup + run: two-step pattern
+  setup-then-run:
+    name: 'Setup + Run'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./actions/setup
+
+      - name: Run help command
+        id: run
+        uses: ./actions/run
+        with:
+          command: '--help'
+          json: 'false'
+
+      - name: Verify output
+        run: |
+          [ "${{ steps.run.outputs.exit-code }}" = "0" ] || exit 1
+
+  # High-level action smoke tests (--help to verify command construction)
+  code-deploy-help:
+    name: 'Code Deploy (help)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./actions/setup
+
+      - name: Test code deploy help
+        uses: ./actions/run
+        with:
+          command: 'code deploy --help'
+          json: 'false'
+
+  mrt-deploy-help:
+    name: 'MRT Deploy (help)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./actions/setup
+
+      - name: Test mrt bundle deploy help
+        uses: ./actions/run
+        with:
+          command: 'mrt bundle deploy --help'
+          json: 'false'
+
+  job-run-help:
+    name: 'Job Run (help)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./actions/setup
+
+      - name: Test job run help
+        uses: ./actions/run
+        with:
+          command: 'job run --help'
+          json: 'false'
+
+  data-import-help:
+    name: 'Data Import (help)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./actions/setup
+
+      - name: Test job import help
+        uses: ./actions/run
+        with:
+          command: 'job import --help'
+          json: 'false'
+
+  webdav-upload-help:
+    name: 'WebDAV Upload (help)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./actions/setup
+
+      - name: Test webdav put help
+        uses: ./actions/run
+        with:
+          command: 'webdav put --help'
+          json: 'false'
+
+  # E2E tests — only on main, requires e2e-dev environment with real credentials
+  e2e:
+    name: 'E2E'
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: e2e-dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup with real credentials
+        uses: ./actions/setup
+        with:
+          client-id: ${{ secrets.SFCC_CLIENT_ID }}
+          client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+          server: ${{ vars.SFCC_SERVER }}
+          username: ${{ secrets.SFCC_USERNAME }}
+          password: ${{ secrets.SFCC_PASSWORD }}
+
+      - name: List code versions
+        id: code-list
+        uses: ./actions/run
+        with:
+          command: 'code list'
+
+      - name: Verify code list output
+        run: |
+          echo "Result: ${{ steps.code-list.outputs.result }}"
+          [ "${{ steps.code-list.outputs.exit-code }}" = "0" ] || exit 1

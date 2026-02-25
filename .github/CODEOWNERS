@@ -2,4 +2,6 @@
 *       @clavery
 /packages/b2c-dx-mcp/       @yhsieh1 @patricksullivansf @wei-liu-sf
 /packages/b2c-vs-extension/    @wei-liu-sf
+/docs/mcp/       @wei-liu-sf @yhsieh1 @patricksullivansf
+/docs/.vitepress/       @wei-liu-sf @yhsieh1 @patricksullivansf
 

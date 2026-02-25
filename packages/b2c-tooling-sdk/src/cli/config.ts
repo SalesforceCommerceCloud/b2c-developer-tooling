@@ -146,7 +146,7 @@ export interface ExtractedMrtFlags {
  *   ...this.getBaseConfigOptions(),
  *   ...mrt.options,
  * };
- * return loadConfig(mrt.config, options, this.getPluginSources());
+ * return loadConfig(mrt.config, options);
  * ```
  */
 export function extractMrtFlags(flags: ParsedFlags): ExtractedMrtFlags {
@@ -174,7 +174,9 @@ export interface LoadConfigOptions {
   instance?: string;
   /** Explicit path to config file (skips searching if provided) */
   configPath?: string;
-  /** Starting directory for config file search (default: current working directory) */
+  /** Starting directory for config file search (default: current project directory) */
+  projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
   workingDirectory?: string;
   /** Cloud origin for MRT ~/.mobify lookup (e.g., https://cloud-staging.mobify.com) */
   cloudOrigin?: string;
@@ -187,8 +189,9 @@ export interface LoadConfigOptions {
 /**
  * Plugin-provided configuration sources with priority ordering.
  *
- * Used by BaseCommand to pass sources collected from the `b2c:config-sources` hook
- * to the configuration resolver.
+ * @deprecated Plugin config sources are now registered with the global
+ * {@link globalConfigSourceRegistry} and automatically included in
+ * {@link resolveConfig}. This type is retained for backwards compatibility.
  */
 export interface PluginSources {
   /**
@@ -213,7 +216,8 @@ export interface PluginSources {
  *
  * @param flags - Configuration values from CLI flags/env vars
  * @param options - Loading options
- * @param pluginSources - Optional sources from CLI plugins (via b2c:config-sources hook)
+ * @param pluginSources - @deprecated Plugin sources are now registered globally via
+ *   {@link globalConfigSourceRegistry}. This parameter is retained for backwards compatibility.
  * @returns Resolved configuration with factory methods
  *
  * @example
@@ -236,16 +240,18 @@ export function loadConfig(
 ): ResolvedB2CConfig {
   const logger = getLogger();
 
-  // Preserve instanceName and workingDirectory from options if not already in flags
+  // Preserve instanceName and projectDirectory from options if not already in flags
   const effectiveFlags = {
     ...flags,
     instanceName: flags.instanceName ?? options.instance,
+    projectDirectory: flags.projectDirectory ?? options.projectDirectory,
     workingDirectory: flags.workingDirectory ?? options.workingDirectory,
   };
 
   const resolved = resolveConfig(effectiveFlags, {
     instance: options.instance,
     configPath: options.configPath,
+    projectDirectory: options.projectDirectory,
     workingDirectory: options.workingDirectory,
     hostnameProtection: true,
     cloudOrigin: options.cloudOrigin,
@@ -254,19 +260,6 @@ export function loadConfig(
     sourcesBefore: pluginSources.before,
     sourcesAfter: pluginSources.after,
   });
-
-  // Log source summary
-  for (const source of resolved.sources) {
-    logger.trace(
-      {
-        source: source.name,
-        location: source.location,
-        fields: source.fields,
-        fieldsIgnored: source.fieldsIgnored,
-      },
-      `[${source.name}] Contributed fields`,
-    );
-  }
 
   // Log warnings (at warn level so users can see configuration issues)
   for (const warning of resolved.warnings) {

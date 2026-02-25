@@ -8,7 +8,7 @@ These skills follow the [Agent Skills](https://agentskills.io/home) format and c
 
 | Plugin | Description |
 |--------|-------------|
-| `b2c-cli` | Skills for Salesforce Commerce Cloud B2C CLI operations |
+| `b2c-cli` | Skills for Salesforce B2C Commerce CLI operations |
 | `b2c` | B2C Commerce development skills including Custom API development guides |
 
 ## Installation

@@ -12,12 +12,13 @@
  * @module tools/cartridges
  */
 
+import path from 'node:path';
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import {findAndDeployCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
-import type {DeployResult, DeployOptions} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
@@ -41,6 +42,8 @@ interface CartridgeDeployInput {
 interface CartridgeToolInjections {
   /** Mock findAndDeployCartridges function for testing */
   findAndDeployCartridges?: (instance: B2CInstance, directory: string, options: DeployOptions) => Promise<DeployResult>;
+  /** Mock getActiveCodeVersion function for testing */
+  getActiveCodeVersion?: (instance: B2CInstance) => Promise<CodeVersion | undefined>;
 }
 
 /**
@@ -58,6 +61,7 @@ interface CartridgeToolInjections {
  */
 function createCartridgeDeployTool(loadServices: () => Services, injections?: CartridgeToolInjections): McpTool {
   const findAndDeployCartridgesFn = injections?.findAndDeployCartridges || findAndDeployCartridges;
+  const getActiveCodeVersionFn = injections?.getActiveCodeVersion || getActiveCodeVersion;
   return createToolAdapter<CartridgeDeployInput, DeployResult>(
     {
       name: 'cartridge_deploy',
@@ -75,7 +79,7 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
           .string()
           .optional()
           .describe(
-            'Path to directory to search for cartridges. Defaults to current working directory if not specified. ' +
+            'Path to directory to search for cartridges. Defaults to current project directory if not specified. ' +
               'The tool will recursively search this directory for .project files to identify cartridges.',
           ),
         cartridges: z
@@ -104,33 +108,65 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
       async execute(args, context) {
         // Get instance from context (guaranteed by adapter when requiresInstance is true)
         const instance = context.b2cInstance!;
-
-        // Default directory to current directory
-        const directory = args.directory || context.services.getWorkingDirectory();
-
-        // Parse options
-        const options: DeployOptions = {
-          include: args.cartridges,
-          exclude: args.exclude,
-          reload: args.reload,
-        };
-
-        // Log all computed variables before deploying
         const logger = getLogger();
-        logger.debug(
-          {
-            directory,
-            include: options.include,
-            exclude: options.exclude,
-            reload: options.reload,
-          },
-          '[Cartridges] Deploying cartridges with computed options',
-        );
 
-        // Deploy cartridges
-        const result = await findAndDeployCartridgesFn(instance, directory, options);
+        try {
+          // If no code version specified, get the active one
+          let codeVersion = instance.config.codeVersion;
+          if (!codeVersion) {
+            logger.debug('No code version specified, getting active version...');
+            const active = await getActiveCodeVersionFn(instance);
+            if (!active?.id) {
+              throw new Error(
+                'No code version specified and no active code version found. ' +
+                  'Specify a code version using one of: ' +
+                  '--code-version flag, SFCC_CODE_VERSION environment variable, ' +
+                  'or code-version field in dw.json configuration file.',
+              );
+            }
+            codeVersion = active.id;
+            instance.config.codeVersion = codeVersion;
+          }
 
-        return result;
+          // Resolve directory path: relative paths are resolved relative to project directory, absolute paths are used as-is
+          const directory = args.directory
+            ? path.isAbsolute(args.directory)
+              ? args.directory
+              : path.resolve(context.services.getWorkingDirectory(), args.directory)
+            : context.services.getWorkingDirectory();
+
+          // Parse options
+          const options: DeployOptions = {
+            include: args.cartridges,
+            exclude: args.exclude,
+            reload: args.reload,
+          };
+
+          // Log all computed variables before deploying
+          logger.debug(
+            {
+              directory,
+              codeVersion,
+              include: options.include,
+              exclude: options.exclude,
+              reload: options.reload,
+            },
+            '[Cartridges] Deploying cartridges with computed options',
+          );
+
+          // Deploy cartridges
+          const result = await findAndDeployCartridgesFn(instance, directory, options);
+
+          return result;
+        } catch (error) {
+          // Handle communication and authentication errors
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(
+            `Failed to communicate with B2C instance. Check your authentication credentials and network connection. ` +
+              `If no code version is specified, ensure the instance is accessible and has an active code version. ` +
+              `Original error: ${errorMessage}`,
+          );
+        }
       },
       formatOutput: (output) => jsonResult(output),
     },

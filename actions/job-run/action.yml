@@ -1,0 +1,97 @@
+name: 'B2C Job Run'
+description: 'Execute a job on a Salesforce B2C Commerce instance'
+branding:
+  icon: 'play-circle'
+  color: 'blue'
+
+inputs:
+  job-id:
+    description: 'Job ID to execute'
+    required: true
+  wait:
+    description: 'Wait for job completion'
+    required: false
+    default: 'true'
+  timeout:
+    description: 'Timeout in seconds (when wait=true)'
+    required: false
+    default: '900'
+  parameters:
+    description: 'Job parameters as KEY=VALUE pairs, one per line'
+    required: false
+  show-log:
+    description: 'Show job log on failure'
+    required: false
+    default: 'true'
+  # Auth inputs for standalone use
+  client-id:
+    description: 'OAuth Client ID (falls back to SFCC_CLIENT_ID env var)'
+    required: false
+  client-secret:
+    description: 'OAuth Client Secret (falls back to SFCC_CLIENT_SECRET env var)'
+    required: false
+  server:
+    description: 'B2C instance hostname (falls back to SFCC_SERVER env var)'
+    required: false
+  # Setup inputs
+  version:
+    description: 'CLI version to install if not already set up'
+    required: false
+    default: 'latest'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '22'
+
+outputs:
+  result:
+    description: 'Job run command JSON output'
+    value: ${{ steps.job.outputs.result }}
+  exit-code:
+    description: 'Command exit code'
+    value: ${{ steps.job.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Ensure CLI is installed
+      uses: ./actions/setup
+      with:
+        version: ${{ inputs.version }}
+        node-version: ${{ inputs.node-version }}
+        client-id: ${{ inputs.client-id }}
+        client-secret: ${{ inputs.client-secret }}
+        server: ${{ inputs.server }}
+
+    - name: Build command
+      id: build-cmd
+      shell: bash
+      run: |
+        CMD="job run ${{ inputs.job-id }}"
+
+        if [ "${{ inputs.wait }}" = "true" ]; then
+          CMD="$CMD --wait --timeout ${{ inputs.timeout }}"
+        fi
+
+        if [ "${{ inputs.show-log }}" = "true" ]; then
+          CMD="$CMD --show-log"
+        fi
+
+        # Parse multiline parameters
+        if [ -n "${{ inputs.parameters }}" ]; then
+          while IFS= read -r param; do
+            param=$(echo "$param" | xargs)
+            if [ -n "$param" ]; then
+              CMD="$CMD -P '$param'"
+            fi
+          done <<< "${{ inputs.parameters }}"
+        fi
+
+        echo "cmd=$CMD" >> "$GITHUB_OUTPUT"
+
+    - name: Run job
+      id: job
+      uses: ./actions/run
+      with:
+        command: ${{ steps.build-cmd.outputs.cmd }}
+        json: 'true'

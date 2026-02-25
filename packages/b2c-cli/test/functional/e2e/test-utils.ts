@@ -154,7 +154,13 @@ export async function runCLI(args: string[], options: CLIOptions = {}): Promise<
     cwd,
   });
 
-  return result;
+  const normalizedExitCode =
+    typeof result.exitCode === 'number' ? result.exitCode : ((result as any).code ?? (result as any).status ?? 1);
+
+  return {
+    ...result,
+    exitCode: normalizedExitCode,
+  };
 }
 
 /**

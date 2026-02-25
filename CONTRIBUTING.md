@@ -42,6 +42,10 @@ Use GitHub Issues page to submit issues, enhancement requests and discuss ideas.
 If you're new to our project and looking for some way to make your first contribution, look for
 Issues labelled `good first contribution`.
 
+# Running the MCP server from source
+
+For information on running the MCP server from source and local development, see [packages/b2c-dx-mcp/CONTRIBUTING.md](packages/b2c-dx-mcp/CONTRIBUTING.md).
+
 # Contribution Checklist
 
 - [x] Clean, simple, well styled code
@@ -70,8 +74,9 @@ Add a changeset when your PR includes changes that users should know about:
 - Breaking changes
 - Significant improvements
 
+For **documentation-only changes** (new guides, restructured content, significant improvements) that should be deployed before the next package release, create a changeset targeting `@salesforce/b2c-dx-docs`. This triggers a doc-only release and rebuild. Routine doc fixes (typos, minor clarifications) that can wait for the next package release don't need a changeset.
+
 You **don't need** a changeset for:
-- Documentation-only changes
 - Internal refactoring
 - Test improvements
 - CI/build changes
@@ -98,6 +103,7 @@ You **don't need** a changeset for:
 
 - Changesets are optional - maintainers can add them later if needed
 - Multiple changesets can exist for separate changes
+- For **release branches** (urgent patches while unrelated changesets are pending on `main`, or maintenance patches on older minors), see [PUBLISHING.md](./PUBLISHING.md#release-branches) for details
 - See [PUBLISHING.md](./PUBLISHING.md) for full release process details
 
 # Creating a Pull Request

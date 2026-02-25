@@ -118,10 +118,14 @@ function processContent(
     }
   }
 
-  // Recurse into content-links
+  // Recurse into content-links (sorted by position)
   const contentLinks = content['content-links'] as Array<Record<string, unknown>> | undefined;
   if (contentLinks?.[0]?.['content-link']) {
-    const links = contentLinks[0]['content-link'] as Array<Record<string, unknown>>;
+    const links = (contentLinks[0]['content-link'] as Array<Record<string, unknown>>).slice().sort((a, b) => {
+      const posA = parseFloat((a['position'] as string[] | undefined)?.[0] ?? 'Infinity');
+      const posB = parseFloat((b['position'] as string[] | undefined)?.[0] ?? 'Infinity');
+      return posA - posB;
+    });
     for (const link of links) {
       const linkAttrs = link['$'] as Record<string, string>;
       const linkId = linkAttrs['content-id'];

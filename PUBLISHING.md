@@ -1,261 +1,176 @@
 # Publishing
 
-This document describes the release and publishing process for the B2C CLI monorepo packages.
+This document is a playbook for releasing the B2C CLI monorepo packages. It covers the day-to-day flows for contributors and maintainers.
 
-## Overview
+## What Gets Published
 
-The project uses:
-- **[Changesets](https://github.com/changesets/changesets)** for version management and changelog generation
-- **[npm Trusted Publishers](https://docs.npmjs.com/trusted-publishers)** with OIDC for secure, tokenless publishing
-- **Two-workflow architecture** separating version management from publishing
+Three packages are published to npm, each versioned independently:
+
+| Package | npm |
+|---------|-----|
+| `@salesforce/b2c-cli` | [npm](https://www.npmjs.com/package/@salesforce/b2c-cli) |
+| `@salesforce/b2c-tooling-sdk` | [npm](https://www.npmjs.com/package/@salesforce/b2c-tooling-sdk) |
+| `@salesforce/b2c-dx-mcp` | [npm](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp) |
+
+When a dependency is bumped (e.g., the SDK), dependent packages automatically receive a patch bump. The `@salesforce/b2c-dx-docs` workspace package is private and uses git tags to trigger documentation rebuilds — it is not published to npm.
 
 ## Release Types
 
-| Type | npm Tag | Trigger | GitHub Release |
-|------|---------|---------|----------------|
-| **Stable** (`1.0.0`) | `@latest` | Git tag `v1.0.0` | Release |
-| **Pre-release** (`1.0.0-beta.1`) | `@next` | Git tag `v1.0.0-beta.1` | Pre-release |
-| **Nightly** (`0.0.1-nightly-20250113`) | `@nightly` | Scheduled (weekdays) or manual | None |
+| Type | npm Tag | Trigger |
+|------|---------|---------|
+| **Stable** | `@latest` | Merge version PR on `main` |
+| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
+| **Nightly** | `@nightly` | Scheduled weekdays 2 AM UTC, or manual |
 
-### Installing Different Versions
+Publishing uses [npm OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers) — no npm tokens are needed. Provenance attestations are generated automatically.
+
+## Creating a Changeset
+
+Every PR with user-facing changes should include a changeset:
 
 ```bash
-# Stable release (default)
-npm install @salesforce/b2c-cli
-
-# Pre-release (beta, preview, rc)
-npm install @salesforce/b2c-cli@next
-
-# Nightly snapshot
-npm install @salesforce/b2c-cli@nightly
+pnpm changeset
 ```
 
-## Published Packages
+1. Select the packages you directly changed
+2. Choose `patch` (bug fixes) or `minor` (new features) — no `major` bumps pre-1.0
+3. Write a brief user-facing summary (this goes in the changelog)
+4. Commit the generated `.changeset/*.md` file with your PR
 
-Only these three packages are published to npm:
+Only list packages you directly changed — dependent packages are bumped automatically.
 
-| Package | npm | Description |
-|---------|-----|-------------|
-| `@salesforce/b2c-cli` | [npm](https://www.npmjs.com/package/@salesforce/b2c-cli) | Command line interface |
-| `@salesforce/b2c-tooling-sdk` | [npm](https://www.npmjs.com/package/@salesforce/b2c-tooling-sdk) | SDK/library for B2C operations |
-| `@salesforce/b2c-dx-mcp` | [npm](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp) | MCP server |
+**Don't need a changeset:** internal refactoring, test improvements, CI changes.
 
-These packages are **linked** in changesets configuration, meaning they always version together.
+## Stable Release
 
-**Not published:**
-- `@salesforce/b2c-plugin-example-config` - Example plugin for reference only
-- `@salesforce/b2c-cli-root` - Monorepo root package
-
-The publish workflow explicitly filters to only these three packages using `--filter`.
-
-## Architecture
-
-### Workflow 1: `changesets.yml` - Version Management
-
-- **Trigger**: Push to `main` branch
-- **Purpose**: Creates/updates a "Version Packages" PR when changesets exist
-- **Permissions**: `contents: write`, `pull-requests: write`
-- **Does NOT publish** - no npm interaction
-
-### Workflow 2: `publish.yml` - npm Publishing
-
-- **Triggers**:
-  - Push of version tags (`v1.0.0`, `v1.0.0-beta.1`, etc.) - stable/pre-releases
-  - Schedule (weekdays at 2 AM UTC) - nightly snapshots
-  - Manual `workflow_dispatch` - on-demand nightly
-- **Purpose**: Publishes packages to npm and creates GitHub Releases (for tag-based releases)
-- **Permissions**: `contents: write`, `id-token: write` (for OIDC)
-- **Security**: Uses npm OIDC trusted publishers - no npm token required
-
-## Release Process
-
-### For Contributors
-
-When making changes that should be released:
-
-1. **Create a changeset** describing your changes:
-
-   ```bash
-   pnpm changeset
-   ```
-
-2. **Select the change type** (pre-1.0):
-   - `patch` - Bug fixes, documentation updates, new features
-   - `minor` - New features, major improvements
-   - `major` - Breaking changes: 1.0 --- initial GA release
-
-3. **Write a summary** - This appears in the changelog
-
-4. **Commit the changeset file** along with your code changes
-
-5. **Open a PR** - The changeset file (`.changeset/*.md`) should be included
-
-### For Maintainers
-
-When ready to release:
+This is the normal release flow from `main`.
 
 1. **Merge PRs with changesets** to `main`
 
-2. **Review the Version PR** - The `changesets.yml` workflow automatically creates a "Version Packages" PR that:
-   - Bumps versions in all `package.json` files
+2. **Review the "Next Release" PR** — created automatically by `changesets.yml`:
+   - Bumps versions in `package.json` files
    - Updates `CHANGELOG.md` files
    - Removes consumed changeset files
 
-3. **Merge the Version PR** when ready to release
+3. **Merge the version PR** — `publish.yml` runs automatically:
+   - Publishes changed packages to npm
+   - Creates per-package git tags (e.g., `@salesforce/b2c-cli@0.4.1`)
+   - Creates a GitHub Release with aggregated changelogs
+   - Triggers a documentation rebuild
 
-4. **Create and push a version tag**:
+No manual tagging or workflow dispatch is needed.
+
+## Release Branches
+
+Use when you need to ship a fix independently of `main`. There are two scenarios:
+
+1. **Hotfix from latest** — urgent patch while unrelated changesets are pending on `main`. Publishes to `@latest`.
+2. **Maintenance patch** — fix for an older minor version (e.g., patching `0.4.x` when `@latest` is `0.5.0`). Publishes to a scoped dist-tag like `@release-0.4`.
+
+**Why:** Changesets consumes all pending changesets atomically — you can't release one package while holding others. Release branches let you version and publish independently of `main`.
+
+Branch naming convention: `release/<major.minor>` (e.g., `release/0.5`). This is self-documenting and allows reuse for multiple patches to the same minor.
+
+### Steps
+
+1. **Find the tag to branch from:**
 
    ```bash
-   # Get the new version from package.json
-   VERSION=$(node -p "require('./packages/b2c-tooling-sdk/package.json').version")
-
-   # Create and push the tag
-   git tag "v$VERSION"
-   git push origin "v$VERSION"
+   git tag --list '@salesforce/*' --sort=-creatordate | head -n5
    ```
 
-5. **Monitor the publish** - The `publish.yml` workflow will:
-   - Validate the tag matches package versions
-   - Build and test all packages
-   - Publish to npm via OIDC
-   - Create a GitHub Release with aggregated changelogs
+2. **Create a release branch:**
 
-### Pre-releases (Beta, Preview, RC)
+   ```bash
+   # Hotfix from latest (e.g., latest is 0.5.0)
+   git checkout -b release/0.5 @salesforce/b2c-cli@0.5.0
 
-For pre-release versions, use changesets pre-release mode:
+   # Maintenance patch on older minor (e.g., latest is 0.5.0, patching 0.4.x)
+   git checkout -b release/0.4 @salesforce/b2c-cli@0.4.2
+   ```
+
+3. **Cherry-pick or apply the fix**, then create and consume a changeset:
+
+   ```bash
+   git cherry-pick <commit-sha>
+   pnpm changeset          # create changeset for the fix
+   pnpm changeset version  # consume it — bumps versions and changelogs
+   git add -A && git commit -m "Version packages"
+   ```
+
+4. **Push the branch:**
+
+   ```bash
+   git push -u origin release/0.5
+   ```
+
+5. **Publishing happens automatically** — CI runs, and on success `publish.yml` triggers. No manual dispatch needed.
+
+6. **Review the auto-created PR** that merges version bumps back to `main`. Merge it to prevent version collisions on the next regular release.
+
+7. **Delete the release branch** after the merge-back PR is merged (or keep it for future patches to the same minor).
+
+### Older minor version patching
+
+When the release branch targets an older minor (e.g., `0.4.3` when `@latest` is `0.5.0`), the publish workflow automatically uses a scoped dist-tag (`release-0.4`) instead of `@latest`, preventing `@latest` from moving backward. Users install with:
 
 ```bash
-# Enter pre-release mode
-pnpm changeset pre enter beta
-
-# Continue normal workflow: create changesets, merge version PR
-# Versions will be like 1.0.0-beta.0, 1.0.0-beta.1, etc.
-
-# Exit pre-release mode when ready for stable
-pnpm changeset pre exit
+npm install @salesforce/b2c-cli@release-0.4
 ```
 
-Pre-release tags (`v1.0.0-beta.1`) publish to `@next` and create GitHub Pre-releases.
+## Nightly Release
 
-### Nightly Releases
+Nightlies run automatically on weekdays at 2 AM UTC. To trigger one manually:
 
-Nightly releases run automatically on weekdays at 2 AM UTC. They can also be triggered manually:
+1. Go to **Actions** → **Publish to npm**
+2. Click **Run workflow** → select `nightly` → **Run workflow**
 
-1. Go to **Actions** → **Publish to npm** workflow
-2. Click **Run workflow**
-3. Select `nightly` and click **Run workflow**
+Nightlies publish as `0.0.0-nightly.<timestamp>` to the `@nightly` tag. They don't create GitHub releases or git tags.
 
-Nightly versions use changesets snapshot format: `0.0.1-nightly-20250113`
+## Doc-Only Release
 
-**Notes:**
-- Nightly releases do NOT create GitHub releases
-- They publish to the `@nightly` npm tag
-- Each nightly overwrites the previous `@nightly` tag
+To deploy documentation changes without bumping CLI/SDK/MCP versions, create a changeset targeting only the docs package:
 
-## Changeset Configuration
+```md
+---
+'@salesforce/b2c-dx-docs': patch
+---
 
-Configuration is in `.changeset/config.json`:
-
-```json
-{
-  "changelog": ["@changesets/changelog-github", { "repo": "..." }],
-  "linked": [
-    ["@salesforce/b2c-cli", "@salesforce/b2c-tooling-sdk", "@salesforce/b2c-dx-mcp"]
-  ],
-  "access": "public",
-  "baseBranch": "main",
-  "updateInternalDependencies": "patch",
-  "ignore": ["@salesforce/b2c-plugin-example-config"]
-}
+Improved authentication guide with step-by-step examples
 ```
 
-Key settings:
-- **linked**: All three main packages version together
-- **access**: Packages are published as public
-- **ignore**: Example plugin is not published
-- **updateInternalDependencies**: Automatically bumps internal deps
+This follows the normal [stable release](#stable-release) flow — the version PR will only bump the docs package, and on merge a `docs@<version>` tag triggers a documentation rebuild. No npm packages are published.
 
-## npm Trusted Publishers (OIDC)
+Use this for significant documentation improvements (new guides, restructured content) that should go live before the next package release. Routine typo fixes can wait for the next package release and don't need a changeset.
 
-This project uses npm's OIDC trusted publishers instead of npm tokens:
+SDK version bumps automatically cascade to the docs package (since API docs are generated from the SDK), so a separate docs changeset isn't needed when the SDK changes.
 
-### How It Works
+## Documentation Deployment
 
-1. npm is configured to trust publishes from the `publish.yml` workflow
-2. GitHub Actions generates a short-lived OIDC token during workflow execution
-3. The token is automatically used by `pnpm publish` - no secrets needed
-4. Provenance attestations are automatically generated
+The documentation site serves two versions:
 
-### Benefits
+- **Stable** (root URL) — built from the most recent release tag (across all branches)
+- **Dev** (`/dev/`) — built from `main`, updated on every push
 
-- **No token management** - No npm tokens to rotate or secure
-- **Audit trail** - Every publish is linked to a specific workflow run
-- **Provenance** - Packages include attestations proving where they were built
-- **Security** - Only the specific workflow can publish, not any repository secret holder
-
-### Configuration (npmjs.com)
-
-Each package must be configured on npmjs.com:
-
-1. Navigate to package → Settings → Publishing access → Trusted Publishers
-2. Add GitHub Actions trusted publisher:
-   - **Owner**: `SalesforceCommerceCloud`
-   - **Repository**: `b2c-developer-tooling`
-   - **Workflow**: `publish.yml`
-   - **Environment**: (leave empty)
-
-## Troubleshooting
-
-### "Tag version does not match package version"
-
-The `publish.yml` workflow validates that the git tag matches the version in `package.json`. Ensure:
-1. The "Version Packages" PR was merged
-2. You pulled the latest `main` before tagging
-3. The tag matches exactly (e.g., `v1.0.0` for version `1.0.0`)
-
-### "No changesets found"
-
-If `pnpm changeset status` shows no pending changes but you expect some:
-1. Ensure changeset files exist in `.changeset/` (not including `README.md` and `config.json`)
-2. Check that the changeset files reference the correct package names
-
-### OIDC publish fails
-
-If publishing fails with authentication errors:
-1. Verify trusted publishers are configured on npmjs.com for all packages
-2. Ensure the workflow filename matches exactly (`publish.yml`)
-3. Check that `id-token: write` permission is set in the workflow
-
-### Version PR not created
-
-If no "Version Packages" PR appears after merging changesets:
-1. Check the Actions tab for `changesets.yml` workflow runs
-2. Verify changesets exist (files in `.changeset/` besides config)
-3. Ensure the workflow has necessary permissions
+Stable docs are rebuilt only when a package publishes to `@latest` (hotfix from the current minor or a regular release) or when a doc-only release is created. Maintenance patches on older minors (which publish to scoped dist-tags like `@release-0.4`) do not trigger a docs rebuild.
 
 ## Local Testing
 
-### Dry-run publish
-
-Test what would be published without actually publishing:
-
 ```bash
+# Dry-run publish (see what would be published)
 pnpm run build
 pnpm --filter @salesforce/b2c-tooling-sdk --filter @salesforce/b2c-cli --filter @salesforce/b2c-dx-mcp publish --access public --dry-run
-```
 
-Note: Only the three main packages are published. The example plugin and root package are excluded.
-
-### Test changeset version
-
-See what versions would be bumped:
-
-```bash
+# Preview version bumps
 pnpm changeset version --dry-run
 ```
 
-## References
+## Troubleshooting
 
-- [Changesets Documentation](https://github.com/changesets/changesets)
-- [npm Trusted Publishers](https://docs.npmjs.com/trusted-publishers)
-- [GitHub Actions OIDC](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
+**Version PR not created** — Check the `changesets.yml` workflow in the Actions tab. Verify changeset files exist in `.changeset/` (besides `README.md` and `config.json`).
+
+**Packages not published after version PR merge** — Check the `publish.yml` workflow run. The workflow compares local versions against npm — if they already match, nothing is published. Verify `changesets.yml` successfully dispatched `publish.yml`.
+
+**OIDC publish fails** — Verify trusted publishers are configured on npmjs.com for each package (Settings → Publishing access → Trusted Publishers). The workflow filename must match exactly (`publish.yml`).
+
+**No changesets found** — Ensure changeset files exist in `.changeset/` and reference correct package names (`@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/b2c-dx-docs`).

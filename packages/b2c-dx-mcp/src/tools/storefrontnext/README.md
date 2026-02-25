@@ -80,9 +80,58 @@ MCP tools for Storefront Next development with React Server Components.
 }
 ```
 
+### `storefront_next_page_designer_decorator`
+
+Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefinition`) to existing React components for Storefront Next.
+
+**Status**: ✅ Implemented (non-GA - use `--allow-non-ga-tools` flag)
+
+**Use cases**:
+
+- Add Page Designer support to new components
+- Convert existing components to be Page Designer-compatible
+- Generate decorator code automatically or interactively
+- Configure component attributes and regions for Page Designer
+
+**Parameters**:
+
+- `component` (required, string): Component name (e.g., "ProductCard") or file path
+- `autoMode` (optional, boolean): Enable auto mode for quick setup
+- `searchPaths` (optional, array): Additional directories to search for components
+- `componentId` (optional, string): Override component ID
+- `conversationContext` (optional, object): For interactive mode workflow steps
+
+**Returns**: Generated decorator code and instructions for adding to component file
+
+**Example usage**:
+
+```json
+// Auto mode (quick setup)
+{
+  "name": "storefront_next_page_designer_decorator",
+  "arguments": {
+    "component": "ProductCard",
+    "autoMode": true
+  }
+}
+
+// Interactive mode (step-by-step)
+{
+  "name": "storefront_next_page_designer_decorator",
+  "arguments": {
+    "component": "Hero",
+    "conversationContext": {
+      "step": "analyze"
+    }
+  }
+}
+```
+
 ## Implementation Details
 
 ### Architecture
+
+#### `storefront_next_development_guidelines`
 
 The tool loads content from markdown files in the `content/` directory:
 
@@ -91,7 +140,7 @@ The tool loads content from markdown files in the `content/` directory:
 - **Section-Based**: Individual markdown files per topic (~100-200 lines each)
 - **Default behavior**: Returns 4 sections by default for comprehensive coverage
 
-### Content Structure
+**Content Structure**:
 
 Each section markdown file includes:
 
@@ -100,14 +149,14 @@ Each section markdown file includes:
 - Quick reference snippets
 - Framework-specific patterns for React Server Components
 
-### Behavior
+**Behavior**:
 
 - **No sections specified**: Returns default comprehensive set (`quick-reference`, `data-fetching`, `components`, `testing`)
 - **Single section**: Returns content directly without separators
 - **Multiple sections**: Combines content with `---` separators and includes instructions for full content display
 - **Empty array**: Returns empty string
 
-### Benefits
+**Benefits**:
 
 ✅ **Token Efficient**: Returns only relevant content (200-500 lines vs 20K+ full doc)  
 ✅ **Modular**: Access specific sections as needed  
@@ -115,15 +164,40 @@ Each section markdown file includes:
 ✅ **Always Current**: Content loaded from markdown files (easy to update)  
 ✅ **Comprehensive Default**: Returns key sections by default for immediate value
 
-## Placeholder Tools
+#### `storefront_next_page_designer_decorator`
 
-The following tools are placeholders awaiting implementation:
+The tool uses a rule-based architecture with TypeScript template literals for generating Page Designer decorators:
 
-- `storefront_next_site_theming` - Configure and manage site theming for Storefront Next
-- `storefront_next_figma_to_component_workflow` - Convert Figma designs to Storefront Next components
-- `storefront_next_generate_component` - Generate a new Storefront Next component
-- `storefront_next_map_tokens_to_theme` - Map design tokens to Storefront Next theme configuration
-- `storefront_next_design_decorator` - Apply design decorators to Storefront Next components
-- `storefront_next_generate_page_designer_metadata` - Generate Page Designer metadata for Storefront Next components
+- **Rule Rendering**: Pure TypeScript functions that return strings based on typed context
+- **Type Safety**: Every rule has a strongly-typed context interface checked at compile time
+- **Template Generation**: Code generation uses pure functions for decorator creation
+- **Component Discovery**: Automatically searches common component directories (e.g., `src/components/**`, `app/components/**`)
 
-Use `--allow-non-ga-tools` flag to enable placeholder tools.
+**Key Features**:
+
+- **Name-Based Lookup**: Find components by name (e.g., "ProductCard") without knowing paths
+- **Auto-Discovery**: Searches common component directories automatically
+- **Type-Safe**: Full TypeScript type inference for all contexts
+- **Fast**: Direct function execution, no file I/O or compilation overhead
+- **Flexible Input**: Supports component names or file paths
+
+**Modes**:
+
+- **Auto Mode**: Generates decorators immediately with sensible defaults
+- **Interactive Mode**: Multi-step workflow with user confirmation at each stage
+
+**Component Discovery**:
+
+The tool automatically searches for components in these locations (in order):
+
+1. `src/components/**` (PascalCase and kebab-case)
+2. `app/components/**`
+3. `components/**`
+4. `src/**` (broader search)
+5. Custom paths (if provided via `searchPaths`)
+
+**Project Directory**:
+
+Component discovery uses the project directory resolved from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+
+**See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.

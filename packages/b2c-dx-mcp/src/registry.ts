@@ -111,27 +111,27 @@ export function createToolRegistry(loadServices: () => Services): ToolRegistry {
  * Performs workspace auto-discovery and returns appropriate toolsets.
  * Always includes BASE_TOOLSET even if no project types are detected.
  *
- * @param flags - Startup flags containing workingDirectory
+ * @param flags - Startup flags containing projectDirectory
  * @param reason - Reason for triggering auto-discovery (for logging)
  * @returns Array of toolsets to enable
  */
 async function performAutoDiscovery(flags: StartupFlags, reason: string): Promise<Toolset[]> {
   const logger = getLogger();
 
-  // Working directory from --working-directory flag or SFCC_WORKING_DIRECTORY env var
-  const workingDirectory = flags.workingDirectory ?? process.cwd();
+  // Project directory from --project-directory flag or SFCC_PROJECT_DIRECTORY env var
+  const projectDirectory = flags.projectDirectory ?? process.cwd();
 
-  // Warn if working directory wasn't explicitly configured
-  if (!flags.workingDirectory) {
+  // Warn if project directory wasn't explicitly configured
+  if (!flags.projectDirectory) {
     logger.warn(
-      {cwd: workingDirectory},
-      'No --working-directory flag or SFCC_WORKING_DIRECTORY env var provided. ' +
+      {cwd: projectDirectory},
+      'No --project-directory flag or SFCC_PROJECT_DIRECTORY env var provided. ' +
         'MCP clients like Cursor and Claude Desktop often spawn servers from ~ instead of the project directory. ' +
-        'Set --working-directory or SFCC_WORKING_DIRECTORY for reliable auto-discovery.',
+        'Set --project-directory or SFCC_PROJECT_DIRECTORY for reliable auto-discovery.',
     );
   }
 
-  const detectionResult = await detectWorkspaceType(workingDirectory);
+  const detectionResult = await detectWorkspaceType(projectDirectory);
 
   // Map all detected project types to MCP toolsets (union)
   // Note: getToolsetsForProjectTypes always includes BASE_TOOLSET
@@ -265,7 +265,7 @@ async function registerTools(tools: McpTool[], server: B2CDxMcpServer, allowNonG
     }
 
     // Register the tool
-    // TODO: Telemetry - Tool registration includes timing/error tracking
+    // Register the tool (invocations are tracked by B2CDxMcpServer)
     server.addTool(tool.name, tool.description, tool.inputSchema, async (args) => tool.handler(args));
   }
 }

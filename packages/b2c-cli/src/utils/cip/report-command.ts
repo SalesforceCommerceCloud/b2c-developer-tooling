@@ -15,6 +15,10 @@ import {
 import {CipCommand} from './command.js';
 import {renderTable, toCsv, type CipOutputFormat} from './format.js';
 
+function camelToKebab(str: string): string {
+  return str.replaceAll(/[A-Z]/gu, (match) => `-${match.toLowerCase()}`);
+}
+
 interface CipReportDescribeOutput {
   description: string;
   name: string;
@@ -147,10 +151,10 @@ export abstract class CipReportCommand<T extends typeof Command> extends CipComm
     }
 
     this.renderRows(
-      ['name', 'type', 'required', 'description'],
+      ['flag', 'type', 'required', 'description'],
       report.parameters.map((parameter) => ({
         description: parameter.description,
-        name: parameter.name,
+        flag: `--${camelToKebab(parameter.name)}`,
         required: parameter.required ? 'yes' : 'no',
         type: parameter.type,
       })),
