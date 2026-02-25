@@ -7,6 +7,8 @@ import {expect} from 'chai';
 import {
   ConfigResolver,
   createConfigResolver,
+  resolveConfig,
+  globalConfigSourceRegistry,
   type ConfigSource,
   type ConfigLoadResult,
   type NormalizedConfig,
@@ -528,6 +530,93 @@ describe('config/resolver', () => {
       expect(config.hostname).to.equal('builtin.com');
       // 'after' plugin provides mrtProject (not in others)
       expect(config.mrtProject).to.equal('after-project');
+    });
+  });
+
+  describe('global config source registry integration', () => {
+    afterEach(() => {
+      globalConfigSourceRegistry.clear();
+    });
+
+    it('resolveConfig() includes globally registered sources', () => {
+      const source: ConfigSource = {
+        name: 'global-test',
+        priority: -1,
+        load() {
+          return {config: {hostname: 'global.example.com'}, location: 'global'};
+        },
+      };
+      globalConfigSourceRegistry.register(source);
+
+      const config = resolveConfig({}, {replaceDefaultSources: true});
+
+      expect(config.values.hostname).to.equal('global.example.com');
+      expect(config.sources).to.have.length(1);
+      expect(config.sources[0].name).to.equal('global-test');
+    });
+
+    it('global sources participate in priority sorting', () => {
+      const lowPriority: ConfigSource = {
+        name: 'global-low',
+        priority: 100,
+        load() {
+          return {config: {hostname: 'low.example.com'}};
+        },
+      };
+      const highPriority: ConfigSource = {
+        name: 'global-high',
+        priority: -10,
+        load() {
+          return {config: {hostname: 'high.example.com'}};
+        },
+      };
+      globalConfigSourceRegistry.register(lowPriority);
+      globalConfigSourceRegistry.register(highPriority);
+
+      const config = resolveConfig({}, {replaceDefaultSources: true});
+
+      // High priority source (-10) wins
+      expect(config.values.hostname).to.equal('high.example.com');
+    });
+
+    it('explicit sourcesBefore/sourcesAfter merge with global sources', () => {
+      const globalSource: ConfigSource = {
+        name: 'global-source',
+        priority: 10,
+        load() {
+          return {config: {clientId: 'global-client'}};
+        },
+      };
+      globalConfigSourceRegistry.register(globalSource);
+
+      const explicitSource: ConfigSource = {
+        name: 'explicit-source',
+        priority: -1,
+        load() {
+          return {config: {hostname: 'explicit.example.com'}};
+        },
+      };
+
+      const config = resolveConfig({}, {replaceDefaultSources: true, sourcesBefore: [explicitSource]});
+
+      // Both sources should contribute
+      expect(config.values.hostname).to.equal('explicit.example.com');
+      expect(config.values.clientId).to.equal('global-client');
+    });
+
+    it('global sources are included when replaceDefaultSources is true', () => {
+      const source: ConfigSource = {
+        name: 'global-persistent',
+        priority: 0,
+        load() {
+          return {config: {shortCode: 'global-code'}};
+        },
+      };
+      globalConfigSourceRegistry.register(source);
+
+      const config = resolveConfig({}, {replaceDefaultSources: true});
+
+      expect(config.values.shortCode).to.equal('global-code');
     });
   });
 

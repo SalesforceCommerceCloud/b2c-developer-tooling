@@ -69,7 +69,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       ...mrt.options,
     };
 
-    return loadConfig(mrt.config, options, this.getPluginSources());
+    return loadConfig(mrt.config, options);
   }
 
   /**
