@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.5.4
+
+### Patch Changes
+
+- [`f9ebb56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9ebb562d0c894aed9f0498b78ca01fce70db352) - Fix duplicate config source registration in `ConfigSourceRegistry` when multiple discovery paths find the same plugins (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.5.3
 
 ### Patch Changes
