@@ -146,7 +146,7 @@ export interface ExtractedMrtFlags {
  *   ...this.getBaseConfigOptions(),
  *   ...mrt.options,
  * };
- * return loadConfig(mrt.config, options, this.getPluginSources());
+ * return loadConfig(mrt.config, options);
  * ```
  */
 export function extractMrtFlags(flags: ParsedFlags): ExtractedMrtFlags {
@@ -189,8 +189,9 @@ export interface LoadConfigOptions {
 /**
  * Plugin-provided configuration sources with priority ordering.
  *
- * Used by BaseCommand to pass sources collected from the `b2c:config-sources` hook
- * to the configuration resolver.
+ * @deprecated Plugin config sources are now registered with the global
+ * {@link globalConfigSourceRegistry} and automatically included in
+ * {@link resolveConfig}. This type is retained for backwards compatibility.
  */
 export interface PluginSources {
   /**
@@ -215,7 +216,8 @@ export interface PluginSources {
  *
  * @param flags - Configuration values from CLI flags/env vars
  * @param options - Loading options
- * @param pluginSources - Optional sources from CLI plugins (via b2c:config-sources hook)
+ * @param pluginSources - @deprecated Plugin sources are now registered globally via
+ *   {@link globalConfigSourceRegistry}. This parameter is retained for backwards compatibility.
  * @returns Resolved configuration with factory methods
  *
  * @example

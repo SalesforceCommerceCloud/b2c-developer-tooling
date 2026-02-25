@@ -3,32 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {
-  resolveConfig,
-  type NormalizedConfig,
-  type ResolveConfigOptions,
-  type ResolvedB2CConfig,
-} from '@salesforce/b2c-tooling-sdk/config';
+import {resolveConfig, type NormalizedConfig, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {getPluginConfigSources} from './plugins.js';
-
-/**
- * Resolves configuration with plugin sources automatically injected.
- */
-function resolveConfigWithPlugins(
-  overrides: Partial<NormalizedConfig> = {},
-  options: ResolveConfigOptions = {},
-): ResolvedB2CConfig {
-  const {sourcesBefore, sourcesAfter} = getPluginConfigSources();
-  return resolveConfig(overrides, {
-    ...options,
-    sourcesBefore: [...sourcesBefore, ...(options.sourcesBefore ?? [])],
-    sourcesAfter: [...(options.sourcesAfter ?? []), ...sourcesAfter],
-  });
-}
 
 const DW_JSON = 'dw.json';
 
@@ -119,7 +98,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
    * Used by deploy-cartridge where the project directory differs from the workspace root.
    */
   resolveForDirectory(workingDirectory: string, overrides: Partial<NormalizedConfig> = {}): ResolvedB2CConfig {
-    return resolveConfigWithPlugins(overrides, {workingDirectory});
+    return resolveConfig(overrides, {workingDirectory});
   }
 
   dispose(): void {
@@ -137,7 +116,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
         workingDirectory = '';
       }
       this.log.appendLine(`[Config] Resolving config from ${workingDirectory || '(no working directory)'}`);
-      const config = resolveConfigWithPlugins({}, {workingDirectory});
+      const config = resolveConfig({}, {workingDirectory});
       this.config = config;
 
       if (!config.hasB2CInstanceConfig()) {

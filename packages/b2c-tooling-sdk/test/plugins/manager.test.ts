@@ -10,6 +10,7 @@ import * as os from 'node:os';
 import {B2CPluginManager} from '@salesforce/b2c-tooling-sdk/plugins';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import {globalAuthMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/auth';
+import {globalConfigSourceRegistry} from '@salesforce/b2c-tooling-sdk/config';
 
 describe('plugins/manager', () => {
   let tempDir: string;
@@ -18,12 +19,14 @@ describe('plugins/manager', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-plugin-manager-'));
     globalMiddlewareRegistry.clear();
     globalAuthMiddlewareRegistry.clear();
+    globalConfigSourceRegistry.clear();
   });
 
   afterEach(() => {
     fs.rmSync(tempDir, {recursive: true, force: true});
     globalMiddlewareRegistry.clear();
     globalAuthMiddlewareRegistry.clear();
+    globalConfigSourceRegistry.clear();
   });
 
   it('initializes with no plugins when data dir is empty', async () => {
@@ -164,6 +167,35 @@ describe('plugins/manager', () => {
     const {sourcesBefore} = manager.getConfigSources();
     expect(sourcesBefore).to.have.length(1);
     expect(sourcesBefore[0].priority).to.equal(42);
+  });
+
+  it('applyMiddleware() registers config sources with global registry', async () => {
+    setupPlugin(tempDir, 'config-plugin', {
+      'b2c:config-sources': './hooks/config.mjs',
+    });
+
+    const hooksDir = path.join(tempDir, 'node_modules', 'config-plugin', 'hooks');
+    fs.mkdirSync(hooksDir, {recursive: true});
+    fs.writeFileSync(
+      path.join(hooksDir, 'config.mjs'),
+      `export default async function(options) {
+        return {
+          sources: [{ name: 'global-test-source', load() { return undefined; } }],
+          priority: 'after',
+        };
+      }`,
+    );
+
+    const manager = new B2CPluginManager({discoveryOptions: {dataDir: tempDir}});
+    await manager.initialize();
+
+    // Before applyMiddleware(), global registry should be empty
+    expect(globalConfigSourceRegistry.size).to.equal(0);
+
+    manager.applyMiddleware();
+
+    // After applyMiddleware(), source should be in global registry
+    expect(globalConfigSourceRegistry.getSourceNames()).to.include('global-test-source');
   });
 
   it('collects and applies HTTP middleware', async () => {
