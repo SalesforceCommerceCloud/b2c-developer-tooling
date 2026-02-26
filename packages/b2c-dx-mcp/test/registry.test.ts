@@ -86,6 +86,7 @@ describe('registry', () => {
       const toolNames = registry.SCAPI.map((t) => t.name);
       expect(toolNames).to.include('scapi_schemas_list');
       expect(toolNames).to.include('scapi_custom_apis_status');
+      expect(toolNames).to.include('scapi_custom_api_scaffold');
     });
 
     it('should create STOREFRONTNEXT tools', () => {
@@ -303,6 +304,7 @@ describe('registry', () => {
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('scapi_custom_apis_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_scaffold');
     });
 
     it('should trigger auto-discovery when all individual tools are invalid', async () => {
@@ -319,6 +321,7 @@ describe('registry', () => {
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('scapi_custom_apis_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_scaffold');
     });
 
     it('should skip non-GA tools when allowNonGaTools is false', async () => {

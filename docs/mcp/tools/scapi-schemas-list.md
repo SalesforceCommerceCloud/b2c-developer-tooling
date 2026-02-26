@@ -164,6 +164,7 @@ Use the MCP tool to show me the full OpenAPI spec for shopper-products v1.
 
 - [SCAPI Toolset](../toolsets#scapi) - Overview of SCAPI discovery tools
 - [scapi_custom_apis_status](./scapi-custom-apis-status) - Check custom API endpoint registration status
+- [scapi_custom_api_scaffold](./scapi-custom-api-scaffold) - Generate a new custom API in a cartridge
 - [Authentication Setup](../../guide/authentication#scapi-authentication) - Set up SCAPI authentication with required roles and scopes
 - [Configuration](../configuration) - Configure OAuth credentials
 - [CLI Reference](../../cli/scapi-schemas) - Equivalent CLI commands: `b2c scapi schemas list` and `b2c scapi schemas get`

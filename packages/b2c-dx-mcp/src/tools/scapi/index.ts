@@ -8,7 +8,7 @@
  * SCAPI toolset for B2C Commerce.
  *
  * This toolset provides MCP tools for Salesforce Commerce API (SCAPI) discovery and exploration.
- * Includes both standard SCAPI schemas and custom API status tools.
+ * Includes standard SCAPI schemas, custom API status, and custom API scaffold tools.
  *
  * @module tools/scapi
  */
@@ -17,6 +17,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createScapiSchemasListTool} from './scapi-schemas-list.js';
 import {createScapiCustomApisStatusTool} from './scapi-custom-apis-status.js';
+import {createScaffoldCustomApiTool} from './scapi-custom-api-scaffold.js';
 
 /**
  * Creates all tools for the SCAPI toolset.
@@ -25,5 +26,9 @@ import {createScapiCustomApisStatusTool} from './scapi-custom-apis-status.js';
  * @returns Array of MCP tools
  */
 export function createScapiTools(loadServices: () => Services): McpTool[] {
-  return [createScapiSchemasListTool(loadServices), createScapiCustomApisStatusTool(loadServices)];
+  return [
+    createScapiSchemasListTool(loadServices),
+    createScapiCustomApisStatusTool(loadServices),
+    createScaffoldCustomApiTool(loadServices),
+  ];
 }
