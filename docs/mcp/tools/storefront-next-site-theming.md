@@ -87,6 +87,19 @@ Only after completing Phases 1 and 2 may you apply theme changes to `app.css` (o
 
 ## Usage Examples
 
+### Example Prompts (Natural Language)
+
+Try these prompts to get started:
+
+| Goal | Example prompt |
+|------|----------------|
+| Start theming from scratch | "I want to apply my brand colors to my Storefront Next site. Use the MCP tool to help me." |
+| Validate before implementing | "I have a color scheme ready. Use the MCP tool to validate my colors for accessibility before I implement." |
+| Colors + fonts upfront | "Use these colors: #635BFF (accent), #0A2540 (dark). Font: Inter. Use the MCP tool to guide me through theming." |
+| Check accessibility only | "Use the MCP tool to validate these color combinations for WCAG: light text #333 on background #FFF, button #0A2540 with white text." |
+| Change existing theme | "I want to change my site theme. Use the MCP tool to walk me through the process." |
+| List available content | "What theming files does the MCP tool have? Use the tool to list them." |
+
 ### First Call - Get Guidelines and Questions
 
 ```
@@ -107,7 +120,7 @@ I want to apply my brand colors to my Storefront Next site. Use the MCP tool to 
 
 After collecting user answers, construct the color mapping and call the tool to validate.
 
-**Example arguments:**
+**Minimal colorMapping (light theme only):**
 
 ```json
 {
@@ -118,6 +131,27 @@ After collecting user answers, construct the color mapping and call the tool to 
         "lightBackground": "#FFFFFF",
         "buttonText": "#FFFFFF",
         "buttonBackground": "#0A2540"
+      }
+    }
+  }
+}
+```
+
+**Full colorMapping (light + dark theme):**
+
+```json
+{
+  "conversationContext": {
+    "collectedAnswers": {
+      "colorMapping": {
+        "lightText": "#171717",
+        "lightBackground": "#FFFFFF",
+        "darkText": "#FAFAFA",
+        "darkBackground": "#0A0A0A",
+        "buttonText": "#FFFFFF",
+        "buttonBackground": "#0A2540",
+        "linkColor": "#2563EB",
+        "accent": "#635BFF"
       }
     }
   }
@@ -148,6 +182,58 @@ Use these colors: #635BFF (accent), #0A2540 (dark), #F6F9FC (brand), #FFFFFF (li
   }
 }
 ```
+
+### With Pre-Provided Fonts
+
+When the user specifies fonts:
+
+```
+I want to use Inter for body text and Playfair Display for headings. Use the MCP tool to help me theme my site.
+```
+
+**Example arguments:**
+
+```json
+{
+  "conversationContext": {
+    "collectedAnswers": {
+      "colors": [],
+      "fonts": [
+        {"name": "Inter", "type": "body"},
+        {"name": "Playfair Display", "type": "heading"}
+      ]
+    }
+  }
+}
+```
+
+### Mid-Conversation Update
+
+When the user answers a question and provides new information, merge it into `collectedAnswers` and call again:
+
+```json
+{
+  "conversationContext": {
+    "collectedAnswers": {
+      "colors": [{"hex": "#635BFF", "type": "accent"}],
+      "fonts": [],
+      "color-1": "primary action buttons",
+      "color-2": "links and hover states"
+    },
+    "questionsAsked": ["color-1", "color-2"]
+  }
+}
+```
+
+### List Available Files (No Context)
+
+Call with empty arguments to list loaded theming file keys:
+
+```json
+{}
+```
+
+Returns available keys such as `theming-questions`, `theming-validation`, `theming-accessibility`.
 
 ## Custom Theming Files
 

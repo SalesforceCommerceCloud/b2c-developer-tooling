@@ -81,7 +81,7 @@ export function createSiteThemingTool(loadServices: () => Services): McpTool {
           .describe('Context from previous conversation rounds'),
       },
       async execute(args: SiteThemingInput, context: ToolExecutionContext) {
-        siteThemingStore.initialize(context.services.getWorkingDirectory());
+        siteThemingStore.initialize(context.services.resolveWithProjectDirectory());
 
         const defaultFileKeys = ['theming-questions', 'theming-validation', 'theming-accessibility'];
         let fileKeys: string[];
