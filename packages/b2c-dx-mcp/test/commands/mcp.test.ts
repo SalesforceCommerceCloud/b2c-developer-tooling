@@ -495,7 +495,7 @@ describe('McpServerCommand', () => {
       // Stub getBaseConfigOptions
       sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
         configPath: undefined,
-        workingDirectory: process.cwd(),
+        projectDirectory: process.cwd(),
       });
 
       // Call loadConfiguration via protected access
@@ -811,9 +811,17 @@ describe('McpServerCommand', () => {
       // Start the command to set up signal handlers
       const runPromise = command.run();
 
-      // Wait a bit for handlers to be set up
-      await new Promise((resolve) => {
-        void setTimeout(resolve, 10);
+      // Wait for signal handler to be registered (avoids race on slower systems)
+      await new Promise<void>((resolve) => {
+        const start = Date.now();
+        const poll = (): void => {
+          if (processOnStub.calledWith('SIGINT') || Date.now() - start > 500) {
+            resolve();
+          } else {
+            setTimeout(poll, 5);
+          }
+        };
+        setTimeout(poll, 5);
       });
 
       // Get the SIGINT handler and call it directly
@@ -855,9 +863,17 @@ describe('McpServerCommand', () => {
       // Start the command to set up signal handlers
       const runPromise = command.run();
 
-      // Wait a bit for handlers to be set up
-      await new Promise((resolve) => {
-        void setTimeout(resolve, 10);
+      // Wait for signal handler to be registered (avoids race on slower systems)
+      await new Promise<void>((resolve) => {
+        const start = Date.now();
+        const poll = (): void => {
+          if (processOnStub.calledWith('SIGTERM') || Date.now() - start > 500) {
+            resolve();
+          } else {
+            setTimeout(poll, 5);
+          }
+        };
+        setTimeout(poll, 5);
       });
 
       // Get the SIGTERM handler and call it directly

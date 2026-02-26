@@ -33,11 +33,11 @@ function getResultText(result: ToolResult): string {
 /**
  * Create a mock services instance for testing.
  *
- * @param workingDirectory - Optional working directory (defaults to process.cwd())
+ * @param projectDirectory - Optional project directory (defaults to process.cwd())
  * @returns A new Services instance with empty configuration
  */
-function createMockServices(workingDirectory?: string): Services {
-  const config = createMockResolvedConfig({workingDirectory});
+function createMockServices(projectDirectory?: string): Services {
+  const config = createMockResolvedConfig({projectDirectory});
   return new Services({resolvedConfig: config});
 }
 
@@ -124,7 +124,7 @@ describe('tools/storefrontnext/page-designer-decorator', () => {
     mkdirSync(testDir, {recursive: true});
     originalCwd = process.cwd();
     process.chdir(testDir);
-    // Create services with workingDirectory set to test directory
+    // Create services with projectDirectory set to test directory
     services = createMockServices(testDir);
   });
 
@@ -189,12 +189,12 @@ describe('tools/storefrontnext/page-designer-decorator', () => {
       expect(text).to.include('TestComponent');
     });
 
-    it('should use workingDirectory from Services', async () => {
+    it('should use projectDirectory from Services', async () => {
       const customDir = path.join(tmpdir(), `b2c-mcp-test-custom-${Date.now()}`);
       mkdirSync(customDir, {recursive: true});
       createTestComponent(customDir, 'CustomComponent');
 
-      // Create services with custom workingDirectory
+      // Create services with custom projectDirectory
       const customServices = createMockServices(customDir);
       const tool = createPageDesignerDecoratorTool(() => customServices);
 

@@ -85,7 +85,7 @@ You can configure the CLI using environment variables:
 
 ## .env File
 
-The CLI automatically loads a `.env` file from the current working directory if present. Use the same `SFCC_*` variable names as environment variables.
+The CLI automatically loads a `.env` file from the current project directory if present. Use the same `SFCC_*` variable names as environment variables.
 
 ```bash
 # .env

@@ -1,6 +1,6 @@
 # CI/CD with GitHub Actions
 
-The B2C Developer Tooling project provides official GitHub Actions for automating Commerce Cloud operations in your CI/CD pipelines.
+The B2C Developer Tooling project provides official GitHub Actions for automating B2C Commerce operations in your CI/CD pipelines.
 
 ## Overview
 
