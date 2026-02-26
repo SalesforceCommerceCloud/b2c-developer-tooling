@@ -21,7 +21,7 @@
 
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
-import {createDeveloperGuidelinesTool} from './developer-guidelines.js';
+import {createDeveloperGuidelinesTool} from './sfnext-development-guidelines.js';
 import {createPageDesignerDecoratorTool} from './page-designer-decorator/index.js';
 import {createSiteThemingTool} from './site-theming/index.js';
 
