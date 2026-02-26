@@ -140,7 +140,7 @@ Discover schema metadata and fetch OpenAPI specs for both standard and custom SC
 
 **Custom API Scaffold (tool: `scapi_customapi_scaffold`):**
 
-Generate a new custom SCAPI endpoint in an existing cartridge (OAS 3.0 schema.yaml, api.json, script.js with example GET endpoints). Requires **apiName** (kebab-case). Optional: **cartridgeName** (omit to use the first cartridge found under the working directory), **apiType** (shopper | admin; default shopper), **apiDescription**, **projectRoot**, **outputDir**. Set `--working-directory` (or SFCC_WORKING_DIRECTORY) so the server discovers cartridges in your project. Files are always generated (no dry run) and existing files are never overwritten.
+Generate a new custom SCAPI endpoint in an existing cartridge (OAS 3.0 schema.yaml, api.json, script.js with example GET endpoints). Requires **apiName** (kebab-case). Optional: **cartridgeName** (omit to use the first cartridge found under the working directory), **apiType** (shopper | admin; default shopper), **apiDescription**, **projectRoot**, **outputDir**. Set `--project-directory` (or SFCC_PROJECT_DIRECTORY) so the server discovers cartridges in your project. Files are always generated (no dry run) and existing files are never overwritten.
 
 - ✅ "Use the MCP tool to scaffold a new custom API named my-products."
 - ✅ "Use the MCP tool to create a custom admin API called customer-trips."

@@ -314,19 +314,6 @@ export class Services {
   }
 
   /**
-   * Get the project project directory.
-   * Falls back to process.cwd() if not explicitly set.
-   *
-   * This is the directory where the project is located, which may differ from process.cwd()
-   * when MCP clients spawn servers from a different location (e.g., home directory).
-   *
-   * @returns Project project directory path
-   */
-  public getWorkingDirectory(): string {
-    return this.resolvedConfig.values.projectDirectory ?? process.cwd();
-  }
-
-  /**
    * Join path segments.
    *
    * @param segments - Path segments to join
@@ -369,6 +356,26 @@ export class Services {
    */
   public resolvePath(...segments: string[]): string {
     return path.resolve(...segments);
+  }
+
+  /**
+   * Resolve a path relative to the project directory.
+   * If path is not supplied, returns the project directory.
+   * If path is absolute, returns it as-is.
+   * If path is relative, resolves it relative to the project directory.
+   *
+   * @param pathArg - Optional path to resolve
+   * @returns Resolved absolute path
+   */
+  public resolveWithProjectDirectory(pathArg?: string): string {
+    const projectDir = this.resolvedConfig.values.projectDirectory ?? process.cwd();
+    if (!pathArg) {
+      return projectDir;
+    }
+    if (path.isAbsolute(pathArg)) {
+      return pathArg;
+    }
+    return path.resolve(projectDir, pathArg);
   }
 
   /**

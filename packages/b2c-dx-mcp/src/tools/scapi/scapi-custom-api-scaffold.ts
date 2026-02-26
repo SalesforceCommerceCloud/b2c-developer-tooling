@@ -13,7 +13,6 @@
  * @module tools/scapi/scapi-custom-api-scaffold
  */
 
-import path from 'node:path';
 import {z} from 'zod';
 import {createToolAdapter, jsonResult, errorResult} from '../adapter.js';
 import type {Services} from '../../services.js';
@@ -48,7 +47,7 @@ interface ScaffoldCustomApiInput {
   apiType?: 'admin' | 'shopper';
   /** Short description of the API. Default: "A custom B2C Commerce API" */
   apiDescription?: string;
-  /** Project root for cartridge discovery and output. Default: MCP working directory */
+  /** Project root for cartridge discovery and output. Default: MCP project directory */
   projectRoot?: string;
   /** Output directory override. Default: scaffold default or project root */
   outputDir?: string;
@@ -79,7 +78,7 @@ export async function executeScaffoldCustomApi(
   services: Services,
   overrides?: ScaffoldCustomApiExecuteOverrides,
 ): Promise<ScaffoldCustomApiOutput> {
-  const projectRoot = path.resolve(args.projectRoot ?? services.getWorkingDirectory());
+  const projectRoot = services.resolveWithProjectDirectory(args.projectRoot);
 
   const getScaffold =
     overrides?.getScaffold ??
