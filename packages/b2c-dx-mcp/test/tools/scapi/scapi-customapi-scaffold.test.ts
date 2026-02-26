@@ -231,5 +231,41 @@ describe('tools/scapi/scapi-custom-api-scaffold', () => {
         fs.rmSync(otherDir, {recursive: true, force: true});
       }
     });
+
+    it('should return error when parameter validation fails (invalid cartridgeName)', async () => {
+      const cartridgeDir = path.join(tempDir, 'app_custom');
+      fs.mkdirSync(cartridgeDir, {recursive: true});
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
+
+      const tool = createScaffoldCustomApiTool(loadServices);
+      const result = await tool.handler({
+        apiName: 'my-api',
+        cartridgeName: 'nonexistent_cartridge',
+      });
+
+      expect(result.isError).to.be.true;
+      const text = getResultText(result);
+      expect(text).to.include('Parameter validation failed');
+    });
+
+    it('should return error when generateFromScaffold throws', async () => {
+      const cartridgeDir = path.join(tempDir, 'app_custom');
+      fs.mkdirSync(cartridgeDir, {recursive: true});
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
+      // Use outputDir that is a file (not a directory) so scaffold write fails
+      const fileAsDir = path.join(tempDir, 'blocker');
+      fs.writeFileSync(fileAsDir, '', 'utf8');
+
+      const tool = createScaffoldCustomApiTool(loadServices);
+      const result = await tool.handler({
+        apiName: 'my-api',
+        projectRoot: tempDir,
+        outputDir: fileAsDir,
+      });
+
+      expect(result.isError).to.be.true;
+      const text = getResultText(result);
+      expect(text).to.include('Scaffold generation failed');
+    });
   });
 });
