@@ -114,7 +114,7 @@ describe('Granular Replications Client', () => {
     it('should queue product for publishing', async () => {
       server.use(
         http.post(`${BASE_URL}/organizations/${ORG_ID}/granular-processes`, async ({request}) => {
-          const body = (await request.json()) as any;
+          const body = (await request.json()) as Record<string, unknown>;
           expect(body).to.deep.equal({product: {productId: 'PROD-1'}});
           return HttpResponse.json({id: 'proc-123'}, {status: 201});
         }),
@@ -132,7 +132,7 @@ describe('Granular Replications Client', () => {
     it('should queue price table for publishing', async () => {
       server.use(
         http.post(`${BASE_URL}/organizations/${ORG_ID}/granular-processes`, async ({request}) => {
-          const body = (await request.json()) as any;
+          const body = (await request.json()) as Record<string, unknown>;
           expect(body).to.deep.equal({priceTable: {priceTableId: 'table-1'}});
           return HttpResponse.json({id: 'proc-456'}, {status: 201});
         }),
@@ -149,7 +149,7 @@ describe('Granular Replications Client', () => {
     it('should queue private content asset for publishing', async () => {
       server.use(
         http.post(`${BASE_URL}/organizations/${ORG_ID}/granular-processes`, async ({request}) => {
-          const body = (await request.json()) as any;
+          const body = (await request.json()) as Record<string, unknown>;
           expect(body).to.deep.equal({
             contentAsset: {contentId: 'hero-banner', type: 'private', siteId: 'RefArch'},
           });
@@ -168,7 +168,7 @@ describe('Granular Replications Client', () => {
     it('should queue shared content asset for publishing', async () => {
       server.use(
         http.post(`${BASE_URL}/organizations/${ORG_ID}/granular-processes`, async ({request}) => {
-          const body = (await request.json()) as any;
+          const body = (await request.json()) as Record<string, unknown>;
           expect(body).to.deep.equal({
             contentAsset: {contentId: 'footer-links', type: 'shared', libraryId: 'SharedLibrary'},
           });

@@ -158,10 +158,10 @@ describe('scapi replications get', () => {
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       sinon.stub(globalThis, 'fetch').resolves(
-        new Response(
-          JSON.stringify({title: 'Not Found', detail: 'Process not found'}),
-          {status: 404, headers: {'content-type': 'application/json'}},
-        ),
+        new Response(JSON.stringify({title: 'Not Found', detail: 'Process not found'}), {
+          status: 404,
+          headers: {'content-type': 'application/json'},
+        }),
       );
 
       try {
@@ -184,10 +184,10 @@ describe('scapi replications get', () => {
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       sinon.stub(globalThis, 'fetch').resolves(
-        new Response(
-          JSON.stringify({title: 'Forbidden', detail: 'Feature not enabled'}),
-          {status: 403, headers: {'content-type': 'application/json'}},
-        ),
+        new Response(JSON.stringify({title: 'Forbidden', detail: 'Feature not enabled'}), {
+          status: 403,
+          headers: {'content-type': 'application/json'},
+        }),
       );
 
       try {

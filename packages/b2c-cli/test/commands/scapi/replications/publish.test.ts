@@ -222,12 +222,14 @@ describe('scapi replications publish', () => {
       sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-      sinon.stub(globalThis, 'fetch').resolves(
-        new Response(
-          JSON.stringify({title: 'Conflict', detail: 'Cannot queue items while full replication is running'}),
-          {status: 409, headers: {'content-type': 'application/json'}},
-        ),
-      );
+      sinon
+        .stub(globalThis, 'fetch')
+        .resolves(
+          new Response(
+            JSON.stringify({title: 'Conflict', detail: 'Cannot queue items while full replication is running'}),
+            {status: 409, headers: {'content-type': 'application/json'}},
+          ),
+        );
 
       try {
         await command.run();

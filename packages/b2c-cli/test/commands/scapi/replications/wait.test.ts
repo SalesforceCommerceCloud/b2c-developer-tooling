@@ -157,7 +157,7 @@ describe('scapi replications wait', () => {
       try {
         await command.run();
         expect.fail('Should have thrown');
-      } catch (error: any) {
+      } catch {
         expect(errorStub.calledOnce).to.equal(true);
       }
     });
@@ -174,10 +174,10 @@ describe('scapi replications wait', () => {
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       sinon.stub(globalThis, 'fetch').resolves(
-        new Response(
-          JSON.stringify({title: 'Not Found', detail: 'Process not found'}),
-          {status: 404, headers: {'content-type': 'application/json'}},
-        ),
+        new Response(JSON.stringify({title: 'Not Found', detail: 'Process not found'}), {
+          status: 404,
+          headers: {'content-type': 'application/json'},
+        }),
       );
 
       try {
