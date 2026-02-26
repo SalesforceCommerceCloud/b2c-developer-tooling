@@ -9,7 +9,10 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {createScaffoldCustomApiTool} from '../../../src/tools/scapi/scapi-custom-api-scaffold.js';
+import {
+  createScaffoldCustomApiTool,
+  executeScaffoldCustomApi,
+} from '../../../src/tools/scapi/scapi-custom-api-scaffold.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
@@ -266,6 +269,43 @@ describe('tools/scapi/scapi-custom-api-scaffold', () => {
       expect(result.isError).to.be.true;
       const text = getResultText(result);
       expect(text).to.include('Scaffold generation failed');
+    });
+
+    it('should return error when scaffold is not found (executeScaffoldCustomApi with getScaffold override)', async () => {
+      const result = await executeScaffoldCustomApi({apiName: 'my-api'}, services, {getScaffold: async () => null});
+
+      expect(result.error).to.be.a('string');
+      expect(result.error).to.include('Scaffold not found');
+      expect(result.error).to.include('custom-api');
+      expect(result.files).to.deep.equal([]);
+    });
+
+    it('should return error when required parameter is missing (executeScaffoldCustomApi with resolveScaffoldParameters override)', async () => {
+      const cartridgeDir = path.join(tempDir, 'app_custom');
+      fs.mkdirSync(cartridgeDir, {recursive: true});
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
+
+      const result = await executeScaffoldCustomApi({apiName: 'my-api'}, services, {
+        getScaffold: async () =>
+          ({
+            id: 'custom-api',
+            manifest: {},
+            path: '',
+            filesPath: '',
+          }) as import('@salesforce/b2c-tooling-sdk/scaffold').Scaffold,
+        resolveScaffoldParameters: async () => ({
+          variables: {},
+          errors: [],
+          missingParameters: [
+            {name: 'cartridgeName', required: true} as import('@salesforce/b2c-tooling-sdk/scaffold').ScaffoldParameter,
+          ],
+        }),
+      });
+
+      expect(result.error).to.be.a('string');
+      expect(result.error).to.include('Missing required parameter');
+      expect(result.error).to.include('cartridgeName');
+      expect(result.files).to.deep.equal([]);
     });
   });
 });
