@@ -17,7 +17,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createScapiSchemasListTool} from './scapi-schemas-list.js';
 import {createScapiCustomApisStatusTool} from './scapi-custom-apis-status.js';
-import {createScaffoldCustomApiTool} from './scapi-customapi-scaffold.js';
+import {createScaffoldCustomApiTool} from './scapi-custom-api-scaffold.js';
 
 /**
  * Creates all tools for the SCAPI toolset.

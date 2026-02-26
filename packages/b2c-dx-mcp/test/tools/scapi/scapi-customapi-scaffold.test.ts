@@ -9,7 +9,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {createScaffoldCustomApiTool} from '../../../src/tools/scapi/scapi-customapi-scaffold.js';
+import {createScaffoldCustomApiTool} from '../../../src/tools/scapi/scapi-custom-api-scaffold.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';

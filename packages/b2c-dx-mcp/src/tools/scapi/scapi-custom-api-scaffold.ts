@@ -8,7 +8,7 @@
  * SCAPI Custom API Scaffold tool.
  *
  * Generates a new custom SCAPI endpoint using the SDK's custom-api scaffold
- * (schema.yaml, api.json, script.js). Mirrors CLI: b2c scaffold generate custom-api.
+ * (schema.yaml, api.json, script.js).
  *
  * @module tools/scapi/scapi-customapi-scaffold
  */
@@ -68,19 +68,16 @@ interface ScaffoldCustomApiOutput {
  *
  * Uses @salesforce/b2c-tooling-sdk scaffold: registry, resolveScaffoldParameters,
  * resolveOutputDirectory, generateFromScaffold. cartridgeName must be a cartridge
- * discovered under projectRoot (e.g. from .project or cartridges/). CLI: b2c scaffold generate custom-api.
+ * discovered under projectRoot (e.g. from .project or cartridges/).
  */
 export function createScaffoldCustomApiTool(loadServices: () => Services): McpTool {
   return createToolAdapter<ScaffoldCustomApiInput, ScaffoldCustomApiOutput>(
     {
       name: 'scapi_custom_api_scaffold',
       description: `Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. \
-       Uses the same scaffold as CLI: b2c scaffold generate custom-api. \
-       Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin), apiDescription, includeExampleEndpoints, projectRoot, outputDir. \
-       cartridgeName must be one of the cartridges discovered under projectRoot (--working-directory or SFCC_WORKING_DIRECTORY). \
-       Set projectRoot to override the working directory. \
-       For faster runs, set --working-directory to your cartridge project root (same as where you would run the CLI from). \
-       CLI: b2c scaffold generate custom-api.`,
+Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin) default to shopper, \
+apiDescription, projectRoot, outputDir. \
+Set projectRoot to override the default project directory.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: false,
       requiresInstance: false,
