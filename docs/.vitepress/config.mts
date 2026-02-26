@@ -99,6 +99,7 @@ const guideSidebar = [
       {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
       {text: 'pwakit_development_guidelines', link: '/mcp/tools/pwakit-development-guidelines'},
       {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
+      {text: 'scapi_custom_api_scaffold', link: '/mcp/tools/scapi-custom-api-scaffold'},
       {text: 'scapi_custom_apis_status', link: '/mcp/tools/scapi-custom-apis-status'},
       {text: 'storefront_next_development_guidelines', link: '/mcp/tools/storefront-next-development-guidelines'},
       {text: 'storefront_next_page_designer_decorator', link: '/mcp/tools/storefront-next-page-designer-decorator'},
