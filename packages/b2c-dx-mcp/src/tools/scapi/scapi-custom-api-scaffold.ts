@@ -76,8 +76,7 @@ export function createScaffoldCustomApiTool(loadServices: () => Services): McpTo
       name: 'scapi_custom_api_scaffold',
       description: `Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. \
 Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin) default to shopper, \
-apiDescription, projectRoot, outputDir. \
-Set projectRoot to override the default project directory.`,
+apiDescription, projectRoot, outputDir.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: false,
       requiresInstance: false,
@@ -93,7 +92,7 @@ Set projectRoot to override the default project directory.`,
           .min(1)
           .nullish()
           .describe(
-            'Cartridge name that will contain the API. Optional; omit to use the first cartridge found under working directory (--working-directory or SFCC_WORKING_DIRECTORY).',
+            'Cartridge name that will contain the API. Optional; omit to use the first cartridge found under project root).',
           ),
         apiType: z
           .enum(['admin', 'shopper'])
@@ -104,7 +103,7 @@ Set projectRoot to override the default project directory.`,
           .string()
           .nullish()
           .describe(
-            'Project root for cartridge discovery. Default: working directory. Set to override the working directory.',
+            'Project root for cartridge discovery. Default: project directory. Set to override the project directory.',
           ),
         outputDir: z.string().optional().describe('Output directory override. Default: project root'),
       },
