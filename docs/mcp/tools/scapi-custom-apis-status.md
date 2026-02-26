@@ -15,7 +15,7 @@ The `scapi_custom_apis_status` tool checks the registration status of custom API
 - Provides per-site details (one row per endpoint per site).
 - Supports filtering, grouping, and column selection.
 
-**Important:** This tool is **remote only** - it queries your live instance. For schema definitions, use [`scapi_schemas_list`](./scapi-schemas-list) with `apiFamily: "custom"`.
+**Important:** This tool is **remote only** - it queries your live instance. For schema definitions, use [`scapi_schemas_list`](./scapi-schemas-list) with `apiFamily: "custom"`. To create a new custom API in your project, use [`scapi_custom_api_scaffold`](./scapi-custom-api-scaffold).
 
 ## Authentication
 

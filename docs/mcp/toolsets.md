@@ -6,7 +6,7 @@ description: Available toolsets and tools in the B2C DX MCP Server for SCAPI, CA
 
 The B2C DX MCP Server provides five toolsets with specialized tools for different B2C Commerce development workflows.
 
-> **Note:** Some tools are currently placeholder or early release implementations. Use `--allow-non-ga-tools` flag to enable them.
+> **Note:** Tools require `--allow-non-ga-tools` to enable (preview release).
 
 ## Overview
 
@@ -53,7 +53,7 @@ Managed Runtime operations for PWA Kit and Storefront Next deployments.
 
 PWA Kit v3 development tools for building headless storefronts.
 
-**Status:** 🚧 Placeholder
+**Status:** 🚧 Early Access (PWA Kit-specific tools planned)
 
 **Auto-enabled for:** PWA Kit v3 projects (detected by `@salesforce/pwa-kit-*` dependencies)
 
@@ -61,14 +61,8 @@ PWA Kit v3 development tools for building headless storefronts.
 
 | Tool | Description | Documentation |
 |------|-------------|---------------|
-| `pwakit_create_storefront` | Create a new PWA Kit storefront project | — |
-| `pwakit_create_page` | Create a new page component in the PWA Kit project | — |
-| `pwakit_create_component` | Create a React component in the PWA Kit project | — |
-| `pwakit_get_dev_guidelines` | Get PWA Kit development guidelines and best practices | — |
-| `pwakit_recommend_hooks` | Recommend appropriate React hooks for PWA Kit use cases | — |
-| `pwakit_run_site_test` | Run site tests for PWA Kit project | — |
-| `pwakit_install_agent_rules` | Install AI agent rules for PWA Kit development | — |
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
+| [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
 
@@ -85,14 +79,14 @@ Salesforce Commerce API discovery and exploration.
 | Tool | Description | Documentation |
 |------|-------------|---------------|
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
+| [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
-| `scapi_customapi_scaffold` | Scaffold a new custom SCAPI API (not yet implemented) | — |
 
 ## STOREFRONTNEXT
 
 Storefront Next development tools for building modern storefronts.
 
-**Status:** 🚧 Placeholder
+**Status:** 🚧 Early Access
 
 **Auto-enabled for:** Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies)
 
@@ -101,19 +95,15 @@ Storefront Next development tools for building modern storefronts.
 | Tool | Description | Documentation |
 |------|-------------|---------------|
 | `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices | — |
-| `storefront_next_site_theming` | Configure and manage site theming for Storefront Next | — |
-| `storefront_next_figma_to_component_workflow` | Convert Figma designs to Storefront Next components | — |
-| `storefront_next_generate_component` | Generate a new Storefront Next component | — |
-| `storefront_next_map_tokens_to_theme` | Map design tokens to Storefront Next theme configuration | — |
 | [`storefront_next_page_designer_decorator`](./tools/storefront-next-page-designer-decorator) | Add Page Designer decorators to Storefront Next components | [View details](./tools/storefront-next-page-designer-decorator) |
-| `storefront_next_generate_page_designer_metadata` | Generate Page Designer metadata for Storefront Next components | — |
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
+| [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
 
 ## Tool Deduplication
 
-Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
+Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_api_scaffold`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
 
 ## Next Steps
 
