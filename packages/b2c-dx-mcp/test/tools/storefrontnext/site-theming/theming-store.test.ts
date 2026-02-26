@@ -198,6 +198,29 @@ Only plain text, no A. Color, B. Font, C. General, or IMPORTANT.`,
       expect(guidance!.validation).to.be.undefined;
     });
 
+    it('should generate color mapping question when content has brand vs accent', () => {
+      const filePath = path.join(testDir, 'color-mapping-q.md');
+      writeFileSync(
+        filePath,
+        `# Color Mapping
+## ⚠️ CRITICAL: Colors
+Ask for clarification on color type mapping. Use exact hex. Primary vs secondary, brand vs accent.
+### What TO Change:
+- color
+- background-color
+### What NOT to Change:
+- margin`,
+        'utf8',
+      );
+
+      siteThemingStore.loadFile('color-mapping-q', filePath);
+      const guidance = siteThemingStore.get('color-mapping-q');
+
+      expect(guidance).to.exist;
+      const mappingQ = guidance!.questions.find((q) => q.question.includes('primary vs secondary'));
+      expect(mappingQ).to.exist;
+    });
+
     it('should parse validation section from markdown', () => {
       const filePath = path.join(testDir, 'validation-test.md');
       const content = [
@@ -566,7 +589,7 @@ Follow user specs exactly.
 
         const customPath2 = path.join(otherDir, 'second-root.md');
         writeFileSync(customPath2, '# Second\n### What TO Change:\n- x\n### What NOT to Change:\n- y', 'utf8');
-        process.env.THEMING_FILES = JSON.stringify([{key: 'second-root', path: path.relative(otherDir, customPath2)}]);
+        process.env.THEMING_FILES = JSON.stringify([{key: 'second-root', path: customPath2}]);
         siteThemingStore.initialize(otherDir);
 
         expect(siteThemingStore.has('first-root')).to.be.false;

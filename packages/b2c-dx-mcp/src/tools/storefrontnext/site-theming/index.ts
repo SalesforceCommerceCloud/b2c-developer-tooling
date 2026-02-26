@@ -53,23 +53,17 @@ export function createSiteThemingTool(loadServices: () => Services): McpTool {
         'MUST ask questions and WAIT for responses. ' +
         'VALIDATION GATE: After collecting answers, call tool again with colorMapping to trigger validation. ' +
         'DEFAULT FILES: theming-questions, theming-validation, theming-accessibility. ' +
-        'Use fileKey or fileKeys to add custom files. ' +
+        'Use fileKeys to add custom files. ' +
         'WORKFLOW: Call tool → Ask questions → Call with colorMapping (validation) → Present findings → Wait confirmation → Implement',
       toolsets: ['STOREFRONTNEXT'],
       isGA: false,
       requiresInstance: false,
       inputSchema: {
-        fileKey: z
-          .string()
-          .optional()
-          .describe(
-            'Key identifier for a single theming file. If not provided, defaults to "site-theming". Available keys can be listed by calling the tool without parameters.',
-          ),
         fileKeys: z
           .array(z.string())
           .optional()
           .describe(
-            'Array of file keys to combine. If provided, guidance from all specified files will be merged. Takes precedence over fileKey if both are provided.',
+            'Array of file keys to add to the default set. If provided, guidance from all specified files will be merged with defaults: theming-questions, theming-validation, theming-accessibility. Available keys can be listed by calling the tool without parameters.',
           ),
         conversationContext: z
           .object({
@@ -95,9 +89,6 @@ export function createSiteThemingTool(loadServices: () => Services): McpTool {
         if (args.fileKeys && args.fileKeys.length > 0) {
           const allKeys = [...defaultFileKeys, ...args.fileKeys];
           fileKeys = [...new Set(allKeys)];
-        } else if (args.fileKey) {
-          const allKeys = [...defaultFileKeys, args.fileKey];
-          fileKeys = [...new Set(allKeys)];
         } else {
           fileKeys = defaultFileKeys;
         }
@@ -108,7 +99,7 @@ export function createSiteThemingTool(loadServices: () => Services): McpTool {
             args.conversationContext.questionsAsked ||
             args.conversationContext.currentStep);
 
-        if (!args.fileKey && !args.fileKeys && !hasContext) {
+        if (!args.fileKeys && !hasContext) {
           const availableKeys = siteThemingStore.getKeys();
           if (availableKeys.length === 0) {
             return {
@@ -118,7 +109,7 @@ export function createSiteThemingTool(loadServices: () => Services): McpTool {
           }
 
           return {
-            text: `Available theming files:\n\n${availableKeys.map((key) => `- ${key}`).join('\n')}\n\nDefault files (always used): theming-questions, theming-validation, theming-accessibility\n\nUse the \`fileKey\` or \`fileKeys\` parameter to add additional files. User-provided files are merged with the defaults.`,
+            text: `Available theming files:\n\n${availableKeys.map((key) => `- ${key}`).join('\n')}\n\nDefault files (always used): theming-questions, theming-validation, theming-accessibility\n\nUse the \`fileKeys\` parameter to add additional files. User-provided files are merged with the defaults.`,
             isError: false,
           };
         }

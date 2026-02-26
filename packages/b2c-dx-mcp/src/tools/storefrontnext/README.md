@@ -141,8 +141,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 
 **Parameters**:
 
-- `fileKey` (optional, string): Single theming file key to add. Defaults use `theming-questions`, `theming-validation`, `theming-accessibility`
-- `fileKeys` (optional, array): Multiple file keys to merge. Takes precedence over `fileKey` if both provided
+- `fileKeys` (optional, array): File keys to add to the default set. Defaults use `theming-questions`, `theming-validation`, `theming-accessibility`
 - `conversationContext` (optional, object): Context from previous rounds
   - `currentStep` (optional): Current step in the conversation
   - `collectedAnswers` (optional): Previously collected answers; include `colorMapping` to trigger automatic validation (colorMapping alone is sufficient; colors array is not required)
@@ -260,7 +259,7 @@ Component discovery uses the project directory resolved from `--project-director
 
 The tool loads theming guidance from markdown files in `content/site-theming/` and runs automatic WCAG contrast validation when `colorMapping` is provided:
 
-- **Content source**: `theming-questions`, `theming-validation`, `theming-accessibility` (default); custom files via `fileKey`/`fileKeys` or `THEMING_FILES` env
+- **Content source**: `theming-questions`, `theming-validation`, `theming-accessibility` (default); custom files via `fileKeys` or `THEMING_FILES` env
 - **Workflow**: Call tool → Ask questions → Call with `colorMapping` (triggers validation) → Present findings → Wait for confirmation → Implement
 
 **See also**: [Detailed documentation](./site-theming/README.md) for complete usage guide, architecture details, and examples.

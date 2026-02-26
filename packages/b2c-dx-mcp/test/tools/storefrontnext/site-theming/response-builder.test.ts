@@ -73,6 +73,18 @@ describe('tools/storefrontnext/site-theming/response-builder', () => {
       expect(qs[0].id).to.equal('q2');
     });
 
+    it('should return remaining questions when questionsAsked but no collectedAnswers', () => {
+      const g = createGuidance({
+        questions: [
+          {id: 'q1', question: 'Q1?', category: 'colors', required: true},
+          {id: 'q2', question: 'Q2?', category: 'general', required: false},
+        ],
+      });
+      const qs = getRelevantQuestions(g, {questionsAsked: ['q1']});
+      expect(qs).to.have.lengthOf(1);
+      expect(qs[0].id).to.equal('q2');
+    });
+
     it('should add follow-up questions when answer provided', () => {
       const g = createGuidance({
         questions: [
@@ -165,6 +177,96 @@ describe('tools/storefrontnext/site-theming/response-builder', () => {
       expect(result).to.include('Other Information');
       expect(result).to.include('spacing:');
       expect(result).to.include('brand: acme');
+    });
+
+    it('should skip colorMapping and question keys in otherInfo', () => {
+      const g = createGuidance({
+        questions: [{id: 'q1', question: 'Colors?', category: 'colors', required: false}],
+      });
+      const result = generateResponse(g, {
+        collectedAnswers: {
+          colors: [],
+          colorMapping: {lightText: '#000', lightBackground: '#FFF'},
+          questionsAsked: ['q1'],
+          brand: 'acme',
+        },
+        questionsAsked: [],
+      });
+      expect(result).to.include('brand: acme');
+      expect(result).not.to.include('colorMapping:');
+      expect(result).not.to.include('questionsAsked:');
+    });
+
+    it('should extract color from color-like keys (accentColor, primaryColor)', () => {
+      const g = createGuidance({
+        questions: [{id: 'q1', question: 'Colors?', category: 'colors', required: false}],
+      });
+      const result = generateResponse(g, {
+        collectedAnswers: {colors: [], accentColor: {hex: '#635BFF', type: 'accent'}},
+        questionsAsked: [],
+      });
+      expect(result).to.include("Information You've Provided");
+      expect(result).to.include('#635BFF');
+    });
+
+    it('should extract font from font-like keys (headingFont, bodyFont)', () => {
+      const g = createGuidance({
+        questions: [{id: 'q1', question: 'Font?', category: 'typography', required: false}],
+      });
+      const result = generateResponse(g, {
+        collectedAnswers: {fonts: [], headingFont: {name: 'Sohne', type: 'title'}},
+        questionsAsked: [],
+      });
+      expect(result).to.include("Information You've Provided");
+      expect(result).to.include('Sohne');
+    });
+
+    it('should extract font without type from font-like keys', () => {
+      const g = createGuidance({
+        questions: [{id: 'q1', question: 'Font?', category: 'typography', required: false}],
+      });
+      const result = generateResponse(g, {
+        collectedAnswers: {fonts: [], bodyFont: {name: 'Arial'}},
+        questionsAsked: [],
+      });
+      expect(result).to.include("Information You've Provided");
+      expect(result).to.include('Arial');
+    });
+
+    it('should show singular remaining when exactly one more question', () => {
+      const g = createGuidance({
+        questions: [
+          {id: 'q1', question: 'Colors?', category: 'colors', required: true},
+          {id: 'q2', question: 'Font?', category: 'typography', required: false},
+          {id: 'q3', question: 'Dark?', category: 'general', required: false},
+          {id: 'q4', question: 'Spacing?', category: 'general', required: false},
+          {id: 'q5', question: 'Radius?', category: 'general', required: false},
+        ],
+      });
+      const result = generateResponse(g, {
+        collectedAnswers: {colors: [{hex: '#000'}], q1: 'done'},
+        questionsAsked: ['q1'],
+      });
+      expect(result).to.match(/1 more question\b/);
+      expect(result).not.to.include('1 more questions');
+    });
+
+    it('should show plural remaining when multiple more questions', () => {
+      const g = createGuidance({
+        questions: [
+          {id: 'q1', question: 'Colors?', category: 'colors', required: true},
+          {id: 'q2', question: 'Font?', category: 'typography', required: false},
+          {id: 'q3', question: 'Dark mode?', category: 'general', required: false},
+          {id: 'q4', question: 'Spacing?', category: 'general', required: false},
+          {id: 'q5', question: 'Radius?', category: 'general', required: false},
+          {id: 'q6', question: 'Shadows?', category: 'general', required: false},
+        ],
+      });
+      const result = generateResponse(g, {
+        collectedAnswers: {colors: [{hex: '#000'}], q1: 'done'},
+        questionsAsked: ['q1'],
+      });
+      expect(result).to.match(/[2-9] more questions\b/);
     });
 
     it('should handle color-like keys with hex undefined without error', () => {

@@ -42,7 +42,6 @@ export interface ConversationContext {
 
 /** Input schema for the site theming tool */
 export interface SiteThemingInput {
-  fileKey?: string;
   fileKeys?: string[];
   conversationContext?: ConversationContext;
 }

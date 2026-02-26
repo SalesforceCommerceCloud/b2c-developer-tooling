@@ -82,7 +82,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should retrieve and parse theming file from store', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: defaultContext,
       });
 
@@ -96,7 +96,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should return error when file key does not exist', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'non-existent',
+        fileKeys: ['non-existent'],
       });
 
       expect(result.isError).to.equal(true);
@@ -107,7 +107,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should extract questions from content', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: defaultContext,
       });
 
@@ -120,7 +120,7 @@ describe('tools/storefrontnext/site-theming', () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
 
       const firstResult = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: defaultContext,
       });
 
@@ -128,7 +128,7 @@ describe('tools/storefrontnext/site-theming', () => {
       expect(firstText).to.include('Questions to Ask the User');
 
       const secondResult = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: {
           questionsAsked: ['color-primary'],
           collectedAnswers: {
@@ -146,7 +146,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should include collected theming info in response', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: {
           questionsAsked: ['color-1', 'color-2'],
           collectedAnswers: {
@@ -170,7 +170,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should include critical guidelines in response', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: defaultContext,
       });
 
@@ -182,7 +182,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it("should include DO and DON'T rules", async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: defaultContext,
       });
 
@@ -192,7 +192,7 @@ describe('tools/storefrontnext/site-theming', () => {
       expect(text).to.match(/position|color/);
     });
 
-    it('should use default files when conversationContext provided without fileKey', async () => {
+    it('should use default files when conversationContext provided without fileKeys', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
         conversationContext: defaultContext,
@@ -207,7 +207,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should run automated color validation when colorMapping is provided', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: {
           questionsAsked: ['color-1'],
           collectedAnswers: {
@@ -234,7 +234,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should run validation when only colorMapping is provided (no colors array)', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: {
           collectedAnswers: {
             colorMapping: {
@@ -270,10 +270,10 @@ describe('tools/storefrontnext/site-theming', () => {
       );
     });
 
-    it('should combine fileKey with default files', async () => {
+    it('should combine fileKeys with default files', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-accessibility',
+        fileKeys: ['theming-accessibility'],
         conversationContext: defaultContext,
       });
 
@@ -303,7 +303,7 @@ describe('tools/storefrontnext/site-theming', () => {
 
       // First call to get initial questions - then simulate answering all
       const firstResult = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: defaultContext,
       });
       const firstText = getResultText(firstResult);
@@ -325,7 +325,7 @@ describe('tools/storefrontnext/site-theming', () => {
       }
 
       const secondResult = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: {
           questionsAsked: questionIds,
           collectedAnswers,
@@ -347,7 +347,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should show validation summary when color combinations fail WCAG', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: {
           questionsAsked: ['color-1'],
           collectedAnswers: {
@@ -375,7 +375,7 @@ describe('tools/storefrontnext/site-theming', () => {
     it('should skip invalid hex in colorMapping without error', async () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
       const result = await tool.handler({
-        fileKey: 'theming-questions',
+        fileKeys: ['theming-questions'],
         conversationContext: {
           questionsAsked: ['color-1'],
           collectedAnswers: {

@@ -7,7 +7,7 @@ The site-theming tool has comprehensive unit tests covering:
 - **Tool metadata**: Name, description, toolsets, inputSchema
 - **Tool behavior**: List files, retrieve guidance, error handling, question filtering
 - **Color validation**: Automated WCAG contrast validation when `colorMapping` is provided
-- **File merging**: `fileKeys` array, `fileKey` with defaults, missing file errors
+- **File merging**: `fileKeys` array, `fileKeys` with defaults, missing file errors
 - **Edge cases**: Ready to Implement flow, validation summary for failing contrast
 - **color-contrast.ts**: Luminance, contrast ratio, WCAG levels, validateContrast, formatValidationResult
 - **theming-store.ts**: Initialize, loadFile, get/getKeys, THEMING_FILES env, workflow/validation parsing
@@ -141,7 +141,7 @@ Expected: Returns merged guidance from both files
 
 ```json
 {
-  "fileKey": "non-existent",
+  "fileKeys": ["non-existent"],
   "conversationContext": {
     "collectedAnswers": {"colors": [], "fonts": []}
   }

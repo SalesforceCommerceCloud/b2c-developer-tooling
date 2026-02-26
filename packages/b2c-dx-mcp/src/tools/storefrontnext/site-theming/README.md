@@ -11,7 +11,7 @@ This tool provides theming guidelines, collects user preferences through structu
 - **Mandatory workflow**: Ensures questions are asked and validation is performed before implementation
 - **Automatic WCAG validation**: Validates color contrast when `colorMapping` is provided in `conversationContext.collectedAnswers`
 - **Content-driven**: Loads guidance from markdown files in `content/site-theming/`
-- **Merge support**: Combines multiple theming files via `fileKey` or `fileKeys`
+- **Merge support**: Combines multiple theming files via `fileKeys`
 - **Custom content**: Add custom files via `THEMING_FILES` environment variable
 
 ## File Structure
@@ -82,7 +82,7 @@ Content files (in `packages/b2c-dx-mcp/content/site-theming/`):
 {}
 ```
 
-Returns list of loaded theming file keys. Use `fileKey` or `fileKeys` to add custom files to the default set.
+Returns list of loaded theming file keys. Use `fileKeys` to add custom files to the default set.
 
 ### Custom Theming Files
 
@@ -93,6 +93,40 @@ export THEMING_FILES='[{"key":"custom-theming","path":"path/to/custom-theming.md
 ```
 
 Paths are relative to the project directory (from `--project-directory` or `SFCC_PROJECT_DIRECTORY`).
+
+Custom files can also be added via the `fileKeys` parameter when calling the tool. Files must follow the format below to be parsed correctly.
+
+#### Custom Theming File Format
+
+Custom theming files must be Markdown (`.md` or `.mdc`). The parser extracts content based on specific heading patterns. Use these headings to structure your file:
+
+| Heading pattern             | Purpose                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------- |
+| `## 🔄 WORKFLOW`            | Workflow steps and instructions. Numbered steps (`1. Step text`) are extracted. |
+| `### 📝 EXTRACTION`         | Instructions for extracting theming info from user input.                       |
+| `### ✅ PRE-IMPLEMENTATION` | Pre-implementation checklist.                                                   |
+| `## ✅ VALIDATION`          | Validation rules.                                                               |
+| `### A. Color`              | Color validation rules.                                                         |
+| `### B. Font`               | Font validation rules.                                                          |
+| `### C. General`            | General validation rules.                                                       |
+| `### IMPORTANT`             | Validation requirements.                                                        |
+| `## ⚠️ CRITICAL: Title`     | Critical guidelines (layout preservation, wait-for-response, etc.).             |
+| `## 📋 Title`               | Specification compliance rules.                                                 |
+| `### What TO Change:`       | DO rules. List items with `-` are extracted.                                    |
+| `### What NOT to Change:`   | DON'T rules. List items with `-` are extracted.                                 |
+
+**Questions**: Lines ending with `?` and length > 10 (from bullet or numbered lists) are extracted as questions. Keywords like "color", "font", "primary", "accent" determine category (colors, typography, general).
+
+**Optional frontmatter** (YAML at top of file):
+
+```yaml
+---
+description: Brief description
+alwaysApply: false
+---
+```
+
+Reference the built-in files (`theming-questions.md`, `theming-validation.md`, `theming-accessibility.md`) in `content/site-theming/` for examples.
 
 ## Architecture
 

@@ -28,8 +28,7 @@ No authentication required. This tool operates on local content and returns guid
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `fileKey` | string | No | Single theming file key to add to the default set. Custom keys are merged with defaults: `theming-questions`, `theming-validation`, `theming-accessibility`. |
-| `fileKeys` | string[] | No | Multiple file keys to add to the default set. Takes precedence over `fileKey` if both provided. |
+| `fileKeys` | string[] | No | File keys to add to the default set. Custom keys are merged with defaults: `theming-questions`, `theming-validation`, `theming-accessibility`. |
 | `conversationContext` | object | No | Context from previous rounds. Omit to list available files. See [Conversation Context](#conversation-context) for details. |
 
 ### Conversation Context
@@ -54,7 +53,7 @@ When using the tool across multiple turns, provide `conversationContext` with th
 
 ### List Available Files
 
-Call the tool without `conversationContext` (and without `fileKey` or `fileKeys`) to list loaded theming file keys:
+Call the tool without `conversationContext` (and without `fileKeys`) to list loaded theming file keys:
 
 ```json
 {}
@@ -150,10 +149,26 @@ Use these colors: #635BFF (accent), #0A2540 (dark), #F6F9FC (brand), #FFFFFF (li
 }
 ```
 
+## Custom Theming Files
+
+You can add custom theming files via `fileKeys` or the `THEMING_FILES` environment variable. Custom files must follow a specific Markdown format so the parser can extract guidelines, questions, and validation rules.
+
+**Required heading patterns** (use these exact patterns for content to be parsed):
+
+- `## 🔄 WORKFLOW` - Workflow steps (numbered `1. Step text`)
+- `### 📝 EXTRACTION` - Extraction instructions
+- `### ✅ PRE-IMPLEMENTATION` - Pre-implementation checklist
+- `## ✅ VALIDATION` - Validation rules (with `### A. Color`, `### B. Font`, `### C. General`, `### IMPORTANT`)
+- `## ⚠️ CRITICAL: Title` - Critical guidelines
+- `## 📋 Title` - Specification rules
+- `### What TO Change:` / `### What NOT to Change:` - DO/DON'T rules (list items with `-`)
+
+**Questions**: Lines ending with `?` (length > 10) from bullet or numbered lists are extracted. Reference the built-in files in `content/site-theming/` for examples.
+
 ## Rules and Constraints
 
 - `colorMapping` triggers automatic WCAG validation; `colors` and `fonts` arrays are optional when `colorMapping` is provided
-- `fileKey` and `fileKeys` add to the default files; they do not replace them
+- `fileKeys` add to the default files; they do not replace them
 - Call the tool first before implementing any theming changes; never skip the question-answer or validation workflow
 - Theme changes apply to `app.css` (standalone: `src/app.css`; monorepo: `packages/template-retail-rsc-app/src/app.css`)
 
