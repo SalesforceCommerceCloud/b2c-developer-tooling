@@ -34,7 +34,7 @@ No authentication required. This tool operates on local content only—guideline
 |---------|----------------|
 | `quick-reference` | Critical rules, architecture principles, quick patterns |
 | `components` | Component patterns, Chakra UI, special components (_app, _app-config, _error), React Hooks |
-| `data-fetching` | commerce-sdk-react hooks, useCustomQuery/useCustomMutation, React Query, custom APIs, caching |
+| `data-fetching` | React Query, commerce-sdk-react hooks, useCustomQuery/useCustomMutation, custom APIs, caching |
 | `routing` | Express.js, React Router, configureRoutes, SSR/CSR navigation, withReactQuery, getProps patterns |
 | `config` | Configuration files, environment variables, file precedence, proxy setup, multi-site |
 | `state-management` | Context API, useReducer, Redux integration, AppConfig methods |
@@ -90,14 +90,6 @@ The returned content includes:
 - Code examples (correct ✅ and incorrect ❌ patterns)
 - Quick reference snippets
 - Framework-specific patterns for React, Chakra UI, and commerce-sdk-react
-
-## Content Structure
-
-Content is loaded from markdown files in the MCP package (`packages/b2c-dx-mcp/content/pwav3/`). Each section is a separate file (~100–200 lines), enabling:
-
-- **Token efficiency**: Returns only relevant content (200–500 lines vs 20K+ full doc).
-- **Modular access**: Request specific sections as needed.
-- **Multi-select**: Combine related sections in a single call for contextual learning.
 
 ## Requirements
 

@@ -94,14 +94,6 @@ The returned content includes:
 - Quick reference snippets
 - Framework-specific patterns for React Server Components
 
-## Content Structure
-
-Content is loaded from markdown files in the MCP package (`packages/b2c-dx-mcp/content/sfnext/`). Each section is a separate file (~100–200 lines), enabling:
-
-- **Token efficiency**: Returns only relevant content (200–500 lines vs 20K+ full doc).
-- **Modular access**: Request specific sections as needed.
-- **Multi-select**: Combine related sections in a single call for contextual learning.
-
 ## Requirements
 
 - Storefront Next project or general Storefront Next development context
