@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "..",
+    "types": ["node", "mocha", "chai"],
+    "paths": {
+      "@salesforce/mrt-utilities": ["../src/index.ts"],
+      "@salesforce/mrt-utilities/streaming": ["../src/streaming/index.ts"]
+    }
+  },
+  "include": ["./**/*", "../src/**/*"]
+}

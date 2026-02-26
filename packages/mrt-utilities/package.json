@@ -1,0 +1,132 @@
+{
+  "name": "@salesforce/mrt-utilities",
+  "version": "0.0.1",
+  "description": "Middleware and utilities to simulate a deployed Managed Runtime environment",
+  "type": "module",
+  "author": "Salesforce",
+  "license": "Apache-2.0",
+  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
+  "keywords": [
+    "salesforce",
+    "commerce-cloud",
+    "mrt",
+    "middleware",
+    "express"
+  ],
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./middleware": {
+      "development": "./src/middleware/index.ts",
+      "import": {
+        "types": "./dist/esm/middleware/index.d.ts",
+        "default": "./dist/esm/middleware/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/middleware/index.d.ts",
+        "default": "./dist/cjs/middleware/index.js"
+      }
+    },
+    "./metrics": {
+      "development": "./src/metrics/index.ts",
+      "import": {
+        "types": "./dist/esm/metrics/index.d.ts",
+        "default": "./dist/esm/metrics/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/metrics/index.d.ts",
+        "default": "./dist/cjs/metrics/index.js"
+      }
+    },
+    "./streaming": {
+      "development": "./src/streaming/index.ts",
+      "import": {
+        "types": "./dist/esm/streaming/index.d.ts",
+        "default": "./dist/esm/streaming/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/streaming/index.d.ts",
+        "default": "./dist/cjs/streaming/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm run build:esm && pnpm run build:cjs",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "clean": "shx rm -rf dist",
+    "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc --noEmit --pretty false",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "pretest": "tsc --noEmit -p test",
+    "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
+    "test:watch": "mocha --watch \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "3.952.0",
+    "@aws-sdk/client-dynamodb": "3.980.0",
+    "@aws-sdk/lib-dynamodb": "3.980.0",
+    "@h4ad/serverless-adapter": "4.4.0",
+    "change-case": "5.4.4",
+    "compressible": "2.0.18",
+    "http-proxy-middleware": "3.0.5",
+    "mime-types": "3.0.1",
+    "negotiator": "1.0.0",
+    "qs": "6.14.0",
+    "set-cookie-parser": "2.7.1"
+  },
+  "devDependencies": {
+    "@salesforce/dev-config": "catalog:",
+    "@serverless/event-mocks": "1.1.1",
+    "@types/aws-lambda": "8.10.160",
+    "@types/chai": "catalog:",
+    "@types/compressible": "2.0.3",
+    "@types/express": "5.0.3",
+    "@types/mime-types": "3.0.1",
+    "@types/mocha": "catalog:",
+    "@types/negotiator": "0.6.4",
+    "@types/node": "catalog:",
+    "@types/qs": "6.14.0",
+    "@types/set-cookie-parser": "2.4.10",
+    "@types/sinon": "catalog:",
+    "c8": "catalog:",
+    "chai": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-header": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "express": "5.1.0",
+    "mocha": "catalog:",
+    "prettier": "catalog:",
+    "shx": "catalog:",
+    "sinon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  },
+  "peerDependencies": {
+    "express": "5.1.0"
+  },
+  "engines": {
+    "node": ">=22.16.0"
+  }
+}
