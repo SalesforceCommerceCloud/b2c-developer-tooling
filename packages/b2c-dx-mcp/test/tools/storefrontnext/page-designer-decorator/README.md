@@ -23,7 +23,7 @@ Run the test suite:
 
 ```bash
 cd packages/b2c-dx-mcp
-pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
+pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 ### 2. MCP Inspector (Interactive Testing)
@@ -62,14 +62,14 @@ The Mocha test suite supports testing against a real Storefront Next installatio
 ```bash
 cd packages/b2c-dx-mcp
 SFCC_WORKING_DIRECTORY=/path/to/storefront-next \
-  pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
+  pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 Or set it as an environment variable:
 ```bash
 export SFCC_WORKING_DIRECTORY=/path/to/storefront-next
 cd packages/b2c-dx-mcp
-pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
+pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 **Important Notes for Real Project Mode**:

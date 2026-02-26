@@ -47,11 +47,7 @@ export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<
   };
 
   protected override loadConfiguration(): ResolvedB2CConfig {
-    return loadConfig(
-      extractOdsFlags(this.flags as Record<string, unknown>),
-      this.getBaseConfigOptions(),
-      this.getPluginSources(),
-    );
+    return loadConfig(extractOdsFlags(this.flags as Record<string, unknown>), this.getBaseConfigOptions());
   }
 
   private _odsClient?: OdsClient;

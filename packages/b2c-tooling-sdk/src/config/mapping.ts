@@ -316,6 +316,7 @@ export function mergeConfigsWithProtection(
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       instanceName: overrides.instanceName ?? base.instanceName,
+      projectDirectory: overrides.projectDirectory ?? base.projectDirectory,
       workingDirectory: overrides.workingDirectory ?? base.workingDirectory,
       mrtProject: overrides.mrtProject ?? base.mrtProject,
       mrtEnvironment: overrides.mrtEnvironment ?? base.mrtEnvironment,

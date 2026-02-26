@@ -90,8 +90,8 @@ The tool automatically searches for components in these locations (in order):
 4. `src/**` (broader search)
 5. Custom paths (if provided via `searchPaths`)
 
-**Working Directory:**
-Component discovery uses the working directory resolved from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+**Project Directory:**
+Component discovery uses the project directory resolved from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **Examples:**
 
@@ -104,7 +104,7 @@ Component discovery uses the working directory resolved from `--working-director
 - Use component name for portability
 - Use path for unusual locations
 - Add `searchPaths` for monorepos or non-standard structures
-- Ensure `--working-directory` flag or `SFCC_WORKING_DIRECTORY` env var is set correctly
+- Ensure `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` env var is set correctly
 
 ## 🏗️ Architecture
 
@@ -237,18 +237,19 @@ Run the comprehensive Mocha test suite:
 
 ```bash
 cd packages/b2c-dx-mcp
-pnpm run test:agent -- test/tools/page-designer-decorator/index.test.ts
+pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 The test suite covers:
+
 - Component discovery (name-based, kebab-case, nested, path-based, custom paths, name collisions)
 - Auto mode (basic, type inference, complex props exclusion, UI-only props exclusion, edge cases)
 - Interactive mode (all steps: analyze, select_props, configure_attrs, configure_regions, confirm_generation)
 - Error handling (invalid input, invalid step name, missing parameters)
 - Edge cases (no props, only complex props, optional props, union types, already decorated components)
-- Working directory resolution (from --working-directory flag or SFCC_WORKING_DIRECTORY env var via Services)
+- Project directory resolution (from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` env var via Services)
 
-See [`test/tools/page-designer-decorator/README.md`](../../../test/tools/page-designer-decorator/README.md) for detailed testing instructions.
+See [`test/tools/storefrontnext/page-designer-decorator/README.md`](../../../../test/tools/storefrontnext/page-designer-decorator/README.md) for detailed testing instructions.
 
 ## 🎓 Learning Resources
 
