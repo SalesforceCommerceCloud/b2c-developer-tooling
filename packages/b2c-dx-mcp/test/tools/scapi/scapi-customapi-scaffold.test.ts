@@ -45,7 +45,7 @@ interface ScaffoldOutput {
   error?: string;
 }
 
-describe('tools/scapi/scapi-customapi-scaffold', () => {
+describe('tools/scapi/scapi-custom-api-scaffold', () => {
   let services: Services;
   let tempDir: string;
   let loadServices: () => Services;
@@ -53,7 +53,7 @@ describe('tools/scapi/scapi-customapi-scaffold', () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-scaffold-test-'));
     services = new Services({
-      resolvedConfig: createMockResolvedConfig({workingDirectory: tempDir}),
+      resolvedConfig: createMockResolvedConfig({projectDirectory: tempDir}),
     });
     loadServices = () => services;
   });
@@ -131,7 +131,7 @@ describe('tools/scapi/scapi-customapi-scaffold', () => {
     it('should generate custom API files when cartridge exists (first cartridge used by default)', async () => {
       const cartridgeDir = path.join(tempDir, 'app_custom');
       fs.mkdirSync(cartridgeDir, {recursive: true});
-      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf-8');
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
 
       const tool = createScaffoldCustomApiTool(loadServices);
       const result = await tool.handler({apiName: 'test-api'});
@@ -157,7 +157,7 @@ describe('tools/scapi/scapi-customapi-scaffold', () => {
     it('should use provided cartridgeName when given', async () => {
       const cartridgeDir = path.join(tempDir, 'app_my_cartridge');
       fs.mkdirSync(cartridgeDir, {recursive: true});
-      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf-8');
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
 
       const tool = createScaffoldCustomApiTool(loadServices);
       const result = await tool.handler({
@@ -177,7 +177,7 @@ describe('tools/scapi/scapi-customapi-scaffold', () => {
     it('should pass apiType admin and include in generated schema', async () => {
       const cartridgeDir = path.join(tempDir, 'int_admin');
       fs.mkdirSync(cartridgeDir, {recursive: true});
-      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf-8');
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
 
       const tool = createScaffoldCustomApiTool(loadServices);
       const result = await tool.handler({
@@ -189,14 +189,14 @@ describe('tools/scapi/scapi-customapi-scaffold', () => {
       expect(result.isError).to.be.undefined;
       const schemaPath = path.join(tempDir, 'int_admin', 'cartridge', 'rest-apis', 'admin-only', 'schema.yaml');
       expect(fs.existsSync(schemaPath)).to.be.true;
-      const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
+      const schemaContent = fs.readFileSync(schemaPath, 'utf8');
       expect(schemaContent).to.include('AmOAuth2');
     });
 
     it('should pass apiDescription and include in generated schema', async () => {
       const cartridgeDir = path.join(tempDir, 'app_custom');
       fs.mkdirSync(cartridgeDir, {recursive: true});
-      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf-8');
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
 
       const tool = createScaffoldCustomApiTool(loadServices);
       await tool.handler({
@@ -205,7 +205,7 @@ describe('tools/scapi/scapi-customapi-scaffold', () => {
       });
 
       const schemaPath = path.join(tempDir, 'app_custom', 'cartridge', 'rest-apis', 'described-api', 'schema.yaml');
-      const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
+      const schemaContent = fs.readFileSync(schemaPath, 'utf8');
       expect(schemaContent).to.include('My custom description for the API');
     });
 
@@ -213,7 +213,7 @@ describe('tools/scapi/scapi-customapi-scaffold', () => {
       const otherDir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-scaffold-other-'));
       const cartridgeDir = path.join(otherDir, 'app_other');
       fs.mkdirSync(cartridgeDir, {recursive: true});
-      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf-8');
+      fs.writeFileSync(path.join(cartridgeDir, '.project'), '', 'utf8');
 
       try {
         const tool = createScaffoldCustomApiTool(loadServices);
