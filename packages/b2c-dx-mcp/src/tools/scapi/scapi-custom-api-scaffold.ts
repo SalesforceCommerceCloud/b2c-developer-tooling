@@ -10,7 +10,7 @@
  * Generates a new custom SCAPI endpoint using the SDK's custom-api scaffold
  * (schema.yaml, api.json, script.js).
  *
- * @module tools/scapi/scapi-customapi-scaffold
+ * @module tools/scapi/scapi-custom-api-scaffold
  */
 
 import path from 'node:path';
