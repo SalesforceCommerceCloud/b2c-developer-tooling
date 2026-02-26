@@ -265,7 +265,7 @@ async function registerTools(tools: McpTool[], server: B2CDxMcpServer, allowNonG
     }
 
     // Register the tool
-    // TODO: Telemetry - Tool registration includes timing/error tracking
+    // Register the tool (invocations are tracked by B2CDxMcpServer)
     server.addTool(tool.name, tool.description, tool.inputSchema, async (args) => tool.handler(args));
   }
 }
