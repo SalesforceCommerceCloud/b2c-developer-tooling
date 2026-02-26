@@ -12,6 +12,7 @@
  * **Implemented Tools:**
  * - `storefront_next_development_guidelines` - Get development guidelines and best practices
  * - `storefront_next_page_designer_decorator` - Add Page Designer decorators to React components
+ * - `storefront_next_site_theming` - Get theming guidelines, questions, and validation
  *
  * Note: mrt_bundle_push is defined in the MRT toolset and appears in STOREFRONTNEXT.
  *
@@ -22,6 +23,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createDeveloperGuidelinesTool} from './developer-guidelines.js';
 import {createPageDesignerDecoratorTool} from './page-designer-decorator/index.js';
+import {createSiteThemingTool} from './site-theming/index.js';
 
 /**
  * Creates all tools for the STOREFRONTNEXT toolset.
@@ -34,5 +36,9 @@ import {createPageDesignerDecoratorTool} from './page-designer-decorator/index.j
  * @returns Array of MCP tools
  */
 export function createStorefrontNextTools(loadServices: () => Services): McpTool[] {
-  return [createDeveloperGuidelinesTool(loadServices), createPageDesignerDecoratorTool(loadServices)];
+  return [
+    createDeveloperGuidelinesTool(loadServices),
+    createPageDesignerDecoratorTool(loadServices),
+    createSiteThemingTool(loadServices),
+  ];
 }
