@@ -258,5 +258,41 @@ describe('tools/storefrontnext/site-theming/color-contrast', () => {
       expect(output).to.not.match(/^[^:]+: #/);
       expect(output).to.include('#000000 on #FFFFFF');
     });
+
+    it('should format AA (not AAA) result with WCAG AA status', () => {
+      const result = {
+        color1: '#6B6B6B',
+        color2: '#FFFFFF',
+        ratio: 5.3,
+        wcagLevel: WCAGLevel.AA,
+        passesAA: true,
+        passesAAA: false,
+        isLargeText: false,
+        visualAssessment: 'good' as const,
+      };
+
+      const output = formatValidationResult(result);
+
+      expect(output).to.include('✅ AA');
+      expect(output).to.include('WCAG normal text');
+    });
+
+    it('should format large text result', () => {
+      const result = {
+        color1: '#888888',
+        color2: '#FFFFFF',
+        ratio: 3.9,
+        wcagLevel: WCAGLevel.AA_LARGE,
+        passesAA: true,
+        passesAAA: false,
+        isLargeText: true,
+        visualAssessment: 'acceptable' as const,
+      };
+
+      const output = formatValidationResult(result);
+
+      expect(output).to.include('WCAG large text');
+      expect(output).to.include('✅ AA');
+    });
   });
 });

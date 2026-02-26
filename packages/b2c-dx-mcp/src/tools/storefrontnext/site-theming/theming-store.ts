@@ -454,6 +454,11 @@ function parseThemingMDC(content: string, filePath: string): ThemingGuidance {
  * Theming Data Store
  * Loads and caches theming guidance from .md/.mdc files
  */
+export interface InitializeOptions {
+  /** Override content directory for default files (used in tests). */
+  contentDirOverride?: string;
+}
+
 class ThemingStore {
   private initializedForRoot: null | string = null;
   private store: Map<string, ThemingGuidance> = new Map();
@@ -475,7 +480,7 @@ class ThemingStore {
    * Uses workspaceRoot for THEMING_FILES env paths (relative to project).
    * Skips re-loading when already initialized for the same root.
    */
-  initialize(workspaceRoot?: string): void {
+  initialize(workspaceRoot?: string, options?: InitializeOptions): void {
     const root = workspaceRoot ?? process.cwd();
     if (this.initializedForRoot === root) {
       return;
@@ -485,13 +490,14 @@ class ThemingStore {
     }
     this.initializedForRoot = root;
 
+    const contentDir = options?.contentDirOverride ?? SITE_THEMING_CONTENT_DIR;
     const defaultFileKeys = ['theming-questions', 'theming-validation', 'theming-accessibility'];
     const extensions = ['.md', '.mdc'];
 
     for (const key of defaultFileKeys) {
       let filePath: null | string = null;
       for (const ext of extensions) {
-        const candidate = join(SITE_THEMING_CONTENT_DIR, `${key}${ext}`);
+        const candidate = join(contentDir, `${key}${ext}`);
         if (existsSync(candidate)) {
           filePath = candidate;
           break;

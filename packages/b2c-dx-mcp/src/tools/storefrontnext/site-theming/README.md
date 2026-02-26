@@ -18,7 +18,11 @@ This tool provides theming guidelines, collects user preferences through structu
 
 ```
 site-theming/
-├── index.ts           # Main tool implementation
+├── index.ts           # Tool factory and orchestration
+├── types.ts           # Shared types (ColorMapping, CollectedAnswers, etc.)
+├── color-mapping.ts   # Color combination derivation and WCAG validation
+├── guidance-merger.ts # Merges multiple ThemingGuidance objects
+├── response-builder.ts # Response construction from guidance and context
 ├── theming-store.ts   # Content loading and parsing
 └── color-contrast.ts  # WCAG 2.1 contrast calculation and validation
 ```
