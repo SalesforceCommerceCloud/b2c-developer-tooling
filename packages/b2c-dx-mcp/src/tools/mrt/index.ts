@@ -12,7 +12,6 @@
  * @module tools/mrt
  */
 
-import path from 'node:path';
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
@@ -115,11 +114,7 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
         // Parse comma-separated glob patterns (same as CLI defaults)
         const ssrOnly = (args.ssrOnly || 'ssr.js,ssr.mjs,server/**/*').split(',').map((s) => s.trim());
         const ssrShared = (args.ssrShared || 'static/**/*,client/**/*').split(',').map((s) => s.trim());
-        const buildDirectory = args.buildDirectory
-          ? path.isAbsolute(args.buildDirectory)
-            ? args.buildDirectory
-            : path.resolve(context.services.getWorkingDirectory(), args.buildDirectory)
-          : path.join(context.services.getWorkingDirectory(), 'build');
+        const buildDirectory = context.services.resolveWithProjectDirectory(args.buildDirectory || 'build');
 
         // Log all computed variables before pushing bundle
         const logger = getLogger();
