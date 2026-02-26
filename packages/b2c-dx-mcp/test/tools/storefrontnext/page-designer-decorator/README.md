@@ -11,7 +11,7 @@ The page-designer-decorator tool has comprehensive unit tests covering:
 - ✅ Error handling (invalid input, invalid step name, missing parameters)
 - ✅ Input validation
 - ✅ Edge cases (no props, only complex props, optional props, union types, already decorated components)
-- ✅ Environment variables (SFCC_WORKING_DIRECTORY)
+- ✅ Environment variables (SFCC_PROJECT_DIRECTORY)
 
 All tests use the standard Mocha test framework and run with `pnpm test`.
 
@@ -57,23 +57,23 @@ npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga
 
 ### 4. Running Tests Against a Local Storefront Next Installation
 
-The Mocha test suite supports testing against a real Storefront Next installation by setting `SFCC_WORKING_DIRECTORY`:
+The Mocha test suite supports testing against a real Storefront Next installation by setting `SFCC_PROJECT_DIRECTORY`:
 
 ```bash
 cd packages/b2c-dx-mcp
-SFCC_WORKING_DIRECTORY=/path/to/storefront-next \
+SFCC_PROJECT_DIRECTORY=/path/to/storefront-next \
   pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 Or set it as an environment variable:
 ```bash
-export SFCC_WORKING_DIRECTORY=/path/to/storefront-next
+export SFCC_PROJECT_DIRECTORY=/path/to/storefront-next
 cd packages/b2c-dx-mcp
 pnpm run test:agent -- test/tools/storefrontnext/page-designer-decorator/index.test.ts
 ```
 
 **Important Notes for Real Project Mode**:
-- Component discovery searches in your real Storefront Next project (`SFCC_WORKING_DIRECTORY`)
+- Component discovery searches in your real Storefront Next project (`SFCC_PROJECT_DIRECTORY`)
 - Tests create temporary directories for test components (not in your real project)
 - Tests will **not** modify your real project files (read-only)
 - Tests will use existing components from your real project if they exist
@@ -104,7 +104,7 @@ export default function TestComponent({title, description}: TestComponentProps) 
 
 3. Set environment variable:
 ```bash
-export SFCC_WORKING_DIRECTORY=/path/to/storefront-next
+export SFCC_PROJECT_DIRECTORY=/path/to/storefront-next
 ```
 
 4. Use the tool via MCP Inspector or your IDE's MCP integration
@@ -144,7 +144,7 @@ Expected: Returns component analysis
 ### Component Not Found Errors
 
 If you get "Component not found" errors:
-1. Verify `SFCC_WORKING_DIRECTORY` is set correctly
+1. Verify `SFCC_PROJECT_DIRECTORY` is set correctly
 2. Check that the component file exists at the expected path
 3. Try using the full relative path: `"component": "src/components/MyComponent.tsx"`
 
