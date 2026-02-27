@@ -8,7 +8,7 @@ This tool analyzes React components and generates Page Designer decorators (`@Co
 
 ## ✨ Key Features
 
-- **Name-Based Lookup**: Find components by name (e.g., "ProductCard") without knowing paths
+- **Name-Based Lookup**: Find components by name (e.g., "ProductItem", "ProductTile") without knowing paths
 - **Auto-Discovery**: Automatically searches common component directories
 - **Type-Safe**: Full TypeScript type inference for all contexts
 - **Fast**: Direct function execution, no file I/O or compilation overhead
@@ -42,19 +42,19 @@ page-designer-decorator/
 ```bash
 # By component name (automatically finds the file)
 storefront_next_page_designer_decorator({
-  component: "ProductCard",
+  component: "ProductItem",
   autoMode: true
 })
 
 # Interactive mode
 storefront_next_page_designer_decorator({
-  component: "Hero",
+  component: "ProductTile",
   conversationContext: { step: "analyze" }
 })
 
 # With custom search paths (for unusual locations)
 storefront_next_page_designer_decorator({
-  component: "ProductCard",
+  component: "ProductItem",
   searchPaths: ["packages/retail/src", "app/features"],
   autoMode: true
 })
@@ -65,14 +65,14 @@ storefront_next_page_designer_decorator({
 ```bash
 # If you prefer to specify the exact path
 storefront_next_page_designer_decorator({
-  component: "src/components/ProductCard.tsx",
+  component: "src/components/ProductItem.tsx",
   autoMode: true
 })
 ```
 
 ### Workflow
 
-1. **Component Discovery**: Provide name (e.g., "ProductCard") or path
+1. **Component Discovery**: Provide name (e.g., "ProductItem") or path
 2. **Mode Selection**: Choose Auto or Interactive mode
 3. **Analysis** (Interactive only): Review component props
 4. **Selection** (Interactive only): Select which props to expose
@@ -91,13 +91,13 @@ The tool automatically searches for components in these locations (in order):
 5. Custom paths (if provided via `searchPaths`)
 
 **Project Directory:**
-Component discovery uses the project directory resolved from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+Component discovery uses the project directory from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **Examples:**
 
-- `"ProductCard"` → finds `src/components/product-tile/ProductCard.tsx`
-- `"Hero"` → finds `src/components/hero/Hero.tsx` or `app/components/hero.tsx`
-- `"product-card"` → finds `src/components/product-card.tsx` or `product-card/index.tsx`
+- `"ProductItem"` → finds `src/components/product-item/index.tsx` or `ProductItem.tsx`
+- `"ProductTile"` → finds `src/components/product-tile/ProductTile.tsx` or `product-tile/index.tsx`
+- `"product-item"` → finds `src/components/product-item.tsx` or `product-item/index.tsx`
 
 **Tips:**
 
