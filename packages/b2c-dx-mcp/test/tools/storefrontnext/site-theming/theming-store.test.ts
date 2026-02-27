@@ -20,7 +20,7 @@ describe('tools/storefrontnext/site-theming/theming-store', () => {
   let originalThemingFiles: string | undefined;
 
   beforeEach(() => {
-    testDir = path.join(tmpdir(), `b2c-theming-store-test-${Date.now()}`);
+    testDir = path.join(tmpdir(), `b2c-theming-store-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
     mkdirSync(testDir, {recursive: true});
     originalThemingFiles = process.env.THEMING_FILES;
   });
@@ -577,7 +577,7 @@ Follow user specs exactly.
 
     it('should clear and re-load when root changes', () => {
       delete process.env.THEMING_FILES;
-      const otherDir = path.join(tmpdir(), `b2c-theming-other-${Date.now()}`);
+      const otherDir = path.join(tmpdir(), `b2c-theming-other-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
       mkdirSync(otherDir, {recursive: true});
       try {
         const customPath = path.join(testDir, 'first-root.md');
