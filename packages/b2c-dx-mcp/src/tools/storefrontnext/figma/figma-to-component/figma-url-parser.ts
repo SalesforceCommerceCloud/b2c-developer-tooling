@@ -7,8 +7,8 @@
 /**
  * Extracted parameters from a Figma design URL.
  *
- * @property fileKey - Figma file identifier from URL path
- * @property nodeId - Node identifier (colon format for Figma MCP)
+ * @property {string} fileKey - Figma file identifier from URL path
+ * @property {string} nodeId - Node identifier (colon format for Figma MCP)
  */
 export interface FigmaParams {
   fileKey: string;

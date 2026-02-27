@@ -22,11 +22,11 @@ import {formatRecommendation} from './formatter.js';
 /**
  * A component discovered in the codebase that may match the Figma design.
  *
- * @property path - Absolute file path to the component
- * @property name - Component name
- * @property similarity - Similarity score (0-100)
- * @property matchType - Type of match: 'name', 'structure', or 'visual'
- * @property code - Full source code of the component
+ * @property {string} path - Absolute file path to the component
+ * @property {string} name - Component name
+ * @property {number} similarity - Similarity score (0-100)
+ * @property {'name'|'structure'|'visual'} matchType - Type of match: 'name', 'structure', or 'visual'
+ * @property {string} code - Full source code of the component
  */
 export interface SimilarComponent {
   path: string;
@@ -66,13 +66,13 @@ export type GenerateComponentInput = z.infer<typeof generateComponentSchema>;
 /**
  * Result of component analysis recommending REUSE, EXTEND, or CREATE.
  *
- * @property action - Recommended action: 'CREATE', 'EXTEND', or 'REUSE'
- * @property confidence - Confidence score (0-100)
- * @property matchedComponent - Best-matching component (if action is REUSE or EXTEND)
- * @property differences - Key differences between Figma design and matched component
- * @property recommendation - Human-readable recommendation text
- * @property suggestedApproach - Implementation guidance
- * @property extendStrategy - Strategy for EXTEND: 'props', 'variant', or 'composition'
+ * @property {'CREATE'|'EXTEND'|'REUSE'} action - Recommended action: 'CREATE', 'EXTEND', or 'REUSE'
+ * @property {number} confidence - Confidence score (0-100)
+ * @property {{path: string, name: string, similarity: number}} [matchedComponent] - Best-matching component (if action is REUSE or EXTEND)
+ * @property {string[]} [differences] - Key differences between Figma design and matched component
+ * @property {string} recommendation - Human-readable recommendation text
+ * @property {string} [suggestedApproach] - Implementation guidance
+ * @property {'composition'|'props'|'variant'} [extendStrategy] - Strategy for EXTEND: 'props', 'variant', or 'composition'
  */
 export interface ComponentAnalysisResult {
   action: 'CREATE' | 'EXTEND' | 'REUSE';

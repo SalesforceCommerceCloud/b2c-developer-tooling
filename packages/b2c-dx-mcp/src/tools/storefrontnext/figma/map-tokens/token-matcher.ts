@@ -9,10 +9,10 @@ import type {ThemeToken, ParsedTheme} from './css-parser.js';
 /**
  * Design token extracted from Figma.
  *
- * @property name - Token name from Figma (e.g., "Primary/Blue", "Spacing/Large")
- * @property value - Token value (e.g., "#2563eb", "16px", "0.5rem")
- * @property type - Token type for matching logic
- * @property description - Optional description from Figma
+ * @property {string} name - Token name from Figma (e.g., "Primary/Blue", "Spacing/Large")
+ * @property {string} value - Token value (e.g., "#2563eb", "16px", "0.5rem")
+ * @property {'color'|'fontFamily'|'fontSize'|'opacity'|'other'|'radius'|'spacing'} type - Token type for matching logic
+ * @property {string} [description] - Optional description from Figma
  */
 export interface FigmaToken {
   name: string;
@@ -24,12 +24,12 @@ export interface FigmaToken {
 /**
  * Result of matching a Figma token to theme tokens.
  *
- * @property figmaToken - The Figma token that was matched
- * @property matchedToken - Best-matching theme token (if found)
- * @property confidence - Match confidence (0-100)
- * @property matchType - 'exact', 'fuzzy', or 'none'
- * @property reason - Human-readable explanation of the match
- * @property suggestions - Suggested new tokens or alternatives (when no match or fuzzy match)
+ * @property {FigmaToken} figmaToken - The Figma token that was matched
+ * @property {ThemeToken} [matchedToken] - Best-matching theme token (if found)
+ * @property {number} confidence - Match confidence (0-100)
+ * @property {'exact'|'fuzzy'|'none'} matchType - 'exact', 'fuzzy', or 'none'
+ * @property {string} reason - Human-readable explanation of the match
+ * @property {TokenSuggestion[]} [suggestions] - Suggested new tokens or alternatives (when no match or fuzzy match)
  */
 export interface TokenMatch {
   figmaToken: FigmaToken;
@@ -43,11 +43,11 @@ export interface TokenMatch {
 /**
  * Suggestion for a new or alternative theme token.
  *
- * @property tokenName - Suggested CSS custom property name
- * @property value - Token value
- * @property theme - Which theme(s) to add to: 'both', 'dark', or 'light'
- * @property reason - Explanation for the suggestion
- * @property insertAfter - Optional token name to insert after in the theme file
+ * @property {string} tokenName - Suggested CSS custom property name
+ * @property {string} value - Token value
+ * @property {'both'|'dark'|'light'} theme - Which theme(s) to add to: 'both', 'dark', or 'light'
+ * @property {string} reason - Explanation for the suggestion
+ * @property {string} [insertAfter] - Optional token name to insert after in the theme file
  */
 export interface TokenSuggestion {
   tokenName: string;

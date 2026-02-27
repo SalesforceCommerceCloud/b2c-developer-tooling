@@ -18,11 +18,11 @@ import postcss, {type AtRule, type Rule} from 'postcss';
 /**
  * Design token extracted from theme CSS (app.css).
  *
- * @property name - CSS custom property name (e.g., "--color-primary")
- * @property value - Raw value (may be var() reference)
- * @property theme - Theme context: 'dark', 'light', or 'shared'
- * @property type - Token type for matching: color, spacing, radius, etc.
- * @property resolvedValue - Resolved value for var() references (actual hex/value)
+ * @property {string} name - CSS custom property name (e.g., "--color-primary")
+ * @property {string} value - Raw value (may be var() reference)
+ * @property {'dark'|'light'|'shared'} theme - Theme context: 'dark', 'light', or 'shared'
+ * @property {'color'|'fontFamily'|'fontSize'|'opacity'|'other'|'radius'|'spacing'} type - Token type for matching: color, spacing, radius, etc.
+ * @property {string} [resolvedValue] - Resolved value for var() references (actual hex/value)
  */
 export interface ThemeToken {
   name: string;
@@ -35,11 +35,11 @@ export interface ThemeToken {
 /**
  * Parsed theme file with tokens organized by theme context.
  *
- * @property tokens - All resolved tokens (excludes unresolved var() references)
- * @property lightTokens - Map of token name to ThemeToken for light theme
- * @property darkTokens - Map of token name to ThemeToken for dark theme
- * @property sharedTokens - Map of token name to ThemeToken for shared tokens
- * @property warnings - Warnings (e.g., unresolved var() references)
+ * @property {ThemeToken[]} tokens - All resolved tokens (excludes unresolved var() references)
+ * @property {Map<string,ThemeToken>} lightTokens - Map of token name to ThemeToken for light theme
+ * @property {Map<string,ThemeToken>} darkTokens - Map of token name to ThemeToken for dark theme
+ * @property {Map<string,ThemeToken>} sharedTokens - Map of token name to ThemeToken for shared tokens
+ * @property {string[]} warnings - Warnings (e.g., unresolved var() references)
  */
 export interface ParsedTheme {
   tokens: ThemeToken[];
