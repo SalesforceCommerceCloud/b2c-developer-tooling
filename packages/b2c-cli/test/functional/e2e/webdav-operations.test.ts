@@ -368,8 +368,29 @@ describe('WebDAV Operations E2E Tests', function () {
 
   describe('Step 11: Verify Extracted Files', function () {
     it('should find extracted files in directory', async function () {
-      await waitFor(async () => {
-        const result = await runCLI([
+      // Unzip visibility can be delayed on WebDAV; use longer timeout and poll every 1s
+      try {
+        await waitFor(
+          async () => {
+            const result = await runCLI([
+              'webdav',
+              'ls',
+              remoteDirPath,
+              '--server',
+              serverHostname,
+              '--root',
+              'impex',
+              '--json',
+            ]);
+            if (result.exitCode !== 0) return false;
+            const response = JSON.parse(toString(result.stdout));
+            return response.entries?.some((e: any) => entryName(e) === testFileName);
+          },
+          420_000,
+          1000,
+        );
+      } catch (error) {
+        const diag = await runCLI([
           'webdav',
           'ls',
           remoteDirPath,
@@ -378,11 +399,10 @@ describe('WebDAV Operations E2E Tests', function () {
           '--root',
           'impex',
           '--json',
-        ]);
-        if (result.exitCode !== 0) return false;
-        const response = JSON.parse(toString(result.stdout));
-        return response.entries?.some((e: any) => entryName(e) === testFileName);
-      }, 300_000);
+        ]).then((r) => (r.exitCode === 0 ? toString(r.stdout) : `exit ${r.exitCode}: ${toString(r.stderr)}`));
+        const msg = error instanceof Error ? error.message : String(error);
+        throw new Error(`${msg}. Last LIST of ${remoteDirPath}: ${diag.slice(0, 500)}`);
+      }
     });
   });
 });
