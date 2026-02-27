@@ -182,6 +182,16 @@ Get registration status of custom API endpoints deployed on the instance (remote
 - ✅ "Use the MCP tool to push the bundle from ./build directory to Managed Runtime."
 - ✅ "Use the MCP tool to deploy my PWA Kit or Storefront Next bundle to production with a deployment message."
 
+##### Figma-to-Component Tools
+
+Call `storefront_next_figma_to_component_workflow` first with a Figma URL; the workflow then uses Figma MCP tools, `storefront_next_generate_component`, and `storefront_next_map_tokens_to_theme`. See [Figma-to-Component Tools Setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup) for prerequisites.
+
+**Prompt examples:**
+- ✅ "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
+- ✅ "Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design."
+- ✅ "Use the MCP tool to analyze the Figma design and recommend whether to reuse, extend, or create a component."
+- ✅ "Use the MCP tool to map these Figma design tokens to my theme."
+
 #### Tips for Better Results
 
 - **Start with guidelines**: When learning a new framework, ask for development guidelines first using "Use the MCP tool to get..."
@@ -319,12 +329,17 @@ Storefront Next development tools for building modern storefronts.
 | Tool | Description |
 |------|-------------|
 | `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices |
+| `storefront_next_figma_to_component_workflow` | Workflow orchestrator for Figma-to-component conversion. Parses Figma URL, returns step-by-step instructions for subsequent tool calls |
+| `storefront_next_generate_component` | Analyze Figma design and discovered components to recommend REUSE, EXTEND, or CREATE strategy |
+| `storefront_next_map_tokens_to_theme` | Map Figma design tokens to existing theme tokens in app.css with confidence scores and suggestions |
 | `storefront_next_page_designer_decorator` | Add Page Designer decorators to Storefront Next components |
 | `storefront_next_site_theming` | Get theming guidelines, questions, and WCAG color validation for Storefront Next |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `scapi_customapi_scaffold` | Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. Required: apiName. Optional: cartridgeName (defaults to first cartridge), apiType, apiDescription, projectRoot, outputDir. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
+
+**Figma-to-Component Tools** (`storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`): Require an external Figma MCP server enabled in your MCP client, `--project-directory` pointing to a Storefront Next project, and a valid Figma URL with `node-id`. See [Figma Tools Setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup) for prerequisites and configuration.
 
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated.
 
