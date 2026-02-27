@@ -64,7 +64,7 @@ See the [Configuration Guide](https://salesforcecommercecloud.github.io/b2c-deve
 | CARTRIDGES | `cartridge_deploy` | [toolsets#cartridges](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#cartridges) |
 | MRT | `mrt_bundle_push` | [toolsets#mrt](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#mrt) |
 | SCAPI | `scapi_schemas_list`, `scapi_custom_apis_status`, `scapi_customapi_scaffold` | [toolsets#scapi](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#scapi) |
-| STOREFRONTNEXT | `storefront_next_development_guidelines`, `storefront_next_page_designer_decorator` | [toolsets#storefrontnext](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext) |
+| STOREFRONTNEXT | `storefront_next_development_guidelines`, `storefront_next_page_designer_decorator`, `storefront_next_site_theming`, `storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme` | [toolsets#storefrontnext](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext) |
 | PWAV3 | `pwakit_development_guidelines` + SCAPI tools | [toolsets#pwav3](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#pwav3) |
 
 ### cartridge_deploy
@@ -114,6 +114,32 @@ Get Storefront Next guidelines and best practices. [Details](https://salesforcec
 Add Page Designer decorators to components. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/storefront-next-page-designer-decorator)
 
 - "Use the MCP tool to add Page Designer decorators to my component."
+
+### storefront_next_site_theming
+
+Get theming guidelines, questions, and WCAG color validation for Storefront Next. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/storefront-next-site-theming)
+
+- "Use the MCP tool to help me apply my brand colors to my Storefront Next site."
+- "Use the MCP tool to validate my color combinations for accessibility."
+
+### storefront_next_figma_to_component_workflow
+
+Workflow orchestrator for Figma-to-component conversion. Parses Figma URL, returns step-by-step instructions for subsequent tool calls. Requires external Figma MCP server. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/storefront-next-figma-to-component-workflow) — [Figma Setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup)
+
+- "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
+- "Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]"
+
+### storefront_next_generate_component
+
+Analyze Figma design and discovered components to recommend REUSE, EXTEND, or CREATE strategy. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/storefront-next-generate-component)
+
+- "Use the MCP tool to analyze the Figma design and recommend whether to reuse, extend, or create a component."
+
+### storefront_next_map_tokens_to_theme
+
+Map Figma design tokens to existing theme tokens in app.css with confidence scores and suggestions. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/storefront-next-map-tokens-to-theme)
+
+- "Use the MCP tool to map these Figma design tokens to my theme."
 
 ### pwakit_development_guidelines
 
