@@ -649,7 +649,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Services): M
         // Use projectDirectory from services to ensure we search in the correct project directory
         // This prevents searches in the home folder when MCP clients spawn servers from ~
         const services = loadServices();
-        const workspaceRoot = services.getWorkingDirectory();
+        const workspaceRoot = services.resolveWithProjectDirectory();
 
         if (validatedArgs.autoMode === undefined && !validatedArgs.conversationContext) {
           const fullPath = resolveComponent(validatedArgs.component, workspaceRoot, validatedArgs.searchPaths);
