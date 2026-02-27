@@ -29,7 +29,17 @@ See [Installation](./installation) for MCP client setup (Cursor, Claude Desktop,
 
 ## Figma MCP Setup
 
-The workflow calls Figma MCP tools (`mcp__figma__get_design_context`, `mcp__figma__get_screenshot`, `mcp__figma__get_metadata`) to fetch design data. These come from a **separate Figma MCP server** that you must enable in your MCP client.
+The workflow calls Figma MCP tools to fetch design data. These come from a **separate Figma MCP server** that you must enable in your MCP client.
+
+**Figma MCP tools used by the workflow:**
+
+| Tool | Purpose |
+|------|---------|
+| `get_design_context` | Generates UI code from the design and returns asset URLs |
+| `get_screenshot` | Provides a visual reference image of the design |
+| `get_metadata` | Retrieves node hierarchy, layer types, names, positions, and sizes |
+
+See the [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) for official setup and tool details.
 
 Figma provides two connection options. Check the [Figma MCP catalog](https://www.figma.com/mcp-catalog/) to see which your client supports, then follow the matching installation:
 

@@ -1,24 +1,21 @@
 ---
-description: Workflow orchestrator for Figma-to-component conversion. Parses Figma URL, returns step-by-step instructions for subsequent tool calls.
+description: Workflow orchestrator for Figma-to-component conversion. Parses your Figma URL and guides your AI assistant through design-to-component conversion.
 ---
 
 # storefront_next_figma_to_component_workflow
 
-Workflow orchestrator for converting Figma designs to Storefront Next components. Call this tool **first** when converting Figma designs. It parses the Figma URL to extract `fileKey` and `nodeId`, then returns step-by-step workflow instructions and parameters for subsequent tool calls.
+Workflow orchestrator for converting Figma designs to Storefront Next components. When you ask your AI assistant to convert a Figma design, it starts with this workflow tool, which parses your URL and guides the assistant through the conversion.
 
 ## Overview
 
-The `storefront_next_figma_to_component_workflow` tool is a **workflow orchestrator** that provides instructions only. It does **not** fetch design data or generate components.
+When you provide a Figma design URL, your AI assistant uses this tool to extract the file and node identifiers, then follows the workflow to fetch design data, analyze your codebase, and produce recommendations. The assistant will:
 
-After calling this tool, you **must** continue executing the complete workflow:
+- Fetch design context and screenshots from Figma
+- Discover similar components in your project
+- Recommend whether to REUSE, EXTEND, or CREATE a component
+- Map Figma design tokens to your theme variables
 
-1. Call Figma MCP tools to fetch design data
-2. Discover similar components using Glob/Grep/Read
-3. Call `storefront_next_generate_component` for REUSE/EXTEND/CREATE recommendation
-4. Call `storefront_next_map_tokens_to_theme` for token mapping
-5. Show both outputs to the user, then implement the recommended approach
-
-**Important:** Do not stop after receiving workflow instructions. Execute all steps to complete the conversion.
+You receive a component recommendation with confidence score and a token mapping summary when the workflow completes.
 
 This tool is part of the STOREFRONTNEXT toolset.
 
@@ -53,13 +50,7 @@ The `node-id` parameter accepts hyphen format (`1-2`) or colon format (`1:2`). T
 
 ## Output
 
-Returns a workflow guide containing:
-
-- **Figma Design Parameters**: Extracted `fileKey`, `nodeId`, and original URL as JSON
-- **Workflow Guidelines**: Step-by-step instructions for the conversion process
-- **Next Steps Reminder**: Critical reminder to execute all subsequent tool calls
-
-**Expected final output from the full workflow:** A recommendation with confidence score from `storefront_next_generate_component` and a token mapping summary from `storefront_next_map_tokens_to_theme`.
+The workflow returns a guide with extracted Figma parameters (`fileKey`, `nodeId`, and original URL). After the full workflow completes, you receive a component recommendation (REUSE/EXTEND/CREATE) with confidence score and a token mapping summary.
 
 **Example prompts:**
 - ✅ "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
@@ -121,11 +112,13 @@ https://figma.com/design/:fileKey/:fileName?node-id=1-2
 
 ## Figma MCP Tools (External)
 
-When executing the workflow, call these Figma MCP tools with the extracted parameters. Always include `clientLanguages="typescript"` and `clientFrameworks="react"`:
+The workflow relies on your AI assistant having access to Figma MCP tools to fetch design data:
 
-- `mcp__figma__get_design_context` (REQUIRED) - Generates UI code and returns asset URLs
-- `mcp__figma__get_screenshot` (REQUIRED) - Provides visual reference of the design
-- `mcp__figma__get_metadata` (OPTIONAL) - Retrieves node hierarchy, layer types, names, positions, and sizes
+- **get_design_context** - Generates UI code from the design and returns asset URLs
+- **get_screenshot** - Provides a visual reference image of the design
+- **get_metadata** - Retrieves node hierarchy, layer types, names, positions, and sizes
+
+Ensure the Figma MCP server is enabled in your MCP client. See [Figma-to-Component Tools Setup](../figma-tools-setup) for configuration and the [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) for official setup and tool details.
 
 ## See Also
 
