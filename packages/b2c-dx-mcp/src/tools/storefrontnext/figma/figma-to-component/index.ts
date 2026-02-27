@@ -220,35 +220,45 @@ function formatWorkflowContent(content: string): string {
 }
 
 function formatNextStepsReminder(): string {
-  let reminder = '---\n\n';
-  reminder += '## CRITICAL: Next Steps Required\n\n';
-  reminder += 'This tool has provided workflow instructions only. You MUST now execute ALL steps below.\n\n';
-  reminder +=
-    '**EXPECTED FINAL OUTPUT:** A recommendation with confidence score from generate_component tool AND a token mapping summary from map_tokens_to_theme tool.\n\n';
-  reminder += '### Step 1: Fetch Figma Design Data (Parallel Calls)\n';
-  reminder += 'Call these Figma MCP tools with the parameters above:\n';
-  reminder += '- `mcp__figma__get_design_context` (REQUIRED) - Get generated React code\n';
-  reminder += '- `mcp__figma__get_screenshot` (REQUIRED) - Get visual reference\n';
-  reminder += '- `mcp__figma__get_metadata` (OPTIONAL) - Get node structure and hierarchy if needed\n\n';
-  reminder += '### Step 2: Discover Similar Components\n';
-  reminder += 'Use your tools to find existing components:\n';
-  reminder += '- Use `Glob` to find component files: `**/components/**/*.tsx`\n';
-  reminder += '- Use `Grep` to search for similar names or patterns\n';
-  reminder += '- Use `Read` to examine promising matches\n';
-  reminder += '- Score each match (0-100) based on similarity\n\n';
-  reminder += '### Step 3: Analyze Component Strategy (CRITICAL - DO NOT SKIP)\n';
-  reminder +=
-    'You MUST call `generate_component` tool with:\n- figmaMetadata (from step 1, or empty string if not fetched)\n- figmaCode (from step 1)\n- componentName (extracted from Figma)\n- discoveredComponents (from step 2)\n\n';
-  reminder += 'This tool returns the recommendation with confidence score that MUST be shown to the user.\n\n';
-  reminder += '### Step 4: Map Design Tokens (CRITICAL - DO NOT SKIP)\n';
-  reminder += 'You MUST call `map_tokens_to_theme` tool with tokens extracted from Figma design.\n\n';
-  reminder += 'This tool returns the token mapping summary that MUST be shown to the user.\n\n';
-  reminder += '### Step 5: Implement\n';
-  reminder +=
-    'After showing the recommendation and token mapping to the user, wait for approval then implement the code changes.\n\n';
-  reminder +=
-    '**DO NOT STOP until you have called generate_component AND map_tokens_to_theme and shown their outputs to the user.**\n\n';
-  return reminder;
+  return `---
+## CRITICAL: Next Steps Required
+
+This tool has provided workflow instructions only. You MUST now execute ALL steps below.
+
+**EXPECTED FINAL OUTPUT:** A recommendation with confidence score from generate_component tool AND a token mapping summary from map_tokens_to_theme tool.
+
+### Step 1: Fetch Figma Design Data (Parallel Calls)
+Call these Figma MCP tools with the parameters above:
+- \`mcp__figma__get_design_context\` (REQUIRED) - Get generated React code
+- \`mcp__figma__get_screenshot\` (REQUIRED) - Get visual reference
+- \`mcp__figma__get_metadata\` (OPTIONAL) - Get node structure and hierarchy if needed
+
+### Step 2: Discover Similar Components
+Use your tools to find existing components:
+- Use \`Glob\` to find component files: \`**/components/**/*.tsx\`
+- Use \`Grep\` to search for similar names or patterns
+- Use \`Read\` to examine promising matches
+- Score each match (0-100) based on similarity
+
+### Step 3: Analyze Component Strategy (CRITICAL - DO NOT SKIP)
+You MUST call \`generate_component\` tool with:
+- figmaMetadata (from step 1, or empty string if not fetched)
+- figmaCode (from step 1)
+- componentName (extracted from Figma)
+- discoveredComponents (from step 2)
+
+This tool returns the recommendation with confidence score that MUST be shown to the user.
+
+### Step 4: Map Design Tokens (CRITICAL - DO NOT SKIP)
+You MUST call \`map_tokens_to_theme\` tool with tokens extracted from Figma design.
+
+This tool returns the token mapping summary that MUST be shown to the user.
+
+### Step 5: Implement
+After showing the recommendation and token mapping to the user, wait for approval then implement the code changes.
+
+**DO NOT STOP until you have called generate_component AND map_tokens_to_theme and shown their outputs to the user.**
+`;
 }
 
 function formatErrorResponse(details: string): string {

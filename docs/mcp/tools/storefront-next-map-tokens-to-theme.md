@@ -22,6 +22,14 @@ The `storefront_next_map_tokens_to_theme` tool ensures components use theme toke
 
 This tool is part of the STOREFRONTNEXT toolset.
 
+## Prerequisites
+
+- Storefront Next project with `app.css` (or provide `themeFilePath` explicitly)
+- `--project-directory` set when theme path is not explicitly provided
+- Figma tokens extracted from design (colors, spacing, radius, etc.)
+
+See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequisites and configuration.
+
 ## Authentication
 
 No authentication required. This tool operates on local theme files.
@@ -155,6 +163,7 @@ Please ensure the theme file path is correct and accessible.
 
 ## See Also
 
+- [Figma-to-Component Tools Setup](../figma-tools-setup) - Prerequisites and Figma MCP configuration
 - [STOREFRONTNEXT Toolset](../toolsets#storefrontnext) - Overview of Storefront Next development tools
 - [Configuration](../configuration) - Configure project directory
 - [Storefront Next Guide](../../guide/storefront-next) - Storefront Next development guide

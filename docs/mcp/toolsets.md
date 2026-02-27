@@ -101,6 +101,8 @@ Storefront Next development tools for building modern storefronts.
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
 
+**Figma-to-component tools** (`storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`) require additional setup: an external Figma MCP server, `--project-directory`, and a valid Figma URL with `node-id`. See [Figma-to-Component Tools Setup](./figma-tools-setup) for prerequisites and configuration.
+
 ## Tool Deduplication
 
 Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.

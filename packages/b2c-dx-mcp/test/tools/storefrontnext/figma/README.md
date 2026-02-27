@@ -242,3 +242,7 @@ For Zod validation errors:
 - **figma-to-component**: `figmaUrl` must be a valid URL string
 - **generate-component**: All of figmaMetadata, figmaCode, componentName, discoveredComponents are required; discoveredComponents must be an array of objects with path, name, similarity, matchType, code
 - **map-tokens**: figmaTokens must be an array of objects with name, value, type (one of: color, spacing, radius, opacity, fontSize, fontFamily, other)
+
+## See Also
+
+For user-facing setup, Figma MCP configuration, and prerequisites, see the [Figma-to-Component Tools Setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup) guide in the documentation.

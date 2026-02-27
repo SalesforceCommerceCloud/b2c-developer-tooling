@@ -22,6 +22,14 @@ After calling this tool, you **must** continue executing the complete workflow:
 
 This tool is part of the STOREFRONTNEXT toolset.
 
+## Prerequisites
+
+- **B2C DX MCP** configured with `--project-directory` pointing to your Storefront Next project and `--allow-non-ga-tools`
+- **Figma MCP server** (external) enabled in your MCP client for full workflow execution
+- **Valid Figma URL** with `node-id` query parameter (obtain by right-clicking a frame in Figma → Copy link to selection)
+
+See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequisites and configuration.
+
 ## Authentication
 
 No authentication required. This tool operates on local workflow files and URL parsing only.
@@ -108,6 +116,7 @@ When executing the workflow, call these Figma MCP tools with the extracted param
 
 ## See Also
 
+- [Figma-to-Component Tools Setup](../figma-tools-setup) - Prerequisites and Figma MCP configuration
 - [STOREFRONTNEXT Toolset](../toolsets#storefrontnext) - Overview of Storefront Next development tools
 - [Configuration](../configuration) - Configure project directory
 - [Storefront Next Guide](../../guide/storefront-next) - Storefront Next development guide

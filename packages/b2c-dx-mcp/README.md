@@ -308,6 +308,8 @@ Storefront Next development tools for building modern storefronts.
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `mrt_bundle_push` | Build, push bundle (optionally deploy) |
 
+**Figma-to-Component Tools** (`storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`): Require an external Figma MCP server enabled in your MCP client, `--project-directory` pointing to a Storefront Next project, and a valid Figma URL with `node-id`. See [Figma Tools Setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup) for prerequisites and configuration.
+
 > **Note:** Some tools appear in multiple toolsets (e.g., `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated.
 
 ## Telemetry

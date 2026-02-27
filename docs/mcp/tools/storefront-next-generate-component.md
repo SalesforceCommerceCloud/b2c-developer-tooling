@@ -18,6 +18,14 @@ The `storefront_next_generate_component` tool compares Figma-generated React cod
 
 This tool is part of the STOREFRONTNEXT toolset.
 
+## Prerequisites
+
+- Figma design data retrieved via Figma MCP tools
+- Component discovery performed (Glob/Grep/Read) before calling
+- `--project-directory` set for workspace context (optional but recommended)
+
+See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequisites and configuration.
+
 ## Authentication
 
 No authentication required. This tool operates on provided input data and workspace context.
@@ -141,6 +149,7 @@ Please check the input parameters and try again.
 
 ## See Also
 
+- [Figma-to-Component Tools Setup](../figma-tools-setup) - Prerequisites and Figma MCP configuration
 - [STOREFRONTNEXT Toolset](../toolsets#storefrontnext) - Overview of Storefront Next development tools
 - [Configuration](../configuration) - Configure project directory
 - [Storefront Next Guide](../../guide/storefront-next) - Storefront Next development guide
