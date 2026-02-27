@@ -93,6 +93,9 @@ Storefront Next development tools for building modern storefronts.
 | Tool | Description | Documentation |
 |------|-------------|---------------|
 | `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices | — |
+| [`storefront_next_figma_to_component_workflow`](./tools/storefront-next-figma-to-component-workflow) | Workflow orchestrator for Figma-to-component conversion. Parses Figma URL, returns step-by-step instructions for subsequent tool calls | [View details](./tools/storefront-next-figma-to-component-workflow) |
+| [`storefront_next_generate_component`](./tools/storefront-next-generate-component) | Analyze Figma design and discovered components to recommend REUSE, EXTEND, or CREATE strategy | [View details](./tools/storefront-next-generate-component) |
+| [`storefront_next_map_tokens_to_theme`](./tools/storefront-next-map-tokens-to-theme) | Map Figma design tokens to existing theme tokens in app.css with confidence scores and suggestions | [View details](./tools/storefront-next-map-tokens-to-theme) |
 | [`storefront_next_page_designer_decorator`](./tools/storefront-next-page-designer-decorator) | Add Page Designer decorators to Storefront Next components | [View details](./tools/storefront-next-page-designer-decorator) |
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
