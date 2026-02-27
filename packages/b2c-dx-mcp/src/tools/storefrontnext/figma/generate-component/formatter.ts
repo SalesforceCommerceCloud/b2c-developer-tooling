@@ -7,7 +7,11 @@
 import type {ComponentAnalysisResult, GenerateComponentInput} from './index.js';
 
 /**
- * Formats the component generation recommendation for AI/developer
+ * Formats the component generation recommendation for AI/developer.
+ *
+ * @param analysis - Component analysis result with REUSE/EXTEND/CREATE decision
+ * @param input - Original generate-component input (component name, etc.)
+ * @returns Formatted markdown string with recommendation, key differences, suggested approach, and next steps
  */
 export function formatRecommendation(analysis: ComponentAnalysisResult, input: GenerateComponentInput): string {
   let output = '# Component Generation Recommendation\n\n';

@@ -4,6 +4,15 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Figma-to-component workflow orchestrator tool.
+ *
+ * Parses Figma URLs, loads workflow instructions, and returns step-by-step guidance
+ * for converting Figma designs to Storefront Next components.
+ *
+ * @module tools/storefrontnext/figma/figma-to-component
+ */
+
 import {z} from 'zod';
 import {readFileSync, existsSync} from 'node:fs';
 import type {McpTool} from '../../../../utils/index.js';
@@ -269,6 +278,13 @@ function formatErrorResponse(details: string): string {
   return response;
 }
 
+/**
+ * Generates the workflow guide for Figma-to-component conversion.
+ *
+ * @param figmaUrl - Figma design URL with node-id query parameter
+ * @param workflowFilePath - Optional absolute path to custom workflow .md file; uses built-in default if omitted
+ * @returns Formatted workflow guide string with Figma parameters and step-by-step instructions, or error message if URL or workflow file is invalid
+ */
 export function generateWorkflowResponse(figmaUrl: string, workflowFilePath?: string): string {
   let figmaParams: FigmaParams;
   try {
@@ -294,6 +310,12 @@ export function generateWorkflowResponse(figmaUrl: string, workflowFilePath?: st
   return response;
 }
 
+/**
+ * Creates the storefront_next_figma_to_component_workflow MCP tool.
+ *
+ * @param loadServices - Function that loads configuration and returns Services instance
+ * @returns MCP tool for workflow orchestration
+ */
 export function createFigmaToComponentTool(loadServices: () => Services): McpTool {
   return createToolAdapter<FigmaToComponentInput, string>(
     {

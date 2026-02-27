@@ -4,13 +4,19 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Extracted parameters from a Figma design URL.
+ *
+ * @property fileKey - Figma file identifier from URL path
+ * @property nodeId - Node identifier (colon format for Figma MCP)
+ */
 export interface FigmaParams {
   fileKey: string;
   nodeId: string;
 }
 
 /**
- * Parses a Figma URL to extract fileKey and nodeId
+ * Parses a Figma URL to extract fileKey and nodeId.
  *
  * Supported URL formats:
  * - https://figma.com/design/:fileKey/:fileName?node-id=1-2
@@ -18,7 +24,9 @@ export interface FigmaParams {
  * - https://figma.com/file/:fileKey/:fileName?node-id=1-2
  *
  * @param figmaUrl - The Figma URL to parse
- * @returns Object with fileKey and nodeId, or throws error if invalid
+ * @returns Object with fileKey and nodeId
+ * @throws {Error} When URL is not from figma.com, fileKey cannot be extracted, or node-id is missing
+ * @throws {TypeError} When URL format is invalid
  */
 export function parseFigmaUrl(figmaUrl: string): FigmaParams {
   try {

@@ -4,6 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Map tokens tool for Figma-to-component workflow.
+ *
+ * Maps Figma design tokens to Storefront Next theme tokens in app.css with exact/fuzzy matching.
+ *
+ * @module tools/storefrontnext/figma/map-tokens
+ */
+
 import {z} from 'zod';
 import type {McpTool} from '../../../../utils/index.js';
 import type {Services} from '../../../../services.js';
@@ -176,6 +184,13 @@ function generateRecommendations(matches: ReturnType<typeof matchTokens>): strin
   return recommendations;
 }
 
+/**
+ * Maps Figma design tokens to existing theme tokens in app.css.
+ *
+ * @param args - Figma tokens array and optional theme file path
+ * @param workspaceRoot - Optional workspace root for theme file discovery; used when themeFilePath is not provided
+ * @returns Formatted mapping report with exact/fuzzy matches, confidence scores, and usage instructions, or error message on failure
+ */
 export function mapFigmaTokensToTheme(args: MapTokensToThemeInput, workspaceRoot?: string): string {
   try {
     const parsedTheme = parseThemeFile(args.themeFilePath, workspaceRoot);
@@ -236,6 +251,12 @@ export function mapFigmaTokensToTheme(args: MapTokensToThemeInput, workspaceRoot
   }
 }
 
+/**
+ * Creates the storefront_next_map_tokens_to_theme MCP tool.
+ *
+ * @param loadServices - Function that loads configuration and returns Services instance
+ * @returns MCP tool for token mapping
+ */
 export function createMapTokensToThemeTool(loadServices: () => Services): McpTool {
   return createToolAdapter<MapTokensToThemeInput, string>(
     {

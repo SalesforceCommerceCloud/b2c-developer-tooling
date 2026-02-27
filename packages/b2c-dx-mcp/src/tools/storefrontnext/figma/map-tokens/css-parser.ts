@@ -15,14 +15,32 @@ import {readFileSync, existsSync} from 'node:fs';
 import {join} from 'node:path';
 import postcss, {type AtRule, type Rule} from 'postcss';
 
+/**
+ * Design token extracted from theme CSS (app.css).
+ *
+ * @property name - CSS custom property name (e.g., "--color-primary")
+ * @property value - Raw value (may be var() reference)
+ * @property theme - Theme context: 'dark', 'light', or 'shared'
+ * @property type - Token type for matching: color, spacing, radius, etc.
+ * @property resolvedValue - Resolved value for var() references (actual hex/value)
+ */
 export interface ThemeToken {
   name: string;
   value: string;
   theme: 'dark' | 'light' | 'shared';
   type: 'color' | 'fontFamily' | 'fontSize' | 'opacity' | 'other' | 'radius' | 'spacing';
-  resolvedValue?: string; // For var() references, the actual hex/value
+  resolvedValue?: string;
 }
 
+/**
+ * Parsed theme file with tokens organized by theme context.
+ *
+ * @property tokens - All resolved tokens (excludes unresolved var() references)
+ * @property lightTokens - Map of token name to ThemeToken for light theme
+ * @property darkTokens - Map of token name to ThemeToken for dark theme
+ * @property sharedTokens - Map of token name to ThemeToken for shared tokens
+ * @property warnings - Warnings (e.g., unresolved var() references)
+ */
 export interface ParsedTheme {
   tokens: ThemeToken[];
   lightTokens: Map<string, ThemeToken>;
@@ -242,7 +260,10 @@ function parseCSSContent(cssContent: string): ParsedTheme {
 }
 
 /**
- * Finds the theme file path (app.css) in the workspace
+ * Finds the theme file path (app.css) in the workspace.
+ *
+ * @param workspaceRoot - Workspace root directory to search
+ * @returns Absolute path to app.css if found, or null
  */
 export function findThemeFilePath(workspaceRoot?: string): null | string {
   if (!workspaceRoot) {
@@ -262,7 +283,13 @@ export function findThemeFilePath(workspaceRoot?: string): null | string {
 
 /**
  * Parses theme file and extracts all CSS custom properties.
- * When themeFilePath is not provided, searches for app.css using the workspaceRoot.
+ *
+ * When themeFilePath is not provided, searches for app.css in src/app.css or app.css relative to workspaceRoot.
+ *
+ * @param themeFilePath - Optional absolute path to theme CSS file
+ * @param workspaceRoot - Optional workspace root for theme file discovery when themeFilePath is omitted
+ * @returns Parsed theme with tokens organized by light/dark/shared
+ * @throws {Error} When theme file is not found
  */
 export function parseThemeFile(themeFilePath?: string, workspaceRoot?: string): ParsedTheme {
   const filePath = themeFilePath ?? findThemeFilePath(workspaceRoot);
@@ -280,21 +307,30 @@ export function parseThemeFile(themeFilePath?: string, workspaceRoot?: string): 
 }
 
 /**
- * Gets all color tokens from parsed theme
+ * Gets all color tokens from parsed theme.
+ *
+ * @param parsedTheme - Parsed theme from parseThemeFile
+ * @returns Array of color-type tokens
  */
 export function getColorTokens(parsedTheme: ParsedTheme): ThemeToken[] {
   return parsedTheme.tokens.filter((token) => token.type === 'color');
 }
 
 /**
- * Gets all spacing tokens from parsed theme
+ * Gets all spacing tokens from parsed theme.
+ *
+ * @param parsedTheme - Parsed theme from parseThemeFile
+ * @returns Array of spacing-type tokens
  */
 export function getSpacingTokens(parsedTheme: ParsedTheme): ThemeToken[] {
   return parsedTheme.tokens.filter((token) => token.type === 'spacing');
 }
 
 /**
- * Gets all radius tokens from parsed theme
+ * Gets all radius tokens from parsed theme.
+ *
+ * @param parsedTheme - Parsed theme from parseThemeFile
+ * @returns Array of radius-type tokens
  */
 export function getRadiusTokens(parsedTheme: ParsedTheme): ThemeToken[] {
   return parsedTheme.tokens.filter((token) => token.type === 'radius');

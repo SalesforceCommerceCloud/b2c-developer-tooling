@@ -4,6 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Generate component tool for Figma-to-component workflow.
+ *
+ * Analyzes Figma design and discovered components to recommend REUSE, EXTEND, or CREATE strategy.
+ *
+ * @module tools/storefrontnext/figma/generate-component
+ */
+
 import {z} from 'zod';
 import type {McpTool} from '../../../../utils/index.js';
 import type {Services} from '../../../../services.js';
@@ -11,6 +19,15 @@ import {createToolAdapter, textResult} from '../../../adapter.js';
 import {analyzeComponentDifferences, determineAction} from './decision.js';
 import {formatRecommendation} from './formatter.js';
 
+/**
+ * A component discovered in the codebase that may match the Figma design.
+ *
+ * @property path - Absolute file path to the component
+ * @property name - Component name
+ * @property similarity - Similarity score (0-100)
+ * @property matchType - Type of match: 'name', 'structure', or 'visual'
+ * @property code - Full source code of the component
+ */
 export interface SimilarComponent {
   path: string;
   name: string;
@@ -46,6 +63,17 @@ export const generateComponentSchema = z
 
 export type GenerateComponentInput = z.infer<typeof generateComponentSchema>;
 
+/**
+ * Result of component analysis recommending REUSE, EXTEND, or CREATE.
+ *
+ * @property action - Recommended action: 'CREATE', 'EXTEND', or 'REUSE'
+ * @property confidence - Confidence score (0-100)
+ * @property matchedComponent - Best-matching component (if action is REUSE or EXTEND)
+ * @property differences - Key differences between Figma design and matched component
+ * @property recommendation - Human-readable recommendation text
+ * @property suggestedApproach - Implementation guidance
+ * @property extendStrategy - Strategy for EXTEND: 'props', 'variant', or 'composition'
+ */
 export interface ComponentAnalysisResult {
   action: 'CREATE' | 'EXTEND' | 'REUSE';
   confidence: number;
@@ -79,6 +107,12 @@ function analyzeComponent(input: GenerateComponentInput): ComponentAnalysisResul
   return decision;
 }
 
+/**
+ * Generates a component recommendation from Figma design and discovered components.
+ *
+ * @param input - Figma design data (metadata, code), component name, and discovered components
+ * @returns Formatted recommendation with REUSE/EXTEND/CREATE decision and implementation guidance, or error message on failure
+ */
 export function generateComponentRecommendation(input: GenerateComponentInput): string {
   try {
     const analysis = analyzeComponent(input);
@@ -91,6 +125,12 @@ export function generateComponentRecommendation(input: GenerateComponentInput): 
   }
 }
 
+/**
+ * Creates the storefront_next_generate_component MCP tool.
+ *
+ * @param loadServices - Function that loads configuration and returns Services instance
+ * @returns MCP tool for component analysis and recommendation
+ */
 export function createGenerateComponentTool(loadServices: () => Services): McpTool {
   return createToolAdapter<GenerateComponentInput, string>(
     {

@@ -6,6 +6,14 @@
 
 import type {ThemeToken, ParsedTheme} from './css-parser.js';
 
+/**
+ * Design token extracted from Figma.
+ *
+ * @property name - Token name from Figma (e.g., "Primary/Blue", "Spacing/Large")
+ * @property value - Token value (e.g., "#2563eb", "16px", "0.5rem")
+ * @property type - Token type for matching logic
+ * @property description - Optional description from Figma
+ */
 export interface FigmaToken {
   name: string;
   value: string;
@@ -13,21 +21,40 @@ export interface FigmaToken {
   description?: string;
 }
 
+/**
+ * Result of matching a Figma token to theme tokens.
+ *
+ * @property figmaToken - The Figma token that was matched
+ * @property matchedToken - Best-matching theme token (if found)
+ * @property confidence - Match confidence (0-100)
+ * @property matchType - 'exact', 'fuzzy', or 'none'
+ * @property reason - Human-readable explanation of the match
+ * @property suggestions - Suggested new tokens or alternatives (when no match or fuzzy match)
+ */
 export interface TokenMatch {
   figmaToken: FigmaToken;
   matchedToken?: ThemeToken;
-  confidence: number; // 0-100
+  confidence: number;
   matchType: 'exact' | 'fuzzy' | 'none';
   reason: string;
   suggestions?: TokenSuggestion[];
 }
 
+/**
+ * Suggestion for a new or alternative theme token.
+ *
+ * @property tokenName - Suggested CSS custom property name
+ * @property value - Token value
+ * @property theme - Which theme(s) to add to: 'both', 'dark', or 'light'
+ * @property reason - Explanation for the suggestion
+ * @property insertAfter - Optional token name to insert after in the theme file
+ */
 export interface TokenSuggestion {
   tokenName: string;
   value: string;
   theme: 'both' | 'dark' | 'light';
   reason: string;
-  insertAfter?: string; // Token name to insert after
+  insertAfter?: string;
 }
 
 /**
@@ -271,7 +298,11 @@ function generateTokenSuggestions(figmaToken: FigmaToken, parsedTheme: ParsedThe
 }
 
 /**
- * Matches a single Figma token to existing theme tokens
+ * Matches a single Figma token to existing theme tokens.
+ *
+ * @param figmaToken - Figma design token to match
+ * @param parsedTheme - Parsed theme from app.css
+ * @returns TokenMatch with exact, fuzzy, or no match and optional suggestions
  */
 export function matchToken(figmaToken: FigmaToken, parsedTheme: ParsedTheme): TokenMatch {
   // Try exact match first (only for colors with hex values)
@@ -324,7 +355,11 @@ export function matchToken(figmaToken: FigmaToken, parsedTheme: ParsedTheme): To
 }
 
 /**
- * Matches multiple Figma tokens to existing theme tokens
+ * Matches multiple Figma tokens to existing theme tokens.
+ *
+ * @param figmaTokens - Array of Figma design tokens to match
+ * @param parsedTheme - Parsed theme from app.css
+ * @returns Array of TokenMatch results, one per input token
  */
 export function matchTokens(figmaTokens: FigmaToken[], parsedTheme: ParsedTheme): TokenMatch[] {
   return figmaTokens.map((token) => matchToken(token, parsedTheme));
