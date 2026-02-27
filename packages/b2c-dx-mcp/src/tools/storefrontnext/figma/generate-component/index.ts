@@ -109,7 +109,7 @@ export function createGenerateComponentTool(loadServices: () => Services): McpTo
       async execute(args, context) {
         return generateComponentRecommendation({
           ...args,
-          workspacePath: args.workspacePath ?? context.services.getWorkingDirectory(),
+          workspacePath: args.workspacePath ?? context.services.resolveWithProjectDirectory(),
         });
       },
       formatOutput: (output) => textResult(output),

@@ -251,7 +251,7 @@ export function createMapTokensToThemeTool(loadServices: () => Services): McpToo
       requiresInstance: false,
       inputSchema: mapTokensToThemeSchema.shape,
       async execute(args, context) {
-        return mapFigmaTokensToTheme(args, context.services.getWorkingDirectory());
+        return mapFigmaTokensToTheme(args, context.services.resolveWithProjectDirectory());
       },
       formatOutput: (output) => textResult(output),
     },
