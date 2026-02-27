@@ -61,18 +61,31 @@ Returns a workflow guide containing:
 
 **Expected final output from the full workflow:** A recommendation with confidence score from `storefront_next_generate_component` and a token mapping summary from `storefront_next_map_tokens_to_theme`.
 
+**Example prompts:**
+- ✅ "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
+- ✅ "Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design."
+- ✅ "Use the MCP tool to start the Figma-to-component workflow with a custom workflow file at /path/to/custom-workflow.md"
+
 ## Usage Examples
 
 ### Basic Workflow Start
 
 ```
-Use the MCP tool to convert this Figma design to a Storefront Next component: https://figma.com/design/abc123/MyDesign?node-id=1-2
+Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]
 ```
 
 ### Custom Workflow File
 
 ```
 Use the MCP tool to start the Figma-to-component workflow with a custom workflow file at /path/to/custom-workflow.md
+```
+
+### Full Homepage Implementation
+
+Create a homepage from a Figma design, creating or updating components as needed:
+
+```
+Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design.
 ```
 
 ## Requirements

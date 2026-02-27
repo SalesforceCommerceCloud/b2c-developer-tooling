@@ -117,6 +117,10 @@ Returns a formatted report containing:
 ...
 ```
 
+**Example prompts:**
+- ✅ "Use the MCP tool to map these Figma tokens to my theme: Primary/Blue #2563eb (color), Spacing/Large 16px (spacing)."
+- ✅ "Use the MCP tool to map Figma design tokens to my theme file at /path/to/app.css."
+
 ## Usage Examples
 
 ### Basic Token Mapping

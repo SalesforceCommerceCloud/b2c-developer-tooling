@@ -108,6 +108,10 @@ Returns a formatted recommendation including:
 ...
 ```
 
+**Example prompts:**
+- ✅ "Use the MCP tool to analyze the Figma design and recommend whether to reuse, extend, or create a component. I've discovered PrimaryButton and SecondaryButton as similar components."
+- ✅ "Use the MCP tool to analyze the Figma design. No similar components were found in the codebase."
+
 ## Usage Examples
 
 ### With Discovered Components

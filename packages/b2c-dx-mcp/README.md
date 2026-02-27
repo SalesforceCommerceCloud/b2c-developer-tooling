@@ -165,6 +165,16 @@ Get registration status of custom API endpoints deployed on the instance (remote
 - ✅ "Use the MCP tool to push the bundle from ./build directory to Managed Runtime."
 - ✅ "Use the MCP tool to deploy my PWA Kit or Storefront Next bundle to production with a deployment message."
 
+##### Figma-to-Component Tools
+
+Call `storefront_next_figma_to_component_workflow` first with a Figma URL; the workflow then uses Figma MCP tools, `storefront_next_generate_component`, and `storefront_next_map_tokens_to_theme`. See [Figma-to-Component Tools Setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup) for prerequisites.
+
+**Prompt examples:**
+- ✅ "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
+- ✅ "Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design."
+- ✅ "Use the MCP tool to analyze the Figma design and recommend whether to reuse, extend, or create a component."
+- ✅ "Use the MCP tool to map these Figma design tokens to my theme."
+
 #### Tips for Better Results
 
 - **Start with guidelines**: When learning a new framework, ask for development guidelines first using "Use the MCP tool to get..."
