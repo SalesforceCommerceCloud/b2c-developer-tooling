@@ -120,6 +120,7 @@ AI assistants automatically decide which MCP tools to use based on your prompts.
 **Storefront Next Development:**
 - ✅ "I'm new to Storefront Next. Use the MCP tool to show me the critical rules I need to know."
 - ✅ "I need to build a product detail page. Use the MCP tool to show me best practices for data fetching and component patterns."
+- ✅ "I want to apply my brand colors to my Storefront Next site. Use the MCP tool to help me."
 
 **SCAPI Discovery:**
 - ✅ "Use the MCP tool to list all available SCAPI schemas."

@@ -112,6 +112,15 @@ The `storefront_next_development_guidelines` tool provides critical architecture
 - `extensions` - Extension development
 - `pitfalls` - Common pitfalls
 
+##### Site Theming
+
+The `storefront_next_site_theming` tool guides theming changes (colors, fonts, visual styling) and validates color combinations for WCAG accessibility. **Use this tool first** when the user wants to apply brand colors or change the site theme.
+
+**Prompt examples:**
+- "I want to apply my brand colors to my Storefront Next site. Use the MCP tool to help me."
+- "Change the theme colors and fonts. Use the MCP tool to guide me through the process."
+- "Use the MCP tool to validate my color combinations for accessibility before I implement."
+
 ##### PWA Kit Development
 
 **Prompt examples:**
@@ -140,7 +149,7 @@ Discover schema metadata and fetch OpenAPI specs for both standard and custom SC
 
 **Custom API Scaffold (tool: `scapi_customapi_scaffold`):**
 
-Generate a new custom SCAPI endpoint in an existing cartridge (OAS 3.0 schema.yaml, api.json, script.js with example GET endpoints). Requires **apiName** (kebab-case). Optional: **cartridgeName** (omit to use the first cartridge found under the working directory), **apiType** (shopper | admin; default shopper), **apiDescription**, **projectRoot**, **outputDir**. Set `--working-directory` (or SFCC_WORKING_DIRECTORY) so the server discovers cartridges in your project. Files are always generated (no dry run) and existing files are never overwritten.
+Generate a new custom SCAPI endpoint in an existing cartridge (OAS 3.0 schema.yaml, api.json, script.js with example GET endpoints). Requires **apiName** (kebab-case). Optional: **cartridgeName** (omit to use the first cartridge found under the working directory), **apiType** (shopper | admin; default shopper), **apiDescription**, **projectRoot**, **outputDir**. Set `--project-directory` (or SFCC_PROJECT_DIRECTORY) so the server discovers cartridges in your project. Files are always generated (no dry run) and existing files are never overwritten.
 
 - ✅ "Use the MCP tool to scaffold a new custom API named my-products."
 - ✅ "Use the MCP tool to create a custom admin API called customer-trips."
@@ -311,6 +320,7 @@ Storefront Next development tools for building modern storefronts.
 |------|-------------|
 | `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices |
 | `storefront_next_page_designer_decorator` | Add Page Designer decorators to Storefront Next components |
+| `storefront_next_site_theming` | Get theming guidelines, questions, and WCAG color validation for Storefront Next |
 | `scapi_schemas_list` | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. |
 | `scapi_custom_apis_status` | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. |
 | `scapi_customapi_scaffold` | Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. Required: apiName. Optional: cartridgeName (defaults to first cartridge), apiType, apiDescription, projectRoot, outputDir. |

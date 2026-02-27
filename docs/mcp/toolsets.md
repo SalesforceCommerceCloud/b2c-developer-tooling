@@ -61,6 +61,7 @@ PWA Kit v3 development tools for building headless storefronts.
 
 | Tool | Description | Documentation |
 |------|-------------|---------------|
+| [`pwakit_development_guidelines`](./tools/pwakit-development-guidelines) | Get PWA Kit v3 development guidelines and best practices | [View details](./tools/pwakit-development-guidelines) |
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
 | [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
@@ -94,8 +95,9 @@ Storefront Next development tools for building modern storefronts.
 
 | Tool | Description | Documentation |
 |------|-------------|---------------|
-| `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices | — |
+| [`storefront_next_development_guidelines`](./tools/storefront-next-development-guidelines) | Get Storefront Next development guidelines and best practices | [View details](./tools/storefront-next-development-guidelines) |
 | [`storefront_next_page_designer_decorator`](./tools/storefront-next-page-designer-decorator) | Add Page Designer decorators to Storefront Next components | [View details](./tools/storefront-next-page-designer-decorator) |
+| [`storefront_next_site_theming`](./tools/storefront-next-site-theming) | Get theming guidelines, questions, and WCAG color validation for Storefront Next | [View details](./tools/storefront-next-site-theming) |
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
 | [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
