@@ -16,6 +16,7 @@
 
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
+import {createDeveloperGuidelinesTool} from './pwa-kit-development-guidelines.js';
 
 /**
  * Creates all tools for the PWAV3 toolset.
@@ -24,9 +25,9 @@ import type {Services} from '../../services.js';
  * in the MRT toolset with toolsets: ["MRT", "PWAV3", "STOREFRONTNEXT"] and
  * automatically appears in PWAV3 for bundle deployment.
  *
- * @param _loadServices - Function that loads configuration and returns Services instance
- * @returns Array of MCP tools (empty until PWA Kit tools are implemented)
+ * @param loadServices - Function that loads configuration and returns Services instance
+ * @returns Array of MCP tools
  */
-export function createPwav3Tools(_loadServices: () => Services): McpTool[] {
-  return [];
+export function createPwav3Tools(loadServices: () => Services): McpTool[] {
+  return [createDeveloperGuidelinesTool(loadServices)];
 }

@@ -61,7 +61,9 @@ PWA Kit v3 development tools for building headless storefronts.
 
 | Tool | Description | Documentation |
 |------|-------------|---------------|
+| [`pwakit_development_guidelines`](./tools/pwakit-development-guidelines) | Get PWA Kit v3 development guidelines and best practices | [View details](./tools/pwakit-development-guidelines) |
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
+| [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
 
@@ -78,6 +80,7 @@ Salesforce Commerce API discovery and exploration.
 | Tool | Description | Documentation |
 |------|-------------|---------------|
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
+| [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
 
 ## STOREFRONTNEXT
@@ -92,12 +95,14 @@ Storefront Next development tools for building modern storefronts.
 
 | Tool | Description | Documentation |
 |------|-------------|---------------|
-| `storefront_next_development_guidelines` | Get Storefront Next development guidelines and best practices | — |
+| [`storefront_next_development_guidelines`](./tools/storefront-next-development-guidelines) | Get Storefront Next development guidelines and best practices | [View details](./tools/storefront-next-development-guidelines) |
 | [`storefront_next_figma_to_component_workflow`](./tools/storefront-next-figma-to-component-workflow) | Workflow orchestrator for Figma-to-component conversion. Parses Figma URL, returns step-by-step instructions for subsequent tool calls | [View details](./tools/storefront-next-figma-to-component-workflow) |
 | [`storefront_next_generate_component`](./tools/storefront-next-generate-component) | Analyze Figma design and discovered components to recommend REUSE, EXTEND, or CREATE strategy | [View details](./tools/storefront-next-generate-component) |
 | [`storefront_next_map_tokens_to_theme`](./tools/storefront-next-map-tokens-to-theme) | Map Figma design tokens to existing theme tokens in app.css with confidence scores and suggestions | [View details](./tools/storefront-next-map-tokens-to-theme) |
 | [`storefront_next_page_designer_decorator`](./tools/storefront-next-page-designer-decorator) | Add Page Designer decorators to Storefront Next components | [View details](./tools/storefront-next-page-designer-decorator) |
+| [`storefront_next_site_theming`](./tools/storefront-next-site-theming) | Get theming guidelines, questions, and WCAG color validation for Storefront Next | [View details](./tools/storefront-next-site-theming) |
 | [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
+| [`scapi_custom_api_scaffold`](./tools/scapi-custom-api-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-scaffold) |
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
 
@@ -105,7 +110,7 @@ Storefront Next development tools for building modern storefronts.
 
 ## Tool Deduplication
 
-Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
+Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_api_scaffold`, `scapi_custom_apis_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
 
 ## Next Steps
 
