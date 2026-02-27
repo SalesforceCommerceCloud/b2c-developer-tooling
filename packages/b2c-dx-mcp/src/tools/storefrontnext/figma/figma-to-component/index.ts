@@ -46,6 +46,9 @@ This workflow guides through converting a Figma design into a StorefrontNext-com
 ### Key Principles
 1. Review workflow plan and list out todos to user before fetching designs
 2. ALWAYS fetch design context and visual reference from Figma MCP tools first. Do not attempt to generate code without retrieving at minimum the design context and screenshot. Metadata is optional
+2a. **NEVER pass dirForAssetWrites on the initial get_design_context call.** Call it first WITHOUT that parameter to inspect the response. Only pass dirForAssetWrites after the user has explicitly approved image export.
+2b. **MANDATORY GATE - Image export requires user approval:** Do NOT call get_design_context with dirForAssetWrites for ANY node until you have: (1) identified all image-containing nodes, (2) presented the list to the user, (3) asked "Should I export these N image assets now? (yes/no)", and (4) received an explicit "yes". Do NOT export images automatically.
+2c. **Single prompt per batch:** Ask ONCE for the entire batch of image nodes. After the user says "yes", export all of them (via one or more get_design_context calls with dirForAssetWrites). Do NOT prompt again for each individual image.
 3. Only call the Figma MCP tools listed in this workflow. If a tool is not available or not enabled, inform the user
 4. ALWAYS discover similar components before creating new ones. Use Glob/Grep/Read to search the codebase
 5. ALWAYS call generate-component tool with discovered components to get REUSE/EXTEND/CREATE recommendation
@@ -56,9 +59,24 @@ This workflow guides through converting a Figma design into a StorefrontNext-com
 
 ### Figma MCP Tools
 When calling these tools, always include: clientLanguages="typescript", clientFrameworks="react"
-- mcp__figma__get_design_context (REQUIRED): Generates UI code and returns asset URLs
+- mcp__figma__get_design_context (REQUIRED): Generates UI code and returns asset URLs. **Initial call: do NOT pass dirForAssetWrites.** Call first without it to inspect the response. Only pass dirForAssetWrites after user has approved export (see Image and Asset Export below).
 - mcp__figma__get_screenshot (REQUIRED): Provides visual reference of the design
-- mcp__figma__get_metadata (OPTIONAL): Retrieves node hierarchy, layer types, names, positions, and sizes. Use only if you need detailed structural information
+- mcp__figma__get_metadata (REQUIRED when node is a section): Retrieves node hierarchy, layer types, names, positions, and sizes. Use when get_design_context returns sparse metadata (section nodes do not export assets)
+
+### Image and Asset Export (REQUIRED)
+**MANDATORY GATE: Do not call get_design_context with dirForAssetWrites until the user has approved. You MUST ask ONCE for the entire batch—never prompt per image.**
+
+Section nodes return sparse metadata and do NOT export images. You MUST:
+
+1. **Initial probe (no export)**: Call get_design_context WITHOUT dirForAssetWrites first. Never pass dirForAssetWrites on the first call.
+2. **Detect sparse response**: If get_design_context returns "sparse metadata" or "section node", call get_metadata with the same nodeId to retrieve the XML with child node IDs
+3. **Identify image-containing nodes**: From the metadata XML (or from the initial response if it's a leaf with images), find nodes that contain images. Include: RECTANGLE with fills; nodes named with image-like names (e.g., photo, image, banner, hero); logos and brand assets (nodes named "logo", "Logo", "brand", "icon", "header", "footer", or similar); vector/component instances that represent logos or icons; frames that visually contain photos/illustrations; any node the screenshot suggests contains a logo or brand asset
+4. **STOP and ask for approval (MANDATORY)**: Present the list of identified nodes (names and node IDs) to the user. Ask explicitly: "I found N image-containing nodes. Should I export these assets now? (yes/no)". STOP and wait for the user to respond. Do NOT call get_design_context with dirForAssetWrites for any node until the user confirms "yes". If you proceed without user confirmation, you have violated this workflow
+5. **Download image nodes** (ONLY after user says "yes"): For each identified image-containing node, call get_design_context with:
+   - nodeId: the node ID from metadata or initial selection (e.g., "3351:1234")
+   - dirForAssetWrites: absolute path to the project's public images folder (e.g., \`{workspace}/packages/template-retail-rsc-app/public/images/figma-exports\`)
+6. **Track downloaded assets**: Note which exported file path corresponds to which node/component (e.g., hero banner → hero-banner.webp, logo → nettle-logo.webp, category card 1 → infused-beverages.webp)
+7. **Set image URLs in implementation**: When implementing the component, use the downloaded file paths for any img src or imageUrl props. Replace placeholder paths with the actual exported asset paths (e.g., \`/images/figma-exports/hero-banner.webp\`)
 
 ### StorefrontNext MCP Tools (REQUIRED)
 - generate-component: Analyzes Figma design and discovered components, recommends REUSE/EXTEND/CREATE strategy. MUST be called with discoveredComponents parameter
@@ -134,9 +152,9 @@ Before calling generate-component, you must discover similar components using yo
 
 **Create and present to the user a task plan that reflects these steps while keeping the Workflow Guidelines in mind. Wait for approval before proceeding.**
 
-1. REQUIRED: Retrieve design context and generated code using mcp__figma__get_design_context with the provided fileKey and nodeId
+1. REQUIRED: Retrieve design context using mcp__figma__get_design_context with fileKey and nodeId. **Do NOT pass dirForAssetWrites on this initial call.** If the response is sparse (section node): call get_metadata, identify image-containing nodes, then STOP and ask the user "Should I export these N image assets now? (yes/no)". WAIT for user to respond. Only after user says "yes", call get_design_context for each image-containing node with dirForAssetWrites
 2. REQUIRED: Retrieve visual reference using mcp__figma__get_screenshot with the provided fileKey and nodeId
-3. OPTIONAL: Retrieve design metadata using mcp__figma__get_metadata with the provided fileKey and nodeId (only if you need detailed structural information about the design hierarchy)
+3. REQUIRED when sparse: If get_design_context returns sparse metadata (section node), call mcp__figma__get_metadata to get child node IDs, identify image-containing nodes, then STOP and ask user for approval. Do NOT call get_design_context with dirForAssetWrites until user confirms "yes"
 4. REQUIRED: Discover similar components in the codebase:
    - Use Glob to find component files in common directories
    - Use Grep to search for components with similar names or structure
@@ -238,9 +256,9 @@ This tool has provided workflow instructions only. You MUST now execute ALL step
 
 ### Step 1: Fetch Figma Design Data (Parallel Calls)
 Call these Figma MCP tools with the parameters above:
-- \`mcp__figma__get_design_context\` (REQUIRED) - Get generated React code
+- \`mcp__figma__get_design_context\` (REQUIRED) - **Do NOT pass dirForAssetWrites on the initial call.** Call first without it to inspect the response. If response is sparse (section node): call get_metadata to get child node IDs, identify image-containing nodes, then STOP and present the list to the user. Ask "Should I export these N image assets now? (yes/no)" and WAIT for user response. Only after user says "yes", call get_design_context per image-containing node with dirForAssetWrites
 - \`mcp__figma__get_screenshot\` (REQUIRED) - Get visual reference
-- \`mcp__figma__get_metadata\` (OPTIONAL) - Get node structure and hierarchy if needed
+- \`mcp__figma__get_metadata\` (REQUIRED when sparse) - Use when get_design_context returns sparse metadata. After identifying image nodes: STOP, present list to user, wait for "yes" before exporting
 
 ### Step 2: Discover Similar Components
 Use your tools to find existing components:
@@ -264,7 +282,7 @@ You MUST call \`map_tokens_to_theme\` tool with tokens extracted from Figma desi
 This tool returns the token mapping summary that MUST be shown to the user.
 
 ### Step 5: Implement
-After showing the recommendation and token mapping to the user, wait for approval then implement the code changes.
+After showing the recommendation and token mapping to the user, wait for approval then implement the code changes. Use the downloaded asset paths from Step 1 for any img src or imageUrl props—do not use placeholder paths.
 
 **DO NOT STOP until you have called generate_component AND map_tokens_to_theme and shown their outputs to the user.**
 `;
