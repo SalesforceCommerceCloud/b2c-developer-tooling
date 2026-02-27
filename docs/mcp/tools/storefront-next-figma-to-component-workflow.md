@@ -11,6 +11,7 @@ Workflow orchestrator for converting Figma designs to Storefront Next components
 When you provide a Figma design URL, your AI assistant uses this tool to extract the file and node identifiers, then follows the workflow to fetch design data, analyze your codebase, and produce recommendations. The assistant will:
 
 - Fetch design context and screenshots from Figma
+- **Ask for your approval before exporting images** — when the design contains image assets (photos, logos, icons), the assistant presents the list and waits for you to confirm before exporting
 - Discover similar components in your project
 - Recommend whether to REUSE, EXTEND, or CREATE a component
 - Map Figma design tokens to your theme variables
@@ -117,6 +118,18 @@ The workflow relies on your AI assistant having access to Figma MCP tools to fet
 - **get_design_context** - Generates UI code from the design and returns asset URLs
 - **get_screenshot** - Provides a visual reference image of the design
 - **get_metadata** - Retrieves node hierarchy, layer types, names, positions, and sizes
+
+### Image Export and User Approval
+
+The workflow requires the assistant to **ask for your approval before exporting any image assets**. The assistant will:
+
+1. Call `get_design_context` **without** `dirForAssetWrites` on the initial call (never export on first call)
+2. Identify image-containing nodes (photos, banners, **logos**, **brand assets**, icons)
+3. Present the list of nodes to you
+4. Ask once: "Should I export these N image assets now? (yes/no)"
+5. Wait for your explicit "yes" before calling `get_design_context` with `dirForAssetWrites` to export
+
+You are prompted **once per batch**—not per image. This ensures you control when assets are written to disk. Logo and brand assets are explicitly included in the identification criteria so they are not missed.
 
 Ensure the Figma MCP server is enabled in your MCP client. See [Figma-to-Component Tools Setup](../figma-tools-setup) for configuration and the [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) for official setup and tool details.
 

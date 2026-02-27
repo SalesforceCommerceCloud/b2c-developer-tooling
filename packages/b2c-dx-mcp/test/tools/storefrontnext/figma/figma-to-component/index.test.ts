@@ -135,6 +135,36 @@ describe('Figma To Component Workflow (figma/)', () => {
 
       expect(response).to.include('DO NOT STOP until you have called generate_component AND map_tokens_to_theme');
     });
+
+    it('should include image export approval instruction (user must confirm before exporting)', () => {
+      const response = generateWorkflowResponse('https://figma.com/design/abc123/MyDesign?node-id=1-2');
+
+      expect(response).to.include('wait for approval');
+      expect(response).to.include('present the list to the user');
+      expect(response).to.include('Should I export these');
+    });
+
+    it('should include logo and brand asset detection in image identification criteria', () => {
+      const response = generateWorkflowResponse('https://figma.com/design/abc123/MyDesign?node-id=1-2');
+
+      expect(response).to.include('logo');
+      expect(response).to.include('brand');
+      expect(response).to.include('icon');
+    });
+
+    it('should instruct to NOT pass dirForAssetWrites on the initial get_design_context call', () => {
+      const response = generateWorkflowResponse('https://figma.com/design/abc123/MyDesign?node-id=1-2');
+
+      expect(response).to.include('dirForAssetWrites');
+      expect(response).to.include('Do NOT pass dirForAssetWrites on the initial call');
+    });
+
+    it('should instruct single prompt per batch (ask once, not per image)', () => {
+      const response = generateWorkflowResponse('https://figma.com/design/abc123/MyDesign?node-id=1-2');
+
+      expect(response).to.include('ask ONCE');
+      expect(response).to.include('entire batch');
+    });
   });
 
   describe('Error Response Format', () => {
