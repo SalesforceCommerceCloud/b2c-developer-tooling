@@ -29,7 +29,7 @@
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
   "peerDependencies": {
-    "@oclif/core": "^4"
+    "@oclif/core": "^4.8.2"
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",
@@ -45,6 +45,6 @@
     "typescript": "catalog:"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.22.0"
   }
 }
