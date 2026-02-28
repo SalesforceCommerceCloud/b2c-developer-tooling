@@ -12,14 +12,14 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@inquirer/prompts": "8.2.0",
+    "@inquirer/prompts": "8.3.0",
     "@oclif/core": "catalog:",
-    "@oclif/plugin-autocomplete": "3.2.39",
-    "@oclif/plugin-help": "6.2.35",
-    "@oclif/plugin-not-found": "3.2.72",
-    "@oclif/plugin-plugins": "5.4.53",
+    "@oclif/plugin-autocomplete": "3.2.40",
+    "@oclif/plugin-help": "6.2.37",
+    "@oclif/plugin-not-found": "3.2.74",
+    "@oclif/plugin-plugins": "5.4.56",
     "@oclif/plugin-version": "2.2.36",
-    "@oclif/plugin-warn-if-update-available": "3.1.52",
+    "@oclif/plugin-warn-if-update-available": "3.1.55",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "catalog:",
     "glob": "catalog:",
@@ -53,7 +53,7 @@
     "typescript": "catalog:"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.22.0"
   },
   "files": [
     "./bin",
