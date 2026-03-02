@@ -132,6 +132,11 @@ AI assistants automatically decide which MCP tools to use based on your prompts.
 **MRT Bundle Operations:**
 - ✅ "Use the MCP tool to build and push my Storefront Next bundle to staging."
 
+**Figma-to-Component:**
+- ✅ "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
+- ✅ "Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design."
+- ✅ "Use the MCP tool to map Figma design tokens to my theme."
+
 See the [Toolsets & Tools Reference](./toolsets) for more prompting examples for each toolset.
 
 ## Telemetry

@@ -84,9 +84,11 @@
     "inspect": "mcp-inspector node bin/run.js --toolsets all --allow-non-ga-tools",
     "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all --allow-non-ga-tools",
     "pretest": "tsc --noEmit -p test",
-    "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
-    "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
-    "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
+    "test": "c8 mocha --forbid-only --ignore 'test/e2e/**' \"test/**/*.test.ts\"",
+    "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json --ignore 'test/e2e/**' \"test/**/*.test.ts\"",
+    "test:agent": "mocha --forbid-only --reporter min --ignore 'test/e2e/**' \"test/**/*.test.ts\"",
+    "test:e2e": "mocha --forbid-only \"test/e2e/**/*.test.ts\"",
+    "test:e2e:ci": "mocha --forbid-only --reporter json --reporter-option output=test-results-e2e.json \"test/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest",
@@ -99,6 +101,7 @@
     "glob": "catalog:",
     "ts-morph": "^27.0.0",
     "yaml": "2.8.1",
+    "postcss": "8.5.6",
     "zod": "3.25.76"
   },
   "devDependencies": {
