@@ -67,9 +67,9 @@ For Account Manager operations that require user-level roles (organization and A
 
 ### Creating an API Client
 
-1. Log in to [Account Manager](https://account.demandware.com)
-2. Navigate to **API Client** in the left menu
-3. Click **Add API Client**
+1. Log in to [Account Manager](https://account.demandware.com).
+2. Navigate to **API Client** in the left menu.
+3. Click **Add API Client**.
 4. Fill in the required fields:
    - **Display Name**: A descriptive name (e.g., "B2C CLI")
    - **Password**: A strong client secret (save this securely for Client Credentials auth)
@@ -77,7 +77,7 @@ For Account Manager operations that require user-level roles (organization and A
    - `client_secret_basic` for client credentials flow
 
 ::: warning
-The B2C CLI only supports `client_secret_basic` for the Token Endpoint Auth Method. `client_secret_post` and `private_key_jwt` are not currently supported.
+The B2C CLI only supports `client_secret_basic` for the Token Endpoint Auth Method. `client_secret_post` and `private_key_jwt` aren't currently supported.
 :::
 
 ### Assigning Roles
@@ -90,16 +90,16 @@ Most roles require a **tenant filter** that specifies which tenants/realms the r
 
 | Role                              | Operations                                | Notes                                       |
 | --------------------------------- | ----------------------------------------- | ------------------------------------------- |
-| `Salesforce Commerce API`         | SCAPI commands and CIP analytics commands | API Clients only. Requires tenant filter.   |
+| `Salesforce Commerce API`         | SCAPI commands and CIP analytics commands | API clients only. Requires a tenant filter.   |
 | `Sandbox API User`                | ODS management, SLAS client management    | Requires tenant filter with realm/org IDs.  |
-| `SLAS Organization Administrator` | SLAS client management (user auth only)   | User accounts only. Requires tenant filter. |
+| `SLAS Organization Administrator` | SLAS client management (user auth only)   | User accounts only. Requires a tenant filter. |
 
-#### For Client Credentials (roles on API Client)
+#### For Client Credentials (Roles on API Client)
 
 Under the API Client's **Roles** section:
 
 1. Add roles needed for your operations
-2. For each role, configure the **tenant filter** with the tenant IDs (e.g., `zzxy_prd`) or realm IDs you need to access
+2. For each role, configure the **tenant filter** with the tenant IDs (for example, `zzxy_prd`) or realm IDs you need to access
 
 **Important:** The `Salesforce Commerce API` role is currently only available for API Clients, not user accounts.
 
@@ -136,8 +136,8 @@ See the individual CLI command pages for complete scope requirements.
 For ODS, SLAS, and SCAPI operations, your API client's roles must have a tenant filter configured:
 
 1. In Account Manager, go to the API Client settings
-2. Under each role (e.g., `Salesforce Commerce API`, `Sandbox API User`), find the **Tenant Filter**
-3. Add the tenant IDs (e.g., `zzxy_prd`) or organization IDs you need to access
+2. Under each role (for example, `Salesforce Commerce API`, `Sandbox API User`), find the **Tenant Filter**
+3. Add the tenant IDs (for example, `zzxy_prd`) or organization IDs you need to access
 
 The tenant filter restricts which tenants/realms the role applies to.
 
@@ -308,7 +308,7 @@ WebDAV is required for file upload operations (`code deploy`, `code watch`, `web
 
 ### Option A: Basic Authentication (Recommended)
 
-Use your Business Manager username and a WebDAV access key. This provides better performance for file operations.
+Use your Business Manager username and a WebDAV access key. These credentials provide better performance for file operations.
 
 1. In Business Manager, go to **Administration** > **Organization** > **Users**
 2. Select your user
@@ -354,7 +354,7 @@ Common paths for CLI operations:
 | `/catalogs/<catalog-id>`  | Catalog file access    |
 | `/libraries/<library-id>` | Content library access |
 
-**Note:** This configuration is only needed when using OAuth for WebDAV. It is not required when using basic authentication with username/access key.
+**Note:** This configuration is only needed when using OAuth for WebDAV. It isn’t required when using basic authentication with username/access key.
 
 ## Managed Runtime API Key
 
@@ -455,7 +455,7 @@ b2c scapi schemas list
 
 - Add the required scopes to your API client's Default Scopes
 - For SCAPI commands, ensure the relevant `sfcc.*` scopes are in Default Scopes
-- Verify Default Scopes includes `mail roles tenantFilter openid`
+- Verify that Default Scopes includes `mail roles tenantFilter openid`
 
 ## Next Steps
 

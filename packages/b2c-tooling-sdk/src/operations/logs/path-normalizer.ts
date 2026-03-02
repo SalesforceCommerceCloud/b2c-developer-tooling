@@ -181,7 +181,7 @@ export function createPathNormalizer(options: PathNormalizerOptions): ((message:
  *
  * This is a convenience function that combines `findCartridges` with
  * `createPathNormalizer` for easy setup. Cartridge paths are converted
- * to relative paths from the current working directory.
+ * to relative paths from the current project directory.
  *
  * @param directory - Directory to search for cartridges (defaults to cwd)
  * @returns Path normalizer function, or undefined if no cartridges found

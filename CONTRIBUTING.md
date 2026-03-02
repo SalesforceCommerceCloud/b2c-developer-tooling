@@ -44,7 +44,7 @@ Issues labelled `good first contribution`.
 
 # Running the MCP server from source
 
-When developing the B2C DX MCP package (`packages/b2c-dx-mcp`), use `node` with the path to `bin/dev.js` in args. Build to latest (`pnpm run build` from the repo root) so changes that require a rebuild are reflected when you run the server.
+For information on running the MCP server from source and local development, see [packages/b2c-dx-mcp/CONTRIBUTING.md](packages/b2c-dx-mcp/CONTRIBUTING.md).
 
 # Contribution Checklist
 
@@ -74,8 +74,9 @@ Add a changeset when your PR includes changes that users should know about:
 - Breaking changes
 - Significant improvements
 
+For **documentation-only changes** (new guides, restructured content, significant improvements) that should be deployed before the next package release, create a changeset targeting `@salesforce/b2c-dx-docs`. This triggers a doc-only release and rebuild. Routine doc fixes (typos, minor clarifications) that can wait for the next package release don't need a changeset.
+
 You **don't need** a changeset for:
-- Documentation-only changes
 - Internal refactoring
 - Test improvements
 - CI/build changes
@@ -102,6 +103,7 @@ You **don't need** a changeset for:
 
 - Changesets are optional - maintainers can add them later if needed
 - Multiple changesets can exist for separate changes
+- For **release branches** (urgent patches while unrelated changesets are pending on `main`, or maintenance patches on older minors), see [PUBLISHING.md](./PUBLISHING.md#release-branches) for details
 - See [PUBLISHING.md](./PUBLISHING.md) for full release process details
 
 # Creating a Pull Request

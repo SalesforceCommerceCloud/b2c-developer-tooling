@@ -5,7 +5,7 @@
  */
 import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
-import type {LoadConfigOptions, PluginSources} from './config.js';
+import type {LoadConfigOptions} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import {parseFriendlySandboxId} from '../operations/ods/sandbox-lookup.js';
 import type {
@@ -19,7 +19,7 @@ import type {
 import {setLanguage} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
-import type {ConfigSource} from '../config/types.js';
+import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {initializeStatefulStore} from '../auth/stateful-store.js';
@@ -96,9 +96,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       env: 'SFCC_INSTANCE',
       helpGroup: 'GLOBAL',
     }),
-    'working-directory': Flags.string({
-      description: 'Project working directory',
-      env: 'SFCC_WORKING_DIRECTORY',
+    'project-directory': Flags.string({
+      aliases: ['working-directory'],
+      description: 'Project directory',
+      env: 'SFCC_PROJECT_DIRECTORY',
+      default: async () => process.env.SFCC_WORKING_DIRECTORY || undefined,
       helpGroup: 'GLOBAL',
     }),
     'extra-query': Flags.string({
@@ -128,11 +130,6 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
   /** Telemetry instance for tracking command events */
   protected telemetry?: Telemetry;
-
-  /** High-priority config sources from plugins (inserted before defaults) */
-  protected pluginSourcesBefore: ConfigSource[] = [];
-  /** Low-priority config sources from plugins (inserted after defaults) */
-  protected pluginSourcesAfter: ConfigSource[] = [];
 
   /** Start time for command duration tracking */
   private commandStartTime?: number;
@@ -306,7 +303,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Gets base configuration options from common flags.
    *
    * Subclasses should spread these options when overriding loadConfiguration()
-   * to ensure common options like workingDirectory are always included.
+   * to ensure common options like projectDirectory are always included.
    *
    * @example
    * ```typescript
@@ -315,7 +312,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    *     ...this.getBaseConfigOptions(),
    *     // Add subclass-specific options here
    *   };
-   *   return loadConfig(extractMyFlags(this.flags), options, this.getPluginSources());
+   *   return loadConfig(extractMyFlags(this.flags), options);
    * }
    * ```
    */
@@ -323,22 +320,13 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return {
       instance: this.flags.instance,
       configPath: this.flags.config,
-      workingDirectory: this.flags['working-directory'],
-    };
-  }
-
-  /**
-   * Gets plugin sources for configuration resolution.
-   */
-  protected getPluginSources(): PluginSources {
-    return {
-      before: this.pluginSourcesBefore,
-      after: this.pluginSourcesAfter,
+      projectDirectory: this.flags['project-directory'],
+      workingDirectory: this.flags['project-directory'],
     };
   }
 
   protected loadConfiguration(): ResolvedB2CConfig {
-    return loadConfig({}, this.getBaseConfigOptions(), this.getPluginSources());
+    return loadConfig({}, this.getBaseConfigOptions());
   }
 
   /**
@@ -405,9 +393,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * but before configuration is resolved. It allows CLI plugins to provide
    * custom ConfigSource implementations.
    *
-   * Plugin sources are collected into two arrays based on their priority:
-   * - `pluginSourcesBefore`: High priority sources (override defaults)
-   * - `pluginSourcesAfter`: Low priority sources (fill gaps)
+   * Plugin sources are registered with the global config source registry
+   * and automatically included in all subsequent `resolveConfig()` calls.
    *
    * Priority mapping:
    * - 'before' → -1 (higher priority than defaults)
@@ -415,6 +402,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * - number → used directly
    */
   protected async collectPluginConfigSources(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
     // Access flags that may be defined in subclasses (OAuthCommand, InstanceCommand)
     const flags = this.flags as Record<string, unknown>;
 
@@ -431,7 +420,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     const hookResult = await this.config.runHook('b2c:config-sources', hookOptions);
 
-    // Collect sources from all plugins that responded, respecting priority
+    // Collect sources from all plugins and register with global registry
     for (const success of hookResult.successes) {
       const result = success.result as ConfigSourcesHookResult | undefined;
       if (!result?.sources?.length) continue;
@@ -446,19 +435,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
               ? result.priority
               : 10; // default 'after'
 
-      // Apply priority to sources that don't already have one set
+      // Apply priority to sources that don't already have one set, then register globally
       for (const source of result.sources) {
         if (source.priority === undefined) {
           (source as {priority?: number}).priority = numericPriority;
         }
-      }
-
-      // Still use before/after arrays for backwards compatibility
-      // The resolver will sort all sources by priority anyway
-      if (numericPriority < 0) {
-        this.pluginSourcesBefore.push(...result.sources);
-      } else {
-        this.pluginSourcesAfter.push(...result.sources);
+        globalConfigSourceRegistry.register(source);
       }
     }
 
@@ -478,6 +460,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Plugin middleware is registered with the global middleware registry.
    */
   protected async collectPluginHttpMiddleware(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
     const hookOptions: HttpMiddlewareHookOptions = {
       flags: this.flags as Record<string, unknown>,
     };
@@ -511,6 +495,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Plugin middleware is registered with the global auth middleware registry.
    */
   protected async collectPluginAuthMiddleware(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
     const hookOptions: AuthMiddlewareHookOptions = {
       flags: this.flags as Record<string, unknown>,
     };

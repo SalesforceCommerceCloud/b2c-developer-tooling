@@ -106,7 +106,7 @@ export default class ScaffoldList extends BaseCommand<typeof ScaffoldList> {
     const registry = createScaffoldRegistry();
     const category = this.flags.category as ScaffoldCategory | undefined;
     const source = this.flags.source as ScaffoldSource | undefined;
-    const projectRoot = this.flags['working-directory'] || process.cwd();
+    const projectRoot = this.flags['project-directory'] || process.cwd();
 
     const scaffolds = await registry.getScaffolds({
       category,

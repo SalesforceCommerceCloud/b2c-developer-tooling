@@ -123,9 +123,14 @@ jobs:
               per_page: 100,
             });
 
+            // Exclude package.json under test/fixtures/ (e.g. e2e workspace-detection fixtures)
+            const isUnderTestFixtures = (filename) =>
+              filename.includes('/test/') && filename.includes('/fixtures/');
             const changedPackageJsonFiles = files
               .map((file) => file.filename)
-              .filter((filename) => filename.endsWith('package.json'));
+              .filter((filename) =>
+                filename.endsWith('package.json') && !isUnderTestFixtures(filename),
+              );
 
             const findings = [];
 

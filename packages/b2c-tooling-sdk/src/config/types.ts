@@ -80,6 +80,8 @@ export interface NormalizedConfig {
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
   /** Starting directory for config file search and project-relative operations */
+  projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
   workingDirectory?: string;
 
   // TLS/mTLS
@@ -143,6 +145,8 @@ export interface ResolveConfigOptions {
   /** Explicit path to config file (defaults to auto-discover) */
   configPath?: string;
   /** Starting directory for config file search */
+  projectDirectory?: string;
+  /** @deprecated Use projectDirectory instead */
   workingDirectory?: string;
   /** Whether to apply hostname mismatch protection (default: true) */
   hostnameProtection?: boolean;

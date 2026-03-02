@@ -5,7 +5,7 @@
 > [!NOTE]
 > This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues and Unofficial Slack.
 
-Salesforce Commerce Cloud B2C Command Line Tools.
+Salesforce B2C Commerce Command Line Tools.
 
 > [!TIP]
 > **Just looking for the B2C CLI or MCP install instructions?** Visit the documentation site at [https://salesforcecommercecloud.github.io/b2c-developer-tooling/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the latest install guide and CLI reference.
@@ -142,6 +142,14 @@ pnpm run docs:build
 pnpm run docs:preview
 ```
 
+### Deployed Documentation
+
+The documentation site serves two versions:
+- **Stable** (root URL) — built from the most recent release tag, updated on every stable release
+- **Dev** (`/dev/`) — built from the `main` branch, updated on every push to `main`
+
+Doc-only releases (without bumping CLI/SDK/MCP versions) are possible by creating a changeset targeting `@salesforce/b2c-dx-docs`. See [PUBLISHING.md](./PUBLISHING.md#documentation-deployment) for details.
+
 ### API Documentation
 
 API documentation is auto-generated from JSDoc comments in the `@salesforce/b2c-tooling-sdk` package. The entry points are defined in `typedoc.json`:
@@ -163,7 +171,13 @@ When adding new public APIs, ensure they have comprehensive JSDoc comments as th
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management and publishes to npm using [OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers).
 
-For detailed information about the release process, see [PUBLISHING.md](./PUBLISHING.md).
+| Release Type | npm Tag | Trigger |
+|-------------|---------|---------|
+| **Stable** | `@latest` | Merge version PR on `main` |
+| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
+| **Nightly** | `@nightly` | Scheduled (weekdays) or manual |
+
+For detailed information about the release process, including release branches, see [PUBLISHING.md](./PUBLISHING.md).
 
 ### Quick Reference
 

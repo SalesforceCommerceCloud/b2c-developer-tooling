@@ -94,11 +94,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   };
 
   protected override loadConfiguration(): ResolvedB2CConfig {
-    return loadConfig(
-      extractOAuthFlags(this.flags as Record<string, unknown>),
-      this.getBaseConfigOptions(),
-      this.getPluginSources(),
-    );
+    return loadConfig(extractOAuthFlags(this.flags as Record<string, unknown>), this.getBaseConfigOptions());
   }
 
   /**

@@ -1,36 +1,30 @@
 import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 
-// Version configuration from environment
-const releaseVersion = process.env.RELEASE_VERSION || 'unreleased';
-const isReleaseBuild = process.env.IS_RELEASE_BUILD === 'true';
+// Build configuration from environment
+const isDevBuild = process.env.IS_DEV_BUILD === 'true';
 
-// Base paths - release build lives in /release/ subdirectory
+// Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
-const basePath = isReleaseBuild ? `${siteBase}/release/` : `${siteBase}/`;
+const basePath = isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`;
 
 // Build version dropdown items
 // VitePress prepends base path to links starting with /, so we use relative paths
 // that work correctly for each build context
 function getVersionItems() {
-  if (releaseVersion === 'unreleased') {
-    // No release yet - only show dev
-    return [{text: 'Development (main)', link: '/'}];
-  }
-
-  if (isReleaseBuild) {
-    // Release build: base is /b2c-developer-tooling/release/
-    // Use ../ to navigate up to main docs
+  if (isDevBuild) {
+    // Dev build: base is /b2c-developer-tooling/dev/
+    // Use ../ to navigate up to stable docs at root
     return [
-      {text: 'Development (main)', link: '../'},
-      {text: 'Latest Release', link: '/'},
+      {text: 'Latest Release', link: '../'},
+      {text: 'Development (main)', link: '/'},
     ];
   }
 
-  // Main build: base is /b2c-developer-tooling/
+  // Stable build: base is /b2c-developer-tooling/
   return [
-    {text: 'Development (main)', link: '/'},
-    {text: 'Latest Release', link: '/release/'},
+    {text: 'Latest Release', link: '/'},
+    {text: 'Development (main)', link: '/dev/'},
   ];
 }
 
@@ -55,6 +49,16 @@ const guideSidebar = [
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Security', link: '/guide/security'},
       {text: 'Storefront Next', link: '/guide/storefront-next'},
+    ],
+  },
+  {
+    text: 'MCP Server',
+    items: [
+      {text: 'Overview', link: '/mcp/'},
+      {text: 'Installation', link: '/mcp/installation'},
+      {text: 'Configuration', link: '/mcp/configuration'},
+      {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
+      {text: 'Figma Tools Setup', link: '/mcp/figma-tools-setup'},
     ],
   },
   {
@@ -89,6 +93,23 @@ const guideSidebar = [
       {text: 'Logging', link: '/cli/logging'},
     ],
   },
+  {
+    text: 'Tools Reference',
+    items: [
+      {text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'},
+      {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
+      {text: 'pwakit_development_guidelines', link: '/mcp/tools/pwakit-development-guidelines'},
+      {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
+      {text: 'scapi_custom_api_scaffold', link: '/mcp/tools/scapi-custom-api-scaffold'},
+      {text: 'scapi_custom_apis_status', link: '/mcp/tools/scapi-custom-apis-status'},
+      {text: 'storefront_next_development_guidelines', link: '/mcp/tools/storefront-next-development-guidelines'},
+      {text: 'storefront_next_figma_to_component_workflow', link: '/mcp/tools/storefront-next-figma-to-component-workflow'},
+      {text: 'storefront_next_generate_component', link: '/mcp/tools/storefront-next-generate-component'},
+      {text: 'storefront_next_map_tokens_to_theme', link: '/mcp/tools/storefront-next-map-tokens-to-theme'},
+      {text: 'storefront_next_page_designer_decorator', link: '/mcp/tools/storefront-next-page-designer-decorator'},
+      {text: 'storefront_next_site_theming', link: '/mcp/tools/storefront-next-site-theming'},
+    ],
+  },
 ];
 
 // Script to force hard navigation for version switching links
@@ -99,15 +120,15 @@ document.addEventListener('click', (e) => {
   if (!link) return;
   const href = link.getAttribute('href');
   // Check if this is a version switch link
-  if (href && (href.includes('/release/') || href === '../')) {
+  if (href && (href.includes('/dev/') || href === '../')) {
     e.preventDefault();
     e.stopPropagation();
     if (href === '../') {
-      // Navigate from /release/ back to main - construct path explicitly
+      // Navigate from /dev/ back to stable root - construct path explicitly
       // to avoid relative path issues with trailing slashes
       const path = window.location.pathname;
-      const mainPath = path.replace(/\\/release\\/.*$/, '/').replace(/\\/release$/, '/');
-      window.location.href = mainPath;
+      const stablePath = path.replace(/\\/dev\\/.*$/, '/').replace(/\\/dev$/, '/');
+      window.location.href = stablePath;
     } else {
       window.location.href = link.href;
     }
@@ -117,7 +138,7 @@ document.addEventListener('click', (e) => {
 
 export default defineConfig({
   title: 'B2C DX',
-  description: 'Salesforce Commerce Cloud B2C Developer Experience - CLI, MCP Server, and SDK',
+  description: 'Salesforce B2C Commerce Developer Experience - CLI, MCP Server, and SDK',
   base: basePath,
 
   head: [['script', {}, versionSwitchScript]],
@@ -139,8 +160,9 @@ export default defineConfig({
       {text: 'Guide', link: '/guide/'},
       {text: 'CLI Reference', link: '/cli/'},
       {text: 'API Reference', link: '/api/'},
+      {text: 'MCP Server', link: '/mcp/'},
       {
-        text: isReleaseBuild ? 'Latest Release' : 'dev',
+        text: isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
       },
     ],
@@ -153,6 +175,7 @@ export default defineConfig({
     sidebar: {
       '/guide/': guideSidebar,
       '/cli/': guideSidebar,
+      '/mcp/': guideSidebar,
       '/api/': [
         {
           text: 'API Reference',

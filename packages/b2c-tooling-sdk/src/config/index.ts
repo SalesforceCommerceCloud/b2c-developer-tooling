@@ -140,5 +140,8 @@ export type {
 // Instance management
 export {InstanceManager, createInstanceManager} from './instance-manager.js';
 
+// Config source registry (global, auto-included in resolveConfig)
+export {ConfigSourceRegistry, globalConfigSourceRegistry} from './config-source-registry.js';
+
 // Config sources (for direct use)
 export {DwJsonSource} from './sources/dw-json-source.js';

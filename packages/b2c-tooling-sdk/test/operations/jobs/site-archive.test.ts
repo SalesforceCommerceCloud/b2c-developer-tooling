@@ -14,6 +14,7 @@ import * as path from 'node:path';
 import {WebDavClient} from '../../../src/clients/webdav.js';
 import {createOcapiClient} from '../../../src/clients/ocapi.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
+import JSZip from 'jszip';
 import {
   siteArchiveImport,
   siteArchiveExport,
@@ -165,12 +166,25 @@ describe('operations/jobs/site-archive', () => {
       expect(uploadedZip).to.not.be.null;
     });
 
-    it('should import from a Buffer', async () => {
-      const zipBuffer = Buffer.from('PK\x03\x04test-data');
+    it('should import from a Buffer with archiveName (caller owns structure)', async () => {
+      // When archiveName is provided, the buffer is used as-is
+      const srcZip = new JSZip();
+      srcZip.file('buffer-import/libraries/mylib/library.xml', '<library/>');
+      const zipBuffer = await srcZip.generateAsync({type: 'nodebuffer'});
+
+      let uploadedZip: Buffer | null = null;
 
       server.use(
-        http.all(`${WEBDAV_BASE}/*`, async () => {
-          return new HttpResponse(null, {status: 201});
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('Impex/src/instance/')) {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'DELETE') {
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
         }),
         http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
           return HttpResponse.json({
@@ -195,7 +209,12 @@ describe('operations/jobs/site-archive', () => {
       });
 
       expect(result.execution.id).to.equal('exec-3');
-      expect(result.archiveFilename).to.include('buffer-import');
+      expect(result.archiveFilename).to.equal('buffer-import.zip');
+
+      // Buffer should be passed through as-is (no re-wrapping)
+      const resultZip = await JSZip.loadAsync(uploadedZip!);
+      const paths = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
+      expect(paths).to.include('buffer-import/libraries/mylib/library.xml');
     });
 
     it('should import from remote filename', async () => {
@@ -268,15 +287,56 @@ describe('operations/jobs/site-archive', () => {
       expect(deleteRequested).to.be.false;
     });
 
-    it('should throw error when archiveName is missing for Buffer', async () => {
-      const zipBuffer = Buffer.from('PK\x03\x04test-data');
+    it('should auto-wrap buffer contents when archiveName is omitted', async () => {
+      // Create a zip without a root directory (like the content FS provider does)
+      const srcZip = new JSZip();
+      srcZip.file('libraries/mylib/library.xml', '<library/>');
+      const zipBuffer = await srcZip.generateAsync({type: 'nodebuffer'});
 
-      try {
-        await siteArchiveImport(mockInstance, zipBuffer);
-        expect.fail('Should have thrown error');
-      } catch (error: any) {
-        expect(error.message).to.include('archiveName is required');
-      }
+      let uploadedZip: Buffer | null = null;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('Impex/src/instance/')) {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'DELETE') {
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
+        }),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
+          return HttpResponse.json({
+            id: 'exec-wrap',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+          });
+        }),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-wrap`, () => {
+          return HttpResponse.json({
+            id: 'exec-wrap',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          });
+        }),
+      );
+
+      const result = await siteArchiveImport(mockInstance, zipBuffer, {
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      // SDK should auto-generate an import-{timestamp} archive name
+      expect(result.archiveFilename).to.match(/^import-\d+\.zip$/);
+      expect(uploadedZip).to.not.be.null;
+
+      // Contents must be wrapped under the generated root directory
+      const resultZip = await JSZip.loadAsync(uploadedZip!);
+      const paths = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
+      const archiveRoot = result.archiveFilename.replace(/\.zip$/, '');
+      expect(paths).to.include(`${archiveRoot}/libraries/mylib/library.xml`);
     });
 
     it('should throw JobExecutionError when import fails', async () => {
@@ -361,7 +421,9 @@ describe('operations/jobs/site-archive', () => {
       expect(content.toString()).to.include('test-export-data');
     });
 
-    it('should export without downloading when localPath is not provided', async () => {
+    it('should run export job without downloading the archive', async () => {
+      let webdavGetRequested = false;
+
       server.use(
         http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-export/executions`, () => {
           return HttpResponse.json({
@@ -379,13 +441,11 @@ describe('operations/jobs/site-archive', () => {
           });
         }),
         http.get(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
+          webdavGetRequested = true;
           return new HttpResponse(Buffer.from('PK\x03\x04test-data'), {
             status: 200,
             headers: {'Content-Type': 'application/zip'},
           });
-        }),
-        http.delete(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
-          return new HttpResponse(null, {status: 204});
         }),
       );
 
@@ -396,7 +456,8 @@ describe('operations/jobs/site-archive', () => {
       );
 
       expect(result.execution.id).to.equal('export-2');
-      expect(result.data).to.be.instanceOf(Buffer);
+      expect(webdavGetRequested).to.be.false;
+      expect(result).to.not.have.property('data');
     });
 
     it('should throw JobExecutionError when export fails', async () => {
@@ -448,15 +509,6 @@ describe('operations/jobs/site-archive', () => {
             exit_status: {code: 'OK'},
             is_log_file_existing: false,
           });
-        }),
-        http.get(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
-          return new HttpResponse(Buffer.from('PK\x03\x04test-data'), {
-            status: 200,
-            headers: {'Content-Type': 'application/zip'},
-          });
-        }),
-        http.delete(`${WEBDAV_BASE}/Impex/src/instance/*`, () => {
-          return new HttpResponse(null, {status: 204});
         }),
       );
 

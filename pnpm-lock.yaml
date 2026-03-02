@@ -122,6 +122,12 @@ importers:
       prettier:
         specifier: 'catalog:'
         version: 3.6.2
+
+  docs:
+    devDependencies:
+      '@salesforce/b2c-tooling-sdk':
+        specifier: workspace:*
+        version: link:../packages/b2c-tooling-sdk
       typedoc:
         specifier: ^0.28.14
         version: 0.28.14(typescript@5.9.3)
@@ -264,6 +270,9 @@ importers:
       glob:
         specifier: 'catalog:'
         version: 13.0.0
+      postcss:
+        specifier: 8.5.6
+        version: 8.5.6
       ts-morph:
         specifier: ^27.0.0
         version: 27.0.2
