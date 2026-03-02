@@ -81,6 +81,19 @@ export type {OAuthConfig} from './oauth.js';
 export {ImplicitOAuthStrategy} from './oauth-implicit.js';
 export type {ImplicitOAuthConfig} from './oauth-implicit.js';
 export {ApiKeyStrategy} from './api-key.js';
+export {StatefulOAuthStrategy} from './stateful-oauth-strategy.js';
+export type {StatefulOAuthStrategyOptions} from './stateful-oauth-strategy.js';
+
+// Stateful auth store
+export {
+  initializeStatefulStore,
+  getStoredSession,
+  setStoredSession,
+  clearStoredSession,
+  isStatefulTokenValid,
+  resetStatefulStoreForTesting,
+} from './stateful-store.js';
+export type {StatefulSession} from './stateful-store.js';
 
 // Resolution helpers
 export {resolveAuthStrategy, checkAvailableAuthMethods} from './resolve.js';

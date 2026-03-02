@@ -10,6 +10,8 @@ import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
+import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
+import {getStoredSession, isStatefulTokenValid} from '../auth/stateful-store.js';
 import {t} from '../i18n/index.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
@@ -30,6 +32,13 @@ const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'implici
  * For B2C instance specific operations, use InstanceCommand instead.
  */
 export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand<T> {
+  private readonly _rawArgv: string[];
+
+  constructor(argv: string[], config: ConstructorParameters<typeof Command>[1]) {
+    super(argv, config);
+    this._rawArgv = [...argv];
+  }
+
   static baseFlags = {
     ...BaseCommand.baseFlags,
     'client-id': Flags.string({
@@ -126,10 +135,53 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    *
    * @throws Error if no allowed method has the required credentials configured
    */
-  protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy {
+  protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy {
     const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
-    // Use getDefaultAuthMethods() to get default array, allowing subclasses to override
+    const requiredScopes = config.scopes ?? [];
+
+    const statefulSession = getStoredSession();
+    const explicitAuthFlags = this.detectExplicitAuthFlags();
+    const configuredClientId = config.clientId;
+    const validSession =
+      statefulSession !== null && isStatefulTokenValid(statefulSession, requiredScopes, undefined, configuredClientId);
+
+    // Use stateful auth only when the session is valid and no explicit auth flags override it
+    if (validSession && explicitAuthFlags.length === 0) {
+      this.logger.debug('[Auth] Using stateful session (sfcc-ci compatible store)');
+      return new StatefulOAuthStrategy(statefulSession, {
+        accountManagerHost,
+        scopes: requiredScopes,
+      });
+    }
+
+    // Warn when an invalid stored session exists or explicit auth flags override a valid one
+    if (statefulSession) {
+      if (validSession && explicitAuthFlags.length > 0) {
+        this.warn(
+          t(
+            'warning.statefulTokenOverridden',
+            '[StatefulAuth] Valid token found in stored session. ' +
+              `However, switching to stateless auth due to presence of ${explicitAuthFlags.join(', ')}. ` +
+              'Remove these flags to use the stored session.',
+          ),
+        );
+      } else if (!validSession) {
+        const renewable = statefulSession.renewBase !== null && statefulSession.renewBase !== undefined;
+        this.warn(
+          t(
+            renewable ? 'warning.statefulTokenExpired' : 'warning.statefulTokenExpiredNoRenew',
+            '[StatefulAuth] [sfcc-ci compatibility] Stored token is expired or invalid for the given request. ' +
+              (renewable
+                ? 'Run `b2c auth client renew` to refresh it. '
+                : 'Run `b2c auth client` or `b2c auth login` to re-authenticate. ') +
+              'Falling back to stateless auth.',
+          ),
+        );
+      }
+    }
+
+    // Fall back to stateless auth
     const allowedMethods = config.authMethods || this.getDefaultAuthMethods();
     const defaultClientId = this.getDefaultClientId();
 
@@ -178,12 +230,31 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
+   * Detects explicit CLI flags that indicate intent to use stateless auth.
+   * Only flags that mandate a specific auth flow are considered:
+   * - --client-secret: indicates client-credentials flow
+   * - --user-auth: indicates browser-based implicit flow
+   * - --auth-methods: explicit auth method selection
+   *
+   * Contextual flags (--client-id, --auth-scope, --short-code, --tenant-id,
+   * --account-manager-host) are NOT included because they are handled by
+   * isStatefulTokenValid (clientId/scope matching) or don't affect auth flow.
+   */
+  private detectExplicitAuthFlags(): string[] {
+    const rawArgs = this._rawArgv;
+    const statelessFlags = ['--client-secret', '--user-auth', '--auth-methods'];
+    return statelessFlags.filter((flag) => rawArgs.some((arg) => arg === flag || arg.startsWith(`${flag}=`)));
+  }
+
+  /**
    * Check if OAuth credentials are available.
    * Returns true if clientId is configured (with or without clientSecret),
    * or if a default client ID is available for implicit flows.
    */
   protected hasOAuthCredentials(): boolean {
-    return this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined;
+    return (
+      this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined || getStoredSession() !== null
+    );
   }
 
   /**

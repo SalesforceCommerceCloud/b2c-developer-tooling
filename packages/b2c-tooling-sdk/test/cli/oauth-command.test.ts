@@ -3,14 +3,40 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {mkdtempSync, rmSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {
+  ImplicitOAuthStrategy,
+  StatefulOAuthStrategy,
+  initializeStatefulStore,
+  setStoredSession,
+  clearStoredSession,
+  resetStatefulStoreForTesting,
+} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_PUBLIC_CLIENT_ID} from '@salesforce/b2c-tooling-sdk';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
+
+function makeJWT(payload: Record<string, unknown> = {}): string {
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  const header = Buffer.from(JSON.stringify({alg: 'HS256', typ: 'JWT'})).toString('base64');
+  const body = Buffer.from(JSON.stringify({sub: 'test', exp, scope: 'sfcc.products', ...payload})).toString('base64');
+  const sig = Buffer.from('sig').toString('base64');
+  return `${header}.${body}.${sig}`;
+}
+
+function makeValidJWT(): string {
+  return makeJWT();
+}
+
+function makeExpiredJWT(): string {
+  return makeJWT({exp: Math.floor(Date.now() / 1000) - 120});
+}
 
 // Create a test command class (no default client ID)
 class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
@@ -66,8 +92,20 @@ class TestOAuthCommandWithDefault extends OAuthCommand<typeof TestOAuthCommandWi
 describe('cli/oauth-command', () => {
   let config: Config;
   let command: TestOAuthCommand;
+  let testDir: string;
+
+  before(() => {
+    testDir = mkdtempSync(join(tmpdir(), 'b2c-oauth-cmd-test-'));
+    initializeStatefulStore(testDir);
+  });
+
+  after(() => {
+    resetStatefulStoreForTesting();
+    rmSync(testDir, {recursive: true, force: true});
+  });
 
   beforeEach(async () => {
+    clearStoredSession();
     isolateConfig();
     config = await Config.load();
     command = new TestOAuthCommand([], config);
@@ -76,6 +114,7 @@ describe('cli/oauth-command', () => {
   afterEach(() => {
     sinon.restore();
     restoreConfig();
+    clearStoredSession();
   });
 
   describe('requireOAuthCredentials', () => {
@@ -220,6 +259,137 @@ describe('cli/oauth-command', () => {
         // client-credentials has higher priority than implicit in the default auth methods
         expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
       });
+    });
+  });
+
+  describe('stateful auth', () => {
+    it('hasOAuthCredentials returns true when stateful session exists', async () => {
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: makeValidJWT(),
+        refreshToken: null,
+        renewBase: null,
+        user: null,
+      });
+      stubParse(command);
+      await command.init();
+
+      expect(command.testHasOAuthCredentials()).to.be.true;
+    });
+
+    it('getOAuthStrategy returns StatefulOAuthStrategy when stateful session is valid', async () => {
+      const token = makeValidJWT();
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: token,
+        refreshToken: null,
+        renewBase: null,
+        user: null,
+      });
+      stubParse(command);
+      await command.init();
+
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(StatefulOAuthStrategy);
+      const tokenResponse = await (strategy as StatefulOAuthStrategy).getTokenResponse();
+      expect(tokenResponse.accessToken).to.equal(token);
+    });
+
+    it('falls back to stateless when no stateful session', async () => {
+      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
+      await command.init();
+
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
+    });
+
+    it('warns about expired renewable token and falls back to stateless', async () => {
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: makeExpiredJWT(),
+        refreshToken: null,
+        renewBase: 'c2VjcmV0',
+        user: null,
+      });
+      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
+      await command.init();
+
+      const warnStub = sinon.stub(command, 'warn');
+      const strategy = command.testGetOAuthStrategy();
+
+      expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
+      expect(warnStub.calledOnce).to.be.true;
+      expect(warnStub.firstCall.args[0]).to.include('auth client renew');
+    });
+
+    it('warns about expired non-renewable token and falls back to stateless', async () => {
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: makeExpiredJWT(),
+        refreshToken: null,
+        renewBase: null,
+        user: null,
+      });
+      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
+      await command.init();
+
+      const warnStub = sinon.stub(command, 'warn');
+      const strategy = command.testGetOAuthStrategy();
+
+      expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
+      expect(warnStub.calledOnce).to.be.true;
+      expect(warnStub.firstCall.args[0]).to.include('auth client');
+      expect(warnStub.firstCall.args[0]).to.include('auth login');
+    });
+
+    it('warns and skips valid session when --client-secret is passed', async () => {
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: makeValidJWT(),
+        refreshToken: null,
+        renewBase: null,
+        user: null,
+      });
+      const cmdWithFlags = new TestOAuthCommand(['--client-secret', 's'], config);
+      stubParse(cmdWithFlags, {'client-id': 'stored-client', 'client-secret': 's'});
+      await cmdWithFlags.init();
+
+      const warnStub = sinon.stub(cmdWithFlags, 'warn');
+      const strategy = cmdWithFlags.testGetOAuthStrategy();
+
+      expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
+      expect(warnStub.calledOnce).to.be.true;
+      expect(warnStub.firstCall.args[0]).to.include('Valid token found');
+      expect(warnStub.firstCall.args[0]).to.include('--client-secret');
+    });
+
+    it('uses stateful session when only --client-id matches stored session', async () => {
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: makeValidJWT(),
+        refreshToken: null,
+        renewBase: null,
+        user: null,
+      });
+      const cmdWithClientId = new TestOAuthCommand(['--client-id', 'stored-client'], config);
+      stubParse(cmdWithClientId, {'client-id': 'stored-client'});
+      await cmdWithClientId.init();
+
+      const warnStub = sinon.stub(cmdWithClientId, 'warn');
+      const strategy = cmdWithClientId.testGetOAuthStrategy();
+
+      expect(strategy).to.be.instanceOf(StatefulOAuthStrategy);
+      expect(warnStub.called).to.be.false;
+    });
+
+    it('does not warn when no stateful session exists', async () => {
+      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
+      await command.init();
+
+      const warnStub = sinon.stub(command, 'warn');
+      command.testGetOAuthStrategy();
+
+      expect(warnStub.called).to.be.false;
     });
   });
 });
