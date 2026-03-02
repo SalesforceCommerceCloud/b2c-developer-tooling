@@ -149,6 +149,33 @@ export const en = {
         ideNotes: 'See IDE documentation for skill configuration:',
       },
     },
+    replications: {
+      list: {
+        description: 'List granular replication processes',
+        error: 'Failed to list replication processes: {{message}}',
+        total: '\nTotal: {{total}} processes',
+      },
+      get: {
+        description: 'Get granular replication process details',
+        error: 'Failed to get replication process: {{message}}',
+      },
+      publish: {
+        description: 'Queue an item for granular replication (publish to production)',
+        'no-entity': 'Must specify --product-id, --price-table-id, or --content-id',
+        'site-required': '--site-id required for private content assets',
+        'library-required': '--library-id required for shared content assets',
+        success: 'Item queued for publishing. Process ID: {{id}}',
+        error: 'Failed to queue item for publishing: {{message}}',
+      },
+      wait: {
+        description: 'Wait for a granular replication process to complete',
+        checking: 'Status: {{status}}',
+        completed: 'Process completed successfully',
+        failed: 'Process failed',
+        timeout: 'Timeout waiting for process to complete',
+        error: 'Failed to get process status: {{message}}',
+      },
+    },
     scaffold: {
       list: {
         description: 'List available project scaffolds',

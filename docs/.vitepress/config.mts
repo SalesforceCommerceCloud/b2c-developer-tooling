@@ -85,6 +85,7 @@ const guideSidebar = [
       {text: 'SLAS Commands', link: '/cli/slas'},
       {text: 'Custom APIs', link: '/cli/custom-apis'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
+      {text: 'Granular Replications', link: '/cli/replications'},
       {text: 'Setup Commands', link: '/cli/setup'},
       {text: 'Scaffold Commands', link: '/cli/scaffold'},
       {text: 'Docs Commands', link: '/cli/docs'},
