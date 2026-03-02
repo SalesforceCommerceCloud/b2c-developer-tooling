@@ -52,6 +52,16 @@ const guideSidebar = [
     ],
   },
   {
+    text: 'MCP Server',
+    items: [
+      {text: 'Overview', link: '/mcp/'},
+      {text: 'Installation', link: '/mcp/installation'},
+      {text: 'Configuration', link: '/mcp/configuration'},
+      {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
+      {text: 'Figma Tools Setup', link: '/mcp/figma-tools-setup'},
+    ],
+  },
+  {
     text: 'Extending',
     items: [
       {text: 'Custom Plugins', link: '/guide/extending'},
@@ -81,6 +91,23 @@ const guideSidebar = [
       {text: 'Auth Commands', link: '/cli/auth'},
       {text: 'Account Manager Commands', link: '/cli/account-manager'},
       {text: 'Logging', link: '/cli/logging'},
+    ],
+  },
+  {
+    text: 'Tools Reference',
+    items: [
+      {text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'},
+      {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
+      {text: 'pwakit_development_guidelines', link: '/mcp/tools/pwakit-development-guidelines'},
+      {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
+      {text: 'scapi_custom_api_scaffold', link: '/mcp/tools/scapi-custom-api-scaffold'},
+      {text: 'scapi_custom_apis_status', link: '/mcp/tools/scapi-custom-apis-status'},
+      {text: 'storefront_next_development_guidelines', link: '/mcp/tools/storefront-next-development-guidelines'},
+      {text: 'storefront_next_figma_to_component_workflow', link: '/mcp/tools/storefront-next-figma-to-component-workflow'},
+      {text: 'storefront_next_generate_component', link: '/mcp/tools/storefront-next-generate-component'},
+      {text: 'storefront_next_map_tokens_to_theme', link: '/mcp/tools/storefront-next-map-tokens-to-theme'},
+      {text: 'storefront_next_page_designer_decorator', link: '/mcp/tools/storefront-next-page-designer-decorator'},
+      {text: 'storefront_next_site_theming', link: '/mcp/tools/storefront-next-site-theming'},
     ],
   },
 ];
@@ -133,6 +160,7 @@ export default defineConfig({
       {text: 'Guide', link: '/guide/'},
       {text: 'CLI Reference', link: '/cli/'},
       {text: 'API Reference', link: '/api/'},
+      {text: 'MCP Server', link: '/mcp/'},
       {
         text: isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
@@ -147,6 +175,7 @@ export default defineConfig({
     sidebar: {
       '/guide/': guideSidebar,
       '/cli/': guideSidebar,
+      '/mcp/': guideSidebar,
       '/api/': [
         {
           text: 'API Reference',

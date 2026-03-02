@@ -13,7 +13,6 @@
  * @module tools/scapi/scapi-custom-api-scaffold
  */
 
-import path from 'node:path';
 import {z} from 'zod';
 import {createToolAdapter, jsonResult, errorResult} from '../adapter.js';
 import type {Services} from '../../services.js';
@@ -48,7 +47,7 @@ interface ScaffoldCustomApiInput {
   apiType?: 'admin' | 'shopper';
   /** Short description of the API. Default: "A custom B2C Commerce API" */
   apiDescription?: string;
-  /** Project root for cartridge discovery and output. Default: MCP working directory */
+  /** Project root for cartridge discovery and output. Default: MCP project directory */
   projectRoot?: string;
   /** Output directory override. Default: scaffold default or project root */
   outputDir?: string;
@@ -79,7 +78,7 @@ export async function executeScaffoldCustomApi(
   services: Services,
   overrides?: ScaffoldCustomApiExecuteOverrides,
 ): Promise<ScaffoldCustomApiOutput> {
-  const projectRoot = path.resolve(args.projectRoot ?? services.getWorkingDirectory());
+  const projectRoot = services.resolveWithProjectDirectory(args.projectRoot);
 
   const getScaffold =
     overrides?.getScaffold ??
@@ -99,19 +98,20 @@ export async function executeScaffoldCustomApi(
     };
   }
 
+  const cartridges = findCartridges(projectRoot);
+  if (cartridges.length === 0) {
+    return {
+      scaffold: CUSTOM_API_SCAFFOLD_ID,
+      outputDir: projectRoot,
+      dryRun: false,
+      files: [],
+      error:
+        'No cartridges found in project. Custom API scaffold requires an existing cartridge. Create a cartridge first: use `b2c scaffold cartridge --name app_custom`, or manually create a directory with a `.project` file (e.g., cartridges/app_custom/.project).',
+    };
+  }
+
   let cartridgeName = args.cartridgeName;
   if (!cartridgeName) {
-    const cartridges = findCartridges(projectRoot);
-    if (cartridges.length === 0) {
-      return {
-        scaffold: CUSTOM_API_SCAFFOLD_ID,
-        outputDir: projectRoot,
-        dryRun: false,
-        files: [],
-        error:
-          'No cartridges found in project. Custom API scaffold requires an existing cartridge. Create a cartridge (directory with .project file) first. You can use the `b2c scaffold cartridge` command to create a cartridge.',
-      };
-    }
     cartridgeName = cartridges[0].name;
   }
 

@@ -1293,6 +1293,40 @@ export default function CollisionComponent({title}: CollisionComponentProps) { r
       const text = getResultText(result);
       expect(text).to.include('CollisionComponent');
     });
+
+    it('should pick default export over first named export (export default X pattern)', async () => {
+      const tool = createPageDesignerDecoratorTool(getServices);
+      // Simulate product-item/index.tsx: has export function X (helper) and export default Y (main)
+      const productItemDir = path.join(testDir, 'src', 'components', 'product-item');
+      mkdirSync(productItemDir, {recursive: true});
+      const indexPath = path.join(productItemDir, 'index.tsx');
+      writeFileSync(
+        indexPath,
+        `export interface ProductItemProps { productId: string; }
+
+export function ProductItemVariantImage() { return null; }
+export function ProductItemVariantAttributes() { return null; }
+
+function ProductItem({ productId }: ProductItemProps) {
+  return <div>{productId}</div>;
+}
+
+export default ProductItem;
+`,
+        'utf8',
+      );
+
+      const result = await tool.handler({
+        component: 'ProductItem',
+        autoMode: true,
+      });
+
+      expect(result.isError).to.be.undefined;
+      const text = getResultText(result);
+      // Must target ProductItem (default export), not ProductItemVariantImage (first named export)
+      expect(text).to.include('ProductItem');
+      expect(text).not.to.include('ProductItemVariantImage');
+    });
   });
 
   describe('input validation', () => {

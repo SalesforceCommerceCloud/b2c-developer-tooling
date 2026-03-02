@@ -12,6 +12,8 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
 - A B2C Commerce project (for project-specific toolsets)
 - MCP client (Cursor, Claude Desktop, or compatible client)
 
+**Figma-to-component tools:** If you use the Figma workflow tools (`storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`), you also need an external Figma MCP server enabled. See [Figma-to-Component Tools Setup](./figma-tools-setup) for prerequisites and configuration.
+
 ## Install via npm (Recommended)
 
 ```json
