@@ -649,7 +649,13 @@ b2c sandbox alias delete zzzv-123 alias-uuid-here --json
 
 ## Sandbox Cloning
 
-Sandbox cloning commands let you create copies of existing sandboxes with their data and configuration. A clone creates a new sandbox instance with the same data as the source sandbox, allowing you to test changes or create development environments without affecting the original.
+On-demand sandbox cloning enables you to create replicas of existing sandboxes in minutes, not hours. It helps teams move faster while reducing risk by providing fully isolated environments for development, testing, and operational workflows.
+
+With a single API call, you can provision a fully isolated replica of your sandbox that includes your database, application code, platform configurations, and all configured feature toggles.
+
+**Important:** To ensure a consistent and reliable clone, the source sandbox is automatically placed in a protected **Stopped** state during the cloning process. This safeguard guarantees data integrity and configuration consistency. Once cloning is complete, the source sandbox resumes normal operation.
+
+Each cloned sandbox is fully isolated, with dedicated compute, storage, and database resources.
 
 Clone commands are available both under the `sandbox` topic and the legacy `ods` aliases:
 
@@ -788,7 +794,9 @@ To check the clone status, run:
 
 #### Notes
 
-- Cloning can take significant time depending on sandbox size and data volume
+- **Source sandbox will be stopped:** The source sandbox is automatically placed in a **Stopped** state during cloning to ensure data integrity and configuration consistency. It resumes normal operation once cloning is complete.
+- Cloning typically completes in minutes, though duration depends on sandbox size and data volume
+- The cloned sandbox is fully isolated with dedicated compute, storage, and database resources
 - If `--target-profile` is not specified, the clone will use the same resource profile as the source sandbox
 - The TTL must be 0 or negative (infinite), or 24 hours or greater. Values between 1-23 are rejected
 - Notification emails will receive updates about the clone progress
