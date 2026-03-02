@@ -104,6 +104,19 @@ describe('tools/scapi/scapi-custom-api-scaffold', () => {
       expect(text).to.include('.project');
     });
 
+    it('should fail fast with "No cartridges found" when cartridgeName provided but project has no cartridges', async () => {
+      const tool = createScaffoldCustomApiTool(loadServices);
+      const result = await tool.handler({
+        apiName: 'my-api',
+        cartridgeName: 'app_custom',
+      });
+
+      expect(result.isError).to.be.true;
+      const text = getResultText(result);
+      expect(text).to.include('No cartridges found');
+      expect(text).not.to.include('Parameter validation failed');
+    });
+
     it('should validate apiName is required', async () => {
       const tool = createScaffoldCustomApiTool(loadServices);
       const result = await tool.handler({});

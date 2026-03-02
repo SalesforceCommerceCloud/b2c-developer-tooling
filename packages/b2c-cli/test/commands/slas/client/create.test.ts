@@ -157,6 +157,56 @@ describe('slas client create', () => {
     expect(result.isPrivateClient).to.equal(false);
   });
 
+  it('merges custom scopes with default scopes when both --default-scopes and --scopes are provided', async () => {
+    const command: any = await createCommand(
+      {
+        'tenant-id': 'abcd_123',
+        name: 'My Client',
+        channels: ['RefArch'],
+        scopes: ['sfcc.shopper-products', 'my.custom.scope'],
+        'default-scopes': true,
+        'redirect-uri': ['http://localhost/callback'],
+        public: true,
+        'create-tenant': false,
+      },
+      {clientId: 'my-client'},
+    );
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+
+    const putStub = sinon.stub().resolves({
+      data: {
+        clientId: 'my-client',
+        name: 'My Client',
+        isPrivateClient: false,
+      },
+      error: undefined,
+      response: {status: 201},
+    });
+
+    sinon.stub(command, 'getSlasClient').returns({
+      PUT: putStub,
+    } as any);
+
+    sinon.stub(command, 'ensureTenantExists').resolves(void 0);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    await command.run();
+
+    const [, options] = putStub.firstCall.args as [string, any];
+    const sentScopes = options.body.scopes as string[];
+
+    // Should contain the custom scope
+    expect(sentScopes).to.include('my.custom.scope');
+    // Should contain default scopes (spot-check a few)
+    expect(sentScopes).to.include('sfcc.shopper-products');
+    expect(sentScopes).to.include('sfcc.shopper-baskets-orders.rw');
+    expect(sentScopes).to.include('sfcc.shopper-customers.login');
+    // sfcc.shopper-products appears in both --scopes and defaults; should not be duplicated
+    const productScopeCount = sentScopes.filter((s: string) => s === 'sfcc.shopper-products').length;
+    expect(productScopeCount).to.equal(1);
+  });
+
   it('calls ensureTenantExists when --create-tenant is true', async () => {
     const command: any = await createCommand(
       {

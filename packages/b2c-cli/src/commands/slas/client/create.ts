@@ -79,7 +79,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       delimiter: ',',
     }),
     'default-scopes': Flags.boolean({
-      description: 'Use default shopper scopes (alternative to --scopes)',
+      description: 'Use default shopper scopes (can be combined with --scopes for additional scopes)',
       default: false,
     }),
     'redirect-uri': Flags.string({
@@ -140,7 +140,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
 
     // oclif handles comma-separation via delimiter option
     const parsedChannels = channels;
-    const parsedScopes = useDefaultScopes ? DEFAULT_SCOPES : scopes!;
+    const parsedScopes = useDefaultScopes ? [...new Set([...(scopes ?? []), ...DEFAULT_SCOPES])] : scopes!;
     const parsedRedirectUri = redirectUri;
     const parsedCallbackUri = callbackUri;
 

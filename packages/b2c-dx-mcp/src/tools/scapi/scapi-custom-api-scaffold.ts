@@ -98,19 +98,20 @@ export async function executeScaffoldCustomApi(
     };
   }
 
+  const cartridges = findCartridges(projectRoot);
+  if (cartridges.length === 0) {
+    return {
+      scaffold: CUSTOM_API_SCAFFOLD_ID,
+      outputDir: projectRoot,
+      dryRun: false,
+      files: [],
+      error:
+        'No cartridges found in project. Custom API scaffold requires an existing cartridge. Create a cartridge first: use `b2c scaffold cartridge --name app_custom`, or manually create a directory with a `.project` file (e.g., cartridges/app_custom/.project).',
+    };
+  }
+
   let cartridgeName = args.cartridgeName;
   if (!cartridgeName) {
-    const cartridges = findCartridges(projectRoot);
-    if (cartridges.length === 0) {
-      return {
-        scaffold: CUSTOM_API_SCAFFOLD_ID,
-        outputDir: projectRoot,
-        dryRun: false,
-        files: [],
-        error:
-          'No cartridges found in project. Custom API scaffold requires an existing cartridge. Create a cartridge (directory with .project file) first. You can use the `b2c scaffold cartridge` command to create a cartridge.',
-      };
-    }
     cartridgeName = cartridges[0].name;
   }
 

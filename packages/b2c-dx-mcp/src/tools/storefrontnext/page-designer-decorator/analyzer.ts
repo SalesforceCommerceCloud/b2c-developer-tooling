@@ -290,11 +290,27 @@ export function generateTypeSuggestions(propName: string, tsType: string): TypeS
 
 /**
  * Extract component name from file content
+ *
+ * Priority order:
+ * 1. export default function X (inline default function)
+ * 2. export default X (default export of named identifier, e.g. export default ProductItem)
+ * 3. export function X (first named function export)
+ * 4. export const X =
+ * 5. fallback: 'Component'
+ *
+ * Note: (2) must be checked before (3) because files may have both "export function Foo"
+ * and "export default Bar" — the default export is the primary component.
  */
 function extractComponentName(content: string): string {
   const defaultFunctionMatch = content.match(/export\s+default\s+function\s+(\w+)/);
   if (defaultFunctionMatch) {
     return defaultFunctionMatch[1];
+  }
+
+  // export default X where X is a named identifier (not "function")
+  const defaultNamedMatch = content.match(/export\s+default\s+(?!function\s)(\w+)/);
+  if (defaultNamedMatch) {
+    return defaultNamedMatch[1];
   }
 
   const namedFunctionMatch = content.match(/export\s+function\s+(\w+)/);

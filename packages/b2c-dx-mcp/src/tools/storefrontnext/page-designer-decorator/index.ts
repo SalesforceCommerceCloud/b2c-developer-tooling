@@ -20,7 +20,7 @@ export const pageDesignerDecoratorSchema = z
     component: z
       .string()
       .describe(
-        'Component name (e.g., "ProductCard", "Hero") or file path (e.g., "src/components/ProductCard.tsx"). ' +
+        'Component name (e.g., "ProductItem", "ProductTile") or file path (e.g., "src/components/ProductItem.tsx"). ' +
           'When a name is provided, the tool automatically searches common component directories. ' +
           'For backward compatibility, file paths are also supported.',
       ),
@@ -634,7 +634,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Services): M
     description:
       'Adds Page Designer decorators (@Component, @AttributeDefinition, @RegionDefinition) to React components. ' +
       'Two modes: autoMode=true for quick setup with defaults, or interactive mode via conversationContext.step. ' +
-      'Component discovery uses projectDirectory from flags/env. ' +
+      'Component discovery uses --project-directory flag or SFCC_PROJECT_DIRECTORY env var. ' +
       'Auto mode: selects suitable props, infers types, generates code immediately. ' +
       'Interactive mode: multi-step workflow (analyze → select_props → configure_attrs → configure_regions → confirm_generation).',
 
