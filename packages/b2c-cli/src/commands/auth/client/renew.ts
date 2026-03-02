@@ -35,7 +35,6 @@ export default class AuthClientRenew extends BaseCommand<typeof AuthClientRenew>
     return loadConfig(
       {accountManagerHost: this.flags['account-manager-host'] as string | undefined},
       this.getBaseConfigOptions(),
-      this.getPluginSources(),
     );
   }
 

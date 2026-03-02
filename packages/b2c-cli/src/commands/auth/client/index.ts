@@ -84,7 +84,6 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
         scopes: scopes && scopes.length > 0 ? scopes : undefined,
       },
       this.getBaseConfigOptions(),
-      this.getPluginSources(),
     );
   }
 

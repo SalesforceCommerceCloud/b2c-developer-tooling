@@ -55,7 +55,6 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
         scopes: scopes && scopes.length > 0 ? scopes : undefined,
       },
       this.getBaseConfigOptions(),
-      this.getPluginSources(),
     );
   }
 
