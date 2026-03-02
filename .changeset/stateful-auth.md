@@ -3,13 +3,33 @@
 '@salesforce/b2c-tooling-sdk': minor
 ---
 
-# Stateful auth support (sfcc-ci compatible)
+# Stateful authentication support
 
-- **auth login** – Log in via browser (implicit OAuth) and save the session for stateful user auth.
-- **auth logout** – Clear the stored session.
-- **auth client** – Authenticate an API client with `client_credentials` or `password` grant (non-interactive). Use `--renew` to enable token auto-renewal.
-- **auth client renew** – Refresh the stored token using credentials saved with `--renew`. Supports `refresh_token` and `client_credentials` grant fallback.
-- **auth client token** – Return the stored authentication token (raw to stdout, or full metadata with `--json`).
-- Uses the **same storage mechanism and keys as sfcc-ci** (`conf` with project name `sfcc-ci`). If you have already logged in with sfcc-ci, b2c-cli will use that token when valid.
-- **Stateful preferred when valid**: Commands that need OAuth first check for a valid stored token; only if absent, invalid, or explicit stateless flags (`--client-secret`, `--user-auth`, `--auth-methods`) are passed do they fall back to stateless auth.
-- No breaking change: when no stateful session exists or it is expired, behavior is unchanged (stateless auth as before).
+Introduces stateful authentication commands and session management, enabling tokens to be persisted on disk and automatically reused across CLI commands — eliminating the need to pass credentials on every invocation.
+
+## New commands
+
+- **`auth login`** – Log in via browser (implicit OAuth) and persist the session for stateful user auth. Only the flags relevant to the implicit flow are exposed (`--client-id`, `--account-manager-host`, `--auth-scope`).
+- **`auth logout`** – Clear the stored session and return to stateless-only auth.
+- **`auth client`** – Authenticate an API client using `client_credentials` or `password` grant (non-interactive). Use `--renew` to store credentials for later token renewal.
+- **`auth client renew`** – Refresh the stored token using credentials saved with `--renew`. Supports `refresh_token` grant with automatic fallback to `client_credentials`.
+- **`auth client token`** – Return the current stored token: raw to stdout (pipe-friendly) or full metadata with `--json`.
+
+## Session storage
+
+Sessions are stored as a JSON file in the CLI's own data directory (e.g. `~/Library/Application Support/@salesforce/b2c-cli/auth-session.json` on macOS). This replaces the previous `conf`-based storage and removes the `conf` package dependency entirely.
+
+> **Note:** Sessions stored by `sfcc-ci` are no longer shared with the CLI. Re-authenticate using `b2c auth login` or `b2c auth client` after upgrading.
+
+## Auth precedence
+
+When a valid stored session exists, all OAuth commands automatically use it — no flags required. The CLI falls back to stateless auth when:
+
+- The stored token is **expired or invalid** — a warning suggests the appropriate renewal command.
+- **Explicit stateless flags** are passed (`--client-secret`, `--user-auth`, or `--auth-methods`) — a warning lists the triggering flags.
+
+Passing `--client-id` alone does not force stateless auth; the stored session is used if the client ID matches.
+
+## No breaking change
+
+When no stateful session exists, behavior is identical to before (stateless auth). Existing environment variable and `dw.json` configuration continues to work without modification.
