@@ -17,7 +17,7 @@ Introduces stateful authentication commands and session management, enabling tok
 
 ## Session storage
 
-Sessions are stored as a JSON file in the CLI's own data directory (e.g. `~/Library/Application Support/@salesforce/b2c-cli/auth-session.json` on macOS). This replaces the previous `conf`-based storage and removes the `conf` package dependency entirely.
+Sessions are stored as a JSON file in the CLI's own data directory (e.g. `~/Library/Application Support/@salesforce/b2c-cli/auth-session.json` on macOS).
 
 > **Note:** Sessions stored by `sfcc-ci` are no longer shared with the CLI. Re-authenticate using `b2c auth login` or `b2c auth client` after upgrading.
 
