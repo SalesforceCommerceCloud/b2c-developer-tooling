@@ -92,12 +92,7 @@ describe('ods clone create', () => {
     it('should have target-profile flag (optional)', () => {
       expect(CloneCreate.flags).to.have.property('target-profile');
       expect(CloneCreate.flags['target-profile'].required).to.be.false;
-      expect(CloneCreate.flags['target-profile'].options).to.deep.equal([
-        'medium',
-        'large',
-        'xlarge',
-        'xxlarge',
-      ]);
+      expect(CloneCreate.flags['target-profile'].options).to.deep.equal(['medium', 'large', 'xlarge', 'xxlarge']);
     });
 
     it('should have optional ttl flag with default', () => {

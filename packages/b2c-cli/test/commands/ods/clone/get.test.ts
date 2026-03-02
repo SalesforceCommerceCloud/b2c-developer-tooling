@@ -104,8 +104,8 @@ describe('ods clone get', () => {
         lastUpdated: '2025-02-27T11:00:00Z',
         customCodeVersion: '1.0.0',
         storefrontCount: 5,
-        filesystemUsageSize: 1073741824, // 1 GB
-        databaseTransferSize: 2147483648, // 2 GB
+        filesystemUsageSize: 1_073_741_824, // 1 GB
+        databaseTransferSize: 2_147_483_648, // 2 GB
       };
 
       stubOdsClientGet(command, async (path: string, options?: any) => {
@@ -133,7 +133,7 @@ describe('ods clone get', () => {
       stubResolveSandboxId(command, async (id) => id);
 
       const outputs: string[] = [];
-      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ...args: string[]) => {
+      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ..._args: string[]) => {
         if (str) {
           const output = Array.isArray(str) ? str.join('') : str;
           outputs.push(output);
@@ -190,7 +190,7 @@ describe('ods clone get', () => {
       stubResolveSandboxId(command, async (id) => id);
 
       const outputs: string[] = [];
-      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ...args: string[]) => {
+      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ..._args: string[]) => {
         if (str) {
           const output = Array.isArray(str) ? str.join('') : str;
           outputs.push(output);
@@ -209,8 +209,8 @@ describe('ods clone get', () => {
         lastKnownState: 'finalizing',
         customCodeVersion: '1.0.0',
         storefrontCount: 5,
-        filesystemUsageSize: 1073741824,
-        databaseTransferSize: 2147483648,
+        filesystemUsageSize: 1_073_741_824,
+        databaseTransferSize: 2_147_483_648,
       };
 
       stubOdsClientGet(command, async () => {
@@ -256,7 +256,7 @@ describe('ods clone get', () => {
       stubResolveSandboxId(command, async (id) => id);
 
       const outputs: string[] = [];
-      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ...args: string[]) => {
+      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ..._args: string[]) => {
         if (str) {
           const output = Array.isArray(str) ? str.join('') : str;
           outputs.push(output);

@@ -12,10 +12,14 @@ import {t} from '../../../i18n/index.js';
  * Command to create a sandbox clone.
  */
 export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
-  static description = t(
-    'commands.clone.create.description',
-    'Create a new sandbox clone from an existing sandbox',
-  );
+  static args = {
+    sandboxId: Args.string({
+      description: 'Sandbox ID (UUID or friendly format like realm-instance) to clone from',
+      required: true,
+    }),
+  };
+
+  static description = t('commands.clone.create.description', 'Create a new sandbox clone from an existing sandbox');
 
   static enableJsonFlag = true;
 
@@ -25,13 +29,6 @@ export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
     '<%= config.bin %> <%= command.id %> <sandboxId> --ttl 48',
     '<%= config.bin %> <%= command.id %> <sandboxId> --target-profile large --ttl 48 --emails dev@example.com,qa@example.com',
   ];
-
-  static args = {
-    sandboxId: Args.string({
-      description: 'Sandbox ID (UUID or friendly format like realm-instance) to clone from',
-      required: true,
-    }),
-  };
 
   static flags = {
     'target-profile': Flags.string({
@@ -116,11 +113,11 @@ export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
 
     // Prepare request body
     const requestBody: {
-      targetProfile?: 'medium' | 'large' | 'xlarge' | 'xxlarge';
+      targetProfile?: 'large' | 'medium' | 'xlarge' | 'xxlarge';
       emails?: string[];
       ttl: number;
     } = {
-      targetProfile: targetProfile as 'medium' | 'large' | 'xlarge' | 'xxlarge',
+      targetProfile: targetProfile as 'large' | 'medium' | 'xlarge' | 'xxlarge',
       ttl,
     };
 
@@ -137,9 +134,7 @@ export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
 
     if (!result.data) {
       const message = getApiErrorMessage(result.error, result.response);
-      this.error(
-        t('commands.clone.create.error', 'Failed to create sandbox clone: {{message}}', {message}),
-      );
+      this.error(t('commands.clone.create.error', 'Failed to create sandbox clone: {{message}}', {message}));
     }
 
     const cloneId = result.data.data?.cloneId;
@@ -148,12 +143,7 @@ export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
       return {cloneId};
     }
 
-    this.log(
-      t(
-        'commands.clone.create.success',
-        '✓ Sandbox clone creation started successfully',
-      ),
-    );
+    this.log(t('commands.clone.create.success', '✓ Sandbox clone creation started successfully'));
     this.log(t('commands.clone.create.cloneId', 'Clone ID: {{cloneId}}', {cloneId}));
     this.log(
       t(

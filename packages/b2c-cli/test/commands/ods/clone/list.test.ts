@@ -139,7 +139,7 @@ describe('ods clone list', () => {
       };
 
       // Stub ux.stdout to capture table output
-      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ...args: string[]) => {
+      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ..._args: string[]) => {
         if (str) {
           const output = Array.isArray(str) ? str.join('') : str;
           logs.push(output);

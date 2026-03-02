@@ -33,7 +33,7 @@ const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
   },
   progressPercentage: {
     header: 'Progress %',
-    get: (c) => (c.progressPercentage !== undefined ? `${c.progressPercentage}%` : '-'),
+    get: (c) => (c.progressPercentage === undefined ? '-' : `${c.progressPercentage}%`),
   },
   createdAt: {
     header: 'Created At',
@@ -49,7 +49,7 @@ const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
   },
   elapsedTimeInSec: {
     header: 'Elapsed Time (sec)',
-    get: (c) => (c.elapsedTimeInSec !== undefined ? c.elapsedTimeInSec.toString() : '-'),
+    get: (c) => (c.elapsedTimeInSec === undefined ? '-' : c.elapsedTimeInSec.toString()),
   },
   realm: {
     header: 'Realm',
@@ -63,6 +63,13 @@ const DEFAULT_COLUMNS = ['cloneId', 'status', 'sourceInstance', 'targetInstance'
  * Command to list sandbox clones for a specific sandbox.
  */
 export default class CloneList extends OdsCommand<typeof CloneList> {
+  static args = {
+    sandboxId: Args.string({
+      description: 'Sandbox ID (UUID or friendly format like realm-instance)',
+      required: true,
+    }),
+  };
+
   static description = t('commands.clone.list.description', 'List all clones for a specific sandbox');
 
   static enableJsonFlag = true;
@@ -73,13 +80,6 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
     '<%= config.bin %> <%= command.id %> <sandboxId> --from 2024-01-01 --to 2024-12-31',
     '<%= config.bin %> <%= command.id %> <sandboxId> --extended',
   ];
-
-  static args = {
-    sandboxId: Args.string({
-      description: 'Sandbox ID (UUID or friendly format like realm-instance)',
-      required: true,
-    }),
-  };
 
   static flags = {
     from: Flags.string({
@@ -108,11 +108,7 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
 
   async run(): Promise<{data?: SandboxCloneGetModel[]}> {
     const {sandboxId: rawSandboxId} = this.args;
-    const {
-      from: fromDate,
-      to: toDate,
-      status,
-    } = this.flags;
+    const {from: fromDate, to: toDate, status} = this.flags;
 
     // Resolve sandbox ID (handles both UUID and friendly format)
     const sandboxId = await this.resolveSandboxId(rawSandboxId);
@@ -125,16 +121,14 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
         query: {
           fromDate,
           toDate,
-          status: status as 'Pending' | 'InProgress' | 'Failed' | 'Completed' | undefined,
+          status: status as 'Completed' | 'Failed' | 'InProgress' | 'Pending' | undefined,
         },
       },
     });
 
     if (!result.data) {
       const message = getApiErrorMessage(result.error, result.response);
-      this.error(
-        t('commands.clone.list.error', 'Failed to list sandbox clones: {{message}}', {message}),
-      );
+      this.error(t('commands.clone.list.error', 'Failed to list sandbox clones: {{message}}', {message}));
     }
 
     if (this.jsonEnabled()) {
@@ -151,9 +145,7 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
     const tableRenderer = new TableRenderer(COLUMNS);
     tableRenderer.render(clones, columns);
 
-    this.log(
-      t('commands.clone.list.total', '\nTotal: {{total}} clone(s)', {total: clones.length}),
-    );
+    this.log(t('commands.clone.list.total', '\nTotal: {{total}} clone(s)', {total: clones.length}));
 
     return {data: clones};
   }

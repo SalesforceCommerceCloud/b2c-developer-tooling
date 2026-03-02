@@ -15,18 +15,6 @@ type SandboxCloneGetModel = OdsComponents['schemas']['SandboxCloneGetModel'];
  * Command to get details of a specific sandbox clone.
  */
 export default class CloneGet extends OdsCommand<typeof CloneGet> {
-  static description = t(
-    'commands.clone.get.description',
-    'Get detailed information about a specific sandbox clone',
-  );
-
-  static enableJsonFlag = true;
-
-  static examples = [
-    '<%= config.bin %> <%= command.id %> <sandboxId> <cloneId>',
-    '<%= config.bin %> <%= command.id %> abcd-123 aaaa-002-1642780893121',
-  ];
-
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or friendly format like realm-instance)',
@@ -37,6 +25,15 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
       required: true,
     }),
   };
+
+  static description = t('commands.clone.get.description', 'Get detailed information about a specific sandbox clone');
+
+  static enableJsonFlag = true;
+
+  static examples = [
+    '<%= config.bin %> <%= command.id %> <sandboxId> <cloneId>',
+    '<%= config.bin %> <%= command.id %> abcd-123 aaaa-002-1642780893121',
+  ];
 
   async run(): Promise<{data?: SandboxCloneGetModel}> {
     const {sandboxId: rawSandboxId, cloneId} = this.args;
@@ -54,9 +51,7 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
 
     if (!result.data) {
       const message = getApiErrorMessage(result.error, result.response);
-      this.error(
-        t('commands.clone.get.error', 'Failed to get clone details: {{message}}', {message}),
-      );
+      this.error(t('commands.clone.get.error', 'Failed to get clone details: {{message}}', {message}));
     }
 
     const clone = result.data.data;
@@ -81,10 +76,7 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
       ['Source Instance', clone?.sourceInstance],
       ['Target Instance', clone?.targetInstance],
       ['Realm', clone?.realm],
-      [
-        'Progress',
-        clone?.progressPercentage !== undefined ? `${clone.progressPercentage}%` : '-',
-      ],
+      ['Progress', clone?.progressPercentage === undefined ? '-' : `${clone.progressPercentage}%`],
       ['Created At', clone?.createdAt ? new Date(clone.createdAt).toLocaleString() : undefined],
       ['Created By', clone?.createdBy],
     ];
