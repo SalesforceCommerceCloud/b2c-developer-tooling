@@ -24,6 +24,11 @@
             "name": "Sandboxes",
             "x-sfdc-group-id": "sandboxes",
             "description": "Operations on the sandbox level."
+        },
+        {
+            "name": "Cloning",
+            "x-sfdc-group-id": "cloning",
+            "description": "APIs for creating and managing sandbox clones."
         }
     ],
     "paths": {
@@ -1183,6 +1188,283 @@
                 ]
             }
         },
+        "/sandboxes/{sandboxId}/clones": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                }
+            ],
+            "get": {
+                "operationId": "getSandboxesClone",
+                "summary": "List all cloned sandboxes for a specific sandbox.",
+                "description": "Return all cloned sandboxes for a specific sandbox. Optionally filter by date range using fromDate and toDate parameters. If fromDate is provided without toDate, toDate defaults to the current timestamp. If both are omitted, all clones are returned. All dates are processed in UTC timezone. Optionally filter by status.",
+                "tags": [
+                    "Cloning"
+                ],
+                "parameters": [
+                    {
+                        "name": "fromDate",
+                        "in": "query",
+                        "description": "Filter clones created on or after this date (ISO 8601 date format, e.g., 2024-01-01). When provided without toDate, toDate defaults to the current timestamp.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "toDate",
+                        "in": "query",
+                        "description": "Filter clones created on or before this date (ISO 8601 date format, e.g., 2024-12-31). If omitted when fromDate is provided, defaults to current timestamp. Optional parameter.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter clones by status (Pending, InProgress, Failed, or Completed). If not provided, returns all clones regardless of status.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Pending",
+                                "InProgress",
+                                "Failed",
+                                "Completed"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of cloned sandboxes.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxCloneListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to that realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "There were server errors during the request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "createSandboxClone",
+                "summary": "Create sandbox clone.",
+                "description": "Create a new sandbox clone for a specific sandbox.",
+                "tags": [
+                    "Cloning"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SandboxCloneProvisioningRequestModel"
+                            }
+                        }
+                    },
+                    "description": "Metadata about the new sandbox clone.",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "The sandbox clone creation has started.",
+                        "headers": {
+                            "Location": {
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "description": "URI of the created sandbox clone."
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxCloneCreateResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "There were server errors during the request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
+        "/sandboxes/{sandboxId}/clones/{cloneId}": {
+            "parameters": [
+                {
+                    "$ref": "#/components/parameters/sandboxIdParam"
+                },
+                {
+                    "$ref": "#/components/parameters/sandboxCloneIdParam"
+                }
+            ],
+            "get": {
+                "operationId": "getSandboxClone",
+                "summary": "Retrieve sandbox clone information.",
+                "description": "Return details on a specific cloned sandbox for a sandbox.",
+                "tags": [
+                    "Cloning"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details on the cloned sandbox (including its state).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SandboxCloneResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request parameters are invalid (bad request).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user doesn't have access to the requested realm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There isn't any sandbox with that ID.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "There were server errors during the request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "AccountManager": []
+                    },
+                    {
+                        "ClientCredentials": []
+                    }
+                ]
+            }
+        },
         "/sandboxes/{sandboxId}/operations": {
             "parameters": [
                 {
@@ -1711,6 +1993,16 @@
                     "format": "uuid"
                 }
             },
+            "sandboxCloneIdParam": {
+                "name": "cloneId",
+                "in": "path",
+                "required": true,
+                "description": "The sandbox clone unique ID. A unique identifier of the sandbox in the format: realm-instance-clone-timestamp (e.g., aaaa-002-1642780893121), where: realm is 4 lowercase letters, instance is 3-digit number, timestamp is in ddMMyyyyHHmm format (13 digits).",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[a-z]{4}-\\d{3}-\\d{13}$"
+                }
+            },
             "operationIdParam": {
                 "name": "operationId",
                 "in": "path",
@@ -1914,6 +2206,8 @@
                             "SandboxUsage",
                             "SandboxStorage",
                             "SandboxOperationList",
+                            "SandboxCloneList",
+                            "SandboxClone",
                             "Status"
                         ]
                     },
@@ -2496,6 +2790,161 @@
                             }
                         }
                     }
+                ]
+            },
+            "SandboxCloneListResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SandboxCloneGetModel"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxCloneResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxCloneGetModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxCloneCreateResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/StatusResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "$ref": "#/components/schemas/SandboxCloneCreateModel"
+                            }
+                        }
+                    }
+                ]
+            },
+            "SandboxCloneGetModel": {
+                "type": "object",
+                "properties": {
+                    "cloneId": {
+                        "type": "string"
+                    },
+                    "realm": {
+                        "type": "string"
+                    },
+                    "sourceInstance": {
+                        "type": "string"
+                    },
+                    "targetInstance": {
+                        "type": "string"
+                    },
+                    "sourceInstanceId": {
+                        "type": "string"
+                    },
+                    "targetInstanceId": {
+                        "type": "string"
+                    },
+                    "targetProfile": {
+                        "$ref": "#/components/schemas/SandboxResourceProfile"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "createdBy": {
+                        "type": "string"
+                    },
+                    "lastUpdated": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/SandboxCloneState"
+                    },
+                    "elapsedTimeInSec": {
+                        "type": "integer"
+                    },
+                    "progressPercentage": {
+                        "type": "integer"
+                    },
+                    "lastKnownState": {
+                        "type": "string",
+                        "description": "The last known clone processing state before completion or failure"
+                    },
+                    "customCodeVersion": {
+                        "type": "string"
+                    },
+                    "storefrontCount": {
+                        "type": "integer"
+                    },
+                    "filesystemUsageSize": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "databaseTransferSize": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "SandboxCloneCreateModel": {
+                "type": "object",
+                "properties": {
+                    "cloneId": {
+                        "type": "string",
+                        "example": "zyom-002-017-180620251331"
+                    }
+                }
+            },
+            "SandboxCloneProvisioningRequestModel": {
+                "type": "object",
+                "properties": {
+                    "targetProfile": {
+                        "$ref": "#/components/schemas/SandboxResourceProfile"
+                    },
+                    "emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "(.+)@(.+)"
+                        },
+                        "example": [
+                            "email1@example.com",
+                            "email2@example.com"
+                        ]
+                    },
+                    "ttl": {
+                        "type": "integer",
+                        "format": "int32",
+                        "default": 24,
+                        "description": "Number of hours for the sandbox clone lifetime. Valid values are: 0 or negative (infinite lifetime), or 24 hours and above. Values between 1 and 23 are not allowed. The TTL must also adhere to the maximum TTL configuration for the realm."
+                    }
+                }
+            },
+            "SandboxCloneState": {
+                "type": "string",
+                "enum": [
+                    "PENDING",
+                    "IN_PROGRESS",
+                    "COMPLETED",
+                    "FAILED"
                 ]
             },
             "SandboxStorageModel": {
