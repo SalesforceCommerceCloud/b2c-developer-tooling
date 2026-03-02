@@ -303,6 +303,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxId}/clones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The sandbox UUID. */
+                sandboxId: components["parameters"]["sandboxIdParam"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List all cloned sandboxes for a specific sandbox.
+         * @description Return all cloned sandboxes for a specific sandbox. Optionally filter by date range using fromDate and toDate parameters. If fromDate is provided without toDate, toDate defaults to the current timestamp. If both are omitted, all clones are returned. All dates are processed in UTC timezone. Optionally filter by status.
+         */
+        get: operations["getSandboxesClone"];
+        put?: never;
+        /**
+         * Create sandbox clone.
+         * @description Create a new sandbox clone for a specific sandbox.
+         */
+        post: operations["createSandboxClone"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sandboxes/{sandboxId}/clones/{cloneId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The sandbox UUID. */
+                sandboxId: components["parameters"]["sandboxIdParam"];
+                /** @description The sandbox clone unique ID. A unique identifier of the sandbox in the format: realm-instance-clone-timestamp (e.g., aaaa-002-1642780893121), where: realm is 4 lowercase letters, instance is 3-digit number, timestamp is in ddMMyyyyHHmm format (13 digits). */
+                cloneId: components["parameters"]["sandboxCloneIdParam"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Retrieve sandbox clone information.
+         * @description Return details on a specific cloned sandbox for a sandbox.
+         */
+        get: operations["getSandboxClone"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxId}/operations": {
         parameters: {
             query?: never;
@@ -438,7 +490,7 @@ export interface components {
              * @description Type of response object.
              * @enum {string}
              */
-            kind: "ApiVersion" | "UserInfo" | "SystemInfo" | "Realm" | "RealmConfiguration" | "RealmUsage" | "MultiRealmUsage" | "Sandbox" | "SandboxList" | "SandboxAlias" | "SandboxAliasList" | "SandboxSettings" | "SandboxUsage" | "SandboxStorage" | "SandboxOperationList" | "Status";
+            kind: "ApiVersion" | "UserInfo" | "SystemInfo" | "Realm" | "RealmConfiguration" | "RealmUsage" | "MultiRealmUsage" | "Sandbox" | "SandboxList" | "SandboxAlias" | "SandboxAliasList" | "SandboxSettings" | "SandboxUsage" | "SandboxStorage" | "SandboxOperationList" | "SandboxCloneList" | "SandboxClone" | "Status";
             /**
              * Format: int32
              * @description Response code sent along with the status.
@@ -740,6 +792,62 @@ export interface components {
         SandboxResponse: components["schemas"]["StatusResponse"] & {
             data?: components["schemas"]["SandboxModel"];
         };
+        SandboxCloneListResponse: components["schemas"]["StatusResponse"] & {
+            data?: components["schemas"]["SandboxCloneGetModel"][];
+        };
+        SandboxCloneResponse: components["schemas"]["StatusResponse"] & {
+            data?: components["schemas"]["SandboxCloneGetModel"];
+        };
+        SandboxCloneCreateResponse: components["schemas"]["StatusResponse"] & {
+            data?: components["schemas"]["SandboxCloneCreateModel"];
+        };
+        SandboxCloneGetModel: {
+            cloneId?: string;
+            realm?: string;
+            sourceInstance?: string;
+            targetInstance?: string;
+            sourceInstanceId?: string;
+            targetInstanceId?: string;
+            targetProfile?: components["schemas"]["SandboxResourceProfile"];
+            /** Format: date-time */
+            createdAt?: string;
+            createdBy?: string;
+            /** Format: date-time */
+            lastUpdated?: string;
+            status?: components["schemas"]["SandboxCloneState"];
+            elapsedTimeInSec?: number;
+            progressPercentage?: number;
+            /** @description The last known clone processing state before completion or failure */
+            lastKnownState?: string;
+            customCodeVersion?: string;
+            storefrontCount?: number;
+            /** Format: int64 */
+            filesystemUsageSize?: number;
+            /** Format: int64 */
+            databaseTransferSize?: number;
+        };
+        SandboxCloneCreateModel: {
+            /** @example zyom-002-017-180620251331 */
+            cloneId?: string;
+        };
+        SandboxCloneProvisioningRequestModel: {
+            targetProfile?: components["schemas"]["SandboxResourceProfile"];
+            /**
+             * @example [
+             *       "email1@example.com",
+             *       "email2@example.com"
+             *     ]
+             */
+            emails?: string[];
+            /**
+             * Format: int32
+             * @description Number of hours for the sandbox clone lifetime. Valid values are: 0 or negative (infinite lifetime), or 24 hours and above. Values between 1 and 23 are not allowed. The TTL must also adhere to the maximum TTL configuration for the realm.
+             * @default 24
+             */
+            ttl: number;
+        };
+        /** @enum {string} */
+        SandboxCloneState: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
         /** @description Shows all filesystem storages and how much space is left on them. */
         SandboxStorageModel: {
             [key: string]: components["schemas"]["StorageUsageModel"];
@@ -1300,6 +1408,8 @@ export interface components {
         sandboxIdParam: string;
         /** @description The sandbox alias UUID. */
         sandboxAliasIdParam: string;
+        /** @description The sandbox clone unique ID. A unique identifier of the sandbox in the format: realm-instance-clone-timestamp (e.g., aaaa-002-1642780893121), where: realm is 4 lowercase letters, instance is 3-digit number, timestamp is in ddMMyyyyHHmm format (13 digits). */
+        sandboxCloneIdParam: string;
         /** @description The operation UUID. */
         operationIdParam: string;
         /** @description The page to access in a paged response. Page numbers start with '0', which is the default value. */
@@ -2171,6 +2281,199 @@ export interface operations {
             };
             /** @description There isn't any sandbox or any alias with that ID. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSandboxesClone: {
+        parameters: {
+            query?: {
+                /** @description Filter clones created on or after this date (ISO 8601 date format, e.g., 2024-01-01). When provided without toDate, toDate defaults to the current timestamp. */
+                fromDate?: string;
+                /** @description Filter clones created on or before this date (ISO 8601 date format, e.g., 2024-12-31). If omitted when fromDate is provided, defaults to current timestamp. Optional parameter. */
+                toDate?: string;
+                /** @description Filter clones by status (Pending, InProgress, Failed, or Completed). If not provided, returns all clones regardless of status. */
+                status?: "Pending" | "InProgress" | "Failed" | "Completed";
+            };
+            header?: never;
+            path: {
+                /** @description The sandbox UUID. */
+                sandboxId: components["parameters"]["sandboxIdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of cloned sandboxes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxCloneListResponse"];
+                };
+            };
+            /** @description The request parameters are invalid (bad request). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The user doesn't have access to that realm. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description There isn't any sandbox with that ID. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description There were server errors during the request. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createSandboxClone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The sandbox UUID. */
+                sandboxId: components["parameters"]["sandboxIdParam"];
+            };
+            cookie?: never;
+        };
+        /** @description Metadata about the new sandbox clone. */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SandboxCloneProvisioningRequestModel"];
+            };
+        };
+        responses: {
+            /** @description The sandbox clone creation has started. */
+            201: {
+                headers: {
+                    /** @description URI of the created sandbox clone. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxCloneCreateResponse"];
+                };
+            };
+            /** @description The request parameters are invalid (bad request). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The user doesn't have access to the realm. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description There isn't any sandbox with that ID. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description There were server errors during the request. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSandboxClone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The sandbox UUID. */
+                sandboxId: components["parameters"]["sandboxIdParam"];
+                /** @description The sandbox clone unique ID. A unique identifier of the sandbox in the format: realm-instance-clone-timestamp (e.g., aaaa-002-1642780893121), where: realm is 4 lowercase letters, instance is 3-digit number, timestamp is in ddMMyyyyHHmm format (13 digits). */
+                cloneId: components["parameters"]["sandboxCloneIdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Details on the cloned sandbox (including its state). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxCloneResponse"];
+                };
+            };
+            /** @description The request parameters are invalid (bad request). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The user doesn't have access to the requested realm. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description There isn't any sandbox with that ID. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description There were server errors during the request. */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -647,6 +647,216 @@ b2c sandbox alias delete zzzv-123 alias-uuid-here --json
 
 ---
 
+## Sandbox Cloning
+
+On-demand sandbox cloning enables you to create replicas of existing sandboxes in minutes, not hours. It helps teams move faster while reducing risk by providing fully isolated environments for development, testing, and operational workflows.
+
+With a single API call, you can provision a fully isolated replica of your sandbox that includes your database, application code, platform configurations, and all configured feature toggles.
+
+**Important:** To ensure a consistent and reliable clone, the source sandbox is automatically placed in a protected **Stopped** state during the cloning process. This safeguard guarantees data integrity and configuration consistency. Once cloning is complete, the source sandbox resumes normal operation.
+
+Each cloned sandbox is fully isolated, with dedicated compute, storage, and database resources.
+
+Clone commands are available both under the `sandbox` topic and the legacy `ods` aliases:
+
+- `b2c sandbox clone list` (`b2c ods clone:list`)
+- `b2c sandbox clone create` (`b2c ods clone:create`)
+- `b2c sandbox clone get` (`b2c ods clone:get`)
+
+### Clone ID Format
+
+Clone IDs follow a specific pattern: `realm-instance-timestamp`
+
+- Example: `aaaa-002-1642780893121`
+- Pattern: 4-letter realm code, followed by 3-digit instance number, followed by 13-digit timestamp
+
+### b2c sandbox clone list
+
+List all clones for a specific sandbox.
+
+#### Usage
+
+```bash
+b2c sandbox clone list <SANDBOXID>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--from` | Filter clones created on or after this date (ISO 8601 date format, e.g., `2024-01-01`) |
+| `--to` | Filter clones created on or before this date (ISO 8601 date format, e.g., `2024-12-31`) |
+| `--status` | Filter clones by status (`Pending`, `InProgress`, `Failed`, `Completed`) |
+| `--columns`, `-c` | Columns to display (comma-separated) |
+| `--extended`, `-x` | Show all columns |
+
+#### Available Columns
+
+`cloneId`, `status`, `targetInstance`, `targetProfile`, `progressPercentage`, `createdAt`, `createdBy`, `lastUpdated`, `elapsedTimeInSec`, `sourceInstance`, `realm`
+
+**Default columns:** `cloneId`, `status`, `targetInstance`, `progressPercentage`, `createdAt`
+
+#### Examples
+
+```bash
+# List all clones for a sandbox
+b2c sandbox clone list zzzv-123
+
+# Filter by status
+b2c sandbox clone list zzzv-123 --status Completed
+
+# Filter by date range
+b2c sandbox clone list zzzv-123 --from 2024-01-01 --to 2024-12-31
+
+# Show all columns
+b2c sandbox clone list zzzv-123 --extended
+
+# Custom columns
+b2c sandbox clone list zzzv-123 --columns cloneId,status,progressPercentage
+
+# Output as JSON
+b2c sandbox clone list zzzv-123 --json
+```
+
+#### Output
+
+```
+Clone ID                  Status      Target Instance  Progress %  Created At
+────────────────────────────────────────────────────────────────────────────────
+aaaa-001-1642780893121    COMPLETED   aaaa-001         100%        2/27/2025, 10:00:00 AM
+aaaa-002-1642780893122    IN_PROGRESS aaaa-002         75%         2/27/2025, 11:00:00 AM
+```
+
+### b2c sandbox clone create
+
+Create a new sandbox clone from an existing sandbox. This creates a complete copy of the source sandbox including all data, configuration, and custom code.
+
+#### Usage
+
+```bash
+b2c sandbox clone create <SANDBOXID>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) to clone from | Yes |
+
+#### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--target-profile` | Resource profile for the cloned sandbox (`medium`, `large`, `xlarge`, `xxlarge`). If not specified, uses the source sandbox's profile. | Source sandbox profile |
+| `--ttl` | Time to live in hours (0 or negative = infinite, minimum 24 hours). Values between 1-23 are not allowed. | `24` |
+| `--emails` | Comma-separated list of notification email addresses | |
+
+#### Examples
+
+```bash
+# Create a clone with same profile as source sandbox
+b2c sandbox clone create zzzv-123
+
+# Create a clone with custom TTL (still uses source profile)
+b2c sandbox clone create zzzv-123 --ttl 48
+
+# Create a clone with different profile
+b2c sandbox clone create zzzv-123 --target-profile large
+
+# Create a clone with large profile and extended TTL
+b2c sandbox clone create zzzv-123 --target-profile large --ttl 48
+
+# Create a clone with notification emails
+b2c sandbox clone create zzzv-123 --target-profile medium --emails dev@example.com,qa@example.com
+
+# Create a clone with infinite TTL
+b2c sandbox clone create zzzv-123 --ttl 0
+
+# Output as JSON
+b2c sandbox clone create zzzv-123 --json
+```
+
+#### Output
+
+```
+✓ Sandbox clone creation started successfully
+Clone ID: aaaa-002-1642780893121
+
+To check the clone status, run:
+  b2c sandbox clone get zzzv-123 aaaa-002-1642780893121
+```
+
+#### Notes
+
+- **Source sandbox will be stopped:** The source sandbox is automatically placed in a **Stopped** state during cloning to ensure data integrity and configuration consistency. It resumes normal operation once cloning is complete.
+- Cloning typically completes in minutes, though duration depends on sandbox size and data volume
+- The cloned sandbox is fully isolated with dedicated compute, storage, and database resources
+- If `--target-profile` is not specified, the clone will use the same resource profile as the source sandbox
+- The TTL must be 0 or negative (infinite), or 24 hours or greater. Values between 1-23 are rejected
+- The clone will be created as a new sandbox instance in the same realm
+
+### b2c sandbox clone get
+
+Retrieve detailed information about a specific sandbox clone, including status, progress, and metadata.
+
+#### Usage
+
+```bash
+b2c sandbox clone get <SANDBOXID> <CLONEID>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| `CLONEID` | Clone ID (e.g., `aaaa-002-1642780893121`) | Yes |
+
+#### Examples
+
+```bash
+# Get clone details
+b2c sandbox clone get zzzv-123 aaaa-002-1642780893121
+
+# Output as JSON
+b2c sandbox clone get zzzv-123 aaaa-002-1642780893121 --json
+```
+
+#### Output
+
+Displays essential clone information in a formatted table:
+
+```
+Clone Details
+──────────────────────────────────────────────────
+Clone ID:          aaaa-002-1642780893121
+Source Instance:   aaaa-000
+Target Instance:   aaaa-002
+Realm:             aaaa
+Progress:          75%
+Created At:        2/27/2025, 10:00:00 AM
+Created By:        user@example.com
+```
+
+For detailed information including status, timing, filesystem usage, and other metadata, use the `--json` flag.
+
+#### Clone Status Values
+
+| Status | Description |
+|--------|-------------|
+| `PENDING` | Clone is queued and waiting to start |
+| `IN_PROGRESS` | Clone operation is currently running |
+| `COMPLETED` | Clone finished successfully |
+| `FAILED` | Clone operation failed |
+
+---
+
 ## Realm-Level Commands
 
 Realm commands operate at the **realm** level rather than on an individual sandbox. They are available as both `realm` topic commands and as `sandbox realm` subcommands:
@@ -662,12 +872,12 @@ To run `b2c realm` commands, your user or API client must have **realm‑level a
 
 ### b2c realm list
 
-List realms eligible for sandbox management, optionally including a simple usage summary.
+List realms eligible for sandbox management.
 
 #### Usage
 
 ```bash
-b2c realm list [REALM] [--show-usage]
+b2c realm list [REALM]
 ```
 
 #### Arguments
