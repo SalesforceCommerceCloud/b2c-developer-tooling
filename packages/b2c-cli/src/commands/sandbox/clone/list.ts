@@ -63,6 +63,8 @@ const DEFAULT_COLUMNS = ['cloneId', 'status', 'sourceInstance', 'targetInstance'
  * Command to list sandbox clones for a specific sandbox.
  */
 export default class CloneList extends OdsCommand<typeof CloneList> {
+  static aliases = ['ods:clone:list'];
+
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or friendly format like realm-instance)',
@@ -144,8 +146,6 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
     const columns = this.getSelectedColumns();
     const tableRenderer = new TableRenderer(COLUMNS);
     tableRenderer.render(clones, columns);
-
-    this.log(t('commands.clone.list.total', '\nTotal: {{total}} clone(s)', {total: clones.length}));
 
     return {data: clones};
   }

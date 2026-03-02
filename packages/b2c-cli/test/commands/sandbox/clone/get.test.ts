@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {ux} from '@oclif/core';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import CloneGet from '../../../../src/commands/ods/clone/get.js';
+import CloneGet from '../../../../src/commands/sandbox/clone/get.js';
 import {runSilent} from '../../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
@@ -50,7 +50,7 @@ function makeCommandThrowOnError(command: any): void {
   };
 }
 
-describe('ods clone get', () => {
+describe('sandbox clone get', () => {
   beforeEach(() => {
     isolateConfig();
   });

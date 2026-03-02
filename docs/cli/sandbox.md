@@ -799,7 +799,6 @@ To check the clone status, run:
 - The cloned sandbox is fully isolated with dedicated compute, storage, and database resources
 - If `--target-profile` is not specified, the clone will use the same resource profile as the source sandbox
 - The TTL must be 0 or negative (infinite), or 24 hours or greater. Values between 1-23 are rejected
-- Notification emails will receive updates about the clone progress
 - The clone will be created as a new sandbox instance in the same realm
 
 ### b2c sandbox clone get
@@ -873,12 +872,12 @@ To run `b2c realm` commands, your user or API client must have **realm‑level a
 
 ### b2c realm list
 
-List realms eligible for sandbox management, optionally including a simple usage summary.
+List realms eligible for sandbox management.
 
 #### Usage
 
 ```bash
-b2c realm list [REALM] [--show-usage]
+b2c realm list [REALM]
 ```
 
 #### Arguments

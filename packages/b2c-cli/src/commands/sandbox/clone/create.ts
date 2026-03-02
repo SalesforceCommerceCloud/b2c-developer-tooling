@@ -12,6 +12,8 @@ import {t} from '../../../i18n/index.js';
  * Command to create a sandbox clone.
  */
 export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
+  static aliases = ['ods:clone:create'];
+
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or friendly format like realm-instance) to clone from',

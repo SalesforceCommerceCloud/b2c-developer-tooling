@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {ux} from '@oclif/core';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import CloneList from '../../../../src/commands/ods/clone/list.js';
+import CloneList from '../../../../src/commands/sandbox/clone/list.js';
 import {runSilent} from '../../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
@@ -50,7 +50,7 @@ function makeCommandThrowOnError(command: any): void {
   };
 }
 
-describe('ods clone list', () => {
+describe('sandbox clone list', () => {
   beforeEach(() => {
     isolateConfig();
   });
@@ -166,7 +166,6 @@ describe('ods clone list', () => {
 
       const combinedLogs = logs.join('\n');
       expect(combinedLogs).to.include('aaaa-001-1642780893121');
-      expect(combinedLogs).to.include('Total: 1 clone(s)');
     });
 
     it('should handle empty clone list', async () => {

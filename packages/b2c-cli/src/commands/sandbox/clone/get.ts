@@ -15,6 +15,8 @@ type SandboxCloneGetModel = OdsComponents['schemas']['SandboxCloneGetModel'];
  * Command to get details of a specific sandbox clone.
  */
 export default class CloneGet extends OdsCommand<typeof CloneGet> {
+  static aliases = ['ods:clone:get'];
+
   static args = {
     sandboxId: Args.string({
       description: 'Sandbox ID (UUID or friendly format like realm-instance)',
