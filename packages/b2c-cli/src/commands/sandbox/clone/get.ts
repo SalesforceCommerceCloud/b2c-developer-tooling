@@ -78,6 +78,7 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
       ['Source Instance', clone?.sourceInstance],
       ['Target Instance', clone?.targetInstance],
       ['Realm', clone?.realm],
+      ['Status', clone?.status],
       ['Progress', clone?.progressPercentage === undefined ? '-' : `${clone.progressPercentage}%`],
       ['Created At', clone?.createdAt ? new Date(clone.createdAt).toLocaleString() : undefined],
       ['Created By', clone?.createdBy],
