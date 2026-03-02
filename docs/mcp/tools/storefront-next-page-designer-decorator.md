@@ -13,7 +13,7 @@ The `storefront_next_page_designer_decorator` tool analyzes React components and
 1. **Auto Mode**: Quick setup with sensible defaults-automatically selects suitable props, infers types, and generates decorators immediately.
 2. **Interactive Mode**: Multi-step workflow for fine-tuned control over decorator configuration.
 
-The tool uses component discovery to find components by name (e.g., "ProductCard") without requiring exact file paths, making it easy to add Page Designer support to existing components.
+The tool uses component discovery to find components by name (e.g., "ProductItem", "ProductTile") without requiring exact file paths, making it easy to add Page Designer support to existing components.
 
 ## Authentication
 
@@ -27,7 +27,7 @@ No authentication required. This tool operates on local files only.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `component` | string | Yes | Component name (for example, `"ProductCard"`, `"Hero"`) or file path (for example, `"src/components/ProductCard.tsx"`). When a name is provided, the tool automatically searches common component directories. |
+| `component` | string | Yes | Component name (for example, `"ProductItem"`, `"ProductTile"`) or file path (for example, `"src/components/ProductItem.tsx"`). When a name is provided, the tool automatically searches common component directories. |
 | `searchPaths` | string[] | No | Additional directories to search for components (for example, `["packages/retail/src", "app/features"]`). Only used when a component is specified by name (not path). |
 | `autoMode` | boolean | No | Auto-generate all configurations with sensible defaults (skip interactive workflow). When enabled, automatically selects suitable props, infers types, and generates decorators without user confirmation. |
 | `componentId` | string | No | Override component ID (default: auto-generated from component name). |
@@ -60,14 +60,14 @@ Auto mode generates decorators immediately with sensible defaults:
 **Usage:**
 
 ```
-Use the MCP tool to add Page Designer decorators to my ProductCard component with auto mode.
+Use the MCP tool to add Page Designer decorators to my ProductItem component with auto mode.
 ```
 
 **Example:**
 
 ```json
 {
-  "component": "ProductCard",
+  "component": "ProductItem",
   "autoMode": true
 }
 ```
@@ -85,14 +85,14 @@ Interactive mode provides a multi-step workflow for fine-tuned control:
 **Usage:**
 
 ```
-Use the MCP tool to add Page Designer decorators to my Hero component interactively.
+Use the MCP tool to add Page Designer decorators to my ProductTile component interactively.
 ```
 
 **Example:**
 
 ```json
 {
-  "component": "Hero",
+  "component": "ProductTile",
   "conversationContext": {
     "step": "analyze"
   }
@@ -110,13 +110,13 @@ The tool automatically searches for components in these locations (in order):
 5. Custom paths (if provided via `searchPaths`)
 
 **Project Directory:**
-Component discovery uses the project directory resolved from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable. This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+Component discovery uses the project directory from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable. This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **Examples:**
 
-- `"ProductCard"` → finds `src/components/product-tile/ProductCard.tsx`
-- `"Hero"` → finds `src/components/hero/Hero.tsx` or `app/components/hero.tsx`
-- `"product-card"` → finds `src/components/product-card.tsx` or `product-card/index.tsx`
+- `"ProductItem"` → finds `src/components/product-item/index.tsx` or `ProductItem.tsx`
+- `"ProductTile"` → finds `src/components/product-tile/ProductTile.tsx` or `product-tile/index.tsx`
+- `"product-item"` → finds `src/components/product-item.tsx` or `product-item/index.tsx`
 
 **Tips:**
 
@@ -132,7 +132,7 @@ Component discovery uses the project directory resolved from `--project-director
 Add Page Designer support with auto-generated defaults:
 
 ```
-Use the MCP tool to add Page Designer decorators to my ProductCard component.
+Use the MCP tool to add Page Designer decorators to my ProductItem component.
 ```
 
 ### Auto Mode with Custom Search Paths
@@ -140,7 +140,7 @@ Use the MCP tool to add Page Designer decorators to my ProductCard component.
 Search in custom directories:
 
 ```
-Use the MCP tool to add Page Designer decorators to ProductCard, searching in packages/retail/src and app/features.
+Use the MCP tool to add Page Designer decorators to ProductItem, searching in packages/retail/src and app/features.
 ```
 
 ### Interactive Mode - Start Analysis
@@ -148,7 +148,7 @@ Use the MCP tool to add Page Designer decorators to ProductCard, searching in pa
 Begin interactive workflow:
 
 ```
-Use the MCP tool to analyze my Hero component for Page Designer decorators.
+Use the MCP tool to analyze my ProductTile component for Page Designer decorators.
 ```
 
 ### Path-Based Usage
@@ -156,7 +156,7 @@ Use the MCP tool to analyze my Hero component for Page Designer decorators.
 Specify exact component path:
 
 ```
-Use the MCP tool to add Page Designer decorators to src/components/ProductCard.tsx with auto mode.
+Use the MCP tool to add Page Designer decorators to src/components/ProductItem.tsx with auto mode.
 ```
 
 ## Output
@@ -174,12 +174,12 @@ The tool returns generated decorator code that includes:
 import { Component, AttributeDefinition, RegionDefinition } from '@salesforce/page-designer';
 
 @Component({
-  id: 'product-card',
-  name: 'Product Card',
+  id: 'product-item',
+  name: 'Product Item',
   description: 'Displays product information',
   group: 'Commerce'
 })
-export class ProductCardMetadata {
+export class ProductItemMetadata {
   @AttributeDefinition({
     id: 'product-id',
     name: 'Product ID',

@@ -166,3 +166,39 @@ jobs:
             if (context.eventName === 'schedule') {
               github.rest.issues.create(issue);
             }
+
+  mcp-e2e-tests:
+    name: MCP E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: |
+          echo "store_path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.store_path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build packages
+        run: pnpm -r run build
+      - name: Run MCP E2E tests
+        working-directory: packages/b2c-dx-mcp
+        env:
+          SFCC_DISABLE_TELEMETRY: 'true'
+          NODE_ENV: test
+        run: pnpm run test:e2e:ci
