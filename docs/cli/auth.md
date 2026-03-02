@@ -10,7 +10,7 @@ Commands for authentication and token management.
 
 The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off implicit flow):
 
-- **Stateful (browser)**: After you run `b2c auth login`, your token is stored in the same location as [sfcc-ci](https://github.com/SalesforceCommerceCloud/sfcc-ci). Subsequent commands (e.g. `b2c auth token`, `b2c am orgs list`) use this token when it is present and valid. If the token is missing or expired, the CLI falls back to stateless auth.
+- **Stateful (browser)**: After you run `b2c auth login`, your token is stored on disk in the CLI data directory. Subsequent commands (e.g. `b2c auth token`, `b2c am orgs list`) use this token when it is present and valid. If the token is missing or expired, the CLI falls back to stateless auth.
 - **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Supports auto-renewal with `--renew`.
 - **Stateless**: You provide `--client-id` (and optionally `--client-secret`) per run or via environment/config; no session is persisted.
 
@@ -20,7 +20,7 @@ Use **auth:logout** to clear the stored session and return to stateless-only beh
 
 ## b2c auth login
 
-Log in via browser (implicit OAuth) and save the session for stateful auth. Uses the same storage as sfcc-ci.
+Log in via browser (implicit OAuth) and save the session for stateful auth.
 
 ### Usage
 
@@ -41,7 +41,7 @@ b2c auth logout
 
 ## b2c auth client
 
-Authenticate an API client using client credentials or resource owner password credentials and save the session for stateful auth. Mirrors the [sfcc-ci `client:auth`](https://github.com/SalesforceCommerceCloud/sfcc-ci) command.
+Authenticate an API client using client credentials or resource owner password credentials and save the session for stateful auth. Compatible with the [sfcc-ci `client:auth`](https://github.com/SalesforceCommerceCloud/sfcc-ci) workflow.
 
 This is the non-interactive alternative to `auth login` — ideal for CI/CD pipelines and automation.
 
@@ -120,7 +120,7 @@ b2c auth client renew
 
 ## b2c auth client token
 
-Return the current stored authentication token. Mirrors [sfcc-ci `client:auth:token`](https://github.com/SalesforceCommerceCloud/sfcc-ci).
+Return the current stored authentication token. Compatible with the [sfcc-ci `client:auth:token`](https://github.com/SalesforceCommerceCloud/sfcc-ci) workflow.
 
 ### Usage
 

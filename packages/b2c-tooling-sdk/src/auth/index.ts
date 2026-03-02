@@ -84,8 +84,9 @@ export {ApiKeyStrategy} from './api-key.js';
 export {StatefulOAuthStrategy} from './stateful-oauth-strategy.js';
 export type {StatefulOAuthStrategyOptions} from './stateful-oauth-strategy.js';
 
-// Stateful auth store (sfcc-ci compatible)
+// Stateful auth store
 export {
+  initializeStatefulStore,
   getStoredSession,
   setStoredSession,
   clearStoredSession,

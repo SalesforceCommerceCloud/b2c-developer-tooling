@@ -49,9 +49,9 @@ The CLI supports four authentication methods:
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
 
-**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once, then stores the session on disk. Subsequent commands automatically use the stored token when it is present and valid, without re-opening the browser. Uses the same storage as [sfcc-ci](https://github.com/SalesforceCommerceCloud/sfcc-ci). Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
+**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once, then stores the session on disk. Subsequent commands automatically use the stored token when it is present and valid, without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
 
-**Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password), store the session, and reuse it across subsequent commands without passing credentials each time. Use `--renew` to enable automatic token renewal via `b2c auth client renew`. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
+**Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password), store the session, and reuse it across subsequent commands without passing credentials each time. Mirrors the [sfcc-ci](https://github.com/SalesforceCommerceCloud/sfcc-ci) `client:auth` workflow. Use `--renew` to enable automatic token renewal via `b2c auth client renew`. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
 
 ::: warning Stateful vs Stateless Precedence
 The stored session is used only when the token is valid **and** no explicit auth flags are provided. The CLI falls back to stateless auth when:

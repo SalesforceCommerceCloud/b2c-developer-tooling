@@ -4,110 +4,131 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
- * Stateful auth store using the same storage mechanism and keys as sfcc-ci.
- * Uses the `conf` package with projectName 'sfcc-ci' so tokens persist across
- * sfcc-ci and b2c-cli when present and valid.
+ * Stateful auth store backed by a JSON file in the oclif data directory
+ * (e.g. ~/Library/Application Support/@salesforce/b2c-cli/auth-session.json on macOS).
+ *
+ * Initialize via initializeStatefulStore(dataDir) from BaseCommand.init() so the
+ * session file is co-located with other CLI data. Falls back to an OS-appropriate
+ * default path when used standalone (outside a CLI command).
+ *
+ * The stateful auth workflow (b2c auth client / b2c auth login / b2c auth logout)
+ * is compatible with sfcc-ci command patterns. Session data is stored internally
+ * in the CLI data directory, not in the sfcc-ci config store.
  *
  * @module auth/stateful-store
  */
-import Conf from 'conf';
+import {existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {homedir, platform} from 'node:os';
 import {decodeJWT} from './oauth.js';
 import {getLogger} from '../logging/logger.js';
 
-/** Config keys matching sfcc-ci lib/config usage */
-const SFCC_CLIENT_ID = 'SFCC_CLIENT_ID';
-const SFCC_CLIENT_TOKEN = 'SFCC_CLIENT_TOKEN';
-const SFCC_REFRESH_TOKEN = 'SFCC_REFRESH_TOKEN';
-const SFCC_CLIENT_RENEW_BASE = 'SFCC_CLIENT_RENEW_BASE';
-const SFCC_USER = 'SFCC_USER';
+const STATEFUL_AUTH_SESSION_STORE = 'auth-session.json';
 
 /** Default buffer (seconds) before token exp to consider it expired */
 const EXPIRY_BUFFER_SEC = 60;
 
-let storeInstance: Conf | null = null;
+let storePath: string | null = null;
 
 /**
- * Returns the conf store instance (projectName 'sfcc-ci' for compatibility with sfcc-ci).
- * Uses 'sfcc-ci-test' when NODE_ENV === 'test' so tests do not touch user config.
+ * Computes the oclif-compatible data directory for @salesforce/b2c-cli.
+ * Used as a fallback when initializeStatefulStore() has not been called.
  */
-function getStore(): Conf {
-  if (!storeInstance) {
-    const projectName = process.env.NODE_ENV === 'test' ? 'sfcc-ci-test' : 'sfcc-ci';
-    storeInstance = new Conf({projectName});
+function getDefaultDataDir(): string {
+  const home = homedir();
+  const name = '@salesforce/b2c-cli';
+  switch (platform()) {
+    case 'darwin':
+      return join(home, 'Library', 'Application Support', name);
+    case 'win32':
+      return join(process.env.LOCALAPPDATA ?? join(home, 'AppData', 'Local'), name);
+    default:
+      return join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), name);
   }
-  return storeInstance;
+}
+
+function getSessionFilePath(): string {
+  return join(storePath ?? getDefaultDataDir(), STATEFUL_AUTH_SESSION_STORE);
 }
 
 /**
- * Stored session read from stateful store.
- * Matches sfcc-ci persisted keys.
+ * Initialize the stateful store with the oclif data directory.
+ * Call this from BaseCommand.init() with this.config.dataDir so the session
+ * file is stored alongside other CLI data (e.g. ~/Library/Application Support/@salesforce/b2c-cli).
+ */
+export function initializeStatefulStore(dataDir: string): void {
+  storePath = dataDir;
+}
+
+/**
+ * Stored session persisted by stateful auth commands.
  */
 export interface StatefulSession {
   clientId: string;
   accessToken: string;
   refreshToken?: string | null;
-  /** Base64-encoded "clientId:clientSecret" for token renewal (client_credentials or refresh_token). */
+  /** Base64-encoded "clientId:clientSecret" for token renewal. */
   renewBase?: string | null;
   user?: string | null;
 }
 
 /**
- * Reads the current stateful session from store if present.
- * Returns null if no access token is stored.
+ * Reads the current stateful session from the JSON file.
+ * Returns null if no session file exists or the file is invalid.
  */
 export function getStoredSession(): StatefulSession | null {
-  const store = getStore();
-  const accessToken = store.get(SFCC_CLIENT_TOKEN) as string | undefined;
-  if (!accessToken) {
+  const filePath = getSessionFilePath();
+  if (!existsSync(filePath)) {
     return null;
   }
-  const clientId = store.get(SFCC_CLIENT_ID) as string | undefined;
-  if (!clientId) {
+  try {
+    const data = JSON.parse(readFileSync(filePath, 'utf8')) as Partial<StatefulSession>;
+    if (!data.clientId || !data.accessToken) {
+      return null;
+    }
+    return {
+      clientId: data.clientId,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken ?? null,
+      renewBase: data.renewBase ?? null,
+      user: data.user ?? null,
+    };
+  } catch {
     return null;
   }
-  return {
-    clientId,
-    accessToken,
-    refreshToken: (store.get(SFCC_REFRESH_TOKEN) as string | undefined) ?? null,
-    renewBase: (store.get(SFCC_CLIENT_RENEW_BASE) as string | undefined) ?? null,
-    user: (store.get(SFCC_USER) as string | undefined) ?? null,
-  };
 }
 
 /**
- * Writes a session to the stateful store (same keys as sfcc-ci).
+ * Writes a session to the JSON file, creating the directory if needed.
  */
 export function setStoredSession(session: StatefulSession): void {
-  const store = getStore();
-  store.set(SFCC_CLIENT_ID, session.clientId);
-  store.set(SFCC_CLIENT_TOKEN, session.accessToken);
-  if (session.refreshToken != null) {
-    store.set(SFCC_REFRESH_TOKEN, session.refreshToken);
-  } else {
-    store.delete(SFCC_REFRESH_TOKEN);
+  const filePath = getSessionFilePath();
+  const dir = join(filePath, '..');
+  if (!existsSync(dir)) {
+    mkdirSync(dir, {recursive: true});
   }
-  if (session.renewBase != null) {
-    store.set(SFCC_CLIENT_RENEW_BASE, session.renewBase);
-  } else {
-    store.delete(SFCC_CLIENT_RENEW_BASE);
-  }
-  if (session.user != null) {
-    store.set(SFCC_USER, session.user);
-  } else {
-    store.delete(SFCC_USER);
-  }
+  const data: StatefulSession = {
+    clientId: session.clientId,
+    accessToken: session.accessToken,
+    refreshToken: session.refreshToken ?? null,
+    renewBase: session.renewBase ?? null,
+    user: session.user ?? null,
+  };
+  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
 }
 
 /**
- * Clears all stateful auth data (same keys as sfcc-ci clear()).
+ * Clears the stored session by removing the session file.
  */
 export function clearStoredSession(): void {
-  const store = getStore();
-  store.delete(SFCC_CLIENT_ID);
-  store.delete(SFCC_CLIENT_TOKEN);
-  store.delete(SFCC_REFRESH_TOKEN);
-  store.delete(SFCC_CLIENT_RENEW_BASE);
-  store.delete(SFCC_USER);
+  const filePath = getSessionFilePath();
+  if (existsSync(filePath)) {
+    try {
+      unlinkSync(filePath);
+    } catch {
+      // ignore — file may have already been removed
+    }
+  }
 }
 
 /**
@@ -142,7 +163,7 @@ export function isStatefulTokenValid(
     }
     const nowSec = Math.floor(Date.now() / 1000);
     if (nowSec >= exp - expiryBufferSec) {
-      logger.debug('[StatefulAuth] Token expired or within buffer');
+      logger.debug('[StatefulAuth] Token missing or expired');
       return false;
     }
     if (requiredScopes.length > 0) {
@@ -162,9 +183,10 @@ export function isStatefulTokenValid(
 }
 
 /**
- * Resets the store instance (for tests).
+ * Resets the store path (for tests). After calling this, the next operation
+ * will use the default data directory unless initializeStatefulStore() is called again.
  * @internal
  */
 export function resetStatefulStoreForTesting(): void {
-  storeInstance = null;
+  storePath = null;
 }

@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {mkdtempSync, rmSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
@@ -10,6 +13,7 @@ import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   ImplicitOAuthStrategy,
   StatefulOAuthStrategy,
+  initializeStatefulStore,
   setStoredSession,
   clearStoredSession,
   resetStatefulStoreForTesting,
@@ -88,18 +92,20 @@ class TestOAuthCommandWithDefault extends OAuthCommand<typeof TestOAuthCommandWi
 describe('cli/oauth-command', () => {
   let config: Config;
   let command: TestOAuthCommand;
-  const originalEnv = process.env.NODE_ENV;
+  let testDir: string;
 
   before(() => {
-    process.env.NODE_ENV = 'test';
+    testDir = mkdtempSync(join(tmpdir(), 'b2c-oauth-cmd-test-'));
+    initializeStatefulStore(testDir);
   });
+
   after(() => {
-    process.env.NODE_ENV = originalEnv;
+    resetStatefulStoreForTesting();
+    rmSync(testDir, {recursive: true, force: true});
   });
 
   beforeEach(async () => {
     clearStoredSession();
-    resetStatefulStoreForTesting();
     isolateConfig();
     config = await Config.load();
     command = new TestOAuthCommand([], config);
@@ -109,7 +115,6 @@ describe('cli/oauth-command', () => {
     sinon.restore();
     restoreConfig();
     clearStoredSession();
-    resetStatefulStoreForTesting();
   });
 
   describe('requireOAuthCredentials', () => {

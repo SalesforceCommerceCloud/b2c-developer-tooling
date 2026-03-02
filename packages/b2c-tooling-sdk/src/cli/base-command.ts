@@ -22,6 +22,7 @@ import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/mi
 import type {ConfigSource} from '../config/types.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
+import {initializeStatefulStore} from '../auth/stateful-store.js';
 import {setUserAgent} from '../clients/user-agent.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
@@ -154,6 +155,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     this.configureLogging();
+
+    // Initialize stateful auth store with oclif's data directory so session
+    // files are stored alongside other CLI data (e.g. ~/Library/Application Support/@salesforce/b2c-cli)
+    initializeStatefulStore(this.config.dataDir);
 
     // Set CLI User-Agent (CLI name/version only, without @salesforce/ prefix)
     // This must happen before any API clients are created
