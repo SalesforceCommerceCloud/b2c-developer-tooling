@@ -63,7 +63,7 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
     username: ${{ secrets.SFCC_USERNAME }}
     password: ${{ secrets.SFCC_PASSWORD }}
     target: './export/site-import.zip'
-    timeout: 300
+    timeout: 600
 ```
 
 ### Raw CLI command

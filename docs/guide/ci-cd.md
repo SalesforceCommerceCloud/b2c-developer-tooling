@@ -100,7 +100,7 @@ Combines setup and command execution. Pass a `command` to run a CLI command, or 
 | `command` | — | CLI command to run |
 | `version` | `latest` | CLI version to install |
 | `node-version` | `22` | Node.js version |
-| `json` | `true` | Parse JSON output |
+| `json` | `true` | Append `--json` flag and parse output |
 | `working-directory` | `.` | Working directory |
 | Auth inputs | — | See [Authentication](#authentication) |
 
@@ -242,13 +242,16 @@ Execute a B2C job and optionally wait for completion.
     job-id: 'sfcc-site-archive-import'
     wait: true
     timeout: 600
+    parameters: |
+      ImportFile=site-import.zip
+      ImportMode=merge
 ```
 
 | Input | Default | Description |
 |-------|---------|-------------|
 | `job-id` | *(required)* | Job ID to execute |
 | `wait` | `true` | Wait for completion |
-| `timeout` | `900` | Timeout in seconds |
+| `timeout` | `900` | Timeout in seconds (when wait=true) |
 | `parameters` | — | `KEY=VALUE` pairs, one per line |
 | `show-log` | `true` | Show job log on failure |
 
