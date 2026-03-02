@@ -71,13 +71,8 @@ describe('registry', () => {
       const registry = createToolRegistry(loadServices);
 
       expect(registry.PWAV3).to.be.an('array');
-      expect(registry.PWAV3.length).to.be.greaterThan(0);
-
+      // mrt_bundle_push appears in PWAV3 (multi-toolset); PWA Kit-specific tools not yet implemented
       const toolNames = registry.PWAV3.map((t) => t.name);
-      expect(toolNames).to.include('pwakit_create_storefront');
-      expect(toolNames).to.include('pwakit_create_page');
-      expect(toolNames).to.include('pwakit_create_component');
-      // mrt_bundle_push should also appear in PWAV3 (multi-toolset)
       expect(toolNames).to.include('mrt_bundle_push');
     });
 
@@ -91,6 +86,7 @@ describe('registry', () => {
       const toolNames = registry.SCAPI.map((t) => t.name);
       expect(toolNames).to.include('scapi_schemas_list');
       expect(toolNames).to.include('scapi_custom_apis_status');
+      expect(toolNames).to.include('scapi_custom_api_scaffold');
     });
 
     it('should create STOREFRONTNEXT tools', () => {
@@ -102,8 +98,7 @@ describe('registry', () => {
 
       const toolNames = registry.STOREFRONTNEXT.map((t) => t.name);
       expect(toolNames).to.include('storefront_next_development_guidelines');
-      expect(toolNames).to.include('storefront_next_site_theming');
-      expect(toolNames).to.include('storefront_next_generate_component');
+      expect(toolNames).to.include('storefront_next_page_designer_decorator');
       // mrt_bundle_push should also appear in STOREFRONTNEXT (multi-toolset)
       expect(toolNames).to.include('mrt_bundle_push');
     });
@@ -136,7 +131,7 @@ describe('registry', () => {
       const server = createMockServer();
       // Use a workspace path that won't match any patterns (should fall back to SCAPI)
       const flags: StartupFlags = {
-        workingDirectory: '/nonexistent/path',
+        projectDirectory: '/nonexistent/path',
         allowNonGaTools: true,
       };
 
@@ -192,7 +187,7 @@ describe('registry', () => {
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should include MRT tools
       expect(server.registeredTools).to.include('mrt_bundle_push');
-      // Should not include PWAV3-only tools
+      // Should not include PWAV3-only tools (placeholder tools removed)
       expect(server.registeredTools).to.not.include('pwakit_create_storefront');
     });
 
@@ -206,10 +201,9 @@ describe('registry', () => {
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // Should include tools from all toolsets
+      // Should include tools from all toolsets (placeholder tools removed)
       expect(server.registeredTools).to.include('cartridge_deploy');
       expect(server.registeredTools).to.include('mrt_bundle_push');
-      expect(server.registeredTools).to.include('pwakit_create_storefront');
       expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('storefront_next_development_guidelines');
     });
@@ -310,6 +304,7 @@ describe('registry', () => {
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('scapi_custom_apis_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_scaffold');
     });
 
     it('should trigger auto-discovery when all individual tools are invalid', async () => {
@@ -326,6 +321,7 @@ describe('registry', () => {
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('scapi_custom_apis_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_scaffold');
     });
 
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
@@ -359,10 +355,10 @@ describe('registry', () => {
     });
 
     describe('auto-discovery', () => {
-      it('should use workingDirectory from flags for detection', async () => {
+      it('should use projectDirectory from flags for detection', async () => {
         const server = createMockServer();
         const flags: StartupFlags = {
-          workingDirectory: '/some/workspace',
+          projectDirectory: '/some/workspace',
           allowNonGaTools: true,
         };
 
@@ -378,7 +374,7 @@ describe('registry', () => {
         // Use a path that doesn't exist - detection will return 'unknown' project type
         // which maps to SCAPI toolset
         const flags: StartupFlags = {
-          workingDirectory: '/nonexistent',
+          projectDirectory: '/nonexistent',
           allowNonGaTools: true,
         };
 
@@ -393,7 +389,7 @@ describe('registry', () => {
         const server = createMockServer();
         const flags: StartupFlags = {
           tools: ['cartridge_deploy'],
-          workingDirectory: '/some/workspace',
+          projectDirectory: '/some/workspace',
           allowNonGaTools: true,
         };
 
@@ -409,7 +405,7 @@ describe('registry', () => {
         const server = createMockServer();
         const flags: StartupFlags = {
           toolsets: ['CARTRIDGES'],
-          workingDirectory: '/some/workspace',
+          projectDirectory: '/some/workspace',
           allowNonGaTools: true,
         };
 

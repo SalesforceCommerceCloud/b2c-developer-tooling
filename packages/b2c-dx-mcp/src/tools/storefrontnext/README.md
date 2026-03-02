@@ -127,6 +127,59 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 }
 ```
 
+### `storefront_next_site_theming`
+
+**MANDATORY** before implementing any theming changes. Provides theming guidelines, questions, and automatic color contrast validation. Call this tool FIRST when the user requests theming (even if colors/fonts are provided). Never implement without calling it first.
+
+**Status**: ✅ Implemented (non-GA - use `--allow-non-ga-tools` flag)
+
+**Use cases**:
+
+- Apply colors, fonts, or visual styling to a Storefront Next site
+- Validate color combinations for WCAG accessibility before implementing
+- Follow the theming workflow (questions → validation → confirmation → implement)
+
+**Parameters**:
+
+- `fileKeys` (optional, array): File keys to add to the default set. Defaults use `theming-questions`, `theming-validation`, `theming-accessibility`
+- `conversationContext` (optional, object): Context from previous rounds
+  - `currentStep` (optional): Current step in the conversation
+  - `collectedAnswers` (optional): Previously collected answers; include `colorMapping` to trigger automatic validation (colorMapping alone is sufficient; colors array is not required)
+  - `questionsAsked` (optional): List of question IDs already asked
+
+**Returns**: Theming guidelines, questions to ask, and (when `colorMapping` provided, with or without colors array) automated WCAG contrast validation results
+
+**Example usage**:
+
+```json
+// First call - get guidelines and questions
+{
+  "name": "storefront_next_site_theming",
+  "arguments": {
+    "conversationContext": {
+      "collectedAnswers": {"colors": [], "fonts": []}
+    }
+  }
+}
+
+// Validation call - after constructing colorMapping (colorMapping alone triggers validation)
+{
+  "name": "storefront_next_site_theming",
+  "arguments": {
+    "conversationContext": {
+      "collectedAnswers": {
+        "colorMapping": {
+          "lightText": "#000000",
+          "lightBackground": "#FFFFFF",
+          "buttonText": "#FFFFFF",
+          "buttonBackground": "#0A2540"
+        }
+      }
+    }
+  }
+}
+```
+
 ## Implementation Details
 
 ### Architecture
@@ -196,20 +249,17 @@ The tool automatically searches for components in these locations (in order):
 4. `src/**` (broader search)
 5. Custom paths (if provided via `searchPaths`)
 
-**Working Directory**:
+**Project Directory**:
 
-Component discovery uses the working directory resolved from `--working-directory` flag or `SFCC_WORKING_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
+Component discovery uses the project directory resolved from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (via Services). This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.
 
-## Placeholder Tools
+#### `storefront_next_site_theming`
 
-The following tools are placeholders awaiting implementation:
+The tool loads theming guidance from markdown files in `content/site-theming/` and runs automatic WCAG contrast validation when `colorMapping` is provided:
 
-- `storefront_next_site_theming` - Configure and manage site theming for Storefront Next
-- `storefront_next_figma_to_component_workflow` - Convert Figma designs to Storefront Next components
-- `storefront_next_generate_component` - Generate a new Storefront Next component
-- `storefront_next_map_tokens_to_theme` - Map design tokens to Storefront Next theme configuration
-- `storefront_next_generate_page_designer_metadata` - Generate Page Designer metadata for Storefront Next components
+- **Content source**: `theming-questions`, `theming-validation`, `theming-accessibility` (default); custom files via `fileKeys` or `THEMING_FILES` env
+- **Workflow**: Call tool → Ask questions → Call with `colorMapping` (triggers validation) → Present findings → Wait for confirmation → Implement
 
-Use `--allow-non-ga-tools` flag to enable placeholder tools.
+**See also**: [Detailed documentation](./site-theming/README.md) for complete usage guide, architecture details, and examples.

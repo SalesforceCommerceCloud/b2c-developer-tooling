@@ -50,6 +50,14 @@ export interface SiteArchiveImportResult {
  * - A Buffer containing zip data
  * - A filename already on the instance (in Impex/src/instance/)
  *
+ * **Buffer handling:** When passing a Buffer, the `archiveName` option controls
+ * the contract:
+ * - **Without `archiveName`:** The buffer should contain archive entries without
+ *   a root directory (e.g. `libraries/mylib/library.xml`). The SDK generates
+ *   an archive name and wraps the contents under it.
+ * - **With `archiveName`:** The buffer must already be correctly structured with
+ *   `archiveName/` as the top-level directory. It is uploaded as-is.
+ *
  * @param instance - B2C instance to import to
  * @param target - Source to import (directory path, zip file path, Buffer, or remote filename)
  * @param options - Import options
@@ -64,9 +72,17 @@ export interface SiteArchiveImportResult {
  * // Import from a zip file
  * const result = await siteArchiveImport(instance, './export.zip');
  *
- * // Import from a buffer
- * const zipBuffer = await fs.promises.readFile('./export.zip');
- * const result = await siteArchiveImport(instance, zipBuffer, {
+ * // Import from a buffer (SDK wraps contents automatically)
+ * const zip = new JSZip();
+ * zip.file('libraries/mylib/library.xml', xmlContent);
+ * const buffer = await zip.generateAsync({type: 'nodebuffer'});
+ * const result = await siteArchiveImport(instance, buffer);
+ *
+ * // Import from a buffer with explicit archive name (caller owns structure)
+ * const zip = new JSZip();
+ * zip.file('my-import/libraries/mylib/library.xml', xmlContent);
+ * const buffer = await zip.generateAsync({type: 'nodebuffer'});
+ * const result = await siteArchiveImport(instance, buffer, {
  *   archiveName: 'my-import'
  * });
  *
@@ -94,12 +110,20 @@ export async function siteArchiveImport(
     zipFilename = target.remoteFilename;
     needsUpload = false;
   } else if (Buffer.isBuffer(target)) {
-    // Buffer - use provided archive name
-    if (!archiveName) {
-      throw new Error('archiveName is required when importing from a Buffer');
+    if (archiveName) {
+      // Caller provides name — buffer must already contain the correct
+      // top-level directory structure (archiveName/...).
+      const baseName = archiveName.endsWith('.zip') ? archiveName.slice(0, -4) : archiveName;
+      zipFilename = `${baseName}.zip`;
+      archiveContent = target;
+    } else {
+      // No name — SDK generates one and wraps the buffer contents under it.
+      // The buffer should contain archive entries without a root directory
+      // (e.g. libraries/mylib/library.xml, sites/RefArch/site.xml).
+      const archiveDirName = `import-${Date.now()}`;
+      zipFilename = `${archiveDirName}.zip`;
+      archiveContent = await wrapArchiveContents(target, archiveDirName, logger);
     }
-    zipFilename = archiveName.endsWith('.zip') ? archiveName : `${archiveName}.zip`;
-    archiveContent = target;
   } else {
     // File path - check if directory or zip file
     const targetPath = target as string;
@@ -234,6 +258,39 @@ async function addDirectoryToZip(zipFolder: JSZip, dirPath: string): Promise<voi
       zipFolder.file(entry.name, content);
     }
   }
+}
+
+/**
+ * Wraps the contents of a zip buffer under a new top-level directory.
+ *
+ * The input buffer should contain archive entries without a root directory
+ * (e.g. `libraries/mylib/library.xml`). The output will have all entries
+ * nested under `archiveDirName/` (e.g. `archiveDirName/libraries/mylib/library.xml`).
+ */
+async function wrapArchiveContents(
+  buffer: Buffer,
+  archiveDirName: string,
+  logger: ReturnType<typeof getLogger>,
+): Promise<Buffer> {
+  const zip = await JSZip.loadAsync(buffer);
+
+  logger.debug({archiveDirName}, `Wrapping archive contents under ${archiveDirName}/`);
+
+  const newZip = new JSZip();
+  const rootFolder = newZip.folder(archiveDirName)!;
+
+  for (const [filePath, entry] of Object.entries(zip.files)) {
+    if (!entry.dir) {
+      const content = await entry.async('nodebuffer');
+      rootFolder.file(filePath, content);
+    }
+  }
+
+  return newZip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: {level: 9},
+  });
 }
 
 /**

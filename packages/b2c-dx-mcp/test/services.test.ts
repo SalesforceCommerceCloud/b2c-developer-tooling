@@ -172,35 +172,50 @@ describe('services', () => {
     });
   });
 
-  describe('getWorkingDirectory', () => {
-    it('should return working directory when provided in config', () => {
+  describe('resolveWithProjectDirectory', () => {
+    it('should return project directory when provided in config and no path arg', () => {
       const workingDir = '/path/to/project';
-      const config = createMockResolvedConfig({workingDirectory: workingDir});
+      const config = createMockResolvedConfig({projectDirectory: workingDir});
       const services = new Services({resolvedConfig: config});
 
-      expect(services.getWorkingDirectory()).to.equal(workingDir);
+      expect(services.resolveWithProjectDirectory()).to.equal(workingDir);
     });
 
-    it('should fall back to process.cwd() when not provided', () => {
+    it('should fall back to process.cwd() when not provided and no path arg', () => {
       const config = createMockResolvedConfig();
       const services = new Services({resolvedConfig: config});
 
-      expect(services.getWorkingDirectory()).to.equal(process.cwd());
+      expect(services.resolveWithProjectDirectory()).to.equal(process.cwd());
     });
 
-    it('should return working directory from fromResolvedConfig when provided in config', () => {
-      const workingDir = '/path/to/project';
-      const config = createMockResolvedConfig({workingDirectory: workingDir});
+    it('should return project directory from fromResolvedConfig when provided in config and no path arg', () => {
+      const projectDir = '/path/to/project';
+      const config = createMockResolvedConfig({projectDirectory: projectDir});
       const services = Services.fromResolvedConfig(config);
 
-      expect(services.getWorkingDirectory()).to.equal(workingDir);
+      expect(services.resolveWithProjectDirectory()).to.equal(projectDir);
     });
 
-    it('should fall back to process.cwd() from fromResolvedConfig when not provided in config', () => {
+    it('should fall back to process.cwd() from fromResolvedConfig when not provided in config and no path arg', () => {
       const config = createMockResolvedConfig();
       const services = Services.fromResolvedConfig(config);
 
-      expect(services.getWorkingDirectory()).to.equal(process.cwd());
+      expect(services.resolveWithProjectDirectory()).to.equal(process.cwd());
+    });
+
+    it('should return absolute path as-is', () => {
+      const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveWithProjectDirectory('/absolute/path')).to.equal('/absolute/path');
+    });
+
+    it('should resolve relative path relative to project directory', () => {
+      const projectDir = '/path/to/project';
+      const config = createMockResolvedConfig({projectDirectory: projectDir});
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveWithProjectDirectory('subdir')).to.equal('/path/to/project/subdir');
     });
   });
 

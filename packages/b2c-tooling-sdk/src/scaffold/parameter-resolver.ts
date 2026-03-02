@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import path from 'node:path';
 import type {B2CInstance} from '../instance/index.js';
 import type {Scaffold, ScaffoldParameter, ScaffoldChoice} from './types.js';
 import {evaluateCondition} from './validators.js';
@@ -64,6 +65,22 @@ export interface ResolvedParameterSchema {
 }
 
 /**
+ * Path to use for scaffold destination so files are generated under outputDir (e.g. working directory).
+ * Returns a path relative to projectRoot when the cartridge is under projectRoot, so the executor
+ * joins with outputDir instead of ignoring it. Otherwise returns the absolute path.
+ */
+function cartridgePathForDestination(absolutePath: string, projectRoot: string): string {
+  const normalizedRoot = path.resolve(projectRoot);
+  const normalizedPath = path.resolve(absolutePath);
+  const relative = path.relative(normalizedRoot, normalizedPath);
+  // Use relative path only when cartridge is under projectRoot (no leading '..')
+  if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
+    return relative;
+  }
+  return absolutePath;
+}
+
+/**
  * Resolve scaffold parameters by:
  * 1. Validating provided variables against sources
  * 2. Setting companion path variables for cartridges
@@ -109,7 +126,7 @@ export async function resolveScaffoldParameters(
         continue;
       }
 
-      // Set companion path variable for cartridges source
+      // Set companion path variable for cartridges source (relative to projectRoot when under it so outputDir is used)
       if (param.source === 'cartridges') {
         if (!cartridgePathMap) {
           const result = resolveLocalSource('cartridges', projectRoot);
@@ -117,7 +134,7 @@ export async function resolveScaffoldParameters(
         }
         const cartridgePath = cartridgePathMap?.get(providedValue);
         if (cartridgePath) {
-          variables[`${param.name}Path`] = cartridgePath;
+          variables[`${param.name}Path`] = cartridgePathForDestination(cartridgePath, projectRoot);
         }
       }
       continue;
@@ -140,7 +157,7 @@ export async function resolveScaffoldParameters(
         }
         const cartridgePath = cartridgePathMap?.get(param.default);
         if (cartridgePath) {
-          variables[`${param.name}Path`] = cartridgePath;
+          variables[`${param.name}Path`] = cartridgePathForDestination(cartridgePath, projectRoot);
         }
       }
       continue;

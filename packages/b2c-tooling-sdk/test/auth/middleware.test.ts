@@ -15,6 +15,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/auth';
 import type {AuthMiddleware, AuthMiddlewareProvider} from '@salesforce/b2c-tooling-sdk/auth';
 import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {userAgentAuthProvider} from '../../src/clients/user-agent.js';
 
 const AM_HOST = 'account.demandware.com';
 const AM_URL = `https://${AM_HOST}/dwsso/oauth2/access_token`;
@@ -282,8 +283,10 @@ describe('auth/middleware', () => {
         }),
       );
 
-      // The user-agent provider should already be registered via the module import
-      // Just verify the headers are present
+      // Register the user-agent auth middleware provider explicitly
+      // (global registries are cleared between tests for isolation)
+      globalAuthMiddlewareRegistry.register(userAgentAuthProvider);
+
       const strategy = new OAuthStrategy({
         clientId: 'test-client-ua',
         clientSecret: 'test-secret',

@@ -56,10 +56,20 @@ export interface FindCartridgesOptions {
 export function findCartridges(directory?: string, options: FindCartridgesOptions = {}): CartridgeMapping[] {
   const searchDir = directory ? path.resolve(directory) : process.cwd();
 
-  // Find all .project files (Eclipse project markers)
+  // Find all .project files (Eclipse project markers).
+  // Ignore common non-cartridge dirs to keep discovery fast when projectRoot is broad (e.g. MCP working directory).
   const projectFiles = globSync('**/.project', {
     cwd: searchDir,
-    ignore: ['**/node_modules/**'],
+    ignore: [
+      '**/node_modules/**',
+      '**/.git/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/.cache/**',
+      '**/tmp/**',
+      '**/temp/**',
+    ],
   });
 
   let cartridges = projectFiles.map((f) => {

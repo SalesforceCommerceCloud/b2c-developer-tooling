@@ -89,12 +89,12 @@ function getWorkspaceRoot() {
   return process.cwd();
 }
 
-function withWorkingDirectory(args, workingDirectory) {
-  if (!workingDirectory || args.indexOf('--project-directory') !== -1 || args.indexOf('--working-directory') !== -1) {
+function withProjectDirectory(args, projectDirectory) {
+  if (!projectDirectory || args.indexOf('--project-directory') !== -1 || args.indexOf('--working-directory') !== -1) {
     return args.slice();
   }
 
-  return args.concat(['--project-directory', workingDirectory]);
+  return args.concat(['--project-directory', projectDirectory]);
 }
 
 function pickInspectConfig(parsed) {
@@ -115,8 +115,8 @@ function pickInspectConfig(parsed) {
   return root;
 }
 
-function runSetupInspect(workingDirectory) {
-  var inspectArgs = withWorkingDirectory(INSPECT_ARGS, workingDirectory);
+function runSetupInspect(projectDirectory) {
+  var inspectArgs = withProjectDirectory(INSPECT_ARGS, projectDirectory);
   var candidates = [];
 
   if (process.env.B2C_CLI_BIN && process.env.B2C_CLI_BIN.trim()) {
@@ -135,8 +135,8 @@ function runSetupInspect(workingDirectory) {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
       };
-      if (workingDirectory) {
-        execOptions.cwd = workingDirectory;
+      if (projectDirectory) {
+        execOptions.cwd = projectDirectory;
       }
 
       var stdout = childProcess.execFileSync(candidate.cmd, candidate.args, execOptions);
@@ -174,11 +174,11 @@ function resolveDwJsonConfig(raw) {
   return raw;
 }
 
-function loadDwJsonFallback(workingDirectory) {
+function loadDwJsonFallback(projectDirectory) {
   try {
-    var dwJsonPath = process.env.SFCC_CONFIG ? process.env.SFCC_CONFIG : path.join(workingDirectory, 'dw.json');
+    var dwJsonPath = process.env.SFCC_CONFIG ? process.env.SFCC_CONFIG : path.join(projectDirectory, 'dw.json');
     if (!path.isAbsolute(dwJsonPath)) {
-      dwJsonPath = path.resolve(workingDirectory || process.cwd(), dwJsonPath);
+      dwJsonPath = path.resolve(projectDirectory || process.cwd(), dwJsonPath);
     }
 
     return resolveDwJsonConfig(require(dwJsonPath));
@@ -227,10 +227,10 @@ function toProphetConfig(config) {
 
 function loadDwConfig() {
   loadDotEnv();
-  var workingDirectory = getWorkspaceRoot();
+  var projectDirectory = getWorkspaceRoot();
 
   try {
-    var inspectConfig = runSetupInspect(workingDirectory);
+    var inspectConfig = runSetupInspect(projectDirectory);
     var inspectMapped = toProphetConfig(inspectConfig);
     if (inspectMapped.hostname) {
       return inspectMapped;
@@ -242,7 +242,7 @@ function loadDwConfig() {
   }
 
   try {
-    var fallbackMapped = toProphetConfig(loadDwJsonFallback(workingDirectory));
+    var fallbackMapped = toProphetConfig(loadDwJsonFallback(projectDirectory));
     if (!fallbackMapped.hostname) {
       logProphetDw('dw.json fallback returned no hostname');
     }

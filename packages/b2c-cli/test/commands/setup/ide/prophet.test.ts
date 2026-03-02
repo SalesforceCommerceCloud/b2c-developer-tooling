@@ -93,9 +93,9 @@ describe('setup ide prophet', () => {
       expect(content).to.include('process.env.SFCC_WORKING_DIRECTORY');
       expect(content).to.include('try {');
       expect(content).to.include('return {};');
-      expect(content).to.include('execOptions.cwd = workingDirectory;');
-      expect(content).to.include("path.join(workingDirectory, 'dw.json')");
-      expect(content).to.include('path.resolve(workingDirectory || process.cwd(), dwJsonPath);');
+      expect(content).to.include('execOptions.cwd = projectDirectory;');
+      expect(content).to.include("path.join(projectDirectory, 'dw.json')");
+      expect(content).to.include('path.resolve(projectDirectory || process.cwd(), dwJsonPath);');
       expect(content).to.include('return resolveDwJsonConfig(require(dwJsonPath));');
       expect(content).to.include('setup inspect returned no hostname; falling back to dw.json');
       expect(content).to.include('dw.json fallback returned no hostname');
