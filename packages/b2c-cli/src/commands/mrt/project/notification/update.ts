@@ -64,9 +64,7 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error(
-        'MRT project is required. Provide --project flag, set SFCC_MRT_PROJECT, or set mrtProject in dw.json.',
-      );
+      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
     }
 
     const {

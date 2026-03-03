@@ -59,9 +59,7 @@ export default class MrtMemberGet extends MrtCommand<typeof MrtMemberGet> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error(
-        'MRT project is required. Provide --project flag, set SFCC_MRT_PROJECT, or set mrtProject in dw.json.',
-      );
+      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
     }
 
     this.log(t('commands.mrt.member.get.fetching', 'Fetching member {{email}}...', {email}));

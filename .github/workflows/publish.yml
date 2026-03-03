@@ -259,6 +259,13 @@ jobs:
             echo "No tags to create"
           fi
 
+      - name: Update v1 Actions tag
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
+        run: |
+          git tag -f v1
+          git push origin v1 --force
+          echo "Updated v1 tag to $(git rev-parse HEAD)"
+
       - name: Create docs tag if version changed
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_docs == 'true'
         run: |

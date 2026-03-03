@@ -29,6 +29,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'mrtOrigin',
   'accountManagerHost',
   'sandboxApiHost',
+  'realm',
 ];
 
 /**

@@ -128,9 +128,9 @@ Configure MRT settings in your project's `dw.json`:
 ### Environment Variables
 
 ```bash
-export SFCC_MRT_API_KEY=your-api-key
-export SFCC_MRT_PROJECT=my-storefront
-export SFCC_MRT_ENVIRONMENT=staging
+export MRT_API_KEY=your-api-key
+export MRT_PROJECT=my-storefront
+export MRT_ENVIRONMENT=staging
 ```
 
 ### ~/.mobify Config

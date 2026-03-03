@@ -183,7 +183,7 @@ export type {
 export {
   createCustomApisClient,
   toOrganizationId,
-  toTenantId,
+  normalizeTenantId,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
