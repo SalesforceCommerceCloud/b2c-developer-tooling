@@ -4,11 +4,16 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import path from 'node:path';
 import type {B2CInstance} from '../instance/index.js';
 import type {Scaffold, ScaffoldParameter, ScaffoldChoice} from './types.js';
 import {evaluateCondition} from './validators.js';
-import {resolveLocalSource, resolveRemoteSource, isRemoteSource, validateAgainstSource} from './sources.js';
+import {
+  resolveLocalSource,
+  resolveRemoteSource,
+  isRemoteSource,
+  validateAgainstSource,
+  cartridgePathForDestination,
+} from './sources.js';
 
 /**
  * Options for resolving scaffold parameters.
@@ -62,22 +67,6 @@ export interface ResolvedParameterSchema {
   pathMap?: Map<string, string>;
   /** Warning message if source resolution failed */
   warning?: string;
-}
-
-/**
- * Path to use for scaffold destination so files are generated under outputDir (e.g. working directory).
- * Returns a path relative to projectRoot when the cartridge is under projectRoot, so the executor
- * joins with outputDir instead of ignoring it. Otherwise returns the absolute path.
- */
-function cartridgePathForDestination(absolutePath: string, projectRoot: string): string {
-  const normalizedRoot = path.resolve(projectRoot);
-  const normalizedPath = path.resolve(absolutePath);
-  const relative = path.relative(normalizedRoot, normalizedPath);
-  // Use relative path only when cartridge is under projectRoot (no leading '..')
-  if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
-    return relative;
-  }
-  return absolutePath;
 }
 
 /**

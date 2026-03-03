@@ -127,12 +127,29 @@ function filterScaffolds(scaffolds: Scaffold[], options: ScaffoldDiscoveryOption
 }
 
 /**
+ * Options for creating a scaffold registry
+ */
+export interface ScaffoldRegistryOptions {
+  /**
+   * Override the built-in scaffolds directory. Useful for bundled environments
+   * (e.g. VS Code extensions) where the SDK's data files are copied to a
+   * different location. Defaults to the SDK's own `data/scaffolds/` directory.
+   */
+  builtInScaffoldsDir?: string;
+}
+
+/**
  * Scaffold registry for discovering and managing scaffolds
  */
 export class ScaffoldRegistry {
   private providers: ScaffoldProvider[] = [];
   private transformers: ScaffoldTransformer[] = [];
   private scaffoldCache: Map<string, Scaffold[]> = new Map();
+  private readonly builtInScaffoldsDir: string;
+
+  constructor(options?: ScaffoldRegistryOptions) {
+    this.builtInScaffoldsDir = options?.builtInScaffoldsDir ?? SCAFFOLDS_DATA_DIR;
+  }
 
   /**
    * Add scaffold providers
@@ -179,7 +196,7 @@ export class ScaffoldRegistry {
     }
 
     // 2. Built-in scaffolds (lowest priority for built-ins)
-    const builtInScaffolds = await discoverScaffoldsFromDir(SCAFFOLDS_DATA_DIR, 'built-in');
+    const builtInScaffolds = await discoverScaffoldsFromDir(this.builtInScaffoldsDir, 'built-in');
     allScaffolds.push(...builtInScaffolds);
 
     // 3. User scaffolds (~/.b2c/scaffolds/)
@@ -258,7 +275,9 @@ export class ScaffoldRegistry {
 
 /**
  * Create a new scaffold registry instance
+ *
+ * @param options - Registry options (e.g. override built-in scaffolds directory)
  */
-export function createScaffoldRegistry(): ScaffoldRegistry {
-  return new ScaffoldRegistry();
+export function createScaffoldRegistry(options?: ScaffoldRegistryOptions): ScaffoldRegistry {
+  return new ScaffoldRegistry(options);
 }
