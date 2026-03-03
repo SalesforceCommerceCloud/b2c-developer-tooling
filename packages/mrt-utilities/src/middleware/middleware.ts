@@ -402,7 +402,7 @@ export const createMRTStaticAssetServingMiddleware = (staticAssetDir: string): R
   return express.static(staticAssetDir, {
     dotfiles: 'deny',
     setHeaders: setLocalAssetHeaders,
-    fallthrough: true,
+    fallthrough: false,
   });
 };
 
