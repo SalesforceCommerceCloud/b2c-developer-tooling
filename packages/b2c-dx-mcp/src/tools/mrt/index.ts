@@ -19,7 +19,105 @@ import {createToolAdapter, jsonResult} from '../adapter.js';
 import {pushBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {PushResult, PushOptions} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+
+/**
+ * Parses a glob pattern string into an array of patterns.
+ * Accepts either a JSON array (e.g. '["server/**\/*", "ssr.{js,mjs}"]')
+ * or a comma-separated string (e.g. 'server/**\/*,ssr.js').
+ * JSON array format supports brace expansion in individual patterns.
+ */
+function parseGlobPatterns(value: string): string[] {
+  const trimmed = value.trim();
+  if (trimmed.startsWith('[')) {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === 'string')) {
+      throw new Error('Invalid glob pattern array: expected an array of strings');
+    }
+    return parsed.map((s: string) => (s as string).trim()).filter(Boolean);
+  }
+  return trimmed
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+interface MrtDefaults {
+  ssrOnly: string[];
+  ssrShared: string[];
+  buildDirectory: string;
+}
+
+const MRT_DEFAULTS: Record<'default' | 'pwa-kit-v3' | 'storefront-next', MrtDefaults> = {
+  'storefront-next': {
+    // ssrEntryPoint is 'streamingHandler' (production + MRT_BUNDLE_TYPE!=='ssr') or 'ssr' otherwise.
+    // Include both patterns so the bundle works regardless of MRT_BUNDLE_TYPE / mode.
+    ssrOnly: [
+      'server/**/*',
+      'loader.js',
+      'streamingHandler.{js,mjs,cjs}',
+      'streamingHandler.{js,mjs,cjs}.map',
+      'ssr.{js,mjs,cjs}',
+      'ssr.{js,mjs,cjs}.map',
+      '!static/**/*',
+      'sfnext-server-*.mjs',
+      '!**/*.stories.tsx',
+      '!**/*.stories.ts',
+      '!**/*-snapshot.tsx',
+      '!.storybook/**/*',
+      '!storybook-static/**/*',
+      '!**/__mocks__/**/*',
+      '!**/__snapshots__/**/*',
+    ],
+    ssrShared: [
+      'client/**/*',
+      'static/**/*',
+      '**/*.css',
+      '**/*.png',
+      '**/*.jpg',
+      '**/*.jpeg',
+      '**/*.gif',
+      '**/*.svg',
+      '**/*.ico',
+      '**/*.woff',
+      '**/*.woff2',
+      '**/*.ttf',
+      '**/*.eot',
+      '!**/*.stories.tsx',
+      '!**/*.stories.ts',
+      '!**/*-snapshot.tsx',
+      '!.storybook/**/*',
+      '!storybook-static/**/*',
+      '!**/__mocks__/**/*',
+      '!**/__snapshots__/**/*',
+    ],
+    buildDirectory: 'build',
+  },
+  'pwa-kit-v3': {
+    ssrOnly: ['ssr.js', 'ssr.js.map', 'node_modules/**/*.*'],
+    ssrShared: ['static/ico/favicon.ico', 'static/robots.txt', '**/*.js', '**/*.js.map', '**/*.json'],
+    buildDirectory: 'build',
+  },
+  default: {
+    ssrOnly: ['ssr.js', 'ssr.mjs', 'server/**/*'],
+    ssrShared: ['static/**/*', 'client/**/*'],
+    buildDirectory: 'build',
+  },
+};
+
+/**
+ * Returns MRT bundle defaults for the given project types.
+ * For hybrid projects (multiple types detected), prefers storefront-next over pwa-kit-v3.
+ *
+ * @param projectTypes - Detected project types from workspace discovery
+ * @returns Defaults for ssrOnly, ssrShared, and buildDirectory
+ */
+function getDefaultsForProjectTypes(projectTypes: ProjectType[]): MrtDefaults {
+  if (projectTypes.includes('storefront-next')) return MRT_DEFAULTS['storefront-next'];
+  if (projectTypes.includes('pwa-kit-v3')) return MRT_DEFAULTS['pwa-kit-v3'];
+  return MRT_DEFAULTS.default;
+}
 
 /**
  * Input type for mrt_bundle_push tool.
@@ -43,6 +141,8 @@ interface MrtBundlePushInput {
 interface MrtToolInjections {
   /** Mock pushBundle function for testing */
   pushBundle?: (options: PushOptions, auth: AuthStrategy) => Promise<PushResult>;
+  /** Mock detectWorkspaceType function for testing */
+  detectWorkspaceType?: (path: string) => Promise<{projectTypes: ProjectType[]}>;
 }
 
 /**
@@ -59,6 +159,7 @@ interface MrtToolInjections {
  */
 function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtToolInjections): McpTool {
   const pushBundleFn = injections?.pushBundle || pushBundle;
+  const detectWorkspaceTypeFn = injections?.detectWorkspaceType ?? detectWorkspaceType;
   return createToolAdapter<MrtBundlePushInput, PushResult>(
     {
       name: 'mrt_bundle_push',
@@ -69,16 +170,25 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
       // MRT operations use ApiKeyStrategy from MRT_API_KEY or ~/.mobify
       requiresMrtAuth: true,
       inputSchema: {
-        buildDirectory: z.string().optional().describe('Path to build directory (default: ./build)'),
+        buildDirectory: z
+          .string()
+          .optional()
+          .describe(
+            'Path to build directory. Defaults vary by project type: Storefront Next, PWA Kit v3, or generic (./build).',
+          ),
         message: z.string().optional().describe('Deployment message'),
         ssrOnly: z
           .string()
           .optional()
-          .describe('Glob patterns for server-only files, comma-separated (default: ssr.js,ssr.mjs,server/**/*)'),
+          .describe(
+            'Glob patterns for server-only files (comma-separated or JSON array). Defaults vary by project type: Storefront Next, PWA Kit v3, or generic.',
+          ),
         ssrShared: z
           .string()
           .optional()
-          .describe('Glob patterns for shared files, comma-separated (default: static/**/*,client/**/*)'),
+          .describe(
+            'Glob patterns for shared files (comma-separated or JSON array). Defaults vary by project type: Storefront Next, PWA Kit v3, or generic.',
+          ),
         deploy: z
           .boolean()
           .optional()
@@ -111,10 +221,16 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
         // Get origin from --cloud-origin flag or mrtOrigin config (optional)
         const origin = context.mrtConfig?.origin;
 
-        // Parse comma-separated glob patterns (same as CLI defaults)
-        const ssrOnly = (args.ssrOnly || 'ssr.js,ssr.mjs,server/**/*').split(',').map((s) => s.trim());
-        const ssrShared = (args.ssrShared || 'static/**/*,client/**/*').split(',').map((s) => s.trim());
-        const buildDirectory = context.services.resolveWithProjectDirectory(args.buildDirectory || 'build');
+        // Detect project type and get project-type-aware defaults
+        const projectDir = context.services.resolveWithProjectDirectory();
+        const {projectTypes} = await detectWorkspaceTypeFn(projectDir);
+        const defaults = getDefaultsForProjectTypes(projectTypes);
+
+        const ssrOnly = args.ssrOnly ? parseGlobPatterns(args.ssrOnly) : defaults.ssrOnly;
+        const ssrShared = args.ssrShared ? parseGlobPatterns(args.ssrShared) : defaults.ssrShared;
+        const buildDirectory = context.services.resolveWithProjectDirectory(
+          args.buildDirectory ?? defaults.buildDirectory,
+        );
 
         // Log all computed variables before pushing bundle
         const logger = getLogger();
@@ -125,6 +241,7 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
             origin,
             buildDirectory,
             message: args.message,
+            projectTypes,
             ssrOnly,
             ssrShared,
           },

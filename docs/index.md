@@ -14,14 +14,11 @@ hero:
       text: Get Started
       link: /guide/
     - theme: alt
-      text: CLI Reference
-      link: /cli/
-    - theme: alt
       text: MCP Server
       link: /mcp/
     - theme: alt
-      text: API Reference
-      link: /api/
+      text: Reference
+      link: /cli/
 
 features:
   - icon: "\U0001F680"
@@ -53,7 +50,7 @@ features:
     title: SDK Library
     details: Build custom integrations with @salesforce/b2c-tooling-sdk - the same SDK powering the CLI.
     link: /api/
-    linkText: API Reference
+    linkText: SDK Reference
   - icon: "\U0001F510"
     title: Account Management
     details: Manage users, roles, organizations, and API clients in Account Manager via CLI and SDK.
