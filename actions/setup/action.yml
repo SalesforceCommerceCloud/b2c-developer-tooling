@@ -38,13 +38,13 @@ inputs:
     description: 'Tenant ID → SFCC_TENANT_ID'
     required: false
   mrt-api-key:
-    description: 'MRT API key → SFCC_MRT_API_KEY'
+    description: 'MRT API key → MRT_API_KEY'
     required: false
   mrt-project:
-    description: 'MRT project slug → SFCC_MRT_PROJECT'
+    description: 'MRT project slug → MRT_PROJECT'
     required: false
   mrt-environment:
-    description: 'MRT environment → SFCC_MRT_ENVIRONMENT'
+    description: 'MRT environment → MRT_ENVIRONMENT'
     required: false
   account-manager-host:
     description: 'Account Manager hostname → SFCC_ACCOUNT_MANAGER_HOST'
@@ -116,13 +116,13 @@ runs:
           echo "SFCC_TENANT_ID=${{ inputs.tenant-id }}" >> "$GITHUB_ENV"
         fi
         if [ -n "${{ inputs.mrt-api-key }}" ]; then
-          echo "SFCC_MRT_API_KEY=${{ inputs.mrt-api-key }}" >> "$GITHUB_ENV"
+          echo "MRT_API_KEY=${{ inputs.mrt-api-key }}" >> "$GITHUB_ENV"
         fi
         if [ -n "${{ inputs.mrt-project }}" ]; then
-          echo "SFCC_MRT_PROJECT=${{ inputs.mrt-project }}" >> "$GITHUB_ENV"
+          echo "MRT_PROJECT=${{ inputs.mrt-project }}" >> "$GITHUB_ENV"
         fi
         if [ -n "${{ inputs.mrt-environment }}" ]; then
-          echo "SFCC_MRT_ENVIRONMENT=${{ inputs.mrt-environment }}" >> "$GITHUB_ENV"
+          echo "MRT_ENVIRONMENT=${{ inputs.mrt-environment }}" >> "$GITHUB_ENV"
         fi
         if [ -n "${{ inputs.account-manager-host }}" ]; then
           echo "SFCC_ACCOUNT_MANAGER_HOST=${{ inputs.account-manager-host }}" >> "$GITHUB_ENV"

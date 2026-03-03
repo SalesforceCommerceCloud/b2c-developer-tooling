@@ -19,7 +19,7 @@
  * a loader function that calls {@link Services.fromResolvedConfig}:
  *
  * - **B2CInstance**: Loaded from flags + dw.json on each call. Available when `requiresInstance: true`.
- * - **MRT Auth**: Loaded from --api-key → SFCC_MRT_API_KEY → ~/.mobify on each call. Available when `requiresMrtAuth: true`.
+ * - **MRT Auth**: Loaded from --api-key → MRT_API_KEY → ~/.mobify on each call. Available when `requiresMrtAuth: true`.
  *
  * This "load on each call" pattern provides:
  * - Fresh configuration on each tool invocation (picks up changes to config files)
@@ -132,7 +132,7 @@ export interface ToolAdapterOptions<TInput, TOutput> {
 
   /**
    * Whether this tool requires MRT API authentication.
-   * When true, creates an ApiKeyStrategy from SFCC_MRT_API_KEY environment variable.
+   * When true, creates an ApiKeyStrategy from MRT_API_KEY environment variable.
    * Defaults to false.
    */
   requiresMrtAuth?: boolean;
@@ -306,7 +306,7 @@ export function createToolAdapter<TInput, TOutput>(
         if (requiresMrtAuth) {
           if (!services.mrtConfig.auth) {
             return errorResult(
-              'MRT auth error: MRT API key required. Provide --api-key, set SFCC_MRT_API_KEY environment variable, or configure ~/.mobify',
+              'MRT auth error: MRT API key required. Provide --api-key, set MRT_API_KEY environment variable, or configure ~/.mobify',
             );
           }
           mrtConfig = {

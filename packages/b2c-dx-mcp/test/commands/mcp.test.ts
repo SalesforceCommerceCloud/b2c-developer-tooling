@@ -74,7 +74,7 @@ describe('McpServerCommand', () => {
     it('should define api-key flag with env var support', () => {
       const flag = McpServerCommand.flags['api-key'];
       expect(flag).to.not.be.undefined;
-      expect(flag.env).to.equal('SFCC_MRT_API_KEY');
+      expect(flag.env).to.equal('MRT_API_KEY');
     });
 
     it('should define project-directory flag with env var support', () => {

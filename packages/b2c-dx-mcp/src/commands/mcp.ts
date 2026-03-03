@@ -30,10 +30,10 @@
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
  * |------|--------------|-------------|
- * | `--api-key` | `SFCC_MRT_API_KEY` | MRT API key for Managed Runtime operations |
- * | `--project` | `SFCC_MRT_PROJECT` | MRT project slug (required for MRT tools) |
- * | `--environment` | `SFCC_MRT_ENVIRONMENT` | MRT environment (e.g., staging, production) |
- * | `--cloud-origin` | `SFCC_MRT_CLOUD_ORIGIN` | MRT cloud origin URL for environment-specific ~/.mobify config |
+ * | `--api-key` | `MRT_API_KEY` | MRT API key for Managed Runtime operations |
+ * | `--project` | `MRT_PROJECT` | MRT project slug (required for MRT tools) |
+ * | `--environment` | `MRT_ENVIRONMENT` | MRT environment (e.g., staging, production) |
+ * | `--cloud-origin` | `MRT_CLOUD_ORIGIN` | MRT cloud origin URL for environment-specific ~/.mobify config |
  *
  * ### B2C Instance Flags (from InstanceCommand.baseFlags)
  * | Flag | Env Variable | Description |
@@ -80,7 +80,7 @@
  * ### MRT API Key
  * Priority (highest to lowest):
  * 1. `--api-key` flag
- * 2. `SFCC_MRT_API_KEY` environment variable
+ * 2. `MRT_API_KEY` environment variable (SFCC_MRT_API_KEY also supported)
  * 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
  *
  * ## Toolset Validation
@@ -102,7 +102,7 @@
  * ```json
  * {
  *   "args": ["--toolsets", "MRT", "--project", "my-project", "--environment", "staging", "--allow-non-ga-tools"],
- *   "env": { "SFCC_MRT_API_KEY": "your-api-key" }
+ *   "env": { "MRT_API_KEY": "your-api-key" }
  * }
  * ```
  *
@@ -257,7 +257,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    *
    * Priority (highest to lowest):
    * 1. CLI flags (--server, --username, --api-key, etc.)
-   * 2. Environment variables (SFCC_SERVER, SFCC_USERNAME, SFCC_MRT_API_KEY, etc.)
+   * 2. Environment variables (SFCC_SERVER, SFCC_USERNAME, MRT_API_KEY, etc.)
    * 3. dw.json file (via --config flag or auto-discovered from --project-directory)
    * 4. ~/.mobify file (for MRT API key)
    */

@@ -121,9 +121,9 @@ b2c mrt env var set API_KEY=secret DEBUG=true FEATURE_FLAG=enabled \
 b2c mrt env var set "MESSAGE=hello world" -p my-storefront -e production
 
 # Using environment variables for auth
-export SFCC_MRT_API_KEY=your-api-key
-export SFCC_MRT_PROJECT=my-storefront
-export SFCC_MRT_ENVIRONMENT=staging
+export MRT_API_KEY=your-api-key
+export MRT_PROJECT=my-storefront
+export MRT_ENVIRONMENT=staging
 b2c mrt env var set MY_VAR=value
 ```
 

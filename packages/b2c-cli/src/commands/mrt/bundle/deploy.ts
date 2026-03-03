@@ -136,13 +136,11 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error(
-        'MRT project is required. Provide --project flag, set SFCC_MRT_PROJECT, or set mrtProject in dw.json.',
-      );
+      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
     }
     if (!environment) {
       this.error(
-        'MRT environment is required when deploying an existing bundle. Provide --environment flag, set SFCC_MRT_ENVIRONMENT, or set mrtEnvironment in dw.json.',
+        'MRT environment is required when deploying an existing bundle. Provide --environment flag, set MRT_ENVIRONMENT, or set mrtEnvironment in dw.json.',
       );
     }
 
@@ -205,9 +203,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     const {message} = this.flags;
 
     if (!project) {
-      this.error(
-        'MRT project is required. Provide --project flag, set SFCC_MRT_PROJECT, or set mrtProject in dw.json.',
-      );
+      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
     }
 
     const buildDir = this.flags['build-dir'];

@@ -29,7 +29,7 @@ describe('MRT Lifecycle E2E Tests', function () {
   // Pass MRT cloud origin to all CLI commands
   // Build env object without undefined values to satisfy Record<string, string>
   const MRT_TEST_ENV: Record<string, string> = {
-    ...(process.env.SFCC_MRT_CLOUD_ORIGIN ? {SFCC_MRT_CLOUD_ORIGIN: process.env.SFCC_MRT_CLOUD_ORIGIN} : {}),
+    ...(process.env.MRT_CLOUD_ORIGIN ? {MRT_CLOUD_ORIGIN: process.env.MRT_CLOUD_ORIGIN} : {}),
   };
 
   let projectSlug: string;
@@ -37,8 +37,8 @@ describe('MRT Lifecycle E2E Tests', function () {
 
   before(async function () {
     // Check required environment variables for MRT
-    // Either SFCC_MRT_API_KEY as env var OR ~/.mobify file must exist
-    const hasMrtApiKey = Boolean(process.env.SFCC_MRT_API_KEY);
+    // Either MRT_API_KEY as env var OR ~/.mobify file must exist
+    const hasMrtApiKey = Boolean(process.env.MRT_API_KEY);
 
     if (!hasMrtApiKey) {
       // Try to check if ~/.mobify exists (CLI will auto-detect it)
@@ -50,7 +50,7 @@ describe('MRT Lifecycle E2E Tests', function () {
         if (testResult.exitCode !== 0) {
           const errorText = String(testResult.stderr || testResult.stdout || '');
           if (errorText.includes('MRT API key required') || errorText.includes('api_key')) {
-            console.log('⚠ SFCC_MRT_API_KEY not set and ~/.mobify not configured, skipping MRT E2E tests');
+            console.log('⚠ MRT_API_KEY not set and ~/.mobify not configured, skipping MRT E2E tests');
             this.skip();
           }
         }
@@ -61,8 +61,8 @@ describe('MRT Lifecycle E2E Tests', function () {
     }
 
     // Try to get a project from environment or discover one
-    if (process.env.SFCC_MRT_PROJECT) {
-      projectSlug = process.env.SFCC_MRT_PROJECT;
+    if (process.env.MRT_PROJECT) {
+      projectSlug = process.env.MRT_PROJECT;
       hasProject = true;
       console.log(`✓ Using MRT project from env: ${projectSlug}`);
     } else {
@@ -761,8 +761,9 @@ describe('MRT Lifecycle E2E Tests', function () {
       const result = await runCLI(['mrt', 'project', 'list', '--json'], {
         timeout: TIMEOUTS.DEFAULT,
         env: {
+          MRT_API_KEY: '',
           SFCC_MRT_API_KEY: '',
-          ...(process.env.SFCC_MRT_CLOUD_ORIGIN ? {SFCC_MRT_CLOUD_ORIGIN: process.env.SFCC_MRT_CLOUD_ORIGIN} : {}),
+          ...(process.env.MRT_CLOUD_ORIGIN ? {MRT_CLOUD_ORIGIN: process.env.MRT_CLOUD_ORIGIN} : {}),
         }, // Override API key to empty while preserving cloud origin if set
       });
 
