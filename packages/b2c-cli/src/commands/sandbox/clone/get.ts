@@ -67,13 +67,8 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
     return {data: clone};
   }
 
-  private printCloneDetails(clone: SandboxCloneGetModel | undefined): void {
-    const ui = cliui({width: process.stdout.columns || 80});
-
-    ui.div({text: 'Clone Details', padding: [1, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-    const fields: [string, string | undefined][] = [
+  private buildCloneFields(clone: SandboxCloneGetModel | undefined): [string, string | undefined][] {
+    return [
       ['Clone ID', clone?.cloneId],
       ['Source Instance', clone?.sourceInstance],
       ['Source Instance ID', clone?.sourceInstanceId],
@@ -88,6 +83,15 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
       ['Filesystem Usage Size', clone?.filesystemUsageSize?.toString()],
       ['Database Transfer Size', clone?.databaseTransferSize?.toString()],
     ];
+  }
+
+  private printCloneDetails(clone: SandboxCloneGetModel | undefined): void {
+    const ui = cliui({width: process.stdout.columns || 80});
+
+    ui.div({text: 'Clone Details', padding: [1, 0, 0, 0]});
+    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+
+    const fields = this.buildCloneFields(clone);
 
     for (const [label, value] of fields) {
       if (value !== undefined) {
