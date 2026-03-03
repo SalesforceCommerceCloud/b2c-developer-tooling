@@ -63,7 +63,7 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
     username: ${{ secrets.SFCC_USERNAME }}
     password: ${{ secrets.SFCC_PASSWORD }}
     target: './export/site-import.zip'
-    timeout: 300
+    timeout: 600
 ```
 
 ### Raw CLI command
@@ -96,9 +96,9 @@ All actions accept auth inputs directly or read from `SFCC_*` environment variab
 | `password` | `SFCC_PASSWORD` | WebDAV operations |
 | `short-code` | `SFCC_SHORTCODE` | SCAPI operations |
 | `tenant-id` | `SFCC_TENANT_ID` | SCAPI operations |
-| `mrt-api-key` | `SFCC_MRT_API_KEY` | MRT operations |
-| `mrt-project` | `SFCC_MRT_PROJECT` | MRT operations |
-| `mrt-environment` | `SFCC_MRT_ENVIRONMENT` | MRT operations |
+| `mrt-api-key` | `MRT_API_KEY` | MRT operations |
+| `mrt-project` | `MRT_PROJECT` | MRT operations |
+| `mrt-environment` | `MRT_ENVIRONMENT` | MRT operations |
 | `account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager |
 
 ## Plugins
@@ -156,3 +156,5 @@ When `json: true` (default), the `result` output contains the parsed JSON from t
   with:
     version: '0.4.1'  # Pin CLI version
 ```
+
+> **Note:** High-level actions (`code-deploy`, `data-import`, `job-run`, `mrt-deploy`, `webdav-upload`) and the root action internally reference `actions/setup@v1` and `actions/run@v1`. This means even if you pin the outer action to a specific SHA or tag, the setup and run steps resolve to the latest `v1` release. For full SHA-level reproducibility, use `actions/setup` + `actions/run` directly — each can be pinned independently to an exact SHA. For most users, `@v1` on the high-level actions is the recommended approach.

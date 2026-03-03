@@ -49,13 +49,13 @@ inputs:
     description: 'Tenant ID → SFCC_TENANT_ID'
     required: false
   mrt-api-key:
-    description: 'MRT API key → SFCC_MRT_API_KEY'
+    description: 'MRT API key → MRT_API_KEY'
     required: false
   mrt-project:
-    description: 'MRT project slug → SFCC_MRT_PROJECT'
+    description: 'MRT project slug → MRT_PROJECT'
     required: false
   mrt-environment:
-    description: 'MRT environment → SFCC_MRT_ENVIRONMENT'
+    description: 'MRT environment → MRT_ENVIRONMENT'
     required: false
   account-manager-host:
     description: 'Account Manager hostname → SFCC_ACCOUNT_MANAGER_HOST'
@@ -77,7 +77,7 @@ runs:
   steps:
     - name: Setup B2C CLI
       id: setup
-      uses: ./actions/setup
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -97,7 +97,7 @@ runs:
     - name: Run command
       id: command
       if: inputs.command != ''
-      uses: ./actions/run
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
       with:
         command: ${{ inputs.command }}
         json: ${{ inputs.json }}

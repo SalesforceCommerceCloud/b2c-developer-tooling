@@ -357,7 +357,7 @@ MRT commands use a separate API key system.
 
 ```bash
 # Environment variable
-export SFCC_MRT_API_KEY=your-mrt-api-key
+export MRT_API_KEY=your-mrt-api-key
 
 # Or in ~/.mobify config file
 echo '{"api_key": "your-mrt-api-key"}' > ~/.mobify

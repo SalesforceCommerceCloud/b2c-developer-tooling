@@ -529,7 +529,7 @@ describe('tools/mrt', () => {
       expect(text).to.include('MRT deployment error');
       expect(text).to.include('Environment is required when deploy=true');
       expect(text).to.include('--environment flag');
-      expect(text).to.include('SFCC_MRT_ENVIRONMENT');
+      expect(text).to.include('MRT_ENVIRONMENT');
       expect(text).to.include('mrtEnvironment');
       expect(pushBundleStub.called).to.be.false;
     });

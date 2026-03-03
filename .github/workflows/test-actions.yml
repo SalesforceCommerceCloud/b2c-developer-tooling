@@ -194,32 +194,3 @@ jobs:
         with:
           command: 'webdav put --help'
           json: 'false'
-
-  # E2E tests — only on main, requires e2e-dev environment with real credentials
-  e2e:
-    name: 'E2E'
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: e2e-dev
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup with real credentials
-        uses: ./actions/setup
-        with:
-          client-id: ${{ secrets.SFCC_CLIENT_ID }}
-          client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
-          server: ${{ vars.SFCC_SERVER }}
-          username: ${{ secrets.SFCC_USERNAME }}
-          password: ${{ secrets.SFCC_PASSWORD }}
-
-      - name: List code versions
-        id: code-list
-        uses: ./actions/run
-        with:
-          command: 'code list'
-
-      - name: Verify code list output
-        run: |
-          echo "Result: ${{ steps.code-list.outputs.result }}"
-          [ "${{ steps.code-list.outputs.exit-code }}" = "0" ] || exit 1

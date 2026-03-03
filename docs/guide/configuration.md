@@ -78,10 +78,10 @@ You can configure the CLI using environment variables:
 | `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                     |
 | `SFCC_CIP_HOST`               | CIP analytics host override                                    |
 | `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                |
-| `SFCC_MRT_API_KEY`            | MRT API key                                                    |
-| `SFCC_MRT_PROJECT`            | MRT project slug                                               |
-| `SFCC_MRT_ENVIRONMENT`        | MRT environment name                                           |
-| `SFCC_MRT_CLOUD_ORIGIN`       | MRT API origin URL override                                    |
+| `MRT_API_KEY`                 | MRT API key (`SFCC_MRT_API_KEY` also supported)                |
+| `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)           |
+| `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
+| `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
 
 ## .env File
 
@@ -337,7 +337,7 @@ When you explicitly specify a hostname that differs from the `dw.json` hostname,
 Managed Runtime (MRT) commands use an API key for authentication. The API key is resolved in this order:
 
 1. `--api-key` flag
-2. `SFCC_MRT_API_KEY` environment variable
+2. `MRT_API_KEY` environment variable (also accepts `SFCC_MRT_API_KEY`)
 3. `~/.mobify` config file
 
 The `~/.mobify` file format:

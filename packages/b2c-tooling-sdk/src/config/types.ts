@@ -57,6 +57,8 @@ export interface NormalizedConfig {
   // ODS (On-Demand Sandbox)
   /** ODS API hostname */
   sandboxApiHost?: string;
+  /** Default ODS realm for sandbox operations */
+  realm?: string;
 
   // MRT fields
   /** MRT project slug */

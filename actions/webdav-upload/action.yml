@@ -53,7 +53,7 @@ runs:
   using: 'composite'
   steps:
     - name: Ensure CLI is installed
-      uses: ./actions/setup
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -65,7 +65,7 @@ runs:
 
     - name: Upload via WebDAV
       id: upload
-      uses: ./actions/run
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
       with:
         command: "webdav put ${{ inputs.local-path }} ${{ inputs.remote-path }} --root ${{ inputs.root }}"
         json: 'true'

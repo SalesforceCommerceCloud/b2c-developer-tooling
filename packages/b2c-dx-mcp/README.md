@@ -53,7 +53,7 @@ Always set `--project-directory` (or `SFCC_PROJECT_DIRECTORY`). MCP clients spaw
 | `SFCC_PASSWORD` | Password/access key for WebDAV |
 | `SFCC_CLIENT_ID` | OAuth client ID |
 | `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `SFCC_MRT_API_KEY` | MRT API key |
+| `MRT_API_KEY` | MRT API key (`SFCC_MRT_API_KEY` also supported) |
 
 See the [Configuration Guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration) for credentials, flags, and toolset selection.
 

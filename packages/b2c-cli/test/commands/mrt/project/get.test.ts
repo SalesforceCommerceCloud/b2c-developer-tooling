@@ -107,4 +107,45 @@ describe('mrt project get', () => {
       expect(errorStub.calledOnce).to.equal(true);
     }
   });
+
+  it('displays project details in non-JSON mode', async () => {
+    const command = createCommand();
+
+    stubParse(command, {}, {slug: 'display-project'});
+    await command.init();
+
+    stubCommonAuth(command);
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtOrigin: 'https://example.com'}}));
+
+    const mockProject = {
+      name: 'Display Project',
+      slug: 'display-project',
+      organization: 'test-org',
+      project_type: 'headless',
+      deletion_status: null,
+      ssr_region: 'us-west-2',
+      url: 'https://display-project.example.com',
+      created_at: '2025-01-10T10:00:00Z',
+      updated_at: '2025-01-20T12:00:00Z',
+    };
+
+    const getStub = sinon.stub().resolves(mockProject);
+
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const result = await getStub({
+        projectSlug: 'display-project',
+        origin: 'https://example.com',
+      });
+      return result;
+    };
+
+    const result = await command.run();
+
+    expect(result.slug).to.equal('display-project');
+    expect(result.name).to.equal('Display Project');
+    expect(result.project_type).to.equal('headless');
+  });
 });

@@ -29,15 +29,15 @@ Store credentials as GitHub [repository secrets](https://docs.github.com/en/acti
 | `SFCC_CLIENT_SECRET` | OAuth Client Secret |
 | `SFCC_USERNAME` | WebDAV username |
 | `SFCC_PASSWORD` | WebDAV password/access key |
-| `SFCC_MRT_API_KEY` | MRT API key |
+| `MRT_API_KEY` | MRT API key |
 
 **Recommended variables:**
 
 | Variable | Description |
 |----------|-------------|
 | `SFCC_SERVER` | B2C instance hostname |
-| `SFCC_MRT_PROJECT` | MRT project slug |
-| `SFCC_MRT_ENVIRONMENT` | MRT environment |
+| `MRT_PROJECT` | MRT project slug |
+| `MRT_ENVIRONMENT` | MRT environment |
 
 Credentials can be passed per-action or set once with the **setup** action so they're available to all subsequent steps.
 
@@ -100,7 +100,7 @@ Combines setup and command execution. Pass a `command` to run a CLI command, or 
 | `command` | — | CLI command to run |
 | `version` | `latest` | CLI version to install |
 | `node-version` | `22` | Node.js version |
-| `json` | `true` | Parse JSON output |
+| `json` | `true` | Append `--json` flag and parse output |
 | `working-directory` | `.` | Working directory |
 | Auth inputs | — | See [Authentication](#authentication) |
 
@@ -213,9 +213,9 @@ Push and deploy an MRT bundle.
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v1
   with:
-    mrt-api-key: ${{ secrets.SFCC_MRT_API_KEY }}
-    project: ${{ vars.SFCC_MRT_PROJECT }}
-    environment: ${{ vars.SFCC_MRT_ENVIRONMENT }}
+    mrt-api-key: ${{ secrets.MRT_API_KEY }}
+    project: ${{ vars.MRT_PROJECT }}
+    environment: ${{ vars.MRT_ENVIRONMENT }}
     build-directory: build
     message: 'Deploy from CI'
 ```
@@ -242,13 +242,16 @@ Execute a B2C job and optionally wait for completion.
     job-id: 'sfcc-site-archive-import'
     wait: true
     timeout: 600
+    parameters: |
+      ImportFile=site-import.zip
+      ImportMode=merge
 ```
 
 | Input | Default | Description |
 |-------|---------|-------------|
 | `job-id` | *(required)* | Job ID to execute |
 | `wait` | `true` | Wait for completion |
-| `timeout` | `900` | Timeout in seconds |
+| `timeout` | `900` | Timeout in seconds (when wait=true) |
 | `parameters` | — | `KEY=VALUE` pairs, one per line |
 | `show-log` | `true` | Show job log on failure |
 
@@ -330,9 +333,9 @@ jobs:
 
       - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v1
         with:
-          mrt-api-key: ${{ secrets.SFCC_MRT_API_KEY }}
-          project: ${{ vars.SFCC_MRT_PROJECT }}
-          environment: ${{ vars.SFCC_MRT_ENVIRONMENT }}
+          mrt-api-key: ${{ secrets.MRT_API_KEY }}
+          project: ${{ vars.MRT_PROJECT }}
+          environment: ${{ vars.MRT_ENVIRONMENT }}
           build-directory: build
           message: 'Release ${{ github.event.release.tag_name }}'
 ```
@@ -389,6 +392,8 @@ Use the `version` input to pin the CLI version:
 ```
 
 Use `@v1` for the latest stable action version (recommended). The floating `v1` tag is updated on each backward-compatible release.
+
+> **Note:** High-level actions (`code-deploy`, `data-import`, `job-run`, `mrt-deploy`, `webdav-upload`) and the root action internally reference `actions/setup@v1` and `actions/run@v1`. This means even if you pin the outer action to a specific SHA or tag, the setup and run steps resolve to the latest `v1` release. For full SHA-level reproducibility, use `actions/setup` + `actions/run` directly — each can be pinned independently to an exact SHA. For most users, `@v1` on the high-level actions is the recommended approach.
 
 ## Plugins
 

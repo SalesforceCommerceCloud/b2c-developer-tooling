@@ -74,7 +74,7 @@ export {
   createGranularReplicationsClient,
   createCipClient,
   toOrganizationId,
-  toTenantId,
+  normalizeTenantId,
   buildTenantScope,
   getApiErrorMessage,
   isValidRoleTenantFilter,

@@ -66,7 +66,7 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
         'Bundle a pre-built PWA Kit or Storefront Next project and push to Managed Runtime. Optionally deploy to a target environment.',
       toolsets: ['MRT', 'PWAV3', 'STOREFRONTNEXT'],
       isGA: false,
-      // MRT operations use ApiKeyStrategy from SFCC_MRT_API_KEY or ~/.mobify
+      // MRT operations use ApiKeyStrategy from MRT_API_KEY or ~/.mobify
       requiresMrtAuth: true,
       inputSchema: {
         buildDirectory: z.string().optional().describe('Path to build directory (default: ./build)'),
@@ -90,7 +90,7 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
         const project = context.mrtConfig?.project;
         if (!project) {
           throw new Error(
-            'MRT project error: Project is required. Provide --project flag or set SFCC_MRT_PROJECT environment variable.',
+            'MRT project error: Project is required. Provide --project flag or set MRT_PROJECT environment variable.',
           );
         }
 
@@ -103,7 +103,7 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
           if (!environment) {
             throw new Error(
               'MRT deployment error: Environment is required when deploy=true. ' +
-                'Provide --environment flag, set SFCC_MRT_ENVIRONMENT environment variable, or set mrtEnvironment in dw.json.',
+                'Provide --environment flag, set MRT_ENVIRONMENT environment variable, or set mrtEnvironment in dw.json.',
             );
           }
         }

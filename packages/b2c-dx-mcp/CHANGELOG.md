@@ -1,5 +1,23 @@
 # @salesforce/b2c-dx-mcp
 
+## 0.4.6
+
+### Patch Changes
+
+- [`beaf275`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/beaf275efbe36b2c5f33c7ed9e368e24f48022fc) - MRT environment variables now use non-prefixed names (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_CLOUD_ORIGIN`) as primary. The `SFCC_`-prefixed versions continue to work as fallbacks. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`beaf275`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/beaf275efbe36b2c5f33c7ed9e368e24f48022fc)]:
+  - @salesforce/b2c-tooling-sdk@0.5.5
+
+## 0.4.5
+
+### Patch Changes
+
+- [#202](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/202) [`917c230`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/917c230d033b7b12bd0262d221173618f71cd0a7) - Unregister placeholder tools and update README for preview release (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+  - Remove placeholder tools (PWA Kit, Storefront Next) so users only see implemented tools at startup
+  - Update README: preview release wording, accurate tool tables, credential notes, example prompts
+  - Fix package license to Apache-2.0
+
 ## 0.4.4
 
 ### Patch Changes
