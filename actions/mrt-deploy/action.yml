@@ -6,10 +6,10 @@ branding:
 
 inputs:
   project:
-    description: 'MRT project slug (falls back to SFCC_MRT_PROJECT env var)'
+    description: 'MRT project slug (falls back to MRT_PROJECT env var)'
     required: false
   environment:
-    description: 'Target environment (falls back to SFCC_MRT_ENVIRONMENT env var)'
+    description: 'Target environment (falls back to MRT_ENVIRONMENT env var)'
     required: false
   build-directory:
     description: 'Local build directory'
@@ -23,7 +23,7 @@ inputs:
     required: false
   # Auth inputs for standalone use
   mrt-api-key:
-    description: 'MRT API key (falls back to SFCC_MRT_API_KEY env var)'
+    description: 'MRT API key (falls back to MRT_API_KEY env var)'
     required: false
   # Setup inputs
   version:
@@ -47,7 +47,7 @@ runs:
   using: 'composite'
   steps:
     - name: Ensure CLI is installed
-      uses: ./actions/setup
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -85,7 +85,7 @@ runs:
 
     - name: Deploy MRT bundle
       id: deploy
-      uses: ./actions/run
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
       with:
         command: ${{ steps.build-cmd.outputs.cmd }}
         json: 'true'

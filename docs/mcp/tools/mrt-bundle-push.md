@@ -25,7 +25,7 @@ Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configurati
 
 **Configuration priority:**
 1. Flags (`--api-key`, `--project`, `--environment`)
-2. Environment variables (`SFCC_MRT_API_KEY`, `SFCC_MRT_PROJECT`, `SFCC_MRT_ENVIRONMENT`)
+2. Environment variables (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`)
 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
 
 ## Parameters
@@ -36,7 +36,7 @@ Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configurati
 | `message` | string | No | None | Deployment message to include with the bundle push. Useful for tracking deployments. |
 | `ssrOnly` | string | No | `ssr.js,ssr.mjs,server/**/*` | Comma-separated glob patterns for server-only files (SSR). These files are only included in the server bundle. |
 | `ssrShared` | string | No | `static/**/*,client/**/*` | Comma-separated glob patterns for shared files. These files are included in both server and client bundles. |
-| `deploy` | boolean | No | `false` | Whether to deploy to an environment after push. When `true`, `environment` must be provided via `--environment` flag or `SFCC_MRT_ENVIRONMENT`. |
+| `deploy` | boolean | No | `false` | Whether to deploy to an environment after push. When `true`, `environment` must be provided via `--environment` flag or `MRT_ENVIRONMENT`. |
 
 ## Usage Examples
 

@@ -32,11 +32,11 @@
  * - Flags (highest priority) merged with dw.json (auto-discovered or via --config)
  *
  * **MRT Auth** (for Managed Runtime tools):
- * 1. `--api-key` flag (oclif also checks `SFCC_MRT_API_KEY` env var)
+ * 1. `--api-key` flag (oclif also checks `MRT_API_KEY` env var; `SFCC_MRT_API_KEY` also supported)
  * 2. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
  *
  * **MRT Origin** (for Managed Runtime API URL):
- * 1. `--cloud-origin` flag (oclif also checks `SFCC_MRT_CLOUD_ORIGIN` env var)
+ * 1. `--cloud-origin` flag (oclif also checks `MRT_CLOUD_ORIGIN` env var; `SFCC_MRT_CLOUD_ORIGIN` also supported)
  * 2. `mrtOrigin` field in dw.json
  * 3. Default: `https://cloud.mobify.com`
  *
@@ -65,11 +65,11 @@ import {
 export interface MrtConfig {
   /** Pre-resolved auth strategy for MRT API operations */
   auth?: AuthStrategy;
-  /** MRT project slug from --project flag or SFCC_MRT_PROJECT env var */
+  /** MRT project slug from --project flag or MRT_PROJECT env var */
   project?: string;
-  /** MRT environment from --environment flag or SFCC_MRT_ENVIRONMENT env var */
+  /** MRT environment from --environment flag or MRT_ENVIRONMENT env var */
   environment?: string;
-  /** MRT API origin URL from --cloud-origin flag, SFCC_MRT_CLOUD_ORIGIN env var, or mrtOrigin in dw.json */
+  /** MRT API origin URL from --cloud-origin flag, MRT_CLOUD_ORIGIN env var, or mrtOrigin in dw.json */
   origin?: string;
 }
 

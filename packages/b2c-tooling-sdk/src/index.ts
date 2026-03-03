@@ -73,7 +73,7 @@ export {
   createCdnZonesClient,
   createCipClient,
   toOrganizationId,
-  toTenantId,
+  normalizeTenantId,
   buildTenantScope,
   getApiErrorMessage,
   isValidRoleTenantFilter,

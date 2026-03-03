@@ -11,7 +11,7 @@ import {setupServer} from 'msw/node';
 import {
   createCustomApisClient,
   toOrganizationId,
-  toTenantId,
+  normalizeTenantId,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
@@ -329,13 +329,53 @@ describe('clients/custom-apis', () => {
     });
   });
 
+  describe('normalizeTenantId', () => {
+    it('returns canonical tenant ID unchanged', () => {
+      expect(normalizeTenantId('abcd_123')).to.equal('abcd_123');
+    });
+
+    it('converts hyphenated tenant ID to underscores', () => {
+      expect(normalizeTenantId('abcd-123')).to.equal('abcd_123');
+    });
+
+    it('strips f_ecom_ prefix from organization ID', () => {
+      expect(normalizeTenantId('f_ecom_abcd_123')).to.equal('abcd_123');
+    });
+
+    it('strips f_ecom_ prefix and converts hyphens', () => {
+      expect(normalizeTenantId('f_ecom_abcd-123')).to.equal('abcd_123');
+    });
+
+    it('extracts tenant from hostname', () => {
+      expect(normalizeTenantId('abcd-123.dx.commercecloud.salesforce.com')).to.equal('abcd_123');
+    });
+
+    it('trims whitespace', () => {
+      expect(normalizeTenantId('  abcd_123  ')).to.equal('abcd_123');
+    });
+
+    it('handles various formats', () => {
+      expect(normalizeTenantId('f_ecom_zzxy_prd')).to.equal('zzxy_prd');
+      expect(normalizeTenantId('zzxy_prd')).to.equal('zzxy_prd');
+      expect(normalizeTenantId('f_ecom_test')).to.equal('test');
+    });
+  });
+
   describe('toOrganizationId', () => {
     it('adds f_ecom_ prefix to tenant ID', () => {
       expect(toOrganizationId('zzxy_prd')).to.equal('f_ecom_zzxy_prd');
     });
 
-    it('returns unchanged if already has f_ecom_ prefix', () => {
+    it('normalizes and adds prefix for already-prefixed input', () => {
       expect(toOrganizationId('f_ecom_zzxy_prd')).to.equal('f_ecom_zzxy_prd');
+    });
+
+    it('normalizes hyphenated input', () => {
+      expect(toOrganizationId('abcd-123')).to.equal('f_ecom_abcd_123');
+    });
+
+    it('normalizes hostname input', () => {
+      expect(toOrganizationId('abcd-123.dx.commercecloud.salesforce.com')).to.equal('f_ecom_abcd_123');
     });
 
     it('handles various tenant ID formats', () => {
@@ -348,21 +388,6 @@ describe('clients/custom-apis', () => {
     });
   });
 
-  describe('toTenantId', () => {
-    it('strips f_ecom_ prefix from organization ID', () => {
-      expect(toTenantId('f_ecom_zzxy_prd')).to.equal('zzxy_prd');
-    });
-
-    it('returns unchanged if no f_ecom_ prefix', () => {
-      expect(toTenantId('zzxy_prd')).to.equal('zzxy_prd');
-    });
-
-    it('handles various formats', () => {
-      expect(toTenantId('f_ecom_abcd_001')).to.equal('abcd_001');
-      expect(toTenantId('f_ecom_test')).to.equal('test');
-    });
-  });
-
   describe('buildTenantScope', () => {
     it('builds scope from tenant ID', () => {
       expect(buildTenantScope('zzxy_prd')).to.equal('SALESFORCE_COMMERCE_API:zzxy_prd');
@@ -370,6 +395,15 @@ describe('clients/custom-apis', () => {
 
     it('strips f_ecom_ prefix before building scope', () => {
       expect(buildTenantScope('f_ecom_zzxy_prd')).to.equal('SALESFORCE_COMMERCE_API:zzxy_prd');
+    });
+
+    it('normalizes hyphenated input', () => {
+      expect(buildTenantScope('abcd-123')).to.equal('SALESFORCE_COMMERCE_API:abcd_123');
+    });
+
+    it('normalizes hostname input', () => {
+      const input = 'abcd-123.dx.commercecloud.salesforce.com';
+      expect(buildTenantScope(input)).to.equal('SALESFORCE_COMMERCE_API:abcd_123');
     });
 
     it('uses SCAPI_TENANT_SCOPE_PREFIX constant', () => {

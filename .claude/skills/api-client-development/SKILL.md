@@ -172,19 +172,22 @@ SCAPI APIs use an `organizationId` path parameter with the `f_ecom_` prefix, but
 
 ```typescript
 // From @salesforce/b2c-tooling-sdk (or clients/custom-apis.ts)
-import {toOrganizationId, toTenantId, buildTenantScope} from '@salesforce/b2c-tooling-sdk';
+import {toOrganizationId, normalizeTenantId, buildTenantScope} from '@salesforce/b2c-tooling-sdk';
 
-// Convert tenant ID to organization ID (adds f_ecom_ prefix)
+// Convert tenant ID to organization ID (normalizes + adds f_ecom_ prefix)
 toOrganizationId('zzxy_prd')        // Returns 'f_ecom_zzxy_prd'
 toOrganizationId('f_ecom_zzxy_prd') // Returns 'f_ecom_zzxy_prd' (unchanged)
+toOrganizationId('zzxy-prd')        // Returns 'f_ecom_zzxy_prd' (hyphen normalized)
 
-// Extract raw tenant ID (strips f_ecom_ prefix)
-toTenantId('f_ecom_zzxy_prd')       // Returns 'zzxy_prd'
-toTenantId('zzxy_prd')              // Returns 'zzxy_prd' (unchanged)
+// Normalize any tenant/org ID form to canonical underscore format
+normalizeTenantId('f_ecom_zzxy_prd')                              // Returns 'zzxy_prd'
+normalizeTenantId('zzxy-prd')                                     // Returns 'zzxy_prd'
+normalizeTenantId('zzxy-prd.dx.commercecloud.salesforce.com')     // Returns 'zzxy_prd'
 
-// Build tenant-specific OAuth scope
+// Build tenant-specific OAuth scope (normalizes input)
 buildTenantScope('zzxy_prd')        // Returns 'SALESFORCE_COMMERCE_API:zzxy_prd'
 buildTenantScope('f_ecom_zzxy_prd') // Returns 'SALESFORCE_COMMERCE_API:zzxy_prd'
+buildTenantScope('zzxy-prd')        // Returns 'SALESFORCE_COMMERCE_API:zzxy_prd'
 ```
 
 ### Constants
@@ -272,20 +275,19 @@ export function createCustomApisClient(
 export const ORGANIZATION_ID_PREFIX = 'f_ecom_';
 export const SCAPI_TENANT_SCOPE_PREFIX = 'SALESFORCE_COMMERCE_API:';
 
-export function toOrganizationId(tenantId: string): string {
-  return tenantId.startsWith(ORGANIZATION_ID_PREFIX)
-    ? tenantId
-    : `${ORGANIZATION_ID_PREFIX}${tenantId}`;
+export function normalizeTenantId(value: string): string {
+  let id = value.trim();
+  if (id.includes('.')) id = id.split('.')[0];
+  if (id.startsWith(ORGANIZATION_ID_PREFIX)) id = id.slice(ORGANIZATION_ID_PREFIX.length);
+  return id.replaceAll('-', '_');
 }
 
-export function toTenantId(value: string): string {
-  return value.startsWith(ORGANIZATION_ID_PREFIX)
-    ? value.slice(ORGANIZATION_ID_PREFIX.length)
-    : value;
+export function toOrganizationId(tenantId: string): string {
+  return `${ORGANIZATION_ID_PREFIX}${normalizeTenantId(tenantId)}`;
 }
 
 export function buildTenantScope(tenantId: string): string {
-  return `${SCAPI_TENANT_SCOPE_PREFIX}${toTenantId(tenantId)}`;
+  return `${SCAPI_TENANT_SCOPE_PREFIX}${normalizeTenantId(tenantId)}`;
 }
 ```
 
@@ -440,13 +442,13 @@ const {data, error} = await client.GET('/endpoint', {...});
 
 ## Troubleshooting
 
-**OAuth scope errors (401/403 from SCAPI)**: Ensure the client factory calls `auth.withAdditionalScopes()` with both the domain scope (e.g., `sfcc.custom-apis`) and the tenant-specific scope (`SALESFORCE_COMMERCE_API:<tenantId>`). Use `buildTenantScope()` to strip the `f_ecom_` prefix from tenant IDs before building scopes.
+**OAuth scope errors (401/403 from SCAPI)**: Ensure the client factory calls `auth.withAdditionalScopes()` with both the domain scope (e.g., `sfcc.custom-apis`) and the tenant-specific scope (`SALESFORCE_COMMERCE_API:<tenantId>`). Use `buildTenantScope()` which normalizes any tenant ID form (hyphenated, hostname, org ID) to canonical underscores before building scopes.
 
 **Type generation failures**: Check that the OpenAPI spec in `specs/` is valid YAML/JSON. Run `pnpm --filter @salesforce/b2c-tooling-sdk run generate:types` and inspect the output. Common issues: spec references external files that aren't present, or uses OpenAPI features not supported by openapi-typescript.
 
 **Middleware ordering issues**: Auth middleware should be added first (`client.use(createAuthMiddleware(...))`), then logging. In openapi-fetch, middleware runs in reverse registration order for requests, so auth registered first means it runs last — ensuring the logging middleware sees the final request with auth headers.
 
-**`organizationId` mismatch**: SCAPI path parameters need the `f_ecom_` prefix (use `toOrganizationId()`), while OAuth scopes need the raw tenant ID (use `toTenantId()`). Mixing these up causes 404s or scope errors.
+**`organizationId` mismatch**: SCAPI path parameters need the `f_ecom_` prefix (use `toOrganizationId()`), while OAuth scopes need the raw tenant ID (use `normalizeTenantId()`). Both functions accept any parseable form (hyphenated, hostname, org ID). Mixing these up causes 404s or scope errors.
 
 ## Checklist: New SCAPI Client
 

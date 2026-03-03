@@ -19,7 +19,7 @@ import {OAuthStrategy} from '../auth/oauth.js';
 import type {paths, components} from './cdn-zones.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
-import {toOrganizationId, toTenantId, buildTenantScope} from './custom-apis.js';
+import {toOrganizationId, normalizeTenantId, buildTenantScope} from './custom-apis.js';
 
 /**
  * Re-export generated types for external use.
@@ -29,7 +29,7 @@ export type {paths, components};
 /**
  * Re-export organization/tenant utilities for convenience.
  */
-export {toOrganizationId, toTenantId, buildTenantScope};
+export {toOrganizationId, normalizeTenantId, buildTenantScope};
 
 /**
  * The typed CDN Zones client for eCDN management.

@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.5.5
+
+### Patch Changes
+
+- [`beaf275`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/beaf275efbe36b2c5f33c7ed9e368e24f48022fc) - MRT environment variables now use non-prefixed names (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_CLOUD_ORIGIN`) as primary. The `SFCC_`-prefixed versions continue to work as fallbacks. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.5.4
 
 ### Patch Changes

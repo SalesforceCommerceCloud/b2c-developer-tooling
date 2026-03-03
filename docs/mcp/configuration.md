@@ -82,7 +82,7 @@ Set environment variables in your MCP client configuration:
         "SFCC_PASSWORD": "...",
         "SFCC_CLIENT_ID": "...",
         "SFCC_CLIENT_SECRET": "...",
-        "SFCC_MRT_API_KEY": "..."
+        "MRT_API_KEY": "..."
       }
     }
   }
@@ -169,10 +169,10 @@ Pass credentials directly as command-line flags:
 
 | Flag | Env Variable | Description |
 |------|--------------|-------------|
-| `--api-key` | `SFCC_MRT_API_KEY` | MRT API key |
-| `--project` | `SFCC_MRT_PROJECT` | MRT project slug |
-| `--environment` | `SFCC_MRT_ENVIRONMENT` | MRT environment (staging, production) |
-| `--cloud-origin` | `SFCC_MRT_CLOUD_ORIGIN` | MRT cloud origin URL |
+| `--api-key` | `MRT_API_KEY` | MRT API key (`SFCC_MRT_API_KEY` also supported) |
+| `--project` | `MRT_PROJECT` | MRT project slug (`SFCC_MRT_PROJECT` also supported) |
+| `--environment` | `MRT_ENVIRONMENT` | MRT environment (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
+| `--cloud-origin` | `MRT_CLOUD_ORIGIN` | MRT cloud origin URL (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
 
 ## Toolset Selection
 
@@ -373,7 +373,7 @@ Requires `dw.json` in project root for B2C credentials.
         "SFCC_SERVER": "xxx.demandware.net",
         "SFCC_CLIENT_ID": "...",
         "SFCC_CLIENT_SECRET": "...",
-        "SFCC_MRT_API_KEY": "..."
+        "MRT_API_KEY": "..."
       }
     }
   }

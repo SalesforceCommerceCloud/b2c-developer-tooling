@@ -183,27 +183,44 @@ export const SCAPI_TENANT_SCOPE_PREFIX = 'SALESFORCE_COMMERCE_API:';
  * toOrganizationId('f_ecom_zzxy_prd') // Returns 'f_ecom_zzxy_prd' (unchanged)
  */
 export function toOrganizationId(tenantId: string): string {
-  if (tenantId.startsWith(ORGANIZATION_ID_PREFIX)) {
-    return tenantId;
-  }
-  return `${ORGANIZATION_ID_PREFIX}${tenantId}`;
+  return `${ORGANIZATION_ID_PREFIX}${normalizeTenantId(tenantId)}`;
 }
 
 /**
- * Extracts the raw tenant ID by stripping the f_ecom_ prefix if present.
+ * Normalizes any parseable tenant/organization ID form to the canonical underscore format.
  *
- * @param value - The tenant ID or organization ID (e.g., "zzxy_prd" or "f_ecom_zzxy_prd")
- * @returns The raw tenant ID without the prefix (e.g., "zzxy_prd")
+ * Supported input forms (all resolve to `abcd_123`):
+ * - `abcd_123` — canonical tenant ID (returned as-is)
+ * - `abcd-123` — hyphenated tenant ID
+ * - `f_ecom_abcd_123` — organization ID
+ * - `f_ecom_abcd-123` — org ID with hyphenated tenant
+ * - `abcd-123.dx.commercecloud.salesforce.com` — sandbox hostname
+ *
+ * @param value - The tenant ID, organization ID, or hostname
+ * @returns The normalized tenant ID in canonical underscore format (e.g., "abcd_123")
  *
  * @example
- * toTenantId('f_ecom_zzxy_prd') // Returns 'zzxy_prd'
- * toTenantId('zzxy_prd')        // Returns 'zzxy_prd' (unchanged)
+ * normalizeTenantId('f_ecom_zzxy_prd') // Returns 'zzxy_prd'
+ * normalizeTenantId('zzxy-prd')        // Returns 'zzxy_prd'
+ * normalizeTenantId('zzxy-prd.dx.commercecloud.salesforce.com') // Returns 'zzxy_prd'
  */
-export function toTenantId(value: string): string {
-  if (value.startsWith(ORGANIZATION_ID_PREFIX)) {
-    return value.slice(ORGANIZATION_ID_PREFIX.length);
+export function normalizeTenantId(value: string): string {
+  let id = value.trim();
+
+  // Extract hostname prefix: "abcd-123.dx.commercecloud.salesforce.com" → "abcd-123"
+  if (id.includes('.')) {
+    id = id.split('.')[0];
   }
-  return value;
+
+  // Strip f_ecom_ prefix (handles org ID form)
+  if (id.startsWith(ORGANIZATION_ID_PREFIX)) {
+    id = id.slice(ORGANIZATION_ID_PREFIX.length);
+  }
+
+  // Convert hyphens to underscores
+  id = id.replaceAll('-', '_');
+
+  return id;
 }
 
 /**
@@ -217,5 +234,5 @@ export function toTenantId(value: string): string {
  * buildTenantScope('f_ecom_zzxy_prd') // Returns 'SALESFORCE_COMMERCE_API:zzxy_prd'
  */
 export function buildTenantScope(tenantId: string): string {
-  return `${SCAPI_TENANT_SCOPE_PREFIX}${toTenantId(tenantId)}`;
+  return `${SCAPI_TENANT_SCOPE_PREFIX}${normalizeTenantId(tenantId)}`;
 }

@@ -28,9 +28,9 @@ These flags are available on all MRT commands:
 
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
-| `--api-key` | `SFCC_MRT_API_KEY` | MRT API key |
-| `--project`, `-p` | `SFCC_MRT_PROJECT` | MRT project slug |
-| `--environment`, `-e` | `SFCC_MRT_ENVIRONMENT` | Target environment (e.g., staging, production) |
+| `--api-key` | `MRT_API_KEY` | MRT API key |
+| `--project`, `-p` | `MRT_PROJECT` | MRT project slug |
+| `--environment`, `-e` | `MRT_ENVIRONMENT` | Target environment (e.g., staging, production). `MRT_TARGET` also supported. |
 
 ### Configuration Sources
 
@@ -56,7 +56,7 @@ MRT commands use API key authentication. The API key is configured in the Manage
 Provide the API key via one of these methods:
 
 1. **Command-line flag**: `--api-key your-api-key`
-2. **Environment variable**: `export SFCC_MRT_API_KEY=your-api-key`
+2. **Environment variable**: `export MRT_API_KEY=your-api-key`
 3. **Mobify config file**: `~/.mobify` with `api_key` field
 
 ```json
