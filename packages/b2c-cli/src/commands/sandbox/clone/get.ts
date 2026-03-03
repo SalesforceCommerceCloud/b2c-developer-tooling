@@ -76,17 +76,22 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
     const fields: [string, string | undefined][] = [
       ['Clone ID', clone?.cloneId],
       ['Source Instance', clone?.sourceInstance],
+      ['Source Instance ID', clone?.sourceInstanceId],
       ['Target Instance', clone?.targetInstance],
+      ['Target Instance ID', clone?.targetInstanceId],
       ['Realm', clone?.realm],
       ['Status', clone?.status],
       ['Progress', clone?.progressPercentage === undefined ? '-' : `${clone.progressPercentage}%`],
       ['Created At', clone?.createdAt ? new Date(clone.createdAt).toLocaleString() : undefined],
-      ['Created By', clone?.createdBy],
+      ['Custom Code Version', clone?.customCodeVersion],
+      ['Storefront Count', clone?.storefrontCount?.toString()],
+      ['Filesystem Usage Size', clone?.filesystemUsageSize?.toString()],
+      ['Database Transfer Size', clone?.databaseTransferSize?.toString()],
     ];
 
     for (const [label, value] of fields) {
       if (value !== undefined) {
-        ui.div({text: `${label}:`, width: 20, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
+        ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
       }
     }
 

@@ -92,7 +92,7 @@ b2c sandbox list
 
 ### Available Columns
 
-`realm`, `instance`, `state`, `profile`, `created`, `eol`, `id`, `hostname`, `createdBy`, `autoScheduled`
+`realm`, `instance`, `state`, `profile`, `created`, `eol`, `id`, `hostname`, `createdBy`, `autoScheduled`, `isCloned`
 
 ### Examples
 
@@ -119,13 +119,15 @@ b2c sandbox list --json
 ### Output
 
 ```
-Realm  Instance  State    Profile  Created     EOL
-──────────────────────────────────────────────────────────────────────────
-abcd   001       started  medium   2024-12-20  2024-12-21
-abcd   002       stopped  large    2024-12-19  2024-12-20 22:30
+Realm  Instance  State    Profile  Created     EOL             Cloned
+─────────────────────────────────────────────────────────────────────────
+abcd   001       started  medium   2024-12-20  2024-12-21      No
+abcd   002       stopped  large    2024-12-19  2024-12-20 22:30 Yes
 ```
 
 The `EOL` column displays `YYYY-MM-DD` normally. When a sandbox expires within 24 hours (or is already expired), the time is also shown as `YYYY-MM-DD HH:mm` (UTC).
+
+The `isCloned` column indicates whether a sandbox was created by cloning another sandbox (`Yes`) or not (`No`).
 
 ---
 
@@ -216,6 +218,12 @@ b2c sandbox get <SANDBOXID>
 |----------|-------------|----------|
 | `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
 
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--clone-details` | Include detailed clone information if the sandbox was created by cloning | `false` |
+
 ### Examples
 
 ```bash
@@ -224,6 +232,9 @@ b2c sandbox get abc12345-1234-1234-1234-abc123456789
 
 # Get sandbox details using realm-instance format
 b2c sandbox get zzzv-123
+
+# Get sandbox details with clone information
+b2c sandbox get zzzv-123 --clone-details
 
 # Output as JSON
 b2c sandbox get zzzv_123 --json
@@ -238,6 +249,19 @@ Displays detailed information about the sandbox including:
 - State and resource profile
 - Creation time and end-of-life
 - Links to BM and storefront
+
+If the sandbox was created by cloning another sandbox, a "Clone Details" section is displayed showing:
+- Cloned From (realm-instance identifier)
+- Source Instance ID (UUID)
+
+When the `--clone-details` flag is used, additional clone metadata is included:
+- Clone ID
+- Status
+- Target Profile
+- Progress Percentage
+- Elapsed Time
+- Custom Code Version
+- Storefront Count
 
 ---
 
@@ -698,9 +722,9 @@ b2c sandbox clone list <SANDBOXID>
 
 #### Available Columns
 
-`cloneId`, `status`, `targetInstance`, `targetProfile`, `progressPercentage`, `createdAt`, `createdBy`, `lastUpdated`, `elapsedTimeInSec`, `sourceInstance`, `realm`
+`cloneId`, `sourceInstance`, `targetInstance`, `status`, `progressPercentage`, `createdAt`, `lastUpdated`, `elapsedTimeInSec`, `customCodeVersion`
 
-**Default columns:** `cloneId`, `status`, `targetInstance`, `progressPercentage`, `createdAt`
+**Default columns:** `cloneId`, `sourceInstance`, `targetInstance`, `status`, `progressPercentage`, `createdAt`
 
 #### Examples
 
@@ -727,11 +751,13 @@ b2c sandbox clone list zzzv-123 --json
 #### Output
 
 ```
-Clone ID                  Status      Target Instance  Progress %  Created At
-────────────────────────────────────────────────────────────────────────────────
-aaaa-001-1642780893121    COMPLETED   aaaa-001         100%        2/27/2025, 10:00:00 AM
-aaaa-002-1642780893122    IN_PROGRESS aaaa-002         75%         2/27/2025, 11:00:00 AM
+Clone ID                 Source Instance  Target Instance  Status       Progress %  Created At
+──────────────────────────────────────────────────────────────────────────────────────────────
+aaaa-001-1642780893121   aaaa-000         aaaa-001         COMPLETED    100%        2024-02-27 10:00
+aaaa-002-1642780893122   aaaa-000         aaaa-002         IN_PROGRESS  75%         2024-02-27
 ```
+
+The `Created At` column displays `YYYY-MM-DD HH:mm` when the clone was created within the last 24 hours, otherwise just `YYYY-MM-DD` (all times in UTC).
 
 ### b2c sandbox clone create
 
@@ -753,7 +779,7 @@ b2c sandbox clone create <SANDBOXID>
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--target-profile` | Resource profile for the cloned sandbox (`medium`, `large`, `xlarge`, `xxlarge`). If not specified, uses the source sandbox's profile. | Source sandbox profile |
+| `--target-profile` | Resource profile for the cloned sandbox (`medium`, `large`, `xlarge`, `xxlarge`). Optional. | Source sandbox profile |
 | `--ttl` | Time to live in hours (0 or negative = infinite, minimum 24 hours). Values between 1-23 are not allowed. | `24` |
 | `--emails` | Comma-separated list of notification email addresses | |
 
@@ -763,17 +789,17 @@ b2c sandbox clone create <SANDBOXID>
 # Create a clone with same profile as source sandbox
 b2c sandbox clone create zzzv-123
 
-# Create a clone with custom TTL (still uses source profile)
+# Create a clone with custom TTL (uses source profile)
 b2c sandbox clone create zzzv-123 --ttl 48
 
-# Create a clone with different profile
+# Create a clone with a different profile
 b2c sandbox clone create zzzv-123 --target-profile large
 
 # Create a clone with large profile and extended TTL
 b2c sandbox clone create zzzv-123 --target-profile large --ttl 48
 
 # Create a clone with notification emails
-b2c sandbox clone create zzzv-123 --target-profile medium --emails dev@example.com,qa@example.com
+b2c sandbox clone create zzzv-123 --emails dev@example.com,qa@example.com
 
 # Create a clone with infinite TTL
 b2c sandbox clone create zzzv-123 --ttl 0
@@ -797,7 +823,7 @@ To check the clone status, run:
 - **Source sandbox will be stopped:** The source sandbox is automatically placed in a **Stopped** state during cloning to ensure data integrity and configuration consistency. It resumes normal operation once cloning is complete.
 - Cloning typically completes in minutes, though duration depends on sandbox size and data volume
 - The cloned sandbox is fully isolated with dedicated compute, storage, and database resources
-- If `--target-profile` is not specified, the clone will use the same resource profile as the source sandbox
+- When `--target-profile` is not specified, the API automatically uses the source sandbox's resource profile (no additional API call is made)
 - The TTL must be 0 or negative (infinite), or 24 hours or greater. Values between 1-23 are rejected
 - The clone will be created as a new sandbox instance in the same realm
 
@@ -830,21 +856,28 @@ b2c sandbox clone get zzzv-123 aaaa-002-1642780893121 --json
 
 #### Output
 
-Displays essential clone information in a formatted table:
+Displays comprehensive clone information in a formatted table:
 
 ```
 Clone Details
 ──────────────────────────────────────────────────
-Clone ID:          aaaa-002-1642780893121
-Source Instance:   aaaa-000
-Target Instance:   aaaa-002
-Realm:             aaaa
-Progress:          75%
-Created At:        2/27/2025, 10:00:00 AM
-Created By:        user@example.com
+Clone ID:                 aaaa-002-1642780893121
+Source Instance:          aaaa-000
+Source Instance ID:       11111111-2222-3333-4444-555555555555
+Target Instance:          aaaa-002
+Target Instance ID:       66666666-7777-8888-9999-000000000000
+Realm:                    aaaa
+Status:                   IN_PROGRESS
+Progress:                 75%
+Created At:               2/27/2025, 10:00:00 AM
+Last Known State:         Finalizing Clone
+Custom Code Version:      version1
+Storefront Count:         0
+Filesystem Usage Size:    1073741824
+Database Transfer Size:   2147483648
 ```
 
-For detailed information including status, timing, filesystem usage, and other metadata, use the `--json` flag.
+For the complete response including all metadata, use the `--json` flag.
 
 #### Clone Status Values
 

@@ -53,7 +53,7 @@ export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
 
   async run(): Promise<{cloneId?: string}> {
     const {sandboxId: rawSandboxId} = this.args;
-    const {'target-profile': targetProfileFlag, emails, ttl} = this.flags;
+    const {'target-profile': targetProfile, emails, ttl} = this.flags;
 
     // Validate TTL
     if (ttl > 0 && ttl < 24) {
@@ -69,48 +69,6 @@ export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
     // Resolve sandbox ID (handles both UUID and friendly format)
     const sandboxId = await this.resolveSandboxId(rawSandboxId);
 
-    // Determine target profile - fetch from source sandbox if not provided
-    let targetProfile = targetProfileFlag;
-
-    if (!targetProfile) {
-      this.log(t('commands.clone.create.fetchingSource', 'Fetching source sandbox profile...'));
-
-      const sourceResult = await this.odsClient.GET('/sandboxes/{sandboxId}', {
-        params: {path: {sandboxId}},
-      });
-
-      if (!sourceResult.data?.data?.resourceProfile) {
-        this.error(
-          t(
-            'commands.clone.create.noSourceProfile',
-            'Unable to determine source sandbox profile. Please specify --target-profile explicitly.',
-          ),
-        );
-      }
-
-      targetProfile = sourceResult.data.data.resourceProfile;
-
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.clone.create.usingSourceProfile', 'Using source sandbox profile: {{profile}}', {
-            profile: targetProfile,
-          }),
-        );
-      }
-    }
-
-    // Validate that profile is one of the allowed values
-    const validProfiles = ['medium', 'large', 'xlarge', 'xxlarge'];
-    if (!validProfiles.includes(targetProfile)) {
-      this.error(
-        t(
-          'commands.clone.create.invalidProfile',
-          'Invalid target profile "{{profile}}". Must be one of: {{validProfiles}}',
-          {profile: targetProfile, validProfiles: validProfiles.join(', ')},
-        ),
-      );
-    }
-
     this.log(t('commands.clone.create.creating', 'Creating sandbox clone...'));
 
     // Prepare request body
@@ -119,9 +77,13 @@ export default class CloneCreate extends OdsCommand<typeof CloneCreate> {
       emails?: string[];
       ttl: number;
     } = {
-      targetProfile: targetProfile as 'large' | 'medium' | 'xlarge' | 'xxlarge',
       ttl,
     };
+
+    // Only include targetProfile if explicitly provided
+    if (targetProfile) {
+      requestBody.targetProfile = targetProfile as 'large' | 'medium' | 'xlarge' | 'xxlarge';
+    }
 
     if (emails && emails.length > 0) {
       requestBody.emails = emails.flatMap((email) => email.split(',').map((e) => e.trim()));

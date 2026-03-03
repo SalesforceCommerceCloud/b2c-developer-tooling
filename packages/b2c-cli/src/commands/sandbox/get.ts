@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, ux} from '@oclif/core';
+import {Args, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {OdsComponents} from '@salesforce/b2c-tooling-sdk';
@@ -35,18 +35,30 @@ export default class SandboxGet extends OdsCommand<typeof SandboxGet> {
     '<%= config.bin %> <%= command.id %> abc12345-1234-1234-1234-abc123456789',
     '<%= config.bin %> <%= command.id %> zzzv-123',
     '<%= config.bin %> <%= command.id %> zzzv_123 --json',
+    '<%= config.bin %> <%= command.id %> zzzv_123 --clone-details',
   ];
+
+  static flags = {
+    'clone-details': Flags.boolean({
+      description: 'Include detailed clone information if the sandbox was created by cloning',
+      default: false,
+    }),
+  };
 
   async run(): Promise<SandboxModel> {
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
 
     this.log(t('commands.sandbox.get.fetching', 'Fetching sandbox {{sandboxId}}...', {sandboxId}));
 
-    const result = await this.odsClient.GET('/sandboxes/{sandboxId}', {
-      params: {
-        path: {sandboxId},
-      },
-    });
+    const params: {path: {sandboxId: string}; query?: {expand: 'clonedetails'[]}} = {
+      path: {sandboxId},
+    };
+
+    if (this.flags['clone-details']) {
+      params.query = {expand: ['clonedetails']};
+    }
+
+    const result = await this.odsClient.GET('/sandboxes/{sandboxId}', {params});
 
     if (!result.data?.data) {
       this.error(
@@ -106,6 +118,39 @@ export default class SandboxGet extends OdsCommand<typeof SandboxGet> {
         {text: 'Emails:', width: 20, padding: [0, 2, 0, 0]},
         {text: sandbox.emails.join(', '), padding: [0, 0, 0, 0]},
       );
+    }
+
+    // Clone Details (if sandbox was cloned)
+    if (sandbox.clonedFrom || sandbox.sourceInstanceIdentifier || sandbox.cloneDetails) {
+      ui.div({text: '', padding: [0, 0, 0, 0]});
+      ui.div({text: 'Clone Details', padding: [1, 0, 0, 0]});
+      ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+
+      const cloneFields: [string, string | undefined][] = [
+        ['Cloned From', sandbox.clonedFrom],
+        ['Source Instance ID', sandbox.sourceInstanceIdentifier],
+      ];
+
+      // If cloneDetails is present (from expand=clonedetails), show additional information
+      if (sandbox.cloneDetails) {
+        const details = sandbox.cloneDetails;
+        cloneFields.push(
+          ['Clone ID', details.cloneId],
+          ['Status', details.status],
+          ['Target Profile', details.targetProfile],
+          ['Created At', details.createdAt ? new Date(details.createdAt).toLocaleString() : undefined],
+          ['Progress', details.progressPercentage ? `${details.progressPercentage}%` : undefined],
+          ['Elapsed Time (sec)', details.elapsedTimeInSec?.toString()],
+          ['Custom Code Version', details.customCodeVersion],
+          ['Storefront Count', details.storefrontCount?.toString()],
+        );
+      }
+
+      for (const [label, value] of cloneFields) {
+        if (value) {
+          ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
+        }
+      }
     }
 
     // Links

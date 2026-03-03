@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {ux} from '@oclif/core';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import CloneList from '../../../../src/commands/sandbox/clone/list.js';
+import CloneList, {COLUMNS} from '../../../../src/commands/sandbox/clone/list.js';
 import {runSilent} from '../../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
@@ -78,6 +78,37 @@ describe('sandbox clone list', () => {
     it('should have status flag', () => {
       expect(CloneList.flags).to.have.property('status');
       expect(CloneList.flags.status.options).to.deep.equal(['Pending', 'InProgress', 'Failed', 'Completed']);
+    });
+  });
+
+  describe('createdAt column formatting', () => {
+    const getCreatedAt = COLUMNS.createdAt.get;
+
+    it('returns "-" when createdAt is missing', () => {
+      expect(getCreatedAt({} as any)).to.equal('-');
+    });
+
+    it('returns YYYY-MM-DD when created more than 24 hours ago', () => {
+      const past = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      const result = getCreatedAt({createdAt: past} as any);
+      expect(result).to.match(/^\d{4}-\d{2}-\d{2}$/);
+    });
+
+    it('returns YYYY-MM-DD HH:mm when created within 24 hours', () => {
+      const recent = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const result = getCreatedAt({createdAt: recent} as any);
+      expect(result).to.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+    });
+
+    it('returns correct UTC time in YYYY-MM-DD HH:mm format', () => {
+      const recentTime = new Date(Date.now() - 30 * 60 * 1000).toISOString(); // 30 minutes ago
+      const d = new Date(recentTime);
+      const expectedDate = d.toISOString().slice(0, 10);
+      const expectedHH = String(d.getUTCHours()).padStart(2, '0');
+      const expectedMM = String(d.getUTCMinutes()).padStart(2, '0');
+
+      const result = getCreatedAt({createdAt: recentTime} as any);
+      expect(result).to.equal(`${expectedDate} ${expectedHH}:${expectedMM}`);
     });
   });
 

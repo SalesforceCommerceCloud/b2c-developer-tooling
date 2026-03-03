@@ -55,7 +55,7 @@ export function createHookContext(options: HookContextOptions = {}): HookContext
  * esbuild transforms `import()` to `require()` in CJS output, which cannot
  * load ESM plugins. Using `new Function` preserves the native dynamic import.
  */
-// eslint-disable-next-line @typescript-eslint/no-implied-eval
+
 const dynamicImport = new Function('specifier', 'return import(specifier)') as (
   specifier: string,
 ) => Promise<Record<string, unknown>>;

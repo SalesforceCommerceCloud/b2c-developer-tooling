@@ -40,20 +40,6 @@ function stubOdsClientPost(command: any, handler: (path: string, options?: any) 
   });
 }
 
-function stubOdsClient(
-  command: any,
-  postHandler: (path: string, options?: any) => Promise<any>,
-  getHandler: (path: string, options?: any) => Promise<any>,
-): void {
-  Object.defineProperty(command, 'odsClient', {
-    value: {
-      POST: postHandler,
-      GET: getHandler,
-    },
-    configurable: true,
-  });
-}
-
 function stubResolveSandboxId(command: any, handler: (id: string) => Promise<string>): void {
   command.resolveSandboxId = handler;
 }
@@ -166,7 +152,7 @@ describe('sandbox clone create', () => {
   });
 
   describe('target profile defaulting', () => {
-    it('should use source sandbox profile when not specified', async () => {
+    it('should not include targetProfile when not specified', async () => {
       const command = new CloneCreate(['test-sandbox-id'], {} as any);
       (command as any).args = {sandboxId: 'test-sandbox-id'};
       (command as any).flags = {ttl: 24}; // No target-profile provided
@@ -175,36 +161,20 @@ describe('sandbox clone create', () => {
       stubResolveSandboxId(command, async (id) => id);
 
       let capturedBody: any;
-      let getCallCount = 0;
 
-      stubOdsClient(
-        command,
-        async (path: string, options?: any) => {
-          capturedBody = options?.body;
-          return {
-            data: {data: {cloneId: 'test-clone-id'}},
-            response: new Response(),
-          };
-        },
-        async (path: string) => {
-          getCallCount++;
-          expect(path).to.equal('/sandboxes/{sandboxId}');
-          return {
-            data: {
-              data: {
-                id: 'test-sandbox-id',
-                resourceProfile: 'large',
-              },
-            },
-            response: new Response(),
-          };
-        },
-      );
+      stubOdsClientPost(command, async (path: string, options?: any) => {
+        capturedBody = options?.body;
+        return {
+          data: {data: {cloneId: 'test-clone-id'}},
+          response: new Response(),
+        };
+      });
 
       await command.run();
 
-      expect(getCallCount).to.equal(1);
-      expect(capturedBody.targetProfile).to.equal('large');
+      // API will use source profile by default, so we should not include targetProfile
+      expect(capturedBody.targetProfile).to.be.undefined;
+      expect(capturedBody.ttl).to.equal(24);
     });
 
     it('should use explicit target-profile when provided', async () => {
@@ -216,90 +186,18 @@ describe('sandbox clone create', () => {
       stubResolveSandboxId(command, async (id) => id);
 
       let capturedBody: any;
-      let getCallCount = 0;
 
-      stubOdsClient(
-        command,
-        async (path: string, options?: any) => {
-          capturedBody = options?.body;
-          return {
-            data: {data: {cloneId: 'test-clone-id'}},
-            response: new Response(),
-          };
-        },
-        async () => {
-          getCallCount++;
-          return {data: null, response: new Response()};
-        },
-      );
+      stubOdsClientPost(command, async (path: string, options?: any) => {
+        capturedBody = options?.body;
+        return {
+          data: {data: {cloneId: 'test-clone-id'}},
+          response: new Response(),
+        };
+      });
 
       await command.run();
 
-      // Should NOT call GET when profile is explicitly provided
-      expect(getCallCount).to.equal(0);
       expect(capturedBody.targetProfile).to.equal('medium');
-    });
-
-    it('should error when source sandbox has no profile', async () => {
-      const command = new CloneCreate(['test-sandbox-id'], {} as any);
-      (command as any).args = {sandboxId: 'test-sandbox-id'};
-      (command as any).flags = {ttl: 24};
-      stubCommandConfigAndLogger(command);
-      makeCommandThrowOnError(command);
-      stubResolveSandboxId(command, async (id) => id);
-
-      stubOdsClient(
-        command,
-        async () => {
-          return {data: null, response: new Response()};
-        },
-        async () => {
-          return {
-            data: {data: {}}, // No resourceProfile
-            response: new Response(),
-          };
-        },
-      );
-
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch (error: unknown) {
-        expect((error as Error).message).to.include('Unable to determine source sandbox profile');
-      }
-    });
-
-    it('should validate profile is allowed value', async () => {
-      const command = new CloneCreate(['test-sandbox-id'], {} as any);
-      (command as any).args = {sandboxId: 'test-sandbox-id'};
-      (command as any).flags = {ttl: 24};
-      stubCommandConfigAndLogger(command);
-      makeCommandThrowOnError(command);
-      stubResolveSandboxId(command, async (id) => id);
-
-      stubOdsClient(
-        command,
-        async () => {
-          return {data: null, response: new Response()};
-        },
-        async () => {
-          return {
-            data: {
-              data: {
-                resourceProfile: 'invalid-profile',
-              },
-            },
-            response: new Response(),
-          };
-        },
-      );
-
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch (error: unknown) {
-        expect((error as Error).message).to.include('Invalid target profile');
-      }
     });
   });
 

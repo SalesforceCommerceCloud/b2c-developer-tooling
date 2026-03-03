@@ -95,7 +95,9 @@ describe('sandbox clone get', () => {
         status: 'COMPLETED',
         realm: 'aaaa',
         sourceInstance: 'aaaa-000',
+        sourceInstanceId: '11111111-2222-3333-4444-555555555555',
         targetInstance: 'aaaa-001',
+        targetInstanceId: '66666666-7777-8888-9999-000000000000',
         targetProfile: 'large',
         progressPercentage: 100,
         elapsedTimeInSec: 3600,
@@ -145,7 +147,9 @@ describe('sandbox clone get', () => {
         status: 'IN_PROGRESS',
         realm: 'aaaa',
         sourceInstance: 'aaaa-000',
+        sourceInstanceId: '11111111-2222-3333-4444-555555555555',
         targetInstance: 'aaaa-001',
+        targetInstanceId: '66666666-7777-8888-9999-000000000000',
         targetProfile: 'large',
         progressPercentage: 75,
         elapsedTimeInSec: 1800,
@@ -173,12 +177,14 @@ describe('sandbox clone get', () => {
       expect(combinedOutput).to.include('75%');
       expect(combinedOutput).to.include('Source Instance:');
       expect(combinedOutput).to.include('aaaa-000');
+      expect(combinedOutput).to.include('Source Instance ID:');
+      expect(combinedOutput).to.include('11111111-2222-3333-4444-555555555555');
       expect(combinedOutput).to.include('Target Instance:');
       expect(combinedOutput).to.include('aaaa-001');
+      expect(combinedOutput).to.include('Target Instance ID:');
+      expect(combinedOutput).to.include('66666666-7777-8888-9999-000000000000');
       expect(combinedOutput).to.include('Realm:');
       expect(combinedOutput).to.include('aaaa');
-      expect(combinedOutput).to.include('Created By:');
-      expect(combinedOutput).to.include('test@example.com');
     });
 
     it('should not display additional info in non-JSON mode', async () => {
@@ -202,7 +208,9 @@ describe('sandbox clone get', () => {
         status: 'COMPLETED',
         realm: 'aaaa',
         sourceInstance: 'aaaa-000',
+        sourceInstanceId: '11111111-2222-3333-4444-555555555555',
         targetInstance: 'aaaa-001',
+        targetInstanceId: '66666666-7777-8888-9999-000000000000',
         progressPercentage: 100,
         createdAt: '2025-02-27T10:00:00Z',
         createdBy: 'test@example.com',
@@ -236,15 +244,16 @@ describe('sandbox clone get', () => {
       expect(combinedOutput).to.include('aaaa');
       expect(combinedOutput).to.include('Progress:');
       expect(combinedOutput).to.include('100%');
-      expect(combinedOutput).to.include('Created By:');
-      expect(combinedOutput).to.include('test@example.com');
 
-      // Should NOT display additional fields in non-JSON mode
-      expect(combinedOutput).to.not.include('Last Known State');
-      expect(combinedOutput).to.not.include('Custom Code Version');
-      expect(combinedOutput).to.not.include('Storefront Count');
-      expect(combinedOutput).to.not.include('Filesystem Usage');
-      expect(combinedOutput).to.not.include('Database Transfer Size');
+      // Should display additional fields in non-JSON mode
+      expect(combinedOutput).to.include('Custom Code Version');
+      expect(combinedOutput).to.include('1.0.0');
+      expect(combinedOutput).to.include('Storefront Count');
+      expect(combinedOutput).to.include('5');
+      expect(combinedOutput).to.include('Filesystem Usage Size');
+      expect(combinedOutput).to.include('1073741824');
+      expect(combinedOutput).to.include('Database Transfer Size');
+      expect(combinedOutput).to.include('2147483648');
     });
 
     it('should handle missing optional fields gracefully', async () => {

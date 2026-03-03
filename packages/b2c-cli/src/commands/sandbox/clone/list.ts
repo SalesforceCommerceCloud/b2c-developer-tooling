@@ -10,14 +10,10 @@ import {t} from '../../../i18n/index.js';
 
 type SandboxCloneGetModel = OdsComponents['schemas']['SandboxCloneGetModel'];
 
-const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
+export const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
   cloneId: {
     header: 'Clone ID',
     get: (c) => c.cloneId || '-',
-  },
-  status: {
-    header: 'Status',
-    get: (c) => c.status || '-',
   },
   sourceInstance: {
     header: 'Source Instance',
@@ -27,9 +23,9 @@ const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
     header: 'Target Instance',
     get: (c) => c.targetInstance || '-',
   },
-  targetProfile: {
-    header: 'Profile',
-    get: (c) => c.targetProfile || '-',
+  status: {
+    header: 'Status',
+    get: (c) => c.status || '-',
   },
   progressPercentage: {
     header: 'Progress %',
@@ -37,11 +33,18 @@ const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
   },
   createdAt: {
     header: 'Created At',
-    get: (c) => (c.createdAt ? new Date(c.createdAt).toLocaleString() : '-'),
-  },
-  createdBy: {
-    header: 'Created By',
-    get: (c) => c.createdBy || '-',
+    get(c) {
+      if (!c.createdAt) return '-';
+      const d = new Date(c.createdAt);
+      const date = d.toISOString().slice(0, 10);
+      const msSinceCreated = Date.now() - d.getTime();
+      if (msSinceCreated <= 24 * 60 * 60 * 1000) {
+        const hh = String(d.getUTCHours()).padStart(2, '0');
+        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${date} ${hh}:${mm}`;
+      }
+      return date;
+    },
   },
   lastUpdated: {
     header: 'Last Updated',
@@ -51,13 +54,13 @@ const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
     header: 'Elapsed Time (sec)',
     get: (c) => (c.elapsedTimeInSec === undefined ? '-' : c.elapsedTimeInSec.toString()),
   },
-  realm: {
-    header: 'Realm',
-    get: (c) => c.realm || '-',
+  customCodeVersion: {
+    header: 'Custom Code Version',
+    get: (c) => c.customCodeVersion || '-',
   },
 };
 
-const DEFAULT_COLUMNS = ['cloneId', 'status', 'sourceInstance', 'targetInstance', 'progressPercentage', 'createdAt'];
+const DEFAULT_COLUMNS = ['cloneId', 'sourceInstance', 'targetInstance', 'status', 'progressPercentage', 'createdAt'];
 
 /**
  * Command to list sandbox clones for a specific sandbox.

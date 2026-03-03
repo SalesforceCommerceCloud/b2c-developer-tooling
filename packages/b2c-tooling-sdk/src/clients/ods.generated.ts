@@ -922,6 +922,12 @@ export interface components {
             };
             startScheduler?: components["schemas"]["WeekdaySchedule"];
             stopScheduler?: components["schemas"]["WeekdaySchedule"];
+            /** @description The realm-instance identifier of the source sandbox from which this sandbox was cloned. */
+            clonedFrom?: string;
+            /** @description The UUID of the source sandbox from which this sandbox was cloned. */
+            sourceInstanceIdentifier?: string;
+            /** @description Detailed clone information if this sandbox was created by cloning another sandbox. Only present when expand=clonedetails is requested and the sandbox is a clone. */
+            cloneDetails?: components["schemas"]["SandboxCloneGetModel"];
         };
         GranularUsage: {
             /** @description start of the usage being returned */
@@ -1946,7 +1952,10 @@ export interface operations {
     };
     getSandbox: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Additional information to include in the sandbox query. Available options: clonedetails */
+                expand?: "clonedetails"[];
+            };
             header?: never;
             path: {
                 /** @description The sandbox UUID. */

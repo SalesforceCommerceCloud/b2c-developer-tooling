@@ -769,6 +769,21 @@
                 "tags": [
                     "Sandboxes"
                 ],
+                "parameters": [
+                    {
+                        "name": "expand",
+                        "in": "query",
+                        "description": "Additional information to include in the sandbox query. Available options: clonedetails",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": ["clonedetails"]
+                            }
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Details on the sandbox (including its state).",
@@ -3089,6 +3104,18 @@
                     },
                     "stopScheduler": {
                         "$ref": "#/components/schemas/WeekdaySchedule"
+                    },
+                    "clonedFrom": {
+                        "type": "string",
+                        "description": "The realm-instance identifier of the source sandbox from which this sandbox was cloned."
+                    },
+                    "sourceInstanceIdentifier": {
+                        "type": "string",
+                        "description": "The UUID of the source sandbox from which this sandbox was cloned."
+                    },
+                    "cloneDetails": {
+                        "$ref": "#/components/schemas/SandboxCloneGetModel",
+                        "description": "Detailed clone information if this sandbox was created by cloning another sandbox. Only present when expand=clonedetails is requested and the sandbox is a clone."
                     }
                 }
             },
