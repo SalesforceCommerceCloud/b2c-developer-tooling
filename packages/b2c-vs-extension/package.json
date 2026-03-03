@@ -339,6 +339,7 @@
       {
         "command": "b2c-dx.scaffold.generate",
         "title": "New from Scaffold...",
+        "icon": "$(file-code)",
         "category": "B2C DX"
       }
     ],
@@ -480,7 +481,8 @@
       "file/newFile": [
         {
           "command": "b2c-dx.scaffold.generate",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "workspaceFolderCount > 0"
         }
       ],
       "explorer/context": [

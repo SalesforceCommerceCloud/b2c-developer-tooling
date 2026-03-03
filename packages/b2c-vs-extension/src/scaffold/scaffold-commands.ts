@@ -60,7 +60,11 @@ async function runScaffoldWizard(
   log: vscode.OutputChannel,
   builtInScaffoldsDir: string,
 ): Promise<void> {
-  const projectRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+  if (!vscode.workspace.workspaceFolders?.length) {
+    vscode.window.showWarningMessage('Open a workspace folder to use scaffolds.');
+    return;
+  }
+  const projectRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
   log.appendLine(`[Scaffold] Starting wizard, projectRoot=${projectRoot}`);
 
   // Step 1: Discover and select scaffold
@@ -135,6 +139,14 @@ async function runScaffoldWizard(
     }
   }
 
+  // Count visible params for step progress (best-effort — conditional params may change)
+  const visibleParams = scaffold.manifest.parameters.filter((p) => {
+    if (resolvedVariables[p.name] !== undefined) return false;
+    if (p.when && !evaluateCondition(p.when, resolvedVariables)) return false;
+    return true;
+  });
+
+  let stepIndex = 0;
   for (const param of scaffold.manifest.parameters) {
     // Skip if already pre-filled by context detection
     if (resolvedVariables[param.name] !== undefined) continue;
@@ -145,10 +157,12 @@ async function runScaffoldWizard(
       continue;
     }
 
+    stepIndex++;
+    const stepTitle = `${scaffold.manifest.displayName} (${stepIndex}/${visibleParams.length})`;
     log.appendLine(`[Scaffold] Prompting for param: ${param.name} (type: ${param.type})`);
 
     // eslint-disable-next-line no-await-in-loop
-    const value = await promptForParameter(param, scaffold, projectRoot, configProvider, log);
+    const value = await promptForParameter(param, scaffold, projectRoot, configProvider, log, stepTitle);
     if (value === undefined) {
       log.appendLine('[Scaffold] User cancelled');
       return;
@@ -227,13 +241,24 @@ async function runScaffoldWizard(
     return;
   }
 
-  const message = `Generated ${created.length} file(s) from ${scaffold.manifest.displayName} scaffold.`;
-  const action = created.length > 0 ? await vscode.window.showInformationMessage(message, 'Open File') : undefined;
-
-  if (action === 'Open File' && created.length > 0) {
+  if (created.length > 0) {
+    // Open the first created file immediately
     const fileUri = vscode.Uri.file(created[0].absolutePath);
     const doc = await vscode.workspace.openTextDocument(fileUri);
     await vscode.window.showTextDocument(doc);
+
+    // Show message with Reveal action for the output directory
+    const action = await vscode.window.showInformationMessage(
+      `Generated ${created.length} file(s) from ${scaffold.manifest.displayName} scaffold.`,
+      'Reveal in Explorer',
+    );
+    if (action === 'Reveal in Explorer') {
+      await vscode.commands.executeCommand('revealInExplorer', fileUri);
+    }
+  }
+
+  if (result.postInstructions) {
+    vscode.window.showInformationMessage(result.postInstructions);
   }
 }
 
@@ -247,12 +272,13 @@ async function promptForParameter(
   projectRoot: string,
   configProvider: B2CExtensionConfig,
   log: vscode.OutputChannel,
+  title?: string,
 ): Promise<string | boolean | string[] | undefined> {
-  const title = scaffold.manifest.displayName;
+  const stepTitle = title ?? scaffold.manifest.displayName;
 
   switch (param.type) {
     case 'boolean':
-      return promptBoolean(param, title);
+      return promptBoolean(param, stepTitle);
 
     case 'choice': {
       const choices = await resolveChoices(param, projectRoot, configProvider, log);
@@ -260,26 +286,26 @@ async function promptForParameter(
         if (param.source) {
           log.appendLine(`[Scaffold] No ${param.source} found, falling back to text input`);
         }
-        return promptString(param, title);
+        return promptString(param, stepTitle);
       }
-      return promptChoice(param, choices, title);
+      return promptChoice(param, choices, stepTitle);
     }
 
     case 'multi-choice': {
       const choices = await resolveChoices(param, projectRoot, configProvider, log);
       if (choices.length === 0) return [];
-      return promptMultiChoice(param, choices, title);
+      return promptMultiChoice(param, choices, stepTitle);
     }
 
     case 'string': {
       if (param.source) {
         const choices = await resolveChoices(param, projectRoot, configProvider, log);
         if (choices.length > 0) {
-          return promptChoice(param, choices, title);
+          return promptChoice(param, choices, stepTitle);
         }
         log.appendLine(`[Scaffold] No ${param.source} found, falling back to text input`);
       }
-      return promptString(param, title);
+      return promptString(param, stepTitle);
     }
 
     default:
@@ -305,22 +331,10 @@ async function promptString(param: ScaffoldParameter, title: string): Promise<st
 }
 
 async function promptBoolean(param: ScaffoldParameter, title: string): Promise<boolean | undefined> {
-  const defaultIsTrue = param.default === true;
-  const items: BooleanQuickPickItem[] = defaultIsTrue
-    ? [
-        {label: 'Yes', description: '(default)', boolValue: true},
-        {label: 'No', boolValue: false},
-      ]
-    : [
-        {label: 'No', description: param.default === false ? '(default)' : undefined, boolValue: false},
-        {label: 'Yes', boolValue: true},
-      ];
-
-  // Default true → Yes first; default false or unset → No first
-  if (!defaultIsTrue && param.default !== false) {
-    // No default — show Yes first
-    items.reverse();
-  }
+  const items: BooleanQuickPickItem[] = [
+    {label: 'Yes', description: param.default === true ? '(default)' : undefined, boolValue: true},
+    {label: 'No', description: param.default === false ? '(default)' : undefined, boolValue: false},
+  ];
 
   const picked = await vscode.window.showQuickPick(items, {
     title,
