@@ -69,5 +69,5 @@ See the [MCP Server Installation Guide](/mcp/installation) for detailed setup in
 - [IDE Integration](./ide-integration) - Connect Prophet VS Code to B2C CLI configuration
 - [MCP Server](/mcp/) - AI-assisted development with Model Context Protocol
 - [CLI Reference](/cli/) - Browse available commands
-- [Tools Reference](/mcp/toolsets) - Explore MCP tools for cartridges, MRT, SCAPI, and so on
-- [API Reference](/api/) - Explore the SDK API
+- [MCP Tools](/mcp/toolsets) - Explore MCP tools for cartridges, MRT, SCAPI, and so on
+- [SDK Reference](/api/) - Explore the SDK
