@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -62,7 +62,14 @@
         "b2c-dx.logLevel": {
           "type": "string",
           "default": "info",
-          "enum": ["trace", "debug", "info", "warn", "error", "silent"],
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "silent"
+          ],
           "description": "Log verbosity level for the B2C DX output channel."
         },
         "b2c-dx.sandbox.pollingInterval": {
@@ -510,25 +517,82 @@
         }
       ],
       "commandPalette": [
-        {"command": "b2c-dx.sandbox.removeRealm", "when": "false"},
-        {"command": "b2c-dx.sandbox.delete", "when": "false"},
-        {"command": "b2c-dx.sandbox.start", "when": "false"},
-        {"command": "b2c-dx.sandbox.stop", "when": "false"},
-        {"command": "b2c-dx.sandbox.restart", "when": "false"},
-        {"command": "b2c-dx.sandbox.viewDetails", "when": "false"},
-        {"command": "b2c-dx.sandbox.openBM", "when": "false"},
-        {"command": "b2c-dx.webdav.newFolder", "when": "false"},
-        {"command": "b2c-dx.webdav.uploadFile", "when": "false"},
-        {"command": "b2c-dx.webdav.delete", "when": "false"},
-        {"command": "b2c-dx.webdav.download", "when": "false"},
-        {"command": "b2c-dx.webdav.openFile", "when": "false"},
-        {"command": "b2c-dx.webdav.newFile", "when": "false"},
-        {"command": "b2c-dx.webdav.mountWorkspace", "when": "false"},
-        {"command": "b2c-dx.content.removeLibrary", "when": "false"},
-        {"command": "b2c-dx.content.export", "when": "false"},
-        {"command": "b2c-dx.content.exportNoAssets", "when": "false"},
-        {"command": "b2c-dx.content.exportAssets", "when": "false"},
-        {"command": "b2c-dx.content.clearFilter", "when": "false"}
+        {
+          "command": "b2c-dx.sandbox.removeRealm",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.delete",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.start",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.stop",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.restart",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.viewDetails",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.openBM",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.newFolder",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.uploadFile",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.delete",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.download",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.openFile",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.newFile",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.mountWorkspace",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.removeLibrary",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.export",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.exportNoAssets",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.exportAssets",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.clearFilter",
+          "when": "false"
+        }
       ]
     }
   },
