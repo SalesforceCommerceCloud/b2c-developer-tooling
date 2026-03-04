@@ -79,13 +79,31 @@ export default class SandboxGet extends OdsCommand<typeof SandboxGet> {
     return sandbox;
   }
 
-  private printSandboxDetails(sandbox: SandboxModel): void {
-    const ui = cliui({width: process.stdout.columns || 80});
+  private buildCloneFields(sandbox: SandboxModel): [string, string | undefined][] {
+    const cloneFields: [string, string | undefined][] = [
+      ['Cloned From', sandbox.clonedFrom],
+      ['Source Instance ID', sandbox.sourceInstanceIdentifier],
+    ];
 
-    ui.div({text: 'Sandbox Details', padding: [1, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+    if (sandbox.cloneDetails) {
+      const details = sandbox.cloneDetails;
+      cloneFields.push(
+        ['Clone ID', details.cloneId],
+        ['Status', details.status],
+        ['Target Profile', details.targetProfile],
+        ['Created At', details.createdAt ? new Date(details.createdAt).toLocaleString() : undefined],
+        ['Progress', details.progressPercentage ? `${details.progressPercentage}%` : undefined],
+        ['Elapsed Time (sec)', details.elapsedTimeInSec?.toString()],
+        ['Custom Code Version', details.customCodeVersion],
+        ['Storefront Count', details.storefrontCount?.toString()],
+      );
+    }
 
-    const fields: [string, string | undefined][] = [
+    return cloneFields;
+  }
+
+  private buildSandboxFields(sandbox: SandboxModel): [string, string | undefined][] {
+    return [
       ['ID', sandbox.id],
       ['Realm', sandbox.realm],
       ['Instance', sandbox.instance],
@@ -100,80 +118,74 @@ export default class SandboxGet extends OdsCommand<typeof SandboxGet> {
       ['App Version', sandbox.versions?.app],
       ['Web Version', sandbox.versions?.web],
     ];
+  }
 
+  private printCloneDetailsSection(ui: ReturnType<typeof cliui>, sandbox: SandboxModel): void {
+    if (!sandbox.clonedFrom && !sandbox.sourceInstanceIdentifier && !sandbox.cloneDetails) return;
+
+    ui.div({text: '', padding: [0, 0, 0, 0]});
+    ui.div({text: 'Clone Details', padding: [1, 0, 0, 0]});
+    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+
+    const cloneFields = this.buildCloneFields(sandbox);
+    this.printFieldsSection(ui, cloneFields, 25);
+  }
+
+  private printFieldsSection(
+    ui: ReturnType<typeof cliui>,
+    fields: [string, string | undefined][],
+    width: number,
+  ): void {
     for (const [label, value] of fields) {
       if (value !== undefined) {
-        ui.div({text: `${label}:`, width: 20, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
+        ui.div({text: `${label}:`, width, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
       }
     }
+  }
 
-    // Tags
+  private printLinksSection(ui: ReturnType<typeof cliui>, sandbox: SandboxModel): void {
+    if (!sandbox.links) return;
+
+    ui.div({text: '', padding: [0, 0, 0, 0]});
+    ui.div({text: 'Links', padding: [1, 0, 0, 0]});
+    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+
+    const links: [string, string | undefined][] = [
+      ['Business Manager', sandbox.links.bm],
+      ['OCAPI', sandbox.links.ocapi],
+      ['Impex', sandbox.links.impex],
+      ['Code', sandbox.links.code],
+      ['Logs', sandbox.links.logs],
+    ];
+
+    this.printFieldsSection(ui, links, 20);
+  }
+
+  private printSandboxDetails(sandbox: SandboxModel): void {
+    const ui = cliui({width: process.stdout.columns || 80});
+
+    ui.div({text: 'Sandbox Details', padding: [1, 0, 0, 0]});
+    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
+
+    const fields = this.buildSandboxFields(sandbox);
+    this.printFieldsSection(ui, fields, 20);
+    this.printTagsAndEmails(ui, sandbox);
+    this.printCloneDetailsSection(ui, sandbox);
+    this.printLinksSection(ui, sandbox);
+
+    ux.stdout(ui.toString());
+  }
+
+  private printTagsAndEmails(ui: ReturnType<typeof cliui>, sandbox: SandboxModel): void {
     if (sandbox.tags && sandbox.tags.length > 0) {
       ui.div({text: 'Tags:', width: 20, padding: [0, 2, 0, 0]}, {text: sandbox.tags.join(', '), padding: [0, 0, 0, 0]});
     }
 
-    // Emails
     if (sandbox.emails && sandbox.emails.length > 0) {
       ui.div(
         {text: 'Emails:', width: 20, padding: [0, 2, 0, 0]},
         {text: sandbox.emails.join(', '), padding: [0, 0, 0, 0]},
       );
     }
-
-    // Clone Details (if sandbox was cloned)
-    if (sandbox.clonedFrom || sandbox.sourceInstanceIdentifier || sandbox.cloneDetails) {
-      ui.div({text: '', padding: [0, 0, 0, 0]});
-      ui.div({text: 'Clone Details', padding: [1, 0, 0, 0]});
-      ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-      const cloneFields: [string, string | undefined][] = [
-        ['Cloned From', sandbox.clonedFrom],
-        ['Source Instance ID', sandbox.sourceInstanceIdentifier],
-      ];
-
-      // If cloneDetails is present (from expand=clonedetails), show additional information
-      if (sandbox.cloneDetails) {
-        const details = sandbox.cloneDetails;
-        cloneFields.push(
-          ['Clone ID', details.cloneId],
-          ['Status', details.status],
-          ['Target Profile', details.targetProfile],
-          ['Created At', details.createdAt ? new Date(details.createdAt).toLocaleString() : undefined],
-          ['Progress', details.progressPercentage ? `${details.progressPercentage}%` : undefined],
-          ['Elapsed Time (sec)', details.elapsedTimeInSec?.toString()],
-          ['Custom Code Version', details.customCodeVersion],
-          ['Storefront Count', details.storefrontCount?.toString()],
-        );
-      }
-
-      for (const [label, value] of cloneFields) {
-        if (value) {
-          ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
-        }
-      }
-    }
-
-    // Links
-    if (sandbox.links) {
-      ui.div({text: '', padding: [0, 0, 0, 0]});
-      ui.div({text: 'Links', padding: [1, 0, 0, 0]});
-      ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-      const links: [string, string | undefined][] = [
-        ['Business Manager', sandbox.links.bm],
-        ['OCAPI', sandbox.links.ocapi],
-        ['Impex', sandbox.links.impex],
-        ['Code', sandbox.links.code],
-        ['Logs', sandbox.links.logs],
-      ];
-
-      for (const [label, value] of links) {
-        if (value) {
-          ui.div({text: `${label}:`, width: 20, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
-        }
-      }
-    }
-
-    ux.stdout(ui.toString());
   }
 }
