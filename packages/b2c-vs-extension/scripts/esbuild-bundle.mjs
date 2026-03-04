@@ -52,6 +52,17 @@ const REQUIRE_RESOLVE_PACKAGE_JSON_RE =
   /require\d*\.resolve\s*\(\s*["']@salesforce\/b2c-tooling-sdk\/package\.json["']\s*\)/g;
 const REQUIRE_RESOLVE_REPLACEMENT = "require('path').join(__dirname, 'package.json')";
 
+// Copy SDK scaffold templates into dist/ so the extension can find them at runtime.
+// The extension passes this path explicitly via createScaffoldRegistry({ builtInScaffoldsDir }).
+const sdkRoot = path.join(pkgRoot, '..', 'b2c-tooling-sdk');
+
+function copySdkScaffolds() {
+  const src = path.join(sdkRoot, 'data', 'scaffolds');
+  const dest = path.join(pkgRoot, 'dist', 'data', 'scaffolds');
+  if (!fs.existsSync(src)) return;
+  fs.cpSync(src, dest, {recursive: true});
+}
+
 function inlineSdkPackageJson() {
   const outPath = path.join(pkgRoot, 'dist', 'extension.js');
   let str = fs.readFileSync(outPath, 'utf8');
@@ -83,6 +94,7 @@ const buildOptions = {
 };
 
 if (watchMode) {
+  copySdkScaffolds();
   const ctx = await esbuild.context(buildOptions);
   await ctx.watch();
   console.log('[esbuild] watching for changes...');
@@ -90,6 +102,7 @@ if (watchMode) {
   const result = await esbuild.build(buildOptions);
 
   inlineSdkPackageJson();
+  copySdkScaffolds();
 
   if (result.metafile && process.env.ANALYZE_BUNDLE) {
     const metaPath = path.join(pkgRoot, 'dist', 'meta.json');
