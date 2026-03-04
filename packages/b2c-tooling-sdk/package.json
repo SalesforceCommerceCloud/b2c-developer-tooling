@@ -178,6 +178,17 @@
         "default": "./dist/cjs/operations/cip/index.js"
       }
     },
+    "./slas": {
+      "development": "./src/slas/index.ts",
+      "import": {
+        "types": "./dist/esm/slas/index.d.ts",
+        "default": "./dist/esm/slas/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/slas/index.d.ts",
+        "default": "./dist/cjs/slas/index.js"
+      }
+    },
     "./cli": {
       "development": "./src/cli/index.ts",
       "import": {
