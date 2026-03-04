@@ -26,7 +26,8 @@
     "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
     "onCommand:b2c-dx.scapiExplorer",
-    "onView:b2cSandboxExplorer"
+    "onView:b2cSandboxExplorer",
+    "onCommand:b2c-dx.scaffold.generate"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -52,6 +53,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable log tailing commands."
+        },
+        "b2c-dx.features.scaffold": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable scaffold generation commands."
         },
         "b2c-dx.logLevel": {
           "type": "string",
@@ -329,6 +335,12 @@
         "title": "Import Site Archive",
         "icon": "$(cloud-upload)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.scaffold.generate",
+        "title": "New from Scaffold...",
+        "icon": "$(file-code)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -466,6 +478,13 @@
           "group": "3_destructive@1"
         }
       ],
+      "file/newFile": [
+        {
+          "command": "b2c-dx.scaffold.generate",
+          "group": "navigation",
+          "when": "workspaceFolderCount > 0"
+        }
+      ],
       "explorer/context": [
         {
           "command": "b2c-dx.webdav.download",
@@ -480,8 +499,14 @@
       ],
       "b2c-dx.submenu": [
         {
+          "command": "b2c-dx.scaffold.generate",
+          "when": "explorerResourceIsFolder",
+          "group": "1_scaffold"
+        },
+        {
           "command": "b2c-dx.content.import",
-          "when": "explorerResourceIsFolder"
+          "when": "explorerResourceIsFolder",
+          "group": "2_import"
         }
       ],
       "commandPalette": [

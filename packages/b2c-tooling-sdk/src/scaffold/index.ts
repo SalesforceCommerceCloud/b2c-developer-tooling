@@ -100,10 +100,14 @@ export {
   resolveRemoteSource,
   isRemoteSource,
   validateAgainstSource,
+  cartridgePathForDestination,
+  detectSourceFromPath,
 } from './sources.js';
+export type {SourceDetectionResult} from './sources.js';
 
 // Registry
 export {ScaffoldRegistry, createScaffoldRegistry} from './registry.js';
+export type {ScaffoldRegistryOptions} from './registry.js';
 
 // Engine
 export {

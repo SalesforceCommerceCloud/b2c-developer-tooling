@@ -95,6 +95,16 @@ function createMockLoadServicesWrapper(options?: {
   return () => services;
 }
 
+/** Project types from SDK discovery */
+type ProjectType = 'cartridges' | 'pwa-kit-v3' | 'storefront-next';
+
+/**
+ * Creates a stub for detectWorkspaceType that returns the given project types.
+ */
+function createDetectWorkspaceTypeStub(projectTypes: ProjectType[] = []) {
+  return async () => ({projectTypes});
+}
+
 describe('tools/mrt', () => {
   let sandbox: sinon.SinonSandbox;
   let pushBundleStub: sinon.SinonStub;
@@ -124,7 +134,7 @@ describe('tools/mrt', () => {
 
     beforeEach(() => {
       loadServices = createMockLoadServicesWrapper({mrtAuth: new MockAuthStrategy(), mrtProject: 'test-project'});
-      tool = createMrtTools(loadServices)[0];
+      tool = createMrtTools(loadServices, {detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3'])})[0];
     });
 
     it('should have correct tool name', () => {
@@ -169,7 +179,10 @@ describe('tools/mrt', () => {
         mrtProject: 'my-project',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -202,7 +215,10 @@ describe('tools/mrt', () => {
         mrtEnvironment: 'staging',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -235,7 +251,10 @@ describe('tools/mrt', () => {
         mrtEnvironment: 'staging',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({buildDirectory: buildDir, deploy: false});
 
@@ -269,7 +288,10 @@ describe('tools/mrt', () => {
         mrtEnvironment: 'staging',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({buildDirectory: buildDir, deploy: true});
 
@@ -304,7 +326,10 @@ describe('tools/mrt', () => {
         mrtOrigin: customOrigin,
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -336,7 +361,10 @@ describe('tools/mrt', () => {
         mrtProject: 'my-project',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       await tool.handler({buildDirectory: buildDir, message: 'Custom deployment message'});
 
@@ -364,7 +392,10 @@ describe('tools/mrt', () => {
         mrtProject: 'my-project',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({buildDirectory: buildDir, message: 'Release v1.0.0'});
 
@@ -399,7 +430,10 @@ describe('tools/mrt', () => {
           mrtProject: 'my-project',
           projectDirectory: projectDir,
         });
-        const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+        const tool = createMrtTools(loadServices, {
+          pushBundle: pushBundleStub,
+          detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+        })[0];
 
         // eslint-disable-next-line no-await-in-loop
         await tool.handler({buildDirectory: relativePath});
@@ -433,7 +467,10 @@ describe('tools/mrt', () => {
           mrtProject: 'my-project',
           projectDirectory: projectDir,
         });
-        const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+        const tool = createMrtTools(loadServices, {
+          pushBundle: pushBundleStub,
+          detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+        })[0];
 
         // eslint-disable-next-line no-await-in-loop
         await tool.handler({buildDirectory: absolutePath});
@@ -461,7 +498,10 @@ describe('tools/mrt', () => {
         mrtProject: 'my-project',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       await tool.handler({});
 
@@ -487,7 +527,10 @@ describe('tools/mrt', () => {
         mrtProject: 'my-project',
         // No projectDirectory provided - should fall back to process.cwd()
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       await tool.handler({buildDirectory: buildDir});
 
@@ -503,7 +546,9 @@ describe('tools/mrt', () => {
         mrtAuth: new MockAuthStrategy(),
         // No project configured
       });
-      const tool = createMrtTools(loadServices)[0];
+      const tool = createMrtTools(loadServices, {
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({});
 
@@ -520,7 +565,9 @@ describe('tools/mrt', () => {
         mrtProject: 'my-project',
         // No environment configured
       });
-      const tool = createMrtTools(loadServices)[0];
+      const tool = createMrtTools(loadServices, {
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({deploy: true});
 
@@ -539,7 +586,9 @@ describe('tools/mrt', () => {
         // No auth configured
         mrtProject: 'my-project',
       });
-      const tool = createMrtTools(loadServices)[0];
+      const tool = createMrtTools(loadServices, {
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({});
 
@@ -562,7 +611,10 @@ describe('tools/mrt', () => {
         mrtProject: 'my-project',
         projectDirectory: projectDir,
       });
-      const tool = createMrtTools(loadServices, {pushBundle: pushBundleStub})[0];
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
 
       const result = await tool.handler({buildDirectory: buildDir});
 
@@ -573,13 +625,152 @@ describe('tools/mrt', () => {
     });
   });
 
+  describe('mrt_bundle_push project-type defaults', () => {
+    it('should use Storefront Next defaults when storefront-next is detected and args omitted', async () => {
+      const projectDir = '/path/to/sfnext-project';
+      const expectedResolvedPath = path.join(projectDir, 'build');
+
+      const mockResult: PushResult = {
+        bundleId: 100,
+        projectSlug: 'my-project',
+        deployed: false,
+        message: 'Test',
+      };
+      pushBundleStub.resolves(mockResult);
+
+      const loadServices = createMockLoadServicesWrapper({
+        mrtAuth: new MockAuthStrategy(),
+        mrtProject: 'my-project',
+        projectDirectory: projectDir,
+      });
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['storefront-next']),
+      })[0];
+
+      await tool.handler({});
+
+      expect(pushBundleStub.calledOnce).to.be.true;
+      const [options] = pushBundleStub.firstCall.args as [PushOptions];
+      expect(options.buildDirectory).to.equal(expectedResolvedPath);
+      expect(options.ssrOnly).to.include('server/**/*');
+      expect(options.ssrOnly).to.include('loader.js');
+      expect(options.ssrOnly).to.include('streamingHandler.{js,mjs,cjs}');
+      expect(options.ssrShared).to.include('client/**/*');
+      expect(options.ssrShared).to.include('static/**/*');
+    });
+
+    it('should use PWA Kit v3 defaults when pwa-kit-v3 is detected and args omitted', async () => {
+      const projectDir = '/path/to/pwakit-project';
+      const expectedResolvedPath = path.join(projectDir, 'build');
+
+      const mockResult: PushResult = {
+        bundleId: 101,
+        projectSlug: 'my-project',
+        deployed: false,
+        message: 'Test',
+      };
+      pushBundleStub.resolves(mockResult);
+
+      const loadServices = createMockLoadServicesWrapper({
+        mrtAuth: new MockAuthStrategy(),
+        mrtProject: 'my-project',
+        projectDirectory: projectDir,
+      });
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3']),
+      })[0];
+
+      await tool.handler({});
+
+      expect(pushBundleStub.calledOnce).to.be.true;
+      const [options] = pushBundleStub.firstCall.args as [PushOptions];
+      expect(options.buildDirectory).to.equal(expectedResolvedPath);
+      expect(options.ssrOnly).to.deep.include('ssr.js');
+      expect(options.ssrOnly).to.deep.include('ssr.js.map');
+      expect(options.ssrOnly).to.deep.include('node_modules/**/*.*');
+      expect(options.ssrShared).to.deep.include('static/ico/favicon.ico');
+      expect(options.ssrShared).to.deep.include('**/*.js');
+    });
+
+    it('should use generic defaults when no project type detected', async () => {
+      const projectDir = '/path/to/unknown-project';
+      const expectedResolvedPath = path.join(projectDir, 'build');
+
+      const mockResult: PushResult = {
+        bundleId: 102,
+        projectSlug: 'my-project',
+        deployed: false,
+        message: 'Test',
+      };
+      pushBundleStub.resolves(mockResult);
+
+      const loadServices = createMockLoadServicesWrapper({
+        mrtAuth: new MockAuthStrategy(),
+        mrtProject: 'my-project',
+        projectDirectory: projectDir,
+      });
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub([]),
+      })[0];
+
+      await tool.handler({});
+
+      expect(pushBundleStub.calledOnce).to.be.true;
+      const [options] = pushBundleStub.firstCall.args as [PushOptions];
+      expect(options.buildDirectory).to.equal(expectedResolvedPath);
+      expect(options.ssrOnly).to.deep.include('ssr.js');
+      expect(options.ssrOnly).to.deep.include('ssr.mjs');
+      expect(options.ssrOnly).to.deep.include('server/**/*');
+      expect(options.ssrShared).to.deep.include('static/**/*');
+      expect(options.ssrShared).to.deep.include('client/**/*');
+    });
+
+    it('should use explicit ssrOnly/ssrShared over project-type defaults', async () => {
+      const projectDir = '/path/to/project';
+      const customSsrOnly = 'custom-server/**/*,ssr.js';
+      const customSsrShared = 'custom-static/**/*,client/**/*';
+
+      const mockResult: PushResult = {
+        bundleId: 103,
+        projectSlug: 'my-project',
+        deployed: false,
+        message: 'Test',
+      };
+      pushBundleStub.resolves(mockResult);
+
+      const loadServices = createMockLoadServicesWrapper({
+        mrtAuth: new MockAuthStrategy(),
+        mrtProject: 'my-project',
+        projectDirectory: projectDir,
+      });
+      const tool = createMrtTools(loadServices, {
+        pushBundle: pushBundleStub,
+        detectWorkspaceType: createDetectWorkspaceTypeStub(['storefront-next']),
+      })[0];
+
+      await tool.handler({
+        buildDirectory: './build',
+        ssrOnly: customSsrOnly,
+        ssrShared: customSsrShared,
+      });
+
+      expect(pushBundleStub.calledOnce).to.be.true;
+      const [options] = pushBundleStub.firstCall.args as [PushOptions];
+      expect(options.ssrOnly).to.deep.equal(['custom-server/**/*', 'ssr.js']);
+      expect(options.ssrShared).to.deep.equal(['custom-static/**/*', 'client/**/*']);
+    });
+  });
+
   describe('mrt_bundle_push input validation', () => {
     let loadServices: () => Services;
     let tool: ReturnType<typeof createMrtTools>[0];
 
     beforeEach(() => {
       loadServices = createMockLoadServicesWrapper({mrtAuth: new MockAuthStrategy(), mrtProject: 'my-project'});
-      tool = createMrtTools(loadServices)[0];
+      tool = createMrtTools(loadServices, {detectWorkspaceType: createDetectWorkspaceTypeStub(['pwa-kit-v3'])})[0];
     });
 
     it('should validate input schema', async () => {
