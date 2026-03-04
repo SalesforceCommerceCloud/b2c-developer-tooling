@@ -410,6 +410,7 @@ export const createMRTStaticAssetServingMiddleware = (staticAssetDir: string): R
  * Creates a common middleware function that sets the host header based on environment variables.
  *
  * The host header is set to EXTERNAL_DOMAIN_NAME if available, otherwise defaults to 'localhost:2401'.
+ * Use this middleware in all environments (local and deployed), at the top of your middleware stack.
  *
  * @returns Express middleware function
  *
@@ -434,8 +435,8 @@ export const createMRTCommonMiddleware = (): RequestHandler => {
  * - Removes API Gateway headers that shouldn't be forwarded
  * - Optionally updates the path and querystring if the request wasn't processed by the request processor
  *
- * This middleware should typically be used at the end of the middleware chain to ensure
- * all internal headers are removed before the request is handled by the application.
+ * Use this middleware in all environments (local and deployed), at the end of the middleware chain,
+ * to ensure all internal headers are removed before the request is handled by the application.
  *
  * @returns Express middleware function
  *
