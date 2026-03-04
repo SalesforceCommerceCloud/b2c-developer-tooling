@@ -18,6 +18,7 @@ import {registerContentTree} from './content-tree/index.js';
 import {registerLogs} from './logs/index.js';
 import {initializePlugins} from './plugins.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
+import {registerScaffold} from './scaffold/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
@@ -909,6 +910,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   }
   if (settings.get<boolean>('features.logTailing', true)) {
     registerLogs(context, configProvider);
+  }
+  if (settings.get<boolean>('features.scaffold', true)) {
+    registerScaffold(context, configProvider, log);
   }
 
   // React to configuration changes
