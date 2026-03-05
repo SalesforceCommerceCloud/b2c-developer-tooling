@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/mrt-utilities",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Middleware and utilities to simulate a deployed Managed Runtime environment",
   "type": "module",
   "author": "Salesforce",
