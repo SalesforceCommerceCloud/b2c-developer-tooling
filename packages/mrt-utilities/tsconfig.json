@@ -1,0 +1,10 @@
+{
+  "extends": "@salesforce/dev-config/tsconfig-strict-esm",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/**/*"]
+}
