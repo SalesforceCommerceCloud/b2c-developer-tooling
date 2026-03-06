@@ -104,3 +104,116 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
 > **Note:** Make sure the script is executable: `chmod +x /full/path/to/packages/b2c-dx-mcp/bin/dev.js`. The script's shebang (`#!/usr/bin/env -S node --conditions development`) handles Node.js setup automatically.
 >
 > **Note:** Restart the MCP server in your IDE to pick up code changes.
+
+## Creating "Add to Cursor" Deep Links
+
+When updating MCP documentation, you may need to create or update the "Add to Cursor" deep link. This link allows users to install the MCP server directly from Cursor.
+
+### Link Format
+
+The deep link follows this format:
+```
+cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=<base64-encoded-config>
+```
+
+### Generating the Base64 Config
+
+1. **Create the configuration object** with `command` and `args`:
+
+   The "Add to Cursor" link uses **user-level configuration** with `--project-directory`:
+   ```json
+   {
+     "command": "npx",
+     "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+   }
+   ```
+
+   The `${workspaceFolder}` variable automatically expands to the current workspace directory in Cursor.
+
+2. **Encode to Base64** using Node.js:
+   ```bash
+   node -e "console.log(Buffer.from(JSON.stringify({command: 'npx', args: ['-y', '@salesforce/b2c-dx-mcp', '--project-directory', '\${workspaceFolder}', '--allow-non-ga-tools']})).toString('base64'))"
+   ```
+
+3. **Construct the full link**:
+   ```
+   cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=<base64-string>
+   ```
+
+### Example
+
+**User-level link (used in documentation):**
+```markdown
+[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+```
+
+### Where to Update
+
+Update the "Add to Cursor" links in:
+- `docs/guide/index.md` - Quick MCP Install section
+- `docs/mcp/index.md` - Quick Start section
+- `docs/mcp/installation.md` - Cursor installation section
+- `docs/mcp/configuration.md` - Configuration section
+
+**Note:** The "Add to Cursor" link uses user-level configuration (`~/.cursor/mcp.json`) with `--project-directory "${workspaceFolder}"` to automatically detect the project from the current workspace.
+
+## Telemetry in Development
+
+**Telemetry is disabled by default** when using `bin/dev.js` to avoid polluting production telemetry data. The development script automatically sets `SFCC_DISABLE_TELEMETRY=true` unless you explicitly enable it.
+
+### Enable Telemetry for Testing
+
+To enable telemetry during local development (for testing telemetry collection), you **must** set `SFCC_APP_INSIGHTS_KEY` to a development/test Application Insights key to avoid sending data to production:
+
+```bash
+SFCC_DISABLE_TELEMETRY=false SFCC_APP_INSIGHTS_KEY="InstrumentationKey=your-dev-key-here" node bin/dev.js --toolsets all --allow-non-ga-tools
+```
+
+Or in your IDE MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx-local": {
+      "command": "node",
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"],
+      "env": {
+        "SFCC_DISABLE_TELEMETRY": "false",
+        "SFCC_APP_INSIGHTS_KEY": "InstrumentationKey=your-dev-key-here"
+      }
+    }
+  }
+}
+```
+
+### Enable Telemetry Logging
+
+To see what telemetry data would be collected (requires telemetry to be enabled), set `SFCC_TELEMETRY_LOG=true`:
+
+```bash
+SFCC_DISABLE_TELEMETRY=false SFCC_APP_INSIGHTS_KEY="InstrumentationKey=your-dev-key-here" SFCC_TELEMETRY_LOG=true node bin/dev.js --toolsets all --allow-non-ga-tools
+```
+
+Or in your IDE MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx-local": {
+      "command": "node",
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"],
+      "env": {
+        "SFCC_DISABLE_TELEMETRY": "false",
+        "SFCC_APP_INSIGHTS_KEY": "InstrumentationKey=your-dev-key-here",
+        "SFCC_TELEMETRY_LOG": "true"
+      }
+    }
+  }
+}
+```
+
+This will output debug logs showing what telemetry attributes are being collected, helping you verify that sensitive data is not included.
+
+**Important:** Always set `SFCC_APP_INSIGHTS_KEY` to a development/test Application Insights key when testing telemetry in dev mode. Without this, telemetry will use the production key from `package.json`, which will pollute production telemetry data.
+
+**Note:** By default, `bin/dev.js` disables telemetry. Set `SFCC_DISABLE_TELEMETRY=false` to enable it, and always provide `SFCC_APP_INSIGHTS_KEY` with a dev/test key.

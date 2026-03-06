@@ -49,15 +49,18 @@ Hybrid projects (e.g., cartridges + PWA Kit) get combined toolsets.
 
 Claude Code supports MCP servers via CLI installation:
 
-1. Navigate to your project root directory:
-   ```bash
-   cd /path/to/your/project
-   ```
+::: code-group
 
-2. Install the MCP server:
-   ```bash
-   claude mcp add --transport stdio b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
-   ```
+```bash [Project Scope (Recommended)]
+cd /path/to/your/project
+claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+```
+
+```bash [User Scope]
+claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+```
+
+:::
 
 See the [Claude Code MCP documentation](https://docs.claude.com/en/docs/claude-code/mcp) for details on scope options and configuration.
 

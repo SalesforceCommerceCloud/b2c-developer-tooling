@@ -204,7 +204,23 @@ Enable debug logging (equivalent to `--log-level debug`):
 
 ## Telemetry
 
-Telemetry is enabled by default and collects anonymous usage data to help improve the developer experience. To disable it, set `SFCC_DISABLE_TELEMETRY=true` in your MCP client configuration's `env` object.
+Telemetry is enabled by default and collects anonymous usage data to help improve the developer experience.
+
+### What We Collect
+
+- **Server lifecycle events**: When the server starts, stops, or encounters errors
+- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
+- **Command metrics**: Command duration and success/failure status
+- **Environment info**: Platform, architecture, Node.js version, and package version
+
+### What We Don't Collect
+
+- **No credentials**: No API keys, passwords, or secrets
+- **No business data**: No product data, customer information, or site content
+- **No tool arguments**: No input parameters or output results from tool calls
+- **No file contents**: No source code, configuration files, or project data
+
+To disable telemetry, set `SFCC_DISABLE_TELEMETRY=true` in your MCP client configuration's `env` object.
 
 ## Next Steps
 

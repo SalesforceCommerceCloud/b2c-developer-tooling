@@ -23,10 +23,19 @@ The MCP server automatically detects your project type and enables relevant tool
 ### Installation
 
 **Claude Code:**
-```bash
+
+::: code-group
+
+```bash [Project Scope (Recommended)]
 cd /path/to/your/project
-claude mcp add --transport stdio b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
 ```
+
+```bash [User Scope]
+claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+```
+
+:::
 
 **Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
 
