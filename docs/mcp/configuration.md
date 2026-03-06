@@ -4,11 +4,11 @@ description: Configure the B2C DX MCP Server with credentials, flags, environmen
 
 # Configuration
 
-The B2C DX MCP Server supports multiple configuration methods for credentials, flags, and toolset selection.
+The B2C DX MCP Server uses the same configuration system as the B2C CLI. For MCP, environment variables are set in your MCP client's JSON config (`env` object), not as system environment variables. See the [CLI Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
 
 ## Configuration Priority
 
-Credentials are resolved in the following priority order.
+Credentials are resolved in the following priority order (same as the CLI):
 
 1. **Flags** (highest priority)
 2. **Environment variables**
@@ -22,7 +22,9 @@ Config files are the recommended approach for managing credentials. They keep cr
 
 #### B2C Credentials (`dw.json`)
 
-Create a [`dw.json`](../guide/configuration#configuration-file) file in your project root:
+Create a [`dw.json`](../guide/configuration#configuration-file) file in your project root. The MCP server uses the same format as the CLI. See the [CLI Configuration guide](../guide/configuration#configuration-file) for the complete `dw.json` format, supported fields, and multi-instance configuration.
+
+**Example minimal configuration:**
 
 ```json
 {
@@ -30,77 +32,57 @@ Create a [`dw.json`](../guide/configuration#configuration-file) file in your pro
   "username": "...",
   "password": "...",
   "client-id": "...",
-  "client-secret": "..."
+  "client-secret": "...",
+  "short-code": "...",
+  "tenant-id": "..."
 }
 ```
 
-The server automatically loads this file when `--project-directory` points to your project.
+The server automatically loads this file when using project-level installation (recommended). With user-level Cursor configuration, ensure `--project-directory` points to your project.
 
 **Required fields per toolset:**
 
 | Toolset | Required Fields |
 |---------|----------------|
-| **SCAPI** | `hostname`, `client-id`, `client-secret` |
-| **CARTRIDGES** | `hostname`, `username`, `password` (or OAuth) |
-| **MRT** | (loaded from `~/.mobify`) |
-| **PWAV3** | None (uses `--project-directory` only) |
-| **STOREFRONTNEXT** | None (uses `--project-directory` only) |
+| **SCAPI** | `short-code`, `tenant-id`, `client-id`, `client-secret` |
+| **CARTRIDGES** | `hostname`, `username`, `password` (or OAuth: `hostname`, `client-id`, `client-secret`) |
+| **MRT** | `project`, MRT API key (from `~/.mobify` or `--api-key`) |
+| **PWAV3** | None (project directory auto-detected with project-level installation) |
+| **STOREFRONTNEXT** | None (project directory auto-detected with project-level installation) |
 
 **Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
 
 #### MRT Credentials (`~/.mobify`)
 
-Create a [`~/.mobify`](../guide/configuration#mobify-config-file) file in your home directory:
+MRT API keys are loaded from [`~/.mobify`](../guide/configuration#mrt-api-key) using the same format and resolution order as the CLI.
+
+Create the `~/.mobify` file manually:
 
 ```json
 {
-  "api_key": "..."
+  "api_key": "your-mrt-api-key"
 }
 ```
 
-You can also create this file using the [B2C CLI](../cli/mrt#b2c-mrt-config-set):
-
-```bash
-b2c mrt config set --api-key YOUR_API_KEY
-```
+For complete setup instructions, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
 
 ### Option 2: Environment Variables
 
-Set environment variables in your MCP client configuration:
-
-**Cursor** (`.cursor/mcp.json`):
+Set environment variables in the `env` object of your MCP client configuration. The MCP server supports the same environment variables as the CLI. See the [CLI Configuration guide](../guide/configuration#environment-variables) for the complete list of supported variables.
 
 ```json
 {
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"],
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--allow-non-ga-tools"],
       "env": {
         "SFCC_SERVER": "xxx.demandware.net",
-        "SFCC_USERNAME": "...",
-        "SFCC_PASSWORD": "...",
         "SFCC_CLIENT_ID": "...",
         "SFCC_CLIENT_SECRET": "...",
+        "SFCC_SHORTCODE": "...",
+        "SFCC_TENANT_ID": "...",
         "MRT_API_KEY": "..."
-      }
-    }
-  }
-}
-```
-
-**Claude Desktop** (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/project", "--allow-non-ga-tools"],
-      "env": {
-        "SFCC_SERVER": "xxx.demandware.net",
-        "SFCC_USERNAME": "...",
-        "SFCC_PASSWORD": "..."
       }
     }
   }
@@ -119,8 +101,6 @@ Pass credentials directly as command-line flags:
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "${workspaceFolder}",
         "--server",
         "xxx.demandware.net",
         "--username",
@@ -138,41 +118,9 @@ Pass credentials directly as command-line flags:
 }
 ```
 
-> **Note:** Flags are less secure than config files or environment variables, especially if your MCP client configuration is shared or committed to version control.
+> **Note:** Flags and environment variables in your MCP client configuration are less secure than config files (`dw.json`), especially if your MCP client configuration is shared or committed to version control. Use `dw.json` (which can be gitignored) for sensitive credentials.
 
-## Flag Reference
-
-### Core Flags
-
-| Flag | Env Variable | Description |
-|------|--------------|-------------|
-| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
-| `--toolsets` | — | Comma-separated toolsets to enable |
-| `--tools` | — | Comma-separated individual tools to enable |
-| `--allow-non-ga-tools` | — | Enable experimental (non-GA) tools |
-| `--config` | — | Explicit path to `dw.json` (advanced) |
-| `--log-level` | — | Logging verbosity (trace, debug, info, warn, error, silent) |
-| `--debug` | — | Enable debug logging |
-
-### B2C Instance Flags
-
-| Flag | Env Variable | Description |
-|------|--------------|-------------|
-| `--server` | `SFCC_SERVER` | B2C instance hostname |
-| `--username` | `SFCC_USERNAME` | Username for Basic auth (WebDAV) |
-| `--password` | `SFCC_PASSWORD` | Password/access key for Basic auth |
-| `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
-| `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `--code-version` | `SFCC_CODE_VERSION` | Code version for deployments |
-
-### MRT Flags
-
-| Flag | Env Variable | Description |
-|------|--------------|-------------|
-| `--api-key` | `MRT_API_KEY` | MRT API key (`SFCC_MRT_API_KEY` also supported) |
-| `--project` | `MRT_PROJECT` | MRT project slug (`SFCC_MRT_PROJECT` also supported) |
-| `--environment` | `MRT_ENVIRONMENT` | MRT environment (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
-| `--cloud-origin` | `MRT_CLOUD_ORIGIN` | MRT cloud origin URL (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
+See the [CLI Configuration guide](../guide/configuration#cli-flags) for complete flag and environment variable documentation.
 
 ## Toolset Selection
 
@@ -192,8 +140,6 @@ Override auto-discovery by specifying toolsets explicitly:
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "${workspaceFolder}",
         "--toolsets",
         "CARTRIDGES,MRT",
         "--allow-non-ga-tools"
@@ -220,88 +166,12 @@ Enable specific tools instead of entire toolsets:
 ```json
 {
   "args": [
-    "--project-directory",
-    "${workspaceFolder}",
     "--tools",
     "cartridge_deploy,scapi_schemas_list",
     "--allow-non-ga-tools"
   ]
 }
 ```
-
-## Credential Details
-
-For authentication setup instructions, see the [Authentication Setup guide](../guide/authentication) which covers API client creation, WebDAV access, SCAPI authentication, and MRT API keys.
-
-### B2C Credentials
-
-#### Username/Password (WebDAV)
-
-- `username` - Your B2C Commerce username
-- `password` - Your [WebDAV access key](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5)
-
-**Used by:** CARTRIDGES toolset
-
-See the [Authentication Setup guide](../guide/authentication#webdav-access) for detailed WebDAV access configuration.
-
-#### OAuth Client Credentials
-
-- `client-id` - API client ID from Account Manager
-- `client-secret` - API client secret from Account Manager
-
-**Used by:** SCAPI toolset
-
-**Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
-
-See the [Authentication Setup guide](../guide/authentication#account-manager-api-client) for creating and configuring API clients, and [SCAPI Authentication](../guide/authentication#scapi-authentication) for SCAPI-specific setup.
-
-### MRT Credentials
-
-- `api-key` - MRT API key from your Managed Runtime project
-- `project` - MRT project slug (required)
-- `environment` - MRT environment: `staging` or `production` (required when deploying)
-
-**Used by:** MRT toolset
-
-**Configuration location:** `~/.mobify` file
-
-See the [Authentication Setup guide](../guide/authentication#managed-runtime-api-key) for detailed MRT API key setup instructions.
-
-## Telemetry Configuration
-
-Telemetry is enabled by default. Configure it via environment variables:
-
-### Disable Telemetry
-
-```json
-{
-  "env": {
-    "SF_DISABLE_TELEMETRY": "true"
-  }
-}
-```
-
-Or:
-
-```json
-{
-  "env": {
-    "SFCC_DISABLE_TELEMETRY": "true"
-  }
-}
-```
-
-### Custom Telemetry Endpoint
-
-```json
-{
-  "env": {
-    "SFCC_APP_INSIGHTS_KEY": "your-key"
-  }
-}
-```
-
-**Note:** Telemetry is automatically disabled when using `bin/dev.js` (development mode).
 
 ## Logging Configuration
 
@@ -332,77 +202,14 @@ Enable debug logging (equivalent to `--log-level debug`):
 }
 ```
 
-## Examples
+## Telemetry
 
-### Minimal Configuration (Auto-Discovery)
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "${workspaceFolder}",
-        "--allow-non-ga-tools"
-      ]
-    }
-  }
-}
-```
-
-Requires `dw.json` in project root for B2C credentials.
-
-### Full Configuration with Environment Variables
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "${workspaceFolder}",
-        "--allow-non-ga-tools"
-      ],
-      "env": {
-        "SFCC_SERVER": "xxx.demandware.net",
-        "SFCC_CLIENT_ID": "...",
-        "SFCC_CLIENT_SECRET": "...",
-        "MRT_API_KEY": "..."
-      }
-    }
-  }
-}
-```
-
-### Manual Toolset Selection
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "${workspaceFolder}",
-        "--toolsets",
-        "CARTRIDGES,SCAPI",
-        "--allow-non-ga-tools"
-      ]
-    }
-  }
-}
-```
+Telemetry is enabled by default and collects anonymous usage data to help improve the developer experience. To disable it, set `SFCC_DISABLE_TELEMETRY=true` in your MCP client configuration's `env` object.
 
 ## Next Steps
 
 - [Installation](./installation) - Set up the MCP server
+- [CLI Configuration](../guide/configuration) - Learn about `dw.json`, environment variables, and credential resolution
+- [Authentication Setup](../guide/authentication) - Set up API clients, WebDAV access, and MRT API keys
 - [Toolsets & Tools](./toolsets) - Explore available toolsets and tools
 - [MCP Server Overview](./) - Learn more about the MCP server

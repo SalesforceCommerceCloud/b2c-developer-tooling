@@ -4,7 +4,7 @@ description: Get Storefront Next development guidelines and best practices for R
 
 # storefront_next_development_guidelines
 
-Returns critical architecture rules, coding standards, and best practices for building Storefront Next applications with React Server Components. **Use this tool first** before writing any Storefront Next code.
+Returns critical architecture rules, coding standards, and best practices for building Storefront Next applications with React Server Components.
 
 ## Overview
 
@@ -18,9 +18,6 @@ The `storefront_next_development_guidelines` tool provides essential development
 
 This tool is part of the STOREFRONTNEXT toolset and is auto-enabled for Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies).
 
-## Authentication
-
-No authentication required. This tool operates on local content only—guidelines are loaded from markdown files bundled with the MCP server.
 
 ## Parameters
 
@@ -94,10 +91,6 @@ The returned content includes:
 - Quick reference snippets
 - Framework-specific patterns for React Server Components
 
-## Requirements
-
-- Storefront Next project or general Storefront Next development context
-- No credentials or instance configuration needed
 
 ## Related Tools
 

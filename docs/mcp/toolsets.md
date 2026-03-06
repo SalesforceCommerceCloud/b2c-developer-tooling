@@ -55,7 +55,7 @@ PWA Kit v3 development tools for building headless storefronts.
 
 **Status:** 🚧 Early Access (PWA Kit-specific tools planned)
 
-**Auto-enabled for:** PWA Kit v3 projects (detected by `@salesforce/pwa-kit-*` dependencies)
+**Auto-enabled for:** PWA Kit v3 projects (detected by `@salesforce/pwa-kit-*` dependencies, `@salesforce/retail-react-app`, or `ccExtensibility` field in package.json)
 
 ### Tools
 
@@ -89,7 +89,7 @@ Storefront Next development tools for building modern storefronts.
 
 **Status:** 🚧 Early Access
 
-**Auto-enabled for:** Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies)
+**Auto-enabled for:** Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies, package name starting with `storefront-next`, or workspace packages with these indicators)
 
 ### Tools
 
@@ -106,7 +106,7 @@ Storefront Next development tools for building modern storefronts.
 | [`scapi_custom_apis_status`](./tools/scapi-custom-apis-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
 
-**Figma-to-component tools** (`storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`) require additional setup: an external Figma MCP server, `--project-directory`, and a valid Figma URL with `node-id`. See [Figma-to-Component Tools Setup](./figma-tools-setup) for prerequisites and configuration.
+**Figma-to-component tools** (`storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`) require additional setup: an external Figma MCP server and a valid Figma URL with `node-id`. See [Figma-to-Component Tools Setup](./figma-tools-setup) for prerequisites and configuration.
 
 ## Tool Deduplication
 

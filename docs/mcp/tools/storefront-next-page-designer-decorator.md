@@ -15,12 +15,8 @@ The `storefront_next_page_designer_decorator` tool analyzes React components and
 
 The tool uses component discovery to find components by name (e.g., "ProductItem", "ProductTile") without requiring exact file paths, making it easy to add Page Designer support to existing components.
 
-## Authentication
+## Prerequisites
 
-No authentication required. This tool operates on local files only.
-
-**Requirements:**
-- `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable (for component discovery)
 - Storefront Next project with React components
 
 ## Parameters
@@ -49,55 +45,10 @@ When using interactive mode, provide `conversationContext` with the following st
 
 ## Operation Modes
 
-### Auto Mode
+The tool supports two modes:
 
-Auto mode generates decorators immediately with sensible defaults:
-
-- Automatically selects suitable props (excludes complex types, UI-only props)
-- Infers types from TypeScript interfaces
-- Generates decorator code without user confirmation
-
-**Usage:**
-
-```
-Use the MCP tool to add Page Designer decorators to my ProductItem component with auto mode.
-```
-
-**Example:**
-
-```json
-{
-  "component": "ProductItem",
-  "autoMode": true
-}
-```
-
-### Interactive Mode
-
-Interactive mode provides a multi-step workflow for fine-tuned control:
-
-1. **Analyze** (`step: "analyze"`) - Analyze component and review props
-2. **Select Props** (`step: "select_props"`) - Choose which props to expose
-3. **Configure Attributes** (`step: "configure_attrs"`) - Configure types, defaults, and values
-4. **Configure Regions** (`step: "configure_regions"`) - Configure nested content areas
-5. **Confirm Generation** (`step: "confirm_generation"`) - Generate final decorator code
-
-**Usage:**
-
-```
-Use the MCP tool to add Page Designer decorators to my ProductTile component interactively.
-```
-
-**Example:**
-
-```json
-{
-  "component": "ProductTile",
-  "conversationContext": {
-    "step": "analyze"
-  }
-}
-```
+1. **Auto Mode**: Quick setup with sensible defaults—automatically selects suitable props, infers types, and generates decorators immediately.
+2. **Interactive Mode**: Multi-step workflow for fine-tuned control over decorator configuration.
 
 ## Component Discovery
 
@@ -108,9 +59,6 @@ The tool automatically searches for components in these locations (in order):
 3. `components/**`
 4. `src/**` (broader search)
 5. Custom paths (if provided via `searchPaths`)
-
-**Project Directory:**
-Component discovery uses the project directory from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable. This ensures searches start from the correct project directory, especially when MCP clients spawn servers from the home directory.
 
 **Examples:**
 
@@ -123,102 +71,38 @@ Component discovery uses the project directory from `--project-directory` flag o
 - Use component name for portability
 - Use path for unusual locations
 - Add `searchPaths` for monorepos or non-standard structures
-- Ensure `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` env var is set correctly
 
 ## Usage Examples
 
-### Basic Auto Mode
-
-Add Page Designer support with auto-generated defaults:
-
+**Auto mode (quick setup):**
 ```
 Use the MCP tool to add Page Designer decorators to my ProductItem component.
 ```
 
-### Auto Mode with Custom Search Paths
+**Interactive mode (fine-tuned control):**
+```
+Use the MCP tool to add Page Designer decorators to my ProductTile component interactively.
+```
 
-Search in custom directories:
-
+**With custom search paths:**
 ```
 Use the MCP tool to add Page Designer decorators to ProductItem, searching in packages/retail/src and app/features.
 ```
 
-### Interactive Mode - Start Analysis
-
-Begin interactive workflow:
-
+**Using component path:**
 ```
-Use the MCP tool to analyze my ProductTile component for Page Designer decorators.
-```
-
-### Path-Based Usage
-
-Specify exact component path:
-
-```
-Use the MCP tool to add Page Designer decorators to src/components/ProductItem.tsx with auto mode.
+Use the MCP tool to add Page Designer decorators to src/components/ProductItem.tsx.
 ```
 
 ## Output
 
-The tool returns generated decorator code that includes:
+The tool returns generated Page Designer decorator code that you can add to your component file. The decorators include component metadata, attribute definitions for props, and region definitions (if configured).
 
-- **Imports**: Required Page Designer decorator imports
-- **@Component Decorator**: Component metadata (id, name, description, group)
-- **@AttributeDefinition Decorators**: Attribute definitions for each prop
-- **@RegionDefinition Decorator**: Region definitions (if configured)
-
-**Example Output:**
-
-```typescript
-import { Component, AttributeDefinition, RegionDefinition } from '@salesforce/page-designer';
-
-@Component({
-  id: 'product-item',
-  name: 'Product Item',
-  description: 'Displays product information',
-  group: 'Commerce'
-})
-export class ProductItemMetadata {
-  @AttributeDefinition({
-    id: 'product-id',
-    name: 'Product ID',
-    type: 'string',
-    required: true
-  })
-  productId: string;
-
-  @AttributeDefinition({
-    id: 'show-price',
-    name: 'Show Price',
-    type: 'boolean',
-    defaultValue: true
-  })
-  showPrice: boolean;
-}
-```
-
-## Requirements
-
-- Storefront Next project
-- React component with TypeScript interfaces
-- `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` environment variable set
-- Component must be discoverable in standard directories or via `searchPaths`
-
-## Features
-
-- **Name-Based Lookup**: Find components by name without knowing paths
-- **Auto-Discovery**: Automatically searches common component directories
-- **Type-Safe**: Full TypeScript type inference for all contexts
-- **Fast**: Direct function execution, no file I/O or compilation overhead
-- **Flexible Input**: Supports component names or file paths
-- **Two Modes**: Auto mode for quick setup, Interactive mode for fine-tuned control
 
 ## Related Tools
 
 - Part of the [STOREFRONTNEXT](../toolsets#storefrontnext) toolset
 - Auto-enabled for Storefront Next projects
-- Related: [`storefront_next_generate_page_designer_metadata`](../toolsets#storefrontnext) - Generate Page Designer metadata
 
 ## See Also
 

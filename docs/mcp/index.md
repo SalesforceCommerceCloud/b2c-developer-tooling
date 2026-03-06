@@ -4,7 +4,7 @@ description: MCP Server for Salesforce B2C Commerce - AI-assisted development to
 
 # MCP Server
 
-The B2C DX MCP Server enables AI assistants (like Cursor, Claude Desktop, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
+The B2C DX MCP Server enables AI assistants (like Claude Code, Cursor, GitHub Copilot, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
 
 > ⚠️ **Preview Release**: This package is in preview. Tools are functional but require `--allow-non-ga-tools` to enable. Additional tools will be added in future releases.
 
@@ -12,43 +12,25 @@ The B2C DX MCP Server enables AI assistants (like Cursor, Claude Desktop, and ot
 
 The MCP server automatically detects your project type and enables relevant tools. It reads configuration from your project's configuration files and provides AI assistants with context-aware tools to help you:
 
-- Discover and explore Salesforce Commerce APIs (both standard and custom APIs).
-- Deploy cartridges and manage code versions on your B2C instances.
-- Build and deploy bundles to Managed Runtime for PWA Kit and Storefront Next projects.
-- Get development guidelines and best practices for PWA Kit v3 and Storefront Next.
-- Generate components, pages, and scaffold new features with framework-specific patterns.
+- Discover and explore Salesforce Commerce APIs
+- Deploy code and manage B2C instances
+- Build and deploy applications to Managed Runtime
+- Get development guidelines and best practices
+- Generate components and scaffold new features
 
 ## Quick Start
 
 ### Installation
 
-See the [Installation Guide](./installation) for detailed setup instructions for Cursor, Claude Desktop, and other MCP clients.
-
-**Cursor** (supports `${workspaceFolder}`):
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
-    }
-  }
-}
+**Claude Code:**
+```bash
+cd /path/to/your/project
+claude mcp add --transport stdio b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
 ```
 
-**Claude Desktop** (use explicit path):
+**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
 
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/your/project", "--allow-non-ga-tools"]
-    }
-  }
-}
-```
+See the [Installation Guide](./installation) for detailed setup instructions for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
 
 ### Configuration
 
@@ -77,13 +59,13 @@ See the [Toolsets & Tools Reference](./toolsets) for detailed descriptions of ea
 
 ### Project Directory
 
-The most important flag is **`--project-directory`** (or env var `SFCC_PROJECT_DIRECTORY`). It tells the server where your project is located, enabling:
+With project-level installation (recommended), the server automatically detects your project location from the MCP config file location. This enables:
 
 1. **Auto-discovery** - Detects your project type and enables appropriate toolsets.
 2. **Configuration loading** - Reads [`dw.json`](../guide/configuration#configuration-file) from your project for credentials.
 3. **Scaffolding** - Creates new files in the correct location.
 
-> **Important:** MCP clients like Cursor and Claude Desktop spawn servers from the home directory (`~`), not your project. Always set `--project-directory`.
+**Note:** If using user-level configuration on Cursor, add `--project-directory "${workspaceFolder}"` to the args array. Claude Code and GitHub Copilot don't require this flag.
 
 ### Project Type Detection
 
@@ -139,36 +121,9 @@ AI assistants automatically decide which MCP tools to use based on your prompts.
 
 See the [Toolsets & Tools Reference](./toolsets) for more prompting examples for each toolset.
 
-## Telemetry
-
-The MCP server collects anonymous usage telemetry to help improve the developer experience. Telemetry is enabled by default.
-
-**Development mode**: Telemetry is automatically disabled when using `bin/dev.js`, so local development and testing won't pollute production data.
-
-### Configuring Telemetry
-
-Set options in the `env` object of your server entry in `.cursor/mcp.json` or `~/.cursor/mcp.json`:
-
-- **Disable**: `SF_DISABLE_TELEMETRY=true` or `SFCC_DISABLE_TELEMETRY=true`
-- **Custom endpoint**: `SFCC_APP_INSIGHTS_KEY=your-key`
-
-### What We Collect
-
-- **Server lifecycle events**: When the server starts, stops, or encounters errors
-- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
-- **Command metrics**: Command duration and success/failure status
-- **Environment info**: Platform, architecture, Node.js version, and package version
-
-### What We Don't Collect
-
-- **No credentials**: No API keys, passwords, or secrets
-- **No business data**: No product data, customer information, or site content
-- **No tool arguments**: No input parameters or output results from tool calls
-- **No file contents**: No source code, configuration files, or project data
-
 ## Next Steps
 
-- [Installation Guide](./installation) - Set up Cursor, Claude Desktop, or other MCP clients
+- [Installation Guide](./installation) - Set up Claude Code, Cursor, GitHub Copilot, or other MCP clients
 - [Configuration](./configuration) - Configure credentials, flags, and toolset selection
 - [Toolsets & Tools](./toolsets) - Explore available toolsets and tools
 - [CLI Reference](../cli/) - Learn about the B2C CLI commands

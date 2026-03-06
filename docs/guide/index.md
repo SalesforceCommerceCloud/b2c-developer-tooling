@@ -7,7 +7,7 @@ description: Introduction to the B2C CLI, MCP Server, and SDK for Salesforce B2C
 The B2C Developer Tooling provides command-line and AI-assisted development tools for Salesforce B2C Commerce.
 
 - **B2C CLI**: Command-line interface that you can use to deploy code, manage sandboxes, run jobs, and so on from the terminal.
-- **MCP Server**: AI-assisted development tools for Cursor, Claude Desktop, and other AI assistants.
+- **MCP Server**: AI-assisted development tools for Claude Code, Cursor, GitHub Copilot, and other AI assistants.
 
 ## Quick CLI Install
 
@@ -31,35 +31,17 @@ See the [CLI Installation Guide](./installation) for more installation options.
 
 ## Quick MCP Install
 
-The B2C DX MCP Server enables AI assistants to help with B2C Commerce development tasks. Install it in your MCP client configuration:
+The B2C DX MCP Server enables AI assistants to help with B2C Commerce development tasks.
 
-**Cursor** (supports `${workspaceFolder}`):
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
-    }
-  }
-}
+**Claude Code:**
+```bash
+cd /path/to/your/project
+claude mcp add --transport stdio b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
 ```
 
-**Claude Desktop** (use explicit path):
+**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
 
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/your/project", "--allow-non-ga-tools"]
-    }
-  }
-}
-```
-
-See the [MCP Server Installation Guide](/mcp/installation) for detailed setup instructions.
+See the [MCP Server Installation Guide](/mcp/installation) for detailed setup instructions for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
 
 ## Next Steps
 
