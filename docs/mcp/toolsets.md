@@ -87,7 +87,7 @@ Salesforce Commerce API discovery and exploration.
 
 Storefront Next development tools for building modern storefronts.
 
-**Status:** 🚧 Early Access
+**Status:** 🚧 Early Access. Storefront Next is part of a closed pilot and isn't available for general use.
 
 **Auto-enabled for:** Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies, package name starting with `storefront-next`, or workspace packages with these indicators)
 
