@@ -307,6 +307,23 @@ export type {
   CipQueryResult,
 } from './cip.js';
 
+export {createGranularReplicationsClient} from './granular-replications.js';
+export type {
+  GranularReplicationsClient,
+  GranularReplicationsClientConfig,
+  GranularReplicationsError,
+  GranularReplicationsResponse,
+  ProductItem,
+  PriceTableItem,
+  ContentAssetItemPrivate,
+  ContentAssetItemShared,
+  PublishProcessResponse,
+  PublishProcessListResponse,
+  PublishIdResponse,
+  paths as GranularReplicationsPaths,
+  components as GranularReplicationsComponents,
+} from './granular-replications.js';
+
 export {getApiErrorMessage} from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';
