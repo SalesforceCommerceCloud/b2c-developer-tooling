@@ -6,6 +6,8 @@ description: Add Page Designer decorators to React components for Storefront Nex
 
 Adds Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefinition`) to React components to make them available in Page Designer for Storefront Next.
 
+> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+
 ## Overview
 
 The `storefront_next_page_designer_decorator` tool analyzes React components and generates Page Designer decorators that enable components to be used in Page Designer. It supports two modes:
