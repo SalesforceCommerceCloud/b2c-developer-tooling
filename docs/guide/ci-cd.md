@@ -438,3 +438,42 @@ Logs are always human-readable on stderr. The `--json` flag only controls the st
 All actions automatically configure:
 
 - **`NO_COLOR=1`** — clean log output without ANSI colors
+
+## Best Practices
+
+### Use Safety Mode
+
+Enable [Safety Mode](/guide/security#operational-security-safety-mode) in CI/CD to prevent accidental destructive operations:
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Prevent accidental deletions
+      SFCC_SAFETY_LEVEL:NO_DELETE
+    steps:
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      - name: Deploy code
+        run: b2c code deploy
+```
+
+**Safety Levels for CI/CD:**
+
+- **`NO_DELETE`** (Recommended for most CI/CD) - Prevents deletions but allows deployments and updates
+- **`NO_UPDATE`** (Strict) - Only allows read and create operations, blocks updates and deletions
+- **`READ_ONLY`** (Monitoring/Reporting) - Only allows read operations
+
+**Example: Production deployment with safety:**
+```yaml
+deploy-production:
+  environment: production
+  env:
+    SFCC_SAFETY_LEVEL: NO_DELETE
+  steps:
+    - name: Deploy
+      run: |
+        b2c code deploy           # ✅ Allowed
+        b2c sandbox start prod    # ✅ Allowed
+        b2c sandbox delete test   # ❌ Blocked by safety mode
+```
