@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.6.1
+
+### Patch Changes
+
+- [`1b9b477`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b9b4773110a5d97bfe81d37a093158088d94cee) - Fix `b2c setup skills` serving stale cached skills when downloading latest release (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.6.0
 
 ### Minor Changes

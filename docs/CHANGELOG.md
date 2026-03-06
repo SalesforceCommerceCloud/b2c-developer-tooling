@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.4
+
+### Patch Changes
+
+- [#239](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/239) [`18ea049`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18ea04990e24de4de2071cb5502e002c6086327d) - Add early access notices to Storefront Next MCP tool documentation indicating they're part of a closed pilot. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
 ## 0.2.3
 
 ### Patch Changes
