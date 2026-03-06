@@ -26,19 +26,19 @@ export abstract class GranularReplicationsCommand<T extends typeof Command> exte
    * Requires:
    * - shortCode configuration (via b2c config:set --short-code <code>)
    * - OAuth credentials
-   * - organizationId (extracted from tenant-id)
+   * - tenantId (from --tenant-id flag or config)
    */
   protected get granularReplicationsClient(): GranularReplicationsClient {
     if (!this._granularReplicationsClient) {
       const shortCode = this.resolvedConfig.values.shortCode;
-      const organizationId = this.getOrganizationId();
+      const tenantId = this.getTenantId();
 
       if (!shortCode) {
         this.error('shortCode configuration is required. Run: b2c config:set --short-code <code>');
       }
 
       this._granularReplicationsClient = createGranularReplicationsClient(
-        {shortCode, organizationId},
+        {shortCode, tenantId},
         this.getOAuthStrategy(),
       );
     }
@@ -46,10 +46,17 @@ export abstract class GranularReplicationsCommand<T extends typeof Command> exte
   }
 
   /**
-   * Get the organization ID from resolved config.
-   * @throws Error if tenant ID is not provided through any source
+   * Get the organization ID (with f_ecom_ prefix) for API path parameters.
    */
   protected getOrganizationId(): string {
+    return toOrganizationId(this.getTenantId());
+  }
+
+  /**
+   * Get the tenant ID from resolved config.
+   * @throws Error if tenant ID is not provided through any source
+   */
+  protected getTenantId(): string {
     const {tenantId} = this.resolvedConfig.values;
     if (!tenantId) {
       this.error(
@@ -59,6 +66,6 @@ export abstract class GranularReplicationsCommand<T extends typeof Command> exte
         ),
       );
     }
-    return toOrganizationId(tenantId);
+    return tenantId;
   }
 }

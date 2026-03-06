@@ -560,7 +560,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     // Use oclif's error() for proper exit code and display
-    this.error(err.message, {exit: exitCode});
+    return this.error(err.message, {exit: exitCode});
   }
 
   /**

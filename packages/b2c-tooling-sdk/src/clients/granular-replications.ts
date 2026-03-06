@@ -9,6 +9,9 @@ import type {paths, components} from './granular-replications.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {OAuthStrategy} from '../auth/oauth.js';
+import {buildTenantScope, toOrganizationId, normalizeTenantId} from './custom-apis.js';
+
+export {toOrganizationId, normalizeTenantId, buildTenantScope};
 
 export type {paths, components};
 export type GranularReplicationsClient = Client<paths>;
@@ -26,7 +29,7 @@ export type PublishIdResponse = components['schemas']['PublishIdResponse'];
 
 export interface GranularReplicationsClientConfig {
   shortCode: string;
-  organizationId: string;
+  tenantId: string;
   scopes?: string[];
   middlewareRegistry?: MiddlewareRegistry;
 }
@@ -37,7 +40,7 @@ export interface GranularReplicationsClientConfig {
  * The Granular Replications API enables programmatic publishing of individual items
  * (products, price tables, content assets) from staging to production environments.
  *
- * @param config - Client configuration with shortCode and organizationId
+ * @param config - Client configuration with shortCode and tenantId
  * @param auth - OAuth authentication strategy
  * @returns Typed Granular Replications API client
  *
@@ -53,7 +56,7 @@ export interface GranularReplicationsClientConfig {
  *
  * const client = createGranularReplicationsClient({
  *   shortCode: 'kv7kzm78',
- *   organizationId: 'f_ecom_zzxy_prd'
+ *   tenantId: 'zzxy_prd'
  * }, auth);
  *
  * // Queue a product for publishing
@@ -83,8 +86,8 @@ export function createGranularReplicationsClient(
     baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/operation/replications/v1`,
   });
 
-  // OAuth scope handling
-  const requiredScopes = config.scopes ?? ['sfcc.granular-replications.rw'];
+  // Build required scopes: domain scope + tenant-specific scope
+  const requiredScopes = config.scopes ?? ['sfcc.granular-replications.rw', buildTenantScope(config.tenantId)];
   const scopedAuth = auth instanceof OAuthStrategy ? auth.withAdditionalScopes(requiredScopes) : auth;
 
   client.use(createAuthMiddleware(scopedAuth));

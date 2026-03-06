@@ -10,6 +10,7 @@ import {createGranularReplicationsClient} from '../../src/clients/granular-repli
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const SHORT_CODE = 'kv7kzm78';
+const TENANT_ID = 'zzxy_prd';
 const ORG_ID = 'f_ecom_zzxy_prd';
 const BASE_URL = `https://${SHORT_CODE}.api.commercecloud.salesforce.com/operation/replications/v1`;
 
@@ -24,7 +25,7 @@ describe('Granular Replications Client', () => {
 
   beforeEach(() => {
     mockAuth = new MockAuthStrategy();
-    client = createGranularReplicationsClient({shortCode: SHORT_CODE, organizationId: ORG_ID}, mockAuth);
+    client = createGranularReplicationsClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, mockAuth);
   });
 
   it('should create client with config', () => {
