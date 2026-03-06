@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {GranularReplicationsCommand} from '../granular-replications-command.js';
+import {GranularReplicationsCommand} from '../../../utils/scapi/replications.js';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getApiErrorMessage,

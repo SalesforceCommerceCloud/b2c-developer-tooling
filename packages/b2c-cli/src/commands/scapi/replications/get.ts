@@ -5,7 +5,7 @@
  */
 import {Args, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {GranularReplicationsCommand} from '../granular-replications-command.js';
+import {GranularReplicationsCommand} from '../../../utils/scapi/replications.js';
 import {getApiErrorMessage, type PublishProcessResponse} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../../i18n/index.js';
 
