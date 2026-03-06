@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -26,7 +26,8 @@
     "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
     "onCommand:b2c-dx.scapiExplorer",
-    "onView:b2cSandboxExplorer"
+    "onView:b2cSandboxExplorer",
+    "onCommand:b2c-dx.scaffold.generate"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -53,10 +54,22 @@
           "default": true,
           "description": "Enable log tailing commands."
         },
+        "b2c-dx.features.scaffold": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable scaffold generation commands."
+        },
         "b2c-dx.logLevel": {
           "type": "string",
           "default": "info",
-          "enum": ["trace", "debug", "info", "warn", "error", "silent"],
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "silent"
+          ],
           "description": "Log verbosity level for the B2C DX output channel."
         },
         "b2c-dx.sandbox.pollingInterval": {
@@ -329,6 +342,12 @@
         "title": "Import Site Archive",
         "icon": "$(cloud-upload)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.scaffold.generate",
+        "title": "New from Scaffold...",
+        "icon": "$(file-code)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -466,6 +485,13 @@
           "group": "3_destructive@1"
         }
       ],
+      "file/newFile": [
+        {
+          "command": "b2c-dx.scaffold.generate",
+          "group": "navigation",
+          "when": "workspaceFolderCount > 0"
+        }
+      ],
       "explorer/context": [
         {
           "command": "b2c-dx.webdav.download",
@@ -480,30 +506,93 @@
       ],
       "b2c-dx.submenu": [
         {
+          "command": "b2c-dx.scaffold.generate",
+          "when": "explorerResourceIsFolder",
+          "group": "1_scaffold"
+        },
+        {
           "command": "b2c-dx.content.import",
-          "when": "explorerResourceIsFolder"
+          "when": "explorerResourceIsFolder",
+          "group": "2_import"
         }
       ],
       "commandPalette": [
-        {"command": "b2c-dx.sandbox.removeRealm", "when": "false"},
-        {"command": "b2c-dx.sandbox.delete", "when": "false"},
-        {"command": "b2c-dx.sandbox.start", "when": "false"},
-        {"command": "b2c-dx.sandbox.stop", "when": "false"},
-        {"command": "b2c-dx.sandbox.restart", "when": "false"},
-        {"command": "b2c-dx.sandbox.viewDetails", "when": "false"},
-        {"command": "b2c-dx.sandbox.openBM", "when": "false"},
-        {"command": "b2c-dx.webdav.newFolder", "when": "false"},
-        {"command": "b2c-dx.webdav.uploadFile", "when": "false"},
-        {"command": "b2c-dx.webdav.delete", "when": "false"},
-        {"command": "b2c-dx.webdav.download", "when": "false"},
-        {"command": "b2c-dx.webdav.openFile", "when": "false"},
-        {"command": "b2c-dx.webdav.newFile", "when": "false"},
-        {"command": "b2c-dx.webdav.mountWorkspace", "when": "false"},
-        {"command": "b2c-dx.content.removeLibrary", "when": "false"},
-        {"command": "b2c-dx.content.export", "when": "false"},
-        {"command": "b2c-dx.content.exportNoAssets", "when": "false"},
-        {"command": "b2c-dx.content.exportAssets", "when": "false"},
-        {"command": "b2c-dx.content.clearFilter", "when": "false"}
+        {
+          "command": "b2c-dx.sandbox.removeRealm",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.delete",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.start",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.stop",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.restart",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.viewDetails",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.openBM",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.newFolder",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.uploadFile",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.delete",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.download",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.openFile",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.newFile",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.mountWorkspace",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.removeLibrary",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.export",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.exportNoAssets",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.exportAssets",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.clearFilter",
+          "when": "false"
+        }
       ]
     }
   },

@@ -73,10 +73,14 @@ export const COLUMNS: Record<string, ColumnDef<SandboxModel>> = {
     get: (s) => (s.autoScheduled ? 'Yes' : 'No'),
     extended: true,
   },
+  isCloned: {
+    header: 'Is Cloned',
+    get: (s) => (s.clonedFrom ? 'Yes' : 'No'),
+  },
 };
 
 /** Default columns shown without --extended */
-const DEFAULT_COLUMNS = ['realm', 'instance', 'state', 'profile', 'created', 'eol', 'id'];
+const DEFAULT_COLUMNS = ['realm', 'instance', 'state', 'profile', 'created', 'eol', 'id', 'isCloned'];
 
 const tableRenderer = new TableRenderer(COLUMNS);
 

@@ -28,18 +28,18 @@ function getVersionItems() {
   ];
 }
 
-const guideSidebar = [
+const guidesSidebar = [
   {
     text: 'Getting Started',
     items: [
       {text: 'Introduction', link: '/guide/'},
-      {text: 'Installation', link: '/guide/installation'},
-      {text: 'Configuration', link: '/guide/configuration'},
+      {text: 'CLI Installation', link: '/guide/installation'},
+      {text: 'CLI Configuration', link: '/guide/configuration'},
       {text: 'Agent Skills & Plugins', link: '/guide/agent-skills'},
     ],
   },
   {
-    text: 'Guides',
+    text: 'How-To',
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
       {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
@@ -49,14 +49,15 @@ const guideSidebar = [
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Security', link: '/guide/security'},
       {text: 'Storefront Next', link: '/guide/storefront-next'},
+      {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
     ],
   },
   {
     text: 'MCP Server',
     items: [
       {text: 'Overview', link: '/mcp/'},
-      {text: 'Installation', link: '/mcp/installation'},
-      {text: 'Configuration', link: '/mcp/configuration'},
+      {text: 'MCP Installation', link: '/mcp/installation'},
+      {text: 'MCP Configuration', link: '/mcp/configuration'},
       {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
       {text: 'Figma Tools Setup', link: '/mcp/figma-tools-setup'},
     ],
@@ -68,34 +69,37 @@ const guideSidebar = [
       {text: '3rd Party Plugins', link: '/guide/third-party-plugins'},
     ],
   },
+];
+
+const referenceSidebar = [
   {
-    text: 'CLI Reference',
+    text: 'CLI Commands',
     items: [
       {text: 'Overview', link: '/cli/'},
-      {text: 'Code Commands', link: '/cli/code'},
-      {text: 'Content Commands', link: '/cli/content'},
-      {text: 'CIP Commands', link: '/cli/cip'},
-      {text: 'Job Commands', link: '/cli/jobs'},
-      {text: 'Logs Commands', link: '/cli/logs'},
-      {text: 'Sites Commands', link: '/cli/sites'},
-      {text: 'WebDAV Commands', link: '/cli/webdav'},
-      {text: 'Sandbox Commands', link: '/cli/sandbox'},
-      {text: 'MRT Commands', link: '/cli/mrt'},
-      {text: 'eCDN Commands', link: '/cli/ecdn'},
-      {text: 'SLAS Commands', link: '/cli/slas'},
+      {text: 'Account Manager', link: '/cli/account-manager'},
+      {text: 'Auth', link: '/cli/auth'},
+      {text: 'CIP', link: '/cli/cip'},
+      {text: 'Code', link: '/cli/code'},
+      {text: 'Content', link: '/cli/content'},
       {text: 'Custom APIs', link: '/cli/custom-apis'},
+      {text: 'Docs', link: '/cli/docs'},
+      {text: 'eCDN', link: '/cli/ecdn'},
+      {text: 'Jobs', link: '/cli/jobs'},
+      {text: 'Logs', link: '/cli/logs'},
+      {text: 'MRT', link: '/cli/mrt'},
+      {text: 'Sandbox', link: '/cli/sandbox'},
+      {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
       {text: 'Granular Replications', link: '/cli/replications'},
-      {text: 'Setup Commands', link: '/cli/setup'},
-      {text: 'Scaffold Commands', link: '/cli/scaffold'},
-      {text: 'Docs Commands', link: '/cli/docs'},
-      {text: 'Auth Commands', link: '/cli/auth'},
-      {text: 'Account Manager Commands', link: '/cli/account-manager'},
+      {text: 'Setup', link: '/cli/setup'},
+      {text: 'Sites', link: '/cli/sites'},
+      {text: 'SLAS', link: '/cli/slas'},
+      {text: 'WebDAV', link: '/cli/webdav'},
       {text: 'Logging', link: '/cli/logging'},
     ],
   },
   {
-    text: 'Tools Reference',
+    text: 'MCP Tools',
     items: [
       {text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'},
       {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
@@ -104,7 +108,10 @@ const guideSidebar = [
       {text: 'scapi_custom_api_scaffold', link: '/mcp/tools/scapi-custom-api-scaffold'},
       {text: 'scapi_custom_apis_status', link: '/mcp/tools/scapi-custom-apis-status'},
       {text: 'storefront_next_development_guidelines', link: '/mcp/tools/storefront-next-development-guidelines'},
-      {text: 'storefront_next_figma_to_component_workflow', link: '/mcp/tools/storefront-next-figma-to-component-workflow'},
+      {
+        text: 'storefront_next_figma_to_component_workflow',
+        link: '/mcp/tools/storefront-next-figma-to-component-workflow',
+      },
       {text: 'storefront_next_generate_component', link: '/mcp/tools/storefront-next-generate-component'},
       {text: 'storefront_next_map_tokens_to_theme', link: '/mcp/tools/storefront-next-map-tokens-to-theme'},
       {text: 'storefront_next_page_designer_decorator', link: '/mcp/tools/storefront-next-page-designer-decorator'},
@@ -158,10 +165,10 @@ export default defineConfig({
       level: [2, 3],
     },
     nav: [
-      {text: 'Guide', link: '/guide/'},
-      {text: 'CLI Reference', link: '/cli/'},
-      {text: 'API Reference', link: '/api/'},
-      {text: 'MCP Server', link: '/mcp/'},
+      {text: 'Guides', link: '/guide/'},
+      {text: 'MCP', link: '/mcp/'},
+      {text: 'Reference', link: '/cli/'},
+      {text: 'SDK', link: '/api/'},
       {
         text: isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
@@ -174,12 +181,13 @@ export default defineConfig({
     },
 
     sidebar: {
-      '/guide/': guideSidebar,
-      '/cli/': guideSidebar,
-      '/mcp/': guideSidebar,
+      '/mcp/tools/': referenceSidebar,
+      '/mcp/': guidesSidebar,
+      '/cli/': referenceSidebar,
+      '/guide/': guidesSidebar,
       '/api/': [
         {
-          text: 'API Reference',
+          text: 'SDK Reference',
           items: [{text: 'Overview', link: '/api/'}],
         },
         ...typedocSidebar,

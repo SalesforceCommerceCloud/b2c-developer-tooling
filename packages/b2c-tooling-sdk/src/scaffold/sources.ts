@@ -4,10 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
 import {findCartridges} from '../operations/code/cartridges.js';
 import type {B2CInstance} from '../instance/index.js';
 import type {OcapiComponents} from '../clients/index.js';
-import type {ScaffoldChoice, DynamicParameterSource, SourceResult} from './types.js';
+import type {ScaffoldChoice, ScaffoldParameter, DynamicParameterSource, SourceResult} from './types.js';
 
 /**
  * Common B2C Commerce hook extension points.
@@ -128,4 +130,74 @@ export function validateAgainstSource(
 
   // For hook-points and other sources, no validation (allow any value)
   return {valid: true};
+}
+
+/**
+ * Path to use for scaffold destination so files are generated under outputDir (e.g. working directory).
+ * Returns a path relative to projectRoot when the cartridge is under projectRoot, so the executor
+ * joins with outputDir instead of ignoring it. Otherwise returns the absolute path.
+ */
+export function cartridgePathForDestination(absolutePath: string, projectRoot: string): string {
+  const normalizedRoot = path.resolve(projectRoot);
+  const normalizedPath = path.resolve(absolutePath);
+  const relative = path.relative(normalizedRoot, normalizedPath);
+  // Use relative path only when cartridge is under projectRoot (no leading '..')
+  if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
+    return relative;
+  }
+  return absolutePath;
+}
+
+/**
+ * Result of detecting a source parameter value from a filesystem path.
+ */
+export interface SourceDetectionResult {
+  /** The resolved parameter value (e.g., cartridge name) */
+  value: string;
+  /** Companion variables to set (e.g., { cartridgeNamePath: "cartridges/app_custom" }) */
+  companionVariables: Record<string, string>;
+}
+
+/**
+ * Detect a parameter's source value from a filesystem context path.
+ *
+ * For `cartridges` source: walks up from `contextPath` looking for a `.project` file
+ * (cartridge marker), stopping at projectRoot. On match returns the cartridge name and
+ * companion path variable.
+ *
+ * @param param - The scaffold parameter with a `source` field
+ * @param contextPath - Filesystem path providing context (e.g., right-clicked folder)
+ * @param projectRoot - Project root directory
+ * @returns Detection result, or undefined if the source could not be detected
+ */
+export function detectSourceFromPath(
+  param: ScaffoldParameter,
+  contextPath: string,
+  projectRoot: string,
+): SourceDetectionResult | undefined {
+  if (param.source !== 'cartridges') {
+    return undefined;
+  }
+
+  const normalizedRoot = path.resolve(projectRoot);
+  let current = path.resolve(contextPath);
+
+  // Walk up from contextPath, checking for .project at each level
+  while (current.length >= normalizedRoot.length) {
+    const projectFile = path.join(current, '.project');
+    if (fs.existsSync(projectFile)) {
+      const cartridgeName = path.basename(current);
+      const destPath = cartridgePathForDestination(current, projectRoot);
+      return {
+        value: cartridgeName,
+        companionVariables: {[`${param.name}Path`]: destPath},
+      };
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) break; // filesystem root
+    current = parent;
+  }
+
+  return undefined;
 }

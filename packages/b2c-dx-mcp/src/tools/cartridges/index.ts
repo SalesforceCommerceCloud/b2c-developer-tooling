@@ -21,6 +21,11 @@ import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-too
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
+/** Reminder shown after deploy so users add cartridges to the site cartridge path. */
+const CARTRIDGE_PATH_REMINDER =
+  "If this is a new or updated cartridge, add it to your site's cartridge path in Business Manager: " +
+  'Sites → Manage Sites → [your site] → Settings tab → Cartridges field.';
+
 /**
  * Input type for cartridge_deploy tool.
  */
@@ -33,6 +38,12 @@ interface CartridgeDeployInput {
   exclude?: string[];
   /** Reload code version after deploy */
   reload?: boolean;
+}
+
+/** Output type: deploy result plus reminder to update site cartridge path. */
+interface CartridgeDeployOutput extends DeployResult {
+  /** Reminder to add deployed cartridges to the site cartridge path in Business Manager. */
+  postInstructions?: string;
 }
 
 /**
@@ -61,7 +72,7 @@ interface CartridgeToolInjections {
 function createCartridgeDeployTool(loadServices: () => Services, injections?: CartridgeToolInjections): McpTool {
   const findAndDeployCartridgesFn = injections?.findAndDeployCartridges || findAndDeployCartridges;
   const getActiveCodeVersionFn = injections?.getActiveCodeVersion || getActiveCodeVersion;
-  return createToolAdapter<CartridgeDeployInput, DeployResult>(
+  return createToolAdapter<CartridgeDeployInput, CartridgeDeployOutput>(
     {
       name: 'cartridge_deploy',
       description:
@@ -69,7 +80,8 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
         'Searches the directory for cartridges (by .project files), applies include/exclude filters, ' +
         'creates a zip archive, uploads via WebDAV, and optionally reloads the code version. ' +
         'Use this tool to deploy custom code cartridges for SFRA or other B2C Commerce code. ' +
-        'Requires the instance to have a code version configured.',
+        'Requires the instance to have a code version configured. ' +
+        "After deploy, add new cartridges to your site's cartridge path in Business Manager: Sites → Manage Sites → [site] → Settings tab → Cartridges.",
       toolsets: ['CARTRIDGES'],
       isGA: false,
       requiresInstance: true,
@@ -152,7 +164,10 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
           // Deploy cartridges
           const result = await findAndDeployCartridgesFn(instance, directory, options);
 
-          return result;
+          return {
+            ...result,
+            postInstructions: CARTRIDGE_PATH_REMINDER,
+          };
         } catch (error) {
           // Handle communication and authentication errors
           const errorMessage = error instanceof Error ? error.message : String(error);

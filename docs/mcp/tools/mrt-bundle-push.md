@@ -30,13 +30,37 @@ Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configurati
 
 ## Parameters
 
+Defaults for `buildDirectory`, `ssrOnly`, and `ssrShared` are chosen by detected project type (Storefront Next, PWA Kit v3, or generic). Explicit parameters override the project-type defaults.
+
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `buildDirectory` | string | No | `./build` | Path to build directory containing the built project files. Can be absolute or relative to the project directory. |
 | `message` | string | No | None | Deployment message to include with the bundle push. Useful for tracking deployments. |
-| `ssrOnly` | string | No | `ssr.js,ssr.mjs,server/**/*` | Comma-separated glob patterns for server-only files (SSR). These files are only included in the server bundle. |
-| `ssrShared` | string | No | `static/**/*,client/**/*` | Comma-separated glob patterns for shared files. These files are included in both server and client bundles. |
+| `ssrOnly` | string | No | Varies by project type | Glob patterns for server-only files (SSR), comma-separated or JSON array. These files are only included in the server bundle. |
+| `ssrShared` | string | No | Varies by project type | Glob patterns for shared files, comma-separated or JSON array. These files are included in both server and client bundles. |
 | `deploy` | boolean | No | `false` | Whether to deploy to an environment after push. When `true`, `environment` must be provided via `--environment` flag or `MRT_ENVIRONMENT`. |
+
+### Default values by project type
+
+When `buildDirectory`, `ssrOnly`, or `ssrShared` are omitted, the tool detects the project type and applies these defaults:
+
+**Generic** (used when no project type is detected; matches CLI `b2c mrt bundle deploy` defaults):
+
+- `buildDirectory`: `./build`
+- `ssrOnly`: `ssr.js`, `ssr.mjs`, `server/**/*`
+- `ssrShared`: `static/**/*`, `client/**/*`
+
+**PWA Kit v3**:
+
+- `buildDirectory`: `./build`
+- `ssrOnly`: `ssr.js`, `ssr.js.map`, `node_modules/**/*.*`
+- `ssrShared`: `static/ico/favicon.ico`, `static/robots.txt`, `**/*.js`, `**/*.js.map`, `**/*.json`
+
+**Storefront Next**:
+
+- `buildDirectory`: `./build`
+- `ssrOnly`: `server/**/*`, `loader.js`, `streamingHandler.{js,mjs,cjs}`, `streamingHandler.{js,mjs,cjs}.map`, `ssr.{js,mjs,cjs}`, `ssr.{js,mjs,cjs}.map`, `!static/**/*`, `sfnext-server-*.mjs`, plus exclusions for Storybook and test files
+- `ssrShared`: `client/**/*`, `static/**/*`, `**/*.css`, image/font extensions, plus exclusions for Storybook and test files
 
 ## Usage Examples
 
