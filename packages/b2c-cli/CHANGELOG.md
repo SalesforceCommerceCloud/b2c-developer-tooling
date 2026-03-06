@@ -1,5 +1,14 @@
 # @salesforce/b2c-cli
 
+## 0.5.6
+
+### Patch Changes
+
+- [`d6b8c57`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6b8c575b62ada6073d89fe03beedc18004e3073) - Fix GitHub Actions for external repository usage by replacing relative `./actions/setup` and `./actions/run` references with fully qualified `SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1` and `SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1` in all composite actions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`8faf831`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8faf831b4e4827e252e48242b2a2b2155157f3c2)]:
+  - @salesforce/b2c-tooling-sdk@0.6.0
+
 ## 0.5.5
 
 ### Patch Changes

@@ -1,0 +1,6 @@
+{
+  "node-option": ["import=tsx", "conditions=development"],
+  "timeout": 10000,
+  "recursive": true,
+  "extension": ["ts"]
+}

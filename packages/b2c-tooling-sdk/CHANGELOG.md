@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.6.0
+
+### Minor Changes
+
+- [#230](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/230) [`8faf831`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8faf831b4e4827e252e48242b2a2b2155157f3c2) - Add `detectSourceFromPath()` for context-aware scaffold parameter detection, `cartridgePathForDestination()` export, and `builtInScaffoldsDir` option on `createScaffoldRegistry()` for bundled consumers (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.5.5
 
 ### Patch Changes
