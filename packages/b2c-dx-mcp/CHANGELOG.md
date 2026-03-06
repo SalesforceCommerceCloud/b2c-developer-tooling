@@ -1,5 +1,16 @@
 # @salesforce/b2c-dx-mcp
 
+## 0.4.7
+
+### Patch Changes
+
+- [#233](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/233) [`6eba028`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6eba028edbb30c47dd2933cd35f0de52a5b62ccb) - cartridge_deploy now reminds users to update the site cartridge path in Business Manager (Sites → Manage Sites → [site] → Settings tab → Cartridges) after deploy. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
+- [#226](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/226) [`8c6665b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c6665ba8a51ddf1d572b9fbff66b9685699880e) - MCP MRT Push now uses correct defaults based on detected project type (Thanks [@patricksullivansf](https://github.com/patricksullivansf)!)
+
+- Updated dependencies [[`8faf831`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8faf831b4e4827e252e48242b2a2b2155157f3c2)]:
+  - @salesforce/b2c-tooling-sdk@0.6.0
+
 ## 0.4.6
 
 ### Patch Changes
