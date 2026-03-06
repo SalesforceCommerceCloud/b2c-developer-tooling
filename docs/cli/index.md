@@ -27,6 +27,32 @@ These flags are available on all commands that interact with B2C instances:
 | `--username`, `-u` | `SFCC_USERNAME`      | Username for Basic Auth            |
 | `--password`, `-p` | `SFCC_PASSWORD`      | Password/access key for Basic Auth |
 
+### Safety Mode
+
+Safety Mode provides protection against accidental or unwanted destructive operations. This is particularly important when using the CLI in automated environments, CI/CD pipelines, or as a tool for AI agents.
+
+| Environment Variable   | Values | Description |
+| ---------------------- | ------ | ----------- |
+| `SFCC_SAFETY_LEVEL` | `NONE` (default) | No restrictions |
+| | `NO_DELETE` | Block DELETE operations |
+| | `NO_UPDATE` | Block DELETE and destructive operations (reset, stop, restart) |
+| | `READ_ONLY` | Block all write operations (GET only) |
+
+**Example:**
+```bash
+# Prevent deletions in CI/CD
+export SFCC_SAFETY_LEVEL=NO_DELETE
+b2c sandbox create --realm test  # ✅ Allowed
+b2c sandbox delete test-id       # ❌ Blocked
+
+# Read-only mode for reporting
+export SFCC_SAFETY_LEVEL=READ_ONLY
+b2c sandbox list                 # ✅ Allowed
+b2c sandbox create --realm test  # ❌ Blocked
+```
+
+Safety Mode operates at the HTTP layer and cannot be bypassed by command-line flags. See the [Security Guide](/guide/security#operational-security-safety-mode) for detailed information.
+
 ### Other Environment Variables
 
 | Environment Variable         | Description                             |

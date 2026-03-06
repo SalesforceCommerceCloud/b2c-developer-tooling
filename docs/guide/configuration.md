@@ -82,6 +82,7 @@ You can configure the CLI using environment variables:
 | `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)           |
 | `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
 | `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
+| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/security#operational-security-safety-mode)) |
 
 ## .env File
 

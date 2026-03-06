@@ -37,6 +37,9 @@ export default class EcdnLogpushJobsDelete extends EcdnZoneCommand<typeof EcdnLo
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete Logpush job');
+
     this.requireOAuthCredentials();
 
     const zoneId = await this.resolveZoneId();
