@@ -6,6 +6,8 @@ description: Analyze Figma design and discovered components to recommend REUSE, 
 
 Analyzes Figma design and discovered components to recommend a component generation strategy. Returns a REUSE, EXTEND, or CREATE action with confidence score, key differences, and suggested implementation approach.
 
+> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+
 ## Overview
 
 The `storefront_next_generate_component` tool compares Figma-generated React code against existing components discovered in the codebase. It analyzes differences across styling, structure, behavior, and props, then recommends the best approach:

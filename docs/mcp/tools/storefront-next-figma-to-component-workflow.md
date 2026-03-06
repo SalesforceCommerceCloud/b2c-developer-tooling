@@ -6,6 +6,8 @@ description: Workflow orchestrator for Figma-to-component conversion. Parses you
 
 Workflow orchestrator for converting Figma designs to Storefront Next components. Provide a Figma design URL to start the workflow, which extracts design data, analyzes your codebase, and produces component recommendations.
 
+> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+
 ## Overview
 
 When you provide a Figma design URL, the workflow will:
