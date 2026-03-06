@@ -40,7 +40,7 @@ The CLI supports four authentication methods:
 
 | Method                             | When Used                                                                                      | Role Configuration                        |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **User Authentication**            | When `--user-auth` is passed, or when only `--client-id` is provided (no secret)               | Roles configured on your **user account** |
+| **User Authentication**            | When `--user-auth` is passed, or when only a client ID is provided (no secret)                 | Roles configured on your **user account** |
 | **Client Credentials**             | When both `--client-id` and `--client-secret` are provided                                     | Roles configured on the **API client**    |
 | **Stateful User Authentication**   | After running `b2c auth login` — browser-based login, token stored and reused                  | Roles configured on your **user account** |
 | **Stateful Client Authentication** | After running `b2c auth client` — client credentials login, token stored and reused            | Roles configured on the **API client**    |

@@ -25,8 +25,18 @@ Log in via browser (implicit OAuth) and save the session for stateful auth.
 ### Usage
 
 ```bash
+b2c auth login [CLIENTID]
+```
+
+`CLIENTID` is an optional positional argument. When omitted, the `SFCC_CLIENT_ID` environment variable is used as a fallback.
+
+```bash
+# Using a positional argument
+b2c auth login your-client-id
+
+# Using environment variable
+export SFCC_CLIENT_ID=your-client-id
 b2c auth login
-b2c auth login --client-id your-client-id
 ```
 
 After a successful login, subsequent commands use the stored token until it expires or you run `b2c auth logout`.
