@@ -17,11 +17,7 @@ This tool works with both standard SCAPI (Shop, Admin, Shopper APIs) and custom 
 
 ## Authentication
 
-Requires OAuth credentials. See [B2C Credentials](../configuration#b2c-credentials) (OAuth Client Credentials section) for complete details.
-
-**Required scope:** `sfcc.scapi-schemas` (required for fetch mode)
-
-**Note:** OAuth credentials are optional for local schema discovery (list mode), but required for fetching full schemas.
+Requires OAuth credentials with `sfcc.scapi-schemas` scope. See [B2C Credentials](../configuration#b2c-credentials-dwjson) for complete details. For scope configuration, see [Configuring Scopes](../../guide/authentication#configuring-scopes).
 
 **Configuration priority:**
 1. Flags (`--server`, `--client-id`, `--client-secret`)
