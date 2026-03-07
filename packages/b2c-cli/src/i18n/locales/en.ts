@@ -11,6 +11,32 @@
  */
 export const en = {
   commands: {
+    auth: {
+      token: {
+        description: 'Get an OAuth access token',
+      },
+      login: {
+        description: 'Log in via browser and save session (stateful auth)',
+        success: 'Login succeeded. Session saved for stateful auth.',
+      },
+      logout: {
+        description: 'Clear stored session (stateful auth)',
+        success: 'Logged out. Stored session cleared.',
+      },
+      client: {
+        description: 'Authenticate an API client and save session',
+        success: 'Authentication succeeded.',
+        failed: 'Authentication failed: {{error}}',
+        renew: {
+          description: 'Renew the client authentication token',
+          success: 'Authentication renewal succeeded.',
+          failed: 'Authentication renewal failed: {{error}}',
+        },
+        token: {
+          description: 'Return the current authentication token (stateful)',
+        },
+      },
+    },
     sites: {
       list: {
         description: 'List sites on a B2C Commerce instance',

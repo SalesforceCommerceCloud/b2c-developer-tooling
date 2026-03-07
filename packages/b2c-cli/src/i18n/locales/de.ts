@@ -8,6 +8,30 @@
  */
 export const de = {
   commands: {
+    auth: {
+      token: {description: 'OAuth-Access-Token abrufen'},
+      login: {
+        description: 'Per Browser anmelden und Session speichern (Stateful Auth)',
+        success: 'Anmeldung erfolgreich. Session für Stateful Auth gespeichert.',
+      },
+      logout: {
+        description: 'Gespeicherte Session löschen (Stateful Auth)',
+        success: 'Abgemeldet. Gespeicherte Session gelöscht.',
+      },
+      client: {
+        description: 'API-Client authentifizieren und Session speichern',
+        success: 'Authentifizierung erfolgreich.',
+        failed: 'Authentifizierung fehlgeschlagen: {{error}}',
+        renew: {
+          description: 'Client-Authentifizierungstoken erneuern',
+          success: 'Authentifizierungserneuerung erfolgreich.',
+          failed: 'Authentifizierungserneuerung fehlgeschlagen: {{error}}',
+        },
+        token: {
+          description: 'Aktuelles Authentifizierungstoken zurückgeben (zustandsbehaftet)',
+        },
+      },
+    },
     sites: {
       list: {
         description: 'Sites auf einer B2C Commerce-Instanz auflisten',
