@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none';
+             script-src 'nonce-__NONCE__' __CSP_SOURCE__;
+             style-src __CSP_SOURCE__ 'unsafe-inline';
+             img-src __CSP_SOURCE__ data:;
+             font-src __CSP_SOURCE__;
+             connect-src https://*.commercecloud.salesforce.com;" />
+  <link rel="stylesheet" href="__SWAGGER_CSS_URI__" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--vscode-editor-background, #1e1e1e);
+      color: var(--vscode-editor-foreground, #d4d4d4);
+    }
+    .token-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--vscode-sideBar-background, #252526);
+      border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c);
+      font-family: var(--vscode-font-family, sans-serif);
+      font-size: 13px;
+    }
+    .token-bar .api-type {
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: var(--vscode-badge-background, #4d4d4d);
+      color: var(--vscode-badge-foreground, #fff);
+    }
+    .token-bar .token-status {
+      flex: 1;
+    }
+    .token-bar .token-status.ok {
+      color: var(--vscode-testing-iconPassed, #73c991);
+    }
+    .token-bar .token-status.error {
+      color: var(--vscode-testing-iconFailed, #f48771);
+    }
+    .token-bar .token-status.pending {
+      color: var(--vscode-descriptionForeground, #888);
+    }
+    .token-bar button {
+      padding: 4px 12px;
+      border: 1px solid var(--vscode-button-border, transparent);
+      border-radius: 2px;
+      background: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, #fff);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .token-bar button:hover {
+      background: var(--vscode-button-hoverBackground, #1177bb);
+    }
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui { background: transparent; }
+    .swagger-ui .scheme-container { background: transparent; }
+    /* Hide resolver error banner — external $refs are resolved server-side */
+    .swagger-ui .errors-wrapper { display: none; }
+  </style>
+</head>
+<body>
+  <div class="token-bar">
+    <span class="api-type" id="apiTypeLabel">__API_TYPE__</span>
+    <span class="token-status pending" id="tokenStatus">Acquiring token...</span>
+    <button id="refreshTokenBtn">Refresh Token</button>
+  </div>
+  <div id="swagger-ui"></div>
+
+  <script src="__SWAGGER_BUNDLE_URI__"></script>
+  <script src="__SWAGGER_PRESET_URI__"></script>
+  <script nonce="__NONCE__">
+    (function() {
+      const vscode = acquireVsCodeApi();
+      let currentToken = '';
+
+      const spec = __SPEC_JSON__;
+
+      const ui = SwaggerUIBundle({
+        spec: spec,
+        dom_id: '#swagger-ui',
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: 'StandaloneLayout',
+        deepLinking: false,
+        validatorUrl: null,
+        requestInterceptor: function(req) {
+          if (currentToken) {
+            req.headers['Authorization'] = 'Bearer ' + currentToken;
+          }
+          return req;
+        }
+      });
+
+      /** Pre-authorize all security schemes so the lock icons turn green. */
+      function preauthorize(token) {
+        var schemes = (spec.components && spec.components.securitySchemes) || {};
+        var authPayload = {};
+        for (var name in schemes) {
+          if (!schemes.hasOwnProperty(name)) continue;
+          var scheme = schemes[name];
+          authPayload[name] = { name: name, schema: scheme, value: token };
+        }
+        if (Object.keys(authPayload).length > 0) {
+          ui.authActions.authorize(authPayload);
+        }
+      }
+
+      function setTokenStatus(text, status) {
+        var el = document.getElementById('tokenStatus');
+        el.textContent = text;
+        el.className = 'token-status ' + status;
+      }
+
+      document.getElementById('refreshTokenBtn').addEventListener('click', function() {
+        setTokenStatus('Refreshing token...', 'pending');
+        vscode.postMessage({ type: 'refreshToken' });
+      });
+
+      window.addEventListener('message', function(event) {
+        var msg = event.data;
+        if (msg.type === 'updateToken') {
+          currentToken = msg.token;
+          preauthorize(msg.token);
+          setTokenStatus('Token acquired', 'ok');
+        } else if (msg.type === 'tokenError') {
+          currentToken = '';
+          setTokenStatus('Token error: ' + msg.error, 'error');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
