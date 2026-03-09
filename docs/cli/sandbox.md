@@ -537,9 +537,9 @@ Sandbox aliases let you access a sandbox via a custom hostname instead of the de
 
 Alias commands are available both under the `sandbox` topic and the legacy `ods` aliases:
 
-- `b2c sandbox alias create` (`b2c ods alias:create`)
-- `b2c sandbox alias list` (`b2c ods alias:list`)
-- `b2c sandbox alias delete` (`b2c ods alias:delete`)
+- `b2c sandbox alias create`
+- `b2c sandbox alias list`
+- `b2c sandbox alias delete`
 
 ### b2c sandbox alias create
 
@@ -683,9 +683,9 @@ Each cloned sandbox is fully isolated, with dedicated compute, storage, and data
 
 Clone commands are available both under the `sandbox` topic and the legacy `ods` aliases:
 
-- `b2c sandbox clone list` (`b2c ods clone:list`)
-- `b2c sandbox clone create` (`b2c ods clone:create`)
-- `b2c sandbox clone get` (`b2c ods clone:get`)
+- `b2c sandbox clone list`
+- `b2c sandbox clone create`
+- `b2c sandbox clone get`
 
 ### Clone ID Format
 
