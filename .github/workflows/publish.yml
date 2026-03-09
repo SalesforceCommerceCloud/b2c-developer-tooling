@@ -400,6 +400,35 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create VS Code extension release
+        if: >-
+          steps.release-type.outputs.type == 'stable'
+          && steps.packages.outputs.publish_vsx == 'true'
+          && (steps.packages.outputs.publish_cli == 'true' || steps.packages.outputs.publish_sdk == 'true' || steps.packages.outputs.publish_mcp == 'true')
+        run: |
+          VSX_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+
+          # Create a dedicated release for the extension (not latest — main releases own that)
+          gh release create "$VSX_TAG" \
+            --title "VS Code Extension ${{ steps.packages.outputs.version_vsx }}" \
+            --latest=false \
+            --notes "$(cat <<'NOTES'
+          ## B2C DX VS Code Extension v${{ steps.packages.outputs.version_vsx }}
+
+          Download the \`.vsix\` file below and install via:
+          \`\`\`
+          code --install-extension b2c-vs-extension-${{ steps.packages.outputs.version_vsx }}.vsix
+          \`\`\`
+
+          Or in VS Code: Extensions → ⋯ → Install from VSIX...
+          NOTES
+          )"
+
+          # Upload the VSIX to the dedicated release
+          gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Trigger documentation deployment
         if: >-
           steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
