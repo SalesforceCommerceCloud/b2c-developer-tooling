@@ -348,6 +348,16 @@
         "title": "New from Scaffold...",
         "icon": "$(file-code)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.setProjectRoot",
+        "title": "Use as B2C Commerce Root",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.resetProjectRoot",
+        "title": "Reset B2C Commerce Root to Auto-Detect",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -502,6 +512,11 @@
           "submenu": "b2c-dx.submenu",
           "when": "explorerResourceIsFolder",
           "group": "7_modification@9"
+        },
+        {
+          "command": "b2c-dx.setProjectRoot",
+          "when": "explorerResourceIsRoot && workspaceFolderCount > 1",
+          "group": "7_modification@10"
         }
       ],
       "b2c-dx.submenu": [
@@ -591,6 +606,10 @@
         },
         {
           "command": "b2c-dx.content.clearFilter",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.setProjectRoot",
           "when": "false"
         }
       ]
