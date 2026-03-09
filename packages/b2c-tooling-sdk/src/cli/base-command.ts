@@ -16,7 +16,7 @@ import type {
   AuthMiddlewareHookOptions,
   AuthMiddlewareHookResult,
 } from './hooks.js';
-import {setLanguage} from '../i18n/index.js';
+import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
 import {getSafetyLevel, describeSafetyLevel} from '../safety/index.js';
@@ -621,7 +621,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       return; // No restrictions
     }
 
-    const operation = operationDescription || 'this destructive operation';
+    const operation = operationDescription || t('base.destructiveOperation', 'this destructive operation');
 
     // Determine if this operation should be blocked
     // We assume all calls to this method are for destructive operations
@@ -632,11 +632,16 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const shouldBlock = safetyLevel === 'READ_ONLY' || safetyLevel === 'NO_DELETE' || safetyLevel === 'NO_UPDATE';
 
     if (shouldBlock) {
-      this.error(
-        `Cannot ${operation}: blocked by safety level ${safetyLevel}.\n\n` +
-          `${describeSafetyLevel(safetyLevel)}\n\n` +
-          `To allow this operation, unset or change the SFCC_SAFETY_LEVEL environment variable.\n` +
-          `See: https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues/67`,
+      return this.error(
+        t(
+          'base.safetyModeBlocked',
+          'Cannot {{operation}}: blocked by safety level {{safetyLevel}}.\n\n{{description}}\n\nTo allow this operation, unset or change the SFCC_SAFETY_LEVEL environment variable.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security#operational-security-safety-mode',
+          {
+            operation,
+            safetyLevel,
+            description: describeSafetyLevel(safetyLevel),
+          },
+        ),
         {exit: 1},
       );
     }
