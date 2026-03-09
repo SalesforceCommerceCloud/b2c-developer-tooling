@@ -226,8 +226,11 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
   // Extract actual version from the final URL (after redirects)
   const actualVersion = extractVersionFromUrl(response.url) || version;
 
-  // Check cache for the resolved version (for 'latest' which we now know)
-  if (version === 'latest' && !forceDownload) {
+  // Check cache for the resolved version (for 'latest' which we now know the real tag)
+  // Only use cache if we actually resolved a real version — if actualVersion is still
+  // 'latest' (e.g., redirect URL didn't contain the tag), we must re-extract since
+  // we can't tell if the cached 'latest' is stale.
+  if (version === 'latest' && actualVersion !== 'latest' && !forceDownload) {
     const cached = getCachedArtifact(actualVersion, skillSet);
     if (cached && fs.existsSync(cached.path)) {
       logger.debug({version: actualVersion, skillSet, path: cached.path}, 'Using cached skills (resolved latest)');

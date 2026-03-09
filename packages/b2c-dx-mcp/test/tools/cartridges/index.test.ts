@@ -15,6 +15,11 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {WebDavClient, OcapiClient} from '@salesforce/b2c-tooling-sdk/clients';
 
+/** Tool output: DeployResult plus postInstructions reminder. */
+interface CartridgeDeployOutput extends DeployResult {
+  postInstructions?: string;
+}
+
 /**
  * Helper to extract text from a ToolResult.
  * Throws if the first content item is not a text type.
@@ -117,6 +122,9 @@ describe('tools/cartridges', () => {
       expect(desc).to.include('Finds and deploys cartridges');
       expect(desc).to.include('B2C Commerce');
       expect(desc).to.include('WebDAV');
+      expect(desc).to.include('Sites → Manage Sites');
+      expect(desc).to.include('Settings tab');
+      expect(desc).to.include('Cartridges');
     });
 
     it('should be in CARTRIDGES toolset', () => {
@@ -166,9 +174,12 @@ describe('tools/cartridges', () => {
       expect(options.include).to.be.undefined;
       expect(options.exclude).to.be.undefined;
       expect(options.reload).to.be.undefined;
-      const jsonResult = getResultJson<DeployResult>(result);
+      const jsonResult = getResultJson<CartridgeDeployOutput>(result);
       expect(jsonResult.codeVersion).to.equal('v1');
       expect(jsonResult.cartridges).to.have.lengthOf(1);
+      expect(jsonResult.postInstructions).to.be.a('string');
+      expect(jsonResult.postInstructions).to.include('Sites → Manage Sites');
+      expect(jsonResult.postInstructions).to.include('Cartridges field');
     });
 
     it('should call findAndDeployCartridges with custom directory', async () => {
@@ -196,8 +207,9 @@ describe('tools/cartridges', () => {
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
       const [, dir] = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
       expect(dir).to.equal(expectedResolvedPath);
-      const jsonResult = getResultJson<DeployResult>(result);
+      const jsonResult = getResultJson<CartridgeDeployOutput>(result);
       expect(jsonResult.codeVersion).to.equal('v2');
+      expect(jsonResult.postInstructions).to.include("site's cartridge path");
     });
 
     it('should pass cartridges array as include option', async () => {
@@ -313,7 +325,7 @@ describe('tools/cartridges', () => {
       expect(options.reload).to.equal(reload);
     });
 
-    it('should return DeployResult as JSON', async () => {
+    it('should return DeployResult with postInstructions as JSON', async () => {
       const mockResult: DeployResult = {
         cartridges: [
           {name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'},
@@ -334,12 +346,17 @@ describe('tools/cartridges', () => {
       const result = await tool.handler({});
 
       expect(result.isError).to.be.undefined;
-      const jsonResult = getResultJson<DeployResult>(result);
+      const jsonResult = getResultJson<CartridgeDeployOutput>(result);
       expect(jsonResult.codeVersion).to.equal('v1.2.3');
       expect(jsonResult.cartridges).to.have.lengthOf(2);
       expect(jsonResult.reloaded).to.be.true;
       expect(jsonResult.cartridges[0].name).to.equal('app_storefront_base');
       expect(jsonResult.cartridges[1].name).to.equal('app_core');
+      expect(jsonResult.postInstructions).to.be.a('string');
+      expect(jsonResult.postInstructions).to.include('Business Manager');
+      expect(jsonResult.postInstructions).to.include('Sites → Manage Sites');
+      expect(jsonResult.postInstructions).to.include('Settings tab');
+      expect(jsonResult.postInstructions).to.include('Cartridges field');
     });
 
     it('should resolve relative directory paths relative to project directory', async () => {
@@ -485,8 +502,9 @@ describe('tools/cartridges', () => {
       expect(getActiveCodeVersionStub.calledWith(mockInstance)).to.be.true;
       expect(mockInstance.config.codeVersion).to.equal('v2');
       expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
-      const jsonResult = getResultJson<DeployResult>(result);
+      const jsonResult = getResultJson<CartridgeDeployOutput>(result);
       expect(jsonResult.codeVersion).to.equal('v2');
+      expect(jsonResult.postInstructions).to.be.a('string');
     });
 
     it('should use existing codeVersion when already specified', async () => {

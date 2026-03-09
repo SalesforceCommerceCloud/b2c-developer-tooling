@@ -64,7 +64,7 @@ describe('sandbox list', () => {
       (command as any).flags = {};
       const columns = (command as any).getSelectedColumns();
 
-      expect(columns).to.deep.equal(['realm', 'instance', 'state', 'profile', 'created', 'eol', 'id']);
+      expect(columns).to.deep.equal(['realm', 'instance', 'state', 'profile', 'created', 'eol', 'id', 'isCloned']);
     });
 
     it('should return all columns when --extended flag is set', () => {
@@ -76,6 +76,7 @@ describe('sandbox list', () => {
       expect(columns).to.include('hostname');
       expect(columns).to.include('createdBy');
       expect(columns).to.include('autoScheduled');
+      expect(columns).to.include('isCloned');
     });
 
     it('should return custom columns when --columns flag is set', () => {
@@ -94,6 +95,22 @@ describe('sandbox list', () => {
       expect(columns).to.not.include('invalid');
       expect(columns).to.include('id');
       expect(columns).to.include('state');
+    });
+  });
+
+  describe('isCloned column formatting', () => {
+    const getIsCloned = COLUMNS.isCloned.get;
+
+    it('returns "Yes" when sandbox has clonedFrom field', () => {
+      expect(getIsCloned({clonedFrom: 'zzzv-001'} as any)).to.equal('Yes');
+    });
+
+    it('returns "No" when sandbox does not have clonedFrom field', () => {
+      expect(getIsCloned({} as any)).to.equal('No');
+    });
+
+    it('returns "No" when clonedFrom is undefined', () => {
+      expect(getIsCloned({clonedFrom: undefined} as any)).to.equal('No');
     });
   });
 

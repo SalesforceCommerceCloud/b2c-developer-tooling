@@ -136,7 +136,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // before the first resolveConfig() call. Failures are non-fatal.
   await initializePlugins();
 
-  const configProvider = new B2CExtensionConfig(log);
+  const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   context.subscriptions.push(configProvider);
 
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
@@ -174,7 +174,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
           let targetUri: vscode.Uri;
           if (vscode.workspace.workspaceFolders?.length) {
-            const rootUri = vscode.workspace.workspaceFolders[0].uri;
+            const rootUri = vscode.Uri.file(configProvider.getWorkingDirectory());
             const routesUri = vscode.Uri.joinPath(rootUri, 'routes');
             const routesPath = routesUri.fsPath;
             const hasRoutesFolder = fs.existsSync(routesPath) && fs.statSync(routesPath).isDirectory();
@@ -237,7 +237,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   // --- Active instance status bar ---
   const dwJsonSource = new DwJsonSource();
-  const getWorkingDirectory = () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+  const getWorkingDirectory = () => configProvider.getWorkingDirectory();
 
   const instanceStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   instanceStatusBar.command = 'b2c-dx.instance.switch';
@@ -251,9 +251,13 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       const host = config.values.hostname ?? '';
       const truncatedHost = host.length > 40 ? host.slice(0, 37) + '...' : host;
       const display = name || truncatedHost || 'unnamed';
-      instanceStatusBar.text = `$(cloud) ${display}`;
+      const pinnedSuffix = configProvider.isProjectRootPinned() ? ' $(pinned)' : '';
+      instanceStatusBar.text = `$(cloud) ${display}${pinnedSuffix}`;
       const tooltipLines = [`B2C Instance: ${name ?? 'unnamed'}`];
       if (host) tooltipLines.push(`Host: ${host}`);
+      if (configProvider.isProjectRootPinned()) {
+        tooltipLines.push(`Project root: ${getWorkingDirectory()} (pinned)`);
+      }
       tooltipLines.push('Click to switch instance');
       instanceStatusBar.tooltip = tooltipLines.join('\n');
       instanceStatusBar.show();
@@ -351,6 +355,25 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }
   });
 
+  const setProjectRootDisposable = vscode.commands.registerCommand(
+    'b2c-dx.setProjectRoot',
+    async (uri?: vscode.Uri) => {
+      if (!uri) return;
+      const folderPath = uri.fsPath;
+      await configProvider.setProjectRoot(folderPath);
+      vscode.window.showInformationMessage(`B2C DX: Project root set to ${path.basename(folderPath)}`);
+    },
+  );
+
+  const resetProjectRootDisposable = vscode.commands.registerCommand('b2c-dx.resetProjectRoot', async () => {
+    if (!configProvider.isProjectRootPinned()) {
+      vscode.window.showInformationMessage('B2C DX: Project root is already using auto-detection.');
+      return;
+    }
+    await configProvider.resetProjectRoot();
+    vscode.window.showInformationMessage('B2C DX: Project root reset to auto-detect.');
+  });
+
   const settings = vscode.workspace.getConfiguration('b2c-dx');
 
   if (settings.get<boolean>('features.webdavBrowser', true)) {
@@ -387,6 +410,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     instanceConfigRegistration,
     inspectInstanceDisposable,
     switchInstanceDisposable,
+    setProjectRootDisposable,
+    resetProjectRootDisposable,
     configChangeListener,
   );
   log.appendLine('B2C DX extension activated.');

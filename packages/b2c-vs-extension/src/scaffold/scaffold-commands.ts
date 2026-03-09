@@ -161,7 +161,6 @@ async function runScaffoldWizard(
     const stepTitle = `${scaffold.manifest.displayName} (${stepIndex}/${visibleParams.length})`;
     log.appendLine(`[Scaffold] Prompting for param: ${param.name} (type: ${param.type})`);
 
-    // eslint-disable-next-line no-await-in-loop
     const value = await promptForParameter(param, scaffold, projectRoot, configProvider, log, stepTitle);
     if (value === undefined) {
       log.appendLine('[Scaffold] User cancelled');

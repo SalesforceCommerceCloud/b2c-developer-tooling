@@ -49,6 +49,7 @@ const guidesSidebar = [
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Security', link: '/guide/security'},
       {text: 'Storefront Next', link: '/guide/storefront-next'},
+      {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
     ],
   },
   {

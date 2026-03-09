@@ -1,5 +1,5 @@
 ---
-description: Install and configure the B2C DX MCP Server for Cursor, Claude Desktop, and other MCP clients.
+description: Install and configure the B2C DX MCP Server for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
 ---
 
 # Installation
@@ -10,216 +10,130 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
 
 - Node.js 22.0.0 or higher
 - A B2C Commerce project (for project-specific toolsets)
-- MCP client (Cursor, Claude Desktop, or compatible client)
+- MCP client (Claude Code, Cursor, GitHub Copilot, or compatible client)
 
-**Figma-to-component tools:** If you use the Figma workflow tools (`storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`), you also need an external Figma MCP server enabled. See [Figma-to-Component Tools Setup](./figma-tools-setup) for prerequisites and configuration.
+> **Note:** For Figma-to-component tools, you also need an external Figma MCP server enabled. See [Figma-to-Component Tools Setup](./figma-tools-setup) for details.
 
-## Install via npm (Recommended)
+## Installation Method
 
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
-    }
-  }
-}
-```
-
-## Cursor Configuration
-
-Cursor supports the `${workspaceFolder}` variable, which automatically resolves to your current workspace directory.
-
-### Setup Steps
-
-1. Open Cursor settings (Cmd/Ctrl + ,)
-2. Search for "MCP" or navigate to MCP settings
-3. Add the following configuration to `.cursor/mcp.json` (workspace) or `~/.cursor/mcp.json` (global):
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "${workspaceFolder}",
-        "--allow-non-ga-tools"
-      ]
-    }
-  }
-}
-```
-
-4. Restart Cursor or reload the MCP server
+The MCP server is installed via `npx`, which downloads and runs the latest version on demand.
 
 ### Project Directory
 
-The `--project-directory` flag is critical. Cursor spawns MCP servers from your home directory (`~`), not your project directory. The `${workspaceFolder}` variable ensures the server knows where your project is located.
+The server automatically detects your project location to enable:
 
-**Why this matters:**
-- Enables **auto-discovery** of your project type
-- Loads configuration from `dw.json` in your project root
-- Ensures that scaffolding creates files in the correct location
+1. **Auto-discovery** - Detects your project type and enables appropriate toolsets
+2. **Configuration loading** - Reads [`dw.json`](../guide/configuration#configuration-file) from your project root for B2C credentials
+3. **Scaffolding** - Creates new files in the correct location based on your project structure
 
-## Claude Desktop Configuration
+**Detection methods:**
+- **Cursor (project-level)**: Automatically detected from the MCP config file location
+- **Cursor (user-level)**: Requires `--project-directory "${workspaceFolder}"` in the args array
+- **Claude Code**: Automatically detected from the current working directory (cd into project root before installation)
+- **GitHub Copilot**: Automatically detected from the workspace location
 
-Claude Desktop doesn't support workspace variables, so you must use an explicit path.
+### Project Type Detection
 
-### Setup Steps
+The server automatically detects your project type:
 
-1. Open Claude Desktop settings
-2. Navigate to MCP servers configuration (usually in `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS)
-3. Add the following configuration:
+| Project Type | Detection Criteria | Enabled Toolsets |
+|--------------|-------------------|------------------|
+| **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` in package.json | PWAV3, MRT, SCAPI |
+| **Storefront Next** | Root or workspace package has `@salesforce/storefront-next*` dependency, or package name starting with `storefront-next` | STOREFRONTNEXT, MRT, CARTRIDGES, SCAPI |
+| **Cartridges** | `.project` file in cartridge directory | CARTRIDGES, SCAPI |
+| **No project detected** | No B2C markers found | SCAPI (base toolset only) |
+
+Hybrid projects (e.g., cartridges + PWA Kit) get combined toolsets.
+
+## Claude Code
+
+Claude Code supports MCP servers via CLI installation:
+
+::: code-group
+
+```bash [Project Scope (Recommended)]
+cd /path/to/your/project
+claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+```
+
+```bash [User Scope]
+claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+```
+
+:::
+
+See the [Claude Code MCP documentation](https://docs.claude.com/en/docs/claude-code/mcp) for details on scope options and configuration.
+
+## Cursor
+
+Cursor supports project-level configuration via `.cursor/mcp.json` in your project root.
+
+### Project-Level Configuration (Recommended)
+
+Project-level configuration automatically detects your project location and can be shared with your team via version control.
+
+1. Create or edit `.cursor/mcp.json` in your project root
+2. Add the following configuration:
 
 ```json
 {
   "mcpServers": {
     "b2c-dx": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "/absolute/path/to/your/project",
-        "--allow-non-ga-tools"
-      ]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--allow-non-ga-tools"]
     }
   }
 }
 ```
 
-4. Replace path `/absolute/path/to/your/project` with actual absolute path to your B2C Commerce project.
-5. Restart Claude Desktop.
+3. Restart Cursor or reload the MCP server
 
-### Per-Project Configuration
+With project-level configuration, the server automatically detects your project location without requiring the `--project-directory` flag. See the [Cursor MCP documentation](https://cursor.com/docs/context/mcp#configuration-locations) for details.
 
-If you work with multiple projects, you can create separate MCP server entries for each:
+### Quick Install (User-Level)
+
+Alternatively, use the "Add to Cursor" link to add to user-level configuration:
+
+[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+
+**Note:** The install link adds to user-level configuration (`~/.cursor/mcp.json`) with `--project-directory "${workspaceFolder}"`. The `${workspaceFolder}` variable automatically expands to your current workspace, so no manual updates are needed when switching projects.
+
+## GitHub Copilot
+
+GitHub Copilot supports MCP servers via configuration in your workspace. See the [GitHub Copilot MCP documentation](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file) for setup instructions.
+
+Copilot supports project-level configuration. Create the MCP config file in your workspace:
 
 ```json
 {
   "mcpServers": {
-    "b2c-dx-project1": {
+    "b2c-dx": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "/path/to/project1",
-        "--allow-non-ga-tools"
-      ]
-    },
-    "b2c-dx-project2": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp",
-        "--project-directory",
-        "/path/to/project2",
-        "--allow-non-ga-tools"
-      ]
+      "args": ["-y", "@salesforce/b2c-dx-mcp", "--allow-non-ga-tools"]
     }
   }
 }
 ```
 
-## Project Directory Setup
-
-The `--project-directory` flag tells the server where your project is located. This enables:
-
-### 1. Auto-Discovery
-
-The server analyzes your project directory to detect the project type:
-
-| Project Type | Detection Criteria |
-|--------------|-------------------|
-| **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` in package.json |
-| **Storefront Next** | Root or workspace package has `@salesforce/storefront-next*` dependency, or package name starting with `storefront-next` |
-| **Cartridges** | `.project` file in cartridge directory |
-| **No project detected** | No B2C markers found |
-
-Based on detection, the server automatically enables relevant toolsets.
-
-### 2. Configuration Loading
-
-The server reads [`dw.json`](../guide/configuration#configuration-file) from your project root for B2C credentials:
-
-```json
-{
-  "hostname": "xxx.demandware.net",
-  "username": "...",
-  "password": "...",
-  "client-id": "...",
-  "client-secret": "..."
-}
-```
-
-See the [Authentication Setup guide](../guide/authentication) for detailed instructions on setting up API clients, WebDAV access, and SCAPI authentication.
-
-### 3. Scaffolding
-
-When creating new files (components, pages, cartridges), the server uses the project directory to place files in the correct location based on your project structure.
-
-## Project Type Detection
-
-The server automatically detects your project type by analyzing the project directory:
-
-### PWA Kit v3
-
-Detected when:
-- `package.json` contains `@salesforce/pwa-kit-*` dependencies
-- `package.json` contains `@salesforce/retail-react-app`
-- `package.json` contains `ccExtensibility` field
-
-**Enabled toolsets:** PWAV3, MRT, SCAPI
-
-### Storefront Next
-
-Detected when:
-- Root `package.json` has `@salesforce/storefront-next*` dependency
-- Any workspace package has `@salesforce/storefront-next*` dependency
-- Package name starts with `storefront-next`
-
-**Enabled toolsets:** STOREFRONTNEXT, MRT, CARTRIDGES, SCAPI
-
-### Cartridges
-
-Detected when:
-- A `.project` file exists in a cartridge directory
-
-**Enabled toolsets:** CARTRIDGES, SCAPI
-
-### No Project Detected
-
-If no B2C markers are found:
-- Only the **SCAPI** toolset is enabled (base toolset)
-
-### Hybrid Projects
-
-Projects with multiple markers (e.g., cartridges + PWA Kit) get combined toolsets. For example:
-- Cartridges + PWA Kit → CARTRIDGES, PWAV3, MRT, SCAPI
+With project-level configuration, the server automatically detects your project location.
 
 ## Troubleshooting
 
 ### Server Not Starting
 
-- Verify Node.js version: `node --version` (must be 22.0.0+).
-- Check that the path to `bin/dev.js` is correct and absolute.
-- Ensure that the script is executable: `chmod +x bin/dev.js`.
+- Verify Node.js version: `node --version` (must be 22.0.0+)
+- Check that `npx` is available and working
 
 ### Tools Not Available
 
-- Ensure `--allow-non-ga-tools` flag is included (required for placeholder tools).
-- Check that `--project-directory` points to a valid project directory.
-- Verify project type detection by checking your `package.json` or project structure.
+- Ensure `--allow-non-ga-tools` flag is included (required for preview tools)
+- Verify project type detection by checking your `package.json` or project structure
+- If using user-level Cursor configuration, ensure `--project-directory "${workspaceFolder}"` is included
 
 ### Configuration Not Loading
 
 - Ensure `dw.json` exists in your project root
-- Verify `--project-directory` points to the correct directory
+- Verify you're using project-level configuration (recommended)
 - Check file permissions on `dw.json`
 
 ## Next Steps
