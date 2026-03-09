@@ -10,7 +10,7 @@ Creates a bundle from a pre-built PWA Kit or Storefront Next project and pushes 
 
 The `mrt_bundle_push` tool bundles a pre-built project and uploads it to Managed Runtime. It:
 
-1. Reads the build directory (default: `./build`).
+1. Reads the build directory (default: `build`).
 2. Creates a bundle with server-only files (SSR) and shared files.
 3. Pushes the bundle to Managed Runtime.
 4. Optionally deploys to a target environment (staging or production).
@@ -21,12 +21,20 @@ This tool is shared across the MRT, PWAV3, and STOREFRONTNEXT toolsets.
 
 ## Authentication
 
-Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configuration#mrt-credentials) for complete details.
+Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configuration#mrt-credentials-mobify) for complete details.
 
 **Configuration priority:**
-1. Flags (`--api-key`, `--project`, `--environment`)
-2. Environment variables (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`)
+1. Flags (`--api-key`, `--project`, `--environment`, `--cloud-origin`)
+2. Environment variables (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_CLOUD_ORIGIN`)
 3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
+
+**Required:**
+- `project` (via `--project` flag or `MRT_PROJECT` environment variable)
+- `api-key` (via `--api-key` flag, `MRT_API_KEY` environment variable, or `~/.mobify` config file)
+
+**Optional:**
+- `environment` (required only when `deploy: true`; via `--environment` flag or `MRT_ENVIRONMENT` environment variable)
+- `cloud-origin` (for environment-specific `~/.mobify` files; via `--cloud-origin` flag or `MRT_CLOUD_ORIGIN` environment variable)
 
 ## Parameters
 
@@ -34,7 +42,7 @@ Defaults for `buildDirectory`, `ssrOnly`, and `ssrShared` are chosen by detected
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `buildDirectory` | string | No | `./build` | Path to build directory containing the built project files. Can be absolute or relative to the project directory. |
+| `buildDirectory` | string | No | `build` | Path to build directory containing the built project files. Can be absolute or relative to the project directory. |
 | `message` | string | No | None | Deployment message to include with the bundle push. Useful for tracking deployments. |
 | `ssrOnly` | string | No | Varies by project type | Glob patterns for server-only files (SSR), comma-separated or JSON array. These files are only included in the server bundle. |
 | `ssrShared` | string | No | Varies by project type | Glob patterns for shared files, comma-separated or JSON array. These files are included in both server and client bundles. |
@@ -46,19 +54,19 @@ When `buildDirectory`, `ssrOnly`, or `ssrShared` are omitted, the tool detects t
 
 **Generic** (used when no project type is detected; matches CLI `b2c mrt bundle deploy` defaults):
 
-- `buildDirectory`: `./build`
+- `buildDirectory`: `build`
 - `ssrOnly`: `ssr.js`, `ssr.mjs`, `server/**/*`
 - `ssrShared`: `static/**/*`, `client/**/*`
 
 **PWA Kit v3**:
 
-- `buildDirectory`: `./build`
+- `buildDirectory`: `build`
 - `ssrOnly`: `ssr.js`, `ssr.js.map`, `node_modules/**/*.*`
 - `ssrShared`: `static/ico/favicon.ico`, `static/robots.txt`, `**/*.js`, `**/*.js.map`, `**/*.json`
 
 **Storefront Next**:
 
-- `buildDirectory`: `./build`
+- `buildDirectory`: `build`
 - `ssrOnly`: `server/**/*`, `loader.js`, `streamingHandler.{js,mjs,cjs}`, `streamingHandler.{js,mjs,cjs}.map`, `ssr.{js,mjs,cjs}`, `ssr.{js,mjs,cjs}.map`, `!static/**/*`, `sfnext-server-*.mjs`, plus exclusions for Storybook and test files
 - `ssrShared`: `client/**/*`, `static/**/*`, `**/*.css`, image/font extensions, plus exclusions for Storybook and test files
 
@@ -69,7 +77,7 @@ When `buildDirectory`, `ssrOnly`, or `ssrShared` are omitted, the tool detects t
 Push a bundle without deploying:
 
 ```
-Use the MCP tool to push the bundle from ./build directory to Managed Runtime.
+Use the MCP tool to push the bundle from build directory to Managed Runtime.
 ```
 
 ### Push and Deploy to Staging
@@ -93,7 +101,7 @@ Use the MCP tool to deploy my PWA Kit or Storefront Next bundle to production wi
 Push from a custom build directory:
 
 ```
-Use the MCP tool to push the bundle from ./dist directory to Managed Runtime.
+Use the MCP tool to push the bundle from dist directory to Managed Runtime.
 ```
 
 ## Output
