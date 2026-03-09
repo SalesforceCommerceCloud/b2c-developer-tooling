@@ -12,7 +12,7 @@ import {withDocs} from '../../i18n/index.js';
 /**
  * Sensitive fields that should be masked by default.
  */
-const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>(['clientSecret', 'mrtApiKey', 'password']);
+const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>(['clientSecret', 'mrtApiKey', 'password', 'slasClientSecret']);
 
 /**
  * JSON output structure for the inspect command.

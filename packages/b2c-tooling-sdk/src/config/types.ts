@@ -48,6 +48,14 @@ export interface NormalizedConfig {
   /** Account Manager hostname for OAuth (default: account.demandware.com) */
   accountManagerHost?: string;
 
+  // SLAS Shopper
+  /** SLAS client ID for shopper authentication */
+  slasClientId?: string;
+  /** SLAS client secret for private shopper clients */
+  slasClientSecret?: string;
+  /** B2C Commerce site/channel ID */
+  siteId?: string;
+
   // SCAPI
   /** SCAPI short code */
   shortCode?: string;
