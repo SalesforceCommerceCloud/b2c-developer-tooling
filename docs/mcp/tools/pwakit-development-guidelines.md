@@ -4,7 +4,7 @@ description: Get PWA Kit v3 development guidelines and best practices for React,
 
 # pwakit_development_guidelines
 
-Returns critical architecture rules, coding standards, and best practices for building PWA Kit v3 applications with React, Chakra UI, and Commerce API. **Use this tool first** before writing any PWA Kit code.
+Returns critical architecture rules, coding standards, and best practices for building PWA Kit v3 applications with React, Chakra UI, and Commerce API.
 
 ## Overview
 

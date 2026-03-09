@@ -1,17 +1,19 @@
 ---
-description: Workflow orchestrator for Figma-to-component conversion. Parses your Figma URL and guides your AI assistant through design-to-component conversion.
+description: Workflow orchestrator for Figma-to-component conversion. Parses your Figma URL and guides you through design-to-component conversion.
 ---
 
 # storefront_next_figma_to_component_workflow
 
-Workflow orchestrator for converting Figma designs to Storefront Next components. When you ask your AI assistant to convert a Figma design, it starts with this workflow tool, which parses your URL and guides the assistant through the conversion.
+Workflow orchestrator for converting Figma designs to Storefront Next components. Provide a Figma design URL to start the workflow, which extracts design data, analyzes your codebase, and produces component recommendations.
+
+> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
 
 ## Overview
 
-When you provide a Figma design URL, your AI assistant uses this tool to extract the file and node identifiers, then follows the workflow to fetch design data, analyze your codebase, and produce recommendations. The assistant will:
+When you provide a Figma design URL, the workflow will:
 
 - Fetch design context and screenshots from Figma
-- **Ask for your approval before exporting images** — when the design contains image assets (photos, logos, icons), the assistant presents the list and waits for you to confirm before exporting
+- Ask for your approval before exporting images (photos, logos, icons)
 - Discover similar components in your project
 - Recommend whether to REUSE, EXTEND, or CREATE a component
 - Map Figma design tokens to your theme variables
@@ -22,15 +24,11 @@ This tool is part of the STOREFRONTNEXT toolset.
 
 ## Prerequisites
 
-- **B2C DX MCP** configured with `--project-directory` pointing to your Storefront Next project and `--allow-non-ga-tools`
-- **Figma MCP server** (external) enabled in your MCP client for full workflow execution
+- **B2C DX MCP** configured with `--allow-non-ga-tools`
+- **Figma MCP server** (external) enabled in your MCP client
 - **Valid Figma URL** with `node-id` query parameter (obtain by right-clicking a frame in Figma → Copy link to selection)
 
 See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequisites and configuration.
-
-## Authentication
-
-No authentication required. This tool operates on local workflow files and URL parsing only.
 
 ## Parameters
 
@@ -80,29 +78,6 @@ Create a homepage from a Figma design, creating or updating components as needed
 Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design.
 ```
 
-## Requirements
-
-- Valid Figma URL from figma.com
-- URL must include `node-id` query parameter
-- For custom workflow: file must exist at the provided path
-
-## Error Handling
-
-The tool returns formatted error messages if:
-
-- **Invalid URL**: URL is not from figma.com, or `fileKey`/`node-id` cannot be extracted
-- **Workflow file not found**: Custom `workflowFilePath` is provided but the file does not exist
-
-**Example error format:**
-
-```
-# Error: Invalid Figma URL
-
-Could not extract node-id from URL. Expected query parameter: ?node-id=1-2
-
-Please provide a valid Figma URL in the format:
-https://figma.com/design/:fileKey/:fileName?node-id=1-2
-```
 
 ## Related Tools
 
@@ -110,28 +85,6 @@ https://figma.com/design/:fileKey/:fileName?node-id=1-2
 - [`storefront_next_map_tokens_to_theme`](./storefront-next-map-tokens-to-theme) - Maps Figma design tokens to theme variables
 - Part of the [STOREFRONTNEXT](../toolsets#storefrontnext) toolset
 - Auto-enabled for Storefront Next projects
-
-## Figma MCP Tools (External)
-
-The workflow relies on your AI assistant having access to Figma MCP tools to fetch design data:
-
-- **get_design_context** - Generates UI code from the design and returns asset URLs
-- **get_screenshot** - Provides a visual reference image of the design
-- **get_metadata** - Retrieves node hierarchy, layer types, names, positions, and sizes
-
-### Image Export and User Approval
-
-The workflow requires the assistant to **ask for your approval before exporting any image assets**. The assistant will:
-
-1. Call `get_design_context` **without** `dirForAssetWrites` on the initial call (never export on first call)
-2. Identify image-containing nodes (photos, banners, **logos**, **brand assets**, icons)
-3. Present the list of nodes to you
-4. Ask once: "Should I export these N image assets now? (yes/no)"
-5. Wait for your explicit "yes" before calling `get_design_context` with `dirForAssetWrites` to export
-
-You are prompted **once per batch**—not per image. This ensures you control when assets are written to disk. Logo and brand assets are explicitly included in the identification criteria so they are not missed.
-
-Ensure the Figma MCP server is enabled in your MCP client. See [Figma-to-Component Tools Setup](../figma-tools-setup) for configuration and the [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) for official setup and tool details.
 
 ## See Also
 

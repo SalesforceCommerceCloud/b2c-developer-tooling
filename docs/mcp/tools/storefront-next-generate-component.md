@@ -6,6 +6,8 @@ description: Analyze Figma design and discovered components to recommend REUSE, 
 
 Analyzes Figma design and discovered components to recommend a component generation strategy. Returns a REUSE, EXTEND, or CREATE action with confidence score, key differences, and suggested implementation approach.
 
+> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+
 ## Overview
 
 The `storefront_next_generate_component` tool compares Figma-generated React code against existing components discovered in the codebase. It analyzes differences across styling, structure, behavior, and props, then recommends the best approach:
@@ -21,14 +23,10 @@ This tool is part of the STOREFRONTNEXT toolset.
 ## Prerequisites
 
 - Figma design data retrieved via Figma MCP tools
-- Component discovery performed (Glob/Grep/Read) before calling
-- `--project-directory` set for workspace context (optional but recommended)
+- Component discovery performed before calling
+- Storefront Next project
 
 See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequisites and configuration.
-
-## Authentication
-
-No authentication required. This tool operates on provided input data and workspace context.
 
 ## Parameters
 
@@ -52,26 +50,6 @@ Each item in `discoveredComponents` must have:
 | `matchType` | string | One of `'name'`, `'structure'`, `'visual'` |
 | `code` | string | Full source code of the component |
 
-## Analysis Logic
-
-The tool analyzes differences in four categories:
-
-- **Styling**: Tailwind classes, inline styles, theme tokens
-- **Structural**: JSX hierarchy, elements, nesting, root element changes
-- **Behavioral**: Hooks, event handlers, client/server rendering (`use client`)
-- **Props**: Interface/prop definitions, new props, type changes
-
-**Decision thresholds:**
-
-- **REUSE**: Difference score ≤ 2, no breaking changes
-- **EXTEND**: Moderate differences; strategy chosen from props, variant, or composition
-- **CREATE**: Difference score > 10, or more than 2 breaking changes
-
-**Extend strategies:**
-
-- **Props**: Add new optional props (1–3 new props, backward compatible)
-- **Variant**: Add visual variants (styling-focused changes)
-- **Composition**: Create wrapper component that composes the base component
 
 ## Output
 
@@ -83,34 +61,6 @@ Returns a formatted recommendation including:
 - **Key Differences**: List of difference descriptions
 - **Suggested Approach**: Implementation guidance
 - **Next Steps**: Action-specific instructions
-
-**Example output structure:**
-
-```markdown
-# Component Generation Recommendation
-
-**Decision:** EXTEND
-**Confidence:** 78%
-
-**Matched Component:**
-- `PrimaryButton` at `src/components/ui/PrimaryButton.tsx`
-- Similarity: 85%
-
-**Recommendation:** The existing component "PrimaryButton" can be extended to support the Figma design.
-
-**Key Differences:**
-1. New Tailwind classes: rounded-lg, shadow-md
-2. Figma design includes event handlers (onClick, onChange, etc.)
-
-## Suggested Approach
-...
-## Next Steps
-...
-```
-
-**Example prompts:**
-- ✅ "Use the MCP tool to analyze the Figma design and recommend whether to reuse, extend, or create a component. I've discovered PrimaryButton and SecondaryButton as similar components."
-- ✅ "Use the MCP tool to analyze the Figma design. No similar components were found in the codebase."
 
 ## Usage Examples
 
@@ -126,23 +76,6 @@ Use the MCP tool to analyze the Figma design and recommend whether to reuse, ext
 Use the MCP tool to analyze the Figma design. No similar components were found in the codebase.
 ```
 
-## Requirements
-
-- Figma design data retrieved via Figma MCP tools
-- Component discovery performed (Glob/Grep/Read) before calling
-- `discoveredComponents` array (can be empty)
-
-## Error Handling
-
-The tool returns a formatted error message if analysis fails:
-
-```
-# Error: Component Generation Failed
-
-<error message>
-
-Please check the input parameters and try again.
-```
 
 ## Related Tools
 

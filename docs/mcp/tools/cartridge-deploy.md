@@ -22,8 +22,10 @@ This tool is useful for deploying custom code cartridges for SFRA or other B2C C
 
 Supports two authentication methods:
 
-- **Basic Authentication (WebDAV)** - See [B2C Credentials](../configuration#b2c-credentials) (Username/Password section)
-- **OAuth** - See [B2C Credentials](../configuration#b2c-credentials) (OAuth Client Credentials section)
+- **Basic Authentication (WebDAV)** - Uses `username` and `password` from `dw.json` or environment variables
+- **OAuth** - Uses `client-id` and `client-secret` from `dw.json` or environment variables
+
+See [Configuration](../configuration) for complete credential setup details.
 
 **Configuration Priority:**
 1. Flags (`--server`, `--username`, `--password`, `--client-id`, `--client-secret`)
@@ -34,7 +36,7 @@ Supports two authentication methods:
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `directory` | string | No | Project directory from `--project-directory` flag or `SFCC_PROJECT_DIRECTORY` env var (falls back to process.cwd()) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges. |
+| `directory` | string | No | Project directory (from `--project-directory` or auto-detected) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges. |
 | `cartridges` | string[] | No | All found cartridges | Array of cartridge names to include in the deployment. Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some. If not specified, all cartridges found in the directory are deployed. |
 | `exclude` | string[] | No | None | Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, such as third-party or unchanged cartridges. Applied after the include filter. |
 | `reload` | boolean | No | `false` | Whether to reload the code version after deployment. When `true`, the tool triggers a code version reload on the instance. |

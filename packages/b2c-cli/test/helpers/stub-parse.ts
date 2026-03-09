@@ -12,8 +12,11 @@ export function stubParse(
   args: Record<string, unknown> = {},
   argv: string[] = [],
 ): SinonStub {
-  // Include silent log level by default to reduce test output noise
-  const defaultFlags = {'log-level': 'silent'};
+  // Include silent log level by default to reduce test output noise.
+  // Point config to /dev/null to prevent dw.json discovery from the working
+  // directory — mirrors what isolateConfig() does via SFCC_CONFIG env var,
+  // but stubParse bypasses oclif's env-to-flag mapping so we need it here.
+  const defaultFlags = {'log-level': 'silent', config: '/dev/null'};
   return stub(command as {parse: unknown}, 'parse').resolves({
     args,
     flags: {...defaultFlags, ...flags},
