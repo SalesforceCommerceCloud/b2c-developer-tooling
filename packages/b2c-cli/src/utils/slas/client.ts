@@ -95,6 +95,25 @@ export function printClientDetails(output: ClientOutput, showSecret = true): voi
 }
 
 /**
+ * Parse a redirectUri string into individual URIs.
+ * The SLAS API returns redirect URIs as a pipe-delimited string (e.g. "http://a|http://b"),
+ * while normalizeClientResponse may produce comma-separated values from an array response.
+ * This helper handles both formats.
+ */
+export function parseRedirectUris(redirectUri: string): string[] {
+  if (redirectUri.includes('|')) {
+    return redirectUri
+      .split('|')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return redirectUri
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
  * Format API error for display.
  */
 export function formatApiError(error: unknown, response: Response): string {

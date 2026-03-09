@@ -39,6 +39,7 @@ import {globalConfigSourceRegistry} from './config-source-registry.js';
 const CREDENTIAL_GROUPS: (keyof NormalizedConfig)[][] = [
   ['clientId', 'clientSecret'],
   ['username', 'password'],
+  ['slasClientId', 'slasClientSecret'],
 ];
 
 /**

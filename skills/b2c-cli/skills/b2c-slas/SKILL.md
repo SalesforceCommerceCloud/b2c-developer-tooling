@@ -81,24 +81,32 @@ b2c slas client create \
 
 **Important:** The custom scope in your SLAS client must match the scope defined in your Custom API's `schema.yaml` security section.
 
-### Get a Token for Testing
+### Get a Shopper Token
 
-After creating a SLAS client, obtain a token for API testing:
+Use `b2c slas token` to obtain a shopper access token for API testing:
 
 ```bash
-# Set credentials from client creation output
-# Find your shortcode in Business Manager: Administration > Site Development > Salesforce Commerce API Settings
-SHORTCODE="kv7kzm78"  # Example shortcode - yours will be different
-ORG="f_ecom_zzpq_013"
-CLIENT_ID="your-client-id"
-CLIENT_SECRET="your-client-secret"
-SITE="RefArch"
+# Guest token with auto-discovery (finds first public SLAS client)
+b2c slas token --tenant-id abcd_123 --site-id RefArch
 
-# Get access token
-curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/$ORG/oauth2/token" \
-  -u "$CLIENT_ID:$CLIENT_SECRET" \
-  -d "grant_type=client_credentials&channel_id=$SITE"
+# Guest token with explicit client (public PKCE flow)
+b2c slas token --slas-client-id my-client --tenant-id abcd_123 --short-code kv7kzm78 --site-id RefArch
+
+# Guest token with private client (client_credentials flow)
+b2c slas token --slas-client-id my-client --slas-client-secret sk_xxx --tenant-id abcd_123 --short-code kv7kzm78 --site-id RefArch
+
+# Registered customer token
+b2c slas token --tenant-id abcd_123 --site-id RefArch --shopper-login user@example.com --shopper-password secret
+
+# JSON output (includes refresh token, expiry, usid, etc.)
+b2c slas token --tenant-id abcd_123 --site-id RefArch --json
+
+# Use token in a subsequent API call
+TOKEN=$(b2c slas token --tenant-id abcd_123 --site-id RefArch)
+curl -H "Authorization: Bearer $TOKEN" "https://kv7kzm78.api.commercecloud.salesforce.com/..."
 ```
+
+The `--slas-client-id` and `--slas-client-secret` can also be set via `SFCC_SLAS_CLIENT_ID` and `SFCC_SLAS_CLIENT_SECRET` environment variables, or `slasClientId` and `slasClientSecret` in dw.json.
 
 ### Update SLAS Client
 
