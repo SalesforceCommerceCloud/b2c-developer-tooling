@@ -25,7 +25,7 @@
     "onCommand:b2c-dx.openUI",
     "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
-    "onCommand:b2c-dx.scapiExplorer",
+    "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
     "onCommand:b2c-dx.scaffold.generate"
   ],
@@ -58,6 +58,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable scaffold generation commands."
+        },
+        "b2c-dx.features.apiBrowser": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the API Browser for exploring SCAPI schemas."
         },
         "b2c-dx.logLevel": {
           "type": "string",
@@ -114,6 +119,12 @@
           "name": "Libraries",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        },
+        {
+          "id": "b2cApiBrowser",
+          "name": "API Browser",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX"
         }
       ],
       "b2c-dx-sandboxes": [
@@ -132,6 +143,10 @@
       {
         "view": "b2cContentExplorer",
         "contents": "No content libraries configured.\n\nSet \"contentLibrary\" in dw.json or add a library manually.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
+      },
+      {
+        "view": "b2cApiBrowser",
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (clientId, clientSecret) and shortCode in dw.json.\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
@@ -155,9 +170,15 @@
         "category": "B2C DX"
       },
       {
-        "command": "b2c-dx.scapiExplorer",
-        "title": "SCAPI API Explorer",
-        "category": "B2C DX"
+        "command": "b2c-dx.apiBrowser.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.apiBrowser.openSwagger",
+        "title": "Open API Documentation",
+        "category": "B2C DX - API Browser"
       },
       {
         "command": "b2c-dx.sandbox.refresh",
@@ -388,6 +409,11 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.apiBrowser.refresh",
+          "when": "view == b2cApiBrowser",
+          "group": "navigation"
+        },
+        {
           "command": "b2c-dx.sandbox.refresh",
           "when": "view == b2cSandboxExplorer",
           "group": "navigation"
@@ -533,6 +559,10 @@
       ],
       "commandPalette": [
         {
+          "command": "b2c-dx.apiBrowser.openSwagger",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.sandbox.removeRealm",
           "when": "false"
         },
@@ -639,6 +669,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.24.0",
+    "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
