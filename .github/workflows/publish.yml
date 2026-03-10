@@ -423,10 +423,15 @@ jobs:
           VSX_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
 
           # Create a dedicated release for the extension (not latest — main releases own that)
-          gh release create "$VSX_TAG" \
-            --title "VS Code Extension ${{ steps.packages.outputs.version_vsx }}" \
-            --latest=false \
-            --notes "$(cat <<'NOTES'
+          # Use --clobber on upload in case a previous run partially completed
+          if gh release view "$VSX_TAG" >/dev/null 2>&1; then
+            echo "Release $VSX_TAG already exists, uploading VSIX to it"
+            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix --clobber
+          else
+            gh release create "$VSX_TAG" \
+              --title "VS Code Extension ${{ steps.packages.outputs.version_vsx }}" \
+              --latest=false \
+              --notes "$(cat <<'NOTES'
           ## B2C DX VS Code Extension v${{ steps.packages.outputs.version_vsx }}
 
           Download the \`.vsix\` file below and install via:
@@ -438,8 +443,9 @@ jobs:
           NOTES
           )"
 
-          # Upload the VSIX to the dedicated release
-          gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
+            # Upload the VSIX to the dedicated release
+            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
