@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
-import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
+import {buildTenantScope, createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import type {SlasComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {getGuestToken} from '@salesforce/b2c-tooling-sdk/slas';
@@ -25,19 +25,19 @@ function deriveTenantId(hostname: unknown): string {
 }
 
 /**
- * Set the default value for organizationId parameters throughout the spec
- * so users don't have to fill it in manually for "Try it out".
+ * Pre-fill default values for known parameters (e.g. organizationId, siteId)
+ * throughout the spec so users don't have to fill them in manually for "Try it out".
+ *
+ * Replaces the entire `param.schema` with `{ type: 'string', default: value }` to
+ * avoid the OAS 3.0 issue where adding `default` alongside a `$ref` sibling is ignored.
  */
-function prefillOrganizationId(spec: Record<string, unknown>, organizationId: string): void {
-  const setDefault = (params: unknown) => {
+function prefillParameters(spec: Record<string, unknown>, defaults: Record<string, string>): void {
+  const applyDefaults = (params: unknown) => {
     if (!Array.isArray(params)) return;
     for (const param of params) {
-      if (param?.name === 'organizationId') {
-        if (param.schema && typeof param.schema === 'object') {
-          (param.schema as Record<string, unknown>).default = organizationId;
-        } else {
-          param.schema = {type: 'string', default: organizationId};
-        }
+      const name = param?.name;
+      if (typeof name === 'string' && name in defaults) {
+        param.schema = {type: 'string', default: defaults[name]};
       }
     }
   };
@@ -46,12 +46,9 @@ function prefillOrganizationId(spec: Record<string, unknown>, organizationId: st
   const components = spec.components as Record<string, unknown> | undefined;
   if (components?.parameters && typeof components.parameters === 'object') {
     for (const param of Object.values(components.parameters as Record<string, Record<string, unknown>>)) {
-      if (param.name === 'organizationId') {
-        if (param.schema && typeof param.schema === 'object') {
-          (param.schema as Record<string, unknown>).default = organizationId;
-        } else {
-          param.schema = {type: 'string', default: organizationId};
-        }
+      const name = param.name;
+      if (typeof name === 'string' && name in defaults) {
+        param.schema = {type: 'string', default: defaults[name]};
       }
     }
   }
@@ -61,12 +58,51 @@ function prefillOrganizationId(spec: Record<string, unknown>, organizationId: st
   if (!paths) return;
   const methods = ['get', 'put', 'post', 'delete', 'patch', 'options', 'head'];
   for (const pathItem of Object.values(paths)) {
-    setDefault(pathItem.parameters);
+    applyDefaults(pathItem.parameters);
     for (const method of methods) {
       const op = pathItem[method] as Record<string, unknown> | undefined;
-      if (op?.parameters) setDefault(op.parameters);
+      if (op?.parameters) applyDefaults(op.parameters);
     }
   }
+}
+
+/**
+ * Extract all OAuth scopes declared in the spec's security requirements.
+ * Collects scopes from both global `security` and per-operation `security` entries.
+ */
+function extractRequiredScopes(spec: Record<string, unknown>): string[] {
+  const scopes = new Set<string>();
+
+  const collectFromSecurity = (security: unknown) => {
+    if (!Array.isArray(security)) return;
+    for (const req of security) {
+      if (req && typeof req === 'object') {
+        for (const scopeList of Object.values(req as Record<string, unknown>)) {
+          if (Array.isArray(scopeList)) {
+            for (const s of scopeList) {
+              if (typeof s === 'string') scopes.add(s);
+            }
+          }
+        }
+      }
+    }
+  };
+
+  // Global security
+  collectFromSecurity(spec.security);
+
+  // Per-operation security
+  const paths = spec.paths as Record<string, Record<string, unknown>> | undefined;
+  if (paths) {
+    for (const pathItem of Object.values(paths)) {
+      for (const method of ['get', 'put', 'post', 'delete', 'patch', 'options', 'head']) {
+        const op = pathItem[method] as Record<string, unknown> | undefined;
+        if (op?.security) collectFromSecurity(op.security);
+      }
+    }
+  }
+
+  return Array.from(scopes);
 }
 
 function detectApiType(spec: Record<string, unknown>, schema: SchemaEntry): ApiType {
@@ -195,8 +231,28 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     const baseUrl = `https://${shortCode}.api.commercecloud.salesforce.com/${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
     spec.servers = [{url: baseUrl}];
 
-    if (organizationId) {
-      prefillOrganizationId(spec, organizationId);
+    // Pre-fill known parameters (organizationId, siteId)
+    const defaults: Record<string, string> = {};
+    if (organizationId) defaults.organizationId = organizationId;
+    const siteId = config.values.siteId as string | undefined;
+    if (siteId) defaults.siteId = siteId;
+    if (Object.keys(defaults).length > 0) {
+      prefillParameters(spec, defaults);
+    }
+
+    // Extract required OAuth scopes from the spec and add the tenant scope
+    // (SALESFORCE_COMMERCE_API:{tenantId}) required by all SCAPI Admin APIs
+    const requiredScopes = extractRequiredScopes(spec);
+    if (apiType === 'Admin' && tenantId) {
+      requiredScopes.push(buildTenantScope(tenantId));
+    }
+
+    // Acquire token before rendering so it can be embedded in the HTML
+    let initialToken = '';
+    try {
+      initialToken = (await this.getToken(apiType, requiredScopes)) ?? '';
+    } catch {
+      /* token errors will be visible in the webview bar */
     }
 
     const swaggerUiDir = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'swagger-ui');
@@ -217,17 +273,16 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       this.panels.delete(key);
     });
 
-    panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType);
+    panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType, initialToken);
 
-    // Handle messages from webview
-    panel.webview.onDidReceiveMessage(async (msg: {type: string}) => {
+    // Handle messages from webview (token refresh + API proxy)
+    panel.webview.onDidReceiveMessage(async (msg: {type: string; [k: string]: unknown}) => {
       if (msg.type === 'refreshToken') {
-        await this.sendToken(panel, apiType);
+        await this.sendToken(panel, apiType, requiredScopes);
+      } else if (msg.type === 'proxyRequest') {
+        await this.handleProxyRequest(panel, msg);
       }
     });
-
-    // Acquire initial token
-    await this.sendToken(panel, apiType);
   }
 
   private async fetchSpec(
@@ -266,6 +321,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
                   apiName: schema.apiName,
                   apiVersion: schema.apiVersion,
                 },
+                query: {expand: 'custom_properties'},
               },
             },
           );
@@ -288,7 +344,12 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     }
   }
 
-  private getWebviewHtml(webview: vscode.Webview, spec: Record<string, unknown>, apiType: ApiType): string {
+  private getWebviewHtml(
+    webview: vscode.Webview,
+    spec: Record<string, unknown>,
+    apiType: ApiType,
+    initialToken: string,
+  ): string {
     const swaggerUiDir = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'swagger-ui');
     const bundleUri = webview.asWebviewUri(vscode.Uri.joinPath(swaggerUiDir, 'swagger-ui-bundle.js'));
     const presetUri = webview.asWebviewUri(vscode.Uri.joinPath(swaggerUiDir, 'swagger-ui-standalone-preset.js'));
@@ -305,13 +366,67 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     html = html.replace('__SWAGGER_CSS_URI__', cssUri.toString());
     html = html.replace('__API_TYPE__', apiType);
     html = html.replace('__SPEC_JSON__', JSON.stringify(spec));
+    html = html.replace('__INITIAL_TOKEN__', initialToken.replace(/[\\'"]/g, '\\$&'));
 
     return html;
   }
 
-  private async sendToken(panel: vscode.WebviewPanel, apiType: ApiType): Promise<void> {
+  /**
+   * Proxy an HTTP request from the webview through the extension host
+   * to avoid CORS restrictions in the webview sandbox.
+   */
+  private async handleProxyRequest(
+    panel: vscode.WebviewPanel,
+    msg: {type: string; [k: string]: unknown},
+  ): Promise<void> {
+    const requestId = msg.requestId as string;
+    const url = msg.url as string;
+    const method = (msg.method as string) || 'GET';
+    const headers = (msg.headers as Record<string, string>) || {};
+    const body = msg.body as string | undefined;
+
+    this.log.appendLine(`[API Browser Proxy] ${method} ${url} (${requestId})`);
+
     try {
-      const token = await this.getToken(apiType);
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: body || undefined,
+      });
+
+      const responseHeaders: Record<string, string> = {};
+      res.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      const responseBody = await res.text();
+
+      this.log.appendLine(
+        `[API Browser Proxy] ${requestId} → ${res.status} ${res.statusText} (${responseBody.length} bytes)`,
+      );
+
+      panel.webview.postMessage({
+        type: 'proxyResponse',
+        requestId,
+        status: res.status,
+        statusText: res.statusText,
+        headers: responseHeaders,
+        body: responseBody,
+      });
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      this.log.appendLine(`[API Browser Proxy] ${requestId} → ERROR: ${errMsg}`);
+      panel.webview.postMessage({
+        type: 'proxyResponse',
+        requestId,
+        error: errMsg,
+      });
+    }
+  }
+
+  private async sendToken(panel: vscode.WebviewPanel, apiType: ApiType, scopes: string[] = []): Promise<void> {
+    try {
+      const token = await this.getToken(apiType, scopes);
       if (token) {
         panel.webview.postMessage({type: 'updateToken', token});
       } else {
@@ -329,13 +444,15 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     }
   }
 
-  private async getToken(apiType: ApiType): Promise<string | null> {
+  private async getToken(apiType: ApiType, scopes: string[] = []): Promise<string | null> {
     const config = this.configProvider.getConfig();
     if (!config) return null;
 
     if (apiType === 'Admin') {
       if (!config.hasOAuthConfig()) return null;
-      const oauthStrategy = config.createOAuth();
+      // Request the specific scopes required by this API spec so the token
+      // includes them (the cache will re-authenticate if scopes are missing)
+      const oauthStrategy = config.createOAuth({scopes});
       const header = await oauthStrategy.getAuthorizationHeader?.();
       if (!header) return null;
       // Header is "Bearer <token>" — extract the token

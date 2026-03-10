@@ -146,7 +146,7 @@
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Configure dw.json with OAuth credentials (clientId, clientSecret) and shortCode to browse SCAPI schemas.\n\n[Refresh](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (clientId, clientSecret) and shortCode in dw.json.\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",

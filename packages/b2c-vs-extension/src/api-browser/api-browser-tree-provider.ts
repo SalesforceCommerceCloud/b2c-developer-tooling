@@ -58,6 +58,7 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private schemaCache: SchemaEntry[] | null = null;
+  private loaded = false;
 
   constructor(
     private readonly configProvider: B2CExtensionConfig,
@@ -65,6 +66,7 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
   ) {}
 
   refresh(): void {
+    this.loaded = true;
     this.schemaCache = null;
     this._onDidChangeTreeData.fire();
   }
@@ -84,6 +86,8 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
   }
 
   private async getRootChildren(): Promise<ApiFamilyTreeItem[]> {
+    if (!this.loaded) return [];
+
     const config = this.configProvider.getConfig();
     if (!config?.hasOAuthConfig()) {
       return [];

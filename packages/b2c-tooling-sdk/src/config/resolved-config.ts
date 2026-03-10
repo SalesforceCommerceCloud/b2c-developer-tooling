@@ -73,10 +73,14 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
     if (!this.hasOAuthConfig()) {
       throw new Error('OAuth requires clientId');
     }
+    const configScopes = this.values.scopes ?? [];
+    const additionalScopes = options?.scopes ?? [];
+    const mergedScopes =
+      additionalScopes.length > 0 ? [...new Set([...configScopes, ...additionalScopes])] : configScopes;
     const credentials: AuthCredentials = {
       clientId: this.values.clientId,
       clientSecret: this.values.clientSecret,
-      scopes: this.values.scopes,
+      scopes: mergedScopes.length > 0 ? mergedScopes : undefined,
       accountManagerHost: this.values.accountManagerHost,
     };
     return resolveAuthStrategy(credentials, {allowedMethods: options?.allowedMethods});
