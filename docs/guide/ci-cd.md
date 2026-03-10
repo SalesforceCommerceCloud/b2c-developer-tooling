@@ -438,5 +438,3 @@ Logs are always human-readable on stderr. The `--json` flag only controls the st
 All actions automatically configure:
 
 - **`NO_COLOR=1`** — clean log output without ANSI colors
-
-## Best Practices
