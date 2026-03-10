@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -176,6 +176,17 @@
       "require": {
         "types": "./dist/cjs/operations/cip/index.d.ts",
         "default": "./dist/cjs/operations/cip/index.js"
+      }
+    },
+    "./slas": {
+      "development": "./src/slas/index.ts",
+      "import": {
+        "types": "./dist/esm/slas/index.d.ts",
+        "default": "./dist/esm/slas/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/slas/index.d.ts",
+        "default": "./dist/cjs/slas/index.js"
       }
     },
     "./cli": {

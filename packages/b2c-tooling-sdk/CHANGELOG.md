@@ -1,5 +1,17 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- [#241](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/241) [`3758114`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3758114c328fcfffc54fb32a935df23503fc0ba2) - Add `EnvSource` config source that maps `SFCC_*` environment variables to config fields (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#232](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/232) [`732d4ad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/732d4ad1e52dd1e0f0676cee87305464ccf4ca9e) - Add `slas token` command to retrieve SLAS shopper access tokens for API testing. Supports public (PKCE) and private (client_credentials) client flows, guest and registered customer authentication, and auto-discovery of public SLAS clients. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [`1b9b477`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b9b4773110a5d97bfe81d37a093158088d94cee) - Fix `b2c setup skills` serving stale cached skills when downloading latest release (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.6.0
 
 ### Minor Changes

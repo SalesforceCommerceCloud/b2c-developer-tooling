@@ -113,6 +113,9 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     clientId: json.clientId,
     clientSecret: json.clientSecret,
     scopes: json.oauthScopes,
+    slasClientId: json.slasClientId,
+    slasClientSecret: json.slasClientSecret,
+    siteId: json.siteId,
     shortCode: json.shortCode,
     tenantId: json.tenantId,
     sandboxApiHost: json.sandboxApiHost,
@@ -179,6 +182,15 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.scopes !== undefined) {
     result.oauthScopes = config.scopes;
+  }
+  if (config.slasClientId !== undefined) {
+    result.slasClientId = config.slasClientId;
+  }
+  if (config.slasClientSecret !== undefined) {
+    result.slasClientSecret = config.slasClientSecret;
+  }
+  if (config.siteId !== undefined) {
+    result.siteId = config.siteId;
   }
   if (config.shortCode !== undefined) {
     result.shortCode = config.shortCode;
@@ -309,6 +321,9 @@ export function mergeConfigsWithProtection(
       clientId: overrides.clientId ?? base.clientId,
       clientSecret: overrides.clientSecret ?? base.clientSecret,
       scopes: overrides.scopes ?? base.scopes,
+      slasClientId: overrides.slasClientId ?? base.slasClientId,
+      slasClientSecret: overrides.slasClientSecret ?? base.slasClientSecret,
+      siteId: overrides.siteId ?? base.siteId,
       authMethods: overrides.authMethods ?? base.authMethods,
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
       shortCode: overrides.shortCode ?? base.shortCode,

@@ -47,6 +47,12 @@ export interface DwJsonConfig {
   clientSecret?: string;
   /** OAuth scopes */
   oauthScopes?: string[];
+  /** SLAS client ID for shopper authentication */
+  slasClientId?: string;
+  /** SLAS client secret for private shopper clients */
+  slasClientSecret?: string;
+  /** B2C Commerce site/channel ID */
+  siteId?: string;
   /** SCAPI short code */
   shortCode?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
