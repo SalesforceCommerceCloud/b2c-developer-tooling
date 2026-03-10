@@ -59,7 +59,7 @@ export default class ReplicationsGet extends GranularReplicationsCommand<typeof 
     const ui = cliui({width: process.stdout.columns || 80});
 
     ui.div({text: 'Replication Process Details', padding: [1, 0, 0, 0]});
-    ui.div('─'.repeat(process.stdout.columns || 80));
+    ui.div('─'.repeat(6 0));
     ui.div({text: `ID: ${processData.id}`, padding: [1, 0, 0, 0]});
     ui.div({text: `Status: ${processData.status}`});
     ui.div({text: `Started: ${processData.startTime}`});
