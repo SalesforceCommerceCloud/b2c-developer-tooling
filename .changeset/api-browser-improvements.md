@@ -1,5 +1,6 @@
 ---
 '@salesforce/b2c-tooling-sdk': minor
+'b2c-vs-extension': minor
 ---
 
-Add `scopes` option to `CreateOAuthOptions` for requesting additional OAuth scopes beyond config defaults. Align SLAS token logging with Auth module conventions (`[SLAS REQ]`/`[SLAS RESP]` format).
+Add API Browser with Swagger UI for interactive SCAPI exploration. Proxy requests through extension host to avoid CORS, pre-fill parameters and auth tokens, and expand custom properties in schemas.
