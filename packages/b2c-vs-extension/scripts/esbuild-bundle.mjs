@@ -72,6 +72,21 @@ function inlineSdkPackageJson() {
   fs.writeFileSync(outPath, str, 'utf8');
 }
 
+/** Copy Swagger UI assets to dist/swagger-ui/ for the API Browser webview. */
+function copySwaggerUiAssets() {
+  // Resolve the swagger-ui-dist package location (pnpm may hoist it)
+  const swaggerUiIndex = fileURLToPath(import.meta.resolve('swagger-ui-dist'));
+  const swaggerUiDist = path.dirname(swaggerUiIndex);
+  const outDir = path.join(pkgRoot, 'dist', 'swagger-ui');
+  fs.mkdirSync(outDir, {recursive: true});
+
+  const files = ['swagger-ui-bundle.js', 'swagger-ui-standalone-preset.js', 'swagger-ui.css'];
+  for (const file of files) {
+    fs.copyFileSync(path.join(swaggerUiDist, file), path.join(outDir, file));
+  }
+  console.log(`[swagger-ui] Copied ${files.length} assets to dist/swagger-ui/`);
+}
+
 const watchMode = process.argv.includes('--watch');
 
 const buildOptions = {
@@ -103,6 +118,7 @@ if (watchMode) {
 
   inlineSdkPackageJson();
   copySdkScaffolds();
+  copySwaggerUiAssets();
 
   if (result.metafile && process.env.ANALYZE_BUNDLE) {
     const metaPath = path.join(pkgRoot, 'dist', 'meta.json');
