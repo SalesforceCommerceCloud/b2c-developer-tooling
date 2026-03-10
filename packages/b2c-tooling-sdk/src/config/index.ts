@@ -145,3 +145,4 @@ export {ConfigSourceRegistry, globalConfigSourceRegistry} from './config-source-
 
 // Config sources (for direct use)
 export {DwJsonSource} from './sources/dw-json-source.js';
+export {EnvSource} from './sources/env-source.js';
