@@ -1,5 +1,16 @@
 # @salesforce/b2c-cli
 
+## 0.7.0
+
+### Minor Changes
+
+- [`d7b2eba`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d7b2ebab077690cd5eb63dd6daff3c8935b22aec) - Added `sandbox update` command to update sandbox TTL, auto-scheduling, tags, and notification emails via the PATCH API (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`b26ebeb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b26ebebd2b5dbff19689bdfadd5b9864597fbfb1)]:
+  - @salesforce/b2c-tooling-sdk@0.8.0
+
 ## 0.6.0
 
 ### Minor Changes
