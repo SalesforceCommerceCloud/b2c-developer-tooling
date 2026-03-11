@@ -220,6 +220,12 @@
         "category": "B2C DX - Sandboxes"
       },
       {
+        "command": "b2c-dx.sandbox.extendExpiration",
+        "title": "Extend Expiration",
+        "icon": "$(clock)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
         "command": "b2c-dx.instance.inspect",
         "title": "B2C Instance Config",
         "category": "B2C DX"
@@ -480,6 +486,11 @@
           "group": "2_lifecycle@3"
         },
         {
+          "command": "b2c-dx.sandbox.extendExpiration",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "group": "2_lifecycle@4"
+        },
+        {
           "command": "b2c-dx.sandbox.delete",
           "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
           "group": "3_destructive@1"
@@ -543,6 +554,10 @@
         },
         {
           "command": "b2c-dx.sandbox.openBM",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.extendExpiration",
           "when": "false"
         },
         {
