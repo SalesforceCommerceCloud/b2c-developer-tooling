@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.1.0
+
+### Minor Changes
+
+- [`cca39c6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cca39c60608960be7f3aaca3edc2be6e80724709) - Initial publish of @salesforce/mrt-utilities via trusted publishing (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.0.2
 
 ### Patch Changes

@@ -70,7 +70,8 @@ jobs:
           HAS_CHANGES=false
           for spec in "@salesforce/b2c-tooling-sdk:packages/b2c-tooling-sdk" \
                       "@salesforce/b2c-cli:packages/b2c-cli" \
-                      "@salesforce/b2c-dx-mcp:packages/b2c-dx-mcp"; do
+                      "@salesforce/b2c-dx-mcp:packages/b2c-dx-mcp" \
+                      "@salesforce/mrt-utilities:packages/mrt-utilities"; do
             PKG_NAME="${spec%%:*}"
             PKG_PATH="${spec##*:}"
             LOCAL=$(node -p "require('./${PKG_PATH}/package.json').version")
@@ -160,6 +161,7 @@ jobs:
           check_package "@salesforce/b2c-tooling-sdk" "packages/b2c-tooling-sdk" "sdk"
           check_package "@salesforce/b2c-cli" "packages/b2c-cli" "cli"
           check_package "@salesforce/b2c-dx-mcp" "packages/b2c-dx-mcp" "mcp"
+          check_package "@salesforce/mrt-utilities" "packages/mrt-utilities" "mrt"
 
           # VS Code extension — compare against git tags (not npm)
           LOCAL_VSX_VERSION=$(node -p "require('./packages/b2c-vs-extension/package.json').version")
@@ -186,7 +188,7 @@ jobs:
         if: steps.release-type.outputs.type == 'nightly'
         run: |
           SNAPSHOT="0.0.0-nightly.$(date +%Y%m%d%H%M%S)"
-          for pkg in packages/b2c-tooling-sdk packages/b2c-cli packages/b2c-dx-mcp; do
+          for pkg in packages/b2c-tooling-sdk packages/b2c-cli packages/b2c-dx-mcp packages/mrt-utilities; do
             node -e "
               const fs = require('fs');
               const path = '$pkg/package.json';
@@ -223,6 +225,12 @@ jobs:
           pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks
           --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_mcp }}
 
+      - name: Publish MRT Utilities to npm
+        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_mrt == 'true'
+        run: >-
+          pnpm --filter @salesforce/mrt-utilities publish --provenance --no-git-checks
+          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_mrt }}
+
       - name: Package VS Code extension
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         working-directory: packages/b2c-vs-extension
@@ -250,6 +258,12 @@ jobs:
 
           if [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
             TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+            git tag "$TAG"
+            TAGS_CREATED="$TAGS_CREATED $TAG"
+          fi
+
+          if [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
+            TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
             git tag "$TAG"
             TAGS_CREATED="$TAGS_CREATED $TAG"
           fi
@@ -323,6 +337,13 @@ jobs:
               echo ""
             fi
 
+            if [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
+              echo "## @salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
+              echo ""
+              extract_latest packages/mrt-utilities/CHANGELOG.md
+              echo ""
+            fi
+
             if [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
               echo "## b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
               echo ""
@@ -348,6 +369,8 @@ jobs:
             RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
           elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+          elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
             RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
@@ -383,6 +406,8 @@ jobs:
             RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
           elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+          elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
             RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           else
@@ -404,6 +429,8 @@ jobs:
             RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
           elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
+          elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
+            RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
             RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           else
@@ -434,10 +461,10 @@ jobs:
               --notes "$(cat <<'NOTES'
           ## B2C DX VS Code Extension v${{ steps.packages.outputs.version_vsx }}
 
-          Download the \`.vsix\` file below and install via:
-          \`\`\`
+          Download the `.vsix` file below and install via:
+          ```
           code --install-extension b2c-vs-extension-${{ steps.packages.outputs.version_vsx }}.vsix
-          \`\`\`
+          ```
 
           Or in VS Code: Extensions → ⋯ → Install from VSIX...
           NOTES
@@ -463,6 +490,7 @@ jobs:
           if [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]] || \
              [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]] || \
              [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]] || \
+             [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]] || \
              [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
             BRANCH="${{ github.event.workflow_run.head_branch }}"
             gh pr create --base main --head "$BRANCH" \
