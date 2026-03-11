@@ -15,7 +15,7 @@ function makeMockClient(responses: Array<{data?: {data?: {status?: string; progr
       callIndex++;
       return {...response, response: new Response()};
     },
-  } as any;
+  } as unknown as Parameters<typeof waitForClone>[0];
 }
 
 describe('waitForClone', () => {

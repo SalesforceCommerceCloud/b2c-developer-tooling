@@ -115,7 +115,13 @@ export async function waitForClone(client: OdsClient, options: WaitForCloneOptio
     lastStatus = currentStatus;
 
     logger.trace({sandboxId, cloneId, elapsedSeconds, status: currentStatus}, '[ODS] Clone poll');
-    options.onPoll?.({sandboxId, cloneId, elapsedSeconds, status: currentStatus, progressPercentage: clone.progressPercentage});
+    options.onPoll?.({
+      sandboxId,
+      cloneId,
+      elapsedSeconds,
+      status: currentStatus,
+      progressPercentage: clone.progressPercentage,
+    });
 
     if (currentStatus === 'COMPLETED') {
       return;

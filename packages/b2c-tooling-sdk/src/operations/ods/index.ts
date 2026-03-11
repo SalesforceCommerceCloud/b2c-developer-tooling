@@ -26,11 +26,6 @@ export {
 
 export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './wait-for-sandbox.js';
 
-export {
-  waitForClone,
-  ClonePollingTimeoutError,
-  ClonePollingError,
-  CloneFailedError,
-} from './wait-for-clone.js';
+export {waitForClone, ClonePollingTimeoutError, ClonePollingError, CloneFailedError} from './wait-for-clone.js';
 
 export type {CloneState, WaitForCloneOptions, WaitForClonePollInfo} from './wait-for-clone.js';
