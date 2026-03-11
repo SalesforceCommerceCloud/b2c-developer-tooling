@@ -156,7 +156,7 @@
         "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.html"
       },
       "ods": {
-        "description": "Alias for 'sandbox' commands. Use 'b2c sandbox' instead.",
+        "description": "Alias for 'sandbox' commands.",
         "subtopics": {
           "clone": {
             "description": "Create and manage sandbox clones (alias for 'sandbox clone')"
