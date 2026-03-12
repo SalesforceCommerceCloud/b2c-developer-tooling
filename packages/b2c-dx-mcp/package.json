@@ -29,7 +29,7 @@
   },
   "oclif": {
     "bin": "b2c-dx-mcp",
-    "dirname": "b2c-dx-mcp",
+    "dirname": "b2c",
     "commands": {
       "strategy": "single",
       "target": "./dist/commands/mcp.js"

@@ -38,7 +38,7 @@ Create a [`dw.json`](../guide/configuration#configuration-file) file in your pro
 }
 ```
 
-The server automatically loads this file when using project-level installation (recommended). With user-level Cursor configuration, ensure `--project-directory` points to your project.
+The server automatically loads this file when using project-level configuration (recommended). With user-level Cursor configuration, ensure `--project-directory "${workspaceFolder}"` is included in the args array. Claude Code and GitHub Copilot automatically detect the project location.
 
 **Required fields per toolset:**
 
@@ -54,7 +54,9 @@ The server automatically loads this file when using project-level installation (
 
 #### MRT Credentials (`~/.mobify`)
 
-MRT API keys are loaded from [`~/.mobify`](../guide/configuration#mrt-api-key) using the same format and resolution order as the CLI.
+MRT tools require an API key for authentication. Unlike B2C credentials (which use `dw.json`), MRT API keys are stored in a separate [`~/.mobify`](../guide/configuration#mrt-api-key) file in your home directory.
+
+**File location:** `~/.mobify` (or `~/.mobify--{hostname}` when using `--cloud-origin`)
 
 Create the `~/.mobify` file manually:
 
@@ -64,7 +66,17 @@ Create the `~/.mobify` file manually:
 }
 ```
 
-For complete setup instructions, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
+**What goes where:**
+- **`dw.json`** - Can include `mrtProject` and `mrtEnvironment` (project-level config)
+- **`~/.mobify`** - Stores the MRT API key (user-level, shared across projects)
+- **Environment variables** - Can override both (see [Option 2: Environment Variables](#option-2-environment-variables))
+- **Flags** - Highest priority overrides (see [Option 3: Flags](#option-3-flags))
+
+**Cloud origin override:** When using `--cloud-origin` (or `MRT_CLOUD_ORIGIN` environment variable) to target a different MRT endpoint, the server looks for `~/.mobify--{hostname}` instead of `~/.mobify`, where `{hostname}` is extracted from the URL. This allows separate API keys for different MRT environments.
+
+**Example:** With `--cloud-origin https://custom.example.com`, the config file `~/.mobify--custom.example.com` is used instead of `~/.mobify`.
+
+For complete setup instructions, including how to get your API key, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
 
 ### Option 2: Environment Variables
 

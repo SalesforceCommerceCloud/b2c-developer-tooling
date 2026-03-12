@@ -130,6 +130,12 @@ AI assistants automatically decide which MCP tools to use based on your prompts.
 
 See the [Toolsets & Tools Reference](./toolsets) for more prompting examples for each toolset.
 
+## Plugins
+
+The MCP server uses the B2C CLI under the hood, so CLI plugins automatically extend MCP functionality. Plugins can add new commands, provide custom configuration sources, integrate with external systems, and more.
+
+See the [CLI Plugin documentation](../guide/extending) for details on creating plugins and [Third-Party Plugins](../guide/third-party-plugins) for available community plugins.
+
 ## Next Steps
 
 - [Installation Guide](./installation) - Set up Claude Code, Cursor, GitHub Copilot, or other MCP clients
