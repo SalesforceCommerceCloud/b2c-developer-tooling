@@ -1,5 +1,46 @@
 # Change Log
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`e790dfa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e790dfa8d5375fde7936ae4a10b2f3fd722ec087)]:
+  - @salesforce/b2c-tooling-sdk@0.8.1
+
+## 0.2.0
+
+### Minor Changes
+
+- [#244](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/244) [`b26ebeb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b26ebebd2b5dbff19689bdfadd5b9864597fbfb1) - Add API Browser with Swagger UI for interactive SCAPI exploration. Proxy requests through extension host to avoid CORS, pre-fill parameters and auth tokens, and expand custom properties in schemas. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`b26ebeb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b26ebebd2b5dbff19689bdfadd5b9864597fbfb1)]:
+  - @salesforce/b2c-tooling-sdk@0.8.0
+
+## 0.1.2
+
+### Patch Changes
+
+- [`6915771`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69157717ce8eba1771687ab800306b2bf6421b18) - Add `b2c-vs-extension@latest` moving tag that updates with each release and fix dedicated VS Code extension release to always trigger independently of other package publishes (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.1.1
+
+### Patch Changes
+
+- [`b45aa8e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b45aa8e0e6172668e174f896d817e094387a6e6f) - Add `b2c-vs-extension@latest` moving tag that updates with each release (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.1.0
+
+### Minor Changes
+
+- [#241](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/241) [`3758114`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3758114c328fcfffc54fb32a935df23503fc0ba2) - Add `.env` file loading, `SFCC_*` env var support, and smart workspace folder detection for multi-root workspaces (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`3758114`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3758114c328fcfffc54fb32a935df23503fc0ba2), [`1b9b477`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b9b4773110a5d97bfe81d37a093158088d94cee), [`732d4ad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/732d4ad1e52dd1e0f0676cee87305464ccf4ca9e)]:
+  - @salesforce/b2c-tooling-sdk@0.7.0
+
 ## 0.0.10
 
 ### Patch Changes

@@ -58,6 +58,40 @@ async function checkResponse(response: Response, context: string): Promise<void>
 }
 
 /**
+ * Helper to collect response headers as a plain object for logging.
+ */
+function serializeHeaders(response: Response): Record<string, string> {
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+  return headers;
+}
+
+/**
+ * Performs a logged fetch request following the Auth logging conventions.
+ * Returns the response (caller must check status).
+ */
+async function loggedFetch(url: string, init: RequestInit): Promise<{response: Response; duration: number}> {
+  const logger = getLogger();
+  const method = init.method ?? 'GET';
+
+  logger.debug({method, url}, `[SLAS REQ] ${method} ${url}`);
+  logger.trace({method, url, headers: init.headers, body: init.body?.toString()}, `[SLAS REQ BODY] ${method} ${url}`);
+
+  const startTime = Date.now();
+  const response = await fetch(url, init);
+  const duration = Date.now() - startTime;
+
+  logger.debug(
+    {method, url, status: response.status, duration},
+    `[SLAS RESP] ${method} ${url} ${response.status} ${duration}ms`,
+  );
+
+  return {response, duration};
+}
+
+/**
  * Retrieves a guest shopper access token from SLAS.
  *
  * - **Private client** (slasClientSecret set): Uses `client_credentials` grant.
@@ -73,7 +107,7 @@ export async function getGuestToken(config: SlasTokenConfig): Promise<SlasTokenR
     return getPrivateClientGuestToken(config);
   }
 
-  logger.debug('Using public client PKCE guest flow');
+  logger.debug({clientId: config.slasClientId}, '[SLAS] Using public client PKCE guest flow');
 
   const baseUrl = buildBaseUrl(config.shortCode, config.organizationId);
   const verifier = generateCodeVerifier();
@@ -89,11 +123,12 @@ export async function getGuestToken(config: SlasTokenConfig): Promise<SlasTokenR
   });
 
   const authorizeUrl = `${baseUrl}/oauth2/authorize?${authorizeParams.toString()}`;
-  logger.debug({url: authorizeUrl}, 'SLAS authorize request');
 
-  const authorizeResponse = await fetch(authorizeUrl, {redirect: 'manual'});
+  const {response: authorizeResponse} = await loggedFetch(authorizeUrl, {redirect: 'manual'});
 
   if (authorizeResponse.status !== 303) {
+    const respHeaders = serializeHeaders(authorizeResponse);
+    logger.trace({headers: respHeaders}, `[SLAS RESP BODY] GET ${authorizeUrl}`);
     await checkResponse(authorizeResponse, 'authorize');
     throw new Error(`Expected 303 redirect from SLAS authorize, got ${authorizeResponse.status}`);
   }
@@ -104,7 +139,7 @@ export async function getGuestToken(config: SlasTokenConfig): Promise<SlasTokenR
   }
 
   const {code, usid} = parseRedirectCode(location);
-  logger.debug({usid}, 'Got authorization code from SLAS');
+  logger.debug({usid}, '[SLAS] Got authorization code');
 
   // Step 2: Exchange code for token
   const tokenBody = new URLSearchParams({
@@ -117,14 +152,19 @@ export async function getGuestToken(config: SlasTokenConfig): Promise<SlasTokenR
     usid,
   });
 
-  const tokenResponse = await fetch(`${baseUrl}/oauth2/token`, {
+  const tokenUrl = `${baseUrl}/oauth2/token`;
+  const {response: tokenResponse} = await loggedFetch(tokenUrl, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: tokenBody,
   });
 
   await checkResponse(tokenResponse, 'token exchange (authorization_code_pkce)');
-  return (await tokenResponse.json()) as SlasTokenResponse;
+  const data = (await tokenResponse.json()) as SlasTokenResponse;
+  const respHeaders = serializeHeaders(tokenResponse);
+  logger.trace({headers: respHeaders, body: data}, `[SLAS RESP BODY] POST ${tokenUrl}`);
+
+  return data;
 }
 
 /**
@@ -132,7 +172,7 @@ export async function getGuestToken(config: SlasTokenConfig): Promise<SlasTokenR
  */
 async function getPrivateClientGuestToken(config: SlasTokenConfig): Promise<SlasTokenResponse> {
   const logger = getLogger();
-  logger.debug('Using private client client_credentials guest flow');
+  logger.debug({clientId: config.slasClientId}, '[SLAS] Using private client client_credentials guest flow');
 
   const baseUrl = buildBaseUrl(config.shortCode, config.organizationId);
   const basicAuth = Buffer.from(`${config.slasClientId}:${config.slasClientSecret}`).toString('base64');
@@ -142,7 +182,8 @@ async function getPrivateClientGuestToken(config: SlasTokenConfig): Promise<Slas
     channel_id: config.siteId,
   });
 
-  const tokenResponse = await fetch(`${baseUrl}/oauth2/token`, {
+  const tokenUrl = `${baseUrl}/oauth2/token`;
+  const {response: tokenResponse} = await loggedFetch(tokenUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -152,7 +193,11 @@ async function getPrivateClientGuestToken(config: SlasTokenConfig): Promise<Slas
   });
 
   await checkResponse(tokenResponse, 'token (client_credentials)');
-  return (await tokenResponse.json()) as SlasTokenResponse;
+  const data = (await tokenResponse.json()) as SlasTokenResponse;
+  const respHeaders = serializeHeaders(tokenResponse);
+  logger.trace({headers: respHeaders, body: data}, `[SLAS RESP BODY] POST ${tokenUrl}`);
+
+  return data;
 }
 
 /**
@@ -172,7 +217,7 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
   const baseUrl = buildBaseUrl(config.shortCode, config.organizationId);
   const isPrivate = Boolean(config.slasClientSecret);
 
-  logger.debug({isPrivate}, 'Using registered customer login flow');
+  logger.debug({clientId: config.slasClientId, isPrivate}, '[SLAS] Using registered customer login flow');
 
   const verifier = generateCodeVerifier();
   const challenge = generateCodeChallenge(verifier);
@@ -187,7 +232,8 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
     redirect_uri: config.redirectUri,
   });
 
-  const loginResponse = await fetch(`${baseUrl}/oauth2/login`, {
+  const loginUrl = `${baseUrl}/oauth2/login`;
+  const {response: loginResponse} = await loggedFetch(loginUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -198,6 +244,8 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
   });
 
   if (loginResponse.status !== 303) {
+    const respHeaders = serializeHeaders(loginResponse);
+    logger.trace({headers: respHeaders}, `[SLAS RESP BODY] POST ${loginUrl}`);
     await checkResponse(loginResponse, 'login');
     throw new Error(`Expected 303 redirect from SLAS login, got ${loginResponse.status}`);
   }
@@ -208,9 +256,11 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
   }
 
   const {code, usid} = parseRedirectCode(location);
-  logger.debug({usid}, 'Got authorization code from SLAS login');
+  logger.debug({usid}, '[SLAS] Got authorization code from login');
 
   // Step 2: Exchange code for token
+  const tokenUrl = `${baseUrl}/oauth2/token`;
+
   if (isPrivate) {
     const basicAuth = Buffer.from(`${config.slasClientId}:${config.slasClientSecret}`).toString('base64');
     const tokenBody = new URLSearchParams({
@@ -221,7 +271,7 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
       usid,
     });
 
-    const tokenResponse = await fetch(`${baseUrl}/oauth2/token`, {
+    const {response: tokenResponse} = await loggedFetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -231,7 +281,11 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
     });
 
     await checkResponse(tokenResponse, 'token exchange (authorization_code)');
-    return (await tokenResponse.json()) as SlasTokenResponse;
+    const data = (await tokenResponse.json()) as SlasTokenResponse;
+    const respHeaders = serializeHeaders(tokenResponse);
+    logger.trace({headers: respHeaders, body: data}, `[SLAS RESP BODY] POST ${tokenUrl}`);
+
+    return data;
   }
 
   // Public client — use PKCE
@@ -245,12 +299,16 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
     usid,
   });
 
-  const tokenResponse = await fetch(`${baseUrl}/oauth2/token`, {
+  const {response: tokenResponse} = await loggedFetch(tokenUrl, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: tokenBody,
   });
 
   await checkResponse(tokenResponse, 'token exchange (authorization_code_pkce)');
-  return (await tokenResponse.json()) as SlasTokenResponse;
+  const data = (await tokenResponse.json()) as SlasTokenResponse;
+  const respHeaders = serializeHeaders(tokenResponse);
+  logger.trace({headers: respHeaders, body: data}, `[SLAS RESP BODY] POST ${tokenUrl}`);
+
+  return data;
 }

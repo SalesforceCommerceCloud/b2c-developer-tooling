@@ -9,5 +9,6 @@
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
 export {DwJsonSource} from './dw-json-source.js';
+export {EnvSource} from './env-source.js';
 export {MobifySource} from './mobify-source.js';
 export {PackageJsonSource} from './package-json-source.js';

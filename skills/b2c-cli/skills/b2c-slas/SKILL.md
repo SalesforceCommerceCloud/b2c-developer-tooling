@@ -35,7 +35,7 @@ b2c slas client list --tenant-id abcd_123 --json
 
 ```bash
 # get details for a specific SLAS client
-b2c slas client get --tenant-id abcd_123 --client-id my-client-id
+b2c slas client get my-client-id --tenant-id abcd_123
 ```
 
 ### Create SLAS Client
@@ -111,15 +111,27 @@ The `--slas-client-id` and `--slas-client-secret` can also be set via `SFCC_SLAS
 ### Update SLAS Client
 
 ```bash
-# update an existing SLAS client
-b2c slas client update --tenant-id abcd_123 --client-id my-client-id
+# update the display name
+b2c slas client update my-client-id --tenant-id abcd_123 --name "New Name"
+
+# rotate the client secret
+b2c slas client update my-client-id --tenant-id abcd_123 --secret new-secret-value
+
+# add scopes (appends to existing by default)
+b2c slas client update my-client-id --tenant-id abcd_123 --scopes sfcc.shopper-baskets
+
+# replace scopes instead of appending
+b2c slas client update my-client-id --tenant-id abcd_123 --scopes sfcc.shopper-baskets --replace
+
+# replace channels
+b2c slas client update my-client-id --tenant-id abcd_123 --channels RefArch,SiteGenesis --replace
 ```
 
 ### Delete SLAS Client
 
 ```bash
 # delete a SLAS client
-b2c slas client delete --tenant-id abcd_123 --client-id my-client-id
+b2c slas client delete my-client-id --tenant-id abcd_123
 ```
 
 ### Configuration
