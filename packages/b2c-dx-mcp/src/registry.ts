@@ -126,7 +126,7 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
     logger.warn(
       {cwd: projectDirectory},
       'No --project-directory flag or SFCC_PROJECT_DIRECTORY env var provided. ' +
-        'MCP clients like Cursor and Claude Desktop often spawn servers from ~ instead of the project directory. ' +
+        'MCP clients like Cursor and Claude Code often spawn servers from ~ instead of the project directory. ' +
         'Set --project-directory or SFCC_PROJECT_DIRECTORY for reliable auto-discovery.',
     );
   }

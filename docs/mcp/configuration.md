@@ -10,9 +10,11 @@ The B2C DX MCP Server uses the same configuration system as the B2C CLI. For MCP
 
 Credentials are resolved in the following priority order (same as the CLI):
 
-1. **Flags** (highest priority)
-2. **Environment variables**
-3. **Config files** (lowest priority)
+1. **Flags** (highest priority) - e.g., `--server`, `--api-key`, `--project`
+2. **Environment variables** - Set in MCP client's `env` object
+3. **Config files** (lowest priority) - `dw.json` (project-level) and `~/.mobify` (user-level for MRT API key)
+
+**Note:** For MRT API key specifically, `dw.json` (`mrtApiKey` field) takes precedence over `~/.mobify` when both are present.
 
 ## Credential Sources
 
@@ -46,7 +48,7 @@ The server automatically loads this file when using project-level configuration 
 |---------|----------------|
 | **SCAPI** | `short-code`, `tenant-id`, `client-id`, `client-secret` |
 | **CARTRIDGES** | `hostname`, `username`, `password` (or OAuth: `hostname`, `client-id`, `client-secret`) |
-| **MRT** | `project`, MRT API key (from `~/.mobify` or `--api-key`) |
+| **MRT** | `mrtProject` (from `dw.json` `mrtProject` field or `--project` flag), MRT API key (from `dw.json` `mrtApiKey`, `~/.mobify` `api_key`, or `--api-key` flag) |
 | **PWAV3** | None (project directory auto-detected with project-level installation) |
 | **STOREFRONTNEXT** | None (project directory auto-detected with project-level installation) |
 
@@ -54,9 +56,7 @@ The server automatically loads this file when using project-level configuration 
 
 #### MRT Credentials (`~/.mobify`)
 
-MRT tools require an API key for authentication. Unlike B2C credentials (which use `dw.json`), MRT API keys are stored in a separate [`~/.mobify`](../guide/configuration#mrt-api-key) file in your home directory.
-
-**File location:** `~/.mobify` (or `~/.mobify--{hostname}` when using `--cloud-origin`)
+MRT tools require an API key for authentication. MRT API keys are stored in a separate [`~/.mobify`](../guide/configuration#mrt-api-key) file in your home directory.
 
 Create the `~/.mobify` file manually:
 
@@ -66,15 +66,11 @@ Create the `~/.mobify` file manually:
 }
 ```
 
-**What goes where:**
-- **`dw.json`** - Can include `mrtProject` and `mrtEnvironment` (project-level config)
-- **`~/.mobify`** - Stores the MRT API key (user-level, shared across projects)
-- **Environment variables** - Can override both (see [Option 2: Environment Variables](#option-2-environment-variables))
-- **Flags** - Highest priority overrides (see [Option 3: Flags](#option-3-flags))
+**File locations:**
+- Default: `~/.mobify`
+- With `--cloud-origin`: `~/.mobify--{hostname}` (e.g., `~/.mobify--custom.example.com` for `--cloud-origin https://custom.example.com`)
 
-**Cloud origin override:** When using `--cloud-origin` (or `MRT_CLOUD_ORIGIN` environment variable) to target a different MRT endpoint, the server looks for `~/.mobify--{hostname}` instead of `~/.mobify`, where `{hostname}` is extracted from the URL. This allows separate API keys for different MRT environments.
-
-**Example:** With `--cloud-origin https://custom.example.com`, the config file `~/.mobify--custom.example.com` is used instead of `~/.mobify`.
+**Note:** The `dw.json` file can include `mrtProject`, `mrtEnvironment`, and `mrtApiKey` for project-level MRT configuration. Alternatively, the API key can be stored in `~/.mobify` (user-level, shared across projects). If both are present, `dw.json` takes precedence. Environment variables and flags can override these values (see [Configuration Priority](#configuration-priority)).
 
 For complete setup instructions, including how to get your API key, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
 
@@ -82,12 +78,14 @@ For complete setup instructions, including how to get your API key, see the [Aut
 
 Set environment variables in the `env` object of your MCP client configuration. The MCP server supports the same environment variables as the CLI. See the [CLI Configuration guide](../guide/configuration#environment-variables) for the complete list of supported variables.
 
+> **Note:** Examples below use `mcpServers` (Cursor format). For GitHub Copilot/VS Code, use `servers` instead and add `"type": "stdio"` (see [Installation](./installation#github-copilot)).
+
 ```json
 {
   "mcpServers": {
-    "b2c-dx": {
+    "b2c-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--allow-non-ga-tools"],
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"],
       "env": {
         "SFCC_SERVER": "xxx.demandware.net",
         "SFCC_CLIENT_ID": "...",
@@ -108,11 +106,11 @@ Pass credentials directly as command-line flags:
 ```json
 {
   "mcpServers": {
-    "b2c-dx": {
+    "b2c-dx-mcp": {
       "command": "npx",
       "args": [
         "-y",
-        "@salesforce/b2c-dx-mcp",
+        "@salesforce/b2c-dx-mcp@latest",
         "--server",
         "xxx.demandware.net",
         "--username",
@@ -147,11 +145,11 @@ Override auto-discovery by specifying toolsets explicitly:
 ```json
 {
   "mcpServers": {
-    "b2c-dx": {
+    "b2c-dx-mcp": {
       "command": "npx",
       "args": [
         "-y",
-        "@salesforce/b2c-dx-mcp",
+        "@salesforce/b2c-dx-mcp@latest",
         "--toolsets",
         "CARTRIDGES,MRT",
         "--allow-non-ga-tools"

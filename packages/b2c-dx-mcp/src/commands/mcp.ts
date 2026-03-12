@@ -56,7 +56,7 @@
  * | `--json` | - | Output logs as JSON lines |
  * | `--lang` | - | Language for messages |
  *
- * **Note on `--project-directory`**: Many MCP clients (Cursor, Claude Desktop) spawn servers from the
+ * **Note on `--project-directory`**: Many MCP clients (Cursor, Claude Code) spawn servers from the
  * user's home directory (`~`) rather than the project directory. This flag is used for:
  * - Auto-discovery (detecting project type when no `--toolsets` or `--tools` are provided)
  * - Scaffolding tools (creating files in the correct project location)
