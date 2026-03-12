@@ -306,6 +306,8 @@ export interface ConfigSource {
 export interface CreateOAuthOptions {
   /** Allowed OAuth methods (default: ['client-credentials', 'implicit']) */
   allowedMethods?: AuthMethod[];
+  /** Additional OAuth scopes to request beyond those in config */
+  scopes?: string[];
 }
 
 /**
