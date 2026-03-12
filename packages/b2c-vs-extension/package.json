@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -238,6 +238,12 @@
         "command": "b2c-dx.sandbox.openBM",
         "title": "Open Business Manager",
         "icon": "$(link-external)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.extendExpiration",
+        "title": "Extend Expiration",
+        "icon": "$(clock)",
         "category": "B2C DX - Sandboxes"
       },
       {
@@ -516,6 +522,11 @@
           "group": "2_lifecycle@3"
         },
         {
+          "command": "b2c-dx.sandbox.extendExpiration",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "group": "2_lifecycle@4"
+        },
+        {
           "command": "b2c-dx.sandbox.delete",
           "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
           "group": "3_destructive@1"
@@ -588,6 +599,10 @@
         },
         {
           "command": "b2c-dx.sandbox.openBM",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.extendExpiration",
           "when": "false"
         },
         {
