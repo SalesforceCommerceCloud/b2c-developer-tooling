@@ -58,6 +58,7 @@ export type HttpClientType =
   | 'am-users-api'
   | 'am-roles-api'
   | 'am-apiclients-api'
+  | 'scapi-cors'
   | 'am-orgs-api';
 
 /**

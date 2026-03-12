@@ -205,6 +205,9 @@
           },
           "schemas": {
             "description": "Browse and retrieve SCAPI schema specifications\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.html"
+          },
+          "cors": {
+            "description": "Manage CORS Preferences for SCAPI sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-cors.html"
           }
         }
       },
