@@ -2,4 +2,4 @@
 '@salesforce/b2c-dx-docs': patch
 ---
 
-Improved MCP documentation clarity: simplified authentication sections, clarified MRT credentials configuration, improved flag documentation consistency across tool pages, and compacted Plugins section to reduce duplication.
+Improved MCP documentation clarity: simplified authentication sections, clarified MRT credentials configuration, improved flag documentation consistency across tool pages, and added Plugins section.
