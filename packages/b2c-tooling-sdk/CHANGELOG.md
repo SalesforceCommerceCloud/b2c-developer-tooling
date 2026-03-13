@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.8.3
+
+### Patch Changes
+
+- [`760a6cb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/760a6cbe144ffcd7c72b32b05df861626d3d5a2c) - Strip `development` export conditions from package.json during publish. Fixes `MODULE_NOT_FOUND` errors when plugins or consumers install the SDK from npm, where the `src/` directory is not included. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.8.2
 
 ### Patch Changes
