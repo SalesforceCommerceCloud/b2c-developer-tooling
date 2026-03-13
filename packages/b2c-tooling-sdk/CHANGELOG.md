@@ -1,5 +1,13 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.8.2
+
+### Patch Changes
+
+- [`d4423bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d4423bb218af3991396286b4900c3b051666e06b) - Add MRT environment variable support to EnvSource (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_CLOUD_ORIGIN` and their `SFCC_MRT_*` variants). The `setup inspect` command now shows values from SFCC\_\* environment variables as a config source. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`69a98dc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69a98dc21f3a326f551929fcd530741b9f0ca126) - Fix `--server` override dropping config from non-instance-bound sources. Previously, overriding the server hostname discarded all config values including credentials from global sources like config plugins. Now only values from the source that provided the conflicting hostname are dropped. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.8.1
 
 ### Patch Changes
