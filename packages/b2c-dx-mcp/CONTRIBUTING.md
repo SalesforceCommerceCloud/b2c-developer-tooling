@@ -33,7 +33,7 @@ For local development or testing, use the development build directly:
 ```json
 {
   "mcpServers": {
-    "b2c-dx": {
+    "b2c-dx-mcp": {
       "command": "node",
       "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
     }
@@ -113,7 +113,7 @@ When updating MCP documentation, you may need to create or update the "Add to Cu
 
 The deep link follows this format:
 ```
-cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=<base64-encoded-config>
+cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-encoded-config>
 ```
 
 ### Generating the Base64 Config
@@ -124,7 +124,7 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=<base64-encode
    ```json
    {
      "command": "npx",
-     "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+     "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
    }
    ```
 
@@ -132,19 +132,19 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=<base64-encode
 
 2. **Encode to Base64** using Node.js:
    ```bash
-   node -e "console.log(Buffer.from(JSON.stringify({command: 'npx', args: ['-y', '@salesforce/b2c-dx-mcp', '--project-directory', '\${workspaceFolder}', '--allow-non-ga-tools']})).toString('base64'))"
+   node -e "console.log(Buffer.from(JSON.stringify({command: 'npx', args: ['-y', '@salesforce/b2c-dx-mcp@latest', '--project-directory', '\${workspaceFolder}', '--allow-non-ga-tools']})).toString('base64'))"
    ```
 
 3. **Construct the full link**:
    ```
-   cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=<base64-string>
+   cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-string>
    ```
 
 ### Example
 
 **User-level link (used in documentation):**
 ```markdown
-[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
 ```
 
 ### Where to Update
