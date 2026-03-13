@@ -68,9 +68,10 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
  */
 export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
   static aliases = ['setup:config'];
-  static hiddenAliases = ['config:show', 'config:inspect'];
 
   static description = withDocs('Display resolved configuration', '/cli/setup.html#b2c-setup-inspect');
+
+  static hiddenAliases = ['config:show', 'config:inspect'];
 
   static enableJsonFlag = true;
 
