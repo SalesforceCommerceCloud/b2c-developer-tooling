@@ -48,4 +48,4 @@ Follow mobile-first responsive design:
 
 ---
 
-**Reference:** See [README-UI-STYLING.md](https://github.com/SalesforceCommerceCloud/storefront-next/blob/main/packages/template-retail-rsc-app/docs/README-UI-STYLING.md) in the storefront-next repo for complete UI and styling documentation.
+**Reference:** See [README-UI-STYLING.md](docs/README-UI-STYLING.md) in your project for complete UI and styling documentation.
