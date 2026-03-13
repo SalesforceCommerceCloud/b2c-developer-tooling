@@ -71,8 +71,6 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
 
   static description = withDocs('Display resolved configuration', '/cli/setup.html#b2c-setup-inspect');
 
-  static hiddenAliases = ['config:show', 'config:inspect'];
-
   static enableJsonFlag = true;
 
   static examples = [
@@ -88,6 +86,8 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       default: false,
     }),
   };
+
+  static hiddenAliases = ['config:show', 'config:inspect'];
 
   protected override loadConfiguration(): ResolvedB2CConfig {
     // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
