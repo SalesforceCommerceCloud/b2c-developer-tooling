@@ -5,8 +5,9 @@
  */
 import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import type {NormalizedConfig, ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
+import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
+import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {EnvSource} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../i18n/index.js';
 
 /**
@@ -67,6 +68,7 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
  */
 export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
   static aliases = ['setup:config'];
+  static hiddenAliases = ['config:show', 'config:inspect'];
 
   static description = withDocs('Display resolved configuration', '/cli/setup.html#b2c-setup-inspect');
 
@@ -85,6 +87,13 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       default: false,
     }),
   };
+
+  protected override loadConfiguration(): ResolvedB2CConfig {
+    // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
+    // Other commands handle env vars via oclif flag mappings, but inspect needs to show them
+    // as a config source since it doesn't have those flags.
+    return loadConfig({}, this.getBaseConfigOptions(), {before: [new EnvSource()]});
+  }
 
   async run(): Promise<SetupInspectResponse> {
     const {values, sources, warnings} = this.resolvedConfig;
