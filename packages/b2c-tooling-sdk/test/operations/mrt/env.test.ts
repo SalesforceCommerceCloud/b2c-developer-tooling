@@ -6,6 +6,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {expect} from 'chai';
+import sinon from 'sinon';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {DEFAULT_MRT_ORIGIN} from '../../../src/clients/mrt.js';
@@ -222,7 +223,7 @@ describe('operations/mrt/env', () => {
         {
           projectSlug: 'my-project',
           slug: 'staging',
-          pollInterval: 100,
+          pollInterval: 10,
         },
         auth,
       );
@@ -231,8 +232,6 @@ describe('operations/mrt/env', () => {
     });
 
     it('should poll until environment becomes ACTIVE', async function () {
-      this.timeout(5000);
-
       let callCount = 0;
 
       server.use(
@@ -252,22 +251,26 @@ describe('operations/mrt/env', () => {
       );
 
       const auth = new MockAuthStrategy();
-      const result = await waitForEnv(
-        {
-          projectSlug: 'my-project',
-          slug: 'staging',
-          pollInterval: 100,
-        },
-        auth,
-      );
-
-      expect(result.state).to.equal('ACTIVE');
-      expect(callCount).to.be.greaterThanOrEqual(3);
+      const clock = sinon.useFakeTimers({shouldAdvanceTime: true});
+      try {
+        const promise = waitForEnv(
+          {
+            projectSlug: 'my-project',
+            slug: 'staging',
+            pollInterval: 10,
+          },
+          auth,
+        );
+        await clock.tickAsync(500);
+        const result = await promise;
+        expect(result.state).to.equal('ACTIVE');
+        expect(callCount).to.be.greaterThanOrEqual(3);
+      } finally {
+        clock.restore();
+      }
     });
 
     it('should call onPoll callback', async function () {
-      this.timeout(5000);
-
       const pollUpdates: any[] = [];
 
       server.use(
@@ -280,25 +283,29 @@ describe('operations/mrt/env', () => {
       );
 
       const auth = new MockAuthStrategy();
-      await waitForEnv(
-        {
-          projectSlug: 'my-project',
-          slug: 'staging',
-          pollInterval: 100,
-          onPoll: (env) => {
-            pollUpdates.push(env);
+      const clock = sinon.useFakeTimers({shouldAdvanceTime: true});
+      try {
+        const promise = waitForEnv(
+          {
+            projectSlug: 'my-project',
+            slug: 'staging',
+            pollInterval: 10,
+            onPoll: (env) => {
+              pollUpdates.push(env);
+            },
           },
-        },
-        auth,
-      );
-
-      expect(pollUpdates.length).to.be.greaterThan(0);
-      expect(pollUpdates[0].slug).to.equal('staging');
+          auth,
+        );
+        await clock.tickAsync(200);
+        await promise;
+        expect(pollUpdates.length).to.be.greaterThan(0);
+        expect(pollUpdates[0].slug).to.equal('staging');
+      } finally {
+        clock.restore();
+      }
     });
 
     it('should timeout after specified duration', async function () {
-      this.timeout(5000);
-
       server.use(
         http.get(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/`, () => {
           return HttpResponse.json({
@@ -309,20 +316,25 @@ describe('operations/mrt/env', () => {
       );
 
       const auth = new MockAuthStrategy();
+      const clock = sinon.useFakeTimers({shouldAdvanceTime: true});
 
       try {
-        await waitForEnv(
+        const promise = waitForEnv(
           {
             projectSlug: 'my-project',
             slug: 'staging',
-            pollInterval: 100,
+            pollInterval: 10,
             timeout: 500,
           },
           auth,
         );
+        await clock.tickAsync(600);
+        await promise;
         expect.fail('Should have thrown timeout error');
       } catch (error: any) {
         expect(error.message).to.include('Timeout');
+      } finally {
+        clock.restore();
       }
     });
 
@@ -343,7 +355,7 @@ describe('operations/mrt/env', () => {
           {
             projectSlug: 'my-project',
             slug: 'staging',
-            pollInterval: 100,
+            pollInterval: 10,
           },
           auth,
         );
