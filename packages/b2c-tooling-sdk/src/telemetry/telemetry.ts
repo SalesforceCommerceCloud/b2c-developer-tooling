@@ -7,7 +7,7 @@
 import {randomBytes} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import {TelemetryReporter} from '@salesforce/telemetry';
+import appInsights from 'applicationinsights';
 import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} from './types.js';
 import {getLogger, type Logger} from '../logging/index.js';
 
@@ -25,6 +25,31 @@ function sanitizeAttributes(attributes: TelemetryAttributes): TelemetryAttribute
     }
   }
   return out;
+}
+
+/**
+ * Split attributes into string properties and numeric measurements
+ * for Application Insights, matching the behavior of @salesforce/telemetry.
+ * String values have $HOME replaced with ~ for GDPR safety.
+ * Boolean values are converted to strings.
+ */
+function buildPropertiesAndMeasurements(attributes: TelemetryAttributes): {
+  properties: Record<string, string>;
+  measurements: Record<string, number>;
+} {
+  const properties: Record<string, string> = {};
+  const measurements: Record<string, number> = {};
+  const home = process.env.HOME ?? '';
+  for (const [key, value] of Object.entries(attributes)) {
+    if (typeof value === 'string') {
+      properties[key] = home ? value.replace(home, '~') : value;
+    } else if (typeof value === 'number') {
+      measurements[key] = value;
+    } else if (typeof value === 'boolean') {
+      properties[key] = String(value);
+    }
+  }
+  return {properties, measurements};
 }
 
 /**
@@ -70,16 +95,6 @@ const readOrCreateCliId = (dataDir?: string): string => {
 };
 
 /**
- * Custom TelemetryReporter that always enables telemetry.
- * Gating is handled at the instantiation site.
- */
-class ConfigurableTelemetryReporter extends TelemetryReporter {
-  override isSfdxTelemetryEnabled(): boolean {
-    return true;
-  }
-}
-
-/**
  * Telemetry client for sending events to Application Insights.
  *
  * @example
@@ -100,7 +115,7 @@ export class Telemetry {
   private attributes: TelemetryAttributes;
   private cliId: string;
   private project: string;
-  private reporter: TelemetryReporter | undefined;
+  private client: appInsights.TelemetryClient | undefined;
   private sessionId: string;
   private started: boolean;
   private version: string;
@@ -130,7 +145,7 @@ export class Telemetry {
     this.appInsightsKey = options.appInsightsKey;
     this.attributes = {...(options.initialAttributes ?? {})};
     this.cliId = readOrCreateCliId(options.dataDir);
-    this.reporter = undefined;
+    this.client = undefined;
     this.sessionId = generateRandomId();
     this.started = false;
     this.version = options.version ?? '0.0.0';
@@ -161,7 +176,8 @@ export class Telemetry {
       const name = eventName?.trim() || 'UNKNOWN';
       this.traceLog?.debug({event: name, attributes}, 'telemetry sendEvent');
       const eventProperties = this.buildEventProperties(attributes);
-      this.reporter?.sendTelemetryEvent(name, eventProperties);
+      const {properties, measurements} = buildPropertiesAndMeasurements(eventProperties);
+      this.client?.trackEvent({name: `${this.project}/${name}`, properties, measurements});
     } catch {
       // ignore send errors
     }
@@ -190,8 +206,9 @@ export class Telemetry {
   sendException(error: Error, attributes: TelemetryAttributes = {}): void {
     try {
       this.traceLog?.debug({error: error.name, message: error.message}, 'telemetry sendException');
-      const properties = this.buildEventProperties(sanitizeAttributes(attributes));
-      this.reporter?.sendTelemetryException(error, properties);
+      const eventProperties = this.buildEventProperties(sanitizeAttributes(attributes));
+      const {properties, measurements} = buildPropertiesAndMeasurements(eventProperties);
+      this.client?.trackException({exception: error, properties, measurements});
     } catch {
       // ignore send errors
     }
@@ -214,53 +231,39 @@ export class Telemetry {
     );
 
     try {
-      await this.createReporter();
+      this.createClient();
     } catch {
-      // Best-effort retry after ~1s: first runs can hit transient failures
-      // establishing the Application Insights connection (DNS/proxy/VPN warm-up,
-      // brief network blips, or backend cold start). One short delay usually fixes it.
-      // If the retry still fails, ignore it to avoid impacting the application.
-      try {
-        await this.createReporter();
-      } catch {
-        // ignore
-      }
+      // best-effort — telemetry failure never impacts the application
     }
   }
 
   /**
-   * Flush pending telemetry events without stopping the reporter.
+   * Flush pending telemetry events without stopping the client.
    * Use this for long-running processes that need to ensure events are sent periodically.
-   * Uses the native reporter.flush() as documented in https://github.com/forcedotcom/telemetry,
-   * and also flushes the App Insights client when present (SDK flush() only flushes O11y).
    */
   async flush(): Promise<void> {
-    if (!this.started || !this.reporter) return;
+    if (!this.started || !this.client) return;
 
-    await this.reporter.flush();
-
-    // SDK flush() only flushes O11y; we use App Insights. Flush the underlying client.
-    try {
-      const client = this.reporter.getTelemetryClient();
-      if (client?.flush) {
-        await new Promise<void>((resolve) => {
-          client.flush({callback: () => resolve()});
-        });
-      }
-    } catch {
-      // getTelemetryClient() throws if App Insights not initialized
-    }
+    await new Promise<void>((resolve) => {
+      this.client!.flush({callback: () => resolve()});
+    });
   }
 
   /**
-   * Stop the telemetry reporter and flush any pending events.
+   * Stop the telemetry client and flush any pending events.
    * Includes a delay to allow async HTTP requests to complete.
    */
   async stop(): Promise<void> {
     if (!this.started) return;
     this.traceLog?.debug('telemetry stop');
     this.started = false;
-    this.reporter?.stop();
+
+    if (this.client) {
+      await new Promise<void>((resolve) => {
+        this.client!.flush({callback: () => resolve()});
+      });
+      this.client = undefined;
+    }
 
     // Allow pending HTTP requests to flush before process exits.
     // Application Insights SDK sends events asynchronously, so we need
@@ -288,12 +291,30 @@ export class Telemetry {
     };
   }
 
-  private async createReporter(): Promise<void> {
-    this.reporter = await ConfigurableTelemetryReporter.create({
-      project: this.project,
-      key: this.appInsightsKey ?? '',
-      userId: this.cliId,
-    });
-    this.reporter.start();
+  private createClient(): void {
+    const client = new appInsights.TelemetryClient(this.appInsightsKey);
+
+    // Disable all auto-collection — we only do manual event tracking
+    client.config.enableAutoCollectConsole = false;
+    client.config.enableAutoCollectExceptions = false;
+    client.config.enableAutoCollectPerformance = false;
+    client.config.enableAutoCollectRequests = false;
+    client.config.enableAutoCollectDependencies = false;
+    client.config.enableAutoDependencyCorrelation = false;
+    client.config.enableAutoCollectHeartbeat = false;
+    client.config.enableAutoCollectPreAggregatedMetrics = false;
+    client.config.enableAutoCollectIncomingRequestAzureFunctions = false;
+    client.config.enableSendLiveMetrics = false;
+    client.config.enableUseDiskRetryCaching = false;
+    client.config.disableStatsbeat = true;
+    client.config.enableInternalDebugLogging = false;
+    client.config.enableInternalWarningLogging = false;
+
+    // Set user ID for session tracking
+    client.context.tags[client.context.keys.userId] = this.cliId;
+    // GDPR: hide machine-identifying cloud role instance
+    client.context.tags[client.context.keys.cloudRoleInstance] = '';
+
+    this.client = client;
   }
 }
