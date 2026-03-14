@@ -38,7 +38,7 @@ pnpm run test:agent
 pnpm --filter @salesforce/b2c-cli run test:agent
 pnpm --filter @salesforce/b2c-tooling-sdk run test:agent
 
-# Lint (errors only, no warnings)
+# Lint (errors only, no warnings); Be sure to run lint before committing or writing a changeset
 pnpm run lint:agent
 
 # Type-check (single-line errors, no color)

@@ -53,11 +53,11 @@ Claude Code supports MCP servers via CLI installation:
 
 ```bash [Project Scope (Recommended)]
 cd /path/to/your/project
-claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
 ```bash [User Scope]
-claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+claude mcp add --transport stdio --scope user b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
 :::
@@ -78,9 +78,9 @@ Project-level configuration automatically detects your project location and can 
 ```json
 {
   "mcpServers": {
-    "b2c-dx": {
+    "b2c-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
     }
   }
 }
@@ -94,26 +94,46 @@ With project-level configuration, the server automatically detects your project 
 
 Alternatively, use the "Add to Cursor" link to add to user-level configuration:
 
-[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3BAbGF0ZXN0IiwiLS1wcm9qZWN0LWRpcmVjdG9yeSIsIiR7d29ya3NwYWNlRm9sZGVyfSIsIi0tYWxsb3ctbm9uLWdhLXRvb2xzIl19)
 
-**Note:** The install link adds to user-level configuration (`~/.cursor/mcp.json`) with `--project-directory "${workspaceFolder}"`. The `${workspaceFolder}` variable automatically expands to your current workspace, so no manual updates are needed when switching projects.
+**Manual Configuration (Windows or if link doesn't work):**
+
+1. Open or create `~/.cursor/mcp.json` (on Windows: `C:\Users\<your-username>\.cursor\mcp.json`)
+2. Add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx-mcp": {
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+> **Note:** Cursor uses `"mcpServers"` as the top-level key. For GitHub Copilot/VS Code, use `"servers"` instead (see [GitHub Copilot](#github-copilot) section). The `${workspaceFolder}` variable automatically expands to your current workspace, so no manual updates are needed when switching projects.
 
 ## GitHub Copilot
 
 GitHub Copilot supports MCP servers via configuration in your workspace. See the [GitHub Copilot MCP documentation](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file) for setup instructions.
 
-Copilot supports project-level configuration. Create the MCP config file in your workspace:
+Copilot supports project-level configuration. Create the MCP config file in your workspace (`.vscode/mcp.json`):
 
 ```json
 {
-  "mcpServers": {
-    "b2c-dx": {
+  "servers": {
+    "b2c-dx-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
     }
-  }
+  },
+  "inputs": []
 }
 ```
+
+> **Note:** GitHub Copilot/VS Code uses `"servers"` (not `"mcpServers"`) and requires `"type": "stdio"` for stdio-based servers. The `"inputs"` array is optional but included for consistency with VS Code's format.
 
 With project-level configuration, the server automatically detects your project location.
 
@@ -123,6 +143,31 @@ With project-level configuration, the server automatically detects your project 
 
 - Verify Node.js version: `node --version` (must be 22.0.0+)
 - Check that `npx` is available and working
+
+### "Could not determine executable to run" Error (Windows)
+
+This error occurs when npx uses a cached broken version (`0.0.1`) instead of the latest version. npx's cache-first behavior can reuse an older cached version even when newer versions are available.
+
+**Solution:**
+
+1. **Update your MCP configuration** to use `@latest`:
+   ```json
+   {
+     "mcpServers": {
+       "b2c-dx-mcp": {
+         "command": "npx",
+         "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+       }
+     }
+   }
+   ```
+
+2. **Clear the npx cache** if the issue persists:
+   ```bash
+   npm cache clean --force
+   ```
+
+**Prevention:** Always use `@latest` in your MCP configuration to ensure npx fetches the latest version from the registry instead of using cached versions.
 
 ### Tools Not Available
 
