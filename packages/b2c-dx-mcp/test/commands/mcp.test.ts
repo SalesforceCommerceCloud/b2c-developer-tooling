@@ -499,7 +499,7 @@ describe('McpServerCommand', () => {
       });
 
       // Call loadConfiguration via protected access
-      const config = (command as unknown as {loadConfiguration(): unknown}).loadConfiguration();
+      const config = await (command as unknown as {loadConfiguration(): Promise<unknown>}).loadConfiguration();
 
       // Verify config was loaded (should return a ResolvedB2CConfig object)
       expect(config).to.exist;
@@ -527,7 +527,7 @@ describe('McpServerCommand', () => {
       sandbox.restore();
     });
 
-    it('should call loadConfiguration and Services.fromResolvedConfig', () => {
+    it('should call loadConfiguration and Services.fromResolvedConfig', async () => {
       const mockConfig = createMockResolvedConfig();
       const mockServices = new Services({
         resolvedConfig: mockConfig,
@@ -536,13 +536,13 @@ describe('McpServerCommand', () => {
       // Stub loadConfiguration to return mock config
       loadConfigurationStub = sandbox
         .stub(command as unknown as Record<string, unknown>, 'loadConfiguration')
-        .returns(mockConfig);
+        .resolves(mockConfig);
 
       // Stub Services.fromResolvedConfig to return mock services
       fromResolvedConfigStub = sandbox.stub(Services, 'fromResolvedConfig').returns(mockServices);
 
       // Call loadServices via protected access
-      const services = (command as unknown as {loadServices(): Services}).loadServices();
+      const services = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
 
       // Verify loadConfiguration was called
       expect(loadConfigurationStub.calledOnce).to.be.true;
@@ -555,7 +555,7 @@ describe('McpServerCommand', () => {
       expect(services).to.equal(mockServices);
     });
 
-    it('should return Services instance created from resolved config', () => {
+    it('should return Services instance created from resolved config', async () => {
       const mockConfig = createMockResolvedConfig({
         hostname: 'test-server',
         mrtProject: 'test-project',
@@ -565,20 +565,20 @@ describe('McpServerCommand', () => {
       });
 
       // Stub loadConfiguration
-      sandbox.stub(command as unknown as Record<string, unknown>, 'loadConfiguration').returns(mockConfig);
+      sandbox.stub(command as unknown as Record<string, unknown>, 'loadConfiguration').resolves(mockConfig);
 
       // Stub Services.fromResolvedConfig to return mock services
       sandbox.stub(Services, 'fromResolvedConfig').returns(mockServices);
 
       // Call loadServices
-      const services = (command as unknown as {loadServices(): Services}).loadServices();
+      const services = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
 
       // Verify the returned services instance
       expect(services).to.equal(mockServices);
       expect(services).to.be.instanceOf(Services);
     });
 
-    it('should reload configuration on each call', () => {
+    it('should reload configuration on each call', async () => {
       const mockConfig1 = createMockResolvedConfig({hostname: 'server1'});
       const mockConfig2 = createMockResolvedConfig({hostname: 'server2'});
       const mockServices1 = new Services({resolvedConfig: mockConfig1});
@@ -588,9 +588,9 @@ describe('McpServerCommand', () => {
       const loadConfigurationStub = sandbox
         .stub(command as unknown as Record<string, unknown>, 'loadConfiguration')
         .onFirstCall()
-        .returns(mockConfig1)
+        .resolves(mockConfig1)
         .onSecondCall()
-        .returns(mockConfig2);
+        .resolves(mockConfig2);
 
       // Stub Services.fromResolvedConfig to return different services
       const fromResolvedConfigStub = sandbox
@@ -601,8 +601,8 @@ describe('McpServerCommand', () => {
         .returns(mockServices2);
 
       // Call loadServices twice
-      const services1 = (command as unknown as {loadServices(): Services}).loadServices();
-      const services2 = (command as unknown as {loadServices(): Services}).loadServices();
+      const services1 = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
+      const services2 = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
 
       // Verify loadConfiguration was called twice
       expect(loadConfigurationStub.calledTwice).to.be.true;

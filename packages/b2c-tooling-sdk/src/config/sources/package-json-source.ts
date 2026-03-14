@@ -11,7 +11,7 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
-import * as fs from 'node:fs';
+import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
 import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions, NormalizedConfig} from '../types.js';
 import {getPopulatedFields, normalizeConfigKeys} from '../mapping.js';
@@ -58,7 +58,7 @@ export class PackageJsonSource implements ConfigSource {
   readonly name = 'PackageJsonSource';
   readonly priority = 1000;
 
-  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+  async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
     const logger = getLogger();
 
     // Only look in cwd (or projectDirectory if provided)
@@ -67,13 +67,15 @@ export class PackageJsonSource implements ConfigSource {
 
     logger.trace({location: packageJsonPath}, '[PackageJsonSource] Checking for package.json');
 
-    if (!fs.existsSync(packageJsonPath)) {
+    try {
+      await fsp.access(packageJsonPath);
+    } catch {
       logger.trace('[PackageJsonSource] No package.json found');
       return undefined;
     }
 
     try {
-      const content = fs.readFileSync(packageJsonPath, 'utf8');
+      const content = await fsp.readFile(packageJsonPath, 'utf8');
       const packageJson = JSON.parse(content) as {b2c?: PackageJsonB2CConfig};
 
       if (!packageJson.b2c) {

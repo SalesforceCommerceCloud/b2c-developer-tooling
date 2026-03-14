@@ -94,7 +94,7 @@ export abstract class CipCommand<T extends typeof Command> extends OAuthCommand<
     return CIP_AUTH_METHODS;
   }
 
-  protected override loadConfiguration(): ResolvedB2CConfig {
+  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     const flags = this.flags as Record<string, unknown>;
     return loadConfig(
       {

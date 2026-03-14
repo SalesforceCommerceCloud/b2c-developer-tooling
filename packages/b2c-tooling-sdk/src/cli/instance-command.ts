@@ -180,7 +180,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
     await this.lifecycleRunner.runAfter(context, result);
   }
 
-  protected override loadConfiguration(): ResolvedB2CConfig {
+  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     return loadConfig(extractInstanceFlags(this.flags as Record<string, unknown>), this.getBaseConfigOptions());
   }
 

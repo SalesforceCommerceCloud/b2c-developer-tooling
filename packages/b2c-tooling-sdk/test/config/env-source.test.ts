@@ -208,20 +208,20 @@ describe('config/EnvSource', () => {
       }
     });
 
-    it('EnvSource overrides DwJsonSource values (priority -10 < 0)', () => {
+    it('EnvSource overrides DwJsonSource values (priority -10 < 0)', async () => {
       // Create dw.json with a hostname
       fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify({hostname: 'dw.demandware.net'}));
 
       // EnvSource with different hostname
       const envSource = new EnvSource({SFCC_SERVER: 'env.demandware.net'});
       const resolver = new ConfigResolver([envSource, new DwJsonSource()]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // EnvSource should win (priority -10 < 0)
       expect(config.hostname).to.equal('env.demandware.net');
     });
 
-    it('DwJsonSource fills gaps not covered by EnvSource', () => {
+    it('DwJsonSource fills gaps not covered by EnvSource', async () => {
       // dw.json provides code-version
       fs.writeFileSync(
         path.join(tempDir, 'dw.json'),
@@ -231,7 +231,7 @@ describe('config/EnvSource', () => {
       // EnvSource provides only hostname
       const envSource = new EnvSource({SFCC_SERVER: 'env.demandware.net'});
       const resolver = new ConfigResolver([envSource, new DwJsonSource()]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.hostname).to.equal('env.demandware.net');
       expect(config.codeVersion).to.equal('v2');

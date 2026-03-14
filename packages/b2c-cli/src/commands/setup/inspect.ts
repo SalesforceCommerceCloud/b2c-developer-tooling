@@ -89,7 +89,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
 
   static hiddenAliases = ['config:show', 'config:inspect'];
 
-  protected override loadConfiguration(): ResolvedB2CConfig {
+  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
     // Other commands handle env vars via oclif flag mappings, but inspect needs to show them
     // as a config source since it doesn't have those flags.

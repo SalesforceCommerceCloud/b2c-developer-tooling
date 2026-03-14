@@ -157,7 +157,10 @@ interface MrtToolInjections {
  * @param injections - Optional dependency injections for testing
  * @returns The mrt_bundle_push tool
  */
-function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtToolInjections): McpTool {
+function createMrtBundlePushTool(
+  loadServices: () => Promise<Services> | Services,
+  injections?: MrtToolInjections,
+): McpTool {
   const pushBundleFn = injections?.pushBundle || pushBundle;
   const detectWorkspaceTypeFn = injections?.detectWorkspaceType ?? detectWorkspaceType;
   return createToolAdapter<MrtBundlePushInput, PushResult>(
@@ -278,6 +281,9 @@ function createMrtBundlePushTool(loadServices: () => Services, injections?: MrtT
  * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createMrtTools(loadServices: () => Services, injections?: MrtToolInjections): McpTool[] {
+export function createMrtTools(
+  loadServices: () => Promise<Services> | Services,
+  injections?: MrtToolInjections,
+): McpTool[] {
   return [createMrtBundlePushTool(loadServices, injections)];
 }
