@@ -365,6 +365,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         attributes.shortCode = values.shortCode;
       }
 
+      if (values.mrtProject) {
+        attributes.mrtProject = values.mrtProject;
+      }
+
       // Record which config sources contributed
       if (sources.length > 0) {
         attributes.configSources = sources.map((s) => s.name).join(', ');
