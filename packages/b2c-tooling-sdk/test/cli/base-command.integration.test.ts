@@ -32,14 +32,16 @@ describe('BaseCommand integration', () => {
     const {error, result} = await run(['test-base', '--extra-query', '{"debug":"true"}', '--json']);
 
     expect(error).to.be.undefined;
-    expect((result as Record<string, unknown>)?.extraParams?.query).to.deep.equal({debug: 'true'});
+    const extraParams = (result as Record<string, unknown>)?.extraParams as Record<string, unknown>;
+    expect(extraParams?.query).to.deep.equal({debug: 'true'});
   });
 
   it('handles --extra-body flag', async () => {
     const {error, result} = await run(['test-base', '--extra-body', '{"_internal":true}', '--json']);
 
     expect(error).to.be.undefined;
-    expect((result as Record<string, unknown>)?.extraParams?.body).to.deep.equal({_internal: true});
+    const extraParams = (result as Record<string, unknown>)?.extraParams as Record<string, unknown>;
+    expect(extraParams?.body).to.deep.equal({_internal: true});
   });
 
   it('handles both --extra-query and --extra-body flags', async () => {
@@ -53,8 +55,9 @@ describe('BaseCommand integration', () => {
     ]);
 
     expect(error).to.be.undefined;
-    expect((result as Record<string, unknown>)?.extraParams?.query).to.deep.equal({debug: 'true'});
-    expect((result as Record<string, unknown>)?.extraParams?.body).to.deep.equal({_internal: true});
+    const extraParams = (result as Record<string, unknown>)?.extraParams as Record<string, unknown>;
+    expect(extraParams?.query).to.deep.equal({debug: 'true'});
+    expect(extraParams?.body).to.deep.equal({_internal: true});
   });
 
   it('returns undefined extraParams when no extra flags provided', async () => {
