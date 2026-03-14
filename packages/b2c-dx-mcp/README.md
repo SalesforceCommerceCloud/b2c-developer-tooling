@@ -5,45 +5,64 @@ MCP (Model Context Protocol) server for Salesforce B2C Commerce developer experi
 > [!NOTE]
 > This project is currently in **Developer Preview**. Tools are functional but require `--allow-non-ga-tools` to enable. Additional tools will be added in future releases.
 
-This MCP server enables AI assistants (Cursor, Claude Desktop, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
+This MCP server enables AI assistants (Cursor, Claude Code, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
 
 Full documentation: [https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/)
 
 ## Installation
 
-**Prerequisites:** Node.js 22.0.0 or higher, MCP client (Cursor, Claude Desktop, or compatible)
+**Prerequisites:** Node.js 22.0.0 or higher, MCP client (Cursor, Claude Code, GitHub Copilot, or compatible)
 
-**Cursor** (supports `${workspaceFolder}`):
+**Cursor** (project-level configuration - recommended):
 
 ```json
 {
   "mcpServers": {
-    "b2c-dx": {
+    "b2c-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
     }
   }
 }
 ```
 
-**Claude Desktop** (use explicit path):
+> **Note:** Project-level configuration (`.cursor/mcp.json`) automatically detects your project location. For user-level configuration, add `--project-directory "${workspaceFolder}"` to the args array.
+
+**GitHub Copilot / VS Code**:
 
 ```json
 {
-  "mcpServers": {
-    "b2c-dx": {
+  "servers": {
+    "b2c-dx-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp", "--project-directory", "/path/to/your/project", "--allow-non-ga-tools"]
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
     }
-  }
+  },
+  "inputs": []
 }
+```
+
+> **Note:** GitHub Copilot/VS Code uses `"servers"` (not `"mcpServers"`) and requires `"type": "stdio"` for stdio-based servers.
+
+**Claude Code**:
+
+Claude Code supports MCP servers via CLI installation:
+
+```bash
+# Project scope (recommended)
+cd /path/to/your/project
+claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
+
+# User scope
+claude mcp add --transport stdio --scope user b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
 See the [Installation Guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation) for detailed setup.
 
 ## Configuration
 
-Always set `--project-directory` (or `SFCC_PROJECT_DIRECTORY`). MCP clients spawn from the home directory (`~`), not your project.
+**Project-level configuration** (recommended for Cursor and GitHub Copilot) automatically detects your project location. For **user-level configuration** or when using explicit paths, set `--project-directory` (or `SFCC_PROJECT_DIRECTORY`). MCP clients spawn from the home directory (`~`), not your project.
 
 | Environment Variable | Description |
 |---------------------|-------------|

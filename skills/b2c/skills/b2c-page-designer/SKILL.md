@@ -1,6 +1,6 @@
 ---
 name: b2c-page-designer
-description: Create Page Designer pages and components in B2C Commerce. Use when building visual merchandising tools, content slots, or experience API integrations. Covers page types, component types, regions, and attribute definitions.
+description: Create Page Designer pages and components in B2C Commerce. Use when building visual merchandising tools, content slots, or experience API integrations. Covers page types, component types, regions, attribute definitions, component type ID and subfolders, enum and custom/color attribute pitfalls, and troubleshooting when a component does not appear in the editor.
 ---
 
 # Page Designer Skill
@@ -37,7 +37,9 @@ Page Designer files are in the cartridge's `experience` directory:
                         banner.isml     # Component template
 ```
 
-**Naming:** The `.json` and `.js` files must have matching names.
+**Naming:** The `.json` and `.js` files must have matching names. Use only **alphanumeric** or **underscore** in file names and in any subdirectory names under `experience/pages` or `experience/components`.
+
+**Component types in subfolders:** You can put component meta and script in a subdirectory (e.g. `experience/components/assets/`). The **component type ID** is then the path with dots: `assets.hero_image_block`. The template path under `templates/default/` must mirror that path (e.g. `templates/default/experience/components/assets/hero_image_block.isml`), and the script must call `Template('experience/components/assets/hero_image_block')` so the path matches. Stored ID is `component.{component_type_id}`; total length must not exceed 256 characters.
 
 ## Page Types
 
@@ -119,6 +121,7 @@ module.exports.render = function (context) {
     "name": "Banner",
     "description": "Promotional banner with image and CTA",
     "group": "content",
+    "region_definitions": [],
     "attribute_definition_groups": [
         {
             "id": "image",
@@ -188,6 +191,8 @@ module.exports.render = function (context) {
 }
 ```
 
+**Component meta:** Always include `region_definitions`. Use `[]` when the component has no nested regions (no slots for other components).
+
 ### Component Script (components/banner.js)
 
 ```javascript
@@ -213,6 +218,19 @@ module.exports.render = function (context) {
 
     return new Template('experience/components/banner').render(model).text;
 };
+```
+
+**Template path:** The path passed to `Template(...)` must match the template path under `templates/default/`. If the component lives in a subfolder (e.g. `experience/components/assets/hero_image_block`), use `Template('experience/components/assets/hero_image_block')` and place the ISML at `templates/default/experience/components/assets/hero_image_block.isml`.
+
+**Handling colors (string or color picker object):** If an attribute can be a hex string or a color picker object `{ color: "#hex" }`, use a small helper so the script works with both:
+
+```javascript
+function getColor(colorAttr) {
+    if (!colorAttr) return '';
+    if (typeof colorAttr === 'string' && colorAttr.trim()) return colorAttr.trim();
+    if (colorAttr.color) return colorAttr.color;
+    return '';
+}
 ```
 
 ### Component Template (templates/experience/components/banner.isml)
@@ -260,7 +278,13 @@ module.exports.render = function (context) {
 | `category` | Category selector | Category object |
 | `product` | Product selector | Product object |
 | `page` | Page selector | Page object |
-| `custom` | JSON object | Object |
+| `custom` | JSON object or custom editor | Object (or editor-specific) |
+
+**Enum — critical for component visibility:** Use a **string array** for `values`: `"values": ["left", "center", "right"]`. Do **not** use objects like `{ "value": "x", "display_value": "X" }`; that format can cause the component type to be rejected and **not appear** in the Page Designer component list.
+
+**Custom and colors:** `type: "custom"` with e.g. `editor_definition.type: "styling.colorPicker"` requires a cartridge that provides that editor on the **Business Manager** site cartridge path. If the component does not show up in the editor, use `type: "string"` for color attributes (merchant types a hex). In the script, support both: accept a string or an object like `{ color: "#hex" }` (e.g. a small `getColor(attr)` helper that returns the string).
+
+**default_value:** Used for storefront rendering only; it is **not** shown as preselected in the Page Designer visual editor.
 
 ## Region Definitions
 
@@ -337,14 +361,25 @@ Organize components in the editor sidebar:
 
 Common groups: `content`, `products`, `navigation`, `layout`, `media`
 
+## If the component does not appear in Page Designer
+
+1. **Enums:** Ensure all `enum` attributes use `"values": ["a", "b"]` (string array), not objects with `value`/`display_value`.
+2. **Custom editors:** Replace `type: "custom"` (e.g. color picker) with `type: "string"` for the problematic attributes and redeploy; if the component then appears, the issue is likely the custom editor or BM cartridge path.
+3. **Naming:** File and subdirectory names only alphanumeric or underscore.
+4. **region_definitions:** Component meta must include `region_definitions` (use `[]` if no nested regions).
+5. **Template path:** Script `Template('...')` path must match the template path under `templates/default/` (including subfolders like `experience/components/assets/...`).
+6. **Logs:** In Business Manager, **Administration > Site Development > Development Setup**, check error logs when opening Page Designer for script or meta errors related to your component type ID.
+7. **Code version:** Deploy the cartridge to the correct code version; in non-production, meta can be cached for a few seconds—try a code version switch or short wait.
+
 ## Best Practices
 
 1. **Use `dw.util.Template`** for rendering (NOT `dw.template.ISML`)
 2. **Keep components self-contained** - avoid cross-component dependencies
-3. **Provide default values** for optional attributes
+3. **Provide default values** for optional attributes (they apply to rendering; not shown as preselected in the editor)
 4. **Group related attributes** in `attribute_definition_groups`
 5. **Use meaningful IDs** - they're used programmatically
-6. **Don't change type IDs** after merchants create content
+6. **Don't change type IDs or attribute types** after merchants create content (creates inconsistency with stored data); add a new component type and deprecate the old one if needed
+7. **Prefer string arrays for enums** and **string for colors** unless you control the BM cartridge path and custom editors
 
 ## Detailed Reference
 

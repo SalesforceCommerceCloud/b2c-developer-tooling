@@ -674,6 +674,63 @@ describe('config/resolver', () => {
       expect(config.selfSigned).to.equal(true);
     });
 
+    it('preserves non-instance-bound source fields on hostname mismatch', () => {
+      const instanceSource = new MockSource('dw-json', {
+        hostname: 'prod.demandware.net',
+        username: 'admin',
+        password: 'prod-pass',
+        shortCode: 'abcdef',
+      });
+      const globalSource = new MockSource('password-store', {
+        clientId: 'my-client-id',
+        clientSecret: 'my-client-secret',
+        shortCode: 'abcdef',
+      });
+      const resolver = new ConfigResolver([instanceSource, globalSource]);
+
+      const {config, warnings, sources} = resolver.resolve(
+        {hostname: 'staging.demandware.net'},
+        {hostnameProtection: true},
+      );
+
+      expect(config.hostname).to.equal('staging.demandware.net');
+      // Instance-bound fields should be dropped
+      expect(config.username).to.be.undefined;
+      expect(config.password).to.be.undefined;
+      // Non-instance-bound fields should survive
+      expect(config.clientId).to.equal('my-client-id');
+      expect(config.clientSecret).to.equal('my-client-secret');
+      // Fields from non-instance-bound source that were previously shadowed
+      // by the instance-bound source should now be available
+      expect(config.shortCode).to.equal('abcdef');
+      expect(warnings).to.have.length(1);
+      expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
+
+      // Source info should reflect the drop
+      const dwJsonInfo = sources.find((s) => s.name === 'dw-json');
+      expect(dwJsonInfo).to.exist;
+      expect(dwJsonInfo!.fields).to.deep.equal([]);
+      expect(dwJsonInfo!.fieldsIgnored).to.include('hostname');
+      expect(dwJsonInfo!.fieldsIgnored).to.include('username');
+      expect(dwJsonInfo!.fieldsIgnored).to.include('password');
+    });
+
+    it('drops fields from plugin source that also provides hostname on mismatch', () => {
+      const pluginSource = new MockSource('custom-plugin', {
+        hostname: 'prod.demandware.net',
+        clientId: 'plugin-client-id',
+        clientSecret: 'plugin-client-secret',
+      });
+      const resolver = new ConfigResolver([pluginSource]);
+
+      const {config} = resolver.resolve({hostname: 'staging.demandware.net'}, {hostnameProtection: true});
+
+      expect(config.hostname).to.equal('staging.demandware.net');
+      // Plugin provided hostname, so it's instance-bound — all its fields dropped
+      expect(config.clientId).to.be.undefined;
+      expect(config.clientSecret).to.be.undefined;
+    });
+
     it('discards TLS options on hostname mismatch protection', () => {
       const source = new MockSource('test', {
         hostname: 'prod.demandware.net',

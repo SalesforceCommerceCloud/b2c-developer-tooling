@@ -56,7 +56,7 @@
  * | `--json` | - | Output logs as JSON lines |
  * | `--lang` | - | Language for messages |
  *
- * **Note on `--project-directory`**: Many MCP clients (Cursor, Claude Desktop) spawn servers from the
+ * **Note on `--project-directory`**: Many MCP clients (Cursor, Claude Code) spawn servers from the
  * user's home directory (`~`) rather than the project directory. This flag is used for:
  * - Auto-discovery (detecting project type when no `--toolsets` or `--tools` are provided)
  * - Scaffolding tools (creating files in the correct project location)
@@ -312,9 +312,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * - `this.telemetry` - Telemetry instance (auto-initialized from package.json config)
    *
    * oclif provides standard config paths via `this.config`:
-   * - `this.config.configDir` - User config (~/.config/b2c-dx-mcp)
-   * - `this.config.dataDir` - User data (~/.local/share/b2c-dx-mcp)
-   * - `this.config.cacheDir` - Cache (~/.cache/b2c-dx-mcp)
+   * - `this.config.configDir` - User config (~/.config/b2c)
+   * - `this.config.dataDir` - User data (~/.local/share/b2c) - shared with b2c-cli for plugin discovery
+   * - `this.config.cacheDir` - Cache (~/.cache/b2c)
    * These can be exposed to Services if needed for features like telemetry or caching.
    */
   async run(): Promise<void> {
