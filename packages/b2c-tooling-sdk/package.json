@@ -383,7 +383,7 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
-    "@salesforce/telemetry": "6.4.6",
+    "applicationinsights": "2.9.8",
     "archiver": "7.0.1",
     "chokidar": "5.0.0",
     "cliui": "catalog:",
