@@ -534,6 +534,45 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
  * ```
  */
 /**
+ * Configuration for safety middleware.
+ */
+import type {SafetyConfig} from '../safety/safety-middleware.js';
+import {checkSafetyViolation, SafetyBlockedError} from '../safety/safety-middleware.js';
+
+/**
+ * Creates safety middleware that blocks destructive operations.
+ *
+ * This middleware intercepts HTTP requests BEFORE they are sent and blocks
+ * destructive operations based on the configured safety level. It cannot be
+ * bypassed by command-line flags since it operates at the HTTP layer.
+ *
+ * @param config - Safety configuration
+ * @returns Middleware that blocks destructive operations
+ *
+ * @example
+ * ```typescript
+ * const client = createOdsClient(config, auth);
+ * client.use(createSafetyMiddleware({ level: 'NO_DELETE' }));
+ * ```
+ */
+export function createSafetyMiddleware(config: SafetyConfig): Middleware {
+  const logger = getLogger();
+
+  return {
+    async onRequest({request}) {
+      const errorMessage = checkSafetyViolation(request.method, request.url, config);
+
+      if (errorMessage) {
+        logger.warn({method: request.method, url: request.url, safetyLevel: config.level}, `[SAFETY] ${errorMessage}`);
+        throw new SafetyBlockedError(errorMessage, request.method, request.url, config.level);
+      }
+
+      return request;
+    },
+  };
+}
+
+/**
  * Configuration for User-Agent middleware.
  */
 export interface UserAgentConfig {

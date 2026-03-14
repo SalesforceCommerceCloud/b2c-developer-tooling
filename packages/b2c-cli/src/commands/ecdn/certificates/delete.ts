@@ -49,6 +49,9 @@ export default class EcdnCertificatesDelete extends EcdnZoneCommand<typeof EcdnC
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete certificate');
+
     this.requireOAuthCredentials();
 
     const zoneId = await this.resolveZoneId();

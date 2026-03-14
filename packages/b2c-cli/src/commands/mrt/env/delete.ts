@@ -64,6 +64,9 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
   };
 
   async run(): Promise<{slug: string; project: string}> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete MRT environment');
+
     this.requireMrtCredentials();
 
     const {slug} = this.args;
