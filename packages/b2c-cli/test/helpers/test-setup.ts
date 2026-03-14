@@ -12,21 +12,6 @@ import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-uti
 import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {stubParse} from './stub-parse.js';
 
-// Cached full Config instance (with commands loaded).
-let cachedFullConfig: Config | undefined;
-
-/**
- * Get a shared oclif Config with all commands loaded. Loads once (~1s first call), then reuses.
- * Use for tests that need config.runCommand() or Help.showHelp().
- */
-export async function getSharedFullConfig(): Promise<Config> {
-  if (!cachedFullConfig) {
-    const {Config} = await import('@oclif/core');
-    cachedFullConfig = await Config.load({root: process.cwd()});
-  }
-  return cachedFullConfig;
-}
-
 type TokenResponse = {
   accessToken: string;
   expires: Date;
@@ -119,14 +104,6 @@ export function stubCommandConfigAndLogger(command: any, accountManagerHost = 'a
     configurable: true,
   });
 
-  // Silence stdout: stub command.log/logToStderr and ux.stdout to prevent
-  // test noise from non-JSON command output (tables, formatted details, etc.)
-  command.log = () => {};
-  command.logToStderr = () => {};
-  if (!Object.hasOwn(ux.stdout, 'isSinonProxy')) {
-    sinon.stub(ux, 'stdout');
-  }
-
   Object.defineProperty(command, 'resolvedConfig', {
     value: {
       values: {
@@ -140,6 +117,14 @@ export function stubCommandConfigAndLogger(command: any, accountManagerHost = 'a
     },
     configurable: true,
   });
+
+  // Silence stdout: stub command.log/logToStderr and ux.stdout to prevent
+  // test noise from non-JSON command output (tables, formatted details, etc.)
+  command.log = () => {};
+  command.logToStderr = () => {};
+  if (!Object.hasOwn(ux.stdout, 'isSinonProxy')) {
+    sinon.stub(ux, 'stdout');
+  }
 }
 
 /**
