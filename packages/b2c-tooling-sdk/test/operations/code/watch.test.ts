@@ -219,7 +219,7 @@ describe('operations/code/watch', () => {
       });
 
       // Wait for watcher to be ready
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       fs.writeFileSync(path.join(cartridgeDir, 'test.js'), 'console.log("test");');
 
@@ -263,7 +263,7 @@ describe('operations/code/watch', () => {
       });
 
       // Wait for watcher to be ready
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Delete the file
       fs.unlinkSync(testFile);
@@ -305,7 +305,7 @@ describe('operations/code/watch', () => {
       });
 
       // Wait for watcher to be ready
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Trigger a file change
       fs.writeFileSync(path.join(cartridgeDir, 'test.js'), 'console.log("test");');
