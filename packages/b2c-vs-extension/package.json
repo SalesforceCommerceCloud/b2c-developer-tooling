@@ -15,7 +15,7 @@
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
   "engines": {
-    "vscode": "^1.105.1"
+    "vscode": "^1.111.0"
   },
   "activationEvents": [
     "onView:b2cWebdavExplorer",
@@ -683,8 +683,8 @@
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
-    "esbuild": "^0.24.0",
-    "swagger-ui-dist": "^5.18.0",
+    "esbuild": "^0.27.4",
+    "swagger-ui-dist": "^5.32.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
