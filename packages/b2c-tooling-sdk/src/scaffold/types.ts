@@ -30,10 +30,17 @@ export type ScaffoldParameterType = 'string' | 'boolean' | 'choice' | 'multi-cho
  * Dynamic sources for populating parameter choices at runtime.
  *
  * - `cartridges`: Discovers cartridges in project via .project files
- * - `hook-points`: Static list of common hook extension points
+ * - `hook-points`: Static list of common hook extension points (all types)
+ * - `scapi-ocapi-hook-points`: SCAPI/OCAPI API extension hook points
+ * - `system-hook-points`: System hook extension points (order, payment, request)
  * - `sites`: Remote - fetches sites from connected B2C instance
  */
-export type DynamicParameterSource = 'cartridges' | 'hook-points' | 'sites';
+export type DynamicParameterSource =
+  | 'cartridges'
+  | 'hook-points'
+  | 'scapi-ocapi-hook-points'
+  | 'system-hook-points'
+  | 'sites';
 
 /**
  * Overwrite behavior for generated files
