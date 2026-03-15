@@ -292,7 +292,7 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns MCP tool for listing/fetching SCAPI schemas
  */
-export function createScapiSchemasListTool(loadServices: () => Services): McpTool {
+export function createScapiSchemasListTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',

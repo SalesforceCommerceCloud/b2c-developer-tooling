@@ -138,6 +138,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   context.subscriptions.push(configProvider);
+  await configProvider.ensureResolved();
 
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
     vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');
@@ -241,11 +242,11 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   const instanceStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   instanceStatusBar.command = 'b2c-dx.instance.switch';
-  const updateInstanceStatusBar = () => {
+  const updateInstanceStatusBar = async () => {
     const config = configProvider.getConfig();
     if (config) {
       // Find active instance name from dw.json
-      const instances = dwJsonSource.listInstances({workingDirectory: getWorkingDirectory()});
+      const instances = await dwJsonSource.listInstances({workingDirectory: getWorkingDirectory()});
       const active = instances.find((i) => i.active);
       const name = active?.name;
       const host = config.values.hostname ?? '';
@@ -272,8 +273,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       }
     }
   };
-  updateInstanceStatusBar();
-  configProvider.onDidReset(updateInstanceStatusBar);
+  await updateInstanceStatusBar();
+  configProvider.onDidReset(() => void updateInstanceStatusBar());
 
   const instanceConfigScheme = 'b2c-instance-config';
   const instanceConfigContents = new Map<string, string>();
@@ -313,7 +314,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   const switchInstanceDisposable = vscode.commands.registerCommand('b2c-dx.instance.switch', async () => {
     const workingDirectory = getWorkingDirectory();
-    const instances = dwJsonSource.listInstances({workingDirectory});
+    const instances = await dwJsonSource.listInstances({workingDirectory});
 
     if (instances.length === 0) {
       vscode.window.showWarningMessage('No instances configured in dw.json.');
@@ -345,7 +346,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }
 
     try {
-      dwJsonSource.setActiveInstance(picked.instance.name, {workingDirectory});
+      await dwJsonSource.setActiveInstance(picked.instance.name, {workingDirectory});
       // The FileSystemWatcher will detect the dw.json change and trigger reset,
       // but fire manually in case the watcher is slow
       configProvider.reset();

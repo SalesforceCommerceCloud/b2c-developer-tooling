@@ -28,6 +28,6 @@ import {createDeveloperGuidelinesTool} from './pwa-kit-development-guidelines.js
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createPwav3Tools(loadServices: () => Services): McpTool[] {
+export function createPwav3Tools(loadServices: () => Promise<Services> | Services): McpTool[] {
   return [createDeveloperGuidelinesTool(loadServices)];
 }

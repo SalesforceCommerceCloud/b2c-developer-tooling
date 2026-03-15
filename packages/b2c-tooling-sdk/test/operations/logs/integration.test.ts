@@ -23,17 +23,17 @@ describe('operations/logs integration', function () {
   // These tests may take longer due to network calls
   this.timeout(30000);
 
-  let instance: ReturnType<ReturnType<typeof resolveConfig>['createB2CInstance']>;
+  let instance: Awaited<ReturnType<Awaited<ReturnType<typeof resolveConfig>>['createB2CInstance']>>;
   let hasInstance = false;
 
-  before(function () {
+  before(async function () {
     try {
       // Try to load config from project root where dw.json is
       const configPath = process.env.SFCC_CONFIG || '../../dw.json';
       console.log(`    CWD: ${process.cwd()}`);
       console.log(`    Config path: ${configPath}`);
       // Note: instance and configPath go in the second argument (options), not the first (overrides)
-      const config = resolveConfig(
+      const config = await resolveConfig(
         {},
         {
           instance: process.env.SFCC_INSTANCE || 'zzpq-013',

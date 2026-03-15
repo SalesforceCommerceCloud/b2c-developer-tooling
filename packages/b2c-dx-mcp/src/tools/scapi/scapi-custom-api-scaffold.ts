@@ -200,7 +200,7 @@ export async function executeScaffoldCustomApi(
  * @param executeOverrides - Optional overrides for testing (getScaffold, resolveScaffoldParameters).
  */
 export function createScaffoldCustomApiTool(
-  loadServices: () => Services,
+  loadServices: () => Promise<Services> | Services,
   executeOverrides?: ScaffoldCustomApiExecuteOverrides,
 ): McpTool {
   return createToolAdapter<ScaffoldCustomApiInput, ScaffoldCustomApiOutput>(

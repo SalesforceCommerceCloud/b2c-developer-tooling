@@ -233,11 +233,11 @@ export interface PluginSources {
  * }
  * ```
  */
-export function loadConfig(
+export async function loadConfig(
   flags: Partial<NormalizedConfig> = {},
   options: LoadConfigOptions = {},
   pluginSources: PluginSources = {},
-): ResolvedB2CConfig {
+): Promise<ResolvedB2CConfig> {
   const logger = getLogger();
 
   // Preserve instanceName and projectDirectory from options if not already in flags
@@ -248,7 +248,7 @@ export function loadConfig(
     workingDirectory: flags.workingDirectory ?? options.workingDirectory,
   };
 
-  const resolved = resolveConfig(effectiveFlags, {
+  const resolved = await resolveConfig(effectiveFlags, {
     instance: options.instance,
     configPath: options.configPath,
     projectDirectory: options.projectDirectory,

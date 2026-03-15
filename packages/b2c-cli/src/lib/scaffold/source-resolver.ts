@@ -43,7 +43,7 @@ export function resolveLocalSource(source: DynamicParameterSource, projectRoot: 
  * @throws Error if authentication fails or API call fails
  */
 export async function resolveRemoteSource(source: DynamicParameterSource): Promise<ScaffoldChoice[]> {
-  const config = loadConfig({}, {configPath: undefined});
+  const config = await loadConfig({}, {configPath: undefined});
 
   if (!config.hasB2CInstanceConfig() || !config.hasOAuthConfig()) {
     throw new Error('B2C instance configuration with OAuth required for sites source');

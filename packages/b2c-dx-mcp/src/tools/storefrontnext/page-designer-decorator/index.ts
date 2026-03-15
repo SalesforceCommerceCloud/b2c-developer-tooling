@@ -627,7 +627,7 @@ function handleAutoMode(args: PageDesignerDecoratorInput, workspaceRoot: string)
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-export function createPageDesignerDecoratorTool(loadServices: () => Services): McpTool {
+export function createPageDesignerDecoratorTool(loadServices: () => Promise<Services> | Services): McpTool {
   return {
     name: 'storefront_next_page_designer_decorator',
 
@@ -648,7 +648,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Services): M
         const validatedArgs = pageDesignerDecoratorSchema.parse(args) as PageDesignerDecoratorInput;
         // Use projectDirectory from services to ensure we search in the correct project directory
         // This prevents searches in the home folder when MCP clients spawn servers from ~
-        const services = loadServices();
+        const services = await loadServices();
         const workspaceRoot = services.resolveWithProjectDirectory();
 
         if (validatedArgs.autoMode === undefined && !validatedArgs.conversationContext) {

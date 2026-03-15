@@ -35,60 +35,60 @@ class MockConfigSource implements ConfigSource {
 
 describe('cli/config', () => {
   describe('loadConfig', () => {
-    it('loads config from flags only', () => {
+    it('loads config from flags only', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'test.demandware.net',
         codeVersion: 'v1',
       };
 
-      const config = loadConfig(flags);
+      const config = await loadConfig(flags);
       expect(config.values.hostname).to.equal('test.demandware.net');
       expect(config.values.codeVersion).to.equal('v1');
     });
 
-    it('merges flags with config file sources', () => {
+    it('merges flags with config file sources', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'flag-hostname.demandware.net',
       };
 
       // loadConfig uses resolveConfig internally which will try to load from dw.json
       // In test environment, this may not exist, so we test with flags only
-      const config = loadConfig(flags);
+      const config = await loadConfig(flags);
       expect(config.values.hostname).to.equal('flag-hostname.demandware.net');
     });
 
-    it('handles instance option', () => {
+    it('handles instance option', async () => {
       const flags: Partial<NormalizedConfig> = {};
       const options: LoadConfigOptions = {
         instance: 'test-instance',
       };
 
-      const config = loadConfig(flags, options);
+      const config = await loadConfig(flags, options);
       // Instance name should be set if found in config
       expect(config).to.be.an('object');
     });
 
-    it('handles configPath option', () => {
+    it('handles configPath option', async () => {
       const flags: Partial<NormalizedConfig> = {};
       const options: LoadConfigOptions = {
         configPath: '/custom/path/dw.json',
       };
 
-      const config = loadConfig(flags, options);
+      const config = await loadConfig(flags, options);
       expect(config).to.be.an('object');
     });
 
-    it('handles cloudOrigin option', () => {
+    it('handles cloudOrigin option', async () => {
       const flags: Partial<NormalizedConfig> = {};
       const options: LoadConfigOptions = {
         cloudOrigin: 'https://cloud-staging.mobify.com',
       };
 
-      const config = loadConfig(flags, options);
+      const config = await loadConfig(flags, options);
       expect(config).to.be.an('object');
     });
 
-    it('merges plugin sources before defaults', () => {
+    it('merges plugin sources before defaults', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'flag-hostname.demandware.net',
       };
@@ -100,12 +100,12 @@ describe('cli/config', () => {
         before: [beforeSource],
       };
 
-      const config = loadConfig(flags, {}, pluginSources);
+      const config = await loadConfig(flags, {}, pluginSources);
       // Plugin source before should contribute codeVersion
       expect(config).to.be.an('object');
     });
 
-    it('merges plugin sources after defaults', () => {
+    it('merges plugin sources after defaults', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'flag-hostname.demandware.net',
       };
@@ -116,43 +116,43 @@ describe('cli/config', () => {
         after: [afterSource],
       };
 
-      const config = loadConfig(flags, {}, pluginSources);
+      const config = await loadConfig(flags, {}, pluginSources);
       // Plugin source after should contribute clientId
       expect(config).to.be.an('object');
     });
 
-    it('handles empty flags', () => {
-      const config = loadConfig({});
+    it('handles empty flags', async () => {
+      const config = await loadConfig({});
       expect(config).to.be.an('object');
     });
 
-    it('handles empty options', () => {
+    it('handles empty options', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'test.demandware.net',
       };
-      const config = loadConfig(flags, {});
+      const config = await loadConfig(flags, {});
       expect(config.values.hostname).to.equal('test.demandware.net');
     });
 
-    it('handles empty plugin sources', () => {
+    it('handles empty plugin sources', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'test.demandware.net',
       };
-      const config = loadConfig(flags, {}, {});
+      const config = await loadConfig(flags, {}, {});
       expect(config.values.hostname).to.equal('test.demandware.net');
     });
 
-    it('preserves instanceName from options when not in resolved config', () => {
+    it('preserves instanceName from options when not in resolved config', async () => {
       const flags: Partial<NormalizedConfig> = {};
       const options: LoadConfigOptions = {
         instance: 'custom-instance',
       };
 
-      const config = loadConfig(flags, options);
+      const config = await loadConfig(flags, options);
       expect(config.values.instanceName).to.equal('custom-instance');
     });
 
-    it('does not override instanceName if already in resolved config', () => {
+    it('does not override instanceName if already in resolved config', async () => {
       const flags: Partial<NormalizedConfig> = {
         instanceName: 'resolved-instance',
       };
@@ -160,12 +160,12 @@ describe('cli/config', () => {
         instance: 'option-instance',
       };
 
-      const config = loadConfig(flags, options);
+      const config = await loadConfig(flags, options);
       // Flags take precedence
       expect(config.values.instanceName).to.equal('resolved-instance');
     });
 
-    it('handles multiple plugin sources with priority', () => {
+    it('handles multiple plugin sources with priority', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'flag-hostname.demandware.net',
       };
@@ -177,7 +177,7 @@ describe('cli/config', () => {
         after: [afterSource],
       };
 
-      const config = loadConfig(flags, {}, pluginSources);
+      const config = await loadConfig(flags, {}, pluginSources);
       expect(config).to.be.an('object');
     });
   });
