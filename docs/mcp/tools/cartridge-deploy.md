@@ -20,17 +20,15 @@ This tool is useful for deploying custom code cartridges for SFRA or other B2C C
 
 ## Authentication
 
-Supports two authentication methods:
+Requires WebDAV access credentials. Supports two authentication methods:
 
-- **Basic Authentication (WebDAV)** - Uses `username` and `password` from `dw.json` or environment variables
-- **OAuth** - Uses `client-id` and `client-secret` from `dw.json` or environment variables
+**Required:**
+- **Basic Auth (recommended)** - `hostname`, `username`, and `password` (WebDAV access key). Provides better performance for WebDAV operations.
+- **OAuth** - `hostname`, `client-id`, and `client-secret`. Requires WebDAV Client Permissions configured.
 
-See [Configuration](../configuration) for complete credential setup details.
+**Configuration priority:** Flags → Environment variables → `dw.json` config file
 
-**Configuration Priority:**
-1. Flags (`--server`, `--username`, `--password`, `--client-id`, `--client-secret`)
-2. Environment variables (`SFCC_SERVER`, `SFCC_USERNAME`, `SFCC_PASSWORD`, `SFCC_CLIENT_ID`, `SFCC_CLIENT_SECRET`)
-3. `dw.json` config file (auto-discovered or via `--config` flag)
+See [Configuration](../configuration) for complete credential setup details including flags and environment variables. See [Authentication Setup](../../guide/authentication#webdav-access) for WebDAV access key and OAuth configuration instructions.
 
 ## Parameters
 

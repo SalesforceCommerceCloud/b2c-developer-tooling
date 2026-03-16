@@ -36,6 +36,15 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
+  // MRT env vars — MRT_* listed first as fallback, SFCC_MRT_* listed second to take precedence
+  MRT_API_KEY: 'mrtApiKey',
+  SFCC_MRT_API_KEY: 'mrtApiKey',
+  MRT_PROJECT: 'mrtProject',
+  SFCC_MRT_PROJECT: 'mrtProject',
+  MRT_ENVIRONMENT: 'mrtEnvironment',
+  SFCC_MRT_ENVIRONMENT: 'mrtEnvironment',
+  MRT_CLOUD_ORIGIN: 'mrtOrigin',
+  SFCC_MRT_CLOUD_ORIGIN: 'mrtOrigin',
 };
 
 /** Fields that should be parsed as comma-separated arrays. */

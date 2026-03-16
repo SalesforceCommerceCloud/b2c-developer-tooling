@@ -334,7 +334,7 @@ export function generateWorkflowResponse(figmaUrl: string, workflowFilePath?: st
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns MCP tool for workflow orchestration
  */
-export function createFigmaToComponentTool(loadServices: () => Services): McpTool {
+export function createFigmaToComponentTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<FigmaToComponentInput, string>(
     {
       name: 'storefront_next_figma_to_component_workflow',

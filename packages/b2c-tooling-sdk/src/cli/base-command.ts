@@ -177,7 +177,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Auto-initialize telemetry from oclif pjson config
     await this.initTelemetryFromConfig();
 
-    this.resolvedConfig = this.loadConfiguration();
+    this.resolvedConfig = await this.loadConfiguration();
 
     this.addTelemetryContext();
   }
@@ -325,7 +325,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     };
   }
 
-  protected loadConfiguration(): ResolvedB2CConfig {
+  protected async loadConfiguration(): Promise<ResolvedB2CConfig> {
     return loadConfig({}, this.getBaseConfigOptions());
   }
 
@@ -368,6 +368,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
       if (values.shortCode) {
         attributes.shortCode = values.shortCode;
+      }
+
+      if (values.mrtProject) {
+        attributes.mrtProject = values.mrtProject;
       }
 
       // Record which config sources contributed

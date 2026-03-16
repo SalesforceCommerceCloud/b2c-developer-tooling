@@ -5,6 +5,8 @@
  */
 import {Config} from '@oclif/core';
 import sinon from 'sinon';
+import {http, HttpResponse} from 'msw';
+import {setupServer} from 'msw/node';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
@@ -40,6 +42,17 @@ describe('cli/job-command', () => {
   let config: Config;
   let command: TestJobCommand;
   let mockInstance: B2CInstance;
+
+  // MSW server to intercept HTTP requests (avoids real network timeouts)
+  const server = setupServer(
+    http.all('https://test.demandware.net/*', () => {
+      return new HttpResponse(null, {status: 404});
+    }),
+  );
+
+  before(() => server.listen({onUnhandledRequest: 'bypass'}));
+  afterEach(() => server.resetHandlers());
+  after(() => server.close());
 
   beforeEach(async () => {
     config = await Config.load();
@@ -94,6 +107,9 @@ describe('cli/job-command', () => {
 
       await cmd.init();
       (cmd as Record<string, B2CInstance | undefined>)._instance = mockInstance;
+
+      // Stub WebDAV get to fail immediately (instead of a real network timeout)
+      sinon.stub(mockInstance.webdav, 'get').rejects(new Error('WebDAV fetch failed'));
 
       // Stub warn to avoid noise in test output for expected warning
       const warnStub = sinon.stub(command, 'warn');

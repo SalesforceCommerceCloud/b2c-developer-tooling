@@ -1,251 +1,282 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy"
-    content="default-src 'none';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none';
              script-src 'nonce-__NONCE__' __CSP_SOURCE__;
              style-src __CSP_SOURCE__ 'unsafe-inline';
              img-src __CSP_SOURCE__ data:;
              font-src __CSP_SOURCE__;
-             connect-src https://*.commercecloud.salesforce.com;" />
-  <link rel="stylesheet" href="__SWAGGER_CSS_URI__" />
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: var(--vscode-editor-background, #1e1e1e);
-      color: var(--vscode-editor-foreground, #d4d4d4);
-    }
-    .token-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 16px;
-      background: var(--vscode-sideBar-background, #252526);
-      border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c);
-      font-family: var(--vscode-font-family, sans-serif);
-      font-size: 13px;
-    }
-    .token-bar .api-type {
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 3px;
-      background: var(--vscode-badge-background, #4d4d4d);
-      color: var(--vscode-badge-foreground, #fff);
-    }
-    .token-bar .token-status {
-      flex: 1;
-    }
-    .token-bar .token-status.ok {
-      color: var(--vscode-testing-iconPassed, #73c991);
-    }
-    .token-bar .token-status.error {
-      color: var(--vscode-testing-iconFailed, #f48771);
-    }
-    .token-bar .token-status.pending {
-      color: var(--vscode-descriptionForeground, #888);
-    }
-    .token-bar button {
-      padding: 4px 12px;
-      border: 1px solid var(--vscode-button-border, transparent);
-      border-radius: 2px;
-      background: var(--vscode-button-background, #0e639c);
-      color: var(--vscode-button-foreground, #fff);
-      cursor: pointer;
-      font-size: 12px;
-    }
-    .token-bar button:hover {
-      background: var(--vscode-button-hoverBackground, #1177bb);
-    }
-    /* Reset VS Code's vscode-default layer styles that bleed into Swagger UI.
+             connect-src https://*.commercecloud.salesforce.com;"
+    />
+    <link rel="stylesheet" href="__SWAGGER_CSS_URI__" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--vscode-editor-background, #1e1e1e);
+        color: var(--vscode-editor-foreground, #d4d4d4);
+      }
+      .token-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        background: var(--vscode-sideBar-background, #252526);
+        border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c);
+        font-family: var(--vscode-font-family, sans-serif);
+        font-size: 13px;
+      }
+      .token-bar .api-type {
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 3px;
+        background: var(--vscode-badge-background, #4d4d4d);
+        color: var(--vscode-badge-foreground, #fff);
+      }
+      .token-bar .token-status {
+        flex: 1;
+      }
+      .token-bar .token-status.ok {
+        color: var(--vscode-testing-iconPassed, #73c991);
+      }
+      .token-bar .token-status.error {
+        color: var(--vscode-testing-iconFailed, #f48771);
+      }
+      .token-bar .token-status.pending {
+        color: var(--vscode-descriptionForeground, #888);
+      }
+      .token-bar button {
+        padding: 4px 12px;
+        border: 1px solid var(--vscode-button-border, transparent);
+        border-radius: 2px;
+        background: var(--vscode-button-background, #0e639c);
+        color: var(--vscode-button-foreground, #fff);
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .token-bar button:hover {
+        background: var(--vscode-button-hoverBackground, #1177bb);
+      }
+      /* Reset VS Code's vscode-default layer styles that bleed into Swagger UI.
        These unlayered rules beat the layered VS Code defaults. */
-    .swagger-ui, .swagger-ui * {
-      color: revert;
-      background: revert;
-      border-color: revert;
-      font-family: revert;
-    }
-    .swagger-ui .topbar { display: none; }
-    /* Hide resolver error banner — external $refs are resolved server-side */
-    .swagger-ui .errors-wrapper { display: none; }
-  </style>
-</head>
-<body>
-  <div class="token-bar">
-    <span class="api-type" id="apiTypeLabel">__API_TYPE__</span>
-    <span class="token-status pending" id="tokenStatus">Acquiring token...</span>
-    <button id="refreshTokenBtn">Refresh Token</button>
-  </div>
-  <div id="swagger-ui"></div>
+      .swagger-ui,
+      .swagger-ui * {
+        color: revert;
+        background: revert;
+        border-color: revert;
+        font-family: revert;
+      }
+      .swagger-ui .topbar {
+        display: none;
+      }
+      /* Hide resolver error banner — external $refs are resolved server-side */
+      .swagger-ui .errors-wrapper {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="token-bar">
+      <span class="api-type" id="apiTypeLabel">__API_TYPE__</span>
+      <span class="token-status pending" id="tokenStatus">Acquiring token...</span>
+      <button id="refreshTokenBtn">Refresh Token</button>
+    </div>
+    <div id="swagger-ui"></div>
 
-  <script src="__SWAGGER_BUNDLE_URI__"></script>
-  <script src="__SWAGGER_PRESET_URI__"></script>
-  <script nonce="__NONCE__">
-    (function() {
-      var vscode = acquireVsCodeApi();
-      var initialToken = '__INITIAL_TOKEN__';
-      var currentToken = initialToken;
+    <script src="__SWAGGER_BUNDLE_URI__"></script>
+    <script src="__SWAGGER_PRESET_URI__"></script>
+    <script nonce="__NONCE__">
+      (function () {
+        var vscode = acquireVsCodeApi();
+        var initialToken = '__INITIAL_TOKEN__';
+        var currentToken = initialToken;
 
-      var spec = __SPEC_JSON__;
+        var spec = __SPEC_JSON__;
 
-      // --- Proxy fetch through extension host to avoid CORS ---
-      // Override window.fetch so swagger-client's normal HTTP processing stays
-      // intact — it reads .text(), .headers.entries() etc. from the result.
-      // We return a mock Response with MUTABLE properties (native Response has
-      // read-only headers, which swagger-client tries to reassign).
-      var pendingProxyRequests = {};
-      var proxyRequestCounter = 0;
+        // --- Proxy fetch through extension host to avoid CORS ---
+        // Override window.fetch so swagger-client's normal HTTP processing stays
+        // intact — it reads .text(), .headers.entries() etc. from the result.
+        // We return a mock Response with MUTABLE properties (native Response has
+        // read-only headers, which swagger-client tries to reassign).
+        var pendingProxyRequests = {};
+        var proxyRequestCounter = 0;
 
-      window.addEventListener('message', function(event) {
-        var msg = event.data;
-        if (msg.type === 'proxyResponse' && pendingProxyRequests[msg.requestId]) {
-          var pending = pendingProxyRequests[msg.requestId];
-          delete pendingProxyRequests[msg.requestId];
-          if (msg.error) {
-            console.error('[API Browser Proxy] Error:', msg.requestId, msg.error);
-            pending.reject(new TypeError('Network request failed: ' + msg.error));
-          } else {
-            console.log('[API Browser Proxy] Response:', msg.requestId, msg.status, msg.statusText, '(' + (msg.body || '').length + ' bytes)');
-            var bodyText = msg.body || '';
-            var hdrs = new Headers(msg.headers || {});
-            // Mock Response: mutable props + standard methods
-            var mockResponse = {
-              ok: msg.status >= 200 && msg.status < 300,
-              status: msg.status,
-              statusText: msg.statusText,
-              headers: hdrs,
-              url: pending.url || '',
-              text: function() { return Promise.resolve(bodyText); },
-              json: function() { return Promise.resolve(JSON.parse(bodyText)); },
-              blob: function() { return Promise.resolve(new Blob([bodyText])); },
-              clone: function() { return Object.assign({}, mockResponse, { text: mockResponse.text, json: mockResponse.json, blob: mockResponse.blob, clone: mockResponse.clone }); }
-            };
-            pending.resolve(mockResponse);
+        window.addEventListener('message', function (event) {
+          var msg = event.data;
+          if (msg.type === 'proxyResponse' && pendingProxyRequests[msg.requestId]) {
+            var pending = pendingProxyRequests[msg.requestId];
+            delete pendingProxyRequests[msg.requestId];
+            if (msg.error) {
+              console.error('[API Browser Proxy] Error:', msg.requestId, msg.error);
+              pending.reject(new TypeError('Network request failed: ' + msg.error));
+            } else {
+              console.log(
+                '[API Browser Proxy] Response:',
+                msg.requestId,
+                msg.status,
+                msg.statusText,
+                '(' + (msg.body || '').length + ' bytes)',
+              );
+              var bodyText = msg.body || '';
+              var hdrs = new Headers(msg.headers || {});
+              // Mock Response: mutable props + standard methods
+              var mockResponse = {
+                ok: msg.status >= 200 && msg.status < 300,
+                status: msg.status,
+                statusText: msg.statusText,
+                headers: hdrs,
+                url: pending.url || '',
+                text: function () {
+                  return Promise.resolve(bodyText);
+                },
+                json: function () {
+                  return Promise.resolve(JSON.parse(bodyText));
+                },
+                blob: function () {
+                  return Promise.resolve(new Blob([bodyText]));
+                },
+                clone: function () {
+                  return Object.assign({}, mockResponse, {
+                    text: mockResponse.text,
+                    json: mockResponse.json,
+                    blob: mockResponse.blob,
+                    clone: mockResponse.clone,
+                  });
+                },
+              };
+              pending.resolve(mockResponse);
+            }
+          } else if (msg.type === 'updateToken') {
+            currentToken = msg.token;
+            preauthorize(msg.token);
+            setTokenStatus('Token acquired', 'ok');
+          } else if (msg.type === 'tokenError') {
+            currentToken = '';
+            setTokenStatus('Token error: ' + msg.error, 'error');
           }
-        } else if (msg.type === 'updateToken') {
-          currentToken = msg.token;
-          preauthorize(msg.token);
-          setTokenStatus('Token acquired', 'ok');
-        } else if (msg.type === 'tokenError') {
-          currentToken = '';
-          setTokenStatus('Token error: ' + msg.error, 'error');
-        }
-      });
+        });
 
-      var nativeFetch = window.fetch.bind(window);
-      window.fetch = function(input, init) {
-        var urlStr;
-        if (typeof input === 'string') {
-          urlStr = input;
-        } else if (input && typeof input === 'object') {
-          urlStr = input.url || String(input);
-        } else {
-          urlStr = String(input);
-        }
-
-        if (urlStr.indexOf('commercecloud.salesforce.com') === -1) {
-          return nativeFetch(input, init);
-        }
-
-        // Proxy through extension host
-        init = init || {};
-        var id = 'req_' + (++proxyRequestCounter);
-        var headers = {};
-        var srcHeaders = init.headers || (input && input.headers);
-        if (srcHeaders) {
-          if (typeof srcHeaders.forEach === 'function') {
-            srcHeaders.forEach(function(v, k) { headers[k] = v; });
-          } else if (typeof srcHeaders.entries === 'function') {
-            for (var pair of srcHeaders.entries()) { headers[pair[0]] = pair[1]; }
+        var nativeFetch = window.fetch.bind(window);
+        window.fetch = function (input, init) {
+          var urlStr;
+          if (typeof input === 'string') {
+            urlStr = input;
+          } else if (input && typeof input === 'object') {
+            urlStr = input.url || String(input);
           } else {
-            for (var k in srcHeaders) {
-              if (srcHeaders.hasOwnProperty(k)) headers[k] = srcHeaders[k];
+            urlStr = String(input);
+          }
+
+          if (urlStr.indexOf('commercecloud.salesforce.com') === -1) {
+            return nativeFetch(input, init);
+          }
+
+          // Proxy through extension host
+          init = init || {};
+          var id = 'req_' + ++proxyRequestCounter;
+          var headers = {};
+          var srcHeaders = init.headers || (input && input.headers);
+          if (srcHeaders) {
+            if (typeof srcHeaders.forEach === 'function') {
+              srcHeaders.forEach(function (v, k) {
+                headers[k] = v;
+              });
+            } else if (typeof srcHeaders.entries === 'function') {
+              for (var pair of srcHeaders.entries()) {
+                headers[pair[0]] = pair[1];
+              }
+            } else {
+              for (var k in srcHeaders) {
+                if (srcHeaders.hasOwnProperty(k)) headers[k] = srcHeaders[k];
+              }
             }
           }
-        }
-        var body = init.body;
-        if (body && typeof body !== 'string') {
-          try { body = JSON.stringify(body); } catch(e) { body = String(body); }
-        }
-        var method = init.method || (input && input.method) || 'GET';
-        console.log('[API Browser Proxy] Sending:', id, method, urlStr);
+          var body = init.body;
+          if (body && typeof body !== 'string') {
+            try {
+              body = JSON.stringify(body);
+            } catch (e) {
+              body = String(body);
+            }
+          }
+          var method = init.method || (input && input.method) || 'GET';
+          console.log('[API Browser Proxy] Sending:', id, method, urlStr);
 
-        return new Promise(function(resolve, reject) {
-          pendingProxyRequests[id] = { resolve: resolve, reject: reject, url: urlStr };
-          vscode.postMessage({
-            type: 'proxyRequest',
-            requestId: id,
-            url: urlStr,
-            method: method,
-            headers: headers,
-            body: body || undefined
+          return new Promise(function (resolve, reject) {
+            pendingProxyRequests[id] = {resolve: resolve, reject: reject, url: urlStr};
+            vscode.postMessage({
+              type: 'proxyRequest',
+              requestId: id,
+              url: urlStr,
+              method: method,
+              headers: headers,
+              body: body || undefined,
+            });
           });
+        };
+        // --- End proxy fetch ---
+
+        var ui = SwaggerUIBundle({
+          spec: spec,
+          dom_id: '#swagger-ui',
+          presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+          layout: 'StandaloneLayout',
+          deepLinking: false,
+          validatorUrl: null,
+          requestInterceptor: function (req) {
+            if (currentToken) {
+              req.headers['Authorization'] = 'Bearer ' + currentToken;
+            }
+            return req;
+          },
+          onComplete: function () {
+            if (initialToken) {
+              preauthorize(initialToken);
+              setTokenStatus('Token acquired', 'ok');
+            }
+          },
         });
-      };
-      // --- End proxy fetch ---
 
-      var ui = SwaggerUIBundle({
-        spec: spec,
-        dom_id: '#swagger-ui',
-        presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIStandalonePreset
-        ],
-        layout: 'StandaloneLayout',
-        deepLinking: false,
-        validatorUrl: null,
-        requestInterceptor: function(req) {
-          if (currentToken) {
-            req.headers['Authorization'] = 'Bearer ' + currentToken;
+        /**
+         * Pre-authorize all security schemes so the lock icons turn green.
+         * OAuth2 schemes require { access_token, token_type } while http/bearer takes a plain string.
+         */
+        function preauthorize(token) {
+          var schemes = (spec.components && spec.components.securitySchemes) || {};
+          var authPayload = {};
+          for (var name in schemes) {
+            if (!schemes.hasOwnProperty(name)) continue;
+            var scheme = schemes[name];
+            if (scheme.type === 'oauth2') {
+              authPayload[name] = {
+                name: name,
+                schema: scheme,
+                value: {access_token: token, token_type: 'Bearer'},
+              };
+            } else {
+              authPayload[name] = {name: name, schema: scheme, value: token};
+            }
           }
-          return req;
-        },
-        onComplete: function() {
-          if (initialToken) {
-            preauthorize(initialToken);
-            setTokenStatus('Token acquired', 'ok');
-          }
-        }
-      });
-
-      /**
-       * Pre-authorize all security schemes so the lock icons turn green.
-       * OAuth2 schemes require { access_token, token_type } while http/bearer takes a plain string.
-       */
-      function preauthorize(token) {
-        var schemes = (spec.components && spec.components.securitySchemes) || {};
-        var authPayload = {};
-        for (var name in schemes) {
-          if (!schemes.hasOwnProperty(name)) continue;
-          var scheme = schemes[name];
-          if (scheme.type === 'oauth2') {
-            authPayload[name] = {
-              name: name,
-              schema: scheme,
-              value: { access_token: token, token_type: 'Bearer' }
-            };
-          } else {
-            authPayload[name] = { name: name, schema: scheme, value: token };
+          if (Object.keys(authPayload).length > 0) {
+            ui.authActions.authorize(authPayload);
           }
         }
-        if (Object.keys(authPayload).length > 0) {
-          ui.authActions.authorize(authPayload);
+
+        function setTokenStatus(text, status) {
+          var el = document.getElementById('tokenStatus');
+          el.textContent = text;
+          el.className = 'token-status ' + status;
         }
-      }
 
-      function setTokenStatus(text, status) {
-        var el = document.getElementById('tokenStatus');
-        el.textContent = text;
-        el.className = 'token-status ' + status;
-      }
-
-      document.getElementById('refreshTokenBtn').addEventListener('click', function() {
-        setTokenStatus('Refreshing token...', 'pending');
-        vscode.postMessage({ type: 'refreshToken' });
-      });
-    })();
-  </script>
-</body>
+        document.getElementById('refreshTokenBtn').addEventListener('click', function () {
+          setTokenStatus('Refreshing token...', 'pending');
+          vscode.postMessage({type: 'refreshToken'});
+        });
+      })();
+    </script>
+  </body>
 </html>

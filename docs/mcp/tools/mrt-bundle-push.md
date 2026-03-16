@@ -21,20 +21,21 @@ This tool is shared across the MRT, PWAV3, and STOREFRONTNEXT toolsets.
 
 ## Authentication
 
-Requires Managed Runtime (MRT) credentials. See [MRT Credentials](../configuration#mrt-credentials-mobify) for complete details.
-
-**Configuration priority:**
-1. Flags (`--api-key`, `--project`, `--environment`, `--cloud-origin`)
-2. Environment variables (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_CLOUD_ORIGIN`)
-3. `~/.mobify` config file (or `~/.mobify--[hostname]` if `--cloud-origin` is set)
+Requires Managed Runtime (MRT) credentials.
 
 **Required:**
-- `project` (via `--project` flag or `MRT_PROJECT` environment variable)
-- `api-key` (via `--api-key` flag, `MRT_API_KEY` environment variable, or `~/.mobify` config file)
+- `project` - MRT project slug
+- `api-key` - MRT API key
+
+**Required when `deploy: true`:**
+- `environment` - Target environment (e.g., staging, production)
 
 **Optional:**
-- `environment` (required only when `deploy: true`; via `--environment` flag or `MRT_ENVIRONMENT` environment variable)
-- `cloud-origin` (for environment-specific `~/.mobify` files; via `--cloud-origin` flag or `MRT_CLOUD_ORIGIN` environment variable)
+- `cloud-origin` - Overrides MRT API endpoint and uses `~/.mobify--{hostname}` instead of `~/.mobify`
+
+**Configuration priority:** Flags → Environment variables → `~/.mobify` config file
+
+See [MRT Credentials](../configuration#mrt-credentials-mobify) for complete setup instructions including flags, environment variables, and the `~/.mobify` file format. See [Authentication Setup](../../guide/authentication#managed-runtime-api-key) for how to get your API key.
 
 ## Parameters
 

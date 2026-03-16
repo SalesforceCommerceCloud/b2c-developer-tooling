@@ -69,7 +69,10 @@ interface CartridgeToolInjections {
  * @param injections - Optional dependency injections for testing
  * @returns The cartridge_deploy tool
  */
-function createCartridgeDeployTool(loadServices: () => Services, injections?: CartridgeToolInjections): McpTool {
+function createCartridgeDeployTool(
+  loadServices: () => Promise<Services> | Services,
+  injections?: CartridgeToolInjections,
+): McpTool {
   const findAndDeployCartridgesFn = injections?.findAndDeployCartridges || findAndDeployCartridges;
   const getActiveCodeVersionFn = injections?.getActiveCodeVersion || getActiveCodeVersion;
   return createToolAdapter<CartridgeDeployInput, CartridgeDeployOutput>(
@@ -191,6 +194,9 @@ function createCartridgeDeployTool(loadServices: () => Services, injections?: Ca
  * @param injections - Optional dependency injections for testing
  * @returns Array of MCP tools
  */
-export function createCartridgesTools(loadServices: () => Services, injections?: CartridgeToolInjections): McpTool[] {
+export function createCartridgesTools(
+  loadServices: () => Promise<Services> | Services,
+  injections?: CartridgeToolInjections,
+): McpTool[] {
   return [createCartridgeDeployTool(loadServices, injections)];
 }

@@ -9,6 +9,23 @@ import path from 'node:path';
 import {globSync} from 'glob';
 import {Project, InterfaceDeclaration, PropertySignature} from 'ts-morph';
 
+/**
+ * Lazily-initialized, reusable ts-morph Project for component analysis.
+ * Creating a new Project (~40ms) on every analyzeComponent call is expensive;
+ * reusing one with an in-memory file system avoids repeated TypeScript compiler init.
+ */
+let cachedProject: Project | undefined;
+
+function getProject(): Project {
+  if (!cachedProject) {
+    cachedProject = new Project({
+      useInMemoryFileSystem: true,
+      skipAddingFilesFromTsConfig: true,
+    });
+  }
+  return cachedProject;
+}
+
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
@@ -352,48 +369,49 @@ function parseComponentFile(filePath: string): ComponentInfo {
     };
   }
 
-  const project = new Project({
-    useInMemoryFileSystem: true,
-    skipAddingFilesFromTsConfig: true,
-  });
+  const project = getProject();
+  const sourceFile = project.createSourceFile(filePath, content, {overwrite: true});
 
-  const sourceFile = project.createSourceFile(filePath, content);
-  const interfaces = sourceFile.getInterfaces();
-  const propsInterface = interfaces.find((i: InterfaceDeclaration) => i.getName().includes('Props'));
+  try {
+    const interfaces = sourceFile.getInterfaces();
+    const propsInterface = interfaces.find((i: InterfaceDeclaration) => i.getName().includes('Props'));
 
-  if (!propsInterface) {
+    if (!propsInterface) {
+      return {
+        componentName: extractComponentName(content),
+        interfaceName: null,
+        hasDecorators: false,
+        props: [],
+        exportType: detectExportType(content),
+        filePath,
+      };
+    }
+
+    const props: PropInfo[] = propsInterface.getProperties().map((prop: PropertySignature) => {
+      const name = prop.getName();
+      const type = prop.getType().getText();
+      const optional = prop.hasQuestionToken();
+
+      return {
+        name,
+        type,
+        optional,
+        isComplex: isComplexType(type),
+        isUIOnly: isUIOnlyProp(name),
+      };
+    });
+
     return {
       componentName: extractComponentName(content),
-      interfaceName: null,
+      interfaceName: propsInterface.getName(),
       hasDecorators: false,
-      props: [],
+      props,
       exportType: detectExportType(content),
       filePath,
     };
+  } finally {
+    project.removeSourceFile(sourceFile);
   }
-
-  const props: PropInfo[] = propsInterface.getProperties().map((prop: PropertySignature) => {
-    const name = prop.getName();
-    const type = prop.getType().getText();
-    const optional = prop.hasQuestionToken();
-
-    return {
-      name,
-      type,
-      optional,
-      isComplex: isComplexType(type),
-      isUIOnly: isUIOnlyProp(name),
-    };
-  });
-
-  return {
-    componentName: extractComponentName(content),
-    interfaceName: propsInterface.getName(),
-    hasDecorators: false,
-    props,
-    exportType: detectExportType(content),
-    filePath,
-  };
 }
 
 // ============================================================================
