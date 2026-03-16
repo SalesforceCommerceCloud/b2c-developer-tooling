@@ -499,7 +499,7 @@ describe('McpServerCommand', () => {
       });
 
       // Call loadConfiguration via protected access
-      const config = (command as unknown as {loadConfiguration(): unknown}).loadConfiguration();
+      const config = await (command as unknown as {loadConfiguration(): Promise<unknown>}).loadConfiguration();
 
       // Verify config was loaded (should return a ResolvedB2CConfig object)
       expect(config).to.exist;
@@ -527,7 +527,7 @@ describe('McpServerCommand', () => {
       sandbox.restore();
     });
 
-    it('should call loadConfiguration and Services.fromResolvedConfig', () => {
+    it('should call loadConfiguration and Services.fromResolvedConfig', async () => {
       const mockConfig = createMockResolvedConfig();
       const mockServices = new Services({
         resolvedConfig: mockConfig,
@@ -536,13 +536,13 @@ describe('McpServerCommand', () => {
       // Stub loadConfiguration to return mock config
       loadConfigurationStub = sandbox
         .stub(command as unknown as Record<string, unknown>, 'loadConfiguration')
-        .returns(mockConfig);
+        .resolves(mockConfig);
 
       // Stub Services.fromResolvedConfig to return mock services
       fromResolvedConfigStub = sandbox.stub(Services, 'fromResolvedConfig').returns(mockServices);
 
       // Call loadServices via protected access
-      const services = (command as unknown as {loadServices(): Services}).loadServices();
+      const services = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
 
       // Verify loadConfiguration was called
       expect(loadConfigurationStub.calledOnce).to.be.true;
@@ -555,7 +555,7 @@ describe('McpServerCommand', () => {
       expect(services).to.equal(mockServices);
     });
 
-    it('should return Services instance created from resolved config', () => {
+    it('should return Services instance created from resolved config', async () => {
       const mockConfig = createMockResolvedConfig({
         hostname: 'test-server',
         mrtProject: 'test-project',
@@ -565,20 +565,20 @@ describe('McpServerCommand', () => {
       });
 
       // Stub loadConfiguration
-      sandbox.stub(command as unknown as Record<string, unknown>, 'loadConfiguration').returns(mockConfig);
+      sandbox.stub(command as unknown as Record<string, unknown>, 'loadConfiguration').resolves(mockConfig);
 
       // Stub Services.fromResolvedConfig to return mock services
       sandbox.stub(Services, 'fromResolvedConfig').returns(mockServices);
 
       // Call loadServices
-      const services = (command as unknown as {loadServices(): Services}).loadServices();
+      const services = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
 
       // Verify the returned services instance
       expect(services).to.equal(mockServices);
       expect(services).to.be.instanceOf(Services);
     });
 
-    it('should reload configuration on each call', () => {
+    it('should reload configuration on each call', async () => {
       const mockConfig1 = createMockResolvedConfig({hostname: 'server1'});
       const mockConfig2 = createMockResolvedConfig({hostname: 'server2'});
       const mockServices1 = new Services({resolvedConfig: mockConfig1});
@@ -588,9 +588,9 @@ describe('McpServerCommand', () => {
       const loadConfigurationStub = sandbox
         .stub(command as unknown as Record<string, unknown>, 'loadConfiguration')
         .onFirstCall()
-        .returns(mockConfig1)
+        .resolves(mockConfig1)
         .onSecondCall()
-        .returns(mockConfig2);
+        .resolves(mockConfig2);
 
       // Stub Services.fromResolvedConfig to return different services
       const fromResolvedConfigStub = sandbox
@@ -601,8 +601,8 @@ describe('McpServerCommand', () => {
         .returns(mockServices2);
 
       // Call loadServices twice
-      const services1 = (command as unknown as {loadServices(): Services}).loadServices();
-      const services2 = (command as unknown as {loadServices(): Services}).loadServices();
+      const services1 = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
+      const services2 = await (command as unknown as {loadServices(): Promise<Services>}).loadServices();
 
       // Verify loadConfiguration was called twice
       expect(loadConfigurationStub.calledTwice).to.be.true;
@@ -771,13 +771,8 @@ describe('McpServerCommand', () => {
     });
 
     it('should set up signal handlers when run() is called', async () => {
-      // Start the command to set up signal handlers
-      const runPromise = command.run();
-
-      // Wait a bit for run() to set up handlers
-      await new Promise((resolve) => {
-        void setTimeout(resolve, 10);
-      });
+      // Start the command — run() sets up handlers and returns
+      await command.run();
 
       // Verify handlers were registered
       expect(stdinOnStub.calledWith('close')).to.be.true;
@@ -788,54 +783,23 @@ describe('McpServerCommand', () => {
       const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
       expect(stdinClosePromise).to.exist;
 
-      // Clean up - resolve the promise manually to prevent hanging
-      const sigintHandler = (command as unknown as {_sigintHandler?: () => void})._sigintHandler;
-      if (sigintHandler) {
-        sigintHandler();
-      }
-
-      // Wait for promise to resolve
-      if (stdinClosePromise) {
-        await stdinClosePromise.catch(() => {
-          // Ignore errors
-        });
-      }
-
-      // Cancel the run promise
-      runPromise.catch(() => {
-        // Ignore errors
-      });
+      // Resolve stdinClosePromise so it doesn't dangle
+      const stdinCloseHandler = (command as unknown as {_stdinCloseHandler?: () => void})._stdinCloseHandler;
+      if (stdinCloseHandler) stdinCloseHandler();
+      await stdinClosePromise;
     });
 
     it('should handle SIGINT signal and send SERVER_STOPPED event', async () => {
-      // Start the command to set up signal handlers
-      const runPromise = command.run();
+      await command.run();
 
-      // Wait for signal handler to be registered (avoids race on slower systems)
-      await new Promise<void>((resolve) => {
-        const start = Date.now();
-        const poll = (): void => {
-          if (processOnStub.calledWith('SIGINT') || Date.now() - start > 500) {
-            resolve();
-          } else {
-            setTimeout(poll, 5);
-          }
-        };
-        setTimeout(poll, 5);
-      });
-
-      // Get the SIGINT handler and call it directly
+      // Trigger the SIGINT handler
       const sigintHandler = (command as unknown as {_sigintHandler?: () => void})._sigintHandler;
       expect(sigintHandler).to.exist;
+      sigintHandler!();
 
-      if (sigintHandler) {
-        sigintHandler();
-      }
-
-      // Wait a bit for the handler to run
-      await new Promise((resolve) => {
-        void setTimeout(resolve, 10);
-      });
+      // Await stdinClosePromise — sendStopAndResolve calls flush() then resolves
+      const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
+      await stdinClosePromise;
 
       // Verify SERVER_STOPPED event was sent
       expect(sendEventStub.called).to.be.true;
@@ -845,49 +809,19 @@ describe('McpServerCommand', () => {
 
       // Verify flush was called
       expect(flushStub.called).to.be.true;
-
-      // Clean up - resolve stdinClosePromise
-      const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
-      if (stdinClosePromise) {
-        await stdinClosePromise.catch(() => {
-          // Ignore errors
-        });
-      }
-
-      runPromise.catch(() => {
-        // Ignore errors
-      });
     });
 
     it('should handle SIGTERM signal and send SERVER_STOPPED event', async () => {
-      // Start the command to set up signal handlers
-      const runPromise = command.run();
+      await command.run();
 
-      // Wait for signal handler to be registered (avoids race on slower systems)
-      await new Promise<void>((resolve) => {
-        const start = Date.now();
-        const poll = (): void => {
-          if (processOnStub.calledWith('SIGTERM') || Date.now() - start > 500) {
-            resolve();
-          } else {
-            setTimeout(poll, 5);
-          }
-        };
-        setTimeout(poll, 5);
-      });
-
-      // Get the SIGTERM handler and call it directly
+      // Trigger the SIGTERM handler
       const sigtermHandler = (command as unknown as {_sigtermHandler?: () => void})._sigtermHandler;
       expect(sigtermHandler).to.exist;
+      sigtermHandler!();
 
-      if (sigtermHandler) {
-        sigtermHandler();
-      }
-
-      // Wait a bit for the handler to run
-      await new Promise((resolve) => {
-        void setTimeout(resolve, 10);
-      });
+      // Await stdinClosePromise — sendStopAndResolve calls flush() then resolves
+      const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
+      await stdinClosePromise;
 
       // Verify SERVER_STOPPED event was sent
       expect(sendEventStub.called).to.be.true;
@@ -897,18 +831,6 @@ describe('McpServerCommand', () => {
 
       // Verify flush was called
       expect(flushStub.called).to.be.true;
-
-      // Clean up
-      const stdinClosePromise = (command as unknown as {stdinClosePromise?: Promise<void>}).stdinClosePromise;
-      if (stdinClosePromise) {
-        await stdinClosePromise.catch(() => {
-          // Ignore errors
-        });
-      }
-
-      runPromise.catch(() => {
-        // Ignore errors
-      });
     });
   });
 });

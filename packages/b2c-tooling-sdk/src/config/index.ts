@@ -15,7 +15,7 @@
  * ```typescript
  * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const config = resolveConfig({
+ * const config = await resolveConfig({
  *   hostname: process.env.SFCC_SERVER,
  *   clientId: process.env.SFCC_CLIENT_ID,
  *   mrtApiKey: process.env.MRT_API_KEY,
@@ -100,6 +100,7 @@ export {resolveConfig, ConfigResolver, createConfigResolver} from './resolver.js
 
 // Types
 export type {
+  MaybePromise,
   NormalizedConfig,
   ConfigSource,
   ConfigLoadResult,

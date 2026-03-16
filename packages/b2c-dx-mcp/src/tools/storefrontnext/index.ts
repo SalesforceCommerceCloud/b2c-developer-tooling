@@ -41,7 +41,7 @@ import {createMapTokensToThemeTool} from './figma/map-tokens/index.js';
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createStorefrontNextTools(loadServices: () => Services): McpTool[] {
+export function createStorefrontNextTools(loadServices: () => Promise<Services> | Services): McpTool[] {
   return [
     createDeveloperGuidelinesTool(loadServices),
     createPageDesignerDecoratorTool(loadServices),

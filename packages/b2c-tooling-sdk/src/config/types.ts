@@ -15,6 +15,15 @@ import type {AuthMethod, AuthStrategy} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 
 /**
+ * A value that may be synchronous or a Promise.
+ *
+ * Used in the {@link ConfigSource} interface so that sources can return
+ * results either synchronously or asynchronously. The resolver normalizes
+ * both forms with `await`.
+ */
+export type MaybePromise<T> = T | Promise<T>;
+
+/**
  * Normalized B2C configuration with camelCase fields.
  *
  * This is the canonical intermediate format that all configuration sources
@@ -77,6 +86,10 @@ export interface NormalizedConfig {
   mrtApiKey?: string;
   /** MRT API origin URL override */
   mrtOrigin?: string;
+
+  // Cartridges
+  /** Cartridge names to include in deploy/watch operations */
+  cartridges?: string[];
 
   // Content
   /** Default content library ID for content export/list commands */
@@ -209,8 +222,8 @@ export interface ConfigLoadResult {
  * class MyCustomSource implements ConfigSource {
  *   name = 'my-custom-source';
  *
- *   load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
- *     // Load config from your custom source
+ *   async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
+ *     // Load config from your custom source (sync return values also work)
  *     return { config: { hostname: 'example.com' }, location: '/path/to/config' };
  *   }
  * }
@@ -237,38 +250,39 @@ export interface ConfigSource {
    * Load configuration from this source.
    *
    * @param options - Resolution options
-   * @returns Config and location from this source, or undefined if source not available
+   * @returns Config and location from this source, or undefined if source not available.
+   *   May return synchronously or as a Promise.
    */
-  load(options: ResolveConfigOptions): ConfigLoadResult | undefined;
+  load(options: ResolveConfigOptions): MaybePromise<ConfigLoadResult | undefined>;
 
   // === Instance Management (for dw.json-style sources) ===
 
   /**
    * List all instances from this source.
    * @param options - Resolution options
-   * @returns Array of instance info objects
+   * @returns Array of instance info objects. May return synchronously or as a Promise.
    */
-  listInstances?(options?: ResolveConfigOptions): InstanceInfo[];
+  listInstances?(options?: ResolveConfigOptions): MaybePromise<InstanceInfo[]>;
 
   /**
    * Create a new instance in this source.
    * @param options - Creation options including name and config
    */
-  createInstance?(options: CreateInstanceOptions & ResolveConfigOptions): void;
+  createInstance?(options: CreateInstanceOptions & ResolveConfigOptions): MaybePromise<void>;
 
   /**
    * Remove an instance from this source.
    * @param name - Instance name to remove
    * @param options - Resolution options
    */
-  removeInstance?(name: string, options?: ResolveConfigOptions): void;
+  removeInstance?(name: string, options?: ResolveConfigOptions): MaybePromise<void>;
 
   /**
    * Set an instance as active.
    * @param name - Instance name to set as active
    * @param options - Resolution options
    */
-  setActiveInstance?(name: string, options?: ResolveConfigOptions): void;
+  setActiveInstance?(name: string, options?: ResolveConfigOptions): MaybePromise<void>;
 
   // === Credential Storage (for keychain-style sources) ===
 
@@ -289,7 +303,7 @@ export interface ConfigSource {
     field: keyof NormalizedConfig,
     value: string,
     options?: ResolveConfigOptions,
-  ): void;
+  ): MaybePromise<void>;
 
   /**
    * Remove a credential for an instance.
@@ -297,7 +311,11 @@ export interface ConfigSource {
    * @param field - Config field to remove
    * @param options - Resolution options
    */
-  removeCredential?(instanceName: string, field: keyof NormalizedConfig, options?: ResolveConfigOptions): void;
+  removeCredential?(
+    instanceName: string,
+    field: keyof NormalizedConfig,
+    options?: ResolveConfigOptions,
+  ): MaybePromise<void>;
 }
 
 /**

@@ -158,7 +158,10 @@ export class ConfigResolver {
    * }
    * ```
    */
-  resolve(overrides: Partial<NormalizedConfig> = {}, options: ResolveConfigOptions = {}): ConfigResolutionResult {
+  async resolve(
+    overrides: Partial<NormalizedConfig> = {},
+    options: ResolveConfigOptions = {},
+  ): Promise<ConfigResolutionResult> {
     const sourceInfos: ConfigSourceInfo[] = [];
     const sourceWarnings: ConfigWarning[] = [];
     const baseConfig: NormalizedConfig = {};
@@ -174,7 +177,7 @@ export class ConfigResolver {
     for (const source of this.sources) {
       let result: ConfigLoadResult | undefined;
       try {
-        result = source.load(enrichedOptions);
+        result = await source.load(enrichedOptions);
       } catch (error) {
         // Source threw an error (e.g., malformed config file) - create warning and continue
         const message = error instanceof Error ? error.message : String(error);
@@ -321,8 +324,11 @@ export class ConfigResolver {
    * await instance.webdav.put('path/file.txt', content);
    * ```
    */
-  createInstance(overrides: Partial<NormalizedConfig> = {}, options: ResolveConfigOptions = {}): B2CInstance {
-    const {config, warnings} = this.resolve(overrides, options);
+  async createInstance(
+    overrides: Partial<NormalizedConfig> = {},
+    options: ResolveConfigOptions = {},
+  ): Promise<B2CInstance> {
+    const {config, warnings} = await this.resolve(overrides, options);
 
     // Log warnings (in production, this would use the SDK logger)
     for (const warning of warnings) {
@@ -354,11 +360,11 @@ export class ConfigResolver {
    * const strategy = resolveAuthStrategy(credentials);
    * ```
    */
-  createAuthCredentials(
+  async createAuthCredentials(
     overrides: Partial<NormalizedConfig> = {},
     options: ResolveConfigOptions = {},
-  ): AuthCredentials {
-    const {config} = this.resolve(overrides, options);
+  ): Promise<AuthCredentials> {
+    const {config} = await this.resolve(overrides, options);
 
     return {
       clientId: config.clientId,
@@ -429,10 +435,10 @@ export function createConfigResolver(): ConfigResolver {
  * @param options - Resolution options
  * @returns Resolved configuration with factory methods
  */
-export function resolveConfig(
+export async function resolveConfig(
   overrides: Partial<NormalizedConfig> = {},
   options: ResolveConfigOptions = {},
-): ResolvedB2CConfig {
+): Promise<ResolvedB2CConfig> {
   // Globally registered sources (from plugins via B2CPluginManager or direct SDK registration).
   // Always included regardless of replaceDefaultSources — global sources are explicitly registered
   // by plugins and should always participate, matching the middleware registry behavior.
@@ -458,7 +464,7 @@ export function resolveConfig(
 
   // ConfigResolver constructor will sort by priority
   const resolver = new ConfigResolver(sources);
-  const {config, warnings, sources: sourceInfos} = resolver.resolve(overrides, options);
+  const {config, warnings, sources: sourceInfos} = await resolver.resolve(overrides, options);
 
   return new ResolvedConfigImpl(config, warnings, sourceInfos);
 }
