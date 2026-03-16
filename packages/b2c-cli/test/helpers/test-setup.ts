@@ -5,6 +5,7 @@
  */
 
 import type {Config} from '@oclif/core';
+import {ux} from '@oclif/core';
 import {captureOutput} from '@oclif/test';
 import sinon from 'sinon';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -116,6 +117,14 @@ export function stubCommandConfigAndLogger(command: any, accountManagerHost = 'a
     },
     configurable: true,
   });
+
+  // Silence stdout: stub command.log/logToStderr and ux.stdout to prevent
+  // test noise from non-JSON command output (tables, formatted details, etc.)
+  command.log = () => {};
+  command.logToStderr = () => {};
+  if (!Object.hasOwn(ux.stdout, 'isSinonProxy')) {
+    sinon.stub(ux, 'stdout');
+  }
 }
 
 /**

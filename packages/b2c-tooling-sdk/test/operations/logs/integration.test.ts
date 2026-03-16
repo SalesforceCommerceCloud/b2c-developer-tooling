@@ -152,7 +152,7 @@ describe('operations/logs integration', function () {
 
       const result = await tailLogs(instance, {
         prefixes: ['error', 'customerror'],
-        pollInterval: 1000,
+        pollInterval: 100,
         lastEntries: 5, // Show last 5 entries per file on startup
         maxEntries: 5,
         onFileDiscovered: (file) => discoveredFiles.push(file.name),
@@ -160,7 +160,7 @@ describe('operations/logs integration', function () {
       });
 
       // Wait for completion (maxEntries reached or timeout)
-      const timeout = new Promise<void>((resolve) => setTimeout(() => resolve(), 10000));
+      const timeout = new Promise<void>((resolve) => setTimeout(() => resolve(), 5000));
       await Promise.race([result.done, timeout]);
       await result.stop();
 
@@ -172,11 +172,11 @@ describe('operations/logs integration', function () {
     it('stop() terminates tailing cleanly', async () => {
       const result = await tailLogs(instance, {
         prefixes: ['error'],
-        pollInterval: 500,
+        pollInterval: 100,
       });
 
-      // Stop after a short delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Stop after a short delay to allow at least one poll cycle
+      await new Promise((resolve) => setTimeout(resolve, 200));
       await result.stop();
 
       // Should complete without hanging

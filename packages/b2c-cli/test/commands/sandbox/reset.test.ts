@@ -92,7 +92,7 @@ describe('sandbox reset', () => {
 
   it('waits for sandbox to reach started state when --wait is set', async () => {
     const command = await setupCommand(
-      {force: true, wait: true, 'poll-interval': 5, timeout: 60, json: true},
+      {force: true, wait: true, 'poll-interval': 0, timeout: 60, json: true},
       {
         sandboxId: 'zzzz-001',
       },

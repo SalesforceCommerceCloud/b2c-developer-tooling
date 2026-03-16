@@ -12,6 +12,21 @@ import appInsights from 'applicationinsights';
 import {Telemetry, createTelemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
+/**
+ * Stop telemetry without waiting for the real 300ms flush delay.
+ * Uses fake timers to skip the setTimeout inside telemetry.stop().
+ */
+async function stopTelemetryFast(telemetry: InstanceType<typeof Telemetry>): Promise<void> {
+  const clock = sinon.useFakeTimers();
+  try {
+    const p = telemetry.stop();
+    await clock.tickAsync(300);
+    await p;
+  } finally {
+    clock.restore();
+  }
+}
+
 describe('telemetry/telemetry', () => {
   let sandbox: sinon.SinonSandbox;
   let trackEventStub: sinon.SinonStub;
@@ -544,7 +559,7 @@ describe('telemetry/telemetry', () => {
     it('does nothing when not started', async () => {
       const telemetry = new Telemetry({project: 'test-project'});
       // Should not throw when stopping without starting
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
     });
 
     it('flushes and stops the client', async () => {
@@ -554,7 +569,7 @@ describe('telemetry/telemetry', () => {
       });
 
       await telemetry.start();
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
 
       expect(flushStub.calledOnce).to.be.true;
     });
@@ -566,8 +581,8 @@ describe('telemetry/telemetry', () => {
       });
 
       await telemetry.start();
-      await telemetry.stop();
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
+      await stopTelemetryFast(telemetry);
 
       // Only called once because second stop() returns early (started is false)
       expect(flushStub.calledOnce).to.be.true;
@@ -854,7 +869,7 @@ describe('telemetry/telemetry', () => {
       telemetry.addAttributes({realm: 'zzpq'});
       telemetry.sendEvent('COMMAND_START', {command: 'test'});
       telemetry.sendException(new Error('test error'));
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
 
       const logContent = fs.readFileSync(logFile, 'utf8');
       expect(logContent).to.include('telemetry start');
@@ -877,7 +892,7 @@ describe('telemetry/telemetry', () => {
 
       await telemetry.start();
       telemetry.sendEvent('COMMAND_START');
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
 
       const logContent = fs.readFileSync(logFile, 'utf8');
       expect(logContent).to.not.include('telemetry');
@@ -901,7 +916,7 @@ describe('telemetry/telemetry', () => {
       // Simulate successful completion
       telemetry.sendEvent('COMMAND_SUCCESS', {command: 'code deploy', duration: 5000});
 
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
 
       expect(trackEventStub.calledTwice).to.be.true;
       // flush called once during stop
@@ -928,7 +943,7 @@ describe('telemetry/telemetry', () => {
 
       // Simulate shutdown
       telemetry.sendEvent('SERVER_STOPPED');
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
 
       expect(trackEventStub.callCount).to.equal(5);
       // flush called once during stop
@@ -952,7 +967,7 @@ describe('telemetry/telemetry', () => {
       const error = new Error('Connection refused');
       telemetry.sendException(error, {exitCode: 1, duration: 1000});
 
-      await telemetry.stop();
+      await stopTelemetryFast(telemetry);
 
       expect(trackEventStub.calledOnce).to.be.true;
       expect(trackExceptionStub.calledOnce).to.be.true;
