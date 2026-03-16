@@ -40,7 +40,7 @@ describe('job log', () => {
     const getJobLogStub = sinon.stub().resolves('log content here');
     command.operations = {...command.operations, getJobExecution: getJobExecutionStub, getJobLog: getJobLogStub};
 
-    const result = await runSilent(() => command.run());
+    const result = (await runSilent(() => command.run())) as {execution: unknown; log: string};
 
     expect(getJobExecutionStub.calledOnce).to.equal(true);
     expect(getJobExecutionStub.getCall(0).args[0]).to.equal(instance);
@@ -62,7 +62,7 @@ describe('job log', () => {
     const getJobLogStub = sinon.stub().resolves('log from exec-2');
     command.operations = {...command.operations, searchJobExecutions: searchStub, getJobLog: getJobLogStub};
 
-    const result = await runSilent(() => command.run());
+    const result = (await runSilent(() => command.run())) as {log: string};
 
     expect(searchStub.calledOnce).to.equal(true);
     expect(searchStub.getCall(0).args[0]).to.equal(instance);
@@ -82,7 +82,7 @@ describe('job log', () => {
     const getJobLogStub = sinon.stub().resolves('error log');
     command.operations = {...command.operations, searchJobExecutions: searchStub, getJobLog: getJobLogStub};
 
-    const result = await runSilent(() => command.run());
+    const result = (await runSilent(() => command.run())) as {log: string};
 
     expect(searchStub.getCall(0).args[1]).to.deep.include({status: ['ERROR']});
     expect(result.log).to.equal('error log');
