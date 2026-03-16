@@ -8,46 +8,9 @@ import sinon from 'sinon';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type {TelemetryReporter} from '@salesforce/telemetry';
-import * as telemetryModule from '@salesforce/telemetry';
+import appInsights from 'applicationinsights';
 import {Telemetry, createTelemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
-
-/** Type for TelemetryReporter.create options */
-interface ReporterCreateOptions {
-  project: string;
-  key: string;
-  userId: string;
-}
-
-/** Partial mock of TelemetryReporter for testing */
-interface MockReporter {
-  sendTelemetryEvent: sinon.SinonStub;
-  sendTelemetryException: sinon.SinonStub;
-  start: sinon.SinonStub;
-  stop: sinon.SinonStub;
-  flush: sinon.SinonStub;
-  getTelemetryClient: sinon.SinonStub;
-}
-
-function createMockReporter(sandbox: sinon.SinonSandbox): MockReporter {
-  const mockClient = {
-    flush: sandbox.stub().callsFake((opts?: {callback?: () => void}) => opts?.callback?.()),
-  };
-  return {
-    sendTelemetryEvent: sandbox.stub(),
-    sendTelemetryException: sandbox.stub(),
-    start: sandbox.stub(),
-    stop: sandbox.stub(),
-    flush: sandbox.stub().resolves(),
-    getTelemetryClient: sandbox.stub().returns(mockClient),
-  };
-}
-
-/** Cast mock reporter to TelemetryReporter for stub resolution */
-function asTelemetryReporter(mock: MockReporter): TelemetryReporter {
-  return mock as unknown as TelemetryReporter;
-}
 
 /**
  * Stop telemetry without waiting for the real 300ms flush delay.
@@ -66,9 +29,17 @@ async function stopTelemetryFast(telemetry: InstanceType<typeof Telemetry>): Pro
 
 describe('telemetry/telemetry', () => {
   let sandbox: sinon.SinonSandbox;
+  let trackEventStub: sinon.SinonStub;
+  let trackExceptionStub: sinon.SinonStub;
+  let flushStub: sinon.SinonStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
+    trackEventStub = sandbox.stub(appInsights.TelemetryClient.prototype, 'trackEvent');
+    trackExceptionStub = sandbox.stub(appInsights.TelemetryClient.prototype, 'trackException');
+    flushStub = sandbox
+      .stub(appInsights.TelemetryClient.prototype, 'flush')
+      .callsFake((opts?: {callback?: (v: string) => void}) => opts?.callback?.(''));
   });
 
   afterEach(() => {
@@ -281,12 +252,9 @@ describe('telemetry/telemetry', () => {
     });
 
     it('verifies overwritten attributes are sent in events', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         initialAttributes: {key: 'old'},
       });
 
@@ -294,13 +262,13 @@ describe('telemetry/telemetry', () => {
       telemetry.addAttributes({key: 'new'});
       telemetry.sendEvent('TEST_EVENT');
 
-      const [, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventProps.key).to.equal('new');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.key).to.equal('new');
     });
   });
 
   describe('sendEvent', () => {
-    it('does not throw when reporter is not initialized', () => {
+    it('does not throw when client is not initialized', () => {
       const telemetry = new Telemetry({project: 'test-project'});
       expect(() => telemetry.sendEvent('TEST_EVENT')).not.to.throw();
     });
@@ -310,23 +278,20 @@ describe('telemetry/telemetry', () => {
       expect(() => telemetry.sendEvent('TEST_EVENT', {action: 'click'})).not.to.throw();
     });
 
-    it('sends event when reporter is available', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
+    it('sends event when client is available', async () => {
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         version: '1.0.0',
       });
 
       await telemetry.start();
       telemetry.sendEvent('TEST_EVENT', {action: 'click'});
 
-      expect(mockReporter.sendTelemetryEvent.calledOnce).to.be.true;
-      const [eventName, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventName).to.equal('TEST_EVENT');
-      expect(eventProps).to.include({
+      expect(trackEventStub.calledOnce).to.be.true;
+      const {name, properties, measurements} = trackEventStub.firstCall.args[0];
+      expect(name).to.equal('test-project/TEST_EVENT');
+      expect(properties).to.include({
         action: 'click',
         version: '1.0.0',
         origin: 'test-project',
@@ -334,72 +299,61 @@ describe('telemetry/telemetry', () => {
         arch: process.arch,
         nodeVersion: process.version,
       });
-      expect(eventProps.sessionId).to.be.a('string');
-      expect(eventProps.cliId).to.be.a('string');
-      expect(eventProps.date).to.be.a('string');
-      expect(eventProps.timestamp).to.be.a('string');
-      expect(eventProps.processUptime).to.be.a('number');
+      expect(properties.sessionId).to.be.a('string');
+      expect(properties.cliId).to.be.a('string');
+      expect(properties.date).to.be.a('string');
+      expect(properties.timestamp).to.be.a('string');
+      expect(measurements.processUptime).to.be.a('number');
     });
 
     it('includes initial attributes in events', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         initialAttributes: {environment: 'test'},
       });
 
       await telemetry.start();
       telemetry.sendEvent('TEST_EVENT');
 
-      const [, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventProps.environment).to.equal('test');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.environment).to.equal('test');
     });
 
     it('includes added attributes in events', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
       telemetry.addAttributes({customAttr: 'value'});
       telemetry.sendEvent('TEST_EVENT');
 
-      const [, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventProps.customAttr).to.equal('value');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.customAttr).to.equal('value');
     });
 
     it('event attributes override instance attributes', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         initialAttributes: {key: 'initial'},
       });
 
       await telemetry.start();
       telemetry.sendEvent('TEST_EVENT', {key: 'event'});
 
-      const [, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventProps.key).to.equal('event');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.key).to.equal('event');
     });
 
     it('silently catches errors during send', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      mockReporter.sendTelemetryEvent.throws(new Error('Send failed'));
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+      trackEventStub.throws(new Error('Send failed'));
 
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -407,46 +361,37 @@ describe('telemetry/telemetry', () => {
     });
 
     it('supports COMMAND_START event type', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         initialAttributes: {command: 'test:command'},
       });
 
       await telemetry.start();
       telemetry.sendEvent('COMMAND_START', {command: 'test:command'});
 
-      const [eventName] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventName).to.equal('COMMAND_START');
+      const {name} = trackEventStub.firstCall.args[0];
+      expect(name).to.equal('test-project/COMMAND_START');
     });
 
     it('supports COMMAND_SUCCESS event type with duration', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
       telemetry.sendEvent('COMMAND_SUCCESS', {command: 'test:command', duration: 1234});
 
-      const [eventName, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventName).to.equal('COMMAND_SUCCESS');
-      expect(eventProps.duration).to.equal(1234);
+      const {name, measurements} = trackEventStub.firstCall.args[0];
+      expect(name).to.equal('test-project/COMMAND_SUCCESS');
+      expect(measurements.duration).to.equal(1234);
     });
 
     it('supports COMMAND_ERROR event type with error details', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -458,37 +403,31 @@ describe('telemetry/telemetry', () => {
         errorCause: 'Missing SFCC_CLIENT_ID',
       });
 
-      const [eventName, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventName).to.equal('COMMAND_ERROR');
-      expect(eventProps.command).to.equal('scapi schemas list');
-      expect(eventProps.exitCode).to.equal(1);
-      expect(eventProps.errorMessage).to.equal('OAuth client ID required.');
-      expect(eventProps.errorCause).to.equal('Missing SFCC_CLIENT_ID');
+      const {name, properties, measurements} = trackEventStub.firstCall.args[0];
+      expect(name).to.equal('test-project/COMMAND_ERROR');
+      expect(properties.command).to.equal('scapi schemas list');
+      expect(measurements.exitCode).to.equal(1);
+      expect(properties.errorMessage).to.equal('OAuth client ID required.');
+      expect(properties.errorCause).to.equal('Missing SFCC_CLIENT_ID');
     });
 
     it('supports SERVER_STOPPED event type', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'b2c-dx-mcp',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
       telemetry.sendEvent('SERVER_STOPPED');
 
-      const [eventName] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventName).to.equal('SERVER_STOPPED');
+      const {name} = trackEventStub.firstCall.args[0];
+      expect(name).to.equal('b2c-dx-mcp/SERVER_STOPPED');
     });
 
     it('supports TOOL_CALLED event type', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'b2c-dx-mcp',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -498,27 +437,24 @@ describe('telemetry/telemetry', () => {
         isError: false,
       });
 
-      const [eventName, eventProps] = mockReporter.sendTelemetryEvent.firstCall.args;
-      expect(eventName).to.equal('TOOL_CALLED');
-      expect(eventProps.toolName).to.equal('cartridge_deploy');
-      expect(eventProps.runTimeMs).to.equal(500);
-      expect(eventProps.isError).to.equal(false);
+      const {name, properties, measurements} = trackEventStub.firstCall.args[0];
+      expect(name).to.equal('b2c-dx-mcp/TOOL_CALLED');
+      expect(properties.toolName).to.equal('cartridge_deploy');
+      expect(measurements.runTimeMs).to.equal(500);
+      expect(properties.isError).to.equal('false');
     });
   });
 
   describe('sendException', () => {
-    it('does not throw when reporter is not initialized', () => {
+    it('does not throw when client is not initialized', () => {
       const telemetry = new Telemetry({project: 'test-project'});
       expect(() => telemetry.sendException(new Error('test error'))).not.to.throw();
     });
 
-    it('sends exception when reporter is available', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
+    it('sends exception when client is available', async () => {
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         version: '1.0.0',
       });
 
@@ -526,9 +462,9 @@ describe('telemetry/telemetry', () => {
       const error = new Error('test error');
       telemetry.sendException(error, {context: 'test-context'});
 
-      expect(mockReporter.sendTelemetryException.calledOnce).to.be.true;
-      const [sentError, properties] = mockReporter.sendTelemetryException.firstCall.args;
-      expect(sentError).to.equal(error);
+      expect(trackExceptionStub.calledOnce).to.be.true;
+      const {exception, properties} = trackExceptionStub.firstCall.args[0];
+      expect(exception).to.equal(error);
       expect(properties).to.include({
         context: 'test-context',
         version: '1.0.0',
@@ -537,30 +473,25 @@ describe('telemetry/telemetry', () => {
     });
 
     it('includes initial attributes in exception', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         initialAttributes: {command: 'test-command'},
       });
 
       await telemetry.start();
       telemetry.sendException(new Error('test error'));
 
-      const [, properties] = mockReporter.sendTelemetryException.firstCall.args;
+      const {properties} = trackExceptionStub.firstCall.args[0];
       expect(properties.command).to.equal('test-command');
     });
 
     it('silently catches errors during send', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      mockReporter.sendTelemetryException.throws(new Error('Send failed'));
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
+      trackExceptionStub.throws(new Error('Send failed'));
 
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -568,110 +499,59 @@ describe('telemetry/telemetry', () => {
     });
 
     it('includes exitCode and command in exception attributes', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         initialAttributes: {command: 'test:command'},
       });
 
       await telemetry.start();
       telemetry.sendException(new Error('test error'), {exitCode: 1, duration: 500});
 
-      const [, properties] = mockReporter.sendTelemetryException.firstCall.args;
-      expect(properties.exitCode).to.equal(1);
-      expect(properties.duration).to.equal(500);
+      const {properties, measurements} = trackExceptionStub.firstCall.args[0];
+      expect(measurements.exitCode).to.equal(1);
+      expect(measurements.duration).to.equal(500);
       expect(properties.command).to.equal('test:command');
     });
   });
 
   describe('start', () => {
     it('does nothing when already started', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
+      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
 
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
       await telemetry.start();
 
-      expect(createStub.calledOnce).to.be.true;
+      // TelemetryClient constructed only once
+      expect(constructorSpy.calledOnce).to.be.true;
     });
 
-    it('does not create reporter when appInsightsKey is not provided', async () => {
-      const createStub = sandbox.stub(telemetryModule.TelemetryReporter, 'create');
+    it('does not create client when appInsightsKey is not provided', async () => {
+      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
 
       const telemetry = new Telemetry({project: 'test-project'});
       await telemetry.start();
 
-      expect(createStub.called).to.be.false;
+      expect(constructorSpy.called).to.be.false;
     });
 
-    it('retries once on initial failure', async () => {
-      const mockReporter = createMockReporter(sandbox);
-
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .onFirstCall()
-        .rejects(new Error('Connection failed'))
-        .onSecondCall()
-        .resolves(asTelemetryReporter(mockReporter));
+    it('creates client with correct connection string', async () => {
+      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
 
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=11111111-1111-1111-1111-111111111111',
       });
 
       await telemetry.start();
 
-      expect(createStub.calledTwice).to.be.true;
-    });
-
-    it('ignores failure after retry', async () => {
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .rejects(new Error('Connection failed'));
-
-      const telemetry = new Telemetry({
-        project: 'test-project',
-        appInsightsKey: 'test-key',
-      });
-
-      await telemetry.start();
-
-      expect(createStub.calledTwice).to.be.true;
-    });
-
-    it('creates reporter with correct options', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
-      // Mock fs to return a known CLI ID
-      sandbox.stub(fs, 'existsSync').returns(true);
-      sandbox.stub(fs, 'readFileSync').returns('known-cli-id');
-
-      const telemetry = new Telemetry({
-        project: 'test-project',
-        appInsightsKey: 'test-key-123',
-        dataDir: '/tmp/test-data',
-      });
-
-      await telemetry.start();
-
-      expect(createStub.calledOnce).to.be.true;
-      const createOptions = createStub.firstCall.args[0] as ReporterCreateOptions;
-      expect(createOptions.project).to.equal('test-project');
-      expect(createOptions.key).to.equal('test-key-123');
-      expect(createOptions.userId).to.equal('known-cli-id');
+      expect(constructorSpy.calledOnce).to.be.true;
+      expect(constructorSpy.firstCall.args[0]).to.equal('InstrumentationKey=11111111-1111-1111-1111-111111111111');
     });
   });
 
@@ -682,28 +562,22 @@ describe('telemetry/telemetry', () => {
       await stopTelemetryFast(telemetry);
     });
 
-    it('stops the reporter', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
+    it('flushes and stops the client', async () => {
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
       await stopTelemetryFast(telemetry);
 
-      expect(mockReporter.stop.calledOnce).to.be.true;
+      expect(flushStub.calledOnce).to.be.true;
     });
 
     it('can be called multiple times', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -711,7 +585,7 @@ describe('telemetry/telemetry', () => {
       await stopTelemetryFast(telemetry);
 
       // Only called once because second stop() returns early (started is false)
-      expect(mockReporter.stop.calledOnce).to.be.true;
+      expect(flushStub.calledOnce).to.be.true;
     });
   });
 
@@ -722,32 +596,23 @@ describe('telemetry/telemetry', () => {
       await telemetry.flush();
     });
 
-    it('calls native reporter.flush() and App Insights client flush', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
+    it('calls client flush', async () => {
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
       await telemetry.flush();
 
-      expect(mockReporter.flush.calledOnce).to.be.true;
-      expect(mockReporter.getTelemetryClient.calledOnce).to.be.true;
-      const client = mockReporter.getTelemetryClient.firstCall.returnValue;
-      expect(client.flush.calledOnce).to.be.true;
-      expect(client.flush.firstCall.args[0]).to.have.property('callback');
+      expect(flushStub.calledOnce).to.be.true;
+      expect(flushStub.firstCall.args[0]).to.have.property('callback');
     });
 
     it('allows sending events after flush', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -756,9 +621,9 @@ describe('telemetry/telemetry', () => {
       telemetry.sendEvent('AFTER_FLUSH');
 
       // Both events should be sent
-      expect(mockReporter.sendTelemetryEvent.calledTwice).to.be.true;
-      expect(mockReporter.sendTelemetryEvent.firstCall.args[0]).to.equal('BEFORE_FLUSH');
-      expect(mockReporter.sendTelemetryEvent.secondCall.args[0]).to.equal('AFTER_FLUSH');
+      expect(trackEventStub.calledTwice).to.be.true;
+      expect(trackEventStub.firstCall.args[0].name).to.equal('test-project/BEFORE_FLUSH');
+      expect(trackEventStub.secondCall.args[0].name).to.equal('test-project/AFTER_FLUSH');
     });
   });
 
@@ -786,66 +651,54 @@ describe('telemetry/telemetry', () => {
       const cliIdFile = path.join(tempDir, 'cliid');
       fs.writeFileSync(cliIdFile, 'existing-cli-id');
 
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: tempDir,
       });
 
       await telemetry.start();
+      telemetry.sendEvent('TEST_EVENT');
 
-      const createOptions = createStub.firstCall.args[0] as ReporterCreateOptions;
-      expect(createOptions.userId).to.equal('existing-cli-id');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.cliId).to.equal('existing-cli-id');
     });
 
     it('creates new CLI ID and persists it to dataDir', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: tempDir,
       });
 
       await telemetry.start();
+      telemetry.sendEvent('TEST_EVENT');
 
       // Verify ID was created
-      const createOptions = createStub.firstCall.args[0] as ReporterCreateOptions;
-      expect(createOptions.userId).to.be.a('string');
-      expect(createOptions.userId).to.have.lengthOf(40); // 20 bytes as hex
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.cliId).to.be.a('string');
+      expect(properties.cliId).to.have.lengthOf(40); // 20 bytes as hex
 
       // Verify ID was persisted
       const persistedId = fs.readFileSync(path.join(tempDir, 'cliid'), 'utf8');
-      expect(persistedId).to.equal(createOptions.userId);
+      expect(persistedId).to.equal(properties.cliId);
     });
 
     it('handles empty CLI ID file by creating new one', async () => {
       const cliIdFile = path.join(tempDir, 'cliid');
       fs.writeFileSync(cliIdFile, '   '); // whitespace-only file
 
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: tempDir,
       });
 
       await telemetry.start();
+      telemetry.sendEvent('TEST_EVENT');
 
-      const createOptions = createStub.firstCall.args[0] as ReporterCreateOptions;
-      expect(createOptions.userId).to.have.lengthOf(40);
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.cliId).to.have.lengthOf(40);
     });
 
     it('handles read errors by creating new ID', async () => {
@@ -853,22 +706,18 @@ describe('telemetry/telemetry', () => {
       // Create a directory with the same name as the file to cause read error
       fs.mkdirSync(cliIdFile);
 
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: tempDir,
       });
 
       await telemetry.start();
+      telemetry.sendEvent('TEST_EVENT');
 
       // Should still get a valid ID despite read error
-      const createOptions = createStub.firstCall.args[0] as ReporterCreateOptions;
-      expect(createOptions.userId).to.be.a('string');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.cliId).to.be.a('string');
     });
 
     it('handles write errors gracefully', async () => {
@@ -876,22 +725,18 @@ describe('telemetry/telemetry', () => {
       const readOnlyDir = path.join(tempDir, 'readonly');
       fs.mkdirSync(readOnlyDir, {mode: 0o444});
 
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: readOnlyDir,
       });
 
       await telemetry.start();
+      telemetry.sendEvent('TEST_EVENT');
 
       // Should still have a valid ID even if persistence failed
-      const createOptions = createStub.firstCall.args[0] as ReporterCreateOptions;
-      expect(createOptions.userId).to.be.a('string');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.cliId).to.be.a('string');
 
       // Clean up permissions for removal
       fs.chmodSync(readOnlyDir, 0o755);
@@ -900,50 +745,43 @@ describe('telemetry/telemetry', () => {
     it('creates dataDir if it does not exist', async () => {
       const nestedDir = path.join(tempDir, 'nested', 'data');
 
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: nestedDir,
       });
 
       await telemetry.start();
+      telemetry.sendEvent('TEST_EVENT');
 
       // Verify ID was created and persisted
-      const createOptions = createStub.firstCall.args[0] as ReporterCreateOptions;
-      expect(createOptions.userId).to.be.a('string');
+      const {properties} = trackEventStub.firstCall.args[0];
+      expect(properties.cliId).to.be.a('string');
       expect(fs.existsSync(path.join(nestedDir, 'cliid'))).to.be.true;
     });
 
     it('uses same CLI ID across multiple telemetry instances with same dataDir', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      const createStub = sandbox
-        .stub(telemetryModule.TelemetryReporter, 'create')
-        .resolves(asTelemetryReporter(mockReporter));
-
       const telemetry1 = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: tempDir,
       });
 
       await telemetry1.start();
-      const userId1 = (createStub.firstCall.args[0] as ReporterCreateOptions).userId;
+      telemetry1.sendEvent('EVENT1');
+      const cliId1 = trackEventStub.firstCall.args[0].properties.cliId;
 
       const telemetry2 = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         dataDir: tempDir,
       });
 
       await telemetry2.start();
-      const userId2 = (createStub.secondCall.args[0] as ReporterCreateOptions).userId;
+      telemetry2.sendEvent('EVENT2');
+      const cliId2 = trackEventStub.secondCall.args[0].properties.cliId;
 
-      expect(userId1).to.equal(userId2);
+      expect(cliId1).to.equal(cliId2);
     });
   });
 
@@ -951,7 +789,7 @@ describe('telemetry/telemetry', () => {
     it('creates Telemetry instance with options', () => {
       const telemetry = createTelemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         version: '1.0.0',
       });
       expect(telemetry).to.be.instanceOf(Telemetry);
@@ -973,16 +811,13 @@ describe('telemetry/telemetry', () => {
 
   describe('session ID uniqueness', () => {
     it('generates unique session IDs per instance', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry1 = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
       const telemetry2 = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry1.start();
@@ -991,9 +826,8 @@ describe('telemetry/telemetry', () => {
       telemetry1.sendEvent('EVENT1');
       telemetry2.sendEvent('EVENT2');
 
-      const stub = mockReporter.sendTelemetryEvent as sinon.SinonStub;
-      const sessionId1 = stub.firstCall.args[1].sessionId;
-      const sessionId2 = stub.secondCall.args[1].sessionId;
+      const sessionId1 = trackEventStub.firstCall.args[0].properties.sessionId;
+      const sessionId2 = trackEventStub.secondCall.args[0].properties.sessionId;
 
       expect(sessionId1).to.be.a('string');
       expect(sessionId2).to.be.a('string');
@@ -1026,12 +860,9 @@ describe('telemetry/telemetry', () => {
       const logFile = path.join(tmpDir, 'log.jsonl');
       configureLogger({level: 'debug', json: true, fd: fs.openSync(logFile, 'w')});
 
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -1054,12 +885,9 @@ describe('telemetry/telemetry', () => {
       const logFile = path.join(tmpDir, 'log.jsonl');
       configureLogger({level: 'debug', json: true, fd: fs.openSync(logFile, 'w')});
 
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'test-project',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
       });
 
       await telemetry.start();
@@ -1073,12 +901,9 @@ describe('telemetry/telemetry', () => {
 
   describe('integration scenarios', () => {
     it('supports full CLI command lifecycle', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'b2c-cli',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         version: '1.0.0',
         initialAttributes: {command: 'code deploy'},
       });
@@ -1093,17 +918,15 @@ describe('telemetry/telemetry', () => {
 
       await stopTelemetryFast(telemetry);
 
-      expect(mockReporter.sendTelemetryEvent.calledTwice).to.be.true;
-      expect(mockReporter.stop.calledOnce).to.be.true;
+      expect(trackEventStub.calledTwice).to.be.true;
+      // flush called once during stop
+      expect(flushStub.calledOnce).to.be.true;
     });
 
     it('supports MCP server lifecycle', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'b2c-dx-mcp',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         version: '1.0.0',
         initialAttributes: {toolsets: 'MRT, CARTRIDGES'},
       });
@@ -1122,17 +945,15 @@ describe('telemetry/telemetry', () => {
       telemetry.sendEvent('SERVER_STOPPED');
       await stopTelemetryFast(telemetry);
 
-      expect(mockReporter.sendTelemetryEvent.callCount).to.equal(5);
-      expect(mockReporter.stop.calledOnce).to.be.true;
+      expect(trackEventStub.callCount).to.equal(5);
+      // flush called once during stop
+      expect(flushStub.calledOnce).to.be.true;
     });
 
     it('supports error handling in CLI command', async () => {
-      const mockReporter = createMockReporter(sandbox);
-      sandbox.stub(telemetryModule.TelemetryReporter, 'create').resolves(asTelemetryReporter(mockReporter));
-
       const telemetry = new Telemetry({
         project: 'b2c-cli',
-        appInsightsKey: 'test-key',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         version: '1.0.0',
         initialAttributes: {command: 'code deploy'},
       });
@@ -1148,9 +969,10 @@ describe('telemetry/telemetry', () => {
 
       await stopTelemetryFast(telemetry);
 
-      expect(mockReporter.sendTelemetryEvent.calledOnce).to.be.true;
-      expect(mockReporter.sendTelemetryException.calledOnce).to.be.true;
-      expect(mockReporter.stop.calledOnce).to.be.true;
+      expect(trackEventStub.calledOnce).to.be.true;
+      expect(trackExceptionStub.calledOnce).to.be.true;
+      // flush called once during stop
+      expect(flushStub.calledOnce).to.be.true;
     });
   });
 });
