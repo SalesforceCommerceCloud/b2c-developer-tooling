@@ -4,6 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {getLogger} from '../logging/logger.js';
+
 /**
  * Safety levels for preventing destructive operations.
  *
@@ -16,8 +18,6 @@ export type SafetyLevel = 'NONE' | 'NO_DELETE' | 'NO_UPDATE' | 'READ_ONLY';
 
 export interface SafetyConfig {
   level: SafetyLevel;
-  allowedPaths?: string[]; // Whitelist specific paths (e.g., ['/auth/token'])
-  blockedPaths?: string[]; // Blacklist specific paths
 }
 
 /**
@@ -46,16 +46,6 @@ export class SafetyBlockedError extends Error {
 export function checkSafetyViolation(method: string, url: string, config: SafetyConfig): string | undefined {
   const upperMethod = method.toUpperCase();
   const path = new URL(url, 'http://dummy').pathname;
-
-  // Check whitelist first
-  if (config.allowedPaths && config.allowedPaths.some((allowed) => path.startsWith(allowed))) {
-    return undefined; // Explicitly allowed
-  }
-
-  // Check blacklist
-  if (config.blockedPaths && config.blockedPaths.some((blocked) => path.startsWith(blocked))) {
-    return `Operation blocked: ${upperMethod} ${path} is in the blocked paths list`;
-  }
 
   switch (config.level) {
     case 'NONE':
@@ -91,29 +81,26 @@ export function checkSafetyViolation(method: string, url: string, config: Safety
 }
 
 /**
- * Parse safety level from environment variable or config.
+ * Parse safety level from environment variable.
  *
- * Reads from SFCC_SAFETY_LEVEL environment variable.
- * Also supports legacy naming for backward compatibility with early adopters.
+ * Reads from SFCC_SAFETY_LEVEL. Valid values: NONE, NO_DELETE, NO_UPDATE, READ_ONLY
+ * (case-insensitive; dashes converted to underscores). Invalid values are logged
+ * as a warning and the default level is returned.
  *
- * @param defaultLevel - Default level if no environment variable is set
+ * @param defaultLevel - Default level if no environment variable is set or value is invalid
  * @returns Parsed safety level
  */
 export function getSafetyLevel(defaultLevel: SafetyLevel = 'NONE'): SafetyLevel {
   const safetyLevelEnv = process.env['SFCC_SAFETY_LEVEL'];
   if (safetyLevelEnv) {
-    const upper = safetyLevelEnv.toUpperCase().replace('-', '_');
+    const upper = safetyLevelEnv.toUpperCase().replace(/-/g, '_');
     if (['NONE', 'NO_DELETE', 'NO_UPDATE', 'READ_ONLY'].includes(upper)) {
       return upper as SafetyLevel;
     }
-
-    // Backward compatibility: map old names to new names (for early adopters)
-    if (upper === 'NO_DESTRUCTIVE') {
-      return 'NO_UPDATE';
-    }
-    if (upper === 'READONLY') {
-      return 'READ_ONLY';
-    }
+    getLogger().warn(
+      {envValue: safetyLevelEnv, validValues: ['NONE', 'NO_DELETE', 'NO_UPDATE', 'READ_ONLY']},
+      'SFCC_SAFETY_LEVEL has an invalid value; using default safety level',
+    );
   }
 
   return defaultLevel;

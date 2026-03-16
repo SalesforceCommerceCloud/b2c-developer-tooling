@@ -5,6 +5,7 @@
  */
 
 import {expect} from 'chai';
+import sinon from 'sinon';
 import {
   checkSafetyViolation,
   getSafetyLevel,
@@ -13,6 +14,7 @@ import {
   type SafetyConfig,
   type SafetyLevel,
 } from '@salesforce/b2c-tooling-sdk';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 describe('safety/safety-middleware', () => {
   describe('checkSafetyViolation', () => {
@@ -133,91 +135,6 @@ describe('safety/safety-middleware', () => {
       });
     });
 
-    describe('allowedPaths whitelist', () => {
-      it('allows operations to whitelisted paths regardless of safety level', () => {
-        const config: SafetyConfig = {
-          level: 'READ_ONLY',
-          allowedPaths: ['/auth/token', '/health'],
-        };
-
-        // DELETE should normally be blocked in READ_ONLY, but allowed for whitelisted paths
-        expect(checkSafetyViolation('DELETE', 'https://api.example.com/auth/token', config)).to.be.undefined;
-        expect(checkSafetyViolation('POST', 'https://api.example.com/health', config)).to.be.undefined;
-
-        // Non-whitelisted path should still be blocked
-        const result = checkSafetyViolation('POST', 'https://api.example.com/items', config);
-        expect(result).to.include('Write operation blocked');
-      });
-
-      it('matches paths using startsWith (prefix matching)', () => {
-        const config: SafetyConfig = {
-          level: 'READ_ONLY',
-          allowedPaths: ['/auth'],
-        };
-
-        // All auth paths should be allowed
-        expect(checkSafetyViolation('POST', 'https://api.example.com/auth/token', config)).to.be.undefined;
-        expect(checkSafetyViolation('POST', 'https://api.example.com/auth/refresh', config)).to.be.undefined;
-
-        // Non-auth path should be blocked
-        const result = checkSafetyViolation('POST', 'https://api.example.com/items', config);
-        expect(result).to.include('Write operation blocked');
-      });
-    });
-
-    describe('blockedPaths blacklist', () => {
-      it('blocks operations to blacklisted paths regardless of safety level', () => {
-        const config: SafetyConfig = {
-          level: 'NONE',
-          blockedPaths: ['/admin', '/dangerous'],
-        };
-
-        // Even with NONE level, blacklisted paths should be blocked
-        const adminResult = checkSafetyViolation('GET', 'https://api.example.com/admin/users', config);
-        expect(adminResult).to.include('blocked paths list');
-
-        const dangerousResult = checkSafetyViolation('GET', 'https://api.example.com/dangerous/operation', config);
-        expect(dangerousResult).to.include('blocked paths list');
-
-        // Non-blacklisted path should be allowed (NONE level)
-        expect(checkSafetyViolation('DELETE', 'https://api.example.com/items/1', config)).to.be.undefined;
-      });
-
-      it('matches paths using startsWith (prefix matching)', () => {
-        const config: SafetyConfig = {
-          level: 'NONE',
-          blockedPaths: ['/admin'],
-        };
-
-        // All admin paths should be blocked
-        const result1 = checkSafetyViolation('GET', 'https://api.example.com/admin/users', config);
-        expect(result1).to.include('blocked paths list');
-
-        const result2 = checkSafetyViolation('GET', 'https://api.example.com/admin/settings', config);
-        expect(result2).to.include('blocked paths list');
-
-        // Non-admin path should be allowed
-        expect(checkSafetyViolation('GET', 'https://api.example.com/public/data', config)).to.be.undefined;
-      });
-    });
-
-    describe('allowedPaths takes precedence over blockedPaths', () => {
-      it('allows whitelisted paths even if they match blacklist', () => {
-        const config: SafetyConfig = {
-          level: 'NONE',
-          allowedPaths: ['/admin/readonly'],
-          blockedPaths: ['/admin'],
-        };
-
-        // Whitelisted path should be allowed despite matching blacklist
-        expect(checkSafetyViolation('GET', 'https://api.example.com/admin/readonly/data', config)).to.be.undefined;
-
-        // Other admin paths should still be blocked
-        const result = checkSafetyViolation('GET', 'https://api.example.com/admin/users', config);
-        expect(result).to.include('blocked paths list');
-      });
-    });
-
     describe('URL parsing', () => {
       it('extracts pathname correctly from full URLs', () => {
         const config: SafetyConfig = {level: 'NO_DELETE'};
@@ -296,23 +213,27 @@ describe('safety/safety-middleware', () => {
       expect(getSafetyLevel()).to.equal('READ_ONLY');
     });
 
-    it('supports backward compatibility aliases', () => {
-      process.env['SFCC_SAFETY_LEVEL'] = 'NO_DESTRUCTIVE';
-      expect(getSafetyLevel()).to.equal('NO_UPDATE');
-
-      process.env['SFCC_SAFETY_LEVEL'] = 'READONLY';
-      expect(getSafetyLevel()).to.equal('READ_ONLY');
-
-      process.env['SFCC_SAFETY_LEVEL'] = 'readonly';
-      expect(getSafetyLevel()).to.equal('READ_ONLY');
-    });
-
     it('returns default level for invalid values', () => {
       process.env['SFCC_SAFETY_LEVEL'] = 'invalid-value';
       expect(getSafetyLevel()).to.equal('NONE');
 
       process.env['SFCC_SAFETY_LEVEL'] = 'invalid-value';
       expect(getSafetyLevel('READ_ONLY')).to.equal('READ_ONLY');
+    });
+
+    it('logs a warning when env is set to an invalid value', () => {
+      const warnStub = sinon.stub(getLogger(), 'warn');
+      try {
+        process.env['SFCC_SAFETY_LEVEL'] = 'INVALID_LEVEL';
+
+        getSafetyLevel('NONE');
+
+        expect(warnStub.calledOnce).to.be.true;
+        expect(warnStub.firstCall.args[0]).to.deep.include({envValue: 'INVALID_LEVEL'});
+        expect(warnStub.firstCall.args[1]).to.include('invalid value');
+      } finally {
+        warnStub.restore();
+      }
     });
 
     it('ignores empty string', () => {

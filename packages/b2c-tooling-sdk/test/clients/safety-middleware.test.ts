@@ -6,7 +6,6 @@
 
 import {expect} from 'chai';
 import {createSafetyMiddleware} from '@salesforce/b2c-tooling-sdk/clients';
-import type {SafetyConfig} from '@salesforce/b2c-tooling-sdk';
 import {SafetyBlockedError} from '@salesforce/b2c-tooling-sdk';
 
 describe('clients/middleware - createSafetyMiddleware', () => {
@@ -170,94 +169,6 @@ describe('clients/middleware - createSafetyMiddleware', () => {
         const request = new Request('https://api.example.com/items', {method});
         const result = await middleware.onRequest!({request} as unknown as OnRequestParams);
         expect(result).to.equal(request);
-      }
-    });
-  });
-
-  describe('allowedPaths configuration', () => {
-    it('allows whitelisted paths regardless of safety level', async () => {
-      const config: SafetyConfig = {
-        level: 'READ_ONLY',
-        allowedPaths: ['/auth/token', '/health'],
-      };
-      const middleware = createSafetyMiddleware(config);
-      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
-
-      // POST should normally be blocked in READ_ONLY
-      const authRequest = new Request('https://api.example.com/auth/token', {method: 'POST'});
-      const result1 = await middleware.onRequest!({request: authRequest} as unknown as OnRequestParams);
-      expect(result1).to.equal(authRequest);
-
-      const healthRequest = new Request('https://api.example.com/health', {method: 'POST'});
-      const result2 = await middleware.onRequest!({request: healthRequest} as unknown as OnRequestParams);
-      expect(result2).to.equal(healthRequest);
-
-      // Non-whitelisted path should still be blocked
-      const itemsRequest = new Request('https://api.example.com/items', {method: 'POST'});
-      try {
-        await middleware.onRequest!({request: itemsRequest} as unknown as OnRequestParams);
-        throw new Error('Expected SafetyBlockedError');
-      } catch (error) {
-        expect(error).to.be.instanceOf(SafetyBlockedError);
-      }
-    });
-  });
-
-  describe('blockedPaths configuration', () => {
-    it('blocks blacklisted paths even with NONE level', async () => {
-      const config: SafetyConfig = {
-        level: 'NONE',
-        blockedPaths: ['/admin', '/dangerous'],
-      };
-      const middleware = createSafetyMiddleware(config);
-      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
-
-      const adminRequest = new Request('https://api.example.com/admin/users', {method: 'GET'});
-      try {
-        await middleware.onRequest!({request: adminRequest} as unknown as OnRequestParams);
-        throw new Error('Expected SafetyBlockedError');
-      } catch (error) {
-        expect(error).to.be.instanceOf(SafetyBlockedError);
-        expect((error as SafetyBlockedError).message).to.include('blocked paths list');
-      }
-
-      const dangerousRequest = new Request('https://api.example.com/dangerous/op', {method: 'DELETE'});
-      try {
-        await middleware.onRequest!({request: dangerousRequest} as unknown as OnRequestParams);
-        throw new Error('Expected SafetyBlockedError');
-      } catch (error) {
-        expect(error).to.be.instanceOf(SafetyBlockedError);
-      }
-
-      // Non-blacklisted path should be allowed
-      const safeRequest = new Request('https://api.example.com/items/1', {method: 'DELETE'});
-      const result = await middleware.onRequest!({request: safeRequest} as unknown as OnRequestParams);
-      expect(result).to.equal(safeRequest);
-    });
-  });
-
-  describe('combined allowedPaths and blockedPaths', () => {
-    it('whitelist takes precedence over blacklist', async () => {
-      const config: SafetyConfig = {
-        level: 'NONE',
-        allowedPaths: ['/admin/readonly'],
-        blockedPaths: ['/admin'],
-      };
-      const middleware = createSafetyMiddleware(config);
-      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
-
-      // Whitelisted admin path should be allowed
-      const readonlyRequest = new Request('https://api.example.com/admin/readonly/data', {method: 'GET'});
-      const result = await middleware.onRequest!({request: readonlyRequest} as unknown as OnRequestParams);
-      expect(result).to.equal(readonlyRequest);
-
-      // Other admin paths should be blocked
-      const usersRequest = new Request('https://api.example.com/admin/users', {method: 'GET'});
-      try {
-        await middleware.onRequest!({request: usersRequest} as unknown as OnRequestParams);
-        throw new Error('Expected SafetyBlockedError');
-      } catch (error) {
-        expect(error).to.be.instanceOf(SafetyBlockedError);
       }
     });
   });
