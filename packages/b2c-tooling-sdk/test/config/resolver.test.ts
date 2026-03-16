@@ -41,14 +41,14 @@ class MockSource implements ConfigSource {
 describe('config/resolver', () => {
   describe('ConfigResolver', () => {
     describe('resolve', () => {
-      it('resolves from a single source', () => {
+      it('resolves from a single source', async () => {
         const source = new MockSource('test', {
           hostname: 'example.demandware.net',
           codeVersion: 'v1',
         });
         const resolver = new ConfigResolver([source]);
 
-        const {config, warnings, sources} = resolver.resolve();
+        const {config, warnings, sources} = await resolver.resolve();
 
         expect(config.hostname).to.equal('example.demandware.net');
         expect(config.codeVersion).to.equal('v1');
@@ -57,31 +57,31 @@ describe('config/resolver', () => {
         expect(sources[0].name).to.equal('test');
       });
 
-      it('resolves tenantId from source', () => {
+      it('resolves tenantId from source', async () => {
         const source = new MockSource('test', {
           hostname: 'example.demandware.net',
           tenantId: 'test_prd',
         });
         const resolver = new ConfigResolver([source]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.tenantId).to.equal('test_prd');
       });
 
-      it('allows overrides to take precedence for tenantId', () => {
+      it('allows overrides to take precedence for tenantId', async () => {
         const source = new MockSource('test', {
           hostname: 'example.demandware.net',
           tenantId: 'source_prd',
         });
         const resolver = new ConfigResolver([source]);
 
-        const {config} = resolver.resolve({tenantId: 'override_prd'});
+        const {config} = await resolver.resolve({tenantId: 'override_prd'});
 
         expect(config.tenantId).to.equal('override_prd');
       });
 
-      it('applies overrides with highest priority', () => {
+      it('applies overrides with highest priority', async () => {
         const source = new MockSource('test', {
           hostname: 'source.demandware.net',
           codeVersion: 'v1',
@@ -89,7 +89,7 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source]);
 
-        const {config} = resolver.resolve({
+        const {config} = await resolver.resolve({
           hostname: 'source.demandware.net',
           codeVersion: 'v2',
         });
@@ -99,7 +99,7 @@ describe('config/resolver', () => {
         expect(config.clientId).to.equal('source-client');
       });
 
-      it('resolves from multiple sources with priority order', () => {
+      it('resolves from multiple sources with priority order', async () => {
         const source1 = new MockSource('first', {
           hostname: 'first.demandware.net',
           codeVersion: 'v1',
@@ -111,7 +111,7 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config, sources} = resolver.resolve();
+        const {config, sources} = await resolver.resolve();
 
         // First source wins for hostname and codeVersion
         expect(config.hostname).to.equal('first.demandware.net');
@@ -121,16 +121,16 @@ describe('config/resolver', () => {
         expect(sources).to.have.length(2);
       });
 
-      it('tracks source locations when available', () => {
+      it('tracks source locations when available', async () => {
         const source = new MockSource('test', {hostname: 'example.demandware.net'}, '/path/to/dw.json');
         const resolver = new ConfigResolver([source]);
 
-        const {sources} = resolver.resolve();
+        const {sources} = await resolver.resolve();
 
         expect(sources[0].location).to.equal('/path/to/dw.json');
       });
 
-      it('tracks which fields each source provided', () => {
+      it('tracks which fields each source provided', async () => {
         const source1 = new MockSource('first', {
           hostname: 'example.demandware.net',
         });
@@ -140,7 +140,7 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {sources} = resolver.resolve();
+        const {sources} = await resolver.resolve();
 
         expect(sources[0].fields).to.deep.equal(['hostname']);
         expect(sources[0].fieldsIgnored).to.be.undefined;
@@ -148,7 +148,7 @@ describe('config/resolver', () => {
         expect(sources[1].fieldsIgnored).to.be.undefined;
       });
 
-      it('tracks fieldsIgnored when higher priority source provides same fields', () => {
+      it('tracks fieldsIgnored when higher priority source provides same fields', async () => {
         const source1 = new MockSource('higher-priority', {
           hostname: 'example.demandware.net',
           clientId: 'higher-client',
@@ -160,7 +160,7 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {sources, config} = resolver.resolve();
+        const {sources, config} = await resolver.resolve();
 
         // Higher priority source provides and uses all its fields
         expect(sources[0].fields).to.have.members(['hostname', 'clientId', 'clientSecret']);
@@ -175,34 +175,34 @@ describe('config/resolver', () => {
         expect(config.clientSecret).to.equal('higher-secret');
       });
 
-      it('skips sources that return undefined', () => {
+      it('skips sources that return undefined', async () => {
         const source1 = new MockSource('empty', undefined);
         const source2 = new MockSource('valid', {
           hostname: 'example.demandware.net',
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config, sources} = resolver.resolve();
+        const {config, sources} = await resolver.resolve();
 
         expect(config.hostname).to.equal('example.demandware.net');
         expect(sources).to.have.length(1);
         expect(sources[0].name).to.equal('valid');
       });
 
-      it('skips sources that return empty config', () => {
+      it('skips sources that return empty config', async () => {
         const source1 = new MockSource('empty', {});
         const source2 = new MockSource('valid', {
           hostname: 'example.demandware.net',
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {sources} = resolver.resolve();
+        const {sources} = await resolver.resolve();
 
         expect(sources).to.have.length(1);
         expect(sources[0].name).to.equal('valid');
       });
 
-      it('applies hostname mismatch protection', () => {
+      it('applies hostname mismatch protection', async () => {
         const source = new MockSource('test', {
           hostname: 'prod.demandware.net',
           clientId: 'prod-client',
@@ -210,7 +210,10 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source]);
 
-        const {config, warnings} = resolver.resolve({hostname: 'staging.demandware.net'}, {hostnameProtection: true});
+        const {config, warnings} = await resolver.resolve(
+          {hostname: 'staging.demandware.net'},
+          {hostnameProtection: true},
+        );
 
         expect(config.hostname).to.equal('staging.demandware.net');
         expect(config.clientId).to.be.undefined;
@@ -219,7 +222,7 @@ describe('config/resolver', () => {
         expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
       });
 
-      it('creates SOURCE_ERROR warning when source throws', () => {
+      it('creates SOURCE_ERROR warning when source throws', async () => {
         // Create a source that throws an error
         const throwingSource: ConfigSource = {
           name: 'throwing-source',
@@ -233,7 +236,7 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([throwingSource, validSource]);
 
-        const {config, warnings, sources} = resolver.resolve();
+        const {config, warnings, sources} = await resolver.resolve();
 
         // Should have one SOURCE_ERROR warning
         expect(warnings).to.have.length(1);
@@ -252,7 +255,7 @@ describe('config/resolver', () => {
         expect(sources[0].name).to.equal('valid');
       });
 
-      it('continues with remaining sources after SOURCE_ERROR', () => {
+      it('continues with remaining sources after SOURCE_ERROR', async () => {
         // First source throws, second succeeds, third also throws
         const throwingSource1: ConfigSource = {
           name: 'bad-source-1',
@@ -271,7 +274,7 @@ describe('config/resolver', () => {
         };
         const resolver = new ConfigResolver([throwingSource1, validSource, throwingSource2]);
 
-        const {config, warnings, sources} = resolver.resolve();
+        const {config, warnings, sources} = await resolver.resolve();
 
         // Should have two SOURCE_ERROR warnings
         expect(warnings).to.have.length(2);
@@ -285,10 +288,10 @@ describe('config/resolver', () => {
         expect(sources).to.have.length(1);
       });
 
-      it('returns empty config when no sources have data', () => {
+      it('returns empty config when no sources have data', async () => {
         const resolver = new ConfigResolver([]);
 
-        const {config, sources} = resolver.resolve();
+        const {config, sources} = await resolver.resolve();
 
         // Config has all fields set to undefined (not an empty object)
         expect(config.hostname).to.be.undefined;
@@ -298,29 +301,29 @@ describe('config/resolver', () => {
     });
 
     describe('credential grouping', () => {
-      it('does not mix clientId and clientSecret from different sources', () => {
+      it('does not mix clientId and clientSecret from different sources', async () => {
         const source1 = new MockSource('first', {clientId: 'first-client'});
         const source2 = new MockSource('second', {clientSecret: 'second-secret'});
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.clientId).to.equal('first-client');
         expect(config.clientSecret).to.be.undefined; // Not mixed from source2
       });
 
-      it('does not mix username and password from different sources', () => {
+      it('does not mix username and password from different sources', async () => {
         const source1 = new MockSource('first', {username: 'user1'});
         const source2 = new MockSource('second', {password: 'pass2'});
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.username).to.equal('user1');
         expect(config.password).to.be.undefined; // Not mixed from source2
       });
 
-      it('allows complete credential pairs from same source', () => {
+      it('allows complete credential pairs from same source', async () => {
         const source1 = new MockSource('first', {hostname: 'example.com'});
         const source2 = new MockSource('second', {
           clientId: 'client',
@@ -328,14 +331,14 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.hostname).to.equal('example.com');
         expect(config.clientId).to.equal('client');
         expect(config.clientSecret).to.equal('secret');
       });
 
-      it('allows non-grouped fields to merge normally', () => {
+      it('allows non-grouped fields to merge normally', async () => {
         const source1 = new MockSource('first', {clientId: 'client'});
         const source2 = new MockSource('second', {
           hostname: 'example.com',
@@ -343,14 +346,14 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.clientId).to.equal('client');
         expect(config.hostname).to.equal('example.com');
         expect(config.codeVersion).to.equal('v1');
       });
 
-      it('blocks both oauth fields when clientId is claimed', () => {
+      it('blocks both oauth fields when clientId is claimed', async () => {
         const source1 = new MockSource('first', {clientId: 'first-client'});
         const source2 = new MockSource('second', {
           clientId: 'second-client',
@@ -358,13 +361,13 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.clientId).to.equal('first-client');
         expect(config.clientSecret).to.be.undefined; // Blocked due to group claim
       });
 
-      it('blocks both basic auth fields when username is claimed', () => {
+      it('blocks both basic auth fields when username is claimed', async () => {
         const source1 = new MockSource('first', {username: 'first-user'});
         const source2 = new MockSource('second', {
           username: 'second-user',
@@ -372,13 +375,13 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.username).to.equal('first-user');
         expect(config.password).to.be.undefined; // Blocked due to group claim
       });
 
-      it('allows independent credential groups to come from different sources', () => {
+      it('allows independent credential groups to come from different sources', async () => {
         const source1 = new MockSource('first', {
           clientId: 'oauth-client',
           clientSecret: 'oauth-secret',
@@ -389,7 +392,7 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source1, source2]);
 
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         // OAuth from source1
         expect(config.clientId).to.equal('oauth-client');
@@ -401,7 +404,7 @@ describe('config/resolver', () => {
     });
 
     describe('createAuthCredentials', () => {
-      it('creates auth credentials from resolved config', () => {
+      it('creates auth credentials from resolved config', async () => {
         const source = new MockSource('test', {
           hostname: 'example.demandware.net',
           clientId: 'test-client',
@@ -413,7 +416,7 @@ describe('config/resolver', () => {
         });
         const resolver = new ConfigResolver([source]);
 
-        const credentials = resolver.createAuthCredentials();
+        const credentials = await resolver.createAuthCredentials();
 
         expect(credentials.clientId).to.equal('test-client');
         expect(credentials.clientSecret).to.equal('test-secret');
@@ -423,14 +426,14 @@ describe('config/resolver', () => {
         expect(credentials.apiKey).to.equal('api-key');
       });
 
-      it('applies overrides to auth credentials', () => {
+      it('applies overrides to auth credentials', async () => {
         const source = new MockSource('test', {
           hostname: 'example.demandware.net',
           clientId: 'source-client',
         });
         const resolver = new ConfigResolver([source]);
 
-        const credentials = resolver.createAuthCredentials({
+        const credentials = await resolver.createAuthCredentials({
           hostname: 'example.demandware.net',
           clientId: 'override-client',
         });
@@ -441,18 +444,18 @@ describe('config/resolver', () => {
   });
 
   describe('createConfigResolver', () => {
-    it('creates a resolver with default sources', () => {
+    it('creates a resolver with default sources', async () => {
       const resolver = createConfigResolver();
 
       // Should not throw
-      const {config} = resolver.resolve({hostname: 'test.demandware.net'});
+      const {config} = await resolver.resolve({hostname: 'test.demandware.net'});
 
       expect(config.hostname).to.equal('test.demandware.net');
     });
   });
 
   describe('priority-based sorting', () => {
-    it('sorts sources by priority (lower number = higher priority)', () => {
+    it('sorts sources by priority (lower number = higher priority)', async () => {
       // Sources added in wrong order, but should be sorted by priority
       const lowPriority = new MockSource('low', {clientId: 'low-client'}, undefined, 100);
       const highPriority = new MockSource('high', {clientId: 'high-client'}, undefined, -10);
@@ -460,57 +463,57 @@ describe('config/resolver', () => {
 
       // Pass sources in "wrong" order - they should get sorted
       const resolver = new ConfigResolver([lowPriority, defaultPriority, highPriority]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // High priority source (-10) wins
       expect(config.clientId).to.equal('high-client');
     });
 
-    it('treats undefined priority as 0', () => {
+    it('treats undefined priority as 0', async () => {
       const withPriority = new MockSource('with', {clientId: 'with-priority'}, undefined, 10);
       const noPriority = new MockSource('no', {clientId: 'no-priority'}, undefined, undefined);
 
       // No priority (=0) should win over priority 10
       const resolver = new ConfigResolver([withPriority, noPriority]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.clientId).to.equal('no-priority');
     });
 
-    it('maintains insertion order for same priority', () => {
+    it('maintains insertion order for same priority', async () => {
       const first = new MockSource('first', {clientId: 'first-client'}, undefined, 0);
       const second = new MockSource('second', {clientId: 'second-client'}, undefined, 0);
 
       const resolver = new ConfigResolver([first, second]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // First source should win since both have same priority
       expect(config.clientId).to.equal('first-client');
     });
 
-    it('negative priorities come before 0', () => {
+    it('negative priorities come before 0', async () => {
       const before = new MockSource('before', {hostname: 'before.com'}, undefined, -1);
       const builtin = new MockSource('builtin', {hostname: 'builtin.com'}, undefined, 0);
 
       const resolver = new ConfigResolver([builtin, before]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // -1 priority should win
       expect(config.hostname).to.equal('before.com');
     });
 
-    it('high priorities (1000) come last', () => {
+    it('high priorities (1000) come last', async () => {
       const packageJson = new MockSource('package', {shortCode: 'package-code'}, undefined, 1000);
       const dwJson = new MockSource('dwjson', {shortCode: 'dw-code'}, undefined, 0);
 
       const resolver = new ConfigResolver([packageJson, dwJson]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // 0 priority should win over 1000
       expect(config.shortCode).to.equal('dw-code');
     });
 
-    it('plugin priorities work with before/after pattern', () => {
+    it('plugin priorities work with before/after pattern', async () => {
       // Simulating: plugin 'before' (-1), builtin (0), plugin 'after' (10)
       const pluginBefore = new MockSource('plugin-before', {clientId: 'before-client'}, undefined, -1);
       const builtin = new MockSource('builtin', {clientId: 'builtin-client', hostname: 'builtin.com'}, undefined, 0);
@@ -522,7 +525,7 @@ describe('config/resolver', () => {
       );
 
       const resolver = new ConfigResolver([pluginAfter, builtin, pluginBefore]);
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // 'before' plugin wins for clientId
       expect(config.clientId).to.equal('before-client');
@@ -538,7 +541,7 @@ describe('config/resolver', () => {
       globalConfigSourceRegistry.clear();
     });
 
-    it('resolveConfig() includes globally registered sources', () => {
+    it('resolveConfig() includes globally registered sources', async () => {
       const source: ConfigSource = {
         name: 'global-test',
         priority: -1,
@@ -548,14 +551,14 @@ describe('config/resolver', () => {
       };
       globalConfigSourceRegistry.register(source);
 
-      const config = resolveConfig({}, {replaceDefaultSources: true});
+      const config = await resolveConfig({}, {replaceDefaultSources: true});
 
       expect(config.values.hostname).to.equal('global.example.com');
       expect(config.sources).to.have.length(1);
       expect(config.sources[0].name).to.equal('global-test');
     });
 
-    it('global sources participate in priority sorting', () => {
+    it('global sources participate in priority sorting', async () => {
       const lowPriority: ConfigSource = {
         name: 'global-low',
         priority: 100,
@@ -573,13 +576,13 @@ describe('config/resolver', () => {
       globalConfigSourceRegistry.register(lowPriority);
       globalConfigSourceRegistry.register(highPriority);
 
-      const config = resolveConfig({}, {replaceDefaultSources: true});
+      const config = await resolveConfig({}, {replaceDefaultSources: true});
 
       // High priority source (-10) wins
       expect(config.values.hostname).to.equal('high.example.com');
     });
 
-    it('explicit sourcesBefore/sourcesAfter merge with global sources', () => {
+    it('explicit sourcesBefore/sourcesAfter merge with global sources', async () => {
       const globalSource: ConfigSource = {
         name: 'global-source',
         priority: 10,
@@ -597,14 +600,14 @@ describe('config/resolver', () => {
         },
       };
 
-      const config = resolveConfig({}, {replaceDefaultSources: true, sourcesBefore: [explicitSource]});
+      const config = await resolveConfig({}, {replaceDefaultSources: true, sourcesBefore: [explicitSource]});
 
       // Both sources should contribute
       expect(config.values.hostname).to.equal('explicit.example.com');
       expect(config.values.clientId).to.equal('global-client');
     });
 
-    it('global sources are included when replaceDefaultSources is true', () => {
+    it('global sources are included when replaceDefaultSources is true', async () => {
       const source: ConfigSource = {
         name: 'global-persistent',
         priority: 0,
@@ -614,14 +617,14 @@ describe('config/resolver', () => {
       };
       globalConfigSourceRegistry.register(source);
 
-      const config = resolveConfig({}, {replaceDefaultSources: true});
+      const config = await resolveConfig({}, {replaceDefaultSources: true});
 
       expect(config.values.shortCode).to.equal('global-code');
     });
   });
 
   describe('TLS/mTLS configuration', () => {
-    it('resolves TLS options from source', () => {
+    it('resolves TLS options from source', async () => {
       const source = new MockSource('test', {
         hostname: 'example.demandware.net',
         certificate: '/path/to/cert.p12',
@@ -630,14 +633,14 @@ describe('config/resolver', () => {
       });
       const resolver = new ConfigResolver([source]);
 
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.certificate).to.equal('/path/to/cert.p12');
       expect(config.certificatePassphrase).to.equal('secret');
       expect(config.selfSigned).to.equal(true);
     });
 
-    it('allows overrides to take precedence for TLS options', () => {
+    it('allows overrides to take precedence for TLS options', async () => {
       const source = new MockSource('test', {
         hostname: 'example.demandware.net',
         certificate: '/source/cert.p12',
@@ -645,7 +648,7 @@ describe('config/resolver', () => {
       });
       const resolver = new ConfigResolver([source]);
 
-      const {config} = resolver.resolve({
+      const {config} = await resolver.resolve({
         hostname: 'example.demandware.net',
         certificate: '/override/cert.p12',
         selfSigned: true,
@@ -655,7 +658,7 @@ describe('config/resolver', () => {
       expect(config.selfSigned).to.equal(true);
     });
 
-    it('merges TLS options from multiple sources', () => {
+    it('merges TLS options from multiple sources', async () => {
       const source1 = new MockSource('first', {
         hostname: 'example.demandware.net',
         certificate: '/path/to/cert.p12',
@@ -666,7 +669,7 @@ describe('config/resolver', () => {
       });
       const resolver = new ConfigResolver([source1, source2]);
 
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.hostname).to.equal('example.demandware.net');
       expect(config.certificate).to.equal('/path/to/cert.p12');
@@ -674,7 +677,64 @@ describe('config/resolver', () => {
       expect(config.selfSigned).to.equal(true);
     });
 
-    it('discards TLS options on hostname mismatch protection', () => {
+    it('preserves non-instance-bound source fields on hostname mismatch', async () => {
+      const instanceSource = new MockSource('dw-json', {
+        hostname: 'prod.demandware.net',
+        username: 'admin',
+        password: 'prod-pass',
+        shortCode: 'abcdef',
+      });
+      const globalSource = new MockSource('password-store', {
+        clientId: 'my-client-id',
+        clientSecret: 'my-client-secret',
+        shortCode: 'abcdef',
+      });
+      const resolver = new ConfigResolver([instanceSource, globalSource]);
+
+      const {config, warnings, sources} = await resolver.resolve(
+        {hostname: 'staging.demandware.net'},
+        {hostnameProtection: true},
+      );
+
+      expect(config.hostname).to.equal('staging.demandware.net');
+      // Instance-bound fields should be dropped
+      expect(config.username).to.be.undefined;
+      expect(config.password).to.be.undefined;
+      // Non-instance-bound fields should survive
+      expect(config.clientId).to.equal('my-client-id');
+      expect(config.clientSecret).to.equal('my-client-secret');
+      // Fields from non-instance-bound source that were previously shadowed
+      // by the instance-bound source should now be available
+      expect(config.shortCode).to.equal('abcdef');
+      expect(warnings).to.have.length(1);
+      expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
+
+      // Source info should reflect the drop
+      const dwJsonInfo = sources.find((s) => s.name === 'dw-json');
+      expect(dwJsonInfo).to.exist;
+      expect(dwJsonInfo!.fields).to.deep.equal([]);
+      expect(dwJsonInfo!.fieldsIgnored).to.include('hostname');
+      expect(dwJsonInfo!.fieldsIgnored).to.include('username');
+      expect(dwJsonInfo!.fieldsIgnored).to.include('password');
+    });
+
+    it('drops fields from plugin source that also provides hostname on mismatch', async () => {
+      const pluginSource = new MockSource('custom-plugin', {
+        hostname: 'prod.demandware.net',
+        clientId: 'plugin-client-id',
+        clientSecret: 'plugin-client-secret',
+      });
+      const resolver = new ConfigResolver([pluginSource]);
+
+      const {config} = await resolver.resolve({hostname: 'staging.demandware.net'}, {hostnameProtection: true});
+
+      expect(config.hostname).to.equal('staging.demandware.net');
+      // Plugin provided hostname, so it's instance-bound — all its fields dropped
+      expect(config.clientId).to.be.undefined;
+      expect(config.clientSecret).to.be.undefined;
+    });
+
+    it('discards TLS options on hostname mismatch protection', async () => {
       const source = new MockSource('test', {
         hostname: 'prod.demandware.net',
         certificate: '/prod/cert.p12',
@@ -683,7 +743,10 @@ describe('config/resolver', () => {
       });
       const resolver = new ConfigResolver([source]);
 
-      const {config, warnings} = resolver.resolve({hostname: 'staging.demandware.net'}, {hostnameProtection: true});
+      const {config, warnings} = await resolver.resolve(
+        {hostname: 'staging.demandware.net'},
+        {hostnameProtection: true},
+      );
 
       expect(config.hostname).to.equal('staging.demandware.net');
       expect(config.certificate).to.be.undefined;

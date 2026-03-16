@@ -254,7 +254,7 @@ function formatZodErrors(error: z.ZodError): string {
  */
 export function createToolAdapter<TInput, TOutput>(
   options: ToolAdapterOptions<TInput, TOutput>,
-  loadServices: () => Services,
+  loadServices: () => Promise<Services> | Services,
 ): McpTool {
   const {
     name,
@@ -288,7 +288,7 @@ export function createToolAdapter<TInput, TOutput>(
 
       try {
         // 2. Load Services to get fresh configuration (re-reads config files)
-        const services = loadServices();
+        const services = await loadServices();
 
         // 3. Get B2CInstance if required (loaded on each call)
         let b2cInstance: B2CInstance | undefined;

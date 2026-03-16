@@ -38,7 +38,7 @@ pnpm run test:agent
 pnpm --filter @salesforce/b2c-cli run test:agent
 pnpm --filter @salesforce/b2c-tooling-sdk run test:agent
 
-# Lint (errors only, no warnings)
+# Lint (errors only, no warnings); Be sure to run lint before committing or writing a changeset
 pnpm run lint:agent
 
 # Type-check (single-line errors, no color)
@@ -160,6 +160,8 @@ This catches prettier formatting, import ordering, class member ordering (`perfe
 ## Testing
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
+
+**Stdout in tests**: Command tests must not leak output to the console. `stubCommandConfigAndLogger()` silences `command.log`, `command.logToStderr`, and `ux.stdout` automatically. For other cases, use `runSilent()` from `test/helpers/test-setup.ts`.
 
 ## Changesets
 

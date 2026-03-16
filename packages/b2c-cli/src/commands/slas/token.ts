@@ -73,7 +73,7 @@ export default class SlasToken extends SlasClientCommand<typeof SlasToken> {
     }),
   };
 
-  protected override loadConfiguration(): ResolvedB2CConfig {
+  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     const flags = this.flags as Record<string, unknown>;
     return loadConfig(
       {

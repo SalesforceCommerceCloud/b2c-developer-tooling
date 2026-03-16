@@ -67,7 +67,7 @@ async function main() {
   const args = parseArgs();
 
   // Resolve config from dw.json / environment, with CLI overrides
-  const config = resolveConfig({
+  const config = await resolveConfig({
     clientId: args.clientId || process.env.SFCC_OAUTH_CLIENT_ID,
     clientSecret: args.clientSecret || process.env.SFCC_OAUTH_CLIENT_SECRET,
   });

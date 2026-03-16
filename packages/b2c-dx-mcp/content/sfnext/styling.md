@@ -48,4 +48,4 @@ Follow mobile-first responsive design:
 
 ---
 
-**Reference:** See [README-UI-STYLING.md](README-UI-STYLING.md) for complete UI and styling documentation.
+**Reference:** See [README-UI-STYLING.md](docs/README-UI-STYLING.md) in your project for complete UI and styling documentation.

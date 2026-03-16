@@ -28,16 +28,16 @@ The MCP server automatically detects your project type and enables relevant tool
 
 ```bash [Project Scope (Recommended)]
 cd /path/to/your/project
-claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
 ```bash [User Scope]
-claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+claude mcp add --transport stdio --scope user b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
 :::
 
-**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3BAbGF0ZXN0IiwiLS1wcm9qZWN0LWRpcmVjdG9yeSIsIiR7d29ya3NwYWNlRm9sZGVyfSIsIi0tYWxsb3ctbm9uLWdhLXRvb2xzIl19)
 
 See the [Installation Guide](./installation) for detailed setup instructions for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
 
@@ -129,6 +129,12 @@ AI assistants automatically decide which MCP tools to use based on your prompts.
 - ✅ "Use the MCP tool to map Figma design tokens to my theme."
 
 See the [Toolsets & Tools Reference](./toolsets) for more prompting examples for each toolset.
+
+## Plugins
+
+The MCP server uses the B2C CLI under the hood, so CLI plugins automatically extend MCP functionality. Plugins can add new commands, provide custom configuration sources, integrate with external systems, and more.
+
+See the [CLI Plugin documentation](../guide/extending) for details on creating plugins and [Third-Party Plugins](../guide/third-party-plugins) for available community plugins.
 
 ## Next Steps
 

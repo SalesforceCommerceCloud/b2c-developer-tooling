@@ -30,7 +30,7 @@ describe('config/sources', () => {
   });
 
   describe('DwJsonSource', () => {
-    it('loads config from dw.json in current directory', () => {
+    it('loads config from dw.json in current directory', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
         dwJsonPath,
@@ -41,13 +41,13 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.hostname).to.equal('test.demandware.net');
       expect(config.codeVersion).to.equal('v1');
     });
 
-    it('does NOT load config from dw.json in parent directory (no upward search)', () => {
+    it('does NOT load config from dw.json in parent directory (no upward search)', async () => {
       const subDir = path.join(tempDir, 'subdir');
       fs.mkdirSync(subDir);
       const dwJsonPath = path.join(tempDir, 'dw.json');
@@ -61,13 +61,13 @@ describe('config/sources', () => {
       // Change to subdirectory - should NOT find parent's dw.json
       process.chdir(subDir);
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // Parent dw.json should NOT be found (no upward search)
       expect(config.hostname).to.be.undefined;
     });
 
-    it('handles OAuth credentials from dw.json', () => {
+    it('handles OAuth credentials from dw.json', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
         dwJsonPath,
@@ -80,14 +80,14 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.clientId).to.equal('test-client');
       expect(config.clientSecret).to.equal('test-secret');
       expect(config.scopes).to.deep.equal(['mail', 'roles']);
     });
 
-    it('loads tenant-id from dw.json', () => {
+    it('loads tenant-id from dw.json', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
         dwJsonPath,
@@ -98,20 +98,20 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.tenantId).to.equal('abcd_prd');
     });
 
-    it('returns undefined when dw.json does not exist', () => {
+    it('returns undefined when dw.json does not exist', async () => {
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // Should not have hostname from dw.json
       expect(config.hostname).to.be.undefined;
     });
 
-    it('handles named instance from multi-config', () => {
+    it('handles named instance from multi-config', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
         dwJsonPath,
@@ -125,12 +125,12 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve({}, {instance: 'staging'});
+      const {config} = await resolver.resolve({}, {instance: 'staging'});
 
       expect(config.hostname).to.equal('staging.demandware.net');
     });
 
-    it('provides location from load result', () => {
+    it('provides location from load result', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
         dwJsonPath,
@@ -140,7 +140,7 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {sources} = resolver.resolve();
+      const {sources} = await resolver.resolve();
 
       const dwJsonSource = sources.find((s) => s.name === 'DwJsonSource');
       // Normalize paths to handle macOS symlinks (/var -> /private/var)
@@ -150,13 +150,13 @@ describe('config/sources', () => {
     });
 
     describe('listInstances', () => {
-      it('returns empty array when no dw.json exists', () => {
+      it('returns empty array when no dw.json exists', async () => {
         const source = new DwJsonSource();
-        const instances = source.listInstances();
+        const instances = await source.listInstances();
         expect(instances).to.deep.equal([]);
       });
 
-      it('returns instances from configs array', () => {
+      it('returns instances from configs array', async () => {
         const dwJsonPath = path.join(tempDir, 'dw.json');
         fs.writeFileSync(
           dwJsonPath,
@@ -169,7 +169,7 @@ describe('config/sources', () => {
         );
 
         const source = new DwJsonSource();
-        const instances = source.listInstances();
+        const instances = await source.listInstances();
 
         expect(instances).to.have.length(2);
         expect(instances[0].name).to.equal('staging');
@@ -178,7 +178,7 @@ describe('config/sources', () => {
         expect(instances[1].active).to.be.true;
       });
 
-      it('includes root config if it has a name', () => {
+      it('includes root config if it has a name', async () => {
         const dwJsonPath = path.join(tempDir, 'dw.json');
         fs.writeFileSync(
           dwJsonPath,
@@ -191,7 +191,7 @@ describe('config/sources', () => {
         );
 
         const source = new DwJsonSource();
-        const instances = source.listInstances();
+        const instances = await source.listInstances();
 
         expect(instances).to.have.length(2);
         expect(instances[0].name).to.equal('root');
@@ -201,34 +201,34 @@ describe('config/sources', () => {
     });
 
     describe('createInstance', () => {
-      it('creates a new instance', () => {
+      it('creates a new instance', async () => {
         const source = new DwJsonSource();
-        source.createInstance({
+        await source.createInstance({
           name: 'staging',
           config: {hostname: 'staging.demandware.net'},
         });
 
-        const instances = source.listInstances();
+        const instances = await source.listInstances();
         expect(instances).to.have.length(1);
         expect(instances[0].name).to.equal('staging');
         expect(instances[0].hostname).to.equal('staging.demandware.net');
       });
 
-      it('creates instance with setActive', () => {
+      it('creates instance with setActive', async () => {
         const source = new DwJsonSource();
-        source.createInstance({
+        await source.createInstance({
           name: 'staging',
           config: {hostname: 'staging.demandware.net'},
           setActive: true,
         });
 
-        const instances = source.listInstances();
+        const instances = await source.listInstances();
         expect(instances[0].active).to.be.true;
       });
     });
 
     describe('removeInstance', () => {
-      it('removes an instance', () => {
+      it('removes an instance', async () => {
         const dwJsonPath = path.join(tempDir, 'dw.json');
         fs.writeFileSync(
           dwJsonPath,
@@ -241,16 +241,16 @@ describe('config/sources', () => {
         );
 
         const source = new DwJsonSource();
-        source.removeInstance('staging');
+        await source.removeInstance('staging');
 
-        const instances = source.listInstances();
+        const instances = await source.listInstances();
         expect(instances).to.have.length(1);
         expect(instances[0].name).to.equal('production');
       });
     });
 
     describe('setActiveInstance', () => {
-      it('sets an instance as active', () => {
+      it('sets an instance as active', async () => {
         const dwJsonPath = path.join(tempDir, 'dw.json');
         fs.writeFileSync(
           dwJsonPath,
@@ -263,9 +263,9 @@ describe('config/sources', () => {
         );
 
         const source = new DwJsonSource();
-        source.setActiveInstance('staging');
+        await source.setActiveInstance('staging');
 
-        const instances = source.listInstances();
+        const instances = await source.listInstances();
         const staging = instances.find((i) => i.name === 'staging');
         expect(staging?.active).to.be.true;
       });
@@ -273,7 +273,7 @@ describe('config/sources', () => {
   });
 
   describe('MobifySource', () => {
-    it('loads mrtApiKey from ~/.mobify', function () {
+    it('loads mrtApiKey from ~/.mobify', async function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -299,7 +299,7 @@ describe('config/sources', () => {
         );
 
         const resolver = new ConfigResolver();
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.mrtApiKey).to.equal('test-api-key');
 
@@ -313,7 +313,7 @@ describe('config/sources', () => {
       }
     });
 
-    it('returns undefined when ~/.mobify does not exist', function () {
+    it('returns undefined when ~/.mobify does not exist', async function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -330,7 +330,7 @@ describe('config/sources', () => {
 
       if (canMock) {
         const resolver = new ConfigResolver();
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.mrtApiKey).to.be.undefined;
 
@@ -344,7 +344,7 @@ describe('config/sources', () => {
       }
     });
 
-    it('returns undefined when api_key is missing from ~/.mobify', function () {
+    it('returns undefined when api_key is missing from ~/.mobify', async function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -369,7 +369,7 @@ describe('config/sources', () => {
         );
 
         const resolver = new ConfigResolver();
-        const {config} = resolver.resolve();
+        const {config} = await resolver.resolve();
 
         expect(config.mrtApiKey).to.be.undefined;
 
@@ -383,7 +383,7 @@ describe('config/sources', () => {
       }
     });
 
-    it('handles cloudOrigin for custom mobify file', function () {
+    it('handles cloudOrigin for custom mobify file', async function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -408,7 +408,7 @@ describe('config/sources', () => {
         );
 
         const resolver = new ConfigResolver();
-        const {config} = resolver.resolve({}, {cloudOrigin: 'https://example.com'});
+        const {config} = await resolver.resolve({}, {cloudOrigin: 'https://example.com'});
 
         expect(config.mrtApiKey).to.equal('cloud-api-key');
 
@@ -422,7 +422,7 @@ describe('config/sources', () => {
       }
     });
 
-    it('creates SOURCE_ERROR warning for invalid JSON in ~/.mobify', function () {
+    it('creates SOURCE_ERROR warning for invalid JSON in ~/.mobify', async function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -442,7 +442,7 @@ describe('config/sources', () => {
         fs.writeFileSync(mobifyPath, 'invalid json');
 
         const resolver = new ConfigResolver();
-        const {config, warnings} = resolver.resolve();
+        const {config, warnings} = await resolver.resolve();
 
         // Config should not have the API key
         expect(config.mrtApiKey).to.be.undefined;
@@ -461,7 +461,7 @@ describe('config/sources', () => {
       }
     });
 
-    it('provides location from load result', function () {
+    it('provides location from load result', async function () {
       const originalHomedir = os.homedir;
       let canMock = false;
       try {
@@ -486,7 +486,7 @@ describe('config/sources', () => {
         );
 
         const resolver = new ConfigResolver();
-        const {sources} = resolver.resolve();
+        const {sources} = await resolver.resolve();
 
         const mobifySource = sources.find((s) => s.name === 'MobifySource');
         // Normalize paths to handle macOS symlinks
@@ -506,7 +506,7 @@ describe('config/sources', () => {
   });
 
   describe('PackageJsonSource', () => {
-    it('loads allowed fields from package.json b2c key', () => {
+    it('loads allowed fields from package.json b2c key', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
         packageJsonPath,
@@ -523,7 +523,7 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       expect(config.shortCode).to.equal('abc123');
       expect(config.clientId).to.equal('test-client-id');
@@ -532,7 +532,7 @@ describe('config/sources', () => {
       expect(config.accountManagerHost).to.equal('account.demandware.com');
     });
 
-    it('ignores sensitive/instance-specific fields', () => {
+    it('ignores sensitive/instance-specific fields', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
         packageJsonPath,
@@ -552,7 +552,7 @@ describe('config/sources', () => {
 
       // Use PackageJsonSource directly to test in isolation
       const source = new PackageJsonSource();
-      const result = source.load({projectDirectory: tempDir});
+      const result = await source.load({projectDirectory: tempDir});
 
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');
@@ -564,15 +564,15 @@ describe('config/sources', () => {
       expect(result!.config.mrtApiKey).to.be.undefined;
     });
 
-    it('returns undefined when package.json does not exist', () => {
+    it('returns undefined when package.json does not exist', async () => {
       const resolver = new ConfigResolver();
-      const {sources} = resolver.resolve();
+      const {sources} = await resolver.resolve();
 
       const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
       expect(packageJsonSource).to.be.undefined;
     });
 
-    it('returns undefined when b2c key is missing', () => {
+    it('returns undefined when b2c key is missing', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
         packageJsonPath,
@@ -582,13 +582,13 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {sources} = resolver.resolve();
+      const {sources} = await resolver.resolve();
 
       const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
       expect(packageJsonSource).to.be.undefined;
     });
 
-    it('returns undefined when b2c key has only disallowed fields', () => {
+    it('returns undefined when b2c key has only disallowed fields', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
         packageJsonPath,
@@ -602,13 +602,13 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {sources} = resolver.resolve();
+      const {sources} = await resolver.resolve();
 
       const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
       expect(packageJsonSource).to.be.undefined;
     });
 
-    it('has lowest priority (1000) and does not override other sources', () => {
+    it('has lowest priority (1000) and does not override other sources', async () => {
       // Create dw.json with clientId
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
@@ -635,7 +635,7 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {config} = resolver.resolve();
+      const {config} = await resolver.resolve();
 
       // dw.json values should take precedence (priority 0 < 1000)
       expect(config.clientId).to.equal('dw-client-id');
@@ -644,7 +644,7 @@ describe('config/sources', () => {
       expect(config.mrtProject).to.equal('package-project');
     });
 
-    it('provides location from load result', () => {
+    it('provides location from load result', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
         packageJsonPath,
@@ -657,7 +657,7 @@ describe('config/sources', () => {
       );
 
       const resolver = new ConfigResolver();
-      const {sources} = resolver.resolve();
+      const {sources} = await resolver.resolve();
 
       const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
       // Normalize paths to handle macOS symlinks
@@ -666,7 +666,7 @@ describe('config/sources', () => {
       expect(actualLocation).to.equal(expectedPath);
     });
 
-    it('accepts kebab-case fields and normalizes to camelCase', () => {
+    it('accepts kebab-case fields and normalizes to camelCase', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
         packageJsonPath,
@@ -683,7 +683,7 @@ describe('config/sources', () => {
       );
 
       const source = new PackageJsonSource();
-      const result = source.load({projectDirectory: tempDir});
+      const result = await source.load({projectDirectory: tempDir});
 
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');
@@ -693,7 +693,7 @@ describe('config/sources', () => {
       expect(result!.config.sandboxApiHost).to.equal('admin.dx.commercecloud.salesforce.com');
     });
 
-    it('rejects disallowed fields even in kebab-case', () => {
+    it('rejects disallowed fields even in kebab-case', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
         packageJsonPath,
@@ -709,7 +709,7 @@ describe('config/sources', () => {
       );
 
       const source = new PackageJsonSource();
-      const result = source.load({projectDirectory: tempDir});
+      const result = await source.load({projectDirectory: tempDir});
 
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');
@@ -717,12 +717,12 @@ describe('config/sources', () => {
       expect(result!.config.clientSecret).to.be.undefined;
     });
 
-    it('handles invalid JSON gracefully', () => {
+    it('handles invalid JSON gracefully', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(packageJsonPath, 'invalid json');
 
       const resolver = new ConfigResolver();
-      const {sources} = resolver.resolve();
+      const {sources} = await resolver.resolve();
 
       const packageJsonSource = sources.find((s) => s.name === 'PackageJsonSource');
       expect(packageJsonSource).to.be.undefined;

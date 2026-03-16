@@ -131,7 +131,7 @@ export function generateComponentRecommendation(input: GenerateComponentInput): 
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns MCP tool for component analysis and recommendation
  */
-export function createGenerateComponentTool(loadServices: () => Services): McpTool {
+export function createGenerateComponentTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<GenerateComponentInput, string>(
     {
       name: 'storefront_next_generate_component',

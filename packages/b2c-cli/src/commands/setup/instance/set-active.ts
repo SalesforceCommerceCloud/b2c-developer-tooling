@@ -42,7 +42,7 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
 
   async run(): Promise<InstanceSetActiveResponse> {
     const source = new DwJsonSource();
-    const instances = source.listInstances({configPath: this.flags.config});
+    const instances = await source.listInstances({configPath: this.flags.config});
 
     let name = this.args.name;
 
@@ -87,7 +87,7 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
     }
 
     // Set as active
-    source.setActiveInstance(name, {configPath: this.flags.config});
+    await source.setActiveInstance(name, {configPath: this.flags.config});
 
     const result: InstanceSetActiveResponse = {
       name,

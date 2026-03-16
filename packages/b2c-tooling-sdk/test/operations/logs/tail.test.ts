@@ -312,7 +312,7 @@ Stack trace line 2
 
       const result = await tailLogs(instance as never, {
         prefixes: ['error'],
-        pollInterval: 100,
+        pollInterval: 10,
         lastEntries: 100, // Fetch up to 100 entries per file on startup
         maxEntries: 2,
         onEntry: (entry) => entries.push(entry),
@@ -347,11 +347,11 @@ Stack trace line 2
       const instance = createMockInstance();
       const result = await tailLogs(instance as never, {
         prefixes: ['error'],
-        pollInterval: 100,
+        pollInterval: 10,
       });
 
       // Stop after a short delay
-      setTimeout(() => result.stop(), 200);
+      setTimeout(() => result.stop(), 50);
 
       // Should complete without hanging
       await result.done;
@@ -384,13 +384,13 @@ Stack trace line 2
 
       const result = await tailLogs(instance as never, {
         prefixes: ['error'],
-        pollInterval: 100,
+        pollInterval: 10,
         lastEntries: 100, // Fetch existing entries to trigger file read
         onError: (err) => errors.push(err),
       });
 
       // Let one poll cycle complete
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 50));
       await result.stop();
       await result.done;
 

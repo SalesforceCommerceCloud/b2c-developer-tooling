@@ -324,11 +324,29 @@ const customAuth = new MockAuthStrategy('custom-token');
 
 ## Silencing Test Output
 
-Commands may produce console output (tables, formatted displays) even in tests. Use these helpers to keep test output clean.
+Commands produce console output (tables, formatted displays) during tests. **All test helpers are designed to keep test output clean by default** — no extra work needed in most cases.
 
-### Using runSilent for Output Capture
+### stubCommandConfigAndLogger Silences Output Automatically
 
-The `runSilent` helper uses oclif's `captureOutput` to suppress stdout/stderr:
+The `stubCommandConfigAndLogger` helper (used by AM and sandbox command tests) automatically stubs `command.log`, `command.logToStderr`, and `ux.stdout` so no output leaks to the console:
+
+```typescript
+import { stubCommandConfigAndLogger } from '../../../helpers/test-setup.js';
+
+it('displays client details in non-JSON mode', async () => {
+  const command = new ClientGet([], {} as any);
+  stubCommandConfigAndLogger(command); // stdout is silenced automatically
+  stubJsonEnabled(command, false);
+  // ... setup ...
+
+  const result = await command.run(); // No console noise
+  expect(result.id).to.equal('client-123');
+});
+```
+
+### Using runSilent for Other Cases
+
+For commands that don't use `stubCommandConfigAndLogger`, use `runSilent` to capture stdout/stderr:
 
 ```typescript
 import { runSilent } from '../../helpers/test-setup.js';
@@ -344,24 +362,22 @@ it('returns data in non-JSON mode', async () => {
 });
 ```
 
-Use `runSilent` when:
-- Testing non-JSON output modes (tables, formatted displays)
-- The test doesn't need to verify console output content
-- You want clean test output with only pass/fail summary
-
 ### When Output Verification is Needed
 
-If you need to verify console output, stub `ux.stdout` directly:
+If you need to verify console output content, stub `ux.stdout` directly **before** calling `stubCommandConfigAndLogger` (which checks if the stub already exists):
 
 ```typescript
 import { ux } from '@oclif/core';
 
 it('prints table in non-JSON mode', async () => {
   const stdoutStub = sinon.stub(ux, 'stdout');
+  stubCommandConfigAndLogger(command); // won't double-stub ux.stdout
 
   await command.run();
 
   expect(stdoutStub.called).to.be.true;
+  const text = stdoutStub.firstCall.args[0];
+  expect(text).to.include('expected content');
 });
 ```
 

@@ -8,7 +8,7 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
-import * as fs from 'node:fs';
+import * as fsp from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '../types.js';
@@ -41,7 +41,7 @@ export class MobifySource implements ConfigSource {
   readonly name = 'MobifySource';
   readonly priority = 0;
 
-  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+  async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
     const logger = getLogger();
 
     // Use explicit credentialsFile if provided, otherwise use default path
@@ -49,13 +49,15 @@ export class MobifySource implements ConfigSource {
 
     logger.trace({location: mobifyPath}, '[MobifySource] Checking for credentials file');
 
-    if (!fs.existsSync(mobifyPath)) {
+    try {
+      await fsp.access(mobifyPath);
+    } catch {
       logger.trace({location: mobifyPath}, '[MobifySource] No credentials file found');
       return undefined;
     }
 
     try {
-      const content = fs.readFileSync(mobifyPath, 'utf8');
+      const content = await fsp.readFile(mobifyPath, 'utf8');
       const config = JSON.parse(content) as MobifyConfigFile;
 
       if (!config.api_key) {

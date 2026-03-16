@@ -222,7 +222,7 @@ describe('operations/mrt/env', () => {
         {
           projectSlug: 'my-project',
           slug: 'staging',
-          pollInterval: 100,
+          pollInterval: 10,
         },
         auth,
       );
@@ -280,7 +280,7 @@ describe('operations/mrt/env', () => {
       );
 
       const auth = new MockAuthStrategy();
-      await waitForEnv(
+      const result = await waitForEnv(
         {
           projectSlug: 'my-project',
           slug: 'staging',
@@ -292,6 +292,7 @@ describe('operations/mrt/env', () => {
         auth,
       );
 
+      expect(result.state).to.equal('ACTIVE');
       expect(pollUpdates.length).to.be.greaterThan(0);
       expect(pollUpdates[0].slug).to.equal('staging');
     });
@@ -343,7 +344,7 @@ describe('operations/mrt/env', () => {
           {
             projectSlug: 'my-project',
             slug: 'staging',
-            pollInterval: 100,
+            pollInterval: 10,
           },
           auth,
         );
