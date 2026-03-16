@@ -45,7 +45,10 @@ export class SandboxTreeItem extends vscode.TreeItem {
     super(label, vscode.TreeItemCollapsibleState.None);
 
     const state = (sandbox.state ?? 'unknown').toLowerCase();
-    this.description = state;
+    const eolDate = sandbox.eol
+      ? new Date(sandbox.eol).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'})
+      : undefined;
+    this.description = eolDate ? `${state} · expires ${eolDate}` : state;
     this.iconPath = STATE_ICONS[state] ?? DEFAULT_ICON;
     this.contextValue = `sandbox-${state}`;
 
@@ -55,6 +58,12 @@ export class SandboxTreeItem extends vscode.TreeItem {
     if (sandbox.createdAt) lines.push(`Created: ${sandbox.createdAt}`);
     if (sandbox.eol) lines.push(`EOL: ${sandbox.eol}`);
     this.tooltip = new vscode.MarkdownString(lines.join('\n\n'));
+
+    this.command = {
+      command: 'b2c-dx.sandbox.viewDetails',
+      title: 'View Details',
+      arguments: [this],
+    };
   }
 }
 
@@ -64,6 +73,18 @@ const MAX_POLL_DURATION_MS = 10 * 60_000;
 function getPollIntervalMs(): number {
   const seconds = vscode.workspace.getConfiguration('b2c-dx').get<number>('sandbox.pollingInterval', 10);
   return seconds * 1000;
+}
+
+function getSandboxDisplayName(sandbox: SandboxInfo): string {
+  return sandbox.instance ? `${sandbox.realm ?? ''}${sandbox.realm ? '-' : ''}${sandbox.instance}` : sandbox.id;
+}
+
+function sortSandboxesByName(sandboxes: SandboxInfo[]): SandboxInfo[] {
+  return [...sandboxes].sort((a, b) => {
+    const nameA = getSandboxDisplayName(a).toLowerCase();
+    const nameB = getSandboxDisplayName(b).toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 }
 
 export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxTreeNode> {
@@ -167,7 +188,7 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
   private async getRealmChildren(element: RealmTreeItem): Promise<SandboxTreeItem[]> {
     const cached = this.configProvider.getCachedSandboxes(element.realm);
     if (cached) {
-      return cached.map((s) => new SandboxTreeItem(s, element.realm));
+      return sortSandboxesByName(cached).map((s) => new SandboxTreeItem(s, element.realm));
     }
 
     const configProvider = this.configProvider.getConfigProvider();
@@ -198,7 +219,7 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
         },
       );
       this.configProvider.setCachedSandboxes(element.realm, sandboxes);
-      return sandboxes.map((s) => new SandboxTreeItem(s, element.realm));
+      return sortSandboxesByName(sandboxes).map((s) => new SandboxTreeItem(s, element.realm));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       vscode.window.showErrorMessage(`Sandboxes (${element.realm}): ${message}`);

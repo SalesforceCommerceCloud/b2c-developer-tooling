@@ -13,6 +13,7 @@ import {runSilent} from '../../../helpers/test-setup.js';
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
     value: {
+      bin: 'b2c',
       findConfigFile: () => ({
         read: () => ({'sandbox-api-host': sandboxApiHost}),
       }),
@@ -231,7 +232,7 @@ describe('sandbox clone create', () => {
     it('should display formatted output in non-JSON mode', async () => {
       const command = new CloneCreate(['test-sandbox-id'], {} as any);
       (command as any).args = {sandboxId: 'test-sandbox-id'};
-      (command as any).flags = {'target-profile': 'medium', ttl: 24};
+      (command as any).flags = {'target-profile': 'medium', ttl: 24, wait: false, 'poll-interval': 10, timeout: 1800};
       stubJsonEnabled(command, false);
       stubCommandConfigAndLogger(command);
       stubResolveSandboxId(command, async (id) => id);
@@ -256,6 +257,9 @@ describe('sandbox clone create', () => {
       expect(combinedLogs).to.include('Clone ID');
       expect(combinedLogs).to.include(mockCloneId);
       expect(combinedLogs).to.include('started successfully');
+      // Verify the config.bin template is resolved, not raw EJS
+      expect(combinedLogs).to.not.include('<%= config.bin %>');
+      expect(combinedLogs).to.include('b2c sandbox clone get');
     });
 
     it('should pass emails to API when provided', async () => {
@@ -310,6 +314,129 @@ describe('sandbox clone create', () => {
       await command.run();
 
       expect(capturedBody.emails).to.deep.equal(['dev@example.com', 'qa@example.com']);
+    });
+  });
+
+  describe('wait functionality', () => {
+    it('should have wait flag', () => {
+      expect(CloneCreate.flags).to.have.property('wait');
+      expect(CloneCreate.flags.wait.default).to.be.false;
+    });
+
+    it('should have poll-interval flag that depends on wait', () => {
+      expect(CloneCreate.flags).to.have.property('poll-interval');
+      expect(CloneCreate.flags['poll-interval'].default).to.equal(10);
+      expect(CloneCreate.flags['poll-interval'].dependsOn).to.deep.equal(['wait']);
+    });
+
+    it('should have timeout flag that depends on wait', () => {
+      expect(CloneCreate.flags).to.have.property('timeout');
+      expect(CloneCreate.flags.timeout.default).to.equal(1800);
+      expect(CloneCreate.flags.timeout.dependsOn).to.deep.equal(['wait']);
+    });
+
+    it('should poll until clone completes when --wait is used', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, wait: true, 'poll-interval': 0, timeout: 5};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      const mockCloneId = 'aaaa-001-1642780893121';
+      let getCalls = 0;
+
+      Object.defineProperty(command, 'odsClient', {
+        value: {
+          POST: async () => ({
+            data: {data: {cloneId: mockCloneId}},
+            response: new Response(),
+          }),
+          async GET() {
+            getCalls++;
+            const status = getCalls >= 2 ? 'COMPLETED' : 'IN_PROGRESS';
+            return {
+              data: {data: {status, cloneId: mockCloneId, progressPercentage: getCalls >= 2 ? 100 : 50}},
+              response: new Response(),
+            };
+          },
+        },
+        configurable: true,
+      });
+
+      const result = await command.run();
+
+      expect(result.cloneId).to.equal(mockCloneId);
+      expect(getCalls).to.be.greaterThanOrEqual(2);
+    });
+
+    it('should error when clone fails during wait', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, wait: true, 'poll-interval': 0, timeout: 5};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      Object.defineProperty(command, 'odsClient', {
+        value: {
+          POST: async () => ({
+            data: {data: {cloneId: 'test-clone-id'}},
+            response: new Response(),
+          }),
+          GET: async () => ({
+            data: {data: {status: 'FAILED', cloneId: 'test-clone-id'}},
+            response: new Response(),
+          }),
+        },
+        configurable: true,
+      });
+
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch (error: unknown) {
+        expect((error as Error).message).to.include('failed');
+      }
+    });
+
+    it('should timeout if clone never completes', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, wait: true, 'poll-interval': 0, timeout: 1};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      const clock = sinon.useFakeTimers({now: 0});
+
+      Object.defineProperty(command, 'odsClient', {
+        value: {
+          POST: async () => ({
+            data: {data: {cloneId: 'test-clone-id'}},
+            response: new Response(),
+          }),
+          GET: async () => ({
+            data: {data: {status: 'IN_PROGRESS', cloneId: 'test-clone-id'}},
+            response: new Response(),
+          }),
+        },
+        configurable: true,
+      });
+
+      const promise = command.run();
+      await clock.tickAsync(2000);
+
+      try {
+        await promise;
+        expect.fail('Expected timeout');
+      } catch (error: any) {
+        expect(error.message).to.include('Timeout waiting for clone');
+      } finally {
+        clock.restore();
+      }
     });
   });
 

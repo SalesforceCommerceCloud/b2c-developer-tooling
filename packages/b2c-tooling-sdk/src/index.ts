@@ -255,9 +255,14 @@ export {
   SandboxPollingTimeoutError,
   SandboxPollingError,
   SandboxTerminalStateError,
+  waitForClone,
+  ClonePollingTimeoutError,
+  ClonePollingError,
+  CloneFailedError,
 } from './operations/ods/index.js';
 
 export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
+export type {CloneState, WaitForCloneOptions, WaitForClonePollInfo} from './operations/ods/index.js';
 
 // Operations - CIP
 export {

@@ -162,6 +162,7 @@ export class ConfigResolver {
     const sourceInfos: ConfigSourceInfo[] = [];
     const sourceWarnings: ConfigWarning[] = [];
     const baseConfig: NormalizedConfig = {};
+    const hostnameProtection = options.hostnameProtection !== false;
 
     // Create enriched options that will be updated with accumulated config values.
     // This allows later sources (like plugins) to use values discovered by earlier sources (like dw.json).
@@ -188,6 +189,44 @@ export class ConfigResolver {
         const {config: sourceConfig, location} = result;
         const fields = getPopulatedFields(sourceConfig);
         if (fields.length > 0) {
+          // Early hostname mismatch detection: if this source provides a hostname
+          // that conflicts with the override, skip this source entirely.
+          // This prevents instance-bound sources from blocking fields in later
+          // non-instance-bound sources (e.g., password-store providing shortCode).
+          if (
+            hostnameProtection &&
+            overrides.hostname &&
+            sourceConfig.hostname &&
+            sourceConfig.hostname !== overrides.hostname
+          ) {
+            sourceWarnings.push({
+              code: 'HOSTNAME_MISMATCH',
+              message: `Server override "${overrides.hostname}" differs from config file "${sourceConfig.hostname}". Config file values ignored.`,
+              details: {
+                providedHostname: overrides.hostname,
+                configHostname: sourceConfig.hostname,
+              },
+            });
+
+            sourceInfos.push({
+              name: source.name,
+              location,
+              fields: [],
+              fieldsIgnored: fields,
+            });
+
+            const logger = getLogger();
+            logger.trace(
+              {
+                source: source.name,
+                location,
+                fieldsIgnored: fields,
+              },
+              `[${source.name}] Skipped due to hostname mismatch`,
+            );
+            continue;
+          }
+
           // Capture which credential groups are already claimed BEFORE processing this source
           // This allows a single source to provide complete credential pairs
           const claimedGroups = getClaimedCredentialGroups(baseConfig);
@@ -247,7 +286,10 @@ export class ConfigResolver {
       }
     }
 
-    // Apply overrides with hostname mismatch protection
+    // Apply overrides with hostname mismatch protection.
+    // Instance-bound sources with conflicting hostnames were already skipped above,
+    // so baseConfig only contains non-instance-bound fields. The merge handles
+    // the case where no source provided a hostname (no mismatch to detect).
     const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
     });

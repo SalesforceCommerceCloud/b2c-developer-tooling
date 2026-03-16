@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "0.7.0",
+  "version": "0.7.3",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -156,8 +156,18 @@
         "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.html"
       },
       "ods": {
-        "description": "Alias for 'sandbox' commands. Use 'b2c sandbox' instead.",
-        "hidden": true
+        "description": "Alias for 'sandbox' commands.",
+        "subtopics": {
+          "clone": {
+            "description": "Create and manage sandbox clones (alias for 'sandbox clone')"
+          },
+          "alias": {
+            "description": "Manage sandbox aliases (alias for 'sandbox alias')"
+          },
+          "realm": {
+            "description": "Manage sandbox realms (alias for 'sandbox realm')"
+          }
+        }
       },
       "sites": {
         "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
