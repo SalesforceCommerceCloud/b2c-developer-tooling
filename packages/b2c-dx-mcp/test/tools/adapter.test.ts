@@ -542,7 +542,7 @@ describe('tools/adapter', () => {
 
       it('should provide mrtConfig in context when auth is configured', async () => {
         // Use resolveConfig + Services.fromResolvedConfig (simulating what mcp.ts does)
-        const config = resolveConfig({mrtApiKey: 'test-api-key-12345'});
+        const config = await resolveConfig({mrtApiKey: 'test-api-key-12345'});
         const services = Services.fromResolvedConfig(config);
         const loadServices = () => services;
         let contextReceived: ToolExecutionContext | undefined;
@@ -574,7 +574,10 @@ describe('tools/adapter', () => {
       it('should support cloudOrigin option in resolveConfig()', async () => {
         // resolveConfig() accepts cloudOrigin for environment-specific config
         // Note: oclif handles env var fallback for --api-key flag, so we pass mrtApiKey explicitly here
-        const config = resolveConfig({mrtApiKey: 'staging-api-key'}, {cloudOrigin: 'https://cloud-staging.mobify.com'});
+        const config = await resolveConfig(
+          {mrtApiKey: 'staging-api-key'},
+          {cloudOrigin: 'https://cloud-staging.mobify.com'},
+        );
         const services = Services.fromResolvedConfig(config);
         const loadServices = () => services;
         let contextReceived: ToolExecutionContext | undefined;
@@ -605,7 +608,7 @@ describe('tools/adapter', () => {
 
       it('should pass mrtOrigin through to mrtConfig.origin in context', async () => {
         // Test that mrtOrigin from config is passed through to context.mrtConfig.origin
-        const config = resolveConfig({
+        const config = await resolveConfig({
           mrtApiKey: 'test-api-key-12345',
           mrtOrigin: 'https://custom-cloud.mobify.com',
         });

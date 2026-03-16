@@ -153,23 +153,14 @@ export class B2CExtensionConfig implements vscode.Disposable {
   }
 
   getConfig(): ResolvedB2CConfig | null {
-    if (!this.resolved) {
-      this.resolve();
-    }
     return this.config;
   }
 
   getInstance(): B2CInstance | null {
-    if (!this.resolved) {
-      this.resolve();
-    }
     return this.instance;
   }
 
   getConfigError(): string | null {
-    if (!this.resolved) {
-      this.resolve();
-    }
     return this.configError;
   }
 
@@ -178,9 +169,6 @@ export class B2CExtensionConfig implements vscode.Disposable {
    * Either the pinned project root or the auto-detected workspace folder.
    */
   getWorkingDirectory(): string {
-    if (!this.resolved) {
-      this.resolve();
-    }
     return this.detectedDirectory;
   }
 
@@ -189,10 +177,17 @@ export class B2CExtensionConfig implements vscode.Disposable {
    * (vs auto-detected).
    */
   isProjectRootPinned(): boolean {
-    if (!this.resolved) {
-      this.resolve();
-    }
     return this.pinned;
+  }
+
+  /**
+   * Ensures configuration has been resolved at least once.
+   * Call this before reading from getters when you need fresh data.
+   */
+  async ensureResolved(): Promise<void> {
+    if (!this.resolved) {
+      await this.resolveAsync();
+    }
   }
 
   /**
@@ -215,21 +210,27 @@ export class B2CExtensionConfig implements vscode.Disposable {
   }
 
   reset(): void {
-    this.log.appendLine('[Config] Resetting cached config (will re-resolve on next access)');
+    this.log.appendLine('[Config] Resetting cached config (will re-resolve asynchronously)');
     this.config = null;
     this.instance = null;
     this.configError = null;
     this.resolved = false;
     this.detectedDirectory = '';
     this.pinned = false;
-    this._onDidReset.fire();
+    // Re-resolve asynchronously, then fire the event so listeners get fresh data
+    void this.resolveAsync().then(() => {
+      this._onDidReset.fire();
+    });
   }
 
   /**
    * Uncached config resolution for a specific directory.
    * Used by deploy-cartridge where the project directory differs from the workspace root.
    */
-  resolveForDirectory(workingDirectory: string, overrides: Partial<NormalizedConfig> = {}): ResolvedB2CConfig {
+  async resolveForDirectory(
+    workingDirectory: string,
+    overrides: Partial<NormalizedConfig> = {},
+  ): Promise<ResolvedB2CConfig> {
     return resolveConfig(overrides, {workingDirectory});
   }
 
@@ -240,7 +241,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     }
   }
 
-  private resolve(): void {
+  private async resolveAsync(): Promise<void> {
     this.resolved = true;
     try {
       // Check for pinned project root first
@@ -279,7 +280,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
         }
       }
 
-      const config = resolveConfig({}, {workingDirectory, sourcesBefore: [new EnvSource()]});
+      const config = await resolveConfig({}, {workingDirectory, sourcesBefore: [new EnvSource()]});
       this.config = config;
 
       if (!config.hasB2CInstanceConfig()) {
