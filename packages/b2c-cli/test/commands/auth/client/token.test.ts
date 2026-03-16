@@ -91,7 +91,8 @@ describe('auth client token', () => {
 
       const command = createCommand();
       sinon.stub(command, 'jsonEnabled').returns(false);
-      const stdoutStub = sinon.stub(ux, 'stdout').returns(void 0 as any);
+      // ux.stdout is already stubbed by stubCommandConfigAndLogger; get a reference to the existing stub
+      const stdoutStub = ux.stdout as unknown as sinon.SinonStub;
 
       await command.run();
 
