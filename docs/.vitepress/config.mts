@@ -108,10 +108,7 @@ const referenceSidebar = [
       {text: 'scapi_custom_api_scaffold', link: '/mcp/tools/scapi-custom-api-scaffold'},
       {text: 'scapi_custom_apis_status', link: '/mcp/tools/scapi-custom-apis-status'},
       {text: 'storefront_next_development_guidelines', link: '/mcp/tools/storefront-next-development-guidelines'},
-      {
-        text: 'storefront_next_figma_to_component_workflow',
-        link: '/mcp/tools/storefront-next-figma-to-component-workflow',
-      },
+      {text: 'storefront_next_figma_to_component_workflow', link: '/mcp/tools/storefront-next-figma-to-component-workflow'},
       {text: 'storefront_next_generate_component', link: '/mcp/tools/storefront-next-generate-component'},
       {text: 'storefront_next_map_tokens_to_theme', link: '/mcp/tools/storefront-next-map-tokens-to-theme'},
       {text: 'storefront_next_page_designer_decorator', link: '/mcp/tools/storefront-next-page-designer-decorator'},
