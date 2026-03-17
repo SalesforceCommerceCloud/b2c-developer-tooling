@@ -311,7 +311,7 @@
     "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
-    "typecheck:agent": "tsc --noEmit --pretty false",
+    "typecheck:agent": "tsc --noEmit -p test --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "postpack": "shx rm -f oclif.manifest.json",

@@ -17,12 +17,12 @@ Configure these resources in Business Manager under **Administration** > **Site 
 | Resource | Methods | Commands |
 |----------|---------|----------|
 | `/jobs/*/executions` | POST | `job run` |
-| `/jobs/*/executions/*` | GET | `job run --wait`, `job wait` |
-| `/job_execution_search` | POST | `job search` |
+| `/jobs/*/executions/*` | GET | `job run --wait`, `job wait`, `job log` |
+| `/job_execution_search` | POST | `job search`, `job log` |
 
 ### WebDAV Access
 
-The `job import` and `job export` commands also require WebDAV access for file transfer.
+The `job import`, `job export`, and `job log` commands also require WebDAV access for file transfer.
 
 ### Configuration
 
@@ -196,6 +196,59 @@ The command displays a table of job executions with:
 - Job ID
 - Status
 - Start Time
+
+---
+
+## b2c job log
+
+Retrieve the log for a job execution. When no execution ID is provided, the command finds the most recent execution that has a log file.
+
+### Usage
+
+```bash
+b2c job log JOBID [EXECUTIONID]
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `JOBID` | Job ID | Yes |
+| `EXECUTIONID` | Execution ID (if omitted, finds the most recent execution with a log) | No |
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--failed` | Find the most recent failed execution with a log | `false` |
+
+### Examples
+
+```bash
+# Get the most recent log for a job
+b2c job log my-custom-job
+
+# Get the most recent failed log
+b2c job log my-custom-job --failed
+
+# Get the log for a specific execution
+b2c job log my-custom-job abc123-def456
+
+# Output as JSON (includes execution metadata and log content)
+b2c job log my-custom-job --json
+
+# Pipe log to a file
+b2c job log my-custom-job > job.log
+```
+
+### Notes
+
+- Not all job executions produce log files. The command will skip executions without logs when searching.
+- Log content is written to stdout, making it easy to pipe to a file or other tools.
+- Status messages are written to stderr so they don't interfere with piped output.
+- The `job log` command requires WebDAV access to retrieve log files.
 
 ---
 
