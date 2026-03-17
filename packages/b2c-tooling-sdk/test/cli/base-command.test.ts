@@ -577,6 +577,19 @@ describe('cli/base-command', () => {
         expect(attrs.clientId).to.equal('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       });
 
+      it('adds mrtProject when available', async () => {
+        stubParse(command);
+        await command.init();
+        setupTelemetry(command);
+        setResolvedConfig(command, {mrtProject: 'my-storefront'});
+
+        command.testAddTelemetryContext();
+
+        expect(telemetryAddAttributesStub.calledOnce).to.be.true;
+        const attrs = telemetryAddAttributesStub.firstCall.args[0];
+        expect(attrs.mrtProject).to.equal('my-storefront');
+      });
+
       it('adds configSources from resolved sources', async () => {
         stubParse(command);
         await command.init();

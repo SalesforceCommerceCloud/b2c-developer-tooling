@@ -18,19 +18,28 @@
       "type": "choice",
       "required": true,
       "choices": [
-        { "value": "ocapi", "label": "OCAPI Hook (shop/data API extension)" },
-        { "value": "scapi", "label": "SCAPI Hook (shopper API extension)" },
-        { "value": "system", "label": "System Hook (order, basket, etc.)" }
+        { "value": "scapi-ocapi", "label": "SCAPI/OCAPI Hook (API extension)" },
+        { "value": "system", "label": "System Hook (order calculation, payment, etc.)" }
       ],
       "default": "system"
     },
     {
-      "name": "hookPoint",
+      "name": "scapiOcapiHookPoint",
       "prompt": "What is the hook extension point?",
       "type": "string",
       "required": true,
-      "source": "hook-points",
-      "validationMessage": "Hook point is required (e.g., dw.order.calculate, dw.ocapi.shop.order.beforePOST)"
+      "when": "hookType=scapi-ocapi",
+      "source": "scapi-ocapi-hook-points",
+      "validationMessage": "Hook point is required (e.g., dw.ocapi.shop.basket.afterPOST)"
+    },
+    {
+      "name": "systemHookPoint",
+      "prompt": "What is the hook extension point?",
+      "type": "string",
+      "required": true,
+      "when": "hookType=system",
+      "source": "system-hook-points",
+      "validationMessage": "Hook point is required (e.g., dw.order.calculate)"
     },
     {
       "name": "cartridgeName",
@@ -50,11 +59,16 @@
   ],
   "modifications": [
     {
+      "target": "{{cartridgeNamePath}}/cartridge/scripts/hooks/{{hookName}}.js",
+      "type": "append",
+      "contentTemplate": "hook-function.js.ejs"
+    },
+    {
       "target": "{{cartridgeNamePath}}/cartridge/hooks.json",
       "type": "json-merge",
       "contentTemplate": "hooks-entry.json.ejs",
       "jsonPath": "hooks"
     }
   ],
-  "postInstructions": "Hook '<%= hookName %>' has been created in '<%= cartridgeName %>'.\n\nHook point: <%= hookPoint %>\n\nNext steps:\n1. Implement the hook logic in cartridge/scripts/hooks/<%= hookName %>.js\n2. Deploy the cartridge to your instance\n3. Ensure <%= cartridgeName %> is in your cartridge path"
+  "postInstructions": "Hook '<%= hookName %>' has been created in '<%= cartridgeName %>'.\n\nHook point: <%= locals.scapiOcapiHookPoint || locals.systemHookPoint %>\n\nNext steps:\n1. Implement the hook logic in cartridge/scripts/hooks/<%= hookName %>.js\n2. Deploy the cartridge to your instance\n3. Ensure <%= cartridgeName %> is in your cartridge path\n\nTip: Run scaffold again with the same hook name to add more extension points to this file."
 }

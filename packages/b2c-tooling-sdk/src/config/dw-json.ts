@@ -11,7 +11,7 @@
  *
  * @module config
  */
-import * as fs from 'node:fs';
+import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
@@ -75,6 +75,8 @@ export interface DwJsonConfig {
   sandboxApiHost?: string;
   /** Default ODS realm for sandbox operations */
   realm?: string;
+  /** Cartridge names to include in deploy/watch (string with colon/comma separators, or array) */
+  cartridges?: string | string[];
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
   /** Optional CIP analytics host override */
@@ -131,14 +133,17 @@ export interface LoadDwJsonResult {
  *   console.log(`Found dw.json at ${dwPath}`);
  * }
  */
-export function findDwJson(projectDirectory: string = process.cwd()): string | undefined {
+export async function findDwJson(projectDirectory: string = process.cwd()): Promise<string | undefined> {
   let dir = projectDirectory;
   const root = path.parse(dir).root;
 
   while (dir !== root) {
     const dwJsonPath = path.join(dir, 'dw.json');
-    if (fs.existsSync(dwJsonPath)) {
+    try {
+      await fsp.access(dwJsonPath);
       return dwJsonPath;
+    } catch {
+      // File doesn't exist, continue searching
     }
     dir = path.dirname(dir);
   }
@@ -217,20 +222,24 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
  * @param options - Loading options
  * @returns The raw multi-config structure and path, or undefined if not found
  */
-export function loadFullDwJson(options: LoadDwJsonOptions = {}): {config: DwJsonMultiConfig; path: string} | undefined {
+export async function loadFullDwJson(
+  options: LoadDwJsonOptions = {},
+): Promise<{config: DwJsonMultiConfig; path: string} | undefined> {
   const logger = getLogger();
   const dwJsonPath =
     options.path ?? path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json');
 
   logger.trace({path: dwJsonPath}, '[DwJsonSource] Checking for config file');
 
-  if (!fs.existsSync(dwJsonPath)) {
+  try {
+    await fsp.access(dwJsonPath);
+  } catch {
     logger.trace({path: dwJsonPath}, '[DwJsonSource] No config file found');
     return undefined;
   }
 
   try {
-    const content = fs.readFileSync(dwJsonPath, 'utf8');
+    const content = await fsp.readFile(dwJsonPath, 'utf8');
     const json = JSON.parse(content) as DwJsonMultiConfig;
     return {config: json, path: dwJsonPath};
   } catch (error) {
@@ -246,9 +255,9 @@ export function loadFullDwJson(options: LoadDwJsonOptions = {}): {config: DwJson
  * @param config - The configuration to save
  * @param filePath - Path to save to
  */
-export function saveDwJson(config: DwJsonMultiConfig, filePath: string): void {
+export async function saveDwJson(config: DwJsonMultiConfig, filePath: string): Promise<void> {
   const content = JSON.stringify(config, null, 2) + '\n';
-  fs.writeFileSync(filePath, content, 'utf8');
+  await fsp.writeFile(filePath, content, 'utf8');
 }
 
 /**
@@ -275,14 +284,19 @@ export interface AddInstanceOptions {
  * @param options - Options for adding
  * @throws Error if instance with same name already exists
  */
-export function addInstance(instance: DwJsonConfig, options: AddInstanceOptions = {}): void {
+export async function addInstance(instance: DwJsonConfig, options: AddInstanceOptions = {}): Promise<void> {
   const dwJsonPath =
     options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
   let existing: DwJsonMultiConfig = {};
-  if (fs.existsSync(dwJsonPath)) {
-    const content = fs.readFileSync(dwJsonPath, 'utf8');
+  try {
+    const content = await fsp.readFile(dwJsonPath, 'utf8');
     existing = JSON.parse(content) as DwJsonMultiConfig;
+  } catch (error) {
+    // File doesn't exist - start with empty config
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error;
+    }
   }
 
   // Check if instance name already exists
@@ -326,7 +340,7 @@ export function addInstance(instance: DwJsonConfig, options: AddInstanceOptions 
   // Add the new instance
   existing.configs.push(instance);
 
-  saveDwJson(existing, dwJsonPath);
+  await saveDwJson(existing, dwJsonPath);
 }
 
 /**
@@ -348,15 +362,20 @@ export interface RemoveInstanceOptions {
  * @param options - Options for removal
  * @throws Error if instance not found or dw.json doesn't exist
  */
-export function removeInstance(name: string, options: RemoveInstanceOptions = {}): void {
+export async function removeInstance(name: string, options: RemoveInstanceOptions = {}): Promise<void> {
   const dwJsonPath =
     options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
-  if (!fs.existsSync(dwJsonPath)) {
-    throw new Error('No dw.json file found');
+  let content: string;
+  try {
+    content = await fsp.readFile(dwJsonPath, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error('No dw.json file found');
+    }
+    throw error;
   }
 
-  const content = fs.readFileSync(dwJsonPath, 'utf8');
   const existing = JSON.parse(content) as DwJsonMultiConfig;
 
   // Check if trying to remove root config
@@ -371,7 +390,7 @@ export function removeInstance(name: string, options: RemoveInstanceOptions = {}
 
   existing.configs = existing.configs.filter((c) => c.name !== name);
 
-  saveDwJson(existing, dwJsonPath);
+  await saveDwJson(existing, dwJsonPath);
 }
 
 /**
@@ -393,15 +412,20 @@ export interface SetActiveInstanceOptions {
  * @param options - Options
  * @throws Error if instance not found or dw.json doesn't exist
  */
-export function setActiveInstance(name: string, options: SetActiveInstanceOptions = {}): void {
+export async function setActiveInstance(name: string, options: SetActiveInstanceOptions = {}): Promise<void> {
   const dwJsonPath =
     options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
-  if (!fs.existsSync(dwJsonPath)) {
-    throw new Error('No dw.json file found');
+  let content: string;
+  try {
+    content = await fsp.readFile(dwJsonPath, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error('No dw.json file found');
+    }
+    throw error;
   }
 
-  const content = fs.readFileSync(dwJsonPath, 'utf8');
   const existing = JSON.parse(content) as DwJsonMultiConfig;
 
   // Find the target instance
@@ -431,7 +455,7 @@ export function setActiveInstance(name: string, options: SetActiveInstanceOption
     throw new Error(`Instance "${name}" not found`);
   }
 
-  saveDwJson(existing, dwJsonPath);
+  await saveDwJson(existing, dwJsonPath);
 }
 
 /**
@@ -462,7 +486,7 @@ export function setActiveInstance(name: string, options: SetActiveInstanceOption
  * // Explicit path
  * const result = loadDwJson({ path: './config/dw.json' });
  */
-export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | undefined {
+export async function loadDwJson(options: LoadDwJsonOptions = {}): Promise<LoadDwJsonResult | undefined> {
   const logger = getLogger();
 
   // If explicit path provided, use it. Otherwise default to ./dw.json (no upward search)
@@ -471,13 +495,15 @@ export function loadDwJson(options: LoadDwJsonOptions = {}): LoadDwJsonResult | 
 
   logger.trace({path: dwJsonPath}, '[DwJsonSource] Checking for config file');
 
-  if (!fs.existsSync(dwJsonPath)) {
+  try {
+    await fsp.access(dwJsonPath);
+  } catch {
     logger.trace({path: dwJsonPath}, '[DwJsonSource] No config file found');
     return undefined;
   }
 
   try {
-    const content = fs.readFileSync(dwJsonPath, 'utf8');
+    const content = await fsp.readFile(dwJsonPath, 'utf8');
     const raw = JSON.parse(content) as Record<string, unknown>;
 
     // Normalize root-level keys to camelCase

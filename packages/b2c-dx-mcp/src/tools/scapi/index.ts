@@ -25,7 +25,7 @@ import {createScaffoldCustomApiTool} from './scapi-custom-api-scaffold.js';
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createScapiTools(loadServices: () => Services): McpTool[] {
+export function createScapiTools(loadServices: () => Promise<Services> | Services): McpTool[] {
   return [
     createScapiSchemasListTool(loadServices),
     createScapiCustomApisStatusTool(loadServices),

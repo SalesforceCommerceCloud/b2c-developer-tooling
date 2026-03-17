@@ -53,7 +53,7 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
     const name = this.args.name;
 
     // Check if instance exists
-    const instances = source.listInstances({configPath: this.flags.config});
+    const instances = await source.listInstances({configPath: this.flags.config});
     const instance = instances.find((i) => i.name === name);
 
     if (!instance) {
@@ -82,7 +82,7 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
     }
 
     // Remove the instance
-    source.removeInstance(name, {configPath: this.flags.config});
+    await source.removeInstance(name, {configPath: this.flags.config});
 
     const result: InstanceRemoveResponse = {
       name,

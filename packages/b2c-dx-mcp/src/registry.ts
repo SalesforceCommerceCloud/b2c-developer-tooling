@@ -79,7 +79,7 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Complete tool registry
  */
-export function createToolRegistry(loadServices: () => Services): ToolRegistry {
+export function createToolRegistry(loadServices: () => Promise<Services> | Services): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
     MRT: [],
@@ -172,7 +172,7 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
 export async function registerToolsets(
   flags: StartupFlags,
   server: B2CDxMcpServer,
-  loadServices: () => Services,
+  loadServices: () => Promise<Services> | Services,
 ): Promise<void> {
   const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];

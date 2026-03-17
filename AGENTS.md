@@ -161,6 +161,8 @@ This catches prettier formatting, import ordering, class member ordering (`perfe
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
 
+**Stdout in tests**: Command tests must not leak output to the console. `stubCommandConfigAndLogger()` silences `command.log`, `command.logToStderr`, and `ux.stdout` automatically. For other cases, use `runSilent()` from `test/helpers/test-setup.ts`.
+
 ## Changesets
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management with **independent per-package versioning**. Each package versions independently based on its own changesets.

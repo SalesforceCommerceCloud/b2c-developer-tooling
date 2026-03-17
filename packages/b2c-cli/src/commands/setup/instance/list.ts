@@ -57,7 +57,7 @@ export default class SetupInstanceList extends BaseCommand<typeof SetupInstanceL
   async run(): Promise<InstanceListResponse> {
     // Get instances from all sources that support listing
     const source = new DwJsonSource();
-    const instances = source.listInstances({
+    const instances = await source.listInstances({
       configPath: this.flags.config,
     });
 

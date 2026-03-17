@@ -18,7 +18,13 @@ const VALID_PARAMETER_TYPES = ['string', 'boolean', 'choice', 'multi-choice'];
 const RESERVED_NAMES = ['kebabCase', 'camelCase', 'pascalCase', 'snakeCase', 'year', 'date', 'uuid'];
 
 /** Valid dynamic parameter sources */
-const VALID_SOURCES: DynamicParameterSource[] = ['cartridges', 'hook-points', 'sites'];
+const VALID_SOURCES: DynamicParameterSource[] = [
+  'cartridges',
+  'hook-points',
+  'scapi-ocapi-hook-points',
+  'system-hook-points',
+  'sites',
+];
 
 /**
  * Validate a scaffold manifest

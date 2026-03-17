@@ -41,7 +41,7 @@ export type {
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-export function createSiteThemingTool(loadServices: () => Services): McpTool {
+export function createSiteThemingTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<SiteThemingInput, {text: string; isError?: boolean}>(
     {
       name: 'storefront_next_site_theming',

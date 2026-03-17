@@ -44,6 +44,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   'secure-server': 'webdavHostname',
   secureHostname: 'webdavHostname',
   passphrase: 'certificatePassphrase',
+  cartridgesPath: 'cartridges',
   cloudOrigin: 'mrtOrigin',
   selfsigned: 'selfSigned',
   'oauth-scopes': 'oauthScopes',
@@ -103,6 +104,20 @@ export function normalizeConfigKeys(raw: Record<string, unknown>): Record<string
  * // { hostname: 'example.com', codeVersion: 'v1' }
  * ```
  */
+/**
+ * Parses a cartridges value that may be a colon-separated string,
+ * comma-separated string, or already an array.
+ */
+function parseCartridges(value: string | string[] | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) return value.length > 0 ? value : undefined;
+  const items = value
+    .split(/[,:]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
   return {
     hostname: json.hostname,
@@ -120,6 +135,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     tenantId: json.tenantId,
     sandboxApiHost: json.sandboxApiHost,
     realm: json.realm,
+    cartridges: parseCartridges(json.cartridges),
     contentLibrary: json.contentLibrary,
     cipHost: json.cipHost,
     instanceName: json.name,
@@ -203,6 +219,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.accountManagerHost !== undefined) {
     result.accountManagerHost = config.accountManagerHost;
+  }
+  if (config.cartridges !== undefined) {
+    result.cartridges = config.cartridges;
   }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
@@ -328,6 +347,7 @@ export function mergeConfigsWithProtection(
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
+      cartridges: overrides.cartridges ?? base.cartridges,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,

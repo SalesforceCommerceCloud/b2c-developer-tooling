@@ -95,8 +95,20 @@ export async function resolveScaffoldParameters(
   let cartridgePathMap: Map<string, string> | undefined;
 
   for (const param of scaffold.manifest.parameters) {
-    // Check if conditional parameter should be evaluated
+    // Check if conditional parameter should be evaluated.
+    // If the condition references a variable that hasn't been resolved yet
+    // (it's missing), include the param as missing so interactive prompts
+    // can re-evaluate the condition after earlier params are filled in.
     if (param.when && !evaluateCondition(param.when, variables)) {
+      const conditionVar = param.when.split('=')[0].replace(/^!/, '');
+      if (variables[conditionVar] !== undefined) {
+        // Condition variable is resolved but condition is false — skip entirely
+        continue;
+      }
+      // Condition variable is unresolved — add to missing so it can be prompted later
+      if (param.required) {
+        missingParameters.push(param);
+      }
       continue;
     }
 

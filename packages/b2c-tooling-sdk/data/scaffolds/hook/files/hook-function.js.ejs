@@ -1,0 +1,263 @@
+<%
+var hookPoint = locals.scapiOcapiHookPoint || locals.systemHookPoint;
+var hookFunctionName = hookPoint.split('.').pop();
+
+// SCAPI/OCAPI hook signatures from commerce-api hook-method-details reference.
+// Format: { params: 'paramList', jsdoc: [{name, type, desc}] }
+var HOOK_SIGNATURES = {
+  // Auth
+  'dw.ocapi.shop.auth.beforePOST': {
+    params: 'authorizationHeader, authRequestType',
+    jsdoc: [{name: 'authorizationHeader', type: 'String', desc: 'the authorization header'}, {name: 'authRequestType', type: 'dw.value.EnumValue', desc: 'guest, login, or refresh'}]
+  },
+  'dw.ocapi.shop.auth.afterPOST': {
+    params: 'customer, authRequestType',
+    jsdoc: [{name: 'customer', type: 'dw.customer.Customer', desc: 'the authenticated customer'}, {name: 'authRequestType', type: 'dw.value.EnumValue', desc: 'guest, login, or refresh'}]
+  },
+  'dw.ocapi.shop.auth.modifyPOSTResponse': {
+    params: 'customer, customerResponse, authRequestType',
+    jsdoc: [{name: 'customer', type: 'dw.customer.Customer', desc: 'the authenticated customer'}, {name: 'customerResponse', type: 'Object', desc: 'the API response document'}, {name: 'authRequestType', type: 'dw.value.EnumValue', desc: 'guest, login, or refresh'}]
+  },
+  // Basket
+  'dw.ocapi.shop.basket.beforePOST_v2': {
+    params: 'basketRequest',
+    jsdoc: [{name: 'basketRequest', type: 'Object', desc: 'the basket request'}]
+  },
+  'dw.ocapi.shop.basket.afterPOST': {
+    params: 'basket',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the created basket'}]
+  },
+  'dw.ocapi.shop.basket.modifyPOSTResponse': {
+    params: 'basket, basketResponse',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'basketResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  'dw.ocapi.shop.basket.beforePATCH': {
+    params: 'basket, basketInput',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket to update'}, {name: 'basketInput', type: 'Object', desc: 'the basket update document'}]
+  },
+  'dw.ocapi.shop.basket.afterPATCH': {
+    params: 'basket, basketInput',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the updated basket'}, {name: 'basketInput', type: 'Object', desc: 'the basket update document'}]
+  },
+  'dw.ocapi.shop.basket.modifyPATCHResponse': {
+    params: 'basket, basketResponse',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'basketResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  'dw.ocapi.shop.basket.modifyGETResponse': {
+    params: 'basket, basketResponse',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'basketResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  'dw.ocapi.shop.basket.validateBasket': {
+    params: 'basketResponse, duringSubmit',
+    jsdoc: [{name: 'basketResponse', type: 'Object', desc: 'the basket response document'}, {name: 'duringSubmit', type: 'boolean', desc: 'true if called during order submit'}]
+  },
+  // Basket billing address
+  'dw.ocapi.shop.basket.billing_address.beforePUT': {
+    params: 'basket, billingAddress',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'billingAddress', type: 'Object', desc: 'the billing address document'}]
+  },
+  'dw.ocapi.shop.basket.billing_address.afterPUT': {
+    params: 'basket, billingAddress',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'billingAddress', type: 'Object', desc: 'the billing address document'}]
+  },
+  // Basket items
+  'dw.ocapi.shop.basket.items.beforePOST': {
+    params: 'basket, items',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'items', type: 'Object', desc: 'the items document'}]
+  },
+  'dw.ocapi.shop.basket.items.afterPOST': {
+    params: 'basket, items',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'items', type: 'Object', desc: 'the items document'}]
+  },
+  // Basket item
+  'dw.ocapi.shop.basket.item.beforePATCH': {
+    params: 'basket, item',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'item', type: 'Object', desc: 'the item document'}]
+  },
+  'dw.ocapi.shop.basket.item.afterPATCH': {
+    params: 'basket, item',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'item', type: 'Object', desc: 'the item document'}]
+  },
+  'dw.ocapi.shop.basket.item.beforeDELETE': {
+    params: 'basket, productItemId',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'productItemId', type: 'String', desc: 'the product item ID'}]
+  },
+  'dw.ocapi.shop.basket.item.afterDELETE': {
+    params: 'basket, productItemId',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'productItemId', type: 'String', desc: 'the product item ID'}]
+  },
+  // Basket coupon
+  'dw.ocapi.shop.basket.coupon.beforePOST': {
+    params: 'basket, couponItem',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'couponItem', type: 'Object', desc: 'the coupon item document'}]
+  },
+  'dw.ocapi.shop.basket.coupon.afterPOST': {
+    params: 'basket, couponItem',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'couponItem', type: 'Object', desc: 'the coupon item document'}]
+  },
+  // Basket payment instrument
+  'dw.ocapi.shop.basket.payment_instrument.beforePOST': {
+    params: 'basket, paymentInstrument',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'paymentInstrument', type: 'Object', desc: 'the payment instrument document'}]
+  },
+  'dw.ocapi.shop.basket.payment_instrument.afterPOST': {
+    params: 'basket, paymentInstrument',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'paymentInstrument', type: 'Object', desc: 'the payment instrument document'}]
+  },
+  // Basket shipment
+  'dw.ocapi.shop.basket.shipment.beforePATCH': {
+    params: 'basket, shipment, shipmentInfo',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'shipment', type: 'dw.order.Shipment', desc: 'the shipment'}, {name: 'shipmentInfo', type: 'Object', desc: 'the shipment update document'}]
+  },
+  'dw.ocapi.shop.basket.shipment.afterPATCH': {
+    params: 'basket, shipment, shipmentInfo',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'shipment', type: 'dw.order.Shipment', desc: 'the shipment'}, {name: 'shipmentInfo', type: 'Object', desc: 'the shipment update document'}]
+  },
+  // Basket shipment shipping address
+  'dw.ocapi.shop.basket.shipment.shipping_address.beforePUT': {
+    params: 'basket, shipment, shippingAddress',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'shipment', type: 'dw.order.Shipment', desc: 'the shipment'}, {name: 'shippingAddress', type: 'Object', desc: 'the shipping address document'}]
+  },
+  'dw.ocapi.shop.basket.shipment.shipping_address.afterPUT': {
+    params: 'basket, shipment, shippingAddress',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'shipment', type: 'dw.order.Shipment', desc: 'the shipment'}, {name: 'shippingAddress', type: 'Object', desc: 'the shipping address document'}]
+  },
+  // Basket shipment shipping method
+  'dw.ocapi.shop.basket.shipment.shipping_method.beforePUT': {
+    params: 'basket, shipment, shippingMethod',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'shipment', type: 'dw.order.Shipment', desc: 'the shipment'}, {name: 'shippingMethod', type: 'Object', desc: 'the shipping method document'}]
+  },
+  'dw.ocapi.shop.basket.shipment.shipping_method.afterPUT': {
+    params: 'basket, shipment, shippingMethod',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket'}, {name: 'shipment', type: 'dw.order.Shipment', desc: 'the shipment'}, {name: 'shippingMethod', type: 'Object', desc: 'the shipping method document'}]
+  },
+  // Order
+  'dw.ocapi.shop.order.beforePOST': {
+    params: 'basket',
+    jsdoc: [{name: 'basket', type: 'dw.order.Basket', desc: 'the basket to create the order from'}]
+  },
+  'dw.ocapi.shop.order.afterPOST': {
+    params: 'order',
+    jsdoc: [{name: 'order', type: 'dw.order.Order', desc: 'the created order'}]
+  },
+  'dw.ocapi.shop.order.modifyPOSTResponse': {
+    params: 'order, orderResponse',
+    jsdoc: [{name: 'order', type: 'dw.order.Order', desc: 'the order'}, {name: 'orderResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  'dw.ocapi.shop.order.modifyGETResponse': {
+    params: 'order, orderResponse',
+    jsdoc: [{name: 'order', type: 'dw.order.Order', desc: 'the order'}, {name: 'orderResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  'dw.ocapi.shop.order.validateOrder': {
+    params: 'order',
+    jsdoc: [{name: 'order', type: 'Object', desc: 'the order response document'}]
+  },
+  // Order payment instrument
+  'dw.ocapi.shop.order.payment_instrument.beforePOST': {
+    params: 'order, paymentInstrument',
+    jsdoc: [{name: 'order', type: 'dw.order.Order', desc: 'the order'}, {name: 'paymentInstrument', type: 'Object', desc: 'the payment instrument document'}]
+  },
+  'dw.ocapi.shop.order.payment_instrument.afterPOST': {
+    params: 'order, paymentInstrument, successfullyAuthorized',
+    jsdoc: [{name: 'order', type: 'dw.order.Order', desc: 'the order'}, {name: 'paymentInstrument', type: 'Object', desc: 'the payment instrument document'}, {name: 'successfullyAuthorized', type: 'boolean', desc: 'true if the payment was authorized'}]
+  },
+  // Customer
+  'dw.ocapi.shop.customer.beforePOST': {
+    params: 'registration',
+    jsdoc: [{name: 'registration', type: 'Object', desc: 'the customer registration document'}]
+  },
+  'dw.ocapi.shop.customer.afterPOST': {
+    params: 'customer, registration',
+    jsdoc: [{name: 'customer', type: 'dw.customer.Customer', desc: 'the created customer'}, {name: 'registration', type: 'Object', desc: 'the customer registration document'}]
+  },
+  'dw.ocapi.shop.customer.modifyGETResponse': {
+    params: 'customer, customerResponse',
+    jsdoc: [{name: 'customer', type: 'dw.customer.Customer', desc: 'the customer'}, {name: 'customerResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  'dw.ocapi.shop.customer.modifyPOSTResponse': {
+    params: 'customer, customerResponse',
+    jsdoc: [{name: 'customer', type: 'dw.customer.Customer', desc: 'the customer'}, {name: 'customerResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  // Product
+  'dw.ocapi.shop.product.modifyGETResponse': {
+    params: 'product, productResponse',
+    jsdoc: [{name: 'product', type: 'dw.catalog.Product', desc: 'the product'}, {name: 'productResponse', type: 'Object', desc: 'the API response document'}]
+  },
+  // Product search
+  'dw.ocapi.shop.product_search.modifyGETResponse': {
+    params: 'searchResponse',
+    jsdoc: [{name: 'searchResponse', type: 'Object', desc: 'the API response document'}]
+  }
+};
+
+// Look up signature or generate a generic one
+var sig = HOOK_SIGNATURES[hookPoint];
+if (!sig) {
+  // Fallback: generic signature based on method pattern
+  if (hookFunctionName.indexOf('modifyGET') === 0 || hookFunctionName.indexOf('modifyPOST') === 0 || hookFunctionName.indexOf('modifyPATCH') === 0 || hookFunctionName.indexOf('modifyPUT') === 0 || hookFunctionName.indexOf('modifyDELETE') === 0) {
+    sig = {params: 'object, response', jsdoc: [{name: 'object', type: 'Object', desc: 'the object being processed'}, {name: 'response', type: 'Object', desc: 'the API response document'}]};
+  } else if (hookFunctionName.indexOf('validate') === 0) {
+    sig = {params: 'response', jsdoc: [{name: 'response', type: 'Object', desc: 'the response document'}]};
+  } else if (hookFunctionName.indexOf('before') === 0 || hookFunctionName.indexOf('after') === 0) {
+    sig = {params: 'object', jsdoc: [{name: 'object', type: 'Object', desc: 'the object being processed'}]};
+  } else {
+    sig = {params: 'object', jsdoc: [{name: 'object', type: 'Object', desc: 'the object being processed'}]};
+  }
+}
+-%>
+
+<% if (hookType === 'scapi-ocapi') { %>
+/**
+ * SCAPI/OCAPI Hook - <%= hookPoint %>
+ *
+<% sig.jsdoc.forEach(function(p) { -%>
+ * @param {<%= p.type %>} <%= p.name %> - <%= p.desc %>
+<% }); -%>
+ */
+exports.<%= hookFunctionName %> = function (<%= sig.params %>) {
+    var log = Logger.getLogger('<%= hookName %>', '<%= cartridgeName %>');
+    log.info('<%= hookFunctionName %> hook called');
+
+    try {
+        // TODO: Implement hook logic
+
+    } catch (e) {
+        log.error('<%= hookFunctionName %> hook error: ' + e.message);
+        return new Status(
+            Status.ERROR,
+            '<%= hookFunctionName.toUpperCase() %>_ERROR',
+            e.message
+        );
+    }
+
+    // WARNING: Returning Status.OK will skip the system implementation
+    // and all subsequent hooks for this extension point.
+    // Only uncomment if you intentionally want to override system behavior.
+    // return new Status(Status.OK);
+};
+<% } else { %>
+/**
+ * System Hook Implementation - <%= hookPoint %>
+ *
+ * @param {dw.order.Basket|dw.order.Order|Object} object - The object being processed
+ * @returns {dw.system.Status} - Status object
+ */
+exports.<%= hookFunctionName %> = function (object) {
+    var log = Logger.getLogger('<%= hookName %>', '<%= cartridgeName %>');
+    log.info('<%= hookFunctionName %> system hook called');
+
+    try {
+        // TODO: Implement hook logic
+
+    } catch (e) {
+        log.error('<%= hookFunctionName %> hook error: ' + e.message);
+        return new Status(
+            Status.ERROR,
+            '<%= hookFunctionName.toUpperCase() %>_ERROR',
+            e.message
+        );
+    }
+
+    return new Status(Status.OK);
+};
+<% } %>
