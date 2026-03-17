@@ -2,7 +2,7 @@
 description: Check the registration status of custom SCAPI endpoints deployed on your B2C Commerce instance.
 ---
 
-# scapi_custom_apis_status
+# scapi_custom_apis_get_status
 
 List custom SCAPI endpoint registration status (active/not_registered). Returns one row per endpoint per site with detailed status information.
 
@@ -10,7 +10,7 @@ List custom SCAPI endpoint registration status (active/not_registered). Returns 
 
 Checks the registration status of custom API endpoints deployed on your B2C Commerce instance. Returns endpoint status (`active` or `not_registered`) with per-site details.
 
-**Note:** This tool queries your live instance. For schema definitions, use [`scapi_schemas_list`](./scapi-schemas-list) with `apiFamily: "custom"`. To create a new custom API, use [`scapi_custom_api_scaffold`](./scapi-custom-api-scaffold).
+**Note:** This tool queries your live instance. For schema definitions, use [`scapi_schemas_list`](./scapi-schemas-list) with `apiFamily: "custom"`. To create a new custom API, use [`scapi_custom_api_generate_scaffold`](./scapi-custom-api-generate-scaffold).
 
 ## Authentication
 

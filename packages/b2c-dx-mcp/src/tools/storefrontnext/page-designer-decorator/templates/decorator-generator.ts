@@ -344,7 +344,7 @@ function generateRegionDefinition(context: MetadataContext): string {
  * **Generated code must be:**
  * - Added to the component file (after imports, before component)
  * - Compiled with TypeScript
- * - Used by `generate_page_designer_metadata` tool to create JSON metadata
+ * - Used by the staticRegistry Vite plugin to generate the component registry
  *
  * @param context - Complete metadata context
  * @returns TypeScript code string ready to paste into component file
