@@ -107,11 +107,15 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
   }
 
   /**
-   * Gets the cartridge filter options from flags.
+   * Gets the cartridge filter options from flags, falling back to
+   * the `cartridges` config value (from dw.json or env) when no
+   * `-c` / `--cartridge` flag is provided.
    */
   protected get cartridgeOptions(): FindCartridgesOptions {
+    const flagCartridges = this.flags.cartridge as string[] | undefined;
+    const configCartridges = this.resolvedConfig?.values.cartridges;
     return {
-      include: this.flags.cartridge as string[] | undefined,
+      include: flagCartridges ?? configCartridges,
       exclude: this.flags['exclude-cartridge'] as string[] | undefined,
     };
   }

@@ -75,6 +75,8 @@ export interface DwJsonConfig {
   sandboxApiHost?: string;
   /** Default ODS realm for sandbox operations */
   realm?: string;
+  /** Cartridge names to include in deploy/watch (string with colon/comma separators, or array) */
+  cartridges?: string | string[];
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
   /** Optional CIP analytics host override */
