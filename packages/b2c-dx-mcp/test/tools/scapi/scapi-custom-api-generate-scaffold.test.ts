@@ -12,7 +12,7 @@ import path from 'node:path';
 import {
   createScaffoldCustomApiTool,
   executeScaffoldCustomApi,
-} from '../../../src/tools/scapi/scapi-custom-api-scaffold.js';
+} from '../../../src/tools/scapi/scapi-custom-api-generate-scaffold.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
@@ -48,7 +48,7 @@ interface ScaffoldOutput {
   error?: string;
 }
 
-describe('tools/scapi/scapi-custom-api-scaffold', () => {
+describe('tools/scapi/scapi-custom-api-generate-scaffold', () => {
   let services: Services;
   let tempDir: string;
   let loadServices: () => Services;
@@ -68,11 +68,11 @@ describe('tools/scapi/scapi-custom-api-scaffold', () => {
   });
 
   describe('createScaffoldCustomApiTool', () => {
-    it('should create scapi_custom_api_scaffold tool with correct metadata', () => {
+    it('should create scapi_custom_api_generate_scaffold tool with correct metadata', () => {
       const tool = createScaffoldCustomApiTool(loadServices);
 
       expect(tool).to.exist;
-      expect(tool.name).to.equal('scapi_custom_api_scaffold');
+      expect(tool.name).to.equal('scapi_custom_api_generate_scaffold');
       expect(tool.description).to.include('custom SCAPI');
       expect(tool.description).to.include('apiName');
       expect(tool.inputSchema).to.exist;

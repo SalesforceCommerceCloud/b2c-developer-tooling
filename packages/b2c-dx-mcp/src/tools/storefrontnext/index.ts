@@ -10,12 +10,12 @@
  * This toolset provides MCP tools for Storefront Next development.
  *
  * **Implemented Tools:**
- * - `storefront_next_development_guidelines` - Get development guidelines and best practices
- * - `storefront_next_page_designer_decorator` - Add Page Designer decorators to React components
- * - `storefront_next_site_theming` - Get theming guidelines, questions, and validation
- * - `storefront_next_figma_to_component_workflow` - Convert Figma to components
- * - `storefront_next_generate_component` - Generate new components
- * - `storefront_next_map_tokens_to_theme` - Map design tokens
+ * - `sfnext_get_guidelines` - Get development guidelines and best practices
+ * - `sfnext_add_page_designer_decorator` - Add Page Designer decorators to React components
+ * - `sfnext_configure_theme` - Get theming guidelines, questions, and validation
+ * - `sfnext_start_figma_workflow` - Convert Figma to components
+ * - `sfnext_analyze_component` - Analyze design and recommend REUSE/EXTEND/CREATE
+ * - `sfnext_match_tokens_to_theme` - Match design tokens to theme
  *
  * Note: mrt_bundle_push is defined in the MRT toolset and appears in STOREFRONTNEXT.
  *

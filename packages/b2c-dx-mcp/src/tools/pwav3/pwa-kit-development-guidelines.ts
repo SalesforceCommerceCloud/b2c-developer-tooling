@@ -118,7 +118,7 @@ const DEFAULT_SECTIONS: SectionKey[] = ['quick-reference', 'components', 'data-f
 export function createDeveloperGuidelinesTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<DeveloperGuidelinesInput, string>(
     {
-      name: 'pwakit_development_guidelines',
+      name: 'pwakit_get_guidelines',
       description:
         'ESSENTIAL FIRST STEP for PWA Kit v3 development. Returns critical architecture rules, coding standards, and best practices. ' +
         'Use this tool FIRST before writing any PWA Kit code to understand non-negotiable patterns for React components, ' +

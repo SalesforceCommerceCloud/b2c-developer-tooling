@@ -42,7 +42,7 @@ mcp-inspector node --conditions development bin/dev.js --toolsets STOREFRONTNEXT
 Then in the inspector:
 
 1. Click **Connect**
-2. Click **List Tools** - you should see `storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, `storefront_next_map_tokens_to_theme`
+2. Click **List Tools** - you should see `sfnext_start_figma_workflow`, `sfnext_analyze_component`, `sfnext_match_tokens_to_theme`
 3. Click on each tool to test with sample inputs
 
 ### 3. CLI Testing
@@ -58,20 +58,20 @@ npx mcp-inspector --cli node bin/run.js --toolsets STOREFRONTNEXT --allow-non-ga
 # Call figma-to-component workflow
 npx mcp-inspector --cli node bin/run.js --toolsets STOREFRONTNEXT --allow-non-ga-tools \
   --method tools/call \
-  --tool-name storefront_next_figma_to_component_workflow \
+  --tool-name sfnext_start_figma_workflow \
   --args '{"figmaUrl": "https://figma.com/design/abc123/MyDesign?node-id=1-2"}'
 
 # Call generate-component
 npx mcp-inspector --cli node bin/run.js --toolsets STOREFRONTNEXT --allow-non-ga-tools \
   --method tools/call \
-  --tool-name storefront_next_generate_component \
+  --tool-name sfnext_analyze_component \
   --args '{"figmaMetadata": "{}", "figmaCode": "<div>Hello</div>", "componentName": "TestComponent", "discoveredComponents": []}'
 
 # Call map-tokens (requires --project-directory with Storefront Next project containing app.css)
 npx mcp-inspector --cli node bin/run.js --toolsets STOREFRONTNEXT --allow-non-ga-tools \
   --project-directory /path/to/storefront-next \
   --method tools/call \
-  --tool-name storefront_next_map_tokens_to_theme \
+  --tool-name sfnext_match_tokens_to_theme \
   --args '{"figmaTokens": [{"name": "Primary", "value": "#2563eb", "type": "color"}]}'
 ```
 
@@ -95,7 +95,7 @@ For `map-tokens` and `generate-component`, the tools use the project directory f
 
 ### 6. Test Scenarios
 
-#### storefront_next_figma_to_component_workflow
+#### sfnext_start_figma_workflow
 
 **Valid Figma URL**
 
@@ -128,7 +128,7 @@ Expected: Error message with URL format guidance.
 
 Expected: Uses custom workflow content instead of default.
 
-#### storefront_next_generate_component
+#### sfnext_analyze_component
 
 **Empty discovered components (CREATE)**
 
@@ -164,7 +164,7 @@ Expected: CREATE recommendation with confidence ~95%.
 
 Expected: REUSE, EXTEND, or CREATE based on analyzed differences.
 
-#### storefront_next_map_tokens_to_theme
+#### sfnext_match_tokens_to_theme
 
 **Basic token mapping**
 
@@ -195,7 +195,7 @@ Expected: Uses specified theme file instead of auto-discovery.
 
 For a full Figma-to-component conversion, execute in order:
 
-1. **Call `storefront_next_figma_to_component_workflow`** with the Figma URL. Receive fileKey, nodeId, and workflow instructions.
+1. **Call `sfnext_start_figma_workflow`** with the Figma URL. Receive fileKey, nodeId, and workflow instructions.
 
 2. **Call Figma MCP tools** (external) with the returned fileKey and nodeId:
    - `mcp__figma__get_design_context` (REQUIRED)
@@ -204,9 +204,9 @@ For a full Figma-to-component conversion, execute in order:
 
 3. **Discover similar components** using Glob/Grep/Read to search the codebase for components similar to the Figma design.
 
-4. **Call `storefront_next_generate_component`** with figmaMetadata, figmaCode, componentName, and discoveredComponents. Receive REUSE/EXTEND/CREATE recommendation.
+4. **Call `sfnext_analyze_component`** with figmaMetadata, figmaCode, componentName, and discoveredComponents. Receive REUSE/EXTEND/CREATE recommendation.
 
-5. **Call `storefront_next_map_tokens_to_theme`** with design tokens extracted from Figma. Receive token mapping and suggestions.
+5. **Call `sfnext_match_tokens_to_theme`** with design tokens extracted from Figma. Receive token mapping and suggestions.
 
 6. **Implement** the recommended approach and present the component to the developer for review.
 
@@ -214,7 +214,7 @@ For a full Figma-to-component conversion, execute in order:
 
 ### Theme File Not Found
 
-If `map_tokens_to_theme` returns "Theme file (app.css) not found":
+If `sfnext_match_tokens_to_theme` returns "Theme file (app.css) not found":
 
 - Ensure `--project-directory` points to a Storefront Next project root
 - Verify `app.css` or `src/app.css` exists in that directory
