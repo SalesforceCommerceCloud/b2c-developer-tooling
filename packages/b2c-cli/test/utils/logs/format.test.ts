@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {formatEntry, setupPathNormalizer, DEFAULT_PREFIXES} from '../../../src/utils/logs/format.js';
+import {formatEntry, highlightLogText, setupPathNormalizer, DEFAULT_PREFIXES} from '../../../src/utils/logs/format.js';
 
 describe('utils/logs/format', () => {
   describe('DEFAULT_PREFIXES', () => {
@@ -75,6 +75,48 @@ describe('utils/logs/format', () => {
       const entry = {...baseEntry, level: 'CUSTOM'};
       const result = formatEntry(entry, true);
       expect(result).to.include('CUSTOM');
+    });
+  });
+
+  describe('highlightLogText', () => {
+    it('highlights log levels and dims timestamps', () => {
+      const input = '[2026-03-16 17:05:08.685 GMT] INFO system-job|12345 - Starting import';
+      const result = highlightLogText(input);
+      // Should contain ANSI codes
+      expect(result).to.include('\u001B[');
+      // Should still contain the text content
+      expect(result).to.include('INFO');
+      expect(result).to.include('Starting import');
+    });
+
+    it('highlights ERROR lines in red', () => {
+      const input = '[2026-03-16 17:05:08.685 GMT] ERROR system-job|12345 - Import failed';
+      const result = highlightLogText(input);
+      expect(result).to.include('\u001B[31m'); // Red
+      expect(result).to.include('ERROR');
+    });
+
+    it('leaves non-matching lines unchanged', () => {
+      const input = '  at com.example.SomeClass.method(SomeClass.java:42)';
+      const result = highlightLogText(input);
+      expect(result).to.equal(input);
+    });
+
+    it('handles multi-line text with mixed content', () => {
+      const input = [
+        '[2026-03-16 17:05:08.685 GMT] ERROR system-job|1 - Failed',
+        '  stack trace line 1',
+        '  stack trace line 2',
+        '[2026-03-16 17:05:09.000 GMT] INFO system-job|2 - Done',
+      ].join('\n');
+      const result = highlightLogText(input);
+      const lines = result.split('\n');
+      // First and last lines should have ANSI codes
+      expect(lines[0]).to.include('\u001B[');
+      expect(lines[3]).to.include('\u001B[');
+      // Stack trace lines should be unchanged
+      expect(lines[1]).to.equal('  stack trace line 1');
+      expect(lines[2]).to.equal('  stack trace line 2');
     });
   });
 

@@ -70,6 +70,30 @@ export function formatEntry(entry: LogEntry, useColor: boolean): string {
 }
 
 /**
+ * Matches a B2C log line start: [YYYY-MM-DD HH:MM:SS.mmm GMT] LEVEL ...
+ */
+const LOG_LINE_RE = /^(\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+\s+\w+\])\s+(ERROR|FATAL|WARN|INFO|DEBUG|TRACE)\b/;
+
+/**
+ * Applies ANSI highlighting to raw log text, line by line.
+ * Timestamps are dimmed, log levels are colored to match `formatEntry` output.
+ * Useful for job logs and other raw log content that hasn't been parsed into LogEntry objects.
+ */
+export function highlightLogText(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => {
+      const match = LOG_LINE_RE.exec(line);
+      if (!match) return line;
+      const [, timestamp, level] = match;
+      const color = LEVEL_COLORS[level] || '';
+      const rest = line.slice(match[0].length);
+      return `${DIM}${timestamp}${RESET} ${color}${level}${RESET}${rest}`;
+    })
+    .join('\n');
+}
+
+/**
  * Sets up a path normalizer for IDE click-to-open functionality.
  * Priority: 1) explicit cartridgePath, 2) auto-discover cartridges, 3) undefined (no normalization)
  */
