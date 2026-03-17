@@ -59,7 +59,7 @@ Adds Page Designer decorators to an existing React component so it can be used i
 
 ### 2. `cartridge_deploy` (CARTRIDGES toolset)
 
-Packages the cartridge, uploads it to Commerce Cloud via WebDAV, and unpacks it on the server. Requires Commerce Cloud credentials (e.g. `dw.json` or explicit config). Use after generating metadata so the new/updated metadata is available in Business Manager.
+Packages the cartridge, uploads it to Commerce Cloud via WebDAV, and unpacks it on the server. **Run `pnpm generate:cartridge` or `pnpm build` before `cartridge_deploy`.** Requires Commerce Cloud credentials (e.g. `dw.json` or explicit config). Use after generating metadata so the new/updated metadata is available in Business Manager.
 
 ### Typical workflow
 
