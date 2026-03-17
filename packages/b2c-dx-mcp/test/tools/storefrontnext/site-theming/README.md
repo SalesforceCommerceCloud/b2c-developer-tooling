@@ -37,7 +37,7 @@ pnpm run inspect:dev
 Then in the inspector:
 
 1. Click **Connect**
-2. Click **List Tools** - you should see `storefront_next_site_theming`
+2. Click **List Tools** - you should see `sfnext_configure_theme`
 3. Click on the tool to test it with real inputs
 
 ### 3. CLI Testing
@@ -45,19 +45,19 @@ Then in the inspector:
 Test via command line:
 
 ```bash
-# List all tools (should include storefront_next_site_theming)
+# List all tools (should include sfnext_configure_theme)
 npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga-tools --method tools/list
 
 # Call the tool - list available files
 npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga-tools \
   --method tools/call \
-  --tool-name storefront_next_site_theming \
+  --tool-name sfnext_configure_theme \
   --args '{}'
 
 # Call with conversation context - get guidelines and questions
 npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT --allow-non-ga-tools \
   --method tools/call \
-  --tool-name storefront_next_site_theming \
+  --tool-name sfnext_configure_theme \
   --args '{"conversationContext":{"collectedAnswers":{"colors":[],"fonts":[]}}}'
 ```
 

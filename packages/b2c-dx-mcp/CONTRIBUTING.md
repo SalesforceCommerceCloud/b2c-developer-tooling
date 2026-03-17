@@ -65,7 +65,7 @@ npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools --me
 # Call a specific tool
 npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools \
   --method tools/call \
-  --tool-name storefront_next_page_designer_decorator
+  --tool-name sfnext_add_page_designer_decorator
 ```
 
 ### JSON-RPC via stdin
