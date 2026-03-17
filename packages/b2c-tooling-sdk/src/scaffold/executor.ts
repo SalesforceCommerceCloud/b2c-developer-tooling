@@ -17,7 +17,7 @@ import type {
 } from './types.js';
 import {ScaffoldEngine} from './engine.js';
 import {evaluateCondition, validateParameters} from './validators.js';
-import {mergeJson, insertAfter, insertBefore, appendContent, prependContent} from './merge.js';
+import {mergeJson, createPath, insertAfter, insertBefore, appendContent, prependContent} from './merge.js';
 
 /**
  * Options for resolving output directory.
@@ -126,8 +126,8 @@ export async function generateFromScaffold(
     const destRendered = engine.renderPath(mapping.destination);
     // If destination is absolute path, use it directly; otherwise join with outputDir
     const destAbsolute = path.isAbsolute(destRendered) ? destRendered : path.join(outputDir, destRendered);
-    // For display purposes, show path relative to cwd
-    const destRelative = path.relative(process.cwd(), destAbsolute) || destAbsolute;
+    // For display purposes, show path relative to outputDir
+    const destRelative = path.relative(outputDir, destAbsolute) || destAbsolute;
 
     // Check if destination exists
     const exists = await fileExists(destAbsolute);
@@ -199,7 +199,7 @@ export async function generateFromScaffold(
 
       const targetRendered = engine.renderPath(modification.target);
       const targetAbsolute = path.isAbsolute(targetRendered) ? targetRendered : path.join(outputDir, targetRendered);
-      const targetRelative = path.relative(process.cwd(), targetAbsolute) || targetAbsolute;
+      const targetRelative = path.relative(outputDir, targetAbsolute) || targetAbsolute;
 
       // Get modification content
       let modContent: string;
@@ -272,8 +272,15 @@ async function processModification(
     switch (modification.type) {
       case 'json-merge': {
         if (!exists) {
-          // Create new JSON file
-          newContent = JSON.stringify(JSON.parse(content), null, 2);
+          // Create new JSON file, wrapping content in jsonPath structure if specified
+          if (modification.jsonPath) {
+            const wrapper: Record<string, unknown> = {};
+            const [parent, key] = createPath(wrapper, modification.jsonPath);
+            parent[key] = JSON.parse(content);
+            newContent = JSON.stringify(wrapper, null, 2);
+          } else {
+            newContent = JSON.stringify(JSON.parse(content), null, 2);
+          }
         } else {
           newContent = mergeJson(existingContent, content, {
             jsonPath: modification.jsonPath,

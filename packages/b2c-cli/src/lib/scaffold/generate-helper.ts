@@ -187,14 +187,18 @@ export async function executeScaffoldGenerate(
 
   // Display results
   const created = result.files.filter((f) => f.action === 'created' || f.action === 'overwritten');
-  const skipped = result.files.filter((f) => f.action === 'skipped');
+  const merged = result.files.filter((f) => f.action === 'merged');
+  // Don't show "skipped" for files that were subsequently merged by a modification
+  const mergedPaths = new Set(merged.map((f) => f.path));
+  const skipped = result.files.filter((f) => f.action === 'skipped' && !mergedPaths.has(f.path));
 
-  if (created.length > 0) {
+  const generated = [...created, ...merged];
+  if (generated.length > 0) {
     ctx.log('');
-    ctx.log(`Successfully generated ${created.length} file(s):`);
-    for (const file of created) {
-      // file.path is already relative to cwd from the executor
-      ctx.log(`  ${file.action === 'overwritten' ? '(overwritten)' : '+'} ${file.path}`);
+    ctx.log(`Successfully generated ${generated.length} file(s):`);
+    for (const file of generated) {
+      const prefix = file.action === 'overwritten' ? '(overwritten)' : file.action === 'merged' ? '(updated)' : '+';
+      ctx.log(`  ${prefix} ${file.path}`);
     }
   }
 
@@ -249,7 +253,7 @@ async function promptForParameter(
 
       return select({
         message: param.prompt,
-        choices: choices.map((c) => ({name: c.label, value: c.value})),
+        choices: choices.map((c) => ({name: formatChoiceName(c), value: c.value})),
         default: param.default as string | undefined,
       });
     }
@@ -285,7 +289,7 @@ async function promptForParameter(
           }
           return select({
             message: param.prompt,
-            choices: choices.map((c) => ({name: c.label, value: c.value})),
+            choices: choices.map((c) => ({name: formatChoiceName(c), value: c.value})),
             default: param.default as string | undefined,
           });
         }
@@ -325,17 +329,31 @@ async function promptTextInput(param: ScaffoldParameter): Promise<string | undef
 }
 
 /**
+ * Format a choice for display: shows "label (value)" when they differ, just "label" otherwise.
+ */
+function formatChoiceName(c: ScaffoldChoice): string {
+  return c.label === c.value ? c.label : `${c.label} (${c.value})`;
+}
+
+/**
  * Create a search source function for inquirer search prompt.
  */
 function createSearchSource(choices: ScaffoldChoice[]) {
   return async (term: string | undefined) => {
     if (!term) {
-      return choices.map((c) => ({name: c.label, value: c.value}));
+      return choices.map((c) => ({name: formatChoiceName(c), value: c.value}));
     }
     const lowerTerm = term.toLowerCase();
-    return choices
+    const filtered = choices
       .filter((c) => c.label.toLowerCase().includes(lowerTerm) || c.value.toLowerCase().includes(lowerTerm))
-      .map((c) => ({name: c.label, value: c.value}));
+      .map((c) => ({name: formatChoiceName(c), value: c.value}));
+
+    // Allow entering a custom value not in the list
+    if (term.length > 0 && !choices.some((c) => c.value === term)) {
+      filtered.push({name: `Custom: ${term}`, value: term});
+    }
+
+    return filtered;
   };
 }
 

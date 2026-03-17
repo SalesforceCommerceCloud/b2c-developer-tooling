@@ -87,6 +87,10 @@ export interface NormalizedConfig {
   /** MRT API origin URL override */
   mrtOrigin?: string;
 
+  // Cartridges
+  /** Cartridge names to include in deploy/watch operations */
+  cartridges?: string[];
+
   // Content
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
