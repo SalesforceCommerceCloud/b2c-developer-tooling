@@ -37,6 +37,9 @@ export default class EcdnPageShieldNotificationsDelete extends EcdnCommand<typeo
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete Page Shield webhook');
+
     this.requireOAuthCredentials();
 
     const webhookId = this.flags['webhook-id'];

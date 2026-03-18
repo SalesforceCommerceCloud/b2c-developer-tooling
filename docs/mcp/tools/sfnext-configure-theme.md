@@ -2,7 +2,7 @@
 description: Get theming guidelines, guided questions, and WCAG color contrast validation for Storefront Next.
 ---
 
-# storefront_next_site_theming
+# sfnext_configure_theme
 
 Guides theming changes (colors, fonts, visual styling) for Storefront Next and validates color combinations for WCAG accessibility.
 
@@ -10,7 +10,7 @@ Guides theming changes (colors, fonts, visual styling) for Storefront Next and v
 
 ## Overview
 
-The `storefront_next_site_theming` tool provides a structured workflow for applying theming to Storefront Next sites:
+The `sfnext_configure_theme` tool provides a structured workflow for applying theming to Storefront Next sites:
 
 1. **Guidelines** - Layout preservation rules, specification compliance, and accessibility requirements
 2. **Guided Questions** - Collects user preferences (colors, fonts, mappings) one at a time

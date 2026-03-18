@@ -44,7 +44,7 @@ export type {
 export function createSiteThemingTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<SiteThemingInput, {text: string; isError?: boolean}>(
     {
-      name: 'storefront_next_site_theming',
+      name: 'sfnext_configure_theme',
       description:
         '⚠️ MANDATORY: Call this tool FIRST before implementing any theming changes. ' +
         'Provides theming guidelines, questions, and automatic validation. ' +

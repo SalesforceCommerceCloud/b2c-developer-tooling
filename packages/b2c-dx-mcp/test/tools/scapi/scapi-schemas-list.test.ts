@@ -61,7 +61,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       expect(tool.description).to.include('SCAPI');
       expect(tool.description).to.include('List');
       expect(tool.description).to.include('Fetch');
-      expect(tool.description).to.include('scapi_custom_apis_status');
+      expect(tool.description).to.include('scapi_custom_apis_get_status');
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);

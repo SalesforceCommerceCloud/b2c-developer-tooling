@@ -16,9 +16,10 @@ import type {
   AuthMiddlewareHookOptions,
   AuthMiddlewareHookResult,
 } from './hooks.js';
-import {setLanguage} from '../i18n/index.js';
+import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
-import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
+import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
+import {getSafetyLevel, describeSafetyLevel} from '../safety/index.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
@@ -159,6 +160,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Register extra params middleware (from --extra-query, --extra-body, --extra-headers flags)
     // This must happen before any API clients are created
     this.registerExtraParamsMiddleware();
+
+    // Register safety middleware FIRST (before any other middleware)
+    // This provides unbypassable protection at the HTTP layer
+    this.registerSafetyMiddleware();
 
     // Collect middleware from plugins before any API clients are created
     await this.collectPluginHttpMiddleware();
@@ -586,6 +591,67 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
+   * Check if destructive operations are allowed based on safety level.
+   * Provides early, user-friendly error messages before HTTP requests are attempted.
+   *
+   * This is a command-level check that complements the HTTP middleware safety guard.
+   * While the middleware provides unbypassable protection, this method offers better
+   * error messages and early detection.
+   *
+   * Destructive operations include:
+   * - Deleting resources (sandboxes, users, API clients, etc.)
+   * - Resetting or wiping data
+   * - Force operations that overwrite data
+   * - Revoking access or permissions
+   *
+   * NOTE: This is optional - the HTTP middleware will catch any operations that bypass
+   * this check. Use this method for better UX when you know an operation is destructive.
+   *
+   * @param operationDescription - Description of the operation (e.g., "delete sandbox", "reset user password")
+   * @throws Error if safety level blocks the operation
+   *
+   * @example
+   * ```typescript
+   * async run() {
+   *   this.assertDestructiveOperationAllowed('delete sandbox');
+   *   // ... proceed with deletion
+   * }
+   * ```
+   */
+  protected assertDestructiveOperationAllowed(operationDescription?: string): void {
+    const safetyLevel = getSafetyLevel('NONE');
+
+    if (safetyLevel === 'NONE') {
+      return; // No restrictions
+    }
+
+    const operation = operationDescription || t('base.destructiveOperation', 'this destructive operation');
+
+    // Determine if this operation should be blocked
+    // We assume all calls to this method are for destructive operations
+    // The safety level determines blocking:
+    // - READ_ONLY: blocks all writes
+    // - NO_DELETE: blocks deletes (we assume this method is called for deletes/destructive ops)
+    // - NO_UPDATE: blocks deletes and resets
+    const shouldBlock = safetyLevel === 'READ_ONLY' || safetyLevel === 'NO_DELETE' || safetyLevel === 'NO_UPDATE';
+
+    if (shouldBlock) {
+      return this.error(
+        t(
+          'base.safetyModeBlocked',
+          'Cannot {{operation}}: blocked by safety level {{safetyLevel}}.\n\n{{description}}\n\nTo allow this operation, unset or change the SFCC_SAFETY_LEVEL environment variable.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security#operational-security-safety-mode',
+          {
+            operation,
+            safetyLevel,
+            description: describeSafetyLevel(safetyLevel),
+          },
+        ),
+        {exit: 1},
+      );
+    }
+  }
+
+  /**
    * Parse extra params from --extra-query, --extra-body, and --extra-headers flags.
    * Returns undefined if no extra params are specified.
    *
@@ -627,6 +693,34 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     return config;
+  }
+
+  /**
+   * Register safety middleware to block destructive operations.
+   * This provides unbypassable protection at the HTTP layer - cannot be circumvented
+   * by command-line flags since it operates on all HTTP requests.
+   *
+   * Safety level is determined by the SFCC_SAFETY_LEVEL environment variable:
+   * - NONE: No restrictions (default)
+   * - NO_DELETE: Block DELETE operations
+   * - NO_UPDATE: Block DELETE + destructive operations (reset/stop/restart)
+   * - READ_ONLY: Block all writes (GET only)
+   */
+  private registerSafetyMiddleware(): void {
+    const safetyLevel = getSafetyLevel('NONE');
+
+    // Only register if safety is enabled
+    if (safetyLevel === 'NONE') return;
+
+    // Safety mode is silent until it blocks something
+    // Error messages will be shown when operations are actually blocked
+
+    globalMiddlewareRegistry.register({
+      name: 'cli-safety-guard',
+      getMiddleware() {
+        return createSafetyMiddleware({level: safetyLevel});
+      },
+    });
   }
 
   /**

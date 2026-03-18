@@ -125,6 +125,7 @@ export {
   createLoggingMiddleware,
   createExtraParamsMiddleware,
   createUserAgentMiddleware,
+  createSafetyMiddleware,
 } from './middleware.js';
 export type {
   ExtraParamsConfig,
