@@ -149,7 +149,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
 
     // Use stateful auth only when the session is valid and no explicit auth flags override it
     if (validSession && explicitAuthFlags.length === 0) {
-      this.logger.debug('[Auth] Using stateful session (sfcc-ci compatible store)');
+      this.logger.debug('[Auth] Using stateful session');
       return new StatefulOAuthStrategy(statefulSession, {
         accountManagerHost,
         scopes: requiredScopes,

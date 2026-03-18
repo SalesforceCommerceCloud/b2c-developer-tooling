@@ -172,6 +172,13 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
 
     this.logger.trace({method, url, body: data}, `[StatefulAuth RESP BODY] ${method} ${url}`);
 
+    try {
+      const decoded = decodeJWT(data.access_token);
+      this.logger.trace({jwt: decoded.payload}, '[StatefulAuth] JWT payload');
+    } catch {
+      // not a JWT; ignore
+    }
+
     setStoredSession({
       clientId,
       accessToken: data.access_token,

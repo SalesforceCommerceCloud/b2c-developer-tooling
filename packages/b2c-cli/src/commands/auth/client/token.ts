@@ -66,6 +66,7 @@ export default class AuthClientToken extends BaseCommand<typeof AuthClientToken>
       const scope = decoded.payload.scope as string | string[] | undefined;
       scopes = scope === null || scope === undefined ? [] : Array.isArray(scope) ? scope : scope.split(' ');
       this.logger.debug({expires, scopes}, '[StatefulAuth] Decoded JWT claims');
+      this.logger.trace({jwt: decoded.payload}, '[StatefulAuth] JWT payload');
     } catch {
       this.logger.debug('[StatefulAuth] Token is not a valid JWT; returning raw token');
     }
