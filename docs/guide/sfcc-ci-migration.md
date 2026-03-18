@@ -22,13 +22,13 @@ For users who prefer the sfcc-ci workflow, the B2C CLI includes a compatibility 
 
 | sfcc-ci | b2c-cli |
 |---------|---------|
-| `sfcc-ci client:auth <id> <secret>` | `b2c auth client --client-id <id> --client-secret <secret>` |
-| `sfcc-ci client:auth:renew` | `b2c auth client renew` |
-| `sfcc-ci client:auth:token` | `b2c auth client token` |
-| `sfcc-ci auth:login [client]` | `b2c auth login [client]` |
-| `sfcc-ci auth:logout` | `b2c auth logout` |
+| `sfcc-ci client:auth <id> <secret>` | `b2c client:auth --client-id <id> --client-secret <secret>` |
+| `sfcc-ci client:auth:renew` | `b2c client:auth:renew` |
+| `sfcc-ci client:auth:token` | `b2c client:auth:token` |
+| `sfcc-ci auth:login [client]` | `b2c auth:login [client]` |
+| `sfcc-ci auth:logout` | `b2c auth:logout` |
 
-The colon-separated forms (`client:auth`, `client:auth:renew`, `client:auth:token`, `auth:login`, `auth:logout`) are also accepted as aliases.
+The colon-separated forms are aliases — the canonical commands are `b2c auth client`, `b2c auth login`, etc.
 
 After authenticating, subsequent commands automatically use the stored token when it is valid. See [Auth Commands](/cli/auth) for full details.
 
@@ -53,16 +53,16 @@ Use **stateless auth** (environment variables) for CI/CD pipelines and **statefu
 
 ## Command Mapping
 
-The B2C CLI uses space-separated commands instead of colons (e.g., `code deploy` instead of `code:deploy`). For the most commonly used commands, colon-separated aliases are also accepted for backward compatibility.
+The B2C CLI's canonical syntax uses spaces instead of colons (e.g., `b2c code deploy`), but for the most commonly used commands, sfcc-ci's colon-separated syntax is also accepted (e.g., `b2c code:deploy`). The tables below show the drop-in colon form where available.
 
 ### Code Management
 
 | sfcc-ci | b2c-cli | Notes |
 |---------|---------|-------|
-| `sfcc-ci code:list` | `b2c code list` | Also accepts `code:list` |
-| `sfcc-ci code:deploy <archive>` | `b2c code deploy` | Deploys from local cartridge source; also accepts `code:deploy` |
-| `sfcc-ci code:activate <version>` | `b2c code activate <version>` | Also accepts `code:activate` |
-| `sfcc-ci code:delete` | `b2c code delete` | Also accepts `code:delete` |
+| `sfcc-ci code:list` | `b2c code:list` | |
+| `sfcc-ci code:deploy <archive>` | `b2c code:deploy` | Deploys from local cartridge source |
+| `sfcc-ci code:activate <version>` | `b2c code:activate <version>` | |
+| `sfcc-ci code:delete` | `b2c code:delete` | |
 
 ### Instance / Data
 
@@ -76,7 +76,7 @@ The B2C CLI uses space-separated commands instead of colons (e.g., `code deploy`
 
 | sfcc-ci | b2c-cli | Notes |
 |---------|---------|-------|
-| `sfcc-ci job:run <id>` | `b2c job run <id>` | Also accepts `job:run`; supports `--wait` and `--timeout` |
+| `sfcc-ci job:run <id>` | `b2c job:run <id>` | Supports `--wait` and `--timeout` |
 | `sfcc-ci job:status <id> <exec>` | `b2c job wait <id> --execution-id <exec>` | |
 
 ### Sandbox
@@ -195,11 +195,11 @@ b2c code activate v1
 If you prefer minimal changes to your existing pipeline scripts:
 
 ```bash
-# Same pattern as sfcc-ci
-b2c auth client --client-id $SFCC_OAUTH_CLIENT_ID --client-secret $SFCC_OAUTH_CLIENT_SECRET
+# Same pattern as sfcc-ci — colon-separated aliases are supported
+b2c client:auth --client-id $SFCC_OAUTH_CLIENT_ID --client-secret $SFCC_OAUTH_CLIENT_SECRET
 
-b2c code deploy
-b2c code activate v1 --server $INSTANCE
+b2c code:deploy
+b2c code:activate v1 --server $INSTANCE
 ```
 
 ### GitHub Actions
