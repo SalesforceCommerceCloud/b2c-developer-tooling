@@ -27,6 +27,8 @@ async function confirm(message: string): Promise<boolean> {
 }
 
 export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
+  static hiddenAliases = ['code:delete'];
+
   static args = {
     codeVersion: Args.string({
       description: 'Code version ID to delete',

@@ -13,6 +13,8 @@ import {t, withDocs} from '../../i18n/index.js';
  * (client credentials or implicit) when configured.
  */
 export default class AuthLogout extends BaseCommand<typeof AuthLogout> {
+  static hiddenAliases = ['auth:logout'];
+
   static description = withDocs(
     t('commands.auth.logout.description', 'Clear stored session (stateful auth)'),
     '/cli/auth.html#b2c-auth-logout',
