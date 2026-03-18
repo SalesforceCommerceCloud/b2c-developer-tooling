@@ -41,6 +41,8 @@ const COLUMNS: Record<string, ColumnDef<PublishProcessResponse>> = {
 
 const DEFAULT_COLUMNS = ['id', 'status', 'entityType', 'entityId', 'startTime'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 export default class ReplicationsList extends GranularReplicationsCommand<typeof ReplicationsList> {
   static description = withDocs(
     t('commands.replications.list.description', 'List granular replication processes'),
@@ -99,7 +101,6 @@ export default class ReplicationsList extends GranularReplicationsCommand<typeof
 
     const processes = result.data.data || [];
     const columns = this.getSelectedColumns();
-    const tableRenderer = new TableRenderer(COLUMNS);
     ux.stdout('\n');
     tableRenderer.render(processes, columns);
 
@@ -116,8 +117,13 @@ export default class ReplicationsList extends GranularReplicationsCommand<typeof
     const extended = this.flags.extended;
 
     if (columnsFlag) {
-      // User specified explicit columns
-      return columnsFlag.split(',').map((c) => c.trim());
+      const requested = columnsFlag.split(',').map((c) => c.trim());
+      const valid = tableRenderer.validateColumnKeys(requested);
+      if (valid.length === 0) {
+        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
+        return DEFAULT_COLUMNS;
+      }
+      return valid;
     }
 
     if (extended) {

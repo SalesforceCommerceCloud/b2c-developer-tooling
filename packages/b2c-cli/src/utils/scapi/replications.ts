@@ -5,11 +5,7 @@
  */
 import {Command} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  createGranularReplicationsClient,
-  type GranularReplicationsClient,
-  toOrganizationId,
-} from '@salesforce/b2c-tooling-sdk';
+import {createGranularReplicationsClient, type GranularReplicationsClient} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
 /**
@@ -24,17 +20,22 @@ export abstract class GranularReplicationsCommand<T extends typeof Command> exte
    * Gets or creates a Granular Replications API client.
    *
    * Requires:
-   * - shortCode configuration (via b2c config:set --short-code <code>)
+   * - short code (--short-code, SFCC_SHORTCODE, or dw.json)
    * - OAuth credentials
-   * - tenantId (from --tenant-id flag or config)
+   * - tenant ID (--tenant-id, SFCC_TENANT_ID, or dw.json)
    */
   protected get granularReplicationsClient(): GranularReplicationsClient {
     if (!this._granularReplicationsClient) {
       const shortCode = this.resolvedConfig.values.shortCode;
-      const tenantId = this.getTenantId();
+      const tenantId = this.requireTenantId();
 
       if (!shortCode) {
-        this.error('shortCode configuration is required. Run: b2c config:set --short-code <code>');
+        this.error(
+          t(
+            'error.shortCodeRequired',
+            'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+          ),
+        );
       }
 
       this._granularReplicationsClient = createGranularReplicationsClient(
@@ -43,29 +44,5 @@ export abstract class GranularReplicationsCommand<T extends typeof Command> exte
       );
     }
     return this._granularReplicationsClient;
-  }
-
-  /**
-   * Get the organization ID (with f_ecom_ prefix) for API path parameters.
-   */
-  protected getOrganizationId(): string {
-    return toOrganizationId(this.getTenantId());
-  }
-
-  /**
-   * Get the tenant ID from resolved config.
-   * @throws Error if tenant ID is not provided through any source
-   */
-  protected getTenantId(): string {
-    const {tenantId} = this.resolvedConfig.values;
-    if (!tenantId) {
-      this.error(
-        t(
-          'error.tenantIdRequired',
-          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
-      );
-    }
-    return tenantId;
   }
 }

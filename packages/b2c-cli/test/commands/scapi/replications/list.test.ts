@@ -150,4 +150,44 @@ describe('scapi replications list', () => {
       }
     });
   });
+
+  describe('getSelectedColumns', () => {
+    let config: Config;
+
+    beforeEach(async () => {
+      config = await Config.load();
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('returns default columns when no flags provided', async () => {
+      const command: any = new ReplicationsList([], config);
+      stubParse(command, {}, {});
+      await command.init();
+
+      expect(command.getSelectedColumns()).to.deep.equal(['id', 'status', 'entityType', 'entityId', 'startTime']);
+    });
+
+    it('filters invalid column names and warns when none valid', async () => {
+      const command: any = new ReplicationsList([], config);
+      stubParse(command, {columns: 'nope,bad'}, {});
+      await command.init();
+
+      const warn = sinon.stub(command, 'warn').returns(void 0);
+      const columns = command.getSelectedColumns();
+
+      expect(columns).to.deep.equal(['id', 'status', 'entityType', 'entityId', 'startTime']);
+      expect(warn.calledOnce).to.equal(true);
+    });
+
+    it('returns only valid columns from --columns', async () => {
+      const command: any = new ReplicationsList([], config);
+      stubParse(command, {columns: 'id,status,bogus'}, {});
+      await command.init();
+
+      expect(command.getSelectedColumns()).to.deep.equal(['id', 'status']);
+    });
+  });
 });

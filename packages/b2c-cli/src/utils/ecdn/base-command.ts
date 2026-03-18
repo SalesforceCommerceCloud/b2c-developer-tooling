@@ -5,7 +5,7 @@
  */
 import {Command} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createCdnZonesClient, toOrganizationId, type CdnZonesClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {createCdnZonesClient, type CdnZonesClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {t} from '../../i18n/index.js';
 
 /**
@@ -81,22 +81,5 @@ export abstract class EcdnCommand<T extends typeof Command> extends OAuthCommand
       this._cdnZonesRwClient = createCdnZonesClient({shortCode, tenantId}, oauthStrategy, {readWrite: true});
     }
     return this._cdnZonesRwClient;
-  }
-
-  /**
-   * Get the organization ID from resolved config.
-   * @throws Error if tenant ID is not provided through any source
-   */
-  protected getOrganizationId(): string {
-    const {tenantId} = this.resolvedConfig.values;
-    if (!tenantId) {
-      this.error(
-        t(
-          'error.tenantIdRequired',
-          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
-      );
-    }
-    return toOrganizationId(tenantId);
   }
 }
