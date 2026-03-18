@@ -59,6 +59,9 @@ export default class MrtNotificationDelete extends MrtCommand<typeof MrtNotifica
   };
 
   async run(): Promise<{id: string; deleted: boolean}> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete notification');
+
     this.requireMrtCredentials();
 
     const {id} = this.args;

@@ -4,7 +4,7 @@ description: Prerequisites and setup for Figma-to-component tools (workflow orch
 
 # Figma-to-Component Tools Setup
 
-Prerequisites and setup for using the Figma workflow tools: `storefront_next_figma_to_component_workflow`, `storefront_next_generate_component`, and `storefront_next_map_tokens_to_theme`.
+Prerequisites and setup for using the Figma workflow tools: `sfnext_start_figma_workflow`, `sfnext_analyze_component`, and `sfnext_match_tokens_to_theme`.
 
 > **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
 
@@ -15,7 +15,7 @@ The Figma-to-component workflow requires an **external Figma MCP server** to fet
 **Prerequisites:**
 - b2c-dx-mcp configured with `--allow-non-ga-tools` flag (Figma tools are preview)
 - Storefront Next project
-- `app.css` theme file (required for `storefront_next_map_tokens_to_theme` tool; optional path can be provided)
+- `app.css` theme file (required for `sfnext_match_tokens_to_theme` tool; optional path can be provided)
 - External Figma MCP server enabled in your MCP client
 
 See [Installation](./installation) for b2c-dx-mcp setup.
@@ -49,8 +49,8 @@ If the Figma MCP server is not enabled, the workflow tool will still return inst
 
 ## Related Documentation
 
-- [storefront_next_figma_to_component_workflow](./tools/storefront-next-figma-to-component-workflow) - Workflow orchestrator (call first)
-- [storefront_next_generate_component](./tools/storefront-next-generate-component) - REUSE/EXTEND/CREATE recommendation
-- [storefront_next_map_tokens_to_theme](./tools/storefront-next-map-tokens-to-theme) - Token mapping
+- [sfnext_start_figma_workflow](./tools/sfnext-start-figma-workflow) - Workflow orchestrator (call first)
+- [sfnext_analyze_component](./tools/sfnext-analyze-component) - REUSE/EXTEND/CREATE recommendation
+- [sfnext_match_tokens_to_theme](./tools/sfnext-match-tokens-to-theme) - Token mapping
 - [STOREFRONTNEXT Toolset](./toolsets#storefrontnext) - Overview of Storefront Next tools
 - [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) - Official Figma MCP setup

@@ -309,6 +309,10 @@ export {getRole, listRoles} from './operations/roles/index.js';
 // Operations - Organizations
 export {getOrg, getOrgByName, listOrgs} from './operations/orgs/index.js';
 
+// Safety - Protection against destructive operations
+export {getSafetyLevel, describeSafetyLevel, checkSafetyViolation, SafetyBlockedError} from './safety/index.js';
+export type {SafetyLevel, SafetyConfig} from './safety/index.js';
+
 // Defaults
 export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from './defaults.js';
 

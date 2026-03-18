@@ -2,7 +2,7 @@
 description: Add Page Designer decorators to React components for Storefront Next to make them available in Page Designer.
 ---
 
-# storefront_next_page_designer_decorator
+# sfnext_add_page_designer_decorator
 
 Adds Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefinition`) to React components to make them available in Page Designer for Storefront Next.
 
@@ -10,7 +10,7 @@ Adds Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDef
 
 ## Overview
 
-The `storefront_next_page_designer_decorator` tool analyzes React components and generates Page Designer decorators that enable components to be used in Page Designer. It supports two modes:
+The `sfnext_add_page_designer_decorator` tool analyzes React components and generates Page Designer decorators that enable components to be used in Page Designer. It supports two modes:
 
 1. **Auto Mode**: Quick setup with sensible defaults-automatically selects suitable props, infers types, and generates decorators immediately.
 2. **Interactive Mode**: Multi-step workflow for fine-tuned control over decorator configuration.

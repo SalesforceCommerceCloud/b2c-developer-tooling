@@ -67,6 +67,9 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
   };
 
   async run(): Promise<DeleteResult> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete MRT project');
+
     this.requireMrtCredentials();
 
     const {slug} = this.args;

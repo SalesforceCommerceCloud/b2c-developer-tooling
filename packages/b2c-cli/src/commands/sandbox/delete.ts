@@ -81,6 +81,9 @@ export default class SandboxDelete extends OdsCommand<typeof SandboxDelete> {
   };
 
   async run(): Promise<void> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete sandbox');
+
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
     const wait = this.flags.wait as boolean;
     const pollInterval = this.flags['poll-interval'] as number;

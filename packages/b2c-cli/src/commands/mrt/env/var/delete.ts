@@ -40,6 +40,9 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
   };
 
   async run(): Promise<{key: string; project: string; environment: string}> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete environment variable');
+
     this.requireMrtCredentials();
 
     const {key} = this.args;

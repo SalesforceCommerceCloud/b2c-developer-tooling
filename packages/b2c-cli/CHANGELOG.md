@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 0.8.0
+
+### Minor Changes
+
+- [#268](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/268) [`0c4e288`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0c4e288ff2609a13983ef883f5675e69ac7cc452) - Add `job log` command to retrieve and display job execution logs. Supports fetching logs for a specific execution or automatically finding the most recent (or most recent failed) execution with a log file. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.7.4
 
 ### Patch Changes

@@ -252,7 +252,7 @@ function formatNextStepsReminder(): string {
 
 This tool has provided workflow instructions only. You MUST now execute ALL steps below.
 
-**EXPECTED FINAL OUTPUT:** A recommendation with confidence score from generate_component tool AND a token mapping summary from map_tokens_to_theme tool.
+**EXPECTED FINAL OUTPUT:** A recommendation with confidence score from sfnext_analyze_component tool AND a token mapping summary from sfnext_match_tokens_to_theme tool.
 
 ### Step 1: Fetch Figma Design Data (Parallel Calls)
 Call these Figma MCP tools with the parameters above:
@@ -268,7 +268,7 @@ Use your tools to find existing components:
 - Score each match (0-100) based on similarity
 
 ### Step 3: Analyze Component Strategy (CRITICAL - DO NOT SKIP)
-You MUST call \`generate_component\` tool with:
+You MUST call \`sfnext_analyze_component\` tool with:
 - figmaMetadata (from step 1, or empty string if not fetched)
 - figmaCode (from step 1)
 - componentName (extracted from Figma)
@@ -277,14 +277,14 @@ You MUST call \`generate_component\` tool with:
 This tool returns the recommendation with confidence score that MUST be shown to the user.
 
 ### Step 4: Map Design Tokens (CRITICAL - DO NOT SKIP)
-You MUST call \`map_tokens_to_theme\` tool with tokens extracted from Figma design.
+You MUST call \`sfnext_match_tokens_to_theme\` tool with tokens extracted from Figma design.
 
 This tool returns the token mapping summary that MUST be shown to the user.
 
 ### Step 5: Implement
 After showing the recommendation and token mapping to the user, wait for approval then implement the code changes. Use the downloaded asset paths from Step 1 for any img src or imageUrl props—do not use placeholder paths.
 
-**DO NOT STOP until you have called generate_component AND map_tokens_to_theme and shown their outputs to the user.**
+**DO NOT STOP until you have called sfnext_analyze_component AND sfnext_match_tokens_to_theme and shown their outputs to the user.**
 `;
 }
 
@@ -329,7 +329,7 @@ export function generateWorkflowResponse(figmaUrl: string, workflowFilePath?: st
 }
 
 /**
- * Creates the storefront_next_figma_to_component_workflow MCP tool.
+ * Creates the sfnext_start_figma_workflow MCP tool.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns MCP tool for workflow orchestration
@@ -337,14 +337,14 @@ export function generateWorkflowResponse(figmaUrl: string, workflowFilePath?: st
 export function createFigmaToComponentTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<FigmaToComponentInput, string>(
     {
-      name: 'storefront_next_figma_to_component_workflow',
+      name: 'sfnext_start_figma_workflow',
       description:
         'WORKFLOW ORCHESTRATOR: Call this tool FIRST when converting Figma designs. ' +
         'Parses Figma URL to extract fileKey and nodeId, returns step-by-step workflow instructions ' +
         'and parameters for subsequent tool calls. ' +
         'CRITICAL: This is only the FIRST step. After calling this tool, you MUST continue executing ' +
         'the complete workflow: 1) Call Figma MCP tools, 2) Discover similar components, ' +
-        '3) Call generate_component tool, 4) Call map_tokens_to_theme tool, ' +
+        '3) Call sfnext_analyze_component tool, 4) Call sfnext_match_tokens_to_theme tool, ' +
         '5) Show both outputs to the user then implement the recommended approach.',
       toolsets: ['STOREFRONTNEXT'],
       isGA: false,
