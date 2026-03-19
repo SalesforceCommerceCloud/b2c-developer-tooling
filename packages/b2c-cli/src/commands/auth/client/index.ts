@@ -21,6 +21,8 @@ import {t} from '../../../i18n/index.js';
  * Use --renew to enable automatic token renewal for later use with `auth client renew`.
  */
 export default class AuthClient extends BaseCommand<typeof AuthClient> {
+  static hiddenAliases = ['client:auth'];
+
   static description = t('commands.auth.client.description', 'Authenticate an API client and save session');
 
   static examples = [
@@ -34,16 +36,19 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
     'client-id': Flags.string({
       description: 'Client ID for OAuth',
       env: 'SFCC_CLIENT_ID',
+      default: async () => process.env.SFCC_OAUTH_CLIENT_ID || undefined,
       helpGroup: 'AUTH',
     }),
     'client-secret': Flags.string({
       description: 'Client secret for OAuth',
       env: 'SFCC_CLIENT_SECRET',
+      default: async () => process.env.SFCC_OAUTH_CLIENT_SECRET || undefined,
       helpGroup: 'AUTH',
     }),
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: async () => process.env.SFCC_LOGIN_URL || undefined,
       helpGroup: 'AUTH',
     }),
     'auth-scope': Flags.string({

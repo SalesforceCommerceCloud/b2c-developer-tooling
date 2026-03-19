@@ -25,6 +25,8 @@ interface AuthClientTokenOutput {
  * Mirrors sfcc-ci `client:auth:token` command behavior.
  */
 export default class AuthClientToken extends BaseCommand<typeof AuthClientToken> {
+  static hiddenAliases = ['client:auth:token'];
+
   static description = t(
     'commands.auth.client.token.description',
     'Return the current authentication token (stateful)',

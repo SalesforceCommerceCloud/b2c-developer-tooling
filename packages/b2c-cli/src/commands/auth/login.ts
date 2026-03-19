@@ -15,6 +15,8 @@ import {t, withDocs} from '../../i18n/index.js';
  * until it expires or you run auth:logout.
  */
 export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
+  static hiddenAliases = ['auth:login'];
+
   static args = {
     clientId: Args.string({
       description: 'Client ID for OAuth (falls back to SFCC_CLIENT_ID env var)',
@@ -33,6 +35,7 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: async () => process.env.SFCC_LOGIN_URL || undefined,
       helpGroup: 'AUTH',
     }),
     'auth-scope': Flags.string({
