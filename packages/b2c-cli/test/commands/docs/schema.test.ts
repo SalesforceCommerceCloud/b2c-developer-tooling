@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {ux} from '@oclif/core';
 import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
@@ -51,7 +52,9 @@ describe('docs schema', () => {
     const command: any = await createCommand({}, {query: 'catalog'});
 
     sinon.stub(command, 'jsonEnabled').returns(false);
-    const readStub = sinon.stub().returns({entry: {id: 'catalog', title: 't', filePath: 'c.xsd'}, content: '<x/>'});
+    const readStub = sinon
+      .stub()
+      .returns({entry: {id: 'catalog', title: 't', filePath: 'c.xsd'}, content: '<x/>', path: '/tmp/c.xsd'});
     command.operations = {...command.operations, readSchemaByQuery: readStub};
 
     const writeStub = sinon.stub(process.stdout, 'write');
@@ -59,5 +62,22 @@ describe('docs schema', () => {
     await command.run();
 
     expect(writeStub.calledOnceWithExactly('<x/>')).to.equal(true);
+  });
+
+  it('outputs filesystem path with --path flag', async () => {
+    const command: any = await createCommand({path: true}, {query: 'catalog'});
+
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    const readStub = sinon
+      .stub()
+      .returns({entry: {id: 'catalog', title: 't', filePath: 'c.xsd'}, content: '<x/>', path: '/data/xsd/c.xsd'});
+    command.operations = {...command.operations, readSchemaByQuery: readStub};
+
+    const stdoutStub = sinon.stub(ux, 'stdout');
+
+    const result = await command.run();
+
+    expect(stdoutStub.calledOnceWithExactly('/data/xsd/c.xsd')).to.equal(true);
+    expect(result).to.deep.equal({entry: {id: 'catalog', title: 't', filePath: 'c.xsd'}, path: '/data/xsd/c.xsd'});
   });
 });

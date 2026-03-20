@@ -19,6 +19,8 @@ import {t} from '../../../i18n/index.js';
  * to client_credentials grant using the stored base64-encoded client:secret.
  */
 export default class AuthClientRenew extends BaseCommand<typeof AuthClientRenew> {
+  static hiddenAliases = ['client:auth:renew'];
+
   static description = t('commands.auth.client.renew.description', 'Renew the client authentication token');
 
   static examples = ['<%= config.bin %> <%= command.id %>'];
@@ -27,6 +29,7 @@ export default class AuthClientRenew extends BaseCommand<typeof AuthClientRenew>
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: async () => process.env.SFCC_LOGIN_URL || undefined,
       helpGroup: 'AUTH',
     }),
   };

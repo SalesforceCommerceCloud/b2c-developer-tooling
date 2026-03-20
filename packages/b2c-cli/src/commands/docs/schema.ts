@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags} from '@oclif/core';
+import {Args, Flags, ux} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {readSchemaByQuery, listSchemas, type SchemaEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import {t} from '../../i18n/index.js';
@@ -11,6 +11,12 @@ import {t} from '../../i18n/index.js';
 interface SchemaResult {
   entry: SchemaEntry;
   content: string;
+  path: string;
+}
+
+interface PathResult {
+  entry: SchemaEntry;
+  path: string;
 }
 
 interface ListResult {
@@ -34,6 +40,7 @@ export default class DocsSchema extends BaseCommand<typeof DocsSchema> {
     '<%= config.bin %> <%= command.id %> order',
     '<%= config.bin %> <%= command.id %> --list',
     '<%= config.bin %> <%= command.id %> catalog --json',
+    'xmllint --schema "$(<%= config.bin %> <%= command.id %> catalog --path)" file.xml --noout',
   ];
 
   static flags = {
@@ -43,6 +50,11 @@ export default class DocsSchema extends BaseCommand<typeof DocsSchema> {
       description: 'List all available schemas',
       default: false,
     }),
+    path: Flags.boolean({
+      char: 'p',
+      description: 'Print the filesystem path to the schema instead of its content',
+      default: false,
+    }),
   };
 
   protected operations = {
@@ -50,9 +62,9 @@ export default class DocsSchema extends BaseCommand<typeof DocsSchema> {
     readSchemaByQuery,
   };
 
-  async run(): Promise<ListResult | SchemaResult> {
+  async run(): Promise<ListResult | PathResult | SchemaResult> {
     const {query} = this.args;
-    const {list} = this.flags;
+    const {list, path: pathFlag} = this.flags;
 
     // List mode
     if (list) {
@@ -83,6 +95,15 @@ export default class DocsSchema extends BaseCommand<typeof DocsSchema> {
       this.error(t('commands.docs.schema.notFound', 'No schema found matching: {{query}}', {query}), {
         suggestions: ['Try a broader search term', 'Use "b2c docs schema --list" to see available schemas'],
       });
+    }
+
+    if (pathFlag) {
+      if (this.jsonEnabled()) {
+        return {entry: result.entry, path: result.path};
+      }
+
+      ux.stdout(result.path);
+      return {entry: result.entry, path: result.path};
     }
 
     if (this.jsonEnabled()) {

@@ -45,11 +45,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     'client-id': Flags.string({
       description: 'Client ID for OAuth',
       env: 'SFCC_CLIENT_ID',
+      default: async () => process.env.SFCC_OAUTH_CLIENT_ID || undefined,
       helpGroup: 'AUTH',
     }),
     'client-secret': Flags.string({
       description: 'Client Secret for OAuth',
       env: 'SFCC_CLIENT_SECRET',
+      default: async () => process.env.SFCC_OAUTH_CLIENT_SECRET || undefined,
       helpGroup: 'AUTH',
     }),
     'auth-scope': Flags.string({
@@ -90,6 +92,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: async () => process.env.SFCC_LOGIN_URL || undefined,
       helpGroup: 'AUTH',
     }),
   };

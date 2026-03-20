@@ -43,6 +43,7 @@ const guidesSidebar = [
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
       {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
+      {text: 'sfcc-ci Migration', link: '/guide/sfcc-ci-migration'},
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},

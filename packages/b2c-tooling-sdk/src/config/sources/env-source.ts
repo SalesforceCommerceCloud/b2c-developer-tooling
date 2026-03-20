@@ -20,6 +20,10 @@ import {getLogger} from '../../logging/logger.js';
  * Mapping of SFCC_* environment variable names to NormalizedConfig field names.
  */
 const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
+  // sfcc-ci legacy aliases — listed first so canonical names below take precedence
+  SFCC_OAUTH_CLIENT_ID: 'clientId',
+  SFCC_OAUTH_CLIENT_SECRET: 'clientSecret',
+  SFCC_LOGIN_URL: 'accountManagerHost',
   SFCC_SERVER: 'hostname',
   SFCC_WEBDAV_SERVER: 'webdavHostname',
   SFCC_CODE_VERSION: 'codeVersion',
