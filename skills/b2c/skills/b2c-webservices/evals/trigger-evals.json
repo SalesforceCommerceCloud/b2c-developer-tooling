@@ -1,0 +1,7 @@
+[
+  {"query": "I need to call an external REST API from a B2C Commerce script using LocalServiceRegistry. How do I set up the service with createRequest, parseResponse, and filterLogMessage callbacks?", "should_trigger": true},
+  {"query": "My service call keeps returning SERVICE_UNAVAILABLE with CIRCUIT_BROKEN. How does the circuit breaker work in the B2C service framework and how do I configure the profile settings?", "should_trigger": true},
+  {"query": "I want to set up an SFTP service to download inventory files from a vendor. How do I configure the service credentials and use the FTP service type with LocalServiceRegistry?", "should_trigger": true},
+  {"query": "How do I make HTTP requests from my Node.js script in the b2c-tooling-sdk package? I need to call the OCAPI data API.", "should_trigger": false},
+  {"query": "I need to configure services.xml for importing service definitions via site archive, but I'm only adding custom attributes to the service credential object type in the metadata.", "should_trigger": false}
+]

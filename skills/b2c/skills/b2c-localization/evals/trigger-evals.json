@@ -1,0 +1,7 @@
+[
+  {"query": "I need to add French Canadian (fr_CA) translations for our checkout flow. Where do I put the .properties files and how does the locale fallback chain work?", "should_trigger": true},
+  {"query": "How do I use Resource.msgf in an ISML template to display a parameterized message like 'You have {0} items in your cart'? I keep getting the raw key instead of the translated string.", "should_trigger": true},
+  {"query": "We're building a language switcher component for SFRA. How do I iterate over Site.current.allowedLocales and generate locale-specific URLs for each language?", "should_trigger": true},
+  {"query": "How do I set the localizable-flag on a custom attribute in system-objecttype-extensions.xml so it can have different values per locale?", "should_trigger": false},
+  {"query": "I need to configure which locales are enabled for our B2C Commerce site in Business Manager. Where are the site locale settings?", "should_trigger": false}
+]

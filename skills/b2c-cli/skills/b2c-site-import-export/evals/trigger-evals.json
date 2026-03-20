@@ -1,0 +1,7 @@
+[
+  {"query": "I need to add a custom attribute called 'vendorCode' to the Product system object on my sandbox. How do I set up the XML and import it?", "should_trigger": true},
+  {"query": "How do I import a site archive directory into my B2C instance? I have a folder with metadata XML files ready to go.", "should_trigger": true},
+  {"query": "I'm trying to create a custom object type called FeatureFlags with a boolean 'enabled' attribute. What's the XML format for custom-objecttype-definitions.xml?", "should_trigger": true},
+  {"query": "How do I upload a cartridge zip file to my sandbox using WebDAV?", "should_trigger": false},
+  {"query": "I need to export all my product data from Business Manager as a CSV. What's the best approach?", "should_trigger": false}
+]

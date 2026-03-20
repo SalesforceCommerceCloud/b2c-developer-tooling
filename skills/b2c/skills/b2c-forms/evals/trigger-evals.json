@@ -1,0 +1,7 @@
+[
+  {"query": "How do I create a form XML definition with field validation in B2C Commerce? I need mandatory fields with regexp patterns and error messages.", "should_trigger": true},
+  {"query": "I'm building a profile edit form in SFRA. How do I use server.forms.getForm to prepopulate the form and handle the POST submission with CSRF protection?", "should_trigger": true},
+  {"query": "What are the available field types in B2C form XML definitions? I need to add a date field and a boolean checkbox to my checkout form.", "should_trigger": true},
+  {"query": "How do I add custom form fields to the Business Manager using form extensions in bm_extensions.xml?", "should_trigger": false},
+  {"query": "I need to validate an address input on the client side using JavaScript before the AJAX submission in my SFRA template.", "should_trigger": false}
+]

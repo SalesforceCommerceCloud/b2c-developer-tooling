@@ -1,0 +1,7 @@
+[
+  {"query": "I need to export the homepage Page Designer page from our SharedLibrary. How do I use b2c content export and can I also export matching pages with a regex pattern?", "should_trigger": true},
+  {"query": "How do I list all Page Designer pages in a site-private library? I want to see the tree structure and then export specific components.", "should_trigger": true},
+  {"query": "Can I export Page Designer content from a local library XML file without connecting to the instance? I have a library.xml I downloaded earlier.", "should_trigger": true},
+  {"query": "I want to create a new Page Designer component type with regions and attribute groups. What should my banner.json meta definition look like?", "should_trigger": false},
+  {"query": "How do I import a site archive back into my sandbox? I have an exported zip file I need to upload.", "should_trigger": false}
+]

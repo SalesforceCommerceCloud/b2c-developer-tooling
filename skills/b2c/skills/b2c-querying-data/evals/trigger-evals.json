@@ -1,0 +1,7 @@
+[
+  {"query": "My category page is slow and I'm using Category.getProducts() to list products. How should I replace this with ProductSearchModel for better performance?", "should_trigger": true},
+  {"query": "I need to search customer profiles by email using CustomerMgr. Should I use searchProfiles or queryProfiles, and what are the performance differences?", "should_trigger": true},
+  {"query": "How do I page through product search results using PagingModel with ProductSearchModel? Also, how do I add refinements for color and price range?", "should_trigger": true},
+  {"query": "I need to create an order from a basket and manage the order status transitions from CREATED to NEW to COMPLETED using OrderMgr.", "should_trigger": false},
+  {"query": "How do I create and query custom objects in B2C Commerce? I need to store loyalty point records using CustomObjectMgr.", "should_trigger": false}
+]

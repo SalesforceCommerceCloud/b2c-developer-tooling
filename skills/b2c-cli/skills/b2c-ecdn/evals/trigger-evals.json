@@ -1,0 +1,7 @@
+[
+  {"query": "I need to purge the CDN cache for our storefront after a product data update. The zone is production-us and tenant is zzxy_prd.", "should_trigger": true},
+  {"query": "How do I add a custom SSL certificate to our eCDN zone? We have the cert.pem and key.pem files ready.", "should_trigger": true},
+  {"query": "Can you show me how to set up WAF rules and rate limiting on our B2C Commerce CDN zone to block bot traffic?", "should_trigger": true},
+  {"query": "How do I configure a CDN like Cloudflare in front of my Node.js Express application?", "should_trigger": false},
+  {"query": "I need to set up caching headers in my SFCC controller response so the browser caches the page for 1 hour.", "should_trigger": false}
+]

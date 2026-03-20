@@ -1,0 +1,7 @@
+[
+  {"query": "How do I list all the available SCAPI schemas for my sandbox instance zzpq-013?", "should_trigger": true},
+  {"query": "I need to check what endpoints are available in the shopper-products API. Can you get the schema and expand the /products path?", "should_trigger": true},
+  {"query": "b2c scapi schemas get is returning a collapsed output. How do I see the full Product schema definition with all fields expanded?", "should_trigger": true},
+  {"query": "I need to make a SCAPI call to search for products. What's the correct curl command to hit the shopper-search endpoint?", "should_trigger": false},
+  {"query": "How do I generate TypeScript types from an OpenAPI spec file I have locally?", "should_trigger": false}
+]

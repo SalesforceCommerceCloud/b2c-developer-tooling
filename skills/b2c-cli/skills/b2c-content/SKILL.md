@@ -1,6 +1,6 @@
 ---
 name: b2c-content
-description: Export and list Page Designer pages from B2C Commerce content libraries. Always reference when using the CLI to export or list Page Designer content, discover page IDs, or work with content library assets.
+description: Export and list Page Designer pages from B2C Commerce content libraries. Always reference when using the CLI to export or list Page Designer content, discover page IDs, or work with content library assets. Covers page designer JSON, content migration, library XML, content archive, site content, component export, and offline export.
 ---
 
 # B2C Content Skill
@@ -107,6 +107,14 @@ b2c content list --type page
 ### More Commands
 
 See `b2c content --help` for a full list of available commands and options in the `content` topic.
+
+## Troubleshooting
+
+- **"Library is required"** -- Set `--library` flag or configure `content-library` in `dw.json`.
+- **Authentication errors** -- OAuth credentials are required for remote operations. Run `b2c auth:login` first. The `--library-file` flag bypasses authentication for offline/local use.
+- **Library not found** -- Verify the library ID matches exactly. For site-private libraries, add `--site-library`.
+- **No content found** -- Check that the page/content IDs exist. Use `b2c content list` to discover available IDs.
+- **Timeout errors** -- Large libraries may exceed the default timeout. Use `--timeout <seconds>` to increase it.
 
 ## Related Skills
 

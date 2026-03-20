@@ -1,0 +1,7 @@
+[
+  {"query": "I need to sync inventory from our warehouse system to B2C Commerce using the Inventory IMPEX API. How do I do bulk imports with NDJSON format for 5000+ SKUs?", "should_trigger": true},
+  {"query": "How do I get an admin OAuth token from Account Manager to call SCAPI admin endpoints? I need the right scopes for updating products and reading orders.", "should_trigger": true},
+  {"query": "I'm building a backend integration to search customers and update promotions via SCAPI admin APIs. What scopes do I need and how do I handle rate limiting?", "should_trigger": true},
+  {"query": "How do I fetch product details from the Shopper Products API in my PWA storefront? I need to use the select parameter to reduce response size.", "should_trigger": false},
+  {"query": "I need to create an order from a basket using OrderMgr.createOrder in a B2C controller with proper Transaction.wrap handling.", "should_trigger": false}
+]

@@ -1,0 +1,7 @@
+[
+  {"query": "I need to create a new SFRA controller that handles GET requests to show a store locator page and POST requests to return JSON search results. How do I use server.get and server.post with middleware?", "should_trigger": true},
+  {"query": "How do I extend the existing Cart controller to append custom data to the Cart-Show route? I want to add loyalty points info to the view data without replacing the whole controller.", "should_trigger": true},
+  {"query": "I'm building a classic (non-SFRA) controller endpoint that returns JSON for an AJAX call. How do I use exports with .public = true and write JSON to the response?", "should_trigger": true},
+  {"query": "How do I generate a URL to the Product-Show endpoint in an ISML template? I need to pass the pid as a query parameter using URLUtils.", "should_trigger": false},
+  {"query": "I need to create a new CLI command in oclif that lists all the controllers deployed to a sandbox. What's the right way to add it to packages/b2c-cli?", "should_trigger": false}
+]

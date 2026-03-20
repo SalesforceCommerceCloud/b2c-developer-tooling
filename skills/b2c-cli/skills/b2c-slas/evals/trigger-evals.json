@@ -1,0 +1,7 @@
+[
+  {"query": "I need to create a SLAS client with a custom scope c_loyalty for testing my Custom API. How do I do that with the CLI?", "should_trigger": true},
+  {"query": "How do I get a shopper access token for my RefArch site? I want to use it to test SCAPI endpoints with curl.", "should_trigger": true},
+  {"query": "I need to update the scopes on my existing SLAS client and rotate the client secret. What are the commands?", "should_trigger": true},
+  {"query": "How do I get an admin API token to authenticate OCAPI requests from my CI pipeline?", "should_trigger": false},
+  {"query": "I need to create an API client in Account Manager for my B2C integration. What roles should it have?", "should_trigger": false}
+]

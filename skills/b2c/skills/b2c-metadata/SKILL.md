@@ -1,6 +1,6 @@
 ---
 name: b2c-metadata
-description: Work with B2C Commerce site metadata XML for custom attributes and object types. Use when defining custom attributes on products/orders/customers, creating custom object types, or setting site preferences via XML import. Covers system-objecttype-extensions.xml and custom-objecttype-definitions.xml.
+description: Work with B2C Commerce site metadata XML for custom attributes and object types. Use when defining custom attributes on products/orders/customers, creating custom object types, or setting site preferences via XML import. Covers site import, site archive, system object extensions, system-objecttype-extensions.xml, custom-objecttype-definitions.xml, Business Manager attributes, BM configuration, and data model definitions.
 ---
 
 # Metadata Skill

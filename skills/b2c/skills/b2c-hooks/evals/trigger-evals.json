@@ -1,0 +1,7 @@
+[
+  {"query": "How do I register a hook in hooks.json for dw.ocapi.shop.basket.afterPOST? My cart totals are wrong and I think the hook is returning a Status that skips the system implementation.", "should_trigger": true},
+  {"query": "I need to implement dw.order.calculate and dw.order.payment.authorize hooks. Where do I put the hooks.json file and how do I reference it from package.json?", "should_trigger": true},
+  {"query": "How do I create a custom extension point using HookMgr.callHook and pass data between afterPOST and modifyPOSTResponse using request.custom?", "should_trigger": true},
+  {"query": "How do I set up Git hooks for pre-commit linting in the b2c-cli project?", "should_trigger": false},
+  {"query": "I need to add a webhook endpoint that gets called when an order is placed so our external OMS gets notified.", "should_trigger": false}
+]

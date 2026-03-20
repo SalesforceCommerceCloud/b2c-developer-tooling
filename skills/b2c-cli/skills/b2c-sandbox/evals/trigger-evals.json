@@ -1,0 +1,7 @@
+[
+  {"query": "I need to spin up a new ODS sandbox in realm zzpq with a 4 hour TTL for testing. How do I create one?", "should_trigger": true},
+  {"query": "Can you list all my running sandboxes and then restart the one at zzzv-123? It seems stuck.", "should_trigger": true},
+  {"query": "How do I stop my B2C on-demand sandbox using the realm-instance format? The instance is zzpq-013.", "should_trigger": true},
+  {"query": "I need to configure my sandbox's OCAPI settings to allow a new client ID access to the Data API.", "should_trigger": false},
+  {"query": "How do I deploy my cartridge code to the sandbox instance at zzpq-013.dx.commercecloud.salesforce.com?", "should_trigger": false}
+]

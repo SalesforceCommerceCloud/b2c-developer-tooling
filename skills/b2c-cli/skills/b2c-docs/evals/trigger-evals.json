@@ -1,0 +1,7 @@
+[
+  {"query": "How do I look up the dw.order.Basket class methods? I need to know what's available for modifying basket line items.", "should_trigger": true},
+  {"query": "b2c docs search isn't finding anything for ProductMgr. Can you show me how to read the full Script API docs for that class?", "should_trigger": true},
+  {"query": "I need the XSD schema for the catalog import format. What fields are required for product import XML?", "should_trigger": true},
+  {"query": "How do I write API documentation for our new SDK module in the docs/ folder?", "should_trigger": false},
+  {"query": "I want to search for all usages of ProductMgr in our codebase cartridges to refactor them.", "should_trigger": false}
+]

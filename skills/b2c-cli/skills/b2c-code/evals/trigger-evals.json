@@ -1,0 +1,7 @@
+[
+  {"query": "How do I deploy only app_storefront_base and plugin_applepay cartridges to my sandbox? I want to delete existing cartridges first and reload the code version.", "should_trigger": true},
+  {"query": "I want to watch for file changes during development and auto-upload to my instance. How does b2c code watch work?", "should_trigger": true},
+  {"query": "How do I list all code versions on my instance and activate a specific one? I also need to delete an old code version.", "should_trigger": true},
+  {"query": "I need to upload a site import archive to the instance via WebDAV. What's the command for that?", "should_trigger": false},
+  {"query": "My ISML templates have a bug where isprint is encoding HTML. How do I fix the encoding attribute in my cartridge templates?", "should_trigger": false}
+]

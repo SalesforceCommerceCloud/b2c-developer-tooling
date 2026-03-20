@@ -1,0 +1,7 @@
+[
+  {"query": "I created a new Page Designer component but it doesn't show up in the editor. The JSON has enum attributes with value/display_value objects. What am I doing wrong?", "should_trigger": true},
+  {"query": "How do I set up a Page Designer page type with multiple regions? I need a hero region that only allows one component and a content region with no restrictions.", "should_trigger": true},
+  {"query": "My Page Designer component is in a subfolder under experience/components/assets/hero_image_block. What should the component type ID be and how do I wire up the Template() path in the JS script file?", "should_trigger": true},
+  {"query": "How do I export Page Designer pages from a content library using the b2c CLI? I want to get the JSON for my homepage.", "should_trigger": false},
+  {"query": "I need to add an isloop inside my ISML template to iterate over product tiles. How does the loopstate variable work with odd/even rows?", "should_trigger": false}
+]

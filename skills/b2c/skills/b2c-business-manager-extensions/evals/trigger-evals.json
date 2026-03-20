@@ -1,0 +1,7 @@
+[
+  {"query": "I need to add a custom menu item to Business Manager with a bm_extensions.xml file. How do I create a BM extension cartridge?", "should_trigger": true},
+  {"query": "How do I add a dialog action button to the order details page in Business Manager? I need to wire up an export button using xp-ref.", "should_trigger": true},
+  {"query": "I'm building a bm_ cartridge and need to create a menuaction that links to my controller. Can you show me the XML structure and how to set up permissions?", "should_trigger": true},
+  {"query": "How do I customize the storefront navigation menu to add a new category link in SFRA?", "should_trigger": false},
+  {"query": "I want to create an admin panel for managing products using a Custom API endpoint in headless commerce.", "should_trigger": false}
+]
