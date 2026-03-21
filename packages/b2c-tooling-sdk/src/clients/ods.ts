@@ -26,6 +26,29 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-re
 const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 
 /**
+ * HTTP header for ODS client-type usage tracking (aligned with API server `X-Client-Type`).
+ */
+export const CLIENT_TYPE_HEADER = 'X-Client-Type';
+
+/**
+ * Client type for requests from this SDK (B2C CLI, VS Code extension, and any `createOdsClient` caller).
+ * Sent as {@link CLIENT_TYPE_HEADER}: B2C-CLI.
+ */
+export const CLI_TYPE_VALUE = 'B2C-CLI';
+
+/**
+ * Middleware that adds {@link CLIENT_TYPE_HEADER}: {@link CLI_TYPE_VALUE} to each request.
+ * Used internally by {@link createOdsClient}; export is for advanced/testing use.
+ */
+export function createClientTypeMiddleware() {
+  return createExtraParamsMiddleware({
+    headers: {
+      [CLIENT_TYPE_HEADER]: CLI_TYPE_VALUE,
+    },
+  });
+}
+
+/**
  * Re-export generated types for external use.
  */
 export type {paths, components};
@@ -180,11 +203,12 @@ export function createOdsClient(config: OdsClientConfig, auth: AuthStrategy): Od
     baseUrl: `https://${host}/api/v1`,
   });
 
-  // Core middleware: extraParams → auth
+  // Core middleware: extraParams → auth → client type
   if (config.extraParams) {
     client.use(createExtraParamsMiddleware(config.extraParams));
   }
   client.use(createAuthMiddleware(auth));
+  client.use(createClientTypeMiddleware());
 
   // Plugin middleware from registry
   for (const middleware of registry.getMiddleware('ods')) {
