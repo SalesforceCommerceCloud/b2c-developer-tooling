@@ -65,7 +65,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     }),
   };
 
-  protected override loadConfiguration(): ResolvedB2CConfig {
+  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
     const options: LoadConfigOptions = {
       ...this.getBaseConfigOptions(),

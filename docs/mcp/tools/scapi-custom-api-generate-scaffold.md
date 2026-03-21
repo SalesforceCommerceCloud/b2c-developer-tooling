@@ -2,19 +2,19 @@
 description: Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge.
 ---
 
-# scapi_custom_api_scaffold
+# scapi_custom_api_generate_scaffold
 
 Generate a new custom SCAPI endpoint in an existing cartridge. Creates `schema.yaml` (OAS 3.0 contract), `api.json` (endpoint mapping), and `script.js` (implementation) under the cartridge's `rest-apis/<apiName>/` directory.
 
 ## Overview
 
-The `scapi_custom_api_scaffold` tool scaffolds a new custom API using the B2C tooling SDK's `custom-api` scaffold. It:
+The `scapi_custom_api_generate_scaffold` tool scaffolds a new custom API using the B2C tooling SDK's `custom-api` scaffold. It:
 
 - Creates an OpenAPI 3.0 schema, API manifest, and script stub in your project.
 - Uses the first cartridge found in the project if you don't specify one.
 - Supports **shopper** (siteId, customer-facing) or **admin** (no siteId) API types.
 
-**No instance or OAuth required** — this tool works locally and only writes files into your project. To check registration status after deployment, use [`scapi_custom_apis_status`](./scapi-custom-apis-status).
+**No instance or OAuth required** — this tool works locally and only writes files into your project. To check registration status after deployment, use [`scapi_custom_apis_get_status`](./scapi-custom-apis-get-status).
 
 ## Parameters
 
@@ -78,7 +78,7 @@ Returns the scaffold ID, output directory, and list of created files:
 1. **Edit** `schema.yaml` to define paths, request/response schemas, and operation IDs.
 2. **Edit** `script.js` to implement the endpoint logic.
 3. **Deploy** the cartridge to your instance and **activate** the code version to register the API.
-4. **Verify** with [`scapi_custom_apis_status`](./scapi-custom-apis-status) that endpoints show as `active`.
+4. **Verify** with [`scapi_custom_apis_get_status`](./scapi-custom-apis-get-status) that endpoints show as `active`.
 
 Shopper APIs are available at:
 `https://{shortCode}.api.commercecloud.salesforce.com/custom/{apiName}/v1/organizations/{organizationId}/...` and require the `siteId` query parameter and ShopperToken authentication.
@@ -86,7 +86,7 @@ Shopper APIs are available at:
 ## Related Tools
 
 - Part of the [SCAPI](../toolsets#scapi), [PWAV3](../toolsets#pwav3), and [STOREFRONTNEXT](../toolsets#storefrontnext) toolsets
-- [`scapi_custom_apis_status`](./scapi-custom-apis-status) — Check custom API endpoint registration status after deployment
+- [`scapi_custom_apis_get_status`](./scapi-custom-apis-get-status) — Check custom API endpoint registration status after deployment
 - [`scapi_schemas_list`](./scapi-schemas-list) — List or fetch custom API schemas (use `apiFamily: "custom"`)
 
 ## See Also

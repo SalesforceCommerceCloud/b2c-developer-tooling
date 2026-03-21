@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {stub, restore, type SinonStub} from 'sinon';
-import {createScapiCustomApisStatusTool} from '../../../src/tools/scapi/scapi-custom-apis-status.js';
+import {createScapiCustomApisStatusTool} from '../../../src/tools/scapi/scapi-custom-apis-get-status.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {CustomApisClient, CustomApisComponents} from '@salesforce/b2c-tooling-sdk/clients';
@@ -66,7 +66,7 @@ function createMockClientResponse(endpoints: CustomApiEndpoint[], activeCodeVers
   };
 }
 
-describe('tools/scapi/scapi-custom-apis-status', () => {
+describe('tools/scapi/scapi-custom-apis-get-status', () => {
   let services: Services;
   let mockGet: SinonStub;
 
@@ -93,11 +93,11 @@ describe('tools/scapi/scapi-custom-apis-status', () => {
   });
 
   describe('createScapiCustomApisStatusTool', () => {
-    it('should create scapi_custom_apis_status tool with correct metadata', () => {
+    it('should create scapi_custom_apis_get_status tool with correct metadata', () => {
       const tool = createScapiCustomApisStatusTool(() => services);
 
       expect(tool).to.exist;
-      expect(tool.name).to.equal('scapi_custom_apis_status');
+      expect(tool.name).to.equal('scapi_custom_apis_get_status');
       expect(tool.description).to.include('Custom');
       expect(tool.description).to.include('endpoint');
       expect(tool.description).to.include('Custom');

@@ -239,6 +239,55 @@ export function registerSandboxCommands(
     await vscode.env.openExternal(vscode.Uri.parse(`https://${node.sandbox.hostName}/on/demandware.store/Sites-Site`));
   });
 
+  const extendExpiration = vscode.commands.registerCommand(
+    'b2c-dx.sandbox.extendExpiration',
+    async (node: SandboxTreeItem) => {
+      if (!node) return;
+
+      const ttlStr = await vscode.window.showInputBox({
+        title: `Extend Expiration — ${node.label ?? node.sandbox.id}`,
+        prompt: 'Hours to add to sandbox lifetime (0 = infinite)',
+        value: '24',
+        validateInput: (v) => {
+          const n = Number(v);
+          if (Number.isNaN(n) || n < 0) return 'Enter a non-negative number';
+          return null;
+        },
+      });
+      if (ttlStr === undefined) return;
+      const ttl = Number(ttlStr);
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Extending expiration for sandbox ${node.sandbox.id}...`,
+        },
+        async () => {
+          try {
+            const odsClient = getOdsClientFromConfig(configProvider);
+            const result = await odsClient.PATCH('/sandboxes/{sandboxId}', {
+              params: {path: {sandboxId: node.sandbox.id}},
+              body: {ttl},
+            });
+            if (result.error) {
+              vscode.window.showErrorMessage(
+                `Failed to extend expiration: ${getApiErrorMessage(result.error, result.response)}`,
+              );
+              return;
+            }
+            const message =
+              ttl === 0 ? 'Sandbox expiration removed (infinite).' : `Sandbox expiration extended by ${ttl} hours.`;
+            vscode.window.showInformationMessage(message);
+            treeProvider.refreshRealm(node.realm);
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            vscode.window.showErrorMessage(`Failed to extend expiration: ${message}`);
+          }
+        },
+      );
+    },
+  );
+
   return [
     detailRegistration,
     refresh,
@@ -251,5 +300,6 @@ export function registerSandboxCommands(
     restart,
     viewDetails,
     openBM,
+    extendExpiration,
   ];
 }

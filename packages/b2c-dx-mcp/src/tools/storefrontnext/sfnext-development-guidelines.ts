@@ -103,10 +103,10 @@ const DEFAULT_SECTIONS: SectionKey[] = ['quick-reference', 'data-fetching', 'com
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-export function createDeveloperGuidelinesTool(loadServices: () => Services): McpTool {
+export function createDeveloperGuidelinesTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<DeveloperGuidelinesInput, string>(
     {
-      name: 'storefront_next_development_guidelines',
+      name: 'sfnext_get_guidelines',
       description:
         'ESSENTIAL FIRST STEP for Storefront Next development. Returns critical architecture rules, coding standards, and best practices. ' +
         'Use this tool FIRST before writing any Storefront Next code to understand non-negotiable patterns for React Server Components, ' +

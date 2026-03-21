@@ -107,8 +107,11 @@ b2c mrt env var set \
   PUBLIC__app__commerce__api__proxy=/mobify/proxy/api \
   PUBLIC__app__commerce__api__callback=/callback \
   PUBLIC__app__commerce__api__privateKeyEnabled=true \
-  COMMERCE_API_SLAS_SECRET=<SLAS_CLIENT_SECRET> \
   PUBLIC__app__defaultSiteId=<SITE_ID> \
+  PUBLIC__app__i18n__fallbackLng="en-US" \
+  PUBLIC__app__i18n__supportedLngs='["en-US"]' \
+  PUBLIC__app__commerce__sites='[{"id": "<SITE_ID>", "defaultLocale": "en-US", "defaultCurrency": "USD", "supportedLocales": [{"id": "en-US", "preferredCurrency": "USD"}], "supportedCurrencies": ["USD"]}]' \
+  COMMERCE_API_SLAS_SECRET=<SLAS_CLIENT_SECRET> \
   -p <PROJECT> -e <ENVIRONMENT>
 ```
 
@@ -123,8 +126,11 @@ b2c mrt env var set \
 | `PUBLIC__app__commerce__api__proxy` | Proxy path for API requests |
 | `PUBLIC__app__commerce__api__callback` | OAuth callback path |
 | `PUBLIC__app__commerce__api__privateKeyEnabled` | Must be `true` for private SLAS clients |
-| `COMMERCE_API_SLAS_SECRET` | SLAS client secret from Step 2 |
 | `PUBLIC__app__defaultSiteId` | Default site ID for the storefront |
+| `PUBLIC__app__i18n__fallbackLng` | Fallback locale (e.g., `en-US`) |
+| `PUBLIC__app__i18n__supportedLngs` | JSON array of supported locales (e.g., `["en-US"]`) |
+| `PUBLIC__app__commerce__sites` | JSON array of site configurations (see below) |
+| `COMMERCE_API_SLAS_SECRET` | SLAS client secret from Step 2 |
 
 Most of these values match what's in your project's `.env` file. The `privateKeyEnabled` variable must be set to `true` when using a private SLAS client.
 
@@ -132,9 +138,25 @@ Most of these values match what's in your project's `.env` file. The `privateKey
 The `COMMERCE_API_SLAS_SECRET` contains sensitive credentials. Treat it accordingly and avoid committing it to source control.
 :::
 
-::: tip
-If your project uses multiple sites, you can also set `PUBLIC__app__commerce__sites` with your sites configuration.
-:::
+### Multi-Site Configuration
+
+The `PUBLIC__app__commerce__sites` variable defines the sites, locales, and currencies for your storefront. Each site entry includes:
+
+```json
+[
+  {
+    "id": "SiteID",
+    "defaultLocale": "en-US",
+    "defaultCurrency": "USD",
+    "supportedLocales": [
+      { "id": "en-US", "preferredCurrency": "USD" }
+    ],
+    "supportedCurrencies": ["USD"]
+  }
+]
+```
+
+Add additional objects to the array for multi-site setups.
 
 ## Step 5: Deploy
 

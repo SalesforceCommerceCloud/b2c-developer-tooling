@@ -16,8 +16,8 @@
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createScapiSchemasListTool} from './scapi-schemas-list.js';
-import {createScapiCustomApisStatusTool} from './scapi-custom-apis-status.js';
-import {createScaffoldCustomApiTool} from './scapi-custom-api-scaffold.js';
+import {createScapiCustomApisStatusTool} from './scapi-custom-apis-get-status.js';
+import {createScaffoldCustomApiTool} from './scapi-custom-api-generate-scaffold.js';
 
 /**
  * Creates all tools for the SCAPI toolset.
@@ -25,7 +25,7 @@ import {createScaffoldCustomApiTool} from './scapi-custom-api-scaffold.js';
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createScapiTools(loadServices: () => Services): McpTool[] {
+export function createScapiTools(loadServices: () => Promise<Services> | Services): McpTool[] {
   return [
     createScapiSchemasListTool(loadServices),
     createScapiCustomApisStatusTool(loadServices),

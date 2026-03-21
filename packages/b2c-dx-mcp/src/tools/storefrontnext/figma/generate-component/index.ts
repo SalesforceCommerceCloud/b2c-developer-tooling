@@ -126,15 +126,15 @@ export function generateComponentRecommendation(input: GenerateComponentInput): 
 }
 
 /**
- * Creates the storefront_next_generate_component MCP tool.
+ * Creates the sfnext_analyze_component MCP tool.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns MCP tool for component analysis and recommendation
  */
-export function createGenerateComponentTool(loadServices: () => Services): McpTool {
+export function createGenerateComponentTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<GenerateComponentInput, string>(
     {
-      name: 'storefront_next_generate_component',
+      name: 'sfnext_analyze_component',
       description:
         'Analyzes Figma design and discovered components to recommend component generation strategy. ' +
         'Workflow: 1) Discover similar components using Glob/Grep/Read tools, ' +

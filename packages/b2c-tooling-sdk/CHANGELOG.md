@@ -1,5 +1,73 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.10.0
+
+### Minor Changes
+
+- [#167](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/167) [`caa568e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/caa568e9de3e8c9d3f2e7b17e5f96c1a0ae3ca73) - Introduces stateful authentication: `auth login` (browser/implicit), `auth logout`, `auth client` (client_credentials/password), `auth client renew`, and `auth client token`. Sessions are stored as a JSON file in the CLI data directory; when a valid session exists, all OAuth commands use it automatically without requiring credentials on every invocation. (Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)!)
+
+  **Note:** Sessions are not shared with `sfcc-ci`. Re-authenticate with `b2c auth login` or `b2c auth client` after upgrading. Existing stateless auth (env vars, `dw.json`) is unaffected.
+
+### Patch Changes
+
+- [`b30e427`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b30e427f25807840dbcceef6c0005e2d9fd1be53) - Add `--path` flag to `b2c docs schema` to print the filesystem path to a schema file instead of its content, enabling use with tools like `xmllint` for XML validation. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#272](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/272) [`e919e50`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e919e502a7a0a6102c4039d003da0d90ab3673dc) - Added sfcc-ci migration guide with command mappings and CI/CD migration instructions. Added backward-compatible sfcc-ci command aliases (`client:auth`, `code:deploy`, `code:list`, `code:activate`, `job:run`, etc.) and environment variable aliases (`SFCC_OAUTH_CLIENT_ID`, `SFCC_OAUTH_CLIENT_SECRET`, `SFCC_LOGIN_URL`). (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.9.0
+
+### Minor Changes
+
+- [#263](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/263) [`16bd9d6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/16bd9d6a1c658d6ba3de04fa3acf89295e1e5e06) - `resolveConfig()` and the `ConfigSource` interface are now async. This enables config sources that perform async I/O such as keychain lookups, credential vaults, or network-based config stores. (Thanks [@clavery](https://github.com/clavery)!)
+
+  **Breaking:** `resolveConfig()` now returns `Promise<ResolvedB2CConfig>` — callers must `await` the result. The `ConfigSource.load()` method return type is now `MaybePromise<ConfigLoadResult | undefined>`, so existing sync source implementations continue to work without changes.
+
+### Patch Changes
+
+- [`4cf7249`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4cf72497f5e01d627de7aae80290d072f4c914f6) - Add `cartridges` config option to specify which cartridges to deploy/watch. Supports comma or colon-separated strings, or arrays in dw.json. Also accepts `cartridgesPath` as an alias. The `-c` flag still takes precedence when provided. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#264](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/264) [`9996eba`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9996eba2a8fe53a27bf52fb208eb722d618cd282) - Fix multiple issues with the hook scaffold (#247): (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#262](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/262) [`d50bf6b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d50bf6b91dcd40314f10c8c97a28805039161213) - Replace @salesforce/telemetry with direct applicationinsights dependency to eliminate the punycode deprecation warning on Node 21+ (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.8.3
+
+### Patch Changes
+
+- [`760a6cb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/760a6cbe144ffcd7c72b32b05df861626d3d5a2c) - Strip `development` export conditions from package.json during publish. Fixes `MODULE_NOT_FOUND` errors when plugins or consumers install the SDK from npm, where the `src/` directory is not included. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.8.2
+
+### Patch Changes
+
+- [`d4423bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d4423bb218af3991396286b4900c3b051666e06b) - Add MRT environment variable support to EnvSource (`MRT_API_KEY`, `MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_CLOUD_ORIGIN` and their `SFCC_MRT_*` variants). The `setup inspect` command now shows values from SFCC\_\* environment variables as a config source. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`69a98dc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69a98dc21f3a326f551929fcd530741b9f0ca126) - Fix `--server` override dropping config from non-instance-bound sources. Previously, overriding the server hostname discarded all config values including credentials from global sources like config plugins. Now only values from the source that provided the conflicting hostname are dropped. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.8.1
+
+### Patch Changes
+
+- [#249](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/249) [`e790dfa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e790dfa8d5375fde7936ae4a10b2f3fd722ec087) - Add `--wait` flag to `sandbox clone create` command to poll until the clone completes, matching the behavior of `sandbox create --wait`. Also fixes the status check hint to display the correct command name instead of a raw template string. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.8.0
+
+### Minor Changes
+
+- [#244](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/244) [`b26ebeb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b26ebebd2b5dbff19689bdfadd5b9864597fbfb1) - Add API Browser with Swagger UI for interactive SCAPI exploration. Proxy requests through extension host to avoid CORS, pre-fill parameters and auth tokens, and expand custom properties in schemas. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.7.0
+
+### Minor Changes
+
+- [#241](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/241) [`3758114`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3758114c328fcfffc54fb32a935df23503fc0ba2) - Add `EnvSource` config source that maps `SFCC_*` environment variables to config fields (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#232](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/232) [`732d4ad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/732d4ad1e52dd1e0f0676cee87305464ccf4ca9e) - Add `slas token` command to retrieve SLAS shopper access tokens for API testing. Supports public (PKCE) and private (client_credentials) client flows, guest and registered customer authentication, and auto-discovery of public SLAS clients. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [`1b9b477`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b9b4773110a5d97bfe81d37a093158088d94cee) - Fix `b2c setup skills` serving stale cached skills when downloading latest release (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.6.0
 
 ### Minor Changes

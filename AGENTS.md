@@ -4,6 +4,7 @@ This is a monorepo project with the following packages:
 - `./packages/b2c-cli` - the command line interface built with oclif
 - `./packages/b2c-tooling-sdk` - the SDK/library for B2C Commerce operations; supports the CLI and can be used standalone
 - `./packages/b2c-dx-mcp` - Model Context Protocol server; also built with oclif
+- `./packages/b2c-vs-extension` - VS Code extension (not published to npm; packaged as VSIX and versioned via git tags)
 - `./docs` - documentation site (private `@salesforce/b2c-dx-docs` workspace package; not published to npm)
 
 ## Common Commands
@@ -37,7 +38,7 @@ pnpm run test:agent
 pnpm --filter @salesforce/b2c-cli run test:agent
 pnpm --filter @salesforce/b2c-tooling-sdk run test:agent
 
-# Lint (errors only, no warnings)
+# Lint (errors only, no warnings); Be sure to run lint before committing or writing a changeset
 pnpm run lint:agent
 
 # Type-check (single-line errors, no color)
@@ -160,6 +161,8 @@ This catches prettier formatting, import ordering, class member ordering (`perfe
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.
 
+**Stdout in tests**: Command tests must not leak output to the console. `stubCommandConfigAndLogger()` silences `command.log`, `command.logToStderr`, and `ux.stdout` automatically. For other cases, use `runSilent()` from `test/helpers/test-setup.ts`.
+
 ## Changesets
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management with **independent per-package versioning**. Each package versions independently based on its own changesets.
@@ -182,7 +185,7 @@ Changeset guidelines:
   - HOW a consumer should update their code
 - Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
-Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/b2c-dx-docs`
+Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`
 
 Create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 

@@ -44,6 +44,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   'secure-server': 'webdavHostname',
   secureHostname: 'webdavHostname',
   passphrase: 'certificatePassphrase',
+  cartridgesPath: 'cartridges',
   cloudOrigin: 'mrtOrigin',
   selfsigned: 'selfSigned',
   'oauth-scopes': 'oauthScopes',
@@ -103,6 +104,20 @@ export function normalizeConfigKeys(raw: Record<string, unknown>): Record<string
  * // { hostname: 'example.com', codeVersion: 'v1' }
  * ```
  */
+/**
+ * Parses a cartridges value that may be a colon-separated string,
+ * comma-separated string, or already an array.
+ */
+function parseCartridges(value: string | string[] | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) return value.length > 0 ? value : undefined;
+  const items = value
+    .split(/[,:]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
   return {
     hostname: json.hostname,
@@ -113,10 +128,14 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     clientId: json.clientId,
     clientSecret: json.clientSecret,
     scopes: json.oauthScopes,
+    slasClientId: json.slasClientId,
+    slasClientSecret: json.slasClientSecret,
+    siteId: json.siteId,
     shortCode: json.shortCode,
     tenantId: json.tenantId,
     sandboxApiHost: json.sandboxApiHost,
     realm: json.realm,
+    cartridges: parseCartridges(json.cartridges),
     contentLibrary: json.contentLibrary,
     cipHost: json.cipHost,
     instanceName: json.name,
@@ -180,6 +199,15 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.scopes !== undefined) {
     result.oauthScopes = config.scopes;
   }
+  if (config.slasClientId !== undefined) {
+    result.slasClientId = config.slasClientId;
+  }
+  if (config.slasClientSecret !== undefined) {
+    result.slasClientSecret = config.slasClientSecret;
+  }
+  if (config.siteId !== undefined) {
+    result.siteId = config.siteId;
+  }
   if (config.shortCode !== undefined) {
     result.shortCode = config.shortCode;
   }
@@ -191,6 +219,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.accountManagerHost !== undefined) {
     result.accountManagerHost = config.accountManagerHost;
+  }
+  if (config.cartridges !== undefined) {
+    result.cartridges = config.cartridges;
   }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
@@ -309,10 +340,14 @@ export function mergeConfigsWithProtection(
       clientId: overrides.clientId ?? base.clientId,
       clientSecret: overrides.clientSecret ?? base.clientSecret,
       scopes: overrides.scopes ?? base.scopes,
+      slasClientId: overrides.slasClientId ?? base.slasClientId,
+      slasClientSecret: overrides.slasClientSecret ?? base.slasClientSecret,
+      siteId: overrides.siteId ?? base.siteId,
       authMethods: overrides.authMethods ?? base.authMethods,
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
+      cartridges: overrides.cartridges ?? base.cartridges,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,

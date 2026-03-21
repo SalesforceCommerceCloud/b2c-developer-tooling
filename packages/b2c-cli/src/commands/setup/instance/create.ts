@@ -117,7 +117,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     }
 
     // Check if instance already exists
-    const existingInstances = source.listInstances({configPath: this.flags.config});
+    const existingInstances = await source.listInstances({configPath: this.flags.config});
     if (existingInstances.some((i) => i.name === name)) {
       this.error(`Instance "${name}" already exists. Use a different name.`);
     }
@@ -287,7 +287,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     }
 
     // Create the instance
-    source.createInstance({
+    await source.createInstance({
       name,
       config,
       setActive,

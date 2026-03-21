@@ -5,12 +5,12 @@
  */
 
 /**
- * SCAPI Custom API Scaffold tool.
+ * SCAPI Custom API Generate Scaffold tool.
  *
  * Generates a new custom SCAPI endpoint using the SDK's custom-api scaffold
  * (schema.yaml, api.json, script.js).
  *
- * @module tools/scapi/scapi-custom-api-scaffold
+ * @module tools/scapi/scapi-custom-api-generate-scaffold
  */
 
 import {z} from 'zod';
@@ -35,7 +35,7 @@ export interface ScaffoldCustomApiExecuteOverrides {
 }
 
 /**
- * Input schema for scapi_custom_api_scaffold tool.
+ * Input schema for scapi_custom_api_generate_scaffold tool.
  * Parameters match the custom-api scaffold: apiName, apiType, cartridgeName, etc.
  */
 interface ScaffoldCustomApiInput {
@@ -54,7 +54,7 @@ interface ScaffoldCustomApiInput {
 }
 
 /**
- * Output schema for scapi_custom_api_scaffold tool.
+ * Output schema for scapi_custom_api_generate_scaffold tool.
  */
 interface ScaffoldCustomApiOutput {
   scaffold: string;
@@ -190,7 +190,7 @@ export async function executeScaffoldCustomApi(
 }
 
 /**
- * Creates the scapi_custom_api_scaffold tool.
+ * Creates the scapi_custom_api_generate_scaffold tool.
  *
  * Uses @salesforce/b2c-tooling-sdk scaffold: registry, resolveScaffoldParameters,
  * resolveOutputDirectory, generateFromScaffold. cartridgeName must be a cartridge
@@ -200,12 +200,12 @@ export async function executeScaffoldCustomApi(
  * @param executeOverrides - Optional overrides for testing (getScaffold, resolveScaffoldParameters).
  */
 export function createScaffoldCustomApiTool(
-  loadServices: () => Services,
+  loadServices: () => Promise<Services> | Services,
   executeOverrides?: ScaffoldCustomApiExecuteOverrides,
 ): McpTool {
   return createToolAdapter<ScaffoldCustomApiInput, ScaffoldCustomApiOutput>(
     {
-      name: 'scapi_custom_api_scaffold',
+      name: 'scapi_custom_api_generate_scaffold',
       description: `Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. \
 Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin) default to shopper, \
 apiDescription, projectRoot, outputDir.`,

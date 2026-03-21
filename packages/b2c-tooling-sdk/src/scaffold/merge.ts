@@ -52,7 +52,7 @@ function navigateToPath(obj: unknown, path: string): [Record<string, unknown> | 
  * @param path - Dot-separated path to create
  * @returns The parent object of the final key
  */
-function createPath(obj: Record<string, unknown>, path: string): [Record<string, unknown>, string] {
+export function createPath(obj: Record<string, unknown>, path: string): [Record<string, unknown>, string] {
   const parts = path.split('.');
   const finalKey = parts.pop()!;
   let current = obj;
@@ -113,10 +113,20 @@ export function mergeJson(
   newContent: string | Record<string, unknown>,
   options: JsonMergeOptions = {},
 ): string {
-  const existing = JSON.parse(existingJson);
+  let existing = JSON.parse(existingJson);
   const content = typeof newContent === 'string' ? JSON.parse(newContent) : newContent;
 
   if (options.jsonPath) {
+    // If existing content is a bare array but we expected an object with jsonPath,
+    // wrap it in the expected structure so the merge works correctly.
+    // This handles files that were previously created without the jsonPath wrapper.
+    if (Array.isArray(existing)) {
+      const wrapper: Record<string, unknown> = {};
+      const [newParent, newKey] = createPath(wrapper, options.jsonPath);
+      newParent[newKey] = existing;
+      existing = wrapper;
+    }
+
     const [parent, key, found] = navigateToPath(existing, options.jsonPath);
 
     if (!found) {

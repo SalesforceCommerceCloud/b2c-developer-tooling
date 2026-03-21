@@ -50,12 +50,12 @@ export class InstanceManager {
    * @param options - Resolution options
    * @returns Array of all instances from all sources
    */
-  listAllInstances(options?: ResolveConfigOptions): InstanceInfo[] {
+  async listAllInstances(options?: ResolveConfigOptions): Promise<InstanceInfo[]> {
     const allInstances: InstanceInfo[] = [];
 
     for (const source of this.sources) {
       if (source.listInstances) {
-        const instances = source.listInstances(options);
+        const instances = await source.listInstances(options);
         allInstances.push(...instances);
       }
     }
@@ -89,7 +89,7 @@ export class InstanceManager {
    * @param targetSource - Source name to use (optional, defaults to first available)
    * @throws Error if no instance sources available or specified source not found
    */
-  createInstance(options: CreateInstanceOptions & ResolveConfigOptions, targetSource?: string): void {
+  async createInstance(options: CreateInstanceOptions & ResolveConfigOptions, targetSource?: string): Promise<void> {
     const instanceSources = this.getInstanceSources();
 
     if (instanceSources.length === 0) {
@@ -108,7 +108,7 @@ export class InstanceManager {
       source = instanceSources[0];
     }
 
-    source.createInstance!(options);
+    await source.createInstance!(options);
   }
 
   /**
@@ -118,13 +118,13 @@ export class InstanceManager {
    * @param options - Resolution options
    * @throws Error if instance not found in any source
    */
-  removeInstance(name: string, options?: ResolveConfigOptions): void {
+  async removeInstance(name: string, options?: ResolveConfigOptions): Promise<void> {
     // Find the source that has this instance
     for (const source of this.sources) {
       if (source.listInstances && source.removeInstance) {
-        const instances = source.listInstances(options);
+        const instances = await source.listInstances(options);
         if (instances.some((i) => i.name === name)) {
-          source.removeInstance(name, options);
+          await source.removeInstance(name, options);
           return;
         }
       }
@@ -140,13 +140,13 @@ export class InstanceManager {
    * @param options - Resolution options
    * @throws Error if instance not found in any source
    */
-  setActiveInstance(name: string, options?: ResolveConfigOptions): void {
+  async setActiveInstance(name: string, options?: ResolveConfigOptions): Promise<void> {
     // Find the source that has this instance
     for (const source of this.sources) {
       if (source.listInstances && source.setActiveInstance) {
-        const instances = source.listInstances(options);
+        const instances = await source.listInstances(options);
         if (instances.some((i) => i.name === name)) {
-          source.setActiveInstance(name, options);
+          await source.setActiveInstance(name, options);
           return;
         }
       }
@@ -165,13 +165,13 @@ export class InstanceManager {
    * @param options - Resolution options
    * @throws Error if no credential sources support the field
    */
-  storeCredential(
+  async storeCredential(
     instanceName: string,
     field: keyof NormalizedConfig,
     value: string,
     targetSource?: string,
     options?: ResolveConfigOptions,
-  ): void {
+  ): Promise<void> {
     const credentialSources = this.getCredentialSources(field);
 
     if (credentialSources.length === 0) {
@@ -189,7 +189,7 @@ export class InstanceManager {
       source = credentialSources[0];
     }
 
-    source.storeCredential!(instanceName, field, value, options);
+    await source.storeCredential!(instanceName, field, value, options);
   }
 }
 

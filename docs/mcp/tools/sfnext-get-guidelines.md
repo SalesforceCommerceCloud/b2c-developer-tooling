@@ -2,7 +2,7 @@
 description: Get Storefront Next development guidelines and best practices for React Server Components, data loading, and framework constraints.
 ---
 
-# storefront_next_development_guidelines
+# sfnext_get_guidelines
 
 Returns critical architecture rules, coding standards, and best practices for building Storefront Next applications with React Server Components.
 
@@ -10,7 +10,7 @@ Returns critical architecture rules, coding standards, and best practices for bu
 
 ## Overview
 
-The `storefront_next_development_guidelines` tool provides essential development guidance for Storefront Next. It:
+The `sfnext_get_guidelines` tool provides essential development guidance for Storefront Next. It:
 
 1. Returns comprehensive guidelines by default (quick-reference plus key sections).
 2. Supports retrieving specific topic sections on demand.
@@ -98,7 +98,7 @@ The returned content includes:
 
 - Part of the [STOREFRONTNEXT](../toolsets#storefrontnext) toolset
 - Auto-enabled for Storefront Next projects
-- [`storefront_next_page_designer_decorator`](./storefront-next-page-designer-decorator) - Add Page Designer decorators to components
+- [`sfnext_add_page_designer_decorator`](./sfnext-add-page-designer-decorator) - Add Page Designer decorators to components
 
 ## See Also
 

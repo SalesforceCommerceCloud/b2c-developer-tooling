@@ -252,15 +252,15 @@ export function mapFigmaTokensToTheme(args: MapTokensToThemeInput, workspaceRoot
 }
 
 /**
- * Creates the storefront_next_map_tokens_to_theme MCP tool.
+ * Creates the sfnext_match_tokens_to_theme MCP tool.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns MCP tool for token mapping
  */
-export function createMapTokensToThemeTool(loadServices: () => Services): McpTool {
+export function createMapTokensToThemeTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<MapTokensToThemeInput, string>(
     {
-      name: 'storefront_next_map_tokens_to_theme',
+      name: 'sfnext_match_tokens_to_theme',
       description:
         'Maps Figma design tokens to existing StorefrontNext theme tokens in app.css. ' +
         'Analyzes Figma design tokens (colors, spacing, radius, etc.) and finds exact matches, ' +

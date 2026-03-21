@@ -49,6 +49,103 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 ---
 
+## b2c slas token
+
+Get a SLAS shopper access token for testing APIs.
+
+### Usage
+
+```bash
+b2c slas token --tenant-id <TENANT_ID> --site-id <SITE_ID>
+```
+
+### Flags
+
+| Flag | Environment Variable | Description | Required |
+|------|---------------------|-------------|----------|
+| `--tenant-id` | `SFCC_TENANT_ID` | SLAS tenant ID (organization ID) | Yes |
+| `--site-id` | `SFCC_SITE_ID` | Site/channel ID | Yes* |
+| `--slas-client-id` | `SFCC_SLAS_CLIENT_ID` | SLAS client ID (auto-discovered if omitted) | No |
+| `--slas-client-secret` | `SFCC_SLAS_CLIENT_SECRET` | SLAS client secret (omit for public clients) | No |
+| `--short-code` | `SFCC_SHORTCODE` | SCAPI short code | Yes |
+| `--redirect-uri` | | Redirect URI | No |
+| `--shopper-login` | | Registered customer login | No |
+| `--shopper-password` | | Registered customer password (prompted interactively if omitted) | No |
+
+\* `--site-id` can be auto-discovered from the SLAS client configuration when using auto-discovery.
+
+### Flows
+
+The command automatically selects the appropriate authentication flow:
+
+| Scenario | Flow |
+|----------|------|
+| No `--slas-client-secret` | Public client PKCE (authorization_code_pkce) |
+| With `--slas-client-secret` | Private client (client_credentials) |
+| With `--shopper-login` | Registered customer login |
+| No `--slas-client-id` | Auto-discovers first public client via SLAS Admin API |
+
+### Examples
+
+```bash
+# Guest token with auto-discovery (finds first public SLAS client)
+b2c slas token --tenant-id abcd_123 --site-id RefArch
+
+# Guest token with explicit public client (PKCE flow)
+b2c slas token --slas-client-id my-client \
+  --tenant-id abcd_123 --short-code kv7kzm78 --site-id RefArch
+
+# Guest token with private client (client_credentials flow)
+b2c slas token --slas-client-id my-client --slas-client-secret sk_xxx \
+  --tenant-id abcd_123 --short-code kv7kzm78 --site-id RefArch
+
+# Registered customer token
+b2c slas token --tenant-id abcd_123 --site-id RefArch \
+  --shopper-login user@example.com --shopper-password secret
+
+# JSON output (includes refresh token, expiry, usid, etc.)
+b2c slas token --tenant-id abcd_123 --site-id RefArch --json
+
+# Use token in a subsequent API call
+TOKEN=$(b2c slas token --tenant-id abcd_123 --site-id RefArch)
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://kv7kzm78.api.commercecloud.salesforce.com/..."
+```
+
+### Output
+
+- **Normal mode**: prints the raw access token to stdout (pipeable)
+- **JSON mode** (`--json`): returns full token details:
+
+```json
+{
+  "accessToken": "...",
+  "refreshToken": "...",
+  "expiresIn": 1800,
+  "tokenType": "Bearer",
+  "usid": "...",
+  "customerId": "...",
+  "clientId": "...",
+  "siteId": "RefArch",
+  "isGuest": true
+}
+```
+
+### Configuration
+
+These values can also be set in `dw.json`:
+
+```json
+{
+  "tenant-id": "abcd_123",
+  "short-code": "kv7kzm78",
+  "slas-client-id": "my-public-client",
+  "site-id": "RefArch"
+}
+```
+
+---
+
 ## b2c slas client list
 
 List SLAS clients for a tenant.

@@ -2,7 +2,7 @@
 description: Workflow orchestrator for Figma-to-component conversion. Parses your Figma URL and guides you through design-to-component conversion.
 ---
 
-# storefront_next_figma_to_component_workflow
+# sfnext_start_figma_workflow
 
 Workflow orchestrator for converting Figma designs to Storefront Next components. Provide a Figma design URL to start the workflow, which extracts design data, analyzes your codebase, and produces component recommendations.
 
@@ -47,15 +47,6 @@ The parser supports these URL formats:
 
 The `node-id` parameter accepts hyphen format (`1-2`) or colon format (`1:2`). The parser converts hyphens to colons for Figma MCP compatibility.
 
-## Output
-
-The workflow returns a guide with extracted Figma parameters (`fileKey`, `nodeId`, and original URL). After the full workflow completes, you receive a component recommendation (REUSE/EXTEND/CREATE) with confidence score and a token mapping summary.
-
-**Example prompts:**
-- ✅ "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
-- ✅ "Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design."
-- ✅ "Use the MCP tool to start the Figma-to-component workflow with a custom workflow file at /path/to/custom-workflow.md"
-
 ## Usage Examples
 
 ### Basic Workflow Start
@@ -78,11 +69,14 @@ Create a homepage from a Figma design, creating or updating components as needed
 Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]. Create new components or update existing components using the MCP tool if necessary, then update the home page. The expected result should be that the homepage matches as closely as possible to the provided Figma design.
 ```
 
+## Output
+
+The workflow returns a guide with extracted Figma parameters (`fileKey`, `nodeId`, and original URL). After the full workflow completes, you receive a component recommendation (REUSE/EXTEND/CREATE) with confidence score and a token mapping summary.
 
 ## Related Tools
 
-- [`storefront_next_generate_component`](./storefront-next-generate-component) - Analyzes design and discovered components; recommends REUSE/EXTEND/CREATE
-- [`storefront_next_map_tokens_to_theme`](./storefront-next-map-tokens-to-theme) - Maps Figma design tokens to theme variables
+- [`sfnext_analyze_component`](./sfnext-analyze-component) - Analyzes design and discovered components; recommends REUSE/EXTEND/CREATE
+- [`sfnext_match_tokens_to_theme`](./sfnext-match-tokens-to-theme) - Matches design tokens to theme variables
 - Part of the [STOREFRONTNEXT](../toolsets#storefrontnext) toolset
 - Auto-enabled for Storefront Next projects
 

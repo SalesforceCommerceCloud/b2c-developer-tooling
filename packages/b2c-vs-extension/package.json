@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.0.10",
+  "version": "0.2.5",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -25,7 +25,7 @@
     "onCommand:b2c-dx.openUI",
     "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
-    "onCommand:b2c-dx.scapiExplorer",
+    "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
     "onCommand:b2c-dx.scaffold.generate"
   ],
@@ -58,6 +58,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable scaffold generation commands."
+        },
+        "b2c-dx.features.apiBrowser": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the API Browser for exploring SCAPI schemas."
         },
         "b2c-dx.logLevel": {
           "type": "string",
@@ -114,6 +119,12 @@
           "name": "Libraries",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        },
+        {
+          "id": "b2cApiBrowser",
+          "name": "API Browser",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX"
         }
       ],
       "b2c-dx-sandboxes": [
@@ -132,6 +143,10 @@
       {
         "view": "b2cContentExplorer",
         "contents": "No content libraries configured.\n\nSet \"contentLibrary\" in dw.json or add a library manually.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
+      },
+      {
+        "view": "b2cApiBrowser",
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (clientId, clientSecret) and shortCode in dw.json.\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
@@ -155,9 +170,15 @@
         "category": "B2C DX"
       },
       {
-        "command": "b2c-dx.scapiExplorer",
-        "title": "SCAPI API Explorer",
-        "category": "B2C DX"
+        "command": "b2c-dx.apiBrowser.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.apiBrowser.openSwagger",
+        "title": "Open API Documentation",
+        "category": "B2C DX - API Browser"
       },
       {
         "command": "b2c-dx.sandbox.refresh",
@@ -217,6 +238,12 @@
         "command": "b2c-dx.sandbox.openBM",
         "title": "Open Business Manager",
         "icon": "$(link-external)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.extendExpiration",
+        "title": "Extend Expiration",
+        "icon": "$(clock)",
         "category": "B2C DX - Sandboxes"
       },
       {
@@ -348,6 +375,16 @@
         "title": "New from Scaffold...",
         "icon": "$(file-code)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.setProjectRoot",
+        "title": "Use as B2C Commerce Root",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.resetProjectRoot",
+        "title": "Reset B2C Commerce Root to Auto-Detect",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -375,6 +412,11 @@
         {
           "command": "b2c-dx.content.clearFilter",
           "when": "view == b2cContentExplorer && b2cContentFilterActive",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.apiBrowser.refresh",
+          "when": "view == b2cApiBrowser",
           "group": "navigation"
         },
         {
@@ -480,6 +522,11 @@
           "group": "2_lifecycle@3"
         },
         {
+          "command": "b2c-dx.sandbox.extendExpiration",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "group": "2_lifecycle@4"
+        },
+        {
           "command": "b2c-dx.sandbox.delete",
           "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
           "group": "3_destructive@1"
@@ -502,6 +549,11 @@
           "submenu": "b2c-dx.submenu",
           "when": "explorerResourceIsFolder",
           "group": "7_modification@9"
+        },
+        {
+          "command": "b2c-dx.setProjectRoot",
+          "when": "explorerResourceIsRoot && workspaceFolderCount > 1",
+          "group": "7_modification@10"
         }
       ],
       "b2c-dx.submenu": [
@@ -517,6 +569,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "b2c-dx.apiBrowser.openSwagger",
+          "when": "false"
+        },
         {
           "command": "b2c-dx.sandbox.removeRealm",
           "when": "false"
@@ -543,6 +599,10 @@
         },
         {
           "command": "b2c-dx.sandbox.openBM",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.extendExpiration",
           "when": "false"
         },
         {
@@ -592,6 +652,10 @@
         {
           "command": "b2c-dx.content.clearFilter",
           "when": "false"
+        },
+        {
+          "command": "b2c-dx.setProjectRoot",
+          "when": "false"
         }
       ]
     }
@@ -620,6 +684,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.24.0",
+    "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",

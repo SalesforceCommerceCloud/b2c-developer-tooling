@@ -59,6 +59,9 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
   };
 
   async run(): Promise<{fromPath: string; deleted: boolean}> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete redirect');
+
     this.requireMrtCredentials();
 
     const {fromPath} = this.args;

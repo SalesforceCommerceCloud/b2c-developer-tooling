@@ -39,7 +39,7 @@ describe('tools/storefrontnext/sfnext-development-guidelines', () => {
   describe('tool metadata', () => {
     it('should have correct tool name', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      expect(tool.name).to.equal('storefront_next_development_guidelines');
+      expect(tool.name).to.equal('sfnext_get_guidelines');
     });
 
     it('should have concise, action-oriented description', () => {

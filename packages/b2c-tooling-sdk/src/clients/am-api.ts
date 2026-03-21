@@ -1056,7 +1056,13 @@ export function createAccountManagerOrgsClient(
       {
         method: processedRequest.method,
         url: processedRequest.url,
-        headers: Object.fromEntries(processedRequest.headers.entries()),
+        headers: (() => {
+          const o: Record<string, string> = {};
+          processedRequest.headers.forEach((value, key) => {
+            o[key] = value;
+          });
+          return o;
+        })(),
       },
       '[AM-ORGS] Request details',
     );

@@ -15,6 +15,8 @@ import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
+  static hiddenAliases = ['code:deploy'];
+
   static args = {
     ...CartridgeCommand.baseArgs,
   };
@@ -134,9 +136,8 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.error(t('commands.code.deploy.noCartridges', 'No cartridges found in {{path}}', {path: this.cartridgePath}));
     }
 
-    this.logger?.info(
-      {path: this.cartridgePath, server: hostname, codeVersion: version},
-      t('commands.code.deploy.deploying', 'Deploying {{path}} to {{hostname}} ({{version}})', {
+    this.log(
+      t('commands.code.deploy.deploying', 'Deploying {{path}} to {{hostname}} ({{version}})...', {
         path: this.cartridgePath,
         hostname,
         version,
@@ -145,12 +146,13 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
 
     // Log found cartridges
     for (const c of cartridges) {
-      this.logger?.debug({cartridgeName: c.name, path: c.src}, `  ${c.name}`);
+      this.log(`  ${c.name} (${c.src})`);
     }
 
     try {
       // Optionally delete existing cartridges first
       if (this.flags.delete) {
+        this.log(t('commands.code.deploy.deleting', 'Deleting existing cartridges...'));
         await this.operations.deleteCartridges(this.instance, cartridges);
       }
 
@@ -174,12 +176,15 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         reloaded,
       };
 
-      this.logger?.info(
-        {codeVersion: result.codeVersion, cartridgeCount: result.cartridges.length},
-        t('commands.code.deploy.summary', 'Deployed {{count}} cartridge(s) to {{codeVersion}}', {
-          count: result.cartridges.length,
-          codeVersion: result.codeVersion,
-        }),
+      this.log(
+        t(
+          'commands.code.deploy.summary',
+          'Deployed {{count}} cartridge(s) to version "{{codeVersion}}" successfully!',
+          {
+            count: result.cartridges.length,
+            codeVersion: result.codeVersion,
+          },
+        ),
       );
 
       if (result.reloaded) {

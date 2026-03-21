@@ -79,7 +79,7 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Complete tool registry
  */
-export function createToolRegistry(loadServices: () => Services): ToolRegistry {
+export function createToolRegistry(loadServices: () => Promise<Services> | Services): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
     MRT: [],
@@ -126,7 +126,7 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
     logger.warn(
       {cwd: projectDirectory},
       'No --project-directory flag or SFCC_PROJECT_DIRECTORY env var provided. ' +
-        'MCP clients like Cursor and Claude Desktop often spawn servers from ~ instead of the project directory. ' +
+        'MCP clients like Cursor and Claude Code often spawn servers from ~ instead of the project directory. ' +
         'Set --project-directory or SFCC_PROJECT_DIRECTORY for reliable auto-discovery.',
     );
   }
@@ -172,7 +172,7 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
 export async function registerToolsets(
   flags: StartupFlags,
   server: B2CDxMcpServer,
-  loadServices: () => Services,
+  loadServices: () => Promise<Services> | Services,
 ): Promise<void> {
   const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];

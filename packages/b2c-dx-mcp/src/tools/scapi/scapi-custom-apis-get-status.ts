@@ -10,7 +10,7 @@
  * Mirrors CLI: b2c scapi custom status. All CLI flags are supported; let the agent decide what to use.
  * Returns raw endpoints from the API (no roll-up). Remote only.
  *
- * @module tools/scapi/scapi-custom-apis-status
+ * @module tools/scapi/scapi-custom-apis-get-status
  */
 
 import {z} from 'zod';
@@ -94,7 +94,7 @@ function buildResponse(
 }
 
 /**
- * Input schema for scapi_custom_apis_status tool.
+ * Input schema for scapi_custom_apis_get_status tool.
  * Mirrors b2c scapi custom status (--status, --group-by, --columns).
  * Use columns parameter to request all fields or specific fields.
  */
@@ -108,7 +108,7 @@ interface CustomListInput {
 }
 
 /**
- * Output schema for scapi_custom_apis_status tool.
+ * Output schema for scapi_custom_apis_get_status tool.
  */
 interface CustomListOutput {
   /** Raw endpoints (one per site). When groupBy is set, use "groups" instead. */
@@ -123,15 +123,15 @@ interface CustomListOutput {
 }
 
 /**
- * Creates the scapi_custom_apis_status tool.
+ * Creates the scapi_custom_apis_get_status tool.
  *
  * Mirrors CLI: b2c scapi custom status. All flags supported; agent chooses what to use.
  * See: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.html#b2c-scapi-custom-status
  */
-export function createScapiCustomApisStatusTool(loadServices: () => Services): McpTool {
+export function createScapiCustomApisStatusTool(loadServices: () => Promise<Services> | Services): McpTool {
   return createToolAdapter<CustomListInput, CustomListOutput>(
     {
-      name: 'scapi_custom_apis_status',
+      name: 'scapi_custom_apis_get_status',
       description: `List Custom SCAPI endpoint registration status (active/not_registered). Returns one row per endpoint per site. For schemas, use scapi_schemas_list with apiFamily: "custom".
 
 Use cases: Check endpoint status, verify deployment, get per-site details. Use status: "active" to filter, groupBy: "site" to group, columns: "field1,field2" for specific fields, or omit columns for defaults.

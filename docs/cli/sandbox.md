@@ -12,7 +12,7 @@ These commands were previously available as `b2c ods <command>`. The `ods` prefi
 
 ## Sandbox ID Formats
 
-Commands that operate on a specific sandbox (`get`, `start`, `stop`, `restart`, `delete`) accept two ID formats:
+Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`) accept two ID formats:
 
 | Format | Example | Description |
 |--------|---------|-------------|
@@ -481,6 +481,68 @@ b2c sandbox reset zzzv-123 --json
 
 ---
 
+## b2c sandbox update
+
+Update a sandbox's TTL, scheduling, tags, or notification emails.
+
+### Usage
+
+```bash
+b2c sandbox update <SANDBOXID> [FLAGS]
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--ttl` | Number of hours to add to sandbox lifetime (0 or less for infinite). Must adhere to the maximum TTL configuration together with previous extensions. |
+| `--auto-scheduled` / `--no-auto-scheduled` | Enable or disable automatic start/stop scheduling |
+| `--tags` | Comma-separated list of tags |
+| `--emails` | Comma-separated list of notification email addresses |
+
+At least one flag is required.
+
+### Examples
+
+```bash
+# Extend sandbox lifetime by 48 hours
+b2c sandbox update zzzv-123 --ttl 48
+
+# Set infinite lifetime
+b2c sandbox update zzzv-123 --ttl 0
+
+# Enable auto-scheduling
+b2c sandbox update zzzv-123 --auto-scheduled
+
+# Disable auto-scheduling
+b2c sandbox update zzzv-123 --no-auto-scheduled
+
+# Set tags
+b2c sandbox update zzzv-123 --tags ci,nightly
+
+# Set notification emails
+b2c sandbox update zzzv-123 --emails dev@example.com,qa@example.com
+
+# Combine multiple updates
+b2c sandbox update zzzv-123 --ttl 48 --tags ci,nightly
+
+# Output as JSON
+b2c sandbox update zzzv-123 --ttl 48 --json
+```
+
+### Notes
+
+- The `--ttl` value is added to the existing sandbox lifetime, not an absolute value. Together with previous extensions, it must adhere to the realm's maximum TTL configuration.
+- Setting `--ttl` to 0 or less gives the sandbox an infinite lifetime (subject to realm configuration).
+
+---
+
 ## b2c sandbox usage
 
 Show usage information for a specific sandbox over a date range.
@@ -537,9 +599,9 @@ Sandbox aliases let you access a sandbox via a custom hostname instead of the de
 
 Alias commands are available both under the `sandbox` topic and the legacy `ods` aliases:
 
-- `b2c sandbox alias create` (`b2c ods alias:create`)
-- `b2c sandbox alias list` (`b2c ods alias:list`)
-- `b2c sandbox alias delete` (`b2c ods alias:delete`)
+- `b2c sandbox alias create`
+- `b2c sandbox alias list`
+- `b2c sandbox alias delete`
 
 ### b2c sandbox alias create
 
@@ -683,9 +745,9 @@ Each cloned sandbox is fully isolated, with dedicated compute, storage, and data
 
 Clone commands are available both under the `sandbox` topic and the legacy `ods` aliases:
 
-- `b2c sandbox clone list` (`b2c ods clone:list`)
-- `b2c sandbox clone create` (`b2c ods clone:create`)
-- `b2c sandbox clone get` (`b2c ods clone:get`)
+- `b2c sandbox clone list`
+- `b2c sandbox clone create`
+- `b2c sandbox clone get`
 
 ### Clone ID Format
 

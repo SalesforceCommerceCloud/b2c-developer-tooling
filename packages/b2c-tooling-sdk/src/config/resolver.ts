@@ -39,6 +39,7 @@ import {globalConfigSourceRegistry} from './config-source-registry.js';
 const CREDENTIAL_GROUPS: (keyof NormalizedConfig)[][] = [
   ['clientId', 'clientSecret'],
   ['username', 'password'],
+  ['slasClientId', 'slasClientSecret'],
 ];
 
 /**
@@ -157,10 +158,14 @@ export class ConfigResolver {
    * }
    * ```
    */
-  resolve(overrides: Partial<NormalizedConfig> = {}, options: ResolveConfigOptions = {}): ConfigResolutionResult {
+  async resolve(
+    overrides: Partial<NormalizedConfig> = {},
+    options: ResolveConfigOptions = {},
+  ): Promise<ConfigResolutionResult> {
     const sourceInfos: ConfigSourceInfo[] = [];
     const sourceWarnings: ConfigWarning[] = [];
     const baseConfig: NormalizedConfig = {};
+    const hostnameProtection = options.hostnameProtection !== false;
 
     // Create enriched options that will be updated with accumulated config values.
     // This allows later sources (like plugins) to use values discovered by earlier sources (like dw.json).
@@ -172,7 +177,7 @@ export class ConfigResolver {
     for (const source of this.sources) {
       let result: ConfigLoadResult | undefined;
       try {
-        result = source.load(enrichedOptions);
+        result = await source.load(enrichedOptions);
       } catch (error) {
         // Source threw an error (e.g., malformed config file) - create warning and continue
         const message = error instanceof Error ? error.message : String(error);
@@ -187,6 +192,44 @@ export class ConfigResolver {
         const {config: sourceConfig, location} = result;
         const fields = getPopulatedFields(sourceConfig);
         if (fields.length > 0) {
+          // Early hostname mismatch detection: if this source provides a hostname
+          // that conflicts with the override, skip this source entirely.
+          // This prevents instance-bound sources from blocking fields in later
+          // non-instance-bound sources (e.g., password-store providing shortCode).
+          if (
+            hostnameProtection &&
+            overrides.hostname &&
+            sourceConfig.hostname &&
+            sourceConfig.hostname !== overrides.hostname
+          ) {
+            sourceWarnings.push({
+              code: 'HOSTNAME_MISMATCH',
+              message: `Server override "${overrides.hostname}" differs from config file "${sourceConfig.hostname}". Config file values ignored.`,
+              details: {
+                providedHostname: overrides.hostname,
+                configHostname: sourceConfig.hostname,
+              },
+            });
+
+            sourceInfos.push({
+              name: source.name,
+              location,
+              fields: [],
+              fieldsIgnored: fields,
+            });
+
+            const logger = getLogger();
+            logger.trace(
+              {
+                source: source.name,
+                location,
+                fieldsIgnored: fields,
+              },
+              `[${source.name}] Skipped due to hostname mismatch`,
+            );
+            continue;
+          }
+
           // Capture which credential groups are already claimed BEFORE processing this source
           // This allows a single source to provide complete credential pairs
           const claimedGroups = getClaimedCredentialGroups(baseConfig);
@@ -246,7 +289,10 @@ export class ConfigResolver {
       }
     }
 
-    // Apply overrides with hostname mismatch protection
+    // Apply overrides with hostname mismatch protection.
+    // Instance-bound sources with conflicting hostnames were already skipped above,
+    // so baseConfig only contains non-instance-bound fields. The merge handles
+    // the case where no source provided a hostname (no mismatch to detect).
     const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
     });
@@ -278,8 +324,11 @@ export class ConfigResolver {
    * await instance.webdav.put('path/file.txt', content);
    * ```
    */
-  createInstance(overrides: Partial<NormalizedConfig> = {}, options: ResolveConfigOptions = {}): B2CInstance {
-    const {config, warnings} = this.resolve(overrides, options);
+  async createInstance(
+    overrides: Partial<NormalizedConfig> = {},
+    options: ResolveConfigOptions = {},
+  ): Promise<B2CInstance> {
+    const {config, warnings} = await this.resolve(overrides, options);
 
     // Log warnings (in production, this would use the SDK logger)
     for (const warning of warnings) {
@@ -311,11 +360,11 @@ export class ConfigResolver {
    * const strategy = resolveAuthStrategy(credentials);
    * ```
    */
-  createAuthCredentials(
+  async createAuthCredentials(
     overrides: Partial<NormalizedConfig> = {},
     options: ResolveConfigOptions = {},
-  ): AuthCredentials {
-    const {config} = this.resolve(overrides, options);
+  ): Promise<AuthCredentials> {
+    const {config} = await this.resolve(overrides, options);
 
     return {
       clientId: config.clientId,
@@ -386,10 +435,10 @@ export function createConfigResolver(): ConfigResolver {
  * @param options - Resolution options
  * @returns Resolved configuration with factory methods
  */
-export function resolveConfig(
+export async function resolveConfig(
   overrides: Partial<NormalizedConfig> = {},
   options: ResolveConfigOptions = {},
-): ResolvedB2CConfig {
+): Promise<ResolvedB2CConfig> {
   // Globally registered sources (from plugins via B2CPluginManager or direct SDK registration).
   // Always included regardless of replaceDefaultSources — global sources are explicitly registered
   // by plugins and should always participate, matching the middleware registry behavior.
@@ -415,7 +464,7 @@ export function resolveConfig(
 
   // ConfigResolver constructor will sort by priority
   const resolver = new ConfigResolver(sources);
-  const {config, warnings, sources: sourceInfos} = resolver.resolve(overrides, options);
+  const {config, warnings, sources: sourceInfos} = await resolver.resolve(overrides, options);
 
   return new ResolvedConfigImpl(config, warnings, sourceInfos);
 }

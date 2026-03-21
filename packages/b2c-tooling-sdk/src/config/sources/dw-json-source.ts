@@ -28,10 +28,10 @@ export class DwJsonSource implements ConfigSource {
   readonly name = 'DwJsonSource';
   readonly priority = 0;
 
-  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+  async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
     const logger = getLogger();
 
-    const result = loadDwJson({
+    const result = await loadDwJson({
       instance: options.instance,
       path: options.configPath,
       projectDirectory: options.projectDirectory ?? options.workingDirectory,
@@ -52,8 +52,8 @@ export class DwJsonSource implements ConfigSource {
   /**
    * List all instances from dw.json.
    */
-  listInstances(options?: ResolveConfigOptions): InstanceInfo[] {
-    const result = loadFullDwJson({
+  async listInstances(options?: ResolveConfigOptions): Promise<InstanceInfo[]> {
+    const result = await loadFullDwJson({
       path: options?.configPath,
       projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
     });
@@ -97,9 +97,9 @@ export class DwJsonSource implements ConfigSource {
   /**
    * Create a new instance in dw.json.
    */
-  createInstance(options: CreateInstanceOptions & ResolveConfigOptions): void {
+  async createInstance(options: CreateInstanceOptions & ResolveConfigOptions): Promise<void> {
     const dwJsonConfig = mapNormalizedConfigToDwJson(options.config, options.name);
-    addInstance(dwJsonConfig, {
+    await addInstance(dwJsonConfig, {
       path: options.configPath,
       projectDirectory: options.projectDirectory ?? options.workingDirectory,
       setActive: options.setActive,
@@ -109,8 +109,8 @@ export class DwJsonSource implements ConfigSource {
   /**
    * Remove an instance from dw.json.
    */
-  removeInstance(name: string, options?: ResolveConfigOptions): void {
-    removeInstance(name, {
+  async removeInstance(name: string, options?: ResolveConfigOptions): Promise<void> {
+    await removeInstance(name, {
       path: options?.configPath,
       projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
     });
@@ -119,8 +119,8 @@ export class DwJsonSource implements ConfigSource {
   /**
    * Set an instance as active in dw.json.
    */
-  setActiveInstance(name: string, options?: ResolveConfigOptions): void {
-    setActiveInstance(name, {
+  async setActiveInstance(name: string, options?: ResolveConfigOptions): Promise<void> {
+    await setActiveInstance(name, {
       path: options?.configPath,
       projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
     });

@@ -9,6 +9,8 @@ import {activateCodeVersion, reloadCodeVersion} from '@salesforce/b2c-tooling-sd
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
+  static hiddenAliases = ['code:activate'];
+
   static args = {
     codeVersion: Args.string({
       description: 'Code version ID to activate',
