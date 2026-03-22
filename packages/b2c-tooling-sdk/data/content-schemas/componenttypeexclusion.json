@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  
+  "type":"object",
+  
+  "properties": {
+    "type_id": {"$ref":"common.json#/definitions/full_qualified_id"}
+  },
+  "required": ["type_id"],
+  "additionalProperties": false
+}
