@@ -1,5 +1,15 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.11.0
+
+### Minor Changes
+
+- [#278](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/278) [`8c31081`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c31081b47e57e6a21e62425e6f19da036fc3e34) - Add `content validate` command to validate Page Designer metadefinition JSON files against bundled schemas. Supports auto-detection of schema types from file paths and content, or explicit `--type` flag. Includes glob pattern support for validating multiple files. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#274](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/274) [`e4b5094`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4b5094d9c1c2a60e1214bc236ce7ed84c5d158b) - Replace `archiver` with `tar-fs` for MRT bundle creation, removing deprecated `glob@10.5.0` from the production dependency tree (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.10.0
 
 ### Minor Changes
