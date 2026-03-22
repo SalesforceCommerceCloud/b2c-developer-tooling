@@ -6,8 +6,8 @@
 /**
  * Content library operations for B2C Commerce.
  *
- * This module provides functions for exporting and manipulating
- * Page Designer content libraries including pages, components, and assets.
+ * This module provides functions for exporting, manipulating, and validating
+ * Page Designer content libraries and metadefinitions.
  *
  * ## Core Classes
  *
@@ -18,6 +18,12 @@
  *
  * - {@link fetchContentLibrary} - Fetch and parse a content library
  * - {@link exportContent} - Export filtered pages with assets to disk
+ *
+ * ## Validation
+ *
+ * - {@link validateMetaDefinition} - Validate a parsed JSON object against a metadefinition schema
+ * - {@link validateMetaDefinitionFile} - Validate a JSON file against a metadefinition schema
+ * - {@link detectMetaDefinitionType} - Auto-detect the schema type from file path or data
  *
  * ## Utilities
  *
@@ -30,6 +36,7 @@
  *   Library,
  *   fetchContentLibrary,
  *   exportContent,
+ *   validateMetaDefinitionFile,
  * } from '@salesforce/b2c-tooling-sdk/operations/content';
  *
  * // Fetch and filter a library
@@ -38,6 +45,10 @@
  *
  * // Or use the high-level export
  * const result = await exportContent(instance, ['homepage'], 'SharedLibrary', './export');
+ *
+ * // Validate a metadefinition file
+ * const validation = validateMetaDefinitionFile('experience/pages/home.json');
+ * console.log(validation.valid, validation.errors);
  * ```
  *
  * @module operations/content
@@ -62,3 +73,20 @@ export type {
   TraverseOptions,
   TreeStringOptions,
 } from './types.js';
+
+export {
+  CONTENT_SCHEMA_TYPES,
+  MetaDefinitionDetectionError,
+  detectMetaDefinitionType,
+  detectTypeFromData,
+  detectTypeFromPath,
+  validateMetaDefinition,
+  validateMetaDefinitionFile,
+} from './validate.js';
+
+export type {
+  ContentSchemaType,
+  MetaDefinitionValidationError,
+  MetaDefinitionValidationResult,
+  ValidateMetaDefinitionOptions,
+} from './validate.js';

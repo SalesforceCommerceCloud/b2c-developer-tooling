@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+
+  "type":"object",
+
+  "definitions": {
+    "cms_content_type": {
+      "type": "object",
+      "properties": {
+        "id" : {
+          "type": "string"
+        },
+        "name" : {
+          "type": "string"
+        },
+        "attribute_definitions": {
+          "type": "array",
+          "items": {"$ref": "attributedefinition.json"}
+        }
+      },
+      "required": ["id", "attribute_definitions"],
+      "additionalProperties": false
+    }
+  },
+
+  "properties": {
+    "type": {"$ref": "#/definitions/cms_content_type"},
+    "id" : {
+      "type": "string"
+    },
+    "name" : {
+      "type": "string"
+    },
+    "publish_date" : {
+      "type": "string",
+      "format": "date-time"
+    },
+    "attributes": {
+      "type": "object"
+    }
+  },
+
+  "required": ["id", "type", "attributes"],
+  "additionalProperties": false
+}

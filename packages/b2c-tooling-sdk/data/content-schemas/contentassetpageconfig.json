@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+    
+  "type":"object",
+  
+  "properties": {
+    "visibility":{
+      "type":"array",
+      "maxItems":1,
+      "items":{"$ref":"visibilityrule.json"}
+    }
+  },
+  "additionalProperties": false
+}

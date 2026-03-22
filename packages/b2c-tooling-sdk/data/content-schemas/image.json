@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+
+  "type":"object",
+
+  "definitions": {
+    "fraction" : {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "focal_point": {
+      "type": "object",
+      "properties": {
+        "x" : { "$ref": "#/definitions/fraction" },
+        "y" : { "$ref": "#/definitions/fraction" }
+      },
+      "required": ["x","y"]
+    },
+    "meta_data": {
+      "type": "object",
+      "properties": {
+        "height" : { "type": "integer" },
+        "width" : { "type": "integer" }
+      },
+      "required": ["height","width"]
+    }
+  },
+
+  "properties": {
+    "path": {"type": "string"},
+    "focal_point": {"$ref":"#/definitions/focal_point"},
+    "meta_data": {"$ref":"#/definitions/meta_data"}
+  },
+  "required": ["path"],
+  "additionalProperties": false
+}

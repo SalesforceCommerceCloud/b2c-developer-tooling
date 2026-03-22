@@ -1,11 +1,11 @@
 ---
 name: b2c-content
-description: Export and list Page Designer pages from B2C Commerce content libraries. Always reference when using the CLI to export or list Page Designer content, discover page IDs, or work with content library assets.
+description: Export, list, and validate Page Designer pages and metadefinitions from B2C Commerce content libraries. Always reference when using the CLI to export, list, or validate Page Designer content, discover page IDs, or work with content library assets.
 ---
 
 # B2C Content Skill
 
-Use the `b2c` CLI to export and list Page Designer content from Salesforce B2C Commerce content libraries.
+Use the `b2c` CLI to export, list, and validate Page Designer content from Salesforce B2C Commerce content libraries.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli content export homepage`).
 
@@ -103,6 +103,27 @@ With a configured library, commands become shorter:
 b2c content export homepage
 b2c content list --type page
 ```
+
+### Validate Metadefinitions
+
+```bash
+# validate a single metadefinition file
+b2c content validate cartridge/experience/pages/storePage.json
+
+# validate all metadefinitions in a directory recursively
+b2c content validate cartridge/experience/
+
+# validate with a glob pattern
+b2c content validate 'cartridge/experience/**/*.json'
+
+# explicitly specify the schema type
+b2c content validate --type componenttype mycomponent.json
+
+# JSON output for CI/scripting
+b2c content validate cartridge/experience/ --json
+```
+
+Schema types are auto-detected from file paths (`experience/pages/` → pagetype, `experience/components/` → componenttype) and from JSON content. Use `--type` to override.
 
 ### More Commands
 
