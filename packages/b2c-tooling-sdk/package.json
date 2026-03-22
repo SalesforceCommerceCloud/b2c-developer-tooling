@@ -79,6 +79,17 @@
         "default": "./dist/cjs/operations/jobs/index.js"
       }
     },
+    "./operations/cap": {
+      "development": "./src/operations/cap/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/cap/index.d.ts",
+        "default": "./dist/esm/operations/cap/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/cap/index.d.ts",
+        "default": "./dist/cjs/operations/cap/index.js"
+      }
+    },
     "./operations/mrt": {
       "development": "./src/operations/mrt/index.ts",
       "import": {

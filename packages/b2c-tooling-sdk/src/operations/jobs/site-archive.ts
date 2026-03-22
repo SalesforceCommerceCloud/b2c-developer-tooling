@@ -14,6 +14,7 @@ import * as path from 'node:path';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
+import {addDirectoryToZip} from '../util/zip.js';
 import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from './run.js';
 
 const IMPORT_JOB_ID = 'sfcc-site-archive-import';
@@ -174,8 +175,8 @@ export async function siteArchiveImport(
     body: {file_name: zipFilename} as unknown as string,
   });
 
-  if (error || !data) {
-    // Try with parameters format as fallback
+  if (error?.fault?.type === 'UnknownPropertyException') {
+    // Retry with parameters format (internal/support users)
     logger.warn('Retrying with parameters format for internal users');
 
     const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
@@ -186,10 +187,12 @@ export async function siteArchiveImport(
     });
 
     if (retryError || !retryData) {
-      throw new Error(retryError?.fault?.message ?? error?.fault?.message ?? 'Failed to execute import job');
+      throw new Error(retryError?.fault?.message ?? 'Failed to execute import job');
     }
 
     execution = retryData;
+  } else if (error || !data) {
+    throw new Error(error?.fault?.message ?? 'Failed to execute import job');
   } else {
     execution = data;
   }
@@ -239,25 +242,6 @@ async function createArchiveFromDirectory(dirPath: string, archiveDirName: strin
     compression: 'DEFLATE',
     compressionOptions: {level: 9},
   });
-}
-
-/**
- * Recursively adds directory contents to a JSZip folder.
- */
-async function addDirectoryToZip(zipFolder: JSZip, dirPath: string): Promise<void> {
-  const entries = await fs.promises.readdir(dirPath, {withFileTypes: true});
-
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-
-    if (entry.isDirectory()) {
-      const subFolder = zipFolder.folder(entry.name)!;
-      await addDirectoryToZip(subFolder, fullPath);
-    } else if (entry.isFile()) {
-      const content = await fs.promises.readFile(fullPath);
-      zipFolder.file(entry.name, content);
-    }
-  }
 }
 
 /**
@@ -447,7 +431,7 @@ export async function siteArchiveExport(
   let execution: JobExecution;
 
   // Execute export job - try export_file format first
-  try {
+  {
     const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
       params: {path: {job_id: EXPORT_JOB_ID}},
       body: {
@@ -456,30 +440,30 @@ export async function siteArchiveExport(
       } as unknown as string,
     });
 
-    if (error || !data) {
+    if (error?.fault?.type === 'UnknownPropertyException') {
+      // Retry with parameters format (internal/support users)
+      logger.warn('Retrying with parameters format for internal users');
+
+      const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
+        params: {path: {job_id: EXPORT_JOB_ID}},
+        body: {
+          parameters: [
+            {name: 'ExportFile', value: zipFilename},
+            {name: 'DataUnits', value: JSON.stringify(dataUnits)},
+          ],
+        } as unknown as string,
+      });
+
+      if (retryError || !retryData) {
+        throw new Error(retryError?.fault?.message ?? 'Failed to execute export job');
+      }
+
+      execution = retryData;
+    } else if (error || !data) {
       throw new Error(error?.fault?.message ?? 'Failed to execute export job');
+    } else {
+      execution = data;
     }
-
-    execution = data;
-  } catch {
-    // Try parameters format for internal users
-    logger.warn('Retrying with parameters format for internal users');
-
-    const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: EXPORT_JOB_ID}},
-      body: {
-        parameters: [
-          {name: 'ExportFile', value: zipFilename},
-          {name: 'DataUnits', value: JSON.stringify(dataUnits)},
-        ],
-      } as unknown as string,
-    });
-
-    if (error || !data) {
-      throw new Error(error?.fault?.message ?? 'Failed to execute export job');
-    }
-
-    execution = data;
   }
 
   logger.debug({jobId: EXPORT_JOB_ID, executionId: execution.id}, `Export job started: ${execution.id}`);

@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
+import {registerCap} from './cap/index.js';
 import {registerContentTree} from './content-tree/index.js';
 import {registerLogs} from './logs/index.js';
 import {initializePlugins} from './plugins.js';
@@ -394,6 +395,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   }
   if (settings.get<boolean>('features.apiBrowser', true)) {
     registerApiBrowser(context, configProvider, log);
+  }
+  if (settings.get<boolean>('features.cap', true)) {
+    registerCap(context, configProvider);
   }
 
   // React to configuration changes

@@ -27,7 +27,9 @@
     "onCommand:b2c-dx.listWebDav",
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
-    "onCommand:b2c-dx.scaffold.generate"
+    "onCommand:b2c-dx.scaffold.generate",
+    "onCommand:b2c-dx.cap.install",
+    "workspaceContains:**/commerce-app.json"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -63,6 +65,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the API Browser for exploring SCAPI schemas."
+        },
+        "b2c-dx.features.cap": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Commerce App Package (CAP) commands and file decorations."
         },
         "b2c-dx.logLevel": {
           "type": "string",
@@ -385,6 +392,12 @@
         "command": "b2c-dx.resetProjectRoot",
         "title": "Reset B2C Commerce Root to Auto-Detect",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.cap.install",
+        "title": "Install Commerce App (CAP)",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -566,6 +579,11 @@
           "command": "b2c-dx.content.import",
           "when": "explorerResourceIsFolder",
           "group": "2_import"
+        },
+        {
+          "command": "b2c-dx.cap.install",
+          "when": "explorerResourceIsFolder && resource in b2c-dx.capDirectories",
+          "group": "3_cap"
         }
       ],
       "commandPalette": [
@@ -655,6 +673,10 @@
         },
         {
           "command": "b2c-dx.setProjectRoot",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cap.install",
           "when": "false"
         }
       ]

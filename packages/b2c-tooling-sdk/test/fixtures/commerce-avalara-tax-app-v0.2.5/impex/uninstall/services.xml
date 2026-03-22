@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+    <service-credential service-credential-id="credentials.avatax.rest" mode="delete"/>
+    <service-profile service-profile-id="profile.avatax.rest" mode="delete"/>
+    <service service-id="avatax.rest.all" mode="delete">
+        <service-type>GENERIC</service-type>
+    </service>
+</services>

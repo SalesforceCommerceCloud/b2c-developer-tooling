@@ -52,7 +52,9 @@ export type B2COperationType =
   | 'code:deploy'
   | 'code:activate'
   | 'site-archive:import'
-  | 'site-archive:export';
+  | 'site-archive:export'
+  | 'cap:install'
+  | 'cap:uninstall';
 
 /**
  * Context provided to lifecycle hooks for a B2C operation.
