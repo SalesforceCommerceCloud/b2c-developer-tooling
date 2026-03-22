@@ -34,7 +34,7 @@ describe('content validate', () => {
   }
 
   function stubGlob(command: any, mapping: Record<string, string[]>) {
-    sinon.stub(command.operations, 'glob').callsFake(async (pattern: string) => mapping[pattern] ?? []);
+    sinon.stub(command.operations, 'glob').callsFake(async (...args: unknown[]) => mapping[args[0] as string] ?? []);
   }
 
   it('writes PASS to stdout for valid file', async () => {
@@ -48,7 +48,7 @@ describe('content validate', () => {
 
     expect(result.validFiles).to.equal(1);
     expect(result.totalErrors).to.equal(0);
-    expect(stdoutStub.calledWithMatch(/PASS/)).to.equal(true);
+    expect(stdoutStub.calledWithMatch(sinon.match(/PASS/))).to.equal(true);
   });
 
   it('writes FAIL to stdout and calls error for invalid file', async () => {
@@ -71,9 +71,9 @@ describe('content validate', () => {
       // expected
     }
 
-    expect(stdoutStub.calledWithMatch(/FAIL/)).to.equal(true);
-    expect(stdoutStub.calledWithMatch(/ERROR/)).to.equal(true);
-    expect(errorStub.calledWithMatch('Validation failed')).to.equal(true);
+    expect(stdoutStub.calledWithMatch(sinon.match(/FAIL/))).to.equal(true);
+    expect(stdoutStub.calledWithMatch(sinon.match(/ERROR/))).to.equal(true);
+    expect(errorStub.calledWithMatch(sinon.match('Validation failed'))).to.equal(true);
   });
 
   it('returns JSON result with data', async () => {

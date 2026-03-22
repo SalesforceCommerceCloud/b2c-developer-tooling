@@ -55,7 +55,10 @@ export default class ContentValidate extends BaseCommand<typeof ContentValidate>
   // Allow multiple file arguments
   static strict = false;
 
-  protected operations = {
+  protected operations: {
+    glob: (pattern: string, options?: {nodir?: boolean}) => Promise<string[]>;
+    validateMetaDefinitionFile: typeof validateMetaDefinitionFile;
+  } = {
     glob,
     validateMetaDefinitionFile,
   };
