@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  
+  "type":"object",
+  
+  "properties": {
+    "id": {"$ref":"common.json#/definitions/id"},
+    "name": {"$ref":"common.json#/definitions/name"},
+    "max_components": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "component_type_exclusions": {
+      "type": "array",
+      "items": {"$ref": "componenttypeexclusion.json"}
+    },
+    "component_type_inclusions": {
+      "type": "array",
+      "items": {"$ref": "componenttypeinclusion.json"}
+    },
+    "default_component_constructors": {
+      "type": "array",
+      "items": {"$ref": "componentconstructor.json"}
+    }
+  },
+  "required": ["id"],
+  "additionalProperties": false,
+  "anyOf": [
+    {"required":  ["component_type_exclusions"], "not":  {"required":  ["component_type_inclusions"]}},
+    {"required":  ["component_type_inclusions"], "not":  {"required":  ["component_type_exclusions"]}},
+    {"not":  {"required":  ["component_type_exclusions", "component_type_inclusions"]}}
+  ]
+}

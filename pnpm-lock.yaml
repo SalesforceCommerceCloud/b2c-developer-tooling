@@ -60,6 +60,9 @@ catalogs:
     glob:
       specifier: 13.0.0
       version: 13.0.0
+    jsonschema:
+      specifier: 1.5.0
+      version: 1.5.0
     mocha:
       specifier: ^10
       version: 10.8.2
@@ -419,6 +422,9 @@ importers:
       i18next:
         specifier: 25.7.4
         version: 25.7.4(typescript@5.9.3)
+      jsonschema:
+        specifier: 'catalog:'
+        version: 1.5.0
       jszip:
         specifier: 3.10.1
         version: 3.10.1
@@ -5828,6 +5834,9 @@ packages:
 
   jsonfile@6.2.0:
     resolution: {integrity: sha512-FGuPw30AdOIUTRMC2OMRtQV+jkVj2cfPqSeWXv1NEAJ1qZ5zb1X6z1mFhbfOB/iy3ssJCD+3KuZ8r8C3uVFlAg==}
+
+  jsonschema@1.5.0:
+    resolution: {integrity: sha512-K+A9hhqbn0f3pJX17Q/7H6yQfD/5OXgdrR5UE12gMXCiN9D5Xq2o5mddV2QEcX/bjla99ASsAAQUyMCCRWAEhw==}
 
   jsonwebtoken@9.0.3:
     resolution: {integrity: sha512-MT/xP0CrubFRNLNKvxJ2BYfy53Zkm++5bX9dtuPbqAeQpTVe0MQTFhao8+Cp//EmJp244xt6Drw/GVEGCUj40g==}
@@ -14577,6 +14586,8 @@ snapshots:
       universalify: 2.0.1
     optionalDependencies:
       graceful-fs: 4.2.11
+
+  jsonschema@1.5.0: {}
 
   jsonwebtoken@9.0.3:
     dependencies:

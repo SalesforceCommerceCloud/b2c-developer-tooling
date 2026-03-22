@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+
+  "definitions": {
+    "custom": {
+      "type": "object",
+      "properties": {
+        "type": {"$ref":"common.json#/definitions/full_qualified_id"},
+        "configuration": {
+          "type": "object"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "cms_record": {
+      "type": "object",
+      "properties": {
+        "content_type": {
+          "type": "string"
+        }
+      },
+      "required": ["content_type"],
+      "additionalProperties": false
+    }
+  }
+}

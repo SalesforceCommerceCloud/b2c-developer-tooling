@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  
+  "type":"object",
+
+  "definitions": {
+    "region_component_constructor": {
+      "type": "object",
+      "properties": {
+        "region_id": {"$ref":"common.json#/definitions/id"},
+        "component_constructors": {
+          "type": "array",
+          "items": {"$ref": "componentconstructor.json"}
+        }
+      },
+      "required": ["region_id", "component_constructors"],
+      "additionalProperties": false
+    }
+  },
+
+  "properties": {
+    "type_id": {"$ref":"common.json#/definitions/full_qualified_id"},
+    "name": {"$ref":"common.json#/definitions/name"},
+    "region_component_constructors": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/region_component_constructor" }
+    }
+  },
+  "required": ["type_id"],
+  "additionalProperties": false
+}
