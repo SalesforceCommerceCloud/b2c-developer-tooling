@@ -15,10 +15,9 @@ import {createWriteStream} from 'node:fs';
 import {readFile, stat, mkdtemp, rm} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import archiver from 'archiver';
+import tar from 'tar-fs';
 import {Minimatch} from 'minimatch';
 import {getLogger} from '../../logging/logger.js';
-import type {Stats} from 'node:fs';
 
 /**
  * Default SSR parameters applied to all bundles.
@@ -210,26 +209,25 @@ export async function createBundle(options: CreateBundleOptions): Promise<Bundle
     // Create tar archive
     await new Promise<void>((resolve, reject) => {
       const output = createWriteStream(tarPath);
-      const archive = archiver('tar');
-
-      archive.pipe(output);
 
       // Prefix all files with {projectSlug}/bld/
-      const newRoot = path.join(projectSlug, 'bld', '');
+      const newRoot = path.join(projectSlug, 'bld');
 
-      archive.directory(buildPath, false, (entry) => {
-        const stats = entry.stats as Stats | undefined;
-        if (stats?.isFile() && entry.name) {
-          filesInArchive.push(entry.name);
-        }
-        entry.prefix = newRoot;
-        return entry;
+      const pack = tar.pack(buildPath, {
+        map(header) {
+          if (header.type === 'file') {
+            filesInArchive.push(header.name);
+          }
+          header.name = path.join(newRoot, header.name);
+          return header;
+        },
       });
 
-      archive.on('error', reject);
+      pack.on('error', reject);
+      output.on('error', reject);
       output.on('finish', resolve);
 
-      archive.finalize();
+      pack.pipe(output);
     });
 
     logger.debug({fileCount: filesInArchive.length}, '[MRT] Archive created');
