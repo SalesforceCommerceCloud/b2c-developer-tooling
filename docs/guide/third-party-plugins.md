@@ -1,5 +1,5 @@
 ---
-description: Community plugins for the B2C CLI including IntelliJ SFCC config integration and macOS Keychain credential storage.
+description: Community plugins for the B2C CLI including IntelliJ SFCC config integration, credential storage, docs search, catalog reduction, and pipeline visualization.
 ---
 
 # 3rd Party Plugins
@@ -184,6 +184,107 @@ b2c code deploy
 # Global OAuth merges with dw.json for other settings
 b2c code deploy
 ```
+
+### Docs Viewer Plugin
+
+**Repository:** [taurgis/b2c-plugin-docs-viewer](https://github.com/taurgis/b2c-plugin-docs-viewer)
+
+Searches Salesforce Help and fetches Help or Developer docs content directly from the CLI. This is useful when you want to look up platform documentation without leaving your terminal.
+
+#### Installation
+
+```bash
+b2c plugins install b2c-plugin-help-docs-viewer
+```
+
+If Playwright Chromium is not installed yet:
+
+```bash
+npx playwright install chromium
+```
+
+#### Features
+
+- Searches Salesforce Help with boxed, column-aligned results
+- Fetches Help or Developer docs pages by URL or by ID from the latest search
+- Fetches search results and article content in one command
+- Reuses cached results for up to 5 days, with `--no-cache` to bypass caching
+- Supports JSON output and optional raw extracted HTML
+
+#### Usage
+
+```bash
+# Search Salesforce Help
+b2c docs search-help-site "b2c commerce roles" --limit 5
+
+# Fetch an article by URL or by search result ID
+b2c docs help-site-article "https://help.salesforce.com/s/articleView?id=cc.b2c_roles_and_permissions.htm&type=5"
+b2c docs help-site-article 2
+
+# Search and fetch details in one step
+b2c docs fetch-results-help-site "pipelines" --limit 3
+```
+
+### Catalog Reducer Plugin
+
+**Repository:** [taurgis/b2c-plugin-catalog-reducer](https://github.com/taurgis/b2c-plugin-catalog-reducer)
+
+Generates smaller, representative Salesforce B2C Commerce catalog datasets from large source XML files. This is useful for creating fixtures, benchmarks, and reduced datasets for local development.
+
+#### Installation
+
+```bash
+b2c plugins install b2c-plugin-catalog-reducer
+```
+
+#### Features
+
+- Reduces large catalog XML files into smaller fixture datasets
+- Supports preferred product IDs, master-product targets, attribute-driven selection, and filler products
+- Writes catalog, inventory, and pricebook outputs in one run
+- Supports source-derived storefront catalogs and generated or source-derived pricebooks
+- Validates generated XML against bundled catalog, inventory, and pricebook schemas
+
+#### Usage
+
+```bash
+# Reduce a catalog using a custom config file
+b2c catalog reduce -i ./catalog.xml -o ./catalog-reduced.xml -c ./catalog-reducer.json
+```
+
+The reducer writes the reduced catalog plus derived inventory and pricebook XML outputs. Relative paths in `pricebookSourceFiles` and `storefrontSourceFiles` are resolved from the config file location.
+
+### Pipeline Visualizer Plugin
+
+**Repository:** [taurgis/b2c-plugin-pipeline-visualizer](https://github.com/taurgis/b2c-plugin-pipeline-visualizer)
+
+Generates ASCII and SVG previews of SFCC pipeline XML files. This is useful for inspecting pipeline structure, branch flow, and layout without opening Business Manager.
+
+#### Installation
+
+```bash
+b2c plugins install b2c-plugin-pipeline-visualizer
+```
+
+#### Features
+
+- Exports ASCII previews from pipeline XML files
+- Generates SVG image output for rendered pipeline layouts
+- Supports branch filtering for focused views
+- Can include grids, node lists, edge lists, and bendpoint details
+- Uses the same layout and edge routing logic across ASCII and SVG output
+
+#### Usage
+
+```bash
+# Export an ASCII view
+b2c pipeline ascii path/to/pipeline.xml --out debug/layouts/pipeline.txt
+
+# Export an SVG image
+b2c pipeline image path/to/pipeline.xml --out debug/layouts/pipeline.svg
+```
+
+Output is written to the file specified by `--out`.
 
 ## Creating Your Own Plugin
 

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+   
+  "type":"object",
+  
+  "properties": {
+    "name": {
+      "$ref": "common.json#/definitions/name"
+    },
+    "description": {
+      "$ref": "common.json#/definitions/description"
+    },
+    "arch_type": {
+      "$ref": "common.json#/definitions/arch_type"
+    },
+    "route": {
+      "$ref": "common.json#/definitions/route"
+    },
+    "region_definitions": {
+      "type": "array",
+      "items": {"$ref": "regiondefinition.json"}
+    },
+    "supported_aspect_types": {
+      "type": "array",
+      "items": {"$ref":"common.json#/definitions/full_qualified_id"}
+    },
+    "attribute_definition_groups": {
+      "type": "array",
+      "items": {
+        "$ref": "attributedefinitiongroup.json"
+      }
+    }
+  },
+  "required": [
+    "region_definitions"
+  ],
+  "additionalProperties": false
+}
