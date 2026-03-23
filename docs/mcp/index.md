@@ -31,6 +31,11 @@ cd /path/to/your/project
 claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
+```bash [Plugin Marketplace (Alternative)]
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-dx-mcp --scope project
+```
+
 ```bash [User Scope]
 claude mcp add --transport stdio --scope user b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```

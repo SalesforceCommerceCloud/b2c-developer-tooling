@@ -14,36 +14,7 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
 
 > **Note:** For Figma-to-component tools, you also need an external Figma MCP server enabled. See [Figma-to-Component Tools Setup](./figma-tools-setup) for details.
 
-## Installation Method
-
-The MCP server is installed via `npx`, which downloads and runs the latest version on demand.
-
-### Project Directory
-
-The server automatically detects your project location to enable:
-
-1. **Auto-discovery** - Detects your project type and enables appropriate toolsets
-2. **Configuration loading** - Reads [`dw.json`](../guide/configuration#configuration-file) from your project root for B2C credentials
-3. **Scaffolding** - Creates new files in the correct location based on your project structure
-
-**Detection methods:**
-- **Cursor (project-level)**: Automatically detected from the MCP config file location
-- **Cursor (user-level)**: Requires `--project-directory "${workspaceFolder}"` in the args array
-- **Claude Code**: Automatically detected from the current working directory (cd into project root before installation)
-- **GitHub Copilot**: Automatically detected from the workspace location
-
-### Project Type Detection
-
-The server automatically detects your project type:
-
-| Project Type | Detection Criteria | Enabled Toolsets |
-|--------------|-------------------|------------------|
-| **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` in package.json | PWAV3, MRT, SCAPI |
-| **Storefront Next** | Root or workspace package has `@salesforce/storefront-next*` dependency, or package name starting with `storefront-next` | STOREFRONTNEXT, MRT, CARTRIDGES, SCAPI |
-| **Cartridges** | `.project` file in cartridge directory | CARTRIDGES, SCAPI |
-| **No project detected** | No B2C markers found | SCAPI (base toolset only) |
-
-Hybrid projects (e.g., cartridges + PWA Kit) get combined toolsets.
+The MCP server is installed via `npx`, which downloads and runs the latest version on demand. For project directory and project type detection details, see [MCP Server Overview](./#usage).
 
 ## Claude Code
 
@@ -54,6 +25,11 @@ Claude Code supports MCP servers via CLI installation:
 ```bash [Project Scope (Recommended)]
 cd /path/to/your/project
 claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
+```
+
+```bash [Plugin Marketplace (Alternative)]
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-dx-mcp --scope project
 ```
 
 ```bash [User Scope]

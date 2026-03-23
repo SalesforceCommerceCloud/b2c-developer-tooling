@@ -39,16 +39,16 @@ The B2C DX MCP Server enables AI assistants to help with B2C Commerce developmen
 
 ```bash [Project Scope (Recommended)]
 cd /path/to/your/project
-claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
 ```bash [User Scope]
-claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+claude mcp add --transport stdio --scope user b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
 ```
 
 :::
 
-**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3BAbGF0ZXN0IiwiLS1wcm9qZWN0LWRpcmVjdG9yeSIsIiR7d29ya3NwYWNlRm9sZGVyfSIsIi0tYWxsb3ctbm9uLWdhLXRvb2xzIl19)
 
 See the [MCP Server Installation Guide](/mcp/installation) for detailed setup instructions for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
 

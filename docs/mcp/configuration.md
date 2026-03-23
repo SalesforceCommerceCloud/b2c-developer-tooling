@@ -136,7 +136,7 @@ See the [CLI Configuration guide](../guide/configuration#cli-flags) for complete
 
 ### Auto-Discovery (Default)
 
-By default, the server automatically detects your project type and enables relevant toolsets. See [Project Type Detection](./installation#project-type-detection) for details.
+By default, the server automatically detects your project type and enables relevant toolsets. See [Project Type Detection](./#project-type-detection) for details.
 
 ### Manual Selection
 

@@ -4,25 +4,31 @@ description: AI agent skills and plugins for Claude Code, Cursor, and GitHub Cop
 
 # Agent Skills & Plugins
 
-The B2C Developer Tooling project provides agent skills that enhance the AI-assisted development experience when working with Salesforce B2C Commerce projects.
+The B2C Developer Tooling project provides agent skills and plugins that enhance the AI-assisted development experience when working with Salesforce B2C Commerce projects.
 
-These skills follow the [Agent Skills](https://agentskills.io/home) standard and can be used with multiple agentic IDEs including [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot, and VS Code.
+Skills plugins follow the [Agent Skills](https://agentskills.io/home) standard and can be used with multiple agentic IDEs including [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot, and VS Code. The marketplace also includes an MCP server plugin (`b2c-dx-mcp`).
 
 ## Overview
 
-When installed, the skills teach AI assistants about B2C Commerce development, CLI commands, and best practices, enabling them to help you with:
+When installed, the skills plugins teach AI assistants about B2C Commerce development, CLI commands, and best practices, enabling them to help you with:
 
 - **CLI Operations**: Deploying cartridges, running jobs, managing sandboxes, WebDAV operations
 - **B2C Development**: Controllers, ISML templates, forms, localization, logging, metadata
 - **Web Services**: HTTP/SOAP/FTP integrations using the Service Framework
 - **Custom APIs**: Building SCAPI Custom APIs with contracts, implementations, and mappings
 
-## Available Plugins
+## Available Skills Plugins
 
 | Plugin | Description |
 |--------|-------------|
 | `b2c-cli` | Skills for B2C CLI commands and operations |
 | `b2c` | Skills for B2C Commerce development patterns |
+
+## Available MCP Plugins
+
+| Plugin | Description |
+|--------|-------------|
+| `b2c-dx-mcp` | MCP server for AI-assisted Salesforce B2C Commerce development with project-aware tooling for common workflows |
 
 ### Plugin: b2c-cli
 
@@ -35,6 +41,12 @@ Browse skills: [skills/b2c-cli/skills/](https://github.com/SalesforceCommerceClo
 Skills for B2C Commerce development patterns and practices. Covers controllers, ISML templates, forms, localization, logging, metadata, web services, custom job steps, Page Designer, Business Manager extensions, and Custom API development.
 
 Browse skills: [skills/b2c/skills/](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c/skills)
+
+### Plugin: b2c-dx-mcp
+
+Marketplace plugin for the B2C DX MCP server, providing AI-assisted B2C Commerce development workflows across supported MCP clients.
+
+For setup and configuration, see the installation sections below and MCP docs: [MCP Server Overview](/mcp/) and [MCP Installation](/mcp/installation).
 
 ## Installation with Claude Code
 
@@ -60,12 +72,14 @@ Install the plugins at your preferred scope:
 # Available only in the current project
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
+claude plugin install b2c-dx-mcp --scope project
 ```
 
 ```bash [User Scope]
 # Available in all your projects
 claude plugin install b2c-cli --scope user
 claude plugin install b2c --scope user
+claude plugin install b2c-dx-mcp --scope user
 ```
 
 :::
@@ -76,7 +90,7 @@ claude plugin install b2c --scope user
 claude plugin list
 ```
 
-You should see `b2c-cli@b2c-developer-tooling` and `b2c@b2c-developer-tooling` in the list.
+You should see `b2c-cli@b2c-developer-tooling`, `b2c@b2c-developer-tooling`, and `b2c-dx-mcp@b2c-developer-tooling` in the list.
 
 ### Updating Plugins
 
@@ -86,6 +100,7 @@ To get the latest plugin updates:
 claude plugin marketplace update
 claude plugin update b2c-cli@b2c-developer-tooling
 claude plugin update b2c@b2c-developer-tooling
+claude plugin update b2c-dx-mcp@b2c-developer-tooling
 ```
 
 ### Uninstalling
@@ -95,6 +110,7 @@ To remove the plugins:
 ```bash
 claude plugin uninstall b2c-cli@b2c-developer-tooling
 claude plugin uninstall b2c@b2c-developer-tooling
+claude plugin uninstall b2c-dx-mcp@b2c-developer-tooling
 ```
 
 To remove the marketplace:
@@ -105,7 +121,7 @@ claude plugin marketplace remove b2c-developer-tooling
 
 ## Installation with Skills CLI
 
-The [Skills CLI](https://github.com/vercel-labs/skills) provides a universal way to install agent skills to any supported IDE.
+The [Skills CLI](https://github.com/vercel-labs/skills) provides a way to install agent skills to supported IDEs. Use this for the skills plugins (`b2c` and `b2c-cli`), not for the MCP server plugin (`b2c-dx-mcp`).
 
 ```bash
 # Interactive mode - select skills and IDEs
