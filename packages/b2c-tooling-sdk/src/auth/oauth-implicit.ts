@@ -34,6 +34,13 @@ export interface ImplicitOAuthConfig {
    * Defaults to 8080 or SFCC_OAUTH_LOCAL_PORT environment variable.
    */
   localPort?: number;
+  /**
+   * Full redirect URI for OAuth. Use when running behind a proxy where
+   * localhost cannot be reached directly by the browser.
+   * Defaults to `http://localhost:${localPort}` or SFCC_REDIRECT_URI environment variable.
+   * The local server still listens on localPort regardless of this setting.
+   */
+  redirectUri?: string;
 }
 
 /**
@@ -100,15 +107,22 @@ async function openBrowser(url: string): Promise<void> {
 export class ImplicitOAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private localPort: number;
+  private redirectUri: string;
   private _hasHadSuccess = false;
 
   constructor(private config: ImplicitOAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
     this.localPort = config.localPort || parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || DEFAULT_LOCAL_PORT;
+    this.redirectUri = config.redirectUri || process.env.SFCC_REDIRECT_URI || `http://localhost:${this.localPort}`;
 
     const logger = getLogger();
     logger.debug(
-      {clientId: this.config.clientId, accountManagerHost: this.accountManagerHost, port: this.localPort},
+      {
+        clientId: this.config.clientId,
+        accountManagerHost: this.accountManagerHost,
+        port: this.localPort,
+        redirectUri: this.redirectUri,
+      },
       '[Auth] ImplicitOAuthStrategy initialized',
     );
     logger.trace({scopes: this.config.scopes}, '[Auth] Configured scopes');
@@ -283,11 +297,10 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
    */
   private async implicitFlowLogin(): Promise<AccessTokenResponse> {
     const logger = getLogger();
-    const redirectUrl = `http://localhost:${this.localPort}`;
 
     const params = new URLSearchParams({
       client_id: this.config.clientId,
-      redirect_uri: redirectUrl,
+      redirect_uri: this.redirectUri,
       response_type: 'token',
     });
 
@@ -300,7 +313,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     logger.debug(
       {
         clientId: this.config.clientId,
-        redirectUrl,
+        redirectUri: this.redirectUri,
         scopes: this.config.scopes,
         accountManagerHost: this.accountManagerHost,
       },
