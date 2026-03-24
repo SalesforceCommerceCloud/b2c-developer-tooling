@@ -35,6 +35,8 @@ b2c auth token --user-auth
 
 Coding agents can also use `--user-auth` — the browser flow works in any environment where a browser can be opened. The flag is exclusive with `--auth-methods`.
 
+**Running behind a proxy:** If `localhost:8080` isn't reachable by the browser (e.g., running in a container or behind a reverse proxy), set `SFCC_REDIRECT_URI` to the proxy URL. The local OAuth server still listens on the default port (or `SFCC_OAUTH_LOCAL_PORT`), but the redirect URI sent to Account Manager will use your proxy URL. Add the proxy URL to the API client's redirect URLs in Account Manager.
+
 ## Tenant ID and Organization ID
 
 B2C Commerce uses two related identifiers:

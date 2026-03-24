@@ -152,6 +152,10 @@ For **User Authentication** (implicit flow), configure redirect URLs in your API
 
 **Note:** Redirect URLs are not required for API clients using only Client Credentials authentication.
 
+::: tip Running Behind a Proxy
+If you're running the CLI behind a proxy where `localhost:8080` isn't reachable by the browser, set `SFCC_REDIRECT_URI` to the proxy URL (e.g., `https://proxy.example.com:8080`). The proxy should forward traffic to the CLI's local server. You can also change the local server port with `SFCC_OAUTH_LOCAL_PORT`. Make sure to add your proxy URL to the API client's redirect URLs in Account Manager.
+:::
+
 ## OCAPI Configuration
 
 For operations that interact with B2C Commerce instances (code deployment, jobs, sites), you need to configure OCAPI permissions on each instance.
