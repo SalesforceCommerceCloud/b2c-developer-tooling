@@ -374,11 +374,11 @@ MRT commands use a separate API key system.
 ### Configuring the API Key
 
 ```bash
-# Environment variable
-export MRT_API_KEY=your-mrt-api-key
+# Save credentials to ~/.mobify
+b2c mrt save-credentials --user your-email@example.com --api-key your-mrt-api-key
 
-# Or in ~/.mobify config file
-echo '{"api_key": "your-mrt-api-key"}' > ~/.mobify
+# Or use an environment variable
+export MRT_API_KEY=your-mrt-api-key
 ```
 
 ## Quick Start Example
