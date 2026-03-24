@@ -13,7 +13,13 @@ import {withDocs} from '../../i18n/index.js';
 /**
  * Sensitive fields that should be masked by default.
  */
-const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>(['clientSecret', 'mrtApiKey', 'password', 'slasClientSecret']);
+const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>([
+  'certificatePassphrase',
+  'clientSecret',
+  'mrtApiKey',
+  'password',
+  'slasClientSecret',
+]);
 
 /**
  * JSON output structure for the inspect command.
@@ -169,7 +175,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       'Instance',
       [
         ['hostname', config.hostname],
-        ['webdavHostname', config.webdavHostname],
+        ...(config.webdavHostname ? [['webdavHostname', config.webdavHostname] as [string, unknown]] : []),
         ['codeVersion', config.codeVersion],
       ],
       fieldSources,
@@ -197,12 +203,27 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['clientSecret', config.clientSecret],
         ['scopes', config.scopes],
         ['authMethods', config.authMethods],
-        ['accountManagerHost', config.accountManagerHost],
-        ['sandboxApiHost', config.sandboxApiHost],
+        ...(config.accountManagerHost ? [['accountManagerHost', config.accountManagerHost] as [string, unknown]] : []),
+        ...(config.sandboxApiHost ? [['sandboxApiHost', config.sandboxApiHost] as [string, unknown]] : []),
       ],
       fieldSources,
       unmask,
     );
+
+    // TLS/mTLS section (only shown when at least one TLS field is configured)
+    if (config.certificate || config.certificatePassphrase || config.selfSigned) {
+      this.renderSection(
+        ui,
+        'TLS/mTLS',
+        [
+          ['certificate', config.certificate],
+          ['certificatePassphrase', config.certificatePassphrase],
+          ['selfSigned', config.selfSigned],
+        ],
+        fieldSources,
+        unmask,
+      );
+    }
 
     // SCAPI section
     this.renderSection(
@@ -224,7 +245,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['mrtProject', config.mrtProject],
         ['mrtEnvironment', config.mrtEnvironment],
         ['mrtApiKey', config.mrtApiKey],
-        ['mrtOrigin', config.mrtOrigin],
+        ...(config.mrtOrigin ? [['mrtOrigin', config.mrtOrigin] as [string, unknown]] : []),
       ],
       fieldSources,
       unmask,
