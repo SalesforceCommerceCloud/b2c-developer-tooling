@@ -51,6 +51,10 @@ export interface OAuthAuthConfig {
   clientSecret?: string;
   scopes?: string[];
   accountManagerHost?: string;
+  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  redirectUri?: string;
+  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  openBrowser?: (url: string) => Promise<void>;
 }
 
 /**

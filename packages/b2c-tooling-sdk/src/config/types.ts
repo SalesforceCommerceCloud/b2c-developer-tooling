@@ -426,9 +426,10 @@ export interface ResolvedB2CConfig {
 
   /**
    * Creates a B2CInstance from the resolved configuration.
+   * @param options - Options for implicit OAuth (redirectUri, openBrowser)
    * @throws Error if hostname is not configured
    */
-  createB2CInstance(): B2CInstance;
+  createB2CInstance(options?: Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'>): B2CInstance;
 
   /**
    * Creates a Basic auth strategy.

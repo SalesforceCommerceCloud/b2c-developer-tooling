@@ -55,11 +55,11 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
 
   // Factory methods
 
-  createB2CInstance(): B2CInstance {
+  createB2CInstance(options?: Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'>): B2CInstance {
     if (!this.hasB2CInstanceConfig()) {
       throw new Error('B2C instance requires hostname');
     }
-    return createInstanceFromConfig(this.values);
+    return createInstanceFromConfig(this.values, options);
   }
 
   createBasicAuth(): AuthStrategy {

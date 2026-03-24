@@ -311,7 +311,8 @@ export class B2CExtensionConfig implements vscode.Disposable {
         return;
       }
 
-      this.instance = config.createB2CInstance();
+      const implicitAuthOpts = await this.getImplicitAuthOptions();
+      this.instance = config.createB2CInstance(implicitAuthOpts);
       this.configError = null;
       this.log.appendLine(`[Config] Resolved instance: ${this.instance.config.hostname}`);
     } catch (err) {
