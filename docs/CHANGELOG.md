@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.8
+
+### Patch Changes
+
+- [#280](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/280) [`a58dd74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a58dd7437d133e6509946f7a73246a96f61f0673) - Refreshed the MCP and agent-skill documentation with clearer installation and configuration guidance, plus updated skill catalog references. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
 ## 0.2.7
 
 ### Patch Changes
