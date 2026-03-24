@@ -63,6 +63,10 @@ class TestOAuthCommand extends OAuthCommand<typeof TestOAuthCommand> {
   public testRequireTenantId() {
     return this.requireTenantId();
   }
+
+  public testGetOrganizationId() {
+    return this.getOrganizationId();
+  }
 }
 
 // Test command with default client ID (simulates AmCommand/OdsCommand behavior)
@@ -197,6 +201,30 @@ describe('cli/oauth-command', () => {
 
       try {
         command.testRequireTenantId();
+      } catch {
+        // Expected
+      }
+
+      expect(errorStub.called).to.be.true;
+    });
+  });
+
+  describe('getOrganizationId', () => {
+    it('returns f_ecom-prefixed org ID from tenant', async () => {
+      stubParse(command, {'client-id': 'test-client', 'tenant-id': 'zzxy_prd'});
+      await command.init();
+
+      expect(command.testGetOrganizationId()).to.equal('f_ecom_zzxy_prd');
+    });
+
+    it('throws when tenant ID missing', async () => {
+      stubParse(command, {'client-id': 'test-client'});
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        command.testGetOrganizationId();
       } catch {
         // Expected
       }
