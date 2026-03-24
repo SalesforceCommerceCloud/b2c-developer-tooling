@@ -6,11 +6,11 @@
 import * as fsp from 'node:fs/promises';
 import * as os from 'node:os';
 import path from 'node:path';
-import * as readline from 'node:readline';
 import {Flags} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {t, withDocs} from '../../i18n/index.js';
+import {confirm} from '../../prompts.js';
 
 interface MobifyConfigFile {
   username?: string;
@@ -81,11 +81,9 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
 
       if (fileExists) {
         const confirmed = await this.confirm(
-          t(
-            'commands.mrt.save-credentials.confirm',
-            'Credentials file already exists at {{path}}.\nOverwrite? (yes/no): ',
-            {path: mobifyPath},
-          ),
+          t('commands.mrt.save-credentials.confirm', 'Credentials file already exists at {{path}}. Overwrite? (y/N)', {
+            path: mobifyPath,
+          }),
         );
         if (!confirmed) {
           this.error('Save cancelled.');
@@ -100,6 +98,11 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
     return credentials;
   }
 
+  /** Wraps shared confirm for testability. */
+  protected async confirm(message: string): Promise<boolean> {
+    return confirm(message);
+  }
+
   private getMobifyPath(cloudOrigin?: string): string {
     if (cloudOrigin) {
       try {
@@ -110,19 +113,5 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
       }
     }
     return path.join(os.homedir(), '.mobify');
-  }
-
-  private async confirm(message: string): Promise<boolean> {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stderr,
-    });
-
-    return new Promise((resolve) => {
-      rl.question(message, (answer) => {
-        rl.close();
-        resolve(answer.toLowerCase() === 'yes' || answer.toLowerCase() === 'y');
-      });
-    });
   }
 }
