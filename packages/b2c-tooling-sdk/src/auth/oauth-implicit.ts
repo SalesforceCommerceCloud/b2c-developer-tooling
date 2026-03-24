@@ -47,7 +47,7 @@ export interface ImplicitOAuthConfig {
  * Returns the HTML page served to the browser to extract the access token
  * from the URL fragment and redirect it as query parameters.
  */
-function getOauth2RedirectHTML(port: number): string {
+function getOauth2RedirectHTML(redirectUri: string): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -58,7 +58,7 @@ function getOauth2RedirectHTML(port: number): string {
 <body onload="doReturnFlow()">
 <script>
     function doReturnFlow() {
-        document.location = "http://localhost:${port}/?" + window.location.hash.substring(1);
+        document.location = "${redirectUri}/?" + window.location.hash.substring(1);
     }
 </script>
 </body>
@@ -352,7 +352,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
           // Serve HTML page to extract token from URL fragment
           logger.debug('[Auth] Serving token extraction HTML page');
           response.writeHead(200, {'Content-Type': 'text/html'});
-          response.write(getOauth2RedirectHTML(this.localPort));
+          response.write(getOauth2RedirectHTML(this.redirectUri));
           response.end();
         } else if (accessToken) {
           const authDuration = Date.now() - startTime;
