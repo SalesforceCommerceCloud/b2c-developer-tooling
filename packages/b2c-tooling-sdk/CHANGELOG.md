@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 0.12.0
+
+### Minor Changes
+
+- [`f7229b4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7229b4372bb23d8e107db75f722575c33f4a007) - Add `SFCC_REDIRECT_URI` environment variable to support implicit OAuth flow behind a proxy. Set this to your proxy URL when `localhost:8080` isn't directly reachable by the browser. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.11.0
 
 ### Minor Changes
