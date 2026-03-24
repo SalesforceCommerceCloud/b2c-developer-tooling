@@ -91,6 +91,7 @@ const referenceSidebar = [
       {text: 'Sandbox', link: '/cli/sandbox'},
       {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
+      {text: 'SCAPI Cors Preferences', link: '/cli/scapi-cors'},
       {text: 'Setup', link: '/cli/setup'},
       {text: 'Sites', link: '/cli/sites'},
       {text: 'SLAS', link: '/cli/slas'},

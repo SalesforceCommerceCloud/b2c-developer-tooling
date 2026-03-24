@@ -175,6 +175,32 @@ export const en = {
         ideNotes: 'See IDE documentation for skill configuration:',
       },
     },
+    scapi: {
+      cors: {
+        get: {
+          description: 'Get CORS preferences for a site',
+          fetching: 'Fetching CORS preferences...',
+          noPreferences: 'No CORS preferences configured for site {{siteId}}.',
+          count: 'Found {{count}} client configuration(s) for site {{siteId}}:',
+          error: 'Failed to fetch CORS preferences: {{message}}',
+        },
+        set: {
+          description: 'Create or replace all CORS preferences for a site',
+          setting: 'Setting CORS preferences...',
+          success: 'CORS preferences for site {{siteId}} updated successfully.',
+          error: 'Failed to set CORS preferences: {{message}}',
+          clientIdFlag: 'The Account Manager client ID to configure CORS origins for',
+          originsFlag:
+            "Comma-separated list of allowed origins in '<scheme>://<domain>.<tld>' format. Use empty string to allow known domains only.",
+        },
+        delete: {
+          description: 'Delete all CORS preferences for a site',
+          deleting: 'Deleting CORS preferences...',
+          success: 'CORS preferences for site {{siteId}} deleted successfully.',
+          error: 'Failed to delete CORS preferences: {{message}}',
+        },
+      },
+    },
     scaffold: {
       list: {
         description: 'List available project scaffolds',

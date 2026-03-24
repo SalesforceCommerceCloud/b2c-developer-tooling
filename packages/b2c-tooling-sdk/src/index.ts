@@ -80,6 +80,7 @@ export {
   fetchRoleMapping,
   resolveToInternalRole,
   resolveFromInternalRole,
+  createScapiCorsClient,
   ORGANIZATION_ID_PREFIX,
   ROLE_TENANT_FILTER_PATTERN,
   SCAPI_TENANT_SCOPE_PREFIX,
@@ -88,6 +89,8 @@ export {
   CDN_ZONES_RW_SCOPES,
   DEFAULT_CIP_HOST,
   DEFAULT_CIP_STAGING_HOST,
+  SCAPI_CORS_READ_SCOPES,
+  SCAPI_CORS_RW_SCOPES,
 } from './clients/index.js';
 export type {
   PropfindEntry,
@@ -161,6 +164,14 @@ export type {
   CipFrame,
   CipQueryOptions,
   CipQueryResult,
+  ScapiCorsClient,
+  ScapiCorsClientConfig,
+  ScapiCorsError,
+  ScapiCorsResponse,
+  CorsPreferences,
+  CorsClientPreferences,
+  ScapiCorsPaths,
+  ScapiCorsComponents,
 } from './clients/index.js';
 
 // Operations - Code
