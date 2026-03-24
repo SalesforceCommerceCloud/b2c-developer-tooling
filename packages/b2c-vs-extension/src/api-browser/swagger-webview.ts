@@ -218,7 +218,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     // Resolve external $refs server-side so the webview doesn't have to fetch them
     if (config.hasOAuthConfig()) {
-      const oauthStrategy = config.createOAuth();
+      const oauthOptions = await this.configProvider.getImplicitAuthOptions();
+      const oauthStrategy = config.createOAuth(oauthOptions);
       const authHeader = await oauthStrategy.getAuthorizationHeader?.();
       await resolveExternalRefs(spec, authHeader, this.log);
     }
@@ -308,7 +309,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
           const tenantId = deriveTenantId(config.values.hostname);
           if (!tenantId) throw new Error('Could not derive tenant ID from hostname.');
 
-          const oauthStrategy = config.createOAuth();
+          const oauthOptions = await this.configProvider.getImplicitAuthOptions();
+          const oauthStrategy = config.createOAuth(oauthOptions);
           const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
           const orgId = toOrganizationId(tenantId);
           const {data, error, response} = await schemasClient.GET(
@@ -452,7 +454,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       if (!config.hasOAuthConfig()) return null;
       // Request the specific scopes required by this API spec so the token
       // includes them (the cache will re-authenticate if scopes are missing)
-      const oauthStrategy = config.createOAuth({scopes});
+      const oauthOptions = await this.configProvider.getImplicitAuthOptions();
+      const oauthStrategy = config.createOAuth({...oauthOptions, scopes});
       const header = await oauthStrategy.getAuthorizationHeader?.();
       if (!header) return null;
       // Header is "Bearer <token>" — extract the token
@@ -510,7 +513,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     try {
       this.log.appendLine(`[API Browser] Auto-discovering SLAS client for tenant ${tenantId}...`);
-      const oauthStrategy = config.createOAuth();
+      const oauthOptions = await this.configProvider.getImplicitAuthOptions();
+      const oauthStrategy = config.createOAuth(oauthOptions);
       const slasClient = createSlasClient({shortCode}, oauthStrategy);
 
       const {data, error} = await slasClient.GET('/tenants/{tenantId}/clients', {

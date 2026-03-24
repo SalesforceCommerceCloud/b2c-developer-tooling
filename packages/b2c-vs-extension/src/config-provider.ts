@@ -8,6 +8,7 @@ import {
   EnvSource,
   type NormalizedConfig,
   type ResolvedB2CConfig,
+  type CreateOAuthOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as fs from 'fs';
@@ -232,6 +233,26 @@ export class B2CExtensionConfig implements vscode.Disposable {
     overrides: Partial<NormalizedConfig> = {},
   ): Promise<ResolvedB2CConfig> {
     return resolveConfig(overrides, {workingDirectory});
+  }
+
+  /**
+   * Returns CreateOAuthOptions with VS Code-specific overrides for implicit auth:
+   * - Uses `vscode.env.openExternal` to open the browser on the client (works in Codespaces/remote)
+   * - Uses `vscode.env.asExternalUri` to resolve the redirect URI for port forwarding
+   *
+   * Merge with any additional options before passing to `config.createOAuth()`.
+   */
+  async getImplicitAuthOptions(): Promise<CreateOAuthOptions> {
+    const localPort = parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || 8080;
+    const localUri = vscode.Uri.parse(`http://localhost:${localPort}`);
+    const externalUri = await vscode.env.asExternalUri(localUri);
+
+    return {
+      redirectUri: process.env.SFCC_REDIRECT_URI || externalUri.toString(/* skipEncoding */ true),
+      openBrowser: async (url: string) => {
+        await vscode.env.openExternal(vscode.Uri.parse(url));
+      },
+    };
   }
 
   dispose(): void {

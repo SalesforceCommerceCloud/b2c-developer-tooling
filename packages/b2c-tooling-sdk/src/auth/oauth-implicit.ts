@@ -41,6 +41,12 @@ export interface ImplicitOAuthConfig {
    * The local server still listens on localPort regardless of this setting.
    */
   redirectUri?: string;
+  /**
+   * Custom browser opener. Receives the authorization URL and should open it
+   * in the user's browser. Useful in environments where the default `open` package
+   * doesn't work (e.g., VS Code remote/Codespaces where `vscode.env.openExternal` is needed).
+   */
+  openBrowser?: (url: string) => Promise<void>;
 }
 
 /**
@@ -70,7 +76,7 @@ function getOauth2RedirectHTML(redirectUri: string): string {
  * Opens the system default browser to the specified URL.
  * Dynamically imports 'open' package to handle the browser opening.
  */
-async function openBrowser(url: string): Promise<void> {
+async function openBrowserDefault(url: string): Promise<void> {
   try {
     // Dynamic import of 'open' package
     const open = await import('open');
@@ -325,9 +331,13 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     logger.info({url: authorizeUrl}, `Login URL: ${authorizeUrl}`);
     logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
 
-    // Attempt to open the browser
+    // Attempt to open the browser (prefer injected opener, fall back to `open` package)
     logger.debug('[Auth] Attempting to open browser');
-    await openBrowser(authorizeUrl);
+    if (this.config.openBrowser) {
+      await this.config.openBrowser(authorizeUrl);
+    } else {
+      await openBrowserDefault(authorizeUrl);
+    }
 
     return new Promise<AccessTokenResponse>((resolve, reject) => {
       const sockets: Set<Socket> = new Set();
