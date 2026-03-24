@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-mcp
 
+## 0.5.4
+
+### Patch Changes
+
+- [#283](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/283) [`fb5ac83`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fb5ac83b43db0666e8e17f62516eb04aac962c2d) - Fix marketplace schema validation for the `b2c-dx-mcp` plugin by adding the required `source` field (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
 ## 0.5.3
 
 ### Patch Changes
