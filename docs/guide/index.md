@@ -11,6 +11,8 @@ The B2C Developer Tooling provides command-line and AI-assisted development tool
 
 ## Quick CLI Install
 
+::: code-group
+
 ```bash [npm]
 npm install -g @salesforce/b2c-cli
 ```
@@ -22,6 +24,8 @@ npx @salesforce/b2c-cli --help
 ```bash [Homebrew]
 brew install SalesforceCommerceCloud/tools/b2c-cli
 ```
+
+:::
 
 See the [CLI Installation Guide](./installation) for more installation options.
 
