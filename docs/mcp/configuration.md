@@ -4,7 +4,7 @@ description: Configure the B2C DX MCP Server with credentials, flags, environmen
 
 # Configuration
 
-The MCP server works with a minimal `mcp.json` — credentials and project settings are typically managed in your project's `dw.json` or `.env` file. You can also pass flags and environment variables directly in `mcp.json` if needed.
+The B2C DX MCP Server uses the same configuration system as the B2C CLI.
 
 See the [CLI Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
 

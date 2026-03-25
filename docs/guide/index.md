@@ -11,8 +11,6 @@ The B2C Developer Tooling provides command-line and AI-assisted development tool
 
 ## Quick CLI Install
 
-::: code-group
-
 ```bash [npm]
 npm install -g @salesforce/b2c-cli
 ```
@@ -25,55 +23,48 @@ npx @salesforce/b2c-cli --help
 brew install SalesforceCommerceCloud/tools/b2c-cli
 ```
 
-:::
-
 See the [CLI Installation Guide](./installation) for more installation options.
 
 ## Quick MCP Install
 
 The B2C DX MCP Server enables AI assistants to help with B2C Commerce development tasks.
 
-::: code-group
+### Claude Code (Project Scope)
 
-```bash [Claude Code]
-cd /path/to/your/project
+1. Open your project root in Claude Code.
+2. Install the plugin marketplace entry:
+
+```bash
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-dx-mcp --scope project
 ```
 
-```bash [Cursor]
-cd /path/to/your/project
-mkdir -p .cursor
-cat > .cursor/mcp.json <<'EOF'
-{
-  "mcpServers": {
-    "b2c-dx-mcp": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
-    }
-  }
+### Cursor (Project Scope)
+
+1. Open your project root.
+2. Create or edit `.cursor/mcp.json`.
+3. Add this entry under `mcpServers` (merge with existing config, do not replace the full file):
+
+```json
+"b2c-dx-mcp": {
+  "command": "npx",
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
 }
-EOF
 ```
 
-```bash [GitHub Copilot]
-cd /path/to/your/project
-mkdir -p .vscode
-cat > .vscode/mcp.json <<'EOF'
-{
-  "servers": {
-    "b2c-dx-mcp": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
-    }
-  },
-  "inputs": []
-}
-EOF
-```
+### GitHub Copilot (Project Scope)
 
-:::
+1. Open your project root.
+2. Create or edit `.vscode/mcp.json`.
+3. Add this entry under `servers` (merge with existing config, do not replace the full file):
+
+```json
+"b2c-dx-mcp": {
+  "type": "stdio",
+  "command": "npx",
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+}
+```
 
 See the [MCP Server Installation Guide](/mcp/installation) for full setup steps and troubleshooting.
 
