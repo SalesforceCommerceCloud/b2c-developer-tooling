@@ -4,29 +4,15 @@ description: Configure the B2C DX MCP Server with credentials, flags, environmen
 
 # Configuration
 
-The B2C DX MCP Server uses the same configuration system as the B2C CLI. For MCP, environment variables are set in your MCP client's JSON config (`env` object), not as system environment variables. See the [CLI Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
+The MCP server works with a minimal `mcp.json` — credentials and project settings are typically managed in your project's `dw.json` or `.env` file. You can also pass flags and environment variables directly in `mcp.json` if needed.
 
-## Configuration Priority
+See the [CLI Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
 
-Credentials are resolved in the following priority order (same as the CLI):
+## Credentials
 
-1. **Flags** (highest priority) - e.g., `--server`, `--api-key`, `--project`
-2. **Environment variables** - Set in MCP client's `env` object
-3. **Config files** (lowest priority) - `dw.json` (project-level) and `~/.mobify` (user-level for MRT API key)
+### `dw.json` (Recommended) {#dw-json}
 
-**Note:** For MRT API key specifically, `dw.json` (`mrtApiKey` field) takes precedence over `~/.mobify` when both are present.
-
-## Credential Sources
-
-### Option 1: Config Files (Recommended)
-
-Config files are the recommended approach for managing credentials. They keep credentials out of your MCP client configuration and are automatically loaded from your project.
-
-#### B2C Credentials (`dw.json`)
-
-Create a [`dw.json`](../guide/configuration#configuration-file) file in your project root. The MCP server uses the same format as the CLI. See the [CLI Configuration guide](../guide/configuration#configuration-file) for the complete `dw.json` format, supported fields, and multi-instance configuration.
-
-**Example minimal configuration:**
+Create a [`dw.json`](../guide/configuration#configuration-file) file in your project root. The MCP server uses the same format as the CLI and loads it automatically with project-level installation.
 
 ```json
 {
@@ -40,7 +26,9 @@ Create a [`dw.json`](../guide/configuration#configuration-file) file in your pro
 }
 ```
 
-The server automatically loads this file when using project-level configuration (recommended). With user-level Cursor configuration, ensure `--project-directory "${workspaceFolder}"` is included in the args array. Claude Code and GitHub Copilot automatically detect the project location.
+With user-level Cursor configuration, add `--project-directory "${workspaceFolder}"` to the args array so the server can find `dw.json`. Claude Code and GitHub Copilot automatically detect the project location.
+
+See the [CLI Configuration guide](../guide/configuration#configuration-file) for the complete `dw.json` format, supported fields, and multi-instance configuration.
 
 **Required fields per toolset:**
 
@@ -48,17 +36,31 @@ The server automatically loads this file when using project-level configuration 
 |---------|----------------|
 | **SCAPI** | `short-code`, `tenant-id`, `client-id`, `client-secret` |
 | **CARTRIDGES** | `hostname`, `username`, `password` (or OAuth: `hostname`, `client-id`, `client-secret`) |
-| **MRT** | `mrtProject` (from `dw.json` `mrtProject` field or `--project` flag), MRT API key (from `dw.json` `mrtApiKey`, `~/.mobify` `api_key`, or `--api-key` flag) |
-| **PWAV3** | None (project directory auto-detected with project-level installation) |
-| **STOREFRONTNEXT** | None (project directory auto-detected with project-level installation) |
+| **MRT** | `mrtProject`, `mrtApiKey` (or `api_key` in `~/.mobify`, or `MRT_API_KEY` env var). `mrtEnvironment` required when deploying. |
+| **PWAV3** | None (project directory auto-detected) |
+| **STOREFRONTNEXT** | None (project directory auto-detected) |
 
 **Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
 
-#### MRT Credentials (`~/.mobify`)
+### `.env` File {#env-file}
 
-MRT tools require an API key for authentication. MRT API keys are stored in a separate [`~/.mobify`](../guide/configuration#mrt-api-key) file in your home directory.
+As an alternative to `dw.json`, you can place a `.env` file in your project root. The server loads it automatically at startup via Node.js native `process.loadEnvFile()`.
 
-Create the `~/.mobify` file manually:
+```bash
+SFCC_SERVER=xxx.demandware.net
+SFCC_CLIENT_ID=...
+SFCC_CLIENT_SECRET=...
+SFCC_SHORTCODE=...
+SFCC_TENANT_ID=...
+```
+
+> **Note:** The `.env` file is loaded from the process working directory. Claude Code and GitHub Copilot set cwd to the project root regardless of scope, so `.env` works in all cases. Cursor user-level config (`~/.cursor/mcp.json`) sets cwd to `~`, so `.env` in the project root **will not be found** — use `dw.json` or system environment variables instead. Cursor project-level config (`.cursor/mcp.json`) works as expected.
+
+See the [Environment Variables Reference](#environment-variables-reference) for the complete list of supported variables.
+
+### MRT Credentials (`~/.mobify`) {#mrt-credentials}
+
+MRT tools require an API key. You can include `mrtApiKey`, `mrtProject`, and `mrtEnvironment` in `dw.json` (see [required fields](#dw-json) above), or store the API key in a separate [`~/.mobify`](../guide/configuration#mrt-api-key) file (user-level, shared across projects):
 
 ```json
 {
@@ -66,81 +68,32 @@ Create the `~/.mobify` file manually:
 }
 ```
 
-**File locations:**
+**`~/.mobify` file locations:**
 - Default: `~/.mobify`
-- With `--cloud-origin`: `~/.mobify--{hostname}` (e.g., `~/.mobify--custom.example.com` for `--cloud-origin https://custom.example.com`)
+- With `--cloud-origin`: `~/.mobify--{hostname}` (e.g., `~/.mobify--custom.example.com`)
+- With `--credentials-file` (or `MRT_CREDENTIALS_FILE`): uses the specified path
 
-**Note:** The `dw.json` file can include `mrtProject`, `mrtEnvironment`, and `mrtApiKey` for project-level MRT configuration. Alternatively, the API key can be stored in `~/.mobify` (user-level, shared across projects). If both are present, `dw.json` takes precedence. Environment variables and flags can override these values (see [Configuration Priority](#configuration-priority)).
+If both `dw.json` and `~/.mobify` contain an API key, `dw.json` takes precedence. For complete setup instructions, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
 
-For complete setup instructions, including how to get your API key, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
+## Configuration Priority
 
-### Option 2: Environment Variables
+When the same setting is provided in multiple places, the server resolves values in this order:
 
-Set environment variables in the `env` object of your MCP client configuration. The MCP server supports the same environment variables as the CLI. See the [CLI Configuration guide](../guide/configuration#environment-variables) for the complete list of supported variables.
+1. **Flags** (highest) — e.g., `--server`, `--api-key` in the `args` array
+2. **Environment variables** — via `.env` file, MCP client `env` object, or system environment
+3. **Config files** (lowest) — `dw.json` and `~/.mobify`
 
-> **Note:** Examples below use `mcpServers` (Cursor format). For GitHub Copilot/VS Code, use `servers` instead and add `"type": "stdio"` (see [Installation](./installation#github-copilot)).
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx-mcp": {
-      "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"],
-      "env": {
-        "SFCC_SERVER": "xxx.demandware.net",
-        "SFCC_CLIENT_ID": "...",
-        "SFCC_CLIENT_SECRET": "...",
-        "SFCC_SHORTCODE": "...",
-        "SFCC_TENANT_ID": "...",
-        "MRT_API_KEY": "..."
-      }
-    }
-  }
-}
-```
-
-### Option 3: Flags
-
-Pass credentials directly as command-line flags:
-
-```json
-{
-  "mcpServers": {
-    "b2c-dx-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp@latest",
-        "--server",
-        "xxx.demandware.net",
-        "--username",
-        "...",
-        "--password",
-        "...",
-        "--client-id",
-        "...",
-        "--client-secret",
-        "...",
-        "--allow-non-ga-tools"
-      ]
-    }
-  }
-}
-```
-
-> **Note:** Flags and environment variables in your MCP client configuration are less secure than config files (`dw.json`), especially if your MCP client configuration is shared or committed to version control. Use `dw.json` (which can be gitignored) for sensitive credentials.
-
-See the [CLI Configuration guide](../guide/configuration#cli-flags) for complete flag and environment variable documentation.
+In practice, you rarely need flags or env vars in `mcp.json` — `dw.json` and `.env` handle most cases. Flags and the `env` object are available for overrides or CI environments.
 
 ## Toolset Selection
 
 ### Auto-Discovery (Default)
 
-By default, the server automatically detects your project type and enables relevant toolsets. See [Project Type Detection](./#project-type-detection) for details.
+By default, the server automatically detects your project type and enables relevant toolsets. No configuration needed. See [Project Type Detection](./#project-type-detection) for details.
 
 ### Manual Selection
 
-Override auto-discovery by specifying toolsets explicitly:
+Override auto-discovery with `--toolsets` or `SFCC_TOOLSETS`:
 
 ```json
 {
@@ -159,15 +112,9 @@ Override auto-discovery by specifying toolsets explicitly:
 }
 ```
 
-**Available toolsets:**
-- `CARTRIDGES` - Cartridge deployment and code version management
-- `MRT` - Managed Runtime bundle operations
-- `PWAV3` - PWA Kit v3 development tools
-- `SCAPI` - Salesforce Commerce API discovery
-- `STOREFRONTNEXT` - Storefront Next development tools
-- `all` - Enable all toolsets
+**Available toolsets:** `CARTRIDGES`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, `all`
 
-**Note:** The `SCAPI` toolset is always enabled, even if not explicitly specified.
+With auto-discovery, the `SCAPI` toolset is always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
 
 ### Individual Tool Selection
 
@@ -183,54 +130,95 @@ Enable specific tools instead of entire toolsets:
 }
 ```
 
-## Logging Configuration
+## Logging
 
-### Log Level
-
-Set logging verbosity:
+Set logging verbosity with `--log-level` or `SFCC_LOG_LEVEL`:
 
 ```json
 {
-  "args": [
-    "--log-level",
-    "debug"
-  ]
+  "args": ["--log-level", "debug"]
 }
 ```
 
 **Available levels:** `trace`, `debug`, `info`, `warn`, `error`, `silent`
 
-### Debug Mode
-
-Enable debug logging (equivalent to `--log-level debug`):
-
-```json
-{
-  "args": [
-    "--debug"
-  ]
-}
-```
+The `--debug` flag (or `SFCC_DEBUG`) is a shorthand for `--log-level debug`.
 
 ## Telemetry
 
 Telemetry is enabled by default and collects anonymous usage data to help improve the developer experience.
 
-### What We Collect
+**What we collect:** server lifecycle events, tool usage (which tools and execution time), command metrics, and environment info (platform, Node.js version, package version).
 
-- **Server lifecycle events**: When the server starts, stops, or encounters errors
-- **Tool usage**: Which tools are called and their execution time (not the arguments or results)
-- **Command metrics**: Command duration and success/failure status
-- **Environment info**: Platform, architecture, Node.js version, and package version
+**What we don't collect:** credentials, business data, tool arguments/results, or file contents.
 
-### What We Don't Collect
+To disable, set either variable in your `.env` file or MCP client `env` object:
 
-- **No credentials**: No API keys, passwords, or secrets
-- **No business data**: No product data, customer information, or site content
-- **No tool arguments**: No input parameters or output results from tool calls
-- **No file contents**: No source code, configuration files, or project data
+| Variable | Description |
+|----------|-------------|
+| `SFCC_DISABLE_TELEMETRY` | Set to `true` to disable telemetry |
+| `SF_DISABLE_TELEMETRY` | Set to `true` to disable telemetry (sf CLI standard) |
 
-To disable telemetry, set `SFCC_DISABLE_TELEMETRY=true` in your MCP client configuration's `env` object.
+## MCP Server Flags Reference {#mcp-server-flags}
+
+Flags specific to the MCP server (in addition to the shared CLI flags in the [CLI Configuration guide](../guide/configuration)):
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--toolsets` | string | Auto-detect | Toolsets to enable (comma-separated) |
+| `--tools` | string | - | Individual tools to enable (comma-separated) |
+| `--allow-non-ga-tools` | boolean | `false` | Enable non-GA (experimental) tools |
+
+Environment variable equivalents for these flags are listed in [MCP Server Environment Variables](#mcp-server-environment-variables).
+
+## Environment Variables Reference {#environment-variables-reference}
+
+These can be set in a `.env` file, the MCP client `env` object, or as system environment variables.
+
+### MCP Server Environment Variables {#mcp-server-environment-variables}
+
+MCP-specific environment variables (flag equivalents):
+
+| Env Variable | Equivalent Flag | Type | Default | Description |
+| ------------ | --------------- | ---- | ------- | ----------- |
+| `SFCC_TOOLSETS` | `--toolsets` | string | Auto-detect | Toolsets to enable (comma-separated) |
+| `SFCC_TOOLS` | `--tools` | string | - | Individual tools to enable (comma-separated) |
+| `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false` | Enable non-GA (experimental) tools |
+
+**B2C instance:**
+
+| Variable | Description |
+|----------|-------------|
+| `SFCC_SERVER` | B2C instance hostname |
+| `SFCC_CODE_VERSION` | Code version for deployments |
+| `SFCC_USERNAME` | Username for Basic auth (WebDAV) |
+| `SFCC_PASSWORD` | Password/access key for Basic auth |
+| `SFCC_CLIENT_ID` | OAuth client ID (`SFCC_OAUTH_CLIENT_ID` also supported) |
+| `SFCC_CLIENT_SECRET` | OAuth client secret (`SFCC_OAUTH_CLIENT_SECRET` also supported) |
+| `SFCC_SHORTCODE` | SCAPI short code |
+| `SFCC_TENANT_ID` | Organization/tenant ID |
+
+**MRT:**
+
+| Variable | Description |
+|----------|-------------|
+| `MRT_API_KEY` | MRT API key (`SFCC_MRT_API_KEY` also supported) |
+| `MRT_PROJECT` | MRT project slug (`SFCC_MRT_PROJECT` also supported) |
+| `MRT_ENVIRONMENT` | Target environment (`SFCC_MRT_ENVIRONMENT` also supported) |
+| `MRT_CLOUD_ORIGIN` | MRT API origin URL (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
+| `MRT_CREDENTIALS_FILE` | Path to MRT credentials file (overrides `~/.mobify`) |
+
+**General:**
+
+| Variable | Description |
+|----------|-------------|
+| `SFCC_PROJECT_DIRECTORY` | Project directory (`SFCC_WORKING_DIRECTORY` also supported) |
+| `SFCC_CONFIG` | Path to config file |
+| `SFCC_INSTANCE` | Instance name from configuration file |
+| `SFCC_LOG_LEVEL` | Logging level |
+| `SFCC_DEBUG` | Enable debug logging |
+
+See the [CLI Configuration guide](../guide/configuration#environment-variables) for the complete list including OAuth and advanced options.
 
 ## Next Steps
 

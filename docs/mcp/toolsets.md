@@ -19,7 +19,7 @@ Toolsets are collections of related tools that work together to support specific
 - [SCAPI](#scapi) - Salesforce Commerce API discovery
 - [STOREFRONTNEXT](#storefrontnext) - Storefront Next development tools
 
-**Note:** The `SCAPI` toolset is always enabled, even if not explicitly specified.
+**Note:** With auto-discovery, the `SCAPI` toolset is always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
 
 ## CARTRIDGES
 
@@ -114,6 +114,6 @@ Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_s
 
 ## Next Steps
 
-- [Configuration](./configuration) - Configure credentials and toolset selection
+- [Configuration](./configuration) - Configure credentials, environment variables, MCP flags, toolset selection, and logging
 - [Installation](./installation) - Set up the MCP server
 - [MCP Server Overview](./) - Learn more about the MCP server
