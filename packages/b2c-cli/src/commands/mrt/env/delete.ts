@@ -3,28 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteEnv} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
-
-/**
- * Simple confirmation prompt.
- */
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
-    });
-  });
-}
+import {confirm} from '../../../prompts.js';
 
 /**
  * Delete an environment (target) from a Managed Runtime project.
@@ -83,7 +66,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
       const confirmed = await this.operations.confirm(
         t(
           'commands.mrt.env.delete.confirm',
-          'Are you sure you want to delete environment "{{slug}}" from {{project}}? (y/n)',
+          'Are you sure you want to delete environment "{{slug}}" from {{project}}?',
           {
             slug,
             project,

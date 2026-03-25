@@ -81,7 +81,7 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
 
       if (fileExists) {
         const confirmed = await this.confirm(
-          t('commands.mrt.save-credentials.confirm', 'Credentials file already exists at {{path}}. Overwrite? (y/N)', {
+          t('commands.mrt.save-credentials.confirm', 'Credentials file already exists at {{path}}. Overwrite?', {
             path: mobifyPath,
           }),
         );

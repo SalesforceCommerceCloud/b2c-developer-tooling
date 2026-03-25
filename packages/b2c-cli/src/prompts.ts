@@ -5,22 +5,36 @@
  */
 import * as readline from 'node:readline';
 
+export interface ConfirmOptions {
+  /** Default to yes when the user presses Enter without typing. Defaults to false (no). */
+  defaultYes?: boolean;
+}
+
 /**
- * Simple yes/no confirmation prompt. Defaults to no.
+ * Simple yes/no confirmation prompt.
  *
- * @param message - Prompt message (e.g., "Delete project? (y/N)")
- * @returns true if user answered y/yes, false otherwise
+ * @param message - Prompt message (the hint is appended automatically, e.g., "(y/N)" or "(Y/n)")
+ * @param options - Options to control default behavior
+ * @returns true if user confirmed, false otherwise
  */
-export async function confirm(message: string): Promise<boolean> {
+export async function confirm(message: string, options?: ConfirmOptions): Promise<boolean> {
+  const defaultYes = options?.defaultYes ?? false;
+  const hint = defaultYes ? '(Y/n)' : '(y/N)';
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stderr,
   });
 
   return new Promise((resolve) => {
-    rl.question(`${message} `, (answer) => {
+    rl.question(`${message} ${hint} `, (answer) => {
       rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
+      const normalized = answer.trim().toLowerCase();
+      if (normalized === '') {
+        resolve(defaultYes);
+      } else {
+        resolve(normalized === 'y' || normalized === 'yes');
+      }
     });
   });
 }
