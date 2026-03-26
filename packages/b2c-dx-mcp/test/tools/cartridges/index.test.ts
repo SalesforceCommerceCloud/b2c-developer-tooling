@@ -132,8 +132,8 @@ describe('tools/cartridges', () => {
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 
-    it('should not be GA (generally available)', () => {
-      expect(tool.isGA).to.be.false;
+    it('should be GA (generally available)', () => {
+      expect(tool.isGA).to.be.true;
     });
 
     it('should require instance', () => {

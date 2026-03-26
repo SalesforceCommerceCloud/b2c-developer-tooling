@@ -105,7 +105,7 @@ describe('tools/scapi/scapi-custom-apis-get-status', () => {
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
-      expect(tool.isGA).to.be.false;
+      expect(tool.isGA).to.be.true;
     });
 
     it('should have optional input params: status, groupBy, columns', () => {

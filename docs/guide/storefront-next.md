@@ -4,11 +4,11 @@ description: Set up Storefront Next development environments using the B2C CLI t
 
 # Storefront Next
 
-::: warning Pilot Preview
-Storefront Next is currently in pilot. Access to Storefront Next is limited to pilot customers. Features and configuration may change.
+::: warning Important
+Storefront Next is currently in a closed pilot. Access to Storefront Next is limited to pilot customers. Features and configuration may change.
 :::
 
-This guide walks through setting up the infrastructure for a Storefront Next project using the B2C CLI. The steps cover creating a sandbox, configuring SLAS authentication, setting up an MRT environment, configuring environment variables, and deploying. Not all steps are required — skip any that are already complete for your project.
+Set up Storefront Next development environments using the B2C CLI to create sandboxes, SLAS clients, MRT environments, and deploy.
 
 ## Prerequisites
 

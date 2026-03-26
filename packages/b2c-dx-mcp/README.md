@@ -2,9 +2,6 @@
 
 MCP (Model Context Protocol) server for Salesforce B2C Commerce developer experience tools.
 
-> [!NOTE]
-> This project is currently in **Developer Preview**. Tools are functional but require `--allow-non-ga-tools` to enable. Additional tools will be added in future releases.
-
 This MCP server enables AI assistants (Cursor, Claude Code, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
 
 Full documentation: [https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/)
@@ -184,6 +181,3 @@ For MCP development, testing, and local setup, see [CONTRIBUTING.md](./CONTRIBUT
 
 This project is licensed under the Apache License 2.0. See [LICENSE.txt](../../LICENSE.txt) for full details.
 
-## Disclaimer
-
-This project is currently in **Developer Preview** and is provided "as-is" without warranty of any kind. It is not yet generally available (GA) and should not be used in production environments. Features, APIs, and functionality may change without notice in future releases.

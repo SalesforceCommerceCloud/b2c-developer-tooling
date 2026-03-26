@@ -6,7 +6,6 @@ description: Available toolsets and tools in the B2C DX MCP Server for SCAPI, CA
 
 The B2C DX MCP Server provides five toolsets with specialized tools for different B2C Commerce development workflows.
 
-> **Note:** Tools require `--allow-non-ga-tools` to enable (preview release).
 
 ## Overview
 
@@ -25,7 +24,7 @@ Toolsets are collections of related tools that work together to support specific
 
 Cartridge development, deployment, and code version management.
 
-**Status:** 🚧 Early Access
+**Status:** ✅ Generally Available
 
 **Auto-enabled for:** Cartridge projects (detected by `.project` file)
 
@@ -39,7 +38,7 @@ Cartridge development, deployment, and code version management.
 
 Managed Runtime operations for PWA Kit and Storefront Next deployments.
 
-**Status:** 🚧 Early Access
+**Status:** ✅ Generally Available
 
 **Auto-enabled for:** PWA Kit v3 and Storefront Next projects
 
@@ -53,7 +52,7 @@ Managed Runtime operations for PWA Kit and Storefront Next deployments.
 
 PWA Kit v3 development tools for building headless storefronts.
 
-**Status:** 🚧 Early Access (PWA Kit-specific tools planned)
+**Status:** ✅ Generally Available
 
 **Auto-enabled for:** PWA Kit v3 projects (detected by `@salesforce/pwa-kit-*` dependencies, `@salesforce/retail-react-app`, or `ccExtensibility` field in package.json)
 
@@ -71,7 +70,7 @@ PWA Kit v3 development tools for building headless storefronts.
 
 Salesforce Commerce API discovery and exploration.
 
-**Status:** 🚧 Early Access
+**Status:** ✅ Generally Available
 
 **Always enabled** - Base toolset available for all projects.
 
@@ -87,7 +86,9 @@ Salesforce Commerce API discovery and exploration.
 
 Storefront Next development tools for building modern storefronts.
 
-**Status:** 🚧 Early Access. Storefront Next is part of a closed pilot and isn't available for general use.
+> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+
+**Status:** 🚧 Preview — requires `--allow-non-ga-tools` flag.
 
 **Auto-enabled for:** Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies, package name starting with `storefront-next`, or workspace packages with these indicators)
 

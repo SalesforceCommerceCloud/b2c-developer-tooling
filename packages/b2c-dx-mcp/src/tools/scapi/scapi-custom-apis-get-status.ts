@@ -142,7 +142,7 @@ Requires OAuth (sfcc.custom-apis scope) and instance config (shortCode, tenantId
 
 CLI: b2c scapi custom status`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: false,
+      isGA: true,
       requiresInstance: false,
       inputSchema: {
         status: z.enum(['active', 'not_registered']).optional().describe('Filter by status. Omit for all.'),

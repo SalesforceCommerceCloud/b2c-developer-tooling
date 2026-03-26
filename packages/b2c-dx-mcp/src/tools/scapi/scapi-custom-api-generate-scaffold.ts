@@ -210,7 +210,7 @@ export function createScaffoldCustomApiTool(
 Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin) default to shopper, \
 apiDescription, projectRoot, outputDir.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: false,
+      isGA: true,
       requiresInstance: false,
       inputSchema: {
         apiName: z
