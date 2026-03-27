@@ -18,7 +18,7 @@ import {
   clearStoredSession,
   resetStatefulStoreForTesting,
 } from '@salesforce/b2c-tooling-sdk/auth';
-import {DEFAULT_PUBLIC_CLIENT_ID} from '@salesforce/b2c-tooling-sdk';
+import {DEFAULT_PUBLIC_CLIENT_ID, getDefaultPublicClientId} from '@salesforce/b2c-tooling-sdk';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
 
@@ -77,7 +77,7 @@ class TestOAuthCommandWithDefault extends OAuthCommand<typeof TestOAuthCommandWi
   async run(): Promise<void> {}
 
   protected override getDefaultClientId(): string {
-    return DEFAULT_PUBLIC_CLIENT_ID;
+    return getDefaultPublicClientId(this.accountManagerHost);
   }
 
   public testHasOAuthCredentials() {
@@ -90,6 +90,10 @@ class TestOAuthCommandWithDefault extends OAuthCommand<typeof TestOAuthCommandWi
 
   public testGetOAuthStrategy() {
     return this.getOAuthStrategy();
+  }
+
+  public testGetDefaultClientId() {
+    return this.getDefaultClientId();
   }
 }
 
@@ -287,6 +291,31 @@ describe('cli/oauth-command', () => {
         // client-credentials has higher priority than implicit in the default auth methods
         expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
       });
+
+      it('uses pod5 default client ID when account-manager-host is account-pod5.demandware.net', async () => {
+        stubParse(commandWithDefault, {'account-manager-host': 'account-pod5.demandware.net'});
+        await commandWithDefault.init();
+
+        expect(commandWithDefault.testGetDefaultClientId()).to.equal('c44527fe-66ff-4455-9eec-7287b2c66485');
+      });
+    });
+  });
+
+  describe('getDefaultPublicClientId', () => {
+    it('returns standard default for default host', () => {
+      expect(getDefaultPublicClientId('account.demandware.com')).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+    });
+
+    it('returns pod5 client ID for account-pod5.demandware.net', () => {
+      expect(getDefaultPublicClientId('account-pod5.demandware.net')).to.equal('c44527fe-66ff-4455-9eec-7287b2c66485');
+    });
+
+    it('returns standard default when host is undefined', () => {
+      expect(getDefaultPublicClientId(undefined)).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+    });
+
+    it('returns standard default for unknown hosts', () => {
+      expect(getDefaultPublicClientId('some-other-host.example.com')).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
     });
   });
 
