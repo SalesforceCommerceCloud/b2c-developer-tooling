@@ -483,7 +483,7 @@ b2c sandbox reset zzzv-123 --json
 
 ## b2c sandbox update
 
-Update a sandbox's TTL, scheduling, tags, or notification emails.
+Update a sandbox's TTL, scheduling, resource profile, tags, or notification emails.
 
 ### Usage
 
@@ -503,6 +503,7 @@ b2c sandbox update <SANDBOXID> [FLAGS]
 |------|-------------|
 | `--ttl` | Number of hours to add to sandbox lifetime (0 or less for infinite). Must adhere to the maximum TTL configuration together with previous extensions. |
 | `--auto-scheduled` / `--no-auto-scheduled` | Enable or disable automatic start/stop scheduling |
+| `--resource-profile` | Resource profile (`medium`, `large`, `xlarge`, `xxlarge`) |
 | `--tags` | Comma-separated list of tags |
 | `--emails` | Comma-separated list of notification email addresses |
 
@@ -526,11 +527,14 @@ b2c sandbox update zzzv-123 --no-auto-scheduled
 # Set tags
 b2c sandbox update zzzv-123 --tags ci,nightly
 
+# Update resource profile
+b2c sandbox update zzzv-123 --resource-profile large
+
 # Set notification emails
 b2c sandbox update zzzv-123 --emails dev@example.com,qa@example.com
 
 # Combine multiple updates
-b2c sandbox update zzzv-123 --ttl 48 --tags ci,nightly
+b2c sandbox update zzzv-123 --ttl 48 --resource-profile xlarge --tags ci,nightly
 
 # Output as JSON
 b2c sandbox update zzzv-123 --ttl 48 --json
