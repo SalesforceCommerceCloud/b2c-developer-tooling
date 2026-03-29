@@ -1,0 +1,7 @@
+[
+  {"query": "My checkout flow is throwing a 500 error on the sandbox. Can you pull the recent error logs to see what's happening?", "should_trigger": true},
+  {"query": "How do I tail the SFCC logs in real time while I'm debugging my custom controller?", "should_trigger": true},
+  {"query": "I need to search the B2C logs for PaymentProcessor errors in the last hour. Show me the b2c logs command with filters.", "should_trigger": true},
+  {"query": "How do I add Logger.error() calls in my B2C cartridge script to log custom error messages?", "should_trigger": false},
+  {"query": "Can you help me configure Winston logging levels in my Node.js Express app?", "should_trigger": false}
+]

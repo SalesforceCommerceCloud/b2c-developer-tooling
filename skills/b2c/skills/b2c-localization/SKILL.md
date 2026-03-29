@@ -1,6 +1,6 @@
 ---
 name: b2c-localization
-description: Localize templates, forms, and content in B2C Commerce. Use when adding translations, working with resource bundles (*.properties files), using Resource.msg, or implementing multi-locale support. Covers locale folders, string externalization, and date/currency formatting.
+description: Localize templates, forms, and content in B2C Commerce. Use when adding translations, working with resource bundles (*.properties files), using Resource.msg or Resource.msgf, or implementing multi-locale/multi-language/multi-country support. Covers i18n, internationalization, translation files, locale folders, string externalization, and date/currency formatting.
 ---
 
 # Localization Skill

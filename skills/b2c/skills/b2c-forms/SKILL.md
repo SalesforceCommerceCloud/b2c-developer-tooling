@@ -1,6 +1,6 @@
 ---
 name: b2c-forms
-description: Create forms with validation in SFRA patterns for B2C Commerce. Use when building checkout forms, account forms, or any form with field definitions, validation rules, and error handling. Covers form XML definitions, server-side validation, and template rendering.
+description: B2C Commerce form development including form XML definitions, ISML form rendering, dw.forms API, form groups, form lists, form actions, form validation, server-side processing, and template rendering. Covers checkout forms, account forms, address forms, and any form with field definitions or validation rules.
 ---
 
 # Forms Skill

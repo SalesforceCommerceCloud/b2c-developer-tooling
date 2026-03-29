@@ -1,0 +1,7 @@
+[
+  {"query": "How do I use CustomObjectMgr to create and query custom objects in B2C Commerce? I need to store configuration data per site with Transaction.wrap.", "should_trigger": true},
+  {"query": "I'm trying to search custom objects via OCAPI Data API using a bool_query with term_query filters. What's the endpoint URL and request format?", "should_trigger": true},
+  {"query": "How do I set up a processing queue using custom objects? I need to create objects with a status field and query for pending items in a job.", "should_trigger": true},
+  {"query": "How do I add custom attributes to the Product system object in Business Manager?", "should_trigger": false},
+  {"query": "I need to create a custom object type definition in my site import XML for deployment. What's the metadata XML schema?", "should_trigger": false}
+]

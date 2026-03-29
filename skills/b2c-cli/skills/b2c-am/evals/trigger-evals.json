@@ -1,0 +1,7 @@
+[
+  {"query": "I need to onboard a new developer. Create a user in Account Manager and grant them bm-admin role scoped to our zzxy_prd tenant.", "should_trigger": true},
+  {"query": "How do I create an API client in Account Manager for our CI/CD pipeline with the SALESFORCE_COMMERCE_API role?", "should_trigger": true},
+  {"query": "Can you list all users in our Account Manager org and show me which ones have the bm-admin role? I want to audit permissions.", "should_trigger": true},
+  {"query": "How do I create a SLAS client for my headless storefront to handle shopper login?", "should_trigger": false},
+  {"query": "I need to configure OAuth scopes for my SCAPI integration. Where do I set up the client credentials?", "should_trigger": false}
+]

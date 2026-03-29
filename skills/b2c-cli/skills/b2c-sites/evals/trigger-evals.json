@@ -1,0 +1,7 @@
+[
+  {"query": "How do I get a list of all the storefront sites on my B2C sandbox?", "should_trigger": true},
+  {"query": "I need to find the site IDs configured on my instance so I can use them in an import command. What's the b2c command for that?", "should_trigger": true},
+  {"query": "Can I check which sites are online vs offline on my-sandbox.demandware.net using the CLI? I want JSON output for a script.", "should_trigger": true},
+  {"query": "How do I create a new storefront site on my B2C Commerce instance from scratch?", "should_trigger": false},
+  {"query": "I need to configure site preferences for RefArch. What XML format should I use for preferences.xml?", "should_trigger": false}
+]

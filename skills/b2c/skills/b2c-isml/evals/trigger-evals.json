@@ -1,0 +1,7 @@
+[
+  {"query": "How do I loop through a list of products in an ISML template? I want to show each product name and price using isloop.", "should_trigger": true},
+  {"query": "I'm writing a storefront template and need to use the isdecorate pattern with isreplace for a shared page layout. Can you show me how the decorator works in templates/default/layouts?", "should_trigger": true},
+  {"query": "My isprint tag is outputting HTML-encoded markup instead of raw HTML. How do I disable encoding in ISML expressions and what's the ${...} syntax for calling URLUtils.url?", "should_trigger": true},
+  {"query": "How do I deploy my cartridge templates to the sandbox? The code version isn't activating after upload.", "should_trigger": false},
+  {"query": "I need to create a Page Designer component with regions and attribute_definition_groups for a hero banner. What should the JSON meta definition look like?", "should_trigger": false}
+]

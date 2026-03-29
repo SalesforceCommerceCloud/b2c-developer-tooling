@@ -1,0 +1,7 @@
+[
+  {"query": "I need to add a custom attribute called 'vendorCode' to the Product system object type. Can you create the system-objecttype-extensions.xml with the attribute definition and a group for Business Manager?", "should_trigger": true},
+  {"query": "How do I define a custom object type for storing store locations with latitude, longitude, and phone fields in custom-objecttype-definitions.xml?", "should_trigger": true},
+  {"query": "I want to create a site preference that has different values for development, staging, and production instances. How do I set up the metadata XML and preferences.xml?", "should_trigger": true},
+  {"query": "How do I read a custom attribute value from a product in my SFRA controller? I'm trying to access product.custom.vendorCode but it's coming back undefined.", "should_trigger": false},
+  {"query": "I need to import product data from a CSV file into B2C Commerce. What's the XML format for the catalog import file with product names and prices?", "should_trigger": false}
+]

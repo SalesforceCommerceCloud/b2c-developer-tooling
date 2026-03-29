@@ -1,0 +1,7 @@
+[
+  {"query": "I need to create a new B2C cartridge called app_custom_loyalty with a controller and a hook. Can I use the scaffold commands to generate these?", "should_trigger": true},
+  {"query": "How do I scaffold a custom SCAPI endpoint for a loyalty points API? I want to generate the boilerplate with b2c scaffold custom-api.", "should_trigger": true},
+  {"query": "I want to generate a Page Designer component called heroCarousel in the content group. What's the scaffold command for that and can I do a dry-run first?", "should_trigger": true},
+  {"query": "How do I deploy my cartridge code to a B2C sandbox instance using the b2c CLI? I need to push cartridges and activate the code version.", "should_trigger": false},
+  {"query": "I'm writing a custom job step that processes orders in chunks. What's the pattern for implementing the read/process/write methods in the chunk step type?", "should_trigger": false}
+]

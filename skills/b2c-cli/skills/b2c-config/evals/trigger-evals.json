@@ -1,0 +1,7 @@
+[
+  {"query": "My b2c CLI keeps connecting to the wrong sandbox. How do I check which config file and credentials are being used? I think my dw.json might be getting overridden by env vars.", "should_trigger": true},
+  {"query": "I need to set up multiple instances in my dw.json and switch between staging and production. How do I use b2c setup instance to manage them?", "should_trigger": true},
+  {"query": "How do I get an OAuth access token from the CLI for use in curl commands against OCAPI? I want to use b2c auth token with specific scopes.", "should_trigger": true},
+  {"query": "How do I deploy cartridges to my sandbox using b2c code deploy? I want to upload and activate the code version.", "should_trigger": false},
+  {"query": "I need to run a CIP analytics report but I'm getting a 403 unauthorized error. What API client role do I need for the tenant?", "should_trigger": false}
+]

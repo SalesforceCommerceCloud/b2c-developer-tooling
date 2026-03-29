@@ -1,0 +1,7 @@
+[
+  {"query": "I need to implement passwordless login using email OTP with SLAS. How does the callback flow work and how do I exchange the OTP for tokens?", "should_trigger": true},
+  {"query": "How do I bridge sessions between our PWA Kit and SFRA storefronts? We need seamless auth when users navigate between the two using dwsgst tokens.", "should_trigger": true},
+  {"query": "We're getting HTTP 409 errors when calling the SLAS trusted-system/token endpoint for the same shopper. How do I handle the 3-second protection window for TSOB?", "should_trigger": true},
+  {"query": "How do I create a new SLAS client using the b2c CLI with default scopes and a redirect URI for my storefront?", "should_trigger": false},
+  {"query": "I need to get a guest access token to call the Shopper Products API from my composable storefront. What's the basic client_credentials flow?", "should_trigger": false}
+]

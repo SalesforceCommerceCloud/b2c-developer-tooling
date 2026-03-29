@@ -1,0 +1,7 @@
+[
+  {"query": "I need to cache external API responses in my B2C cartridge using CacheMgr. How do I set up caches.json and use the get/put methods?", "should_trigger": true},
+  {"query": "My custom cache entries keep disappearing. What's the max entry size and when do caches get invalidated in B2C Commerce?", "should_trigger": true},
+  {"query": "How do I define a cache with expireAfterSeconds in caches.json and reference it from package.json in my cartridge?", "should_trigger": true},
+  {"query": "How do I configure HTTP caching headers for my SCAPI custom endpoint responses?", "should_trigger": false},
+  {"query": "I want to improve page load performance on my storefront. Should I enable CDN caching or use page-level caching in B2C?", "should_trigger": false}
+]

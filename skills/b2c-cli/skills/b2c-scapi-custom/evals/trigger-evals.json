@@ -1,0 +1,7 @@
+[
+  {"query": "My custom SCAPI endpoint is returning 404. How do I check if it's registered properly on tenant zzxy_prd?", "should_trigger": true},
+  {"query": "Can you list all the custom API endpoints and show me which ones failed registration? I need to see the error reasons.", "should_trigger": true},
+  {"query": "I ran b2c scapi custom status but some endpoints show not_registered. How do I debug what went wrong with the registration?", "should_trigger": true},
+  {"query": "I need to create a new custom SCAPI endpoint with a Shopper API that returns product recommendations. What's the process?", "should_trigger": false},
+  {"query": "How do I call the SCAPI Shopper Products API from my storefront JavaScript to get product details?", "should_trigger": false}
+]

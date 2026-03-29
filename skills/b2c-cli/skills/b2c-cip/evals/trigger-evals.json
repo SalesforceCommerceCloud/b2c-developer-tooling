@@ -1,0 +1,7 @@
+[
+  {"query": "I need to pull sales analytics data for January from our production tenant abcd_prd. How do I run the sales-analytics report with b2c cip?", "should_trigger": true},
+  {"query": "What tables are available in CIP? I want to discover the aggregate tables and then run a custom SQL query against ccdw_aggr_sales_summary.", "should_trigger": true},
+  {"query": "How do I get search query performance metrics from Commerce Intelligence? I want to see top search terms and their conversion rates for our RefArch site.", "should_trigger": true},
+  {"query": "I need to export Page Designer content from the SharedLibrary. How do I list all pages using the b2c CLI?", "should_trigger": false},
+  {"query": "How do I set up OAuth client credentials in dw.json for the b2c CLI? My client-id and client-secret aren't being picked up.", "should_trigger": false}
+]

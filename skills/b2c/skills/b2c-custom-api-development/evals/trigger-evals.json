@@ -1,0 +1,7 @@
+[
+  {"query": "I need to create a Custom SCAPI endpoint with a schema.yaml and api.json. How do I structure the rest-apis folder in my cartridge?", "should_trigger": true},
+  {"query": "My custom API returns 404 after deployment. How do I check registration status and debug why the endpoint isn't appearing?", "should_trigger": true},
+  {"query": "How do I use RESTResponseMgr to return a success response from my custom API script, and what OAuth scopes do I need for a shopper-facing endpoint?", "should_trigger": true},
+  {"query": "How do I call an external REST API from a B2C Commerce script using LocalServiceRegistry?", "should_trigger": false},
+  {"query": "I need to set up OCAPI permissions for the Data API to allow product imports from an external system.", "should_trigger": false}
+]

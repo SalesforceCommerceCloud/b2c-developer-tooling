@@ -1,0 +1,7 @@
+[
+  {"query": "How do I search for products using the Shopper Search SCAPI endpoint? I need to call the product-search API from my PWA Kit storefront with proper auth headers.", "should_trigger": true},
+  {"query": "I'm building a headless checkout flow and need to create a basket, add items, and submit an order using the Shopper Baskets and Shopper Orders SCAPI endpoints.", "should_trigger": true},
+  {"query": "How do I use the Shopper Context API to set personalization data like source codes and customer group IDs? What are the quota limits for production vs non-production?", "should_trigger": true},
+  {"query": "I need to update product catalog data and inventory levels from a backend service using admin API tokens from Account Manager.", "should_trigger": false},
+  {"query": "How do I implement passwordless email OTP login with SLAS? I need the callback flow to send a one-time password to the shopper.", "should_trigger": false}
+]
