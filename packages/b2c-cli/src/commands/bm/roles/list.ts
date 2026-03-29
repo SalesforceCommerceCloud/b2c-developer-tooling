@@ -16,6 +16,7 @@ const COLUMNS: Record<string, ColumnDef<BmRole>> = {
   description: {
     header: 'Description',
     get: (r) => r.description || '-',
+    extended: true,
   },
   userCount: {
     header: 'Users',
@@ -28,7 +29,7 @@ const COLUMNS: Record<string, ColumnDef<BmRole>> = {
   },
 };
 
-const DEFAULT_COLUMNS = ['id', 'description', 'userCount'];
+const DEFAULT_COLUMNS = ['id', 'userCount'];
 
 export default class BmRolesList extends InstanceCommand<typeof BmRolesList> {
   static description = t('commands.bm.roles.list.description', 'List Business Manager access roles on an instance');
