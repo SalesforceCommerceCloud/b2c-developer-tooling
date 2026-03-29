@@ -8,6 +8,11 @@ description: Migrate from sfcc-ci to @salesforce/b2c-cli with command mappings, 
 
 If you haven't installed the B2C CLI yet, see the [Installation guide](./installation).
 
+::: tip Migrating from sfcc-ci's JavaScript API?
+If you use `require('sfcc-ci')` in Node.js scripts, see the
+[SDK Migration Guide](./sdk-migration) for side-by-side code examples.
+:::
+
 ## Authentication
 
 The biggest change from sfcc-ci is how authentication works by default.
@@ -215,4 +220,5 @@ The B2C CLI provides official GitHub Actions that handle installation, credentia
 - [Authentication Setup](./authentication) — configure API clients, OCAPI, and WebDAV
 - [Configuration](./configuration) — environment variables, dw.json, and instance management
 - [CI/CD with GitHub Actions](./ci-cd) — official GitHub Actions for automation
+- [SDK Migration (Programmatic API)](./sdk-migration) — migrate from sfcc-ci's JavaScript API to the SDK
 - [CLI Reference](/cli/) — browse all available commands
