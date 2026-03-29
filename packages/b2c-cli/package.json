@@ -98,6 +98,19 @@
     },
     "topicSeparator": " ",
     "topics": {
+      "bm": {
+        "description": "Manage Business Manager resources on an instance",
+        "subtopics": {
+          "roles": {
+            "description": "Manage instance-level Business Manager access roles",
+            "subtopics": {
+              "permissions": {
+                "description": "Get and set permissions for Business Manager roles"
+              }
+            }
+          }
+        }
+      },
       "auth": {
         "description": "Manage authentication credentials and tokens\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/auth.html"
       },

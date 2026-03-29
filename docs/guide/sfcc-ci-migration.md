@@ -106,19 +106,22 @@ Sandbox commands map directly, with spaces replacing colons:
 | `sfcc-ci slas:client:list` | `b2c slas client list` |
 | `sfcc-ci slas:client:delete` | `b2c slas client delete` |
 
-### User / Org / Role (Account Manager)
+### User / Org / Role
 
-Account Manager operations are under the `am` topic:
+Account Manager operations are under the `am` topic. Instance-level Business Manager role management is under the `bm` topic:
 
-| sfcc-ci | b2c-cli |
-|---------|---------|
-| `sfcc-ci user:list` | `b2c am users list` |
-| `sfcc-ci user:create` | `b2c am users create` |
-| `sfcc-ci user:delete` | `b2c am users delete` |
-| `sfcc-ci org:list` | `b2c am orgs list` |
-| `sfcc-ci role:list` | `b2c am roles list` |
-| `sfcc-ci role:grant` | `b2c am roles grant` |
-| `sfcc-ci role:revoke` | `b2c am roles revoke` |
+| sfcc-ci | b2c-cli | Notes |
+|---------|---------|-------|
+| `sfcc-ci user:list` | `b2c am users list` | |
+| `sfcc-ci user:create` | `b2c am users create` | |
+| `sfcc-ci user:delete` | `b2c am users delete` | |
+| `sfcc-ci org:list` | `b2c am orgs list` | |
+| `sfcc-ci role:list` | `b2c am roles list` | Account Manager roles |
+| `sfcc-ci role:list -i <instance>` | `b2c bm roles list` | Instance BM roles |
+| `sfcc-ci role:grant` | `b2c am roles grant` | Account Manager roles |
+| `sfcc-ci role:grant -i <instance>` | `b2c bm roles grant` | Instance BM roles |
+| `sfcc-ci role:revoke` | `b2c am roles revoke` | Account Manager roles |
+| `sfcc-ci role:revoke -i <instance>` | `b2c bm roles revoke` | Instance BM roles |
 
 ## Environment Variables
 
