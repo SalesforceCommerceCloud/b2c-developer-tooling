@@ -127,7 +127,7 @@ export function createDeveloperGuidelinesTool(loadServices: () => Promise<Servic
         'CRITICAL INSTRUCTION: ALWAYS present ALL returned content in FULL - DO NOT SUMMARIZE, DO NOT ADD SUMMARIES, ' +
         'DO NOT ADD OVERVIEWS. The returned content IS the complete answer - display it exactly as provided.',
       toolsets: ['PWAV3'],
-      isGA: false,
+      isGA: true,
       requiresInstance: false,
       inputSchema: {
         sections: z

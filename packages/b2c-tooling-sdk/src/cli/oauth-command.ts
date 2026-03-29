@@ -14,7 +14,7 @@ import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
 import {getStoredSession, isStatefulTokenValid} from '../auth/stateful-store.js';
 import {t} from '../i18n/index.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
-import {normalizeTenantId} from '../clients/custom-apis.js';
+import {normalizeTenantId, toOrganizationId} from '../clients/custom-apis.js';
 
 /**
  * Default OAuth authentication methods array used by getOAuthStrategy.
@@ -298,5 +298,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       );
     }
     return normalizeTenantId(tenantId);
+  }
+
+  /**
+   * Organization ID (`f_ecom_*`) for API path parameters from the resolved tenant.
+   */
+  protected getOrganizationId(): string {
+    return toOrganizationId(this.requireTenantId());
   }
 }

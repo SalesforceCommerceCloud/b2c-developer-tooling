@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  
+  "type":"object",
+  
+  "properties": {
+    "name": {"$ref":"common.json#/definitions/name"},
+    "description": {"$ref":"common.json#/definitions/description"},
+    "arch_type": {
+      "$ref": "common.json#/definitions/arch_type"
+    },
+    "group": {"$ref":"common.json#/definitions/id"},
+    "region_definitions": {
+      "type": "array",
+      "items": {"$ref": "regiondefinition.json"}
+    },
+    "attribute_definition_groups": {
+      "type": "array",
+      "items": {"$ref": "attributedefinitiongroup.json"}
+    }
+  },
+  "required": ["region_definitions","attribute_definition_groups", "group"],
+  "additionalProperties": false
+}

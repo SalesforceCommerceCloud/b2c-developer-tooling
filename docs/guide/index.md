@@ -33,24 +33,44 @@ See the [CLI Installation Guide](./installation) for more installation options.
 
 The B2C DX MCP Server enables AI assistants to help with B2C Commerce development tasks.
 
-**Claude Code:**
+### Claude Code (Project Scope)
 
-::: code-group
+1. Open your project root in Claude Code.
+2. Install the plugin marketplace entry:
 
-```bash [Project Scope (Recommended)]
-cd /path/to/your/project
-claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+```bash
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-dx-mcp --scope project
 ```
 
-```bash [User Scope]
-claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+### Cursor (Project Scope)
+
+1. Open your project root.
+2. Create or edit `.cursor/mcp.json`.
+3. Add this entry under `mcpServers` (merge with existing config, do not replace the full file):
+
+```json
+"b2c-dx-mcp": {
+  "command": "npx",
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+}
 ```
 
-:::
+### GitHub Copilot (Project Scope)
 
-**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+1. Open your project root.
+2. Create or edit `.vscode/mcp.json`.
+3. Add this entry under `servers` (merge with existing config, do not replace the full file):
 
-See the [MCP Server Installation Guide](/mcp/installation) for detailed setup instructions for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
+```json
+"b2c-dx-mcp": {
+  "type": "stdio",
+  "command": "npx",
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+}
+```
+
+See the [MCP Server Installation Guide](/mcp/installation) for full setup steps and troubleshooting.
 
 ## Next Steps
 

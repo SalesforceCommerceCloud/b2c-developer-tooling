@@ -9,7 +9,7 @@ import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   createSlasClient,
   getApiErrorMessage,
-  DEFAULT_PUBLIC_CLIENT_ID,
+  getDefaultPublicClientId,
   type SlasClient,
   type SlasComponents,
 } from '@salesforce/b2c-tooling-sdk';
@@ -206,7 +206,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
   }
 
   protected override getDefaultClientId(): string {
-    return DEFAULT_PUBLIC_CLIENT_ID;
+    return getDefaultPublicClientId(this.accountManagerHost);
   }
 
   /**

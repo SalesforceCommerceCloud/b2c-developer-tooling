@@ -306,7 +306,7 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
 
 **Requirements:** OAuth with sfcc.scapi-schemas scope.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: false,
+      isGA: true,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)
       inputSchema: {
         apiFamily: z.string().optional().describe('API family (e.g., "checkout", "product", "custom").'),

@@ -87,9 +87,9 @@ describe('tools/pwav3/pwa-kit-development-guidelines', () => {
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 
-    it('should not be GA (generally available)', () => {
+    it('should be GA (generally available)', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      expect(tool.isGA).to.be.false;
+      expect(tool.isGA).to.be.true;
     });
 
     it('should not require B2C instance', () => {

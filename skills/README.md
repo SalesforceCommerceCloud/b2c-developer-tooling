@@ -1,15 +1,22 @@
-# B2C CLI Agent Skills & Claude Code Plugins
+# B2C Agent Skills & Claude Code Plugins
 
-This directory contains agent skills and [Claude Code](https://claude.ai/code) plugins that enhance the AI-assisted development experience when working with Salesforce B2C Commerce projects.
+This directory contains agent skills and skills-based [Claude Code](https://claude.ai/code) plugins that enhance AI-assisted development for Salesforce B2C Commerce projects.
 
 These skills follow the [Agent Skills](https://agentskills.io/home) format and can be used with multiple agentic IDEs including Claude Code, Cursor, GitHub Copilot, and OpenAI Codex.
 
-## Available Plugins
+## Available Skills Plugins
 
 | Plugin | Description |
 |--------|-------------|
 | `b2c-cli` | Skills for Salesforce B2C Commerce CLI operations |
 | `b2c` | B2C Commerce development skills including Custom API development guides |
+
+## MCP Plugin
+
+`b2c-dx-mcp` is an MCP server plugin, not a skills plugin. For installation and configuration, see:
+
+- [MCP Installation Guide](../docs/mcp/installation.md)
+- [MCP Overview](../docs/mcp/index.md)
 
 ## Installation
 
@@ -23,17 +30,20 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 
 ### 2. Install the Plugin
 
-Install the b2c-cli plugin at your preferred scope:
+Install the plugins at your preferred scope:
 
 ```bash
 # Install for the current project only
 claude plugin install b2c-cli --scope project
+claude plugin install b2c --scope project
 
 # Install for the current user (available in all projects)
 claude plugin install b2c-cli --scope user
+claude plugin install b2c --scope user
 
 # Install locally (development/testing)
 claude plugin install b2c-cli --scope local
+claude plugin install b2c --scope local
 ```
 
 ### 3. Verify Installation

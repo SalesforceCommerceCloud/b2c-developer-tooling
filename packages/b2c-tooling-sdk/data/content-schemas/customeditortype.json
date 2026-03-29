@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  
+  "type":"object",
+
+  "definitions": {
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+
+  "properties": {
+    "name": {"$ref": "common.json#/definitions/name"},
+    "description": {"$ref": "common.json#/definitions/description"},
+    "resources": {
+      "type": "object",
+      "properties": {
+        "styles": {"$ref":"#/definitions/resources"},
+        "scripts": {"$ref":"#/definitions/resources"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

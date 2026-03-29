@@ -1,5 +1,31 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.0.0
+
+### Major Changes
+
+- [#289](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/289) [`7287490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7287490d6ec4e3597822d0ee0e4d6775ae656845) - Document MCP server GA availability updates. CARTRIDGES, MRT, SCAPI, and PWAV3 tools are generally available and no longer require `--allow-non-ga-tools`; STOREFRONTNEXT tools remain in preview. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
+## 0.5.4
+
+### Patch Changes
+
+- [#283](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/283) [`fb5ac83`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fb5ac83b43db0666e8e17f62516eb04aac962c2d) - Fix marketplace schema validation for the `b2c-dx-mcp` plugin by adding the required `source` field (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [[`f7229b4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7229b4372bb23d8e107db75f722575c33f4a007)]:
+  - @salesforce/b2c-tooling-sdk@0.12.0
+
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [[`8c31081`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c31081b47e57e6a21e62425e6f19da036fc3e34), [`e4b5094`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4b5094d9c1c2a60e1214bc236ce7ed84c5d158b)]:
+  - @salesforce/b2c-tooling-sdk@0.11.0
+
 ## 0.5.1
 
 ### Patch Changes

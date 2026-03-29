@@ -1,26 +1,27 @@
 ---
-description: Commands for exporting and listing Page Designer content from B2C Commerce content libraries.
+description: Commands for exporting, listing, and validating Page Designer content from B2C Commerce content libraries.
 ---
 
 # Content Commands
 
-Commands for working with Page Designer content libraries on B2C Commerce instances.
+Commands for working with Page Designer content libraries and metadefinitions.
 
 ## Authentication
 
-Content commands require OAuth authentication:
+The `content export` and `content list` commands require OAuth authentication:
 
 | Operation | Auth Required |
 |-----------|--------------|
 | `content export` | OAuth (OCAPI for export job + WebDAV for assets) |
 | `content list` | OAuth (OCAPI for export job) |
+| `content validate` | None (local file validation) |
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 ```
 
-Both commands also support a `--library-file` flag for offline use with a local XML file, which skips authentication entirely.
+The `content export` and `content list` commands also support a `--library-file` flag for offline use with a local XML file, which skips authentication entirely.
 
 For complete setup instructions, see the [Authentication Guide](/guide/authentication).
 
@@ -201,3 +202,96 @@ footer-content (CONTENT ASSET)
 Pages show `id (typeId: type)`, components show `typeId (id)`, content assets show `id (CONTENT ASSET)`, and static assets show `path (STATIC ASSET)`. The tree uses color when output to a terminal: page names are bold, component type IDs are cyan, asset paths are green, and tree connectors are dim.
 
 With `--json`, returns `{ data: [...] }` with each item containing `id`, `type`, `typeId`, and `children` count.
+
+---
+
+## b2c content validate
+
+Validate Page Designer metadefinition JSON files against bundled JSON schemas. This is a local-only command — no instance connection or authentication is required.
+
+The command auto-detects the schema type using file path conventions (`experience/pages/` → pagetype, `experience/components/` → componenttype) and falls back to inspecting the JSON properties. You can also specify the type explicitly with `--type`.
+
+### Usage
+
+```bash
+b2c content validate <files...>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `files` | One or more file paths, directories, or glob patterns | Yes |
+
+When a directory is passed, all `*.json` files within it are validated recursively.
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--type`, `-t` | Schema type to validate against (skips auto-detection) | Auto-detected |
+
+Available schema types: `pagetype`, `componenttype`, `aspecttype`, `cmsrecord`, `customeditortype`, `contentassetpageconfig`, `contentassetcomponentconfig`, `contentassetstructuredcontentdata`, `image`.
+
+### Examples
+
+```bash
+# Validate a single page type definition
+b2c content validate cartridge/experience/pages/storePage.json
+
+# Validate all metadefinitions in a directory recursively
+b2c content validate cartridge/experience/
+
+# Validate with a glob pattern
+b2c content validate 'cartridge/experience/**/*.json'
+
+# Explicitly specify the schema type
+b2c content validate --type componenttype mycomponent.json
+
+# Validate multiple files
+b2c content validate pages/home.json pages/about.json components/hero.json
+
+# JSON output for CI/scripting
+b2c content validate cartridge/experience/ --json
+```
+
+### Output
+
+The command prints a color-coded result for each file:
+
+```
+PASS: experience/pages/storePage.json (pagetype)
+PASS: experience/components/hero.json (componenttype)
+FAIL: experience/components/broken.json (componenttype)
+  ERROR at .attribute_definition_groups[0]: is required
+
+2/3 file(s) valid, 1 error(s)
+```
+
+The command exits with a non-zero status when any file fails validation.
+
+With `--json`, returns a structured result:
+
+```json
+{
+  "results": [
+    {
+      "valid": true,
+      "schemaType": "pagetype",
+      "errors": [],
+      "filePath": "/path/to/storePage.json"
+    }
+  ],
+  "totalFiles": 1,
+  "validFiles": 1,
+  "totalErrors": 0
+}
+```
+
+### Notes
+
+- Auto-detection uses file path conventions first: files under `experience/pages/` are validated as `pagetype`, files under `experience/components/` as `componenttype`. For other schema types, use `--type`.
+- Schemas are bundled with the SDK and follow the [Page Designer metadefinition specification](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-page-designer.html).
+- Use `b2c content validate` in CI pipelines to catch metadefinition errors before deployment.

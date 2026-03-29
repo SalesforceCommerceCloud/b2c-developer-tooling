@@ -70,6 +70,8 @@ You can configure the CLI using environment variables:
 | `SFCC_SHORTCODE`              | SCAPI short code                                               |
 | `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                               |
 | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
+| `SFCC_REDIRECT_URI`           | Override redirect URI for implicit OAuth flow (e.g., when behind a proxy) |
+| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the implicit OAuth redirect server (default: `8080`) |
 | `SFCC_USERNAME`               | Basic auth username                                            |
 | `SFCC_PASSWORD`               | Basic auth password                                            |
 | `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |

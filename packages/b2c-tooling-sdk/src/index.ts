@@ -71,6 +71,7 @@ export {
   createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
   createCdnZonesClient,
+  createGranularReplicationsClient,
   createCipClient,
   toOrganizationId,
   normalizeTenantId,
@@ -153,6 +154,19 @@ export type {
   ZonesEnvelope,
   CdnZonesPaths,
   CdnZonesComponents,
+  GranularReplicationsClient,
+  GranularReplicationsClientConfig,
+  GranularReplicationsError,
+  GranularReplicationsResponse,
+  ProductItem,
+  PriceTableItem,
+  ContentAssetItemPrivate,
+  ContentAssetItemShared,
+  PublishProcessResponse,
+  PublishProcessListResponse,
+  PublishIdResponse,
+  GranularReplicationsPaths,
+  GranularReplicationsComponents,
   CipClient,
   CipClientConfig,
   CipColumn,
@@ -314,7 +328,12 @@ export {getSafetyLevel, describeSafetyLevel, checkSafetyViolation, SafetyBlocked
 export type {SafetyLevel, SafetyConfig} from './safety/index.js';
 
 // Defaults
-export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from './defaults.js';
+export {
+  DEFAULT_ACCOUNT_MANAGER_HOST,
+  DEFAULT_ODS_HOST,
+  DEFAULT_PUBLIC_CLIENT_ID,
+  getDefaultPublicClientId,
+} from './defaults.js';
 
 // Version info
 export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';

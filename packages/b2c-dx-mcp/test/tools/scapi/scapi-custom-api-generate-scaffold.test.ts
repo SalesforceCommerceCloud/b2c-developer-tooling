@@ -78,7 +78,7 @@ describe('tools/scapi/scapi-custom-api-generate-scaffold', () => {
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
-      expect(tool.isGA).to.be.false;
+      expect(tool.isGA).to.be.true;
     });
 
     it('should have required apiName and optional cartridgeName, apiType, apiDescription, projectRoot, outputDir', () => {

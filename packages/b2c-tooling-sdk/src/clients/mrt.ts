@@ -155,7 +155,8 @@ export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): Mr
   let origin = config.origin || DEFAULT_MRT_ORIGIN;
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  // Normalize origin: add https:// if no protocol specified
+  // Normalize origin: add https:// if no protocol specified.
+  // The config resolver also normalizes, but this is a safety net for direct SDK usage.
   if (origin && !origin.startsWith('http://') && !origin.startsWith('https://')) {
     origin = `https://${origin}`;
   }

@@ -11,6 +11,7 @@ import {t, withDocs} from '../../i18n/index.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 type SandboxUpdateRequestModel = OdsComponents['schemas']['SandboxUpdateRequestModel'];
+type SandboxResourceProfile = OdsComponents['schemas']['SandboxResourceProfile'];
 
 /**
  * Command to update an on-demand sandbox.
@@ -26,7 +27,10 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
   };
 
   static description = withDocs(
-    t('commands.sandbox.update.description', 'Update a sandbox (extend TTL, change scheduling, update tags or emails)'),
+    t(
+      'commands.sandbox.update.description',
+      'Update a sandbox (extend TTL, change scheduling, update resource xprofile, tags, or emails)',
+    ),
     '/cli/sandbox.html#b2c-sandbox-update',
   );
 
@@ -37,9 +41,10 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
     '<%= config.bin %> <%= command.id %> zzzv-123 --ttl 0',
     '<%= config.bin %> <%= command.id %> zzzv-123 --auto-scheduled',
     '<%= config.bin %> <%= command.id %> zzzv-123 --no-auto-scheduled',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --resource-profile large',
     '<%= config.bin %> <%= command.id %> zzzv-123 --tags tag1,tag2',
     '<%= config.bin %> <%= command.id %> zzzv-123 --emails user@example.com,dev@example.com',
-    '<%= config.bin %> <%= command.id %> zzzv-123 --ttl 48 --tags ci,nightly --json',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --ttl 48 --resource-profile xlarge --tags ci,nightly --json',
   ];
 
   static flags = {
@@ -49,6 +54,10 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
     'auto-scheduled': Flags.boolean({
       description: 'Enable or disable automatic start/stop scheduling',
       allowNo: true,
+    }),
+    'resource-profile': Flags.string({
+      description: 'Resource profile (medium, large, xlarge, xxlarge)',
+      options: ['medium', 'large', 'xlarge', 'xxlarge'],
     }),
     tags: Flags.string({
       description: 'Comma-separated list of tags',
@@ -60,11 +69,19 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
 
   async run(): Promise<SandboxModel> {
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
-    const {ttl, 'auto-scheduled': autoScheduled, tags, emails} = this.flags;
+    const {ttl, 'auto-scheduled': autoScheduled, 'resource-profile': resourceProfile, tags, emails} = this.flags;
 
     // Require at least one update flag
-    if (ttl === undefined && autoScheduled === undefined && tags === undefined && emails === undefined) {
-      this.error('At least one update flag is required. Use --ttl, --auto-scheduled, --tags, or --emails.');
+    if (
+      ttl === undefined &&
+      autoScheduled === undefined &&
+      resourceProfile === undefined &&
+      tags === undefined &&
+      emails === undefined
+    ) {
+      this.error(
+        'At least one update flag is required. Use --ttl, --auto-scheduled, --resource-profile, --tags, or --emails.',
+      );
     }
 
     const body: SandboxUpdateRequestModel = {};
@@ -75,6 +92,10 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
 
     if (autoScheduled !== undefined) {
       body.autoScheduled = autoScheduled;
+    }
+
+    if (resourceProfile !== undefined) {
+      body.resourceProfile = resourceProfile as SandboxResourceProfile;
     }
 
     if (tags !== undefined) {
@@ -120,6 +141,7 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
       ['Realm', sandbox.realm],
       ['Instance', sandbox.instance],
       ['State', sandbox.state],
+      ['Profile', sandbox.resourceProfile],
       ['Auto Scheduled', sandbox.autoScheduled?.toString()],
       ['EOL', sandbox.eol ? new Date(sandbox.eol).toLocaleString() : undefined],
     ];

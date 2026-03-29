@@ -97,7 +97,7 @@ export const en = {
         deleting: 'Deleting code version {{codeVersion}} from {{hostname}}...',
         deleted: 'Code version {{codeVersion}} deleted successfully',
         failed: 'Failed to delete code version: {{message}}',
-        confirm: 'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}? (y/n)',
+        confirm: 'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}?',
         cancelled: 'Deletion cancelled',
       },
       deploy: {
@@ -173,6 +173,33 @@ export const en = {
         confirmClaudeCode: 'Continue with Claude Code installation?',
         confirmInstall: 'Proceed with installation?',
         ideNotes: 'See IDE documentation for skill configuration:',
+      },
+    },
+    replications: {
+      list: {
+        description: 'List granular replication processes',
+        error: 'Failed to list replication processes: {{message}}',
+        total: '\nTotal: {{total}} processes',
+      },
+      get: {
+        description: 'Get granular replication process details',
+        error: 'Failed to get replication process: {{message}}',
+      },
+      publish: {
+        description: 'Queue an item for granular replication (publish to production)',
+        'no-entity': 'Must specify --product-id, --price-table-id, or --content-id',
+        'site-required': '--site-id required for private content assets',
+        'library-required': '--library-id required for shared content assets',
+        success: 'Item queued for publishing. Process ID: {{id}}',
+        error: 'Failed to queue item for publishing: {{message}}',
+      },
+      wait: {
+        description: 'Wait for a granular replication process to complete',
+        checking: 'Status: {{status}}',
+        completed: 'Process completed successfully',
+        failed: 'Process failed',
+        timeout: 'Timeout waiting for process to complete',
+        error: 'Failed to get process status: {{message}}',
       },
     },
     scaffold: {

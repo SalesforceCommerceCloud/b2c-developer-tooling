@@ -14,7 +14,12 @@
 import type {AuthCredentials} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 import {getLogger} from '../logging/logger.js';
-import {mergeConfigsWithProtection, getPopulatedFields, createInstanceFromConfig} from './mapping.js';
+import {
+  mergeConfigsWithProtection,
+  getPopulatedFields,
+  createInstanceFromConfig,
+  normalizeOriginUrl,
+} from './mapping.js';
 import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
   ConfigLoadResult,
@@ -296,6 +301,10 @@ export class ConfigResolver {
     const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
     });
+
+    // Normalize mrtOrigin to ensure it always has an https:// prefix.
+    // Users may provide a bare hostname (e.g., "cloud.mobify.com") or a full URL.
+    config.mrtOrigin = normalizeOriginUrl(config.mrtOrigin);
 
     // Combine source warnings with merge warnings
     const warnings = [...sourceWarnings, ...mergeWarnings];

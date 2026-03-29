@@ -13,6 +13,7 @@
  */
 import type {AuthStrategy} from '../../auth/types.js';
 import {DEFAULT_MRT_ORIGIN} from '../../clients/mrt.js';
+import {normalizeOriginUrl} from '../../config/mapping.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -96,7 +97,7 @@ const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
 export async function createLoggingToken(options: CreateLoggingTokenOptions, auth: AuthStrategy): Promise<string> {
   const logger = getLogger();
   const {projectSlug, environmentSlug, origin} = options;
-  const baseUrl = origin || DEFAULT_MRT_ORIGIN;
+  const baseUrl = normalizeOriginUrl(origin) || DEFAULT_MRT_ORIGIN;
 
   logger.debug({projectSlug, environmentSlug}, '[MRT] Creating logging token');
 
@@ -217,7 +218,7 @@ export function getLogsWebSocketUrl(origin: string): string {
 export async function tailMrtLogs(options: TailMrtLogsOptions, auth: AuthStrategy): Promise<TailMrtLogsResult> {
   const logger = getLogger();
   const {projectSlug, environmentSlug, origin, user, onEntry, onConnect, onError, onClose} = options;
-  const baseOrigin = origin || DEFAULT_MRT_ORIGIN;
+  const baseOrigin = normalizeOriginUrl(origin) || DEFAULT_MRT_ORIGIN;
 
   logger.debug({projectSlug, environmentSlug, origin: baseOrigin}, '[MRT] Starting log tail');
 

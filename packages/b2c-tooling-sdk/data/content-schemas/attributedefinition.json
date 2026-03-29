@@ -1,0 +1,283 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+
+  "type":"object",
+
+  "definitions": {
+
+    "attribute_base": {
+      "properties": {
+        "id": {"$ref":"common.json#/definitions/id"},
+        "name": {"$ref":"common.json#/definitions/name"},
+        "description": {"$ref":"common.json#/definitions/description"},
+        "type": {},
+        "editor_definition":{},
+        "values":{},
+        "required": {"type": "boolean","default": true},
+        "default_value":{},
+        "dynamic_lookup": {
+          "type": "object",
+          "properties": {
+            "aspect_attribute_alias": {"$ref":"common.json#/definitions/id"}
+          },
+          "required": [
+            "aspect_attribute_alias"
+          ],
+          "additionalProperties": false
+        },
+        "searching": {
+          "properties": {
+            "searchable": {"type": "boolean"},
+            "refinable": {"type": "boolean"},
+            "boost_factor": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 100
+            },
+            "sortable": {"type": "boolean","default": false}
+          },
+          "required": ["searchable", "refinable"],
+          "additionalProperties":false
+        }
+      },
+      "required": ["id","type"],
+      "additionalProperties":false
+    },
+
+    "string": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["string"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"}
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "text": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["text"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"}
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "markup": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["markup"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"},
+            "searching": {
+              "properties": {
+                "searchable": {"type": "boolean"},
+                "refinable": {"type": "boolean"},
+                "sortable": {"enum": [false]}
+              }
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "integer": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["integer"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"integer"},
+            "searching":{"not":{}}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "boolean": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["boolean"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"boolean"},
+            "searching":{"not":{}}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "product": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["product"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "category": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["category"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "file": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["file"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"},
+            "searching":{"not":{}}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "page": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["page"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"},
+            "searching":{"not":{}}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "image": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["image"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"not":{}},
+            "searching":{"not":{}}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "url": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["url"] },
+            "editor_definition":{"not":{}},
+            "values":{"not":{}},
+            "default_value":{"type":"string"},
+            "searching":{"not":{}}
+        },
+          "required": ["type"]
+        }
+      ]
+    },
+    "enum_of_integer": {
+     "allOf": [
+       { "$ref": "#/definitions/attribute_base" },
+       { "properties": {
+           "type": { "enum":["enum"] },
+           "editor_definition":{"not":{}},
+           "values": {
+             "type": "array",
+             "minItems":1,
+             "items": {"type": "integer"}
+           },
+           "default_value":{"type":"integer"},
+           "searching":{"not":{}}
+       },
+         "required": ["type", "values"]
+       }
+     ]
+    },
+    "enum_of_string": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["enum"] },
+            "editor_definition":{"not":{}},
+            "values": {
+              "type": "array",
+              "minItems":1,
+              "items": {"type": "string"}
+            },
+            "default_value":{"type":"string"}
+          },
+          "required": ["type", "values"]
+        }
+      ]
+    },
+    "custom": {
+     "allOf": [
+       { "$ref": "#/definitions/attribute_base" },
+       { "properties": {
+           "type": { "enum":["custom"] },
+           "editor_definition": {"$ref":"editordefinition.json#/definitions/custom"},
+           "values":{"not":{}},
+           "default_value":{"not":{}},
+           "searching": {
+             "properties": {
+               "searchable": {"type": "boolean"},
+               "refinable": { "enum": [ false ] },
+               "sortable": { "enum": [ false ] }
+             },
+             "required": ["searchable", "refinable"],
+             "additionalProperties":false
+           }
+         },
+         "required": ["type"]
+       }
+     ]
+    },
+    "cms_record": {
+      "allOf": [
+        { "$ref": "#/definitions/attribute_base" },
+        { "properties": {
+            "type": { "enum":["cms_record"] },
+            "editor_definition": {"$ref":"editordefinition.json#/definitions/cms_record"},
+            "values":{"not":{}},
+            "default_value":{"not":{}},
+            "searching": {
+              "properties": {
+                "searchable": {"type": "boolean"},
+                "refinable": { "enum": [ false ] },
+                "sortable": { "enum": [ false ] }
+              },
+              "required": ["searchable", "refinable"],
+              "additionalProperties":false
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    }
+  }
+}
