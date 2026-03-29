@@ -14,6 +14,7 @@ describe('sites cartridges list', () => {
   const hooks = createIsolatedConfigHooks();
 
   beforeEach(hooks.beforeEach);
+
   afterEach(hooks.afterEach);
 
   async function createCommand(flags: Record<string, unknown> = {}) {

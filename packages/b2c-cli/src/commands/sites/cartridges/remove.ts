@@ -10,7 +10,7 @@ import {t, withDocs} from '../../../i18n/index.js';
 
 export default class SitesCartridgesRemove extends InstanceCommand<typeof SitesCartridgesRemove> {
   static description = withDocs(
-    t('commands.sites.cartridges.remove.description', 'Remove a cartridge from a site\'s cartridge path'),
+    t('commands.sites.cartridges.remove.description', "Remove a cartridge from a site's cartridge path"),
     '/cli/sites.html#b2c-sites-cartridges-remove',
   );
 
@@ -91,12 +91,7 @@ export default class SitesCartridgesRemove extends InstanceCommand<typeof SitesC
     const bm = this.flags.bm;
 
     if (!siteId && !bm) {
-      this.error(
-        t(
-          'commands.sites.cartridges.siteIdRequired',
-          'Provide --site-id <id> or --bm to specify a site.',
-        ),
-      );
+      this.error(t('commands.sites.cartridges.siteIdRequired', 'Provide --site-id <id> or --bm to specify a site.'));
     }
 
     return bm ? BM_SITE_ID : siteId!;

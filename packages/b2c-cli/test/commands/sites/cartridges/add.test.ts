@@ -13,6 +13,7 @@ describe('sites cartridges add', () => {
   const hooks = createIsolatedConfigHooks();
 
   beforeEach(hooks.beforeEach);
+
   afterEach(hooks.afterEach);
 
   async function createCommand(flags: Record<string, unknown> = {}, args: Record<string, unknown> = {}) {
@@ -90,10 +91,7 @@ describe('sites cartridges add', () => {
   });
 
   it('errors when position is before/after without --target', async () => {
-    const command: any = await createCommand(
-      {'site-id': 'RefArch', position: 'before'},
-      {cartridge: 'my_cartridge'},
-    );
+    const command: any = await createCommand({'site-id': 'RefArch', position: 'before'}, {cartridge: 'my_cartridge'});
     stubCommon(command, {jsonEnabled: false, siteId: 'RefArch', position: 'before'});
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));

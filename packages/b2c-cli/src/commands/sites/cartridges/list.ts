@@ -77,12 +77,7 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
     const bm = this.flags.bm;
 
     if (!siteId && !bm) {
-      this.error(
-        t(
-          'commands.sites.cartridges.siteIdRequired',
-          'Provide --site-id <id> or --bm to specify a site.',
-        ),
-      );
+      this.error(t('commands.sites.cartridges.siteIdRequired', 'Provide --site-id <id> or --bm to specify a site.'));
     }
 
     return bm ? BM_SITE_ID : siteId!;

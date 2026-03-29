@@ -327,7 +327,9 @@ async function getCartridgePathViaExport(
   const logger = getLogger();
   const {log, waitOptions} = updateOptions ?? {};
   logger.debug({siteId}, 'Reading cartridge path via site archive export');
-  log?.(`Exporting ${siteId === BM_SITE_ID ? 'organization preferences' : 'site descriptor'} to read cartridge path...`);
+  log?.(
+    `Exporting ${siteId === BM_SITE_ID ? 'organization preferences' : 'site descriptor'} to read cartridge path...`,
+  );
 
   if (siteId === BM_SITE_ID) {
     const result = await siteArchiveExportToBuffer(instance, {global_data: {preferences: true}}, {waitOptions});

@@ -25,10 +25,7 @@ export default class SitesCartridgesSet extends InstanceCommand<typeof SitesCart
 
   static args = {
     cartridges: Args.string({
-      description: t(
-        'args.cartridges.description',
-        'New cartridge path (colon-separated, e.g. "cart1:cart2:cart3")',
-      ),
+      description: t('args.cartridges.description', 'New cartridge path (colon-separated, e.g. "cart1:cart2:cart3")'),
       required: true,
     }),
   };
@@ -74,9 +71,7 @@ export default class SitesCartridgesSet extends InstanceCommand<typeof SitesCart
       return result;
     }
 
-    this.log(
-      t('commands.sites.cartridges.set.success', 'Cartridge path updated for site "{{siteId}}".', {siteId}),
-    );
+    this.log(t('commands.sites.cartridges.set.success', 'Cartridge path updated for site "{{siteId}}".', {siteId}));
     this.log(
       t('commands.sites.cartridges.set.updatedPath', 'New path: {{cartridges}}', {
         cartridges: result.cartridges,
@@ -91,12 +86,7 @@ export default class SitesCartridgesSet extends InstanceCommand<typeof SitesCart
     const bm = this.flags.bm;
 
     if (!siteId && !bm) {
-      this.error(
-        t(
-          'commands.sites.cartridges.siteIdRequired',
-          'Provide --site-id <id> or --bm to specify a site.',
-        ),
-      );
+      this.error(t('commands.sites.cartridges.siteIdRequired', 'Provide --site-id <id> or --bm to specify a site.'));
     }
 
     return bm ? BM_SITE_ID : siteId!;

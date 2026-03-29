@@ -15,7 +15,7 @@ import {t, withDocs} from '../../../i18n/index.js';
 
 export default class SitesCartridgesAdd extends InstanceCommand<typeof SitesCartridgesAdd> {
   static description = withDocs(
-    t('commands.sites.cartridges.add.description', 'Add a cartridge to a site\'s cartridge path'),
+    t('commands.sites.cartridges.add.description', "Add a cartridge to a site's cartridge path"),
     '/cli/sites.html#b2c-sites-cartridges-add',
   );
 
@@ -67,32 +67,35 @@ export default class SitesCartridgesAdd extends InstanceCommand<typeof SitesCart
     // Validate target is provided for relative positions
     if ((position === 'before' || position === 'after') && !target) {
       this.error(
-        t(
-          'commands.sites.cartridges.add.targetRequired',
-          '--target is required when --position is "{{position}}"',
-          {position},
-        ),
+        t('commands.sites.cartridges.add.targetRequired', '--target is required when --position is "{{position}}"', {
+          position,
+        }),
       );
     }
 
-    const result = await addCartridge(this.instance, siteId, {name: cartridge, position, target}, {
-      log: (msg) => {
-        if (!this.jsonEnabled()) this.log(msg);
-      },
-      waitOptions: {
-        onProgress: (exec, elapsed) => {
-          if (!this.jsonEnabled()) {
-            const elapsedSec = Math.floor(elapsed / 1000);
-            this.log(
-              t('commands.sites.cartridges.jobProgress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                status: exec.execution_status,
-                elapsed: elapsedSec.toString(),
-              }),
-            );
-          }
+    const result = await addCartridge(
+      this.instance,
+      siteId,
+      {name: cartridge, position, target},
+      {
+        log: (msg) => {
+          if (!this.jsonEnabled()) this.log(msg);
+        },
+        waitOptions: {
+          onProgress: (exec, elapsed) => {
+            if (!this.jsonEnabled()) {
+              const elapsedSec = Math.floor(elapsed / 1000);
+              this.log(
+                t('commands.sites.cartridges.jobProgress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
+                  status: exec.execution_status,
+                  elapsed: elapsedSec.toString(),
+                }),
+              );
+            }
+          },
         },
       },
-    });
+    );
 
     if (this.jsonEnabled()) {
       return result;
@@ -118,12 +121,7 @@ export default class SitesCartridgesAdd extends InstanceCommand<typeof SitesCart
     const bm = this.flags.bm;
 
     if (!siteId && !bm) {
-      this.error(
-        t(
-          'commands.sites.cartridges.siteIdRequired',
-          'Provide --site-id <id> or --bm to specify a site.',
-        ),
-      );
+      this.error(t('commands.sites.cartridges.siteIdRequired', 'Provide --site-id <id> or --bm to specify a site.'));
     }
 
     return bm ? BM_SITE_ID : siteId!;
