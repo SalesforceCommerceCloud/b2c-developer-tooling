@@ -202,7 +202,8 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
         {location: vscode.ProgressLocation.Notification, title: `Fetching sandboxes for realm ${element.realm}...`},
         async () => {
           const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
-          const authStrategy = config.createOAuth();
+          const oauthOptions = await configProvider.getImplicitAuthOptions();
+          const authStrategy = config.createOAuth(oauthOptions);
           const odsClient = createOdsClient({host}, authStrategy);
           const result = await odsClient.GET('/sandboxes', {
             params: {
@@ -234,7 +235,8 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
     if (!config?.hasOAuthConfig()) return undefined;
 
     const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
-    const authStrategy = config.createOAuth();
+    const oauthOptions = await configProvider.getImplicitAuthOptions();
+    const authStrategy = config.createOAuth(oauthOptions);
     const odsClient = createOdsClient({host}, authStrategy);
     const result = await odsClient.GET('/sandboxes/{sandboxId}', {
       params: {path: {sandboxId}},

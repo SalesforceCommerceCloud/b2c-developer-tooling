@@ -478,7 +478,10 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
  * await instance.webdav.mkcol('Cartridges/v1');
  * ```
  */
-export function createInstanceFromConfig(config: NormalizedConfig): B2CInstance {
+export function createInstanceFromConfig(
+  config: NormalizedConfig,
+  options?: {redirectUri?: string; openBrowser?: (url: string) => Promise<void>},
+): B2CInstance {
   if (!config.hostname) {
     throw new Error('Hostname is required. Set in dw.json or provide via overrides.');
   }
@@ -499,6 +502,15 @@ export function createInstanceFromConfig(config: NormalizedConfig): B2CInstance 
   };
 
   const authConfig = buildAuthConfigFromNormalized(config);
+
+  // Inject implicit auth options into OAuth config when present
+  if (authConfig.oauth && (options?.redirectUri || options?.openBrowser)) {
+    authConfig.oauth = {
+      ...authConfig.oauth,
+      redirectUri: options.redirectUri,
+      openBrowser: options.openBrowser,
+    };
+  }
 
   return new B2CInstance(instanceConfig, authConfig);
 }
