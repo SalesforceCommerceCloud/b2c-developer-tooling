@@ -183,7 +183,12 @@
         }
       },
       "sites": {
-        "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
+        "description": "List and manage storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html",
+        "subtopics": {
+          "cartridges": {
+            "description": "Manage site cartridge path (list, add, remove, set)"
+          }
+        }
       },
       "am": {
         "description": "Manage Account Manager resources",

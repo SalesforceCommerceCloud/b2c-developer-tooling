@@ -388,7 +388,7 @@ The OCAPI client is generated from the OpenAPI spec, so all paths, parameters, a
 | `code.compare(...)` | _Not ported_ | |
 | `code.diffdeploy(...)` | _Not ported_ | |
 | `manifest.generate(...)` | _Not ported_ | |
-| `cartridge.add(...)` | _Planned for a future release_ | |
+| `cartridge.add(...)` | `addCartridge(instance, siteId, opts)` | `*/operations/sites` |
 | `instance.upload(instance, file, token, opts, cb)` | `instance.webdav.put(path, data)` | `*/instance` |
 | `instance.import(instance, file, token, cb)` | `siteArchiveImport(instance, zipPath)` | `*/operations/jobs` |
 | `job.run(instance, jobId, params, token, cb)` | `executeJob(instance, jobId, opts?)` | `*/operations/jobs` |

@@ -88,8 +88,11 @@ b2c code delete <version-name>
 
 See `b2c code --help` for a full list of available commands and options in the `code` topic.
 
+> **Note:** `b2c code deploy` uploads cartridge *code* to an instance. To manage which cartridges are *active on a site* (the cartridge path), see the `b2c-cli:b2c-sites` skill for the `b2c sites cartridges` commands.
+
 ## Related Skills
 
+- `b2c-cli:b2c-sites` - Manage site cartridge paths (list, add, remove, set active cartridges)
 - `b2c-cli:b2c-scapi-custom` - Check Custom API registration status after deployment
 - `b2c-cli:b2c-webdav` - Low-level file operations (delete cartridges, list files)
 - `b2c:b2c-custom-api-development` - Creating Custom API endpoints

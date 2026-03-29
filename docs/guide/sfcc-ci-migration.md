@@ -77,6 +77,17 @@ The B2C CLI's canonical syntax uses spaces instead of colons (e.g., `b2c code de
 | `sfcc-ci instance:import <archive>` | `b2c content import <archive>` | Or `b2c job run sfcc-site-archive-import` |
 | `sfcc-ci instance:export` | `b2c content export` | See [Content commands](/cli/content) |
 
+### Cartridge Path
+
+| sfcc-ci | b2c-cli | Notes |
+|---------|---------|-------|
+| `sfcc-ci cartridge:add <name> --siteid <id>` | `b2c sites cartridges add <name> --site-id <id>` | Supports `--position` and `--target` flags |
+| _(no equivalent)_ | `b2c sites cartridges list --site-id <id>` | List the active cartridge path |
+| _(no equivalent)_ | `b2c sites cartridges remove <name> --site-id <id>` | Remove a cartridge from the path |
+| _(no equivalent)_ | `b2c sites cartridges set <path> --site-id <id>` | Replace the entire cartridge path |
+
+The B2C CLI also supports the Business Manager cartridge path via the `--bm` flag (shorthand for `--site-id Sites-Site`). When OCAPI direct permissions are unavailable, the commands automatically fall back to site archive import/export. See [Sites commands](/cli/sites#cartridge-commands) for details.
+
 ### Jobs
 
 | sfcc-ci | b2c-cli | Notes |
