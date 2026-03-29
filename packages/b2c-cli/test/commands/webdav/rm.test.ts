@@ -4,7 +4,6 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import readline from 'node:readline';
 import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
@@ -56,13 +55,10 @@ describe('webdav rm', () => {
       },
     }));
 
-    const rl = {
-      question(_prompt: string, cb: (answer: string) => void) {
-        cb('n');
-      },
-      close() {},
-    };
-    sinon.stub(readline, 'createInterface').returns(rl as any);
+    const confirmStub = sinon.stub().resolves(false);
+    command.operations = {...command.operations, confirm: confirmStub};
+
+    sinon.stub(command, 'log').returns(void 0);
 
     const result = await command.run();
 

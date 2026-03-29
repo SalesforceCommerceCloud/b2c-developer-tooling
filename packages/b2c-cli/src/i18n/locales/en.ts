@@ -97,7 +97,7 @@ export const en = {
         deleting: 'Deleting code version {{codeVersion}} from {{hostname}}...',
         deleted: 'Code version {{codeVersion}} deleted successfully',
         failed: 'Failed to delete code version: {{message}}',
-        confirm: 'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}? (y/n)',
+        confirm: 'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}?',
         cancelled: 'Deletion cancelled',
       },
       deploy: {
