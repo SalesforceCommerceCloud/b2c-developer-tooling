@@ -8,6 +8,8 @@ import cliui from 'cliui';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {EnvSource} from '@salesforce/b2c-tooling-sdk/config';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
+import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {withDocs} from '../../i18n/index.js';
 
 /**
@@ -91,15 +93,41 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       description: 'Show sensitive values unmasked (passwords, secrets, API keys)',
       default: false,
     }),
+    'account-manager-host': Flags.string({
+      description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
+      env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: async () => process.env.SFCC_LOGIN_URL || undefined,
+      helpGroup: 'AUTH',
+    }),
+    'cloud-origin': Flags.string({
+      description: `MRT cloud origin URL (default: ${DEFAULT_MRT_ORIGIN})`,
+      env: 'MRT_CLOUD_ORIGIN',
+      default: async () => process.env.SFCC_MRT_CLOUD_ORIGIN || undefined,
+      helpGroup: 'MRT',
+    }),
   };
 
   static hiddenAliases = ['config:show', 'config:inspect'];
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
+    const accountManagerHost = this.flags['account-manager-host'] as string | undefined;
+    const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
+
     // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
     // Other commands handle env vars via oclif flag mappings, but inspect needs to show them
     // as a config source since it doesn't have those flags.
-    return loadConfig({}, this.getBaseConfigOptions(), {before: [new EnvSource()]});
+    return loadConfig(
+      {
+        accountManagerHost,
+        mrtOrigin: cloudOrigin,
+      },
+      {
+        ...this.getBaseConfigOptions(),
+        accountManagerHost,
+        cloudOrigin,
+      },
+      {before: [new EnvSource()]},
+    );
   }
 
   async run(): Promise<SetupInspectResponse> {

@@ -17,6 +17,24 @@ import type {DwJsonConfig} from './dw-json.js';
 import type {NormalizedConfig, ConfigWarning} from './types.js';
 
 /**
+ * Normalizes a URL origin string by ensuring it has an `https://` protocol prefix.
+ * Accepts both bare hostnames (`cloud.mobify.com`) and full URLs (`https://cloud.mobify.com`).
+ * Strips trailing slashes for consistency.
+ *
+ * @param origin - A hostname or URL origin string
+ * @returns The origin with `https://` protocol, or undefined if input is undefined
+ */
+export function normalizeOriginUrl(origin: string | undefined): string | undefined {
+  if (!origin) return undefined;
+  let normalized = origin;
+  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    normalized = `https://${normalized}`;
+  }
+  // Strip trailing slash for consistency
+  return normalized.replace(/\/+$/, '');
+}
+
+/**
  * Converts a kebab-case string to camelCase.
  *
  * @param str - The kebab-case string to convert
