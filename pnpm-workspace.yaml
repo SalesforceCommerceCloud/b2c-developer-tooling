@@ -4,17 +4,17 @@ packages:
 
 catalog:
   # Production dependencies (exact versions for published packages)
-  '@oclif/core': 4.8.0
+  '@oclif/core': 4.10.3
   cliui: 9.0.1
-  glob: 13.0.0
+  glob: 13.0.6
   jsonschema: 1.5.0
   open: 11.0.0
 
   # Dev dependencies (shared across packages)
   '@eslint/compat': ^1
   '@oclif/prettier-config': ^0.2.1
-  '@oclif/test': ^4
-  '@salesforce/dev-config': ^4.3.2
+  '@oclif/test': ^4.1.17
+  '@salesforce/dev-config': ^4.3.3
   '@types/chai': ^4
   '@types/mocha': ^10
   '@types/node': ^22
@@ -28,11 +28,11 @@ catalog:
   eslint-plugin-prettier: ^5.5.4
   mocha: ^10
   msw: ^2.12.4
-  oclif: ^4
-  prettier: ^3.6.2
-  shx: ^0.3.3
+  oclif: ^4.22.96
+  prettier: ^3.8.1
+  shx: ^0.4.0
   sinon: ^21.0.1
-  tsx: ^4
+  tsx: ^4.21.0
   typescript: ^5
   typescript-eslint: ^8
 
