@@ -35,7 +35,7 @@ jobs:
       pull-requests: write # For creating merge-back PRs
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || '' }}
           fetch-depth: 0 # Needed for docs tag detection
@@ -105,11 +105,11 @@ jobs:
 
       - name: Setup pnpm
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: 22
           cache: 'pnpm'
