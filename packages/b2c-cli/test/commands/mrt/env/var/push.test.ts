@@ -185,8 +185,10 @@ describe('mrt env var push', () => {
     const listStub = sinon.stub().resolves({variables: []} as any);
     const setStub = sinon
       .stub()
-      .onFirstCall().resolves(void 0)
-      .onSecondCall().rejects(new Error('API error'));
+      .onFirstCall()
+      .resolves(void 0)
+      .onSecondCall()
+      .rejects(new Error('API error'));
     command.operations = {...command.operations, listEnvVars: listStub, setEnvVar: setStub};
 
     // Should not throw even if one var fails

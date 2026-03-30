@@ -70,12 +70,12 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     let rawContent: string;
     try {
       rawContent = this.operations.readEnvFile(envFilePath);
-    } catch (err) {
-      const error = err as NodeJS.ErrnoException;
+    } catch (error_) {
+      const error = error_ as NodeJS.ErrnoException;
       if (error.code === 'ENOENT') {
         this.error(t('commands.mrt.env.var.push.fileNotFound', '.env file not found: {{path}}', {path: envFilePath}));
       }
-      throw err;
+      throw error_;
     }
 
     const parsed = dotenvParse(rawContent);
@@ -150,23 +150,29 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       }
     }
 
-    // Step 8: Push variables one at a time for per-variable reporting
+    // Step 8: Push all variables in parallel, reporting per-variable results
+    const results = await Promise.allSettled(
+      toSync.map(({key, value}) =>
+        this.operations.setEnvVar(
+          {projectSlug: project, environment, key, value, origin: this.resolvedConfig.values.mrtOrigin},
+          this.getMrtAuth(),
+        ),
+      ),
+    );
+
     let pushed = 0;
     let failed = 0;
 
-    for (const {key, value} of toSync) {
-      try {
-        await this.operations.setEnvVar(
-          {projectSlug: project, environment, key, value, origin: this.resolvedConfig.values.mrtOrigin},
-          this.getMrtAuth(),
-        );
+    for (const [index, result] of results.entries()) {
+      const {key} = toSync[index];
+      if (result.status === 'fulfilled') {
         ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
         pushed++;
-      } catch (err) {
+      } else {
         this.warn(
           t('commands.mrt.env.var.push.varFailed', '  ✗ {{key}}: {{message}}', {
             key,
-            message: (err as Error).message,
+            message: (result.reason as Error).message,
           }),
         );
         failed++;

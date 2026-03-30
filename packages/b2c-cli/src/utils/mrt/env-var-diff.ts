@@ -62,15 +62,15 @@ export function computeEnvVarDiff(local: Map<string, string>, remote: Map<string
   const remoteOnly: EnvVarEntry[] = [];
 
   for (const [key, value] of local) {
-    if (!remote.has(key)) {
-      add.push({key, value});
-    } else {
+    if (remote.has(key)) {
       const remoteValue = remote.get(key)!;
       if (remoteValue === value) {
         unchanged.push({key, value});
       } else {
         update.push({key, value, oldValue: remoteValue});
       }
+    } else {
+      add.push({key, value});
     }
   }
 
@@ -95,12 +95,10 @@ export function formatEnvVarDiffSummary(diff: EnvVarDiff): string {
   if (add.length === 0 && update.length === 0) {
     lines.push('Nothing to sync — all variables are up-to-date.');
     if (unchanged.length > 0) {
-      lines.push('');
-      lines.push(`  ${unchanged.length} variable(s) unchanged`);
+      lines.push('', `  ${unchanged.length} variable(s) unchanged`);
     }
     if (remoteOnly.length > 0) {
-      lines.push('');
-      lines.push(`  ${remoteOnly.length} remote-only variable(s) (not in local file):`);
+      lines.push('', `  ${remoteOnly.length} remote-only variable(s) (not in local file):`);
       for (const {key, value} of remoteOnly) {
         lines.push(`    * ${key} = ${value}`);
       }

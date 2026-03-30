@@ -10,9 +10,9 @@ describe('utils/mrt/env-var-diff', () => {
   describe('filterByPrefix', () => {
     it('filters out vars whose keys start with excluded prefixes', () => {
       const vars = new Map([
-        ['PUBLIC__app__site__locale', 'en-US'],
         ['MRT_PROJECT', 'my-project'],
         ['MRT_TARGET', 'staging'],
+        ['PUBLIC__app__site__locale', 'en-US'],
         ['SOME_VAR', 'value'],
       ]);
       const result = filterByPrefix(vars, ['MRT_']);
@@ -24,9 +24,9 @@ describe('utils/mrt/env-var-diff', () => {
 
     it('supports multiple exclude prefixes', () => {
       const vars = new Map([
-        ['SFCC_API_KEY', 'secret'],
         ['MRT_PROJECT', 'my-project'],
         ['PUBLIC__foo', 'bar'],
+        ['SFCC_API_KEY', 'secret'],
       ]);
       const result = filterByPrefix(vars, ['SFCC_', 'MRT_']);
       expect(result.has('PUBLIC__foo')).to.be.true;
@@ -36,8 +36,8 @@ describe('utils/mrt/env-var-diff', () => {
 
     it('returns all vars when exclude list is empty', () => {
       const vars = new Map([
-        ['FOO', 'bar'],
         ['BAZ', 'qux'],
+        ['FOO', 'bar'],
       ]);
       const result = filterByPrefix(vars, []);
       expect(result.size).to.equal(2);
@@ -94,13 +94,13 @@ describe('utils/mrt/env-var-diff', () => {
     it('handles all four categories together', () => {
       const local = new Map([
         ['ADD_VAR', 'new'],
-        ['UPDATE_VAR', 'updated'],
         ['SAME_VAR', 'same'],
+        ['UPDATE_VAR', 'updated'],
       ]);
       const remote = new Map([
-        ['UPDATE_VAR', 'old'],
-        ['SAME_VAR', 'same'],
         ['REMOTE_ONLY_VAR', 'remote'],
+        ['SAME_VAR', 'same'],
+        ['UPDATE_VAR', 'old'],
       ]);
       const diff = computeEnvVarDiff(local, remote);
       expect(diff.add).to.have.lengthOf(1);
@@ -118,7 +118,10 @@ describe('utils/mrt/env-var-diff', () => {
     });
 
     it('returns all-unchanged when local and remote are identical', () => {
-      const vars = new Map([['A', '1'], ['B', '2']]);
+      const vars = new Map([
+        ['A', '1'],
+        ['B', '2'],
+      ]);
       const diff = computeEnvVarDiff(vars, vars);
       expect(diff.unchanged).to.have.lengthOf(2);
       expect(diff.add).to.have.lengthOf(0);
