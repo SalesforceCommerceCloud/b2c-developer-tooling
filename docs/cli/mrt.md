@@ -471,7 +471,7 @@ b2c mrt bundle deploy -p my-storefront -e staging --wait
 | `--node-version`, `-n` | Node.js version for SSR | `22.x` |
 | `--ssr-param` | SSR parameters (key=value) | |
 | `--wait`, `-w` | Wait for the deployment to complete before returning | `false` |
-| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `30` |
 | `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600` |
 
 ### b2c mrt bundle list

@@ -126,7 +126,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }),
     'poll-interval': Flags.integer({
       description: 'Polling interval in seconds when using --wait',
-      default: 10,
+      default: 30,
       dependsOn: ['wait'],
     }),
     timeout: Flags.integer({
