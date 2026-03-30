@@ -182,14 +182,13 @@ export default class JobExport extends JobCommand<typeof JobExport> {
     this.log(t('commands.job.export.dataUnits', 'Data units: {{dataUnits}}', {dataUnits: JSON.stringify(dataUnits)}));
 
     const waitOptions: WaitForJobOptions = {
-      timeout: timeout ? timeout * 1000 : undefined,
-      onProgress: (exec, elapsed) => {
+      timeoutSeconds: timeout,
+      onPoll: (info) => {
         if (!this.jsonEnabled()) {
-          const elapsedSec = Math.floor(elapsed / 1000);
           this.log(
             t('commands.job.export.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-              status: exec.execution_status,
-              elapsed: elapsedSec.toString(),
+              status: info.status,
+              elapsed: String(info.elapsedSeconds),
             }),
           );
         }

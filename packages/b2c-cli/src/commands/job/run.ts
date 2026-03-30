@@ -49,6 +49,11 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       char: 't',
       description: 'Timeout in seconds when waiting (default: no timeout)',
     }),
+    'poll-interval': Flags.integer({
+      description: 'Polling interval in seconds when using --wait',
+      default: 3,
+      dependsOn: ['wait'],
+    }),
     param: Flags.string({
       char: 'P',
       description: 'Job parameter in format "name=value" (use -P multiple times for multiple params)',
@@ -80,7 +85,15 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     this.requireOAuthCredentials();
 
     const {jobId} = this.args;
-    const {wait, timeout, param, body, 'no-wait-running': noWaitRunning, 'show-log': showLog} = this.flags;
+    const {
+      wait,
+      timeout,
+      'poll-interval': pollInterval,
+      param,
+      body,
+      'no-wait-running': noWaitRunning,
+      'show-log': showLog,
+    } = this.flags;
 
     // Parse parameters or body
     const parameters = this.parseParameters(param || []);
@@ -138,6 +151,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         jobId,
         executionId: execution.id!,
         timeout,
+        pollInterval,
         showLog,
         context,
       });
@@ -216,22 +230,23 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     jobId: string;
     executionId: string;
     timeout: number | undefined;
+    pollInterval: number | undefined;
     showLog: boolean;
     context: B2COperationContext;
   }): Promise<JobExecution> {
-    const {jobId, executionId, timeout, showLog, context} = options;
+    const {jobId, executionId, timeout, pollInterval, showLog, context} = options;
     this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 
     try {
       const execution = await this.operations.waitForJob(this.instance, jobId, executionId, {
-        timeout: timeout ? timeout * 1000 : undefined,
-        onProgress: (exec, elapsed) => {
+        timeoutSeconds: timeout,
+        pollIntervalSeconds: pollInterval,
+        onPoll: (info) => {
           if (!this.jsonEnabled()) {
-            const elapsedSec = Math.floor(elapsed / 1000);
             this.log(
               t('commands.job.run.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                status: exec.execution_status,
-                elapsed: elapsedSec.toString(),
+                status: info.status,
+                elapsed: String(info.elapsedSeconds),
               }),
             );
           }

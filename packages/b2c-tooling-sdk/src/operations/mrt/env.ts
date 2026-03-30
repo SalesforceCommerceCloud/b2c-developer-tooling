@@ -354,25 +354,48 @@ export async function getEnv(options: GetEnvOptions, auth: AuthStrategy): Promis
 const TERMINAL_STATES: MrtEnvironmentState[] = ['ACTIVE', 'CREATE_FAILED', 'PUBLISH_FAILED'];
 
 /**
+ * Poll info passed to the onPoll callback during environment waiting.
+ */
+export interface WaitForEnvPollInfo {
+  /** Environment slug. */
+  slug: string;
+  /** Seconds elapsed since waiting started. */
+  elapsedSeconds: number;
+  /** Current environment state (e.g., 'PUBLISH_IN_PROGRESS', 'ACTIVE'). */
+  state: string;
+}
+
+/**
  * Options for waiting for an MRT environment to be ready.
  */
 export interface WaitForEnvOptions extends GetEnvOptions {
   /**
-   * Polling interval in milliseconds.
-   * @default 10000
+   * Polling interval in seconds.
+   * @default 10
    */
-  pollInterval?: number;
+  pollIntervalSeconds?: number;
 
   /**
-   * Maximum time to wait in milliseconds.
-   * @default 2700000 (45 minutes)
+   * Maximum time to wait in seconds (0 for no timeout).
+   * @default 2700 (45 minutes)
    */
-  timeout?: number;
+  timeoutSeconds?: number;
 
   /**
-   * Optional callback called on each poll with the current environment state.
+   * Optional callback invoked on each poll with current status.
    */
-  onPoll?: (env: MrtEnvironment) => void;
+  onPoll?: (info: WaitForEnvPollInfo) => void;
+
+  /**
+   * Custom sleep function for testing.
+   */
+  sleep?: (ms: number) => Promise<void>;
+}
+
+async function defaultSleep(ms: number): Promise<void> {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 /**
@@ -404,8 +427,8 @@ export interface WaitForEnvOptions extends GetEnvOptions {
  * const readyEnv = await waitForEnv({
  *   projectSlug: 'my-storefront',
  *   slug: 'staging',
- *   timeout: 60000, // 1 minute
- *   onPoll: (e) => console.log(`State: ${e.state}`)
+ *   timeoutSeconds: 60,
+ *   onPoll: (info) => console.log(`[${info.elapsedSeconds}s] State: ${info.state}`)
  * }, auth);
  *
  * if (readyEnv.state === 'ACTIVE') {
@@ -415,18 +438,29 @@ export interface WaitForEnvOptions extends GetEnvOptions {
  */
 export async function waitForEnv(options: WaitForEnvOptions, auth: AuthStrategy): Promise<MrtEnvironment> {
   const logger = getLogger();
-  const {projectSlug, slug, pollInterval = 10000, timeout = 2700000, onPoll, origin} = options;
+  const {projectSlug, slug, pollIntervalSeconds = 10, timeoutSeconds = 2700, onPoll, origin} = options;
 
-  logger.debug({projectSlug, slug, pollInterval, timeout}, '[MRT] Waiting for environment');
-
+  const sleepFn = options.sleep ?? defaultSleep;
   const startTime = Date.now();
+  const pollIntervalMs = pollIntervalSeconds * 1000;
+  const timeoutMs = timeoutSeconds * 1000;
 
-  while (Date.now() - startTime < timeout) {
-    const env = await getEnv({projectSlug, slug, origin}, auth);
+  logger.debug({projectSlug, slug, pollIntervalSeconds, timeoutSeconds}, '[MRT] Waiting for environment');
 
-    if (onPoll) {
-      onPoll(env);
+  await sleepFn(pollIntervalMs);
+
+  while (true) {
+    const elapsedSeconds = Math.round((Date.now() - startTime) / 1000);
+
+    if (timeoutSeconds > 0 && Date.now() - startTime > timeoutMs) {
+      throw new Error(`Timeout waiting for environment "${slug}" after ${timeoutSeconds}s`);
     }
+
+    const env = await getEnv({projectSlug, slug, origin}, auth);
+    const currentState = (env.state as string) ?? 'unknown';
+
+    logger.trace({slug, elapsedSeconds, state: currentState}, '[MRT] Environment poll');
+    onPoll?.({slug, elapsedSeconds, state: currentState});
 
     if (env.state && TERMINAL_STATES.includes(env.state as MrtEnvironmentState)) {
       if (env.state === 'CREATE_FAILED') {
@@ -439,12 +473,8 @@ export async function waitForEnv(options: WaitForEnvOptions, auth: AuthStrategy)
       return env;
     }
 
-    logger.debug({slug, state: env.state, elapsed: Date.now() - startTime}, '[MRT] Environment still in progress');
-
-    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    await sleepFn(pollIntervalMs);
   }
-
-  throw new Error(`Timeout waiting for environment "${slug}" to be ready after ${timeout}ms`);
 }
 
 /**

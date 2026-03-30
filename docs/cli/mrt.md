@@ -284,6 +284,8 @@ b2c mrt env create prod -p my-storefront --name "Production" \
 | `--enable-source-maps` | Enable source maps |
 | `--proxy` | Proxy configuration in format `path=host` (repeatable) |
 | `--wait`, `-w` | Wait for the environment to be ready before returning |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600` |
 
 ### b2c mrt env get
 
@@ -454,6 +456,9 @@ b2c mrt bundle deploy -p my-storefront --build-dir ./dist
 
 # Deploy existing bundle by ID
 b2c mrt bundle deploy 12345 -p my-storefront -e production
+
+# Deploy and wait for completion
+b2c mrt bundle deploy -p my-storefront -e staging --wait
 ```
 
 **Flags:**
@@ -465,6 +470,9 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
 | `--node-version`, `-n` | Node.js version for SSR | `22.x` |
 | `--ssr-param` | SSR parameters (key=value) | |
+| `--wait`, `-w` | Wait for the deployment to complete before returning | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600` |
 
 ### b2c mrt bundle list
 

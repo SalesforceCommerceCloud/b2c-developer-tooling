@@ -207,7 +207,9 @@ describe('operations/mrt/env', () => {
   });
 
   describe('waitForEnv', () => {
-    it('should return immediately when environment is ACTIVE', async () => {
+    const instantSleep = () => Promise.resolve();
+
+    it('should return when environment is ACTIVE', async () => {
       server.use(
         http.get(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/`, () => {
           return HttpResponse.json({
@@ -222,7 +224,8 @@ describe('operations/mrt/env', () => {
         {
           projectSlug: 'my-project',
           slug: 'staging',
-          pollInterval: 10,
+          pollIntervalSeconds: 1,
+          sleep: instantSleep,
         },
         auth,
       );
@@ -230,9 +233,7 @@ describe('operations/mrt/env', () => {
       expect(result.state).to.equal('ACTIVE');
     });
 
-    it('should poll until environment becomes ACTIVE', async function () {
-      this.timeout(5000);
-
+    it('should poll until environment becomes ACTIVE', async () => {
       let callCount = 0;
 
       server.use(
@@ -256,7 +257,8 @@ describe('operations/mrt/env', () => {
         {
           projectSlug: 'my-project',
           slug: 'staging',
-          pollInterval: 100,
+          pollIntervalSeconds: 1,
+          sleep: instantSleep,
         },
         auth,
       );
@@ -265,9 +267,7 @@ describe('operations/mrt/env', () => {
       expect(callCount).to.be.greaterThanOrEqual(3);
     });
 
-    it('should call onPoll callback', async function () {
-      this.timeout(5000);
-
+    it('should call onPoll callback with structured info', async () => {
       const pollUpdates: any[] = [];
 
       server.use(
@@ -284,9 +284,10 @@ describe('operations/mrt/env', () => {
         {
           projectSlug: 'my-project',
           slug: 'staging',
-          pollInterval: 100,
-          onPoll: (env) => {
-            pollUpdates.push(env);
+          pollIntervalSeconds: 1,
+          sleep: instantSleep,
+          onPoll: (info) => {
+            pollUpdates.push(info);
           },
         },
         auth,
@@ -294,12 +295,12 @@ describe('operations/mrt/env', () => {
 
       expect(result.state).to.equal('ACTIVE');
       expect(pollUpdates.length).to.be.greaterThan(0);
-      expect(pollUpdates[0].slug).to.equal('staging');
+      expect(pollUpdates[0]).to.have.property('slug', 'staging');
+      expect(pollUpdates[0]).to.have.property('elapsedSeconds').that.is.a('number');
+      expect(pollUpdates[0]).to.have.property('state', 'ACTIVE');
     });
 
-    it('should timeout after specified duration', async function () {
-      this.timeout(5000);
-
+    it('should timeout after specified duration', async () => {
       server.use(
         http.get(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/`, () => {
           return HttpResponse.json({
@@ -316,8 +317,9 @@ describe('operations/mrt/env', () => {
           {
             projectSlug: 'my-project',
             slug: 'staging',
-            pollInterval: 100,
-            timeout: 500,
+            pollIntervalSeconds: 1,
+            timeoutSeconds: 1,
+            sleep: instantSleep,
           },
           auth,
         );
@@ -344,13 +346,42 @@ describe('operations/mrt/env', () => {
           {
             projectSlug: 'my-project',
             slug: 'staging',
-            pollInterval: 10,
+            pollIntervalSeconds: 1,
+            sleep: instantSleep,
           },
           auth,
         );
         expect.fail('Should have thrown error');
       } catch (error: any) {
         expect(error.message).to.include('creation failed');
+      }
+    });
+
+    it('should throw error when environment enters PUBLISH_FAILED state', async () => {
+      server.use(
+        http.get(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/`, () => {
+          return HttpResponse.json({
+            slug: 'staging',
+            state: 'PUBLISH_FAILED',
+          });
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+
+      try {
+        await waitForEnv(
+          {
+            projectSlug: 'my-project',
+            slug: 'staging',
+            pollIntervalSeconds: 1,
+            sleep: instantSleep,
+          },
+          auth,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error: any) {
+        expect(error.message).to.include('publish failed');
       }
     });
   });

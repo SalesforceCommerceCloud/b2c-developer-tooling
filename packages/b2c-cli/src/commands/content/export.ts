@@ -116,7 +116,7 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
       this.requireOAuthCredentials();
     }
 
-    const waitOptions = flags.timeout ? {timeout: flags.timeout * 1000} : undefined;
+    const waitOptions = flags.timeout ? {timeoutSeconds: flags.timeout} : undefined;
 
     if (flags['dry-run']) {
       const {library} = await this.operations.fetchContentLibrary(this.instance, libraryId, {

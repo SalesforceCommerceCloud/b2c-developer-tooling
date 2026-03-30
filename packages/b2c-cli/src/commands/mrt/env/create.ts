@@ -194,6 +194,16 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       description: 'Wait for the environment to be ready before returning',
       default: false,
     }),
+    'poll-interval': Flags.integer({
+      description: 'Polling interval in seconds when using --wait',
+      default: 10,
+      dependsOn: ['wait'],
+    }),
+    timeout: Flags.integer({
+      description: 'Maximum time to wait in seconds when using --wait (0 for no timeout)',
+      default: 600,
+      dependsOn: ['wait'],
+    }),
   };
 
   protected operations = {
@@ -222,6 +232,8 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       'enable-source-maps': enableSourceMaps,
       proxy: proxyStrings,
       wait,
+      'poll-interval': pollInterval,
+      timeout,
     } = this.flags;
 
     // Default name to slug if not provided
@@ -257,19 +269,19 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       if (wait) {
         this.log(t('commands.mrt.env.create.waiting', 'Waiting for environment "{{slug}}" to be ready...', {slug}));
 
-        const waitStartTime = Date.now();
         result = await this.operations.waitForEnv(
           {
             projectSlug: project,
             slug,
             origin: this.resolvedConfig.values.mrtOrigin,
-            onPoll: (env) => {
+            pollIntervalSeconds: pollInterval,
+            timeoutSeconds: timeout,
+            onPoll: (info) => {
               if (!this.jsonEnabled()) {
-                const elapsed = Math.round((Date.now() - waitStartTime) / 1000);
                 this.log(
                   t('commands.mrt.env.create.state', '[{{elapsed}}s] State: {{state}}', {
-                    elapsed: String(elapsed),
-                    state: env.state ?? 'unknown',
+                    elapsed: String(info.elapsedSeconds),
+                    state: info.state,
                   }),
                 );
               }

@@ -223,6 +223,7 @@ export type {
   JobExecutionParameter,
   ExecuteJobOptions,
   WaitForJobOptions,
+  WaitForJobPollInfo,
   SearchJobExecutionsOptions,
   JobExecutionSearchResult,
   SiteArchiveImportOptions,

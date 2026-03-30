@@ -117,14 +117,13 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       const result = await this.operations.siteArchiveImport(this.instance, importTarget, {
         keepArchive,
         waitOptions: {
-          timeout: timeout ? timeout * 1000 : undefined,
-          onProgress: (exec, elapsed) => {
+          timeoutSeconds: timeout,
+          onPoll: (info) => {
             if (!this.jsonEnabled()) {
-              const elapsedSec = Math.floor(elapsed / 1000);
               this.log(
                 t('commands.job.import.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.execution_status,
-                  elapsed: elapsedSec.toString(),
+                  status: info.status,
+                  elapsed: String(info.elapsedSeconds),
                 }),
               );
             }
