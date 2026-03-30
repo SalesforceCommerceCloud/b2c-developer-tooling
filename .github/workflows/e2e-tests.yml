@@ -75,8 +75,6 @@ jobs:
           fi
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.17.1
 
       - name: Get pnpm store directory
         shell: bash
@@ -90,7 +88,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-            
+
       - name: Install dependencies
         if: steps.check-secrets.outputs.has-secrets == 'true'
         run: pnpm install --frozen-lockfile
@@ -178,8 +176,6 @@ jobs:
           node-version: '22.x'
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.17.1
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash

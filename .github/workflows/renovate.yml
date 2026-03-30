@@ -1,9 +1,9 @@
 name: Renovate
 
 on:
-  # Run every hour
+  # Run daily at 5am UTC (matches renovate.json Monday schedule window)
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 5 * * *'
   # Allow manual trigger
   workflow_dispatch:
     inputs:
@@ -29,7 +29,7 @@ jobs:
         uses: renovatebot/github-action@v41.0.21
         with:
           configurationFile: renovate.json
-          token: ${{ secrets.RENOVATE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
         env:
           LOG_LEVEL: info
           RENOVATE_REPOSITORIES: ${{ github.repository }}
