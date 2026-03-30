@@ -331,6 +331,39 @@
         "types": "./dist/cjs/telemetry/index.d.ts",
         "default": "./dist/cjs/telemetry/index.js"
       }
+    },
+    "./operations/ods": {
+      "development": "./src/operations/ods/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/ods/index.d.ts",
+        "default": "./dist/esm/operations/ods/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/ods/index.d.ts",
+        "default": "./dist/cjs/operations/ods/index.js"
+      }
+    },
+    "./safety": {
+      "development": "./src/safety/index.ts",
+      "import": {
+        "types": "./dist/esm/safety/index.d.ts",
+        "default": "./dist/esm/safety/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/safety/index.d.ts",
+        "default": "./dist/cjs/safety/index.js"
+      }
+    },
+    "./i18n": {
+      "development": "./src/i18n/index.ts",
+      "import": {
+        "types": "./dist/esm/i18n/index.d.ts",
+        "default": "./dist/esm/i18n/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/i18n/index.d.ts",
+        "default": "./dist/cjs/i18n/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",

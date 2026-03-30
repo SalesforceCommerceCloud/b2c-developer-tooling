@@ -264,12 +264,6 @@
               }
             }
           },
-          "firewall": {
-            "description": "Manage custom firewall rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
-          },
-          "rate-limit": {
-            "description": "Manage rate limiting rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
-          },
           "logpush": {
             "description": "Manage log export configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
             "subtopics": {

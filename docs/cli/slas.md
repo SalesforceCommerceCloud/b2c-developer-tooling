@@ -387,3 +387,45 @@ b2c slas client delete my-client-id --tenant-id abcd_123 --json
 
 - Deletion is permanent and cannot be undone
 - Active sessions using this client will be invalidated
+
+---
+
+## b2c slas client open
+
+Open the SLAS Admin UI for a client in your browser.
+
+### Usage
+
+```bash
+b2c slas client open <CLIENTID> --tenant-id <TENANT_ID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `CLIENTID` | SLAS client ID to open in the admin UI | Yes |
+
+### Flags
+
+| Flag | Environment Variable | Description | Required |
+|------|---------------------|-------------|----------|
+| `--tenant-id` | `SFCC_TENANT_ID` | SLAS tenant ID (organization ID) | Yes |
+| `--short-code` | `SFCC_SHORTCODE` | SCAPI short code | Yes* |
+
+\* `--short-code` can be set via `SFCC_SHORTCODE` environment variable or `short-code` in `dw.json`.
+
+### Examples
+
+```bash
+# Open the SLAS Admin UI for a specific client
+b2c slas client open my-client-id --tenant-id abcd_123
+
+# With explicit short code
+b2c slas client open my-client-id --tenant-id abcd_123 --short-code kv7kzm78
+```
+
+### Notes
+
+- Opens the SLAS Admin UI in your default browser
+- The URL is also printed to the console if the browser fails to open
