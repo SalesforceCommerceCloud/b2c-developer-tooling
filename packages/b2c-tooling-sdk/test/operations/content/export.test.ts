@@ -25,7 +25,7 @@ const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
 const OCAPI_BASE = `https://${TEST_HOST}/s/-/dw/data/v25_6`;
 
 /** Short poll interval for fast tests */
-const FAST_WAIT_OPTIONS = {pollInterval: 10};
+const FAST_WAIT_OPTIONS = {pollIntervalSeconds: 1, sleep: () => Promise.resolve()};
 
 /**
  * Library XML with attributes on <data> elements so xml2js produces

@@ -25,8 +25,8 @@ const TEST_HOST = 'test.demandware.net';
 const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
 const OCAPI_BASE = `https://${TEST_HOST}/s/-/dw/data/v25_6`;
 
-// Use short poll interval for fast tests (default is 3000ms)
-const FAST_WAIT_OPTIONS = {pollInterval: 10};
+// Use short poll interval for fast tests
+const FAST_WAIT_OPTIONS = {pollIntervalSeconds: 1, sleep: () => Promise.resolve()};
 
 describe('operations/jobs/site-archive', () => {
   const server = setupServer();
