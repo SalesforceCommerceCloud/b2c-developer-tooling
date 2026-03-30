@@ -409,6 +409,9 @@ b2c sandbox delete <SANDBOXID>
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--force`, `-f` | Skip confirmation prompt | `false` |
+| `--wait`, `-w` | Wait for the sandbox to be fully deleted before returning | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (0 for no timeout) | `600` |
 
 ### Examples
 
@@ -421,12 +424,16 @@ b2c sandbox delete zzzv-123
 
 # Delete without confirmation
 b2c sandbox delete zzzv_123 --force
+
+# Delete and wait for completion
+b2c sandbox delete zzzv_123 --force --wait
 ```
 
 ### Notes
 
 - The command will prompt for confirmation unless `--force` is used
 - Deleted sandboxes cannot be recovered
+- Use `--wait` to block until the sandbox is fully removed
 
 ---
 

@@ -92,6 +92,7 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 ## Documentation
 
 - Update docs in `./docs/` folder and relevant skills in `./skills/b2c-cli/skills/` when updating or adding CLI commands.
+- When adding new SDK modules, update `docs/typedoc.json` entry points to include the new module's barrel file so API docs are generated.
 
 See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
@@ -178,7 +179,7 @@ Changeset guidelines:
 - a pull request can have multiple changesets; separate files for separate changes
 - Only list directly-changed packages in changeset frontmatter — do not include dependent packages (they get auto-bumped)
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
-- This is a pre-1.0 preview release, so there are no `major` breaking change bumps yet
+- Use `major` for breaking changes that require consumers to update their code
 - Good changesets explain:
   - WHAT the change is
   - WHY the change was made
