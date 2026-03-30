@@ -22,10 +22,7 @@ import {filterByPrefix, computeEnvVarDiff, formatEnvVarDiffSummary} from '../../
  */
 export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
   static description = withDocs(
-    t(
-      'commands.mrt.env.var.push.description',
-      'Push local .env file variables to a Managed Runtime environment',
-    ),
+    t('commands.mrt.env.var.push.description', 'Push local .env file variables to a Managed Runtime environment'),
     '/cli/mrt.html#b2c-mrt-env-var-push',
   );
 
@@ -76,9 +73,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     } catch (err) {
       const error = err as NodeJS.ErrnoException;
       if (error.code === 'ENOENT') {
-        this.error(
-          t('commands.mrt.env.var.push.fileNotFound', '.env file not found: {{path}}', {path: envFilePath}),
-        );
+        this.error(t('commands.mrt.env.var.push.fileNotFound', '.env file not found: {{path}}', {path: envFilePath}));
       }
       throw err;
     }
@@ -181,11 +176,15 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     // Step 9: Summary
     ux.stdout('');
     ux.stdout(
-      t('commands.mrt.env.var.push.summary', 'Summary: {{pushed}} pushed, {{failed}} failed, {{skipped}} remote-only (not deleted)', {
-        pushed,
-        failed,
-        skipped: diff.remoteOnly.length,
-      }),
+      t(
+        'commands.mrt.env.var.push.summary',
+        'Summary: {{pushed}} pushed, {{failed}} failed, {{skipped}} remote-only (not deleted)',
+        {
+          pushed,
+          failed,
+          skipped: diff.remoteOnly.length,
+        },
+      ),
     );
 
     return {pushed, failed, skipped: diff.remoteOnly.length};
