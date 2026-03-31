@@ -9,10 +9,14 @@ inputs:
     description: 'Path to cartridge source directory'
     required: false
     default: '.'
-  reload:
-    description: 'Activate/reload the code version after deploy'
+  activate:
+    description: 'Activate the code version after deploy'
     required: false
-    default: 'true'
+    default: 'false'
+  reload:
+    description: 'Alias for activate (deprecated)'
+    required: false
+    default: 'false'
   code-version:
     description: 'Code version to deploy to (overrides SFCC_CODE_VERSION env var)'
     required: false
@@ -81,7 +85,7 @@ runs:
       run: |
         CMD="code deploy ${{ inputs.cartridge-path }}"
 
-        if [ "${{ inputs.reload }}" = "true" ]; then
+        if [ "${{ inputs.activate }}" = "true" ] || [ "${{ inputs.reload }}" = "true" ]; then
           CMD="$CMD --reload"
         fi
 
