@@ -604,6 +604,79 @@ If detailed usage data is present (granular history, profiles, etc.), the comman
 
 ---
 
+## b2c sandbox settings
+
+Show effective OCAPI and WebDAV settings for a specific sandbox.
+
+### Usage
+
+```bash
+b2c sandbox settings <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Examples
+
+```bash
+# Show settings summary for a sandbox
+b2c sandbox settings zzzz-001
+
+# Output full settings payload as JSON
+b2c sandbox settings zzzz-001 --json
+```
+
+### Output
+
+When not using `--json`, the command prints:
+
+- Number of OCAPI client entries
+- Number of WebDAV client entries
+- A short per-client breakdown for each settings type
+
+---
+
+## b2c sandbox storage
+
+Show filesystem storage usage for a specific sandbox.
+
+### Usage
+
+```bash
+b2c sandbox storage <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Examples
+
+```bash
+# Show storage table for a sandbox
+b2c sandbox storage zzzz-001
+
+# Output raw storage response as JSON
+b2c sandbox storage zzzz-001 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a table with one row per filesystem:
+
+- Filesystem name
+- Total space (MB)
+- Used space (MB)
+- Used percentage
+
+---
+
 ## Sandbox Aliases
 
 Sandbox aliases let you access a sandbox via a custom hostname instead of the default instance hostname.
@@ -968,9 +1041,11 @@ For the complete response including all metadata, use the `--json` flag.
 Realm commands operate at the **realm** level rather than on an individual sandbox. They are available as both `realm` topic commands and as `sandbox realm` subcommands:
 
 - `b2c realm list` (`b2c sandbox realm list`)
+- `b2c realm configuration` (`b2c sandbox realm configuration`)
 - `b2c realm get` (`b2c sandbox realm get`)
 - `b2c realm update` (`b2c sandbox realm update`)
 - `b2c realm usage` (`b2c sandbox realm usage`)
+- `b2c realm usages` (`b2c sandbox realm usages`)
 
 ### Required Access for Realm Commands
 
@@ -990,7 +1065,7 @@ b2c realm list [REALM]
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `REALM` | Specific realm ID (four-letter ID) to get details for | No |
+| `REALM` | Optional realm ID filter (four-letter ID) | No |
 
 #### Examples
 
@@ -1005,7 +1080,35 @@ b2c realm list zzzz
 b2c realm list --json
 ```
 
-When `REALM` is omitted, the command discovers realms from the `/me` endpoint and then fetches configuration for each.
+When `REALM` is omitted, the command discovers realms from the `/me` endpoint.
+
+### b2c realm configuration
+
+Get sandbox configuration for a specific realm.
+
+#### Usage
+
+```bash
+b2c realm configuration <REALM>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `REALM` | Realm ID (four-letter ID) | Yes |
+
+#### Examples
+
+```bash
+# Get realm sandbox configuration
+b2c realm configuration zzzz
+
+# JSON output
+b2c realm configuration zzzz --json
+```
+
+When not using `--json`, the command prints configuration details such as emails, sandbox limits, TTL values, and start/stop schedulers.
 
 ### b2c realm get
 
@@ -1142,4 +1245,47 @@ When not using `--json`, the command prints a summary including:
 - Minutes up by profile (if present)
 
 If detailed usage is available, it prints a hint to re-run with `--json` for the full structure. If no usage data is returned for the requested period, it prints a friendly message instead of failing.
+
+### b2c realm usages
+
+Show usage information for multiple realms in one request.
+
+#### Usage
+
+```bash
+b2c realm usages [FLAGS]
+```
+
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--realm` | Realm IDs to include (repeat flag or provide comma-separated values) |
+| `--from` | Earliest date to include in usage (ISO 8601) |
+| `--to` | Latest date to include in usage (ISO 8601) |
+| `--detailed-report` | Include detailed usage information in the response |
+
+If `--realm` is omitted, the command auto-discovers realms from `/me` and queries usage for all discovered realms.
+
+#### Examples
+
+```bash
+# Usage for all realms available to the current user
+b2c realm usages
+
+# Usage for two specific realms
+b2c realm usages --realm zzzz --realm yyyy
+
+# Usage for comma-separated realms and date range
+b2c realm usages --realm zzzz,yyyy --from 2024-01-01 --to 2024-01-31
+
+# Detailed report in JSON
+b2c realm usages --detailed-report --json
+```
+
+When not using `--json`, the command prints one row per realm with summary metrics such as:
+
+- Active / created / deleted sandbox counts
+- Minutes up / minutes down
+- Sandbox seconds
 

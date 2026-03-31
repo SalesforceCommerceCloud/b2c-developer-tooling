@@ -6,29 +6,26 @@
 
 import {Args} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../../i18n/index.js';
 
-type RealmConfigurationModel = OdsComponents['schemas']['RealmConfigurationModel'];
-
-interface RealmWithUsage {
+interface RealmItem {
   realmId: string;
-  configuration?: RealmConfigurationModel;
 }
 
 interface RealmListResponse {
-  realms: RealmWithUsage[];
+  realms: RealmItem[];
 }
 
 /**
- * List realms eligible for sandbox management, optionally including usage.
+ * List realms eligible for sandbox management.
  */
 export default class SandboxRealmList extends OdsCommand<typeof SandboxRealmList> {
   static aliases = ['ods:realm:list', 'realm:list'];
 
   static args = {
     realm: Args.string({
-      description: 'Specific realm ID (four-letter ID) to get details for',
+      description: 'Optional realm ID filter (four-letter ID)',
       required: false,
     }),
   };
@@ -70,32 +67,7 @@ export default class SandboxRealmList extends OdsCommand<typeof SandboxRealmList
       realmIds = meResult.data.data.realms ?? [];
     }
 
-    const realms: RealmWithUsage[] = [];
-
-    for (const realmId of realmIds) {
-      // Fetch configuration for each realm
-      // eslint-disable-next-line no-await-in-loop -- Sequential API calls required
-      const configResult = await this.odsClient.GET('/realms/{realm}/configuration', {
-        params: {path: {realm: realmId}},
-      });
-
-      if (configResult.error) {
-        this.error(
-          t('commands.realm.list.configError', 'Failed to fetch configuration for realm {{realm}}: {{message}}', {
-            realm: realmId,
-            message: getApiErrorMessage(configResult.error, configResult.response),
-          }),
-        );
-      }
-
-      const realmEntry: RealmWithUsage = {
-        realmId,
-
-        configuration: (configResult.data?.data as RealmConfigurationModel | undefined) ?? undefined,
-      };
-
-      realms.push(realmEntry);
-    }
+    const realms: RealmItem[] = realmIds.map((realmId) => ({realmId}));
 
     const response: RealmListResponse = {realms};
 
@@ -110,16 +82,12 @@ export default class SandboxRealmList extends OdsCommand<typeof SandboxRealmList
 
     // Human-readable output: simple table-like listing
 
-    console.log('Realm  Enabled');
+    console.log('Realm');
 
-    console.log('─────  ───────');
+    console.log('─────');
 
     for (const realm of realms) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const configAny = realm.configuration as any;
-      const enabled = configAny?.enabled ?? false;
-
-      console.log(`${realm.realmId.padEnd(5)}  ${String(enabled).padEnd(7)}`);
+      console.log(realm.realmId);
     }
 
     return response;
