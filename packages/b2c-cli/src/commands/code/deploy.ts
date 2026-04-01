@@ -8,6 +8,7 @@ import {
   uploadCartridges,
   deleteCartridges,
   getActiveCodeVersion,
+  activateCodeVersion,
   reloadCodeVersion,
   type DeployResult,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
@@ -32,8 +33,9 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> ./my-cartridges',
     '<%= config.bin %> <%= command.id %> --server my-sandbox.demandware.net --code-version v1',
+    '<%= config.bin %> <%= command.id %> --activate',
+    '<%= config.bin %> <%= command.id %> --delete --activate',
     '<%= config.bin %> <%= command.id %> --reload',
-    '<%= config.bin %> <%= command.id %> --delete --reload',
     '<%= config.bin %> <%= command.id %> -c app_storefront_base -c plugin_applepay',
     '<%= config.bin %> <%= command.id %> -x test_cartridge',
   ];
@@ -41,10 +43,17 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
   static flags = {
     ...CartridgeCommand.baseFlags,
     ...CartridgeCommand.cartridgeFlags,
+    activate: Flags.boolean({
+      char: 'a',
+      description: 'Activate code version after deploy',
+      default: false,
+      exclusive: ['reload'],
+    }),
     reload: Flags.boolean({
       char: 'r',
-      description: 'Reload (re-activate) code version after deploy',
+      description: 'Reload (toggle activation to force reload) code version after deploy',
       default: false,
+      exclusive: ['activate'],
     }),
     delete: Flags.boolean({
       description: 'Delete existing cartridges before upload',
@@ -56,6 +65,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     uploadCartridges,
     deleteCartridges,
     getActiveCodeVersion,
+    activateCodeVersion,
     reloadCodeVersion,
   };
 
@@ -65,15 +75,15 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     const hostname = this.resolvedConfig.values.hostname!;
     let version = this.resolvedConfig.values.codeVersion;
 
-    // OAuth is only required if:
+    // OAuth is required if:
     // 1. No code version specified (need to auto-discover via OCAPI)
-    // 2. --reload flag is set (need to call OCAPI to reload)
-    const needsOAuth = !version || this.flags.reload;
+    // 2. --activate or --reload flag is set (need to call OCAPI)
+    const needsOAuth = !version || this.flags.activate || this.flags.reload;
     if (needsOAuth && !this.hasOAuthCredentials()) {
       const reason = version
         ? t(
-            'commands.code.deploy.oauthRequiredForReload',
-            'The --reload flag requires OAuth credentials to reload the code version via OCAPI.',
+            'commands.code.deploy.oauthRequiredForActivate',
+            'The --activate/--reload flag requires OAuth credentials to manage the code version via OCAPI.',
           )
         : t(
             'commands.code.deploy.oauthRequiredForDiscovery',
@@ -109,6 +119,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       cartridgePath: this.cartridgePath,
       hostname,
       codeVersion: version,
+      activate: this.flags.activate,
       reload: this.flags.reload,
       delete: this.flags.delete,
       ...this.cartridgeOptions,
@@ -125,6 +136,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       return {
         cartridges: [],
         codeVersion: version,
+        activated: false,
         reloaded: false,
       };
     }
@@ -159,20 +171,33 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       // Upload cartridges
       await this.operations.uploadCartridges(this.instance, cartridges);
 
-      // Optionally reload code version
+      // Optionally activate or reload code version
+      let activated = false;
       let reloaded = false;
-      if (this.flags.reload) {
-        try {
+      try {
+        if (this.flags.activate) {
+          await this.operations.activateCodeVersion(this.instance, version);
+          activated = true;
+        } else if (this.flags.reload) {
           await this.operations.reloadCodeVersion(this.instance, version);
+          activated = true;
           reloaded = true;
-        } catch (error) {
-          this.logger?.debug(`Could not reload code version: ${error instanceof Error ? error.message : error}`);
         }
+      } catch (error) {
+        const clientId = this.resolvedConfig.values.clientId ?? 'unknown';
+        this.error(
+          t(
+            'commands.code.deploy.activateFailed',
+            'Failed to activate code version "{{version}}": {{message}}\n\nEnsure your OCAPI client ({{clientId}}) is configured with Data API permissions.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#ocapi-configuration',
+            {version, message: error instanceof Error ? error.message : String(error), clientId},
+          ),
+        );
       }
 
       const result: DeployResult = {
         cartridges,
         codeVersion: version,
+        activated,
         reloaded,
       };
 
@@ -187,8 +212,12 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         ),
       );
 
-      if (result.reloaded) {
-        this.log(t('commands.code.deploy.reloaded', 'Code version reloaded'));
+      if (result.activated) {
+        this.log(
+          result.reloaded
+            ? t('commands.code.deploy.reloaded', 'Code version reloaded')
+            : t('commands.code.deploy.activated', 'Code version activated'),
+        );
       }
 
       // Run afterOperation hooks with success
