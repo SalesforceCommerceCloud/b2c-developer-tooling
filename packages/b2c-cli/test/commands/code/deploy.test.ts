@@ -42,7 +42,7 @@ describe('code deploy', () => {
 
     const result = await command.run();
 
-    expect(result).to.deep.equal({cartridges: [], codeVersion: 'v1', reloaded: false});
+    expect(result).to.deep.equal({cartridges: [], codeVersion: 'v1', activated: false, reloaded: false});
   });
 
   it('errors when no cartridges are found', async () => {
@@ -90,11 +90,60 @@ describe('code deploy', () => {
     expect(uploadStub.calledOnceWithExactly(instance, cartridges)).to.equal(true);
     expect(reloadStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
 
-    expect(result).to.deep.include({codeVersion: 'v1', reloaded: true});
+    expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: true});
     expect(afterHooksStub.calledOnce).to.equal(true);
   });
 
-  it('swallows reload errors and still succeeds', async () => {
+  it('calls activate after deploy when --activate is set', async () => {
+    const command: any = await createCommand({activate: true}, {cartridgePath: '.'});
+    const instance = stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const cartridges = [{name: 'c1', src: '/tmp/c1', dest: 'c1'}];
+    sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
+
+    const uploadStub = sinon.stub().resolves(void 0);
+    const activateStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, uploadCartridges: uploadStub, activateCodeVersion: activateStub};
+
+    const result = await command.run();
+
+    expect(activateStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
+    expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: false});
+  });
+
+  it('errors when activate fails', async () => {
+    const command: any = await createCommand({activate: true}, {cartridgePath: '.'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const cartridges = [{name: 'c1', src: '/tmp/c1', dest: 'c1'}];
+    sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
+
+    const uploadStub = sinon.stub().resolves(void 0);
+    const activateStub = sinon.stub().rejects(new Error('activate failed'));
+    command.operations = {...command.operations, uploadCartridges: uploadStub, activateCodeVersion: activateStub};
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.called).to.equal(true);
+    const errorMessage = errorStub.firstCall.args[0];
+    expect(errorMessage).to.include('activate failed');
+    expect(errorMessage).to.include('OCAPI');
+  });
+
+  it('errors when reload fails', async () => {
     const command: any = await createCommand({reload: true}, {cartridgePath: '.'});
     stubCommon(command);
 
@@ -108,9 +157,19 @@ describe('code deploy', () => {
     const reloadStub = sinon.stub().rejects(new Error('reload failed'));
     command.operations = {...command.operations, uploadCartridges: uploadStub, reloadCodeVersion: reloadStub};
 
-    const result = await command.run();
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    expect(result.reloaded).to.equal(false);
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.called).to.equal(true);
+    const errorMessage = errorStub.firstCall.args[0];
+    expect(errorMessage).to.include('reload failed');
+    expect(errorMessage).to.include('OCAPI');
   });
 
   it('errors when no code version and no OAuth credentials', async () => {
@@ -156,7 +215,30 @@ describe('code deploy', () => {
 
     expect(errorStub.calledOnce).to.equal(true);
     const errorMessage = errorStub.firstCall.args[0];
-    expect(errorMessage).to.include('reload');
+    expect(errorMessage).to.include('activate');
+  });
+
+  it('errors when --activate flag set but no OAuth credentials', async () => {
+    const command: any = await createCommand({activate: true}, {cartridgePath: '.'});
+
+    sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.calledOnce).to.equal(true);
+    const errorMessage = errorStub.firstCall.args[0];
+    expect(errorMessage).to.include('activate');
   });
 
   it('uses active code version when resolvedConfig is missing codeVersion', async () => {

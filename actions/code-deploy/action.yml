@@ -85,7 +85,9 @@ runs:
       run: |
         CMD="code deploy ${{ inputs.cartridge-path }}"
 
-        if [ "${{ inputs.activate }}" = "true" ] || [ "${{ inputs.reload }}" = "true" ]; then
+        if [ "${{ inputs.activate }}" = "true" ]; then
+          CMD="$CMD --activate"
+        elif [ "${{ inputs.reload }}" = "true" ]; then
           CMD="$CMD --reload"
         fi
 
