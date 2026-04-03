@@ -58,12 +58,14 @@ export class WebDavDragAndDropController implements vscode.TreeDragAndDropContro
   ): Promise<void> {
     if (!target || !DROPPABLE_TYPES.has(target.nodeType)) return;
 
-    // Internal tree move/copy
+    // Internal tree move/copy — validate the payload is actually our array of paths
     const treePaths = dataTransfer.get(WEBDAV_TREE_MIME);
     if (treePaths) {
-      const paths = treePaths.value as string[];
-      await this.handleTreeDrop(target, paths, token);
-      return;
+      const paths = treePaths.value;
+      if (Array.isArray(paths) && paths.length > 0 && typeof paths[0] === 'string' && paths[0].includes('/')) {
+        await this.handleTreeDrop(target, paths as string[], token);
+        return;
+      }
     }
 
     // External file drop (from OS or VS Code explorer)
