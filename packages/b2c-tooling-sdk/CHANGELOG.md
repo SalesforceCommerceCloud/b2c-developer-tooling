@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.0.1
+
+### Patch Changes
+
+- [`e597e61`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e597e6131b9965e88ef75954a935695fa7f6d70f) - Add `--activate` flag to `code deploy` for activating a code version after deploy without the toggle behavior of `--reload`. Both `--activate` and `--reload` now error on failure instead of silently continuing. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.0.0
 
 ### Major Changes

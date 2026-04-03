@@ -149,6 +149,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app_storefront_base', dest: 'app_storefront_base'}],
         codeVersion: 'v1',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -190,6 +191,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'my_cartridge', src: '/path/to/my_cartridge', dest: 'my_cartridge'}],
         codeVersion: 'v2',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -221,6 +223,7 @@ describe('tools/cartridges', () => {
           {name: 'app_core', src: '/path/to/app_core', dest: 'app_core'},
         ],
         codeVersion: 'v1',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -246,6 +249,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
         codeVersion: 'v1',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -269,6 +273,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
         codeVersion: 'v1',
+        activated: true,
         reloaded: true,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -299,6 +304,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
         codeVersion: 'v1',
+        activated: true,
         reloaded: true,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -332,6 +338,7 @@ describe('tools/cartridges', () => {
           {name: 'app_core', src: '/path/to/core', dest: 'app_core'},
         ],
         codeVersion: 'v1.2.3',
+        activated: true,
         reloaded: true,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -370,6 +377,7 @@ describe('tools/cartridges', () => {
         const mockResult: DeployResult = {
           cartridges: [{name: 'test_cartridge', src: '/path/to/test', dest: 'test_cartridge'}],
           codeVersion: 'v1',
+          activated: false,
           reloaded: false,
         };
         findAndDeployCartridgesStub.resolves(mockResult);
@@ -403,6 +411,7 @@ describe('tools/cartridges', () => {
         const mockResult: DeployResult = {
           cartridges: [{name: 'test_cartridge', src: '/path/to/test', dest: 'test_cartridge'}],
           codeVersion: 'v1',
+          activated: false,
           reloaded: false,
         };
         findAndDeployCartridgesStub.resolves(mockResult);
@@ -429,6 +438,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'test_cartridge', src: '/path/to/test', dest: 'test_cartridge'}],
         codeVersion: 'v1',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -454,6 +464,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'test_cartridge', src: '/path/to/test', dest: 'test_cartridge'}],
         codeVersion: 'v1',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -481,6 +492,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
         codeVersion: 'v2',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);
@@ -511,6 +523,7 @@ describe('tools/cartridges', () => {
       const mockResult: DeployResult = {
         cartridges: [{name: 'app_storefront_base', src: '/path/to/app', dest: 'app_storefront_base'}],
         codeVersion: 'v1',
+        activated: false,
         reloaded: false,
       };
       findAndDeployCartridgesStub.resolves(mockResult);

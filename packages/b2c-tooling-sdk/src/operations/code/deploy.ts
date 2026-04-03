@@ -9,7 +9,7 @@ import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
-import {reloadCodeVersion} from './versions.js';
+import {activateCodeVersion, reloadCodeVersion} from './versions.js';
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 
@@ -17,7 +17,9 @@ const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
  * Options for deploying cartridges.
  */
 export interface DeployOptions extends FindCartridgesOptions {
-  /** Reload (re-activate) the code version after deploy */
+  /** Activate the code version after deploy */
+  activate?: boolean;
+  /** Reload (toggle activation to force reload) the code version after deploy */
   reload?: boolean;
   /** Delete existing cartridges before uploading */
   delete?: boolean;
@@ -31,7 +33,9 @@ export interface DeployResult {
   cartridges: CartridgeMapping[];
   /** Code version deployed to */
   codeVersion: string;
-  /** Whether the code version was reloaded */
+  /** Whether the code version was activated after deploy */
+  activated: boolean;
+  /** Whether the code version was reloaded after deploy */
   reloaded: boolean;
 }
 
@@ -259,21 +263,24 @@ export async function findAndDeployCartridges(
   // Upload cartridges
   await uploadCartridges(instance, cartridges);
 
-  // Optionally reload
+  // Optionally activate or reload
+  let activated = false;
   let reloaded = false;
-  if (options.reload) {
+  if (options.activate) {
+    logger.debug('Activating code version...');
+    await activateCodeVersion(instance, codeVersion);
+    activated = true;
+  } else if (options.reload) {
     logger.debug('Reloading code version...');
-    try {
-      await reloadCodeVersion(instance, codeVersion);
-      reloaded = true;
-    } catch (error) {
-      logger.debug({error}, 'Could not reload code version');
-    }
+    await reloadCodeVersion(instance, codeVersion);
+    activated = true;
+    reloaded = true;
   }
 
   return {
     cartridges,
     codeVersion,
+    activated,
     reloaded,
   };
 }
