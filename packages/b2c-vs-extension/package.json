@@ -44,11 +44,6 @@
           "default": true,
           "description": "Enable the WebDAV Browser."
         },
-        "b2c-dx.features.webdavCrossRootDragDrop": {
-          "type": "boolean",
-          "default": false,
-          "description": "Allow drag-and-drop moves between different WebDAV roots (e.g., Catalogs to Libraries). Experimental."
-        },
         "b2c-dx.features.contentLibraries": {
           "type": "boolean",
           "default": true,

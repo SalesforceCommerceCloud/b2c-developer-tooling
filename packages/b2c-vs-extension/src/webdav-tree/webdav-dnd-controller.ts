@@ -24,11 +24,7 @@ function getWebdavRoot(webdavPath: string): string {
  *
  * Supports:
  * - Drop from local file system / VS Code explorer (upload)
- * - Drag out to local file system (via FileSystemProvider)
- * - Move/copy within the tree (WebDAV MOVE)
- *
- * Cross-root moves (e.g., Catalogs → Libraries) are supported but
- * gated behind the `b2c-dx.features.webdavCrossRootDragDrop` setting.
+ * - Move within the same WebDAV root (WebDAV MOVE)
  */
 export class WebDavDragAndDropController implements vscode.TreeDragAndDropController<WebDavTreeItem> {
   readonly dragMimeTypes = [WEBDAV_TREE_MIME];
@@ -82,7 +78,7 @@ export class WebDavDragAndDropController implements vscode.TreeDragAndDropContro
   }
 
   /**
-   * Handle internal tree move via WebDAV MOVE.
+   * Handle internal tree move via WebDAV MOVE (same root only).
    */
   private async handleTreeDrop(
     target: WebDavTreeItem,
@@ -92,21 +88,14 @@ export class WebDavDragAndDropController implements vscode.TreeDragAndDropContro
     const instance = this.configProvider.getInstance();
     if (!instance) return;
 
-    const crossRootEnabled = vscode.workspace
-      .getConfiguration('b2c-dx.features')
-      .get<boolean>('webdavCrossRootDragDrop', false);
-
     const targetRoot = getWebdavRoot(target.webdavPath);
 
     for (const sourcePath of sourcePaths) {
       if (token.isCancellationRequested) break;
 
       const sourceRoot = getWebdavRoot(sourcePath);
-      if (sourceRoot !== targetRoot && !crossRootEnabled) {
-        vscode.window.showWarningMessage(
-          `Cross-root move from ${sourceRoot} to ${targetRoot} is disabled. ` +
-            `Enable "b2c-dx.features.webdavCrossRootDragDrop" in settings to allow this.`,
-        );
+      if (sourceRoot !== targetRoot) {
+        vscode.window.showWarningMessage(`Cannot move files between ${sourceRoot} and ${targetRoot}.`);
         continue;
       }
 
@@ -124,10 +113,12 @@ export class WebDavDragAndDropController implements vscode.TreeDragAndDropContro
           },
         );
 
-        // Invalidate caches for source parent and target
+        // Invalidate caches and notify tree to refresh source and target
         const sourceParent = sourcePath.substring(0, sourcePath.lastIndexOf('/'));
         this.fsProvider.clearCache(sourceParent);
         this.fsProvider.clearCache(target.webdavPath);
+        this.fsProvider.fireDidChange(vscode.FileChangeType.Deleted, webdavPathToUri(sourcePath));
+        this.fsProvider.fireDidChange(vscode.FileChangeType.Created, webdavPathToUri(destinationPath));
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         vscode.window.showErrorMessage(`WebDAV: Move failed for ${fileName}: ${message}`);
