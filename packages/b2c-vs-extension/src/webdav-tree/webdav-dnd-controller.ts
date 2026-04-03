@@ -143,24 +143,77 @@ export class WebDavDragAndDropController implements vscode.TreeDragAndDropContro
     uris: vscode.Uri[],
     token: vscode.CancellationToken,
   ): Promise<void> {
-    for (const uri of uris) {
-      if (token.isCancellationRequested) break;
+    // Count total files for progress reporting
+    const totalFiles = await this.countFiles(uris);
+    const label = totalFiles === 1 ? (uris[0].path.split('/').pop() ?? 'file') : `${totalFiles} files`;
 
-      try {
-        const stat = await vscode.workspace.fs.stat(uri);
-        if (stat.type === vscode.FileType.Directory) {
-          await this.uploadDirectory(target.webdavPath, uri, token);
-        } else {
-          await this.uploadFile(target.webdavPath, uri);
+    await vscode.window.withProgress(
+      {location: vscode.ProgressLocation.Notification, title: `Uploading ${label}...`, cancellable: true},
+      async (progress, progressToken) => {
+        let uploaded = 0;
+        const reportProgress = (fileName: string) => {
+          uploaded++;
+          progress.report({
+            message: totalFiles > 1 ? `${fileName} (${uploaded}/${totalFiles})` : fileName,
+            increment: (1 / totalFiles) * 100,
+          });
+        };
+
+        const effectiveToken = {
+          get isCancellationRequested() {
+            return token.isCancellationRequested || progressToken.isCancellationRequested;
+          },
+        };
+
+        for (const uri of uris) {
+          if (effectiveToken.isCancellationRequested) break;
+
+          try {
+            const stat = await vscode.workspace.fs.stat(uri);
+            if (stat.type === vscode.FileType.Directory) {
+              await this.uploadDirectory(target.webdavPath, uri, effectiveToken, reportProgress);
+            } else {
+              const fileName = uri.path.split('/').pop() ?? 'file';
+              await this.uploadFile(target.webdavPath, uri);
+              reportProgress(fileName);
+            }
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const fileName = uri.path.split('/').pop() ?? uri.toString();
+            vscode.window.showErrorMessage(`WebDAV: Upload failed for ${fileName}: ${message}`);
+          }
         }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        const fileName = uri.path.split('/').pop() ?? uri.toString();
-        vscode.window.showErrorMessage(`WebDAV: Upload failed for ${fileName}: ${message}`);
-      }
-    }
+      },
+    );
 
     this.fsProvider.clearCache(target.webdavPath);
+  }
+
+  /** Count total files across URIs (recursing into directories). */
+  private async countFiles(uris: vscode.Uri[]): Promise<number> {
+    let count = 0;
+    for (const uri of uris) {
+      const stat = await vscode.workspace.fs.stat(uri);
+      if (stat.type === vscode.FileType.Directory) {
+        count += await this.countDirectoryFiles(uri);
+      } else {
+        count++;
+      }
+    }
+    return Math.max(count, 1);
+  }
+
+  private async countDirectoryFiles(uri: vscode.Uri): Promise<number> {
+    let count = 0;
+    const entries = await vscode.workspace.fs.readDirectory(uri);
+    for (const [name, type] of entries) {
+      if (type === vscode.FileType.Directory) {
+        count += await this.countDirectoryFiles(vscode.Uri.joinPath(uri, name));
+      } else {
+        count++;
+      }
+    }
+    return count;
   }
 
   private async uploadFile(targetDir: string, uri: vscode.Uri): Promise<void> {
@@ -174,7 +227,12 @@ export class WebDavDragAndDropController implements vscode.TreeDragAndDropContro
     });
   }
 
-  private async uploadDirectory(targetDir: string, uri: vscode.Uri, token: vscode.CancellationToken): Promise<void> {
+  private async uploadDirectory(
+    targetDir: string,
+    uri: vscode.Uri,
+    token: {isCancellationRequested: boolean},
+    reportProgress: (fileName: string) => void,
+  ): Promise<void> {
     const dirName = uri.path.split('/').pop() ?? 'folder';
     const destDir = `${targetDir}/${dirName}`;
 
@@ -186,9 +244,10 @@ export class WebDavDragAndDropController implements vscode.TreeDragAndDropContro
 
       const childUri = vscode.Uri.joinPath(uri, name);
       if (type === vscode.FileType.Directory) {
-        await this.uploadDirectory(destDir, childUri, token);
+        await this.uploadDirectory(destDir, childUri, token, reportProgress);
       } else {
         await this.uploadFile(destDir, childUri);
+        reportProgress(name);
       }
     }
   }
