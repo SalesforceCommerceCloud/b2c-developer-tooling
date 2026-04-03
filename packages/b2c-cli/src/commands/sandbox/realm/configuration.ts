@@ -16,7 +16,7 @@ type RealmConfigurationResponse = OdsComponents['schemas']['RealmConfigurationRe
  * Get realm sandbox configuration.
  */
 export default class SandboxRealmConfiguration extends OdsCommand<typeof SandboxRealmConfiguration> {
-  static aliases = ['ods:realm:configuration', 'realm:configuration'];
+  static aliases = ['ods:realm:configuration'];
 
   static args = {
     realm: Args.string({

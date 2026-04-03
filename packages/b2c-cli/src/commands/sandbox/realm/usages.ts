@@ -16,7 +16,7 @@ type MultiRealmUsageResponse = OdsComponents['schemas']['MultiRealmUsageResponse
  * Show usage information for multiple realms.
  */
 export default class SandboxRealmUsages extends OdsCommand<typeof SandboxRealmUsages> {
-  static aliases = ['ods:realm:usages', 'realm:usages'];
+  static aliases = ['ods:realm:usages'];
 
   static description = withDocs(
     t('commands.realm.usages.description', 'Show usage information for multiple realms'),

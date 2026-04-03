@@ -21,7 +21,7 @@ interface RealmListResponse {
  * List realms eligible for sandbox management.
  */
 export default class SandboxRealmList extends OdsCommand<typeof SandboxRealmList> {
-  static aliases = ['ods:realm:list', 'realm:list'];
+  static aliases = ['ods:realm:list'];
 
   static args = {
     realm: Args.string({

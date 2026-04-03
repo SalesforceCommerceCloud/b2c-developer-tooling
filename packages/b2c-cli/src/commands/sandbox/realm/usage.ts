@@ -15,7 +15,7 @@ type RealmUsageModel = OdsComponents['schemas']['RealmUsageModel'];
  * Show realm-level usage information.
  */
 export default class SandboxRealmUsage extends OdsCommand<typeof SandboxRealmUsage> {
-  static aliases = ['ods:realm:usage', 'realm:usage'];
+  static aliases = ['ods:realm:usage'];
 
   static args = {
     realm: Args.string({

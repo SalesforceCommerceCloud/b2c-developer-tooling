@@ -1038,27 +1038,27 @@ For the complete response including all metadata, use the `--json` flag.
 
 ## Realm-Level Commands
 
-Realm commands operate at the **realm** level rather than on an individual sandbox. They are available as both `realm` topic commands and as `sandbox realm` subcommands:
+Realm commands operate at the **realm** level rather than on an individual sandbox. Use them under the existing sandbox topics:
 
-- `b2c realm list` (`b2c sandbox realm list`)
-- `b2c realm configuration` (`b2c sandbox realm configuration`)
-- `b2c realm get` (`b2c sandbox realm get`)
-- `b2c realm update` (`b2c sandbox realm update`)
-- `b2c realm usage` (`b2c sandbox realm usage`)
-- `b2c realm usages` (`b2c sandbox realm usages`)
+- `b2c sandbox realm list` (or `b2c ods realm list`)
+- `b2c sandbox realm configuration` (or `b2c ods realm configuration`)
+- `b2c sandbox realm get` (or `b2c ods realm get`)
+- `b2c sandbox realm update` (or `b2c ods realm update`)
+- `b2c sandbox realm usage` (or `b2c ods realm usage`)
+- `b2c sandbox realm usages` (or `b2c ods realm usages`)
 
 ### Required Access for Realm Commands
 
-To run `b2c realm` commands, your user or API client must have **realm‑level access** in Account Manager (typically a role ending in `_sbx` for sandbox management).
+To run `b2c sandbox realm` (or `b2c ods realm`) commands, your user or API client must have **realm‑level access** in Account Manager (typically a role ending in `_sbx` for sandbox management).
 
-### b2c realm list
+### b2c sandbox realm list
 
 List realms eligible for sandbox management.
 
 #### Usage
 
 ```bash
-b2c realm list [REALM]
+b2c sandbox realm list [REALM]
 ```
 
 #### Arguments
@@ -1071,25 +1071,25 @@ b2c realm list [REALM]
 
 ```bash
 # List all realms you can manage
-b2c realm list
+b2c sandbox realm list
 
 # List a single realm
-b2c realm list zzzz
+b2c sandbox realm list zzzz
 
 # JSON output
-b2c realm list --json
+b2c sandbox realm list --json
 ```
 
 When `REALM` is omitted, the command discovers realms from the `/me` endpoint.
 
-### b2c realm configuration
+### b2c sandbox realm configuration
 
 Get sandbox configuration for a specific realm.
 
 #### Usage
 
 ```bash
-b2c realm configuration <REALM>
+b2c sandbox realm configuration <REALM>
 ```
 
 #### Arguments
@@ -1102,22 +1102,22 @@ b2c realm configuration <REALM>
 
 ```bash
 # Get realm sandbox configuration
-b2c realm configuration zzzz
+b2c sandbox realm configuration zzzz
 
 # JSON output
-b2c realm configuration zzzz --json
+b2c sandbox realm configuration zzzz --json
 ```
 
 When not using `--json`, the command prints configuration details such as emails, sandbox limits, TTL values, and start/stop schedulers.
 
-### b2c realm get
+### b2c sandbox realm get
 
 Get detailed information about a specific realm, including configuration.
 
 #### Usage
 
 ```bash
-b2c realm get <REALM>
+b2c sandbox realm get <REALM>
 ```
 
 #### Arguments
@@ -1130,10 +1130,10 @@ b2c realm get <REALM>
 
 ```bash
 # Get realm details
-b2c realm get zzzz
+b2c sandbox realm get zzzz
 
 # JSON output (includes configuration and account details when available)
-b2c realm get zzzz --json
+b2c sandbox realm get zzzz --json
 ```
 
 #### Output
@@ -1150,14 +1150,14 @@ The command prints:
   - Whether local users are allowed
   - Start/stop scheduler definitions (as JSON) when present
 
-### b2c realm update
+### b2c sandbox realm update
 
 Update realm‑level sandbox configuration for TTL and start/stop schedulers.
 
 #### Usage
 
 ```bash
-b2c realm update <REALM> [FLAGS]
+b2c sandbox realm update <REALM> [FLAGS]
 ```
 
 #### Arguments
@@ -1186,27 +1186,27 @@ The scheduler flags expect a JSON value or the literal string `"null"`:
 
 ```bash
 # Set max TTL to unlimited and default TTL to 24 hours
-b2c realm update zzzz --max-sandbox-ttl 0 --default-sandbox-ttl 24
+b2c sandbox realm update zzzz --max-sandbox-ttl 0 --default-sandbox-ttl 24
 
 # Configure weekday start/stop schedules
-b2c realm update zzzz \
+b2c sandbox realm update zzzz \
   --start-scheduler '{"weekdays":["MONDAY","TUESDAY"],"time":"08:00:00Z"}' \
   --stop-scheduler '{"weekdays":["MONDAY","TUESDAY"],"time":"19:00:00Z"}'
 
 # Remove an existing stop scheduler
-b2c realm update zzzz --stop-scheduler "null"
+b2c sandbox realm update zzzz --stop-scheduler "null"
 ```
 
 If no update flags are provided, the command fails with a helpful error explaining which flags can be used.
 
-### b2c realm usage
+### b2c sandbox realm usage
 
 Show usage information for a realm across all sandboxes in that realm.
 
 #### Usage
 
 ```bash
-b2c realm usage <REALM> [FLAGS]
+b2c sandbox realm usage <REALM> [FLAGS]
 ```
 
 #### Arguments
@@ -1228,13 +1228,13 @@ b2c realm usage <REALM> [FLAGS]
 
 ```bash
 # Realm usage for a recent window
-b2c realm usage zzzz
+b2c sandbox realm usage zzzz
 
 # Realm usage for a specific range
-b2c realm usage zzzz --from 2024-01-01 --to 2024-01-31
+b2c sandbox realm usage zzzz --from 2024-01-01 --to 2024-01-31
 
 # Daily granularity with full JSON response
-b2c realm usage zzzz --granularity daily --detailed-report --json
+b2c sandbox realm usage zzzz --granularity daily --detailed-report --json
 ```
 
 When not using `--json`, the command prints a summary including:
@@ -1246,14 +1246,14 @@ When not using `--json`, the command prints a summary including:
 
 If detailed usage is available, it prints a hint to re-run with `--json` for the full structure. If no usage data is returned for the requested period, it prints a friendly message instead of failing.
 
-### b2c realm usages
+### b2c sandbox realm usages
 
 Show usage information for multiple realms in one request.
 
 #### Usage
 
 ```bash
-b2c realm usages [FLAGS]
+b2c sandbox realm usages [FLAGS]
 ```
 
 #### Flags
@@ -1271,16 +1271,16 @@ If `--realm` is omitted, the command auto-discovers realms from `/me` and querie
 
 ```bash
 # Usage for all realms available to the current user
-b2c realm usages
+b2c sandbox realm usages
 
 # Usage for two specific realms
-b2c realm usages --realm zzzz --realm yyyy
+b2c sandbox realm usages --realm zzzz --realm yyyy
 
 # Usage for comma-separated realms and date range
-b2c realm usages --realm zzzz,yyyy --from 2024-01-01 --to 2024-01-31
+b2c sandbox realm usages --realm zzzz,yyyy --from 2024-01-01 --to 2024-01-31
 
 # Detailed report in JSON
-b2c realm usages --detailed-report --json
+b2c sandbox realm usages --detailed-report --json
 ```
 
 When not using `--json`, the command prints one row per realm with summary metrics such as:
