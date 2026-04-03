@@ -5,6 +5,7 @@
  */
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {WebDavDragAndDropController} from './webdav-dnd-controller.js';
 import {WEBDAV_SCHEME, WebDavFileSystemProvider} from './webdav-fs-provider.js';
 import {WebDavMappingsProvider} from './webdav-mappings.js';
 import {WebDavTreeDataProvider} from './webdav-tree-provider.js';
@@ -22,9 +23,12 @@ export function registerWebDavTree(context: vscode.ExtensionContext, configProvi
 
   const treeProvider = new WebDavTreeDataProvider(configProvider, fsProvider, mappingsProvider);
 
+  const dndController = new WebDavDragAndDropController(configProvider, fsProvider);
+
   const treeView = vscode.window.createTreeView('b2cWebdavExplorer', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
+    dragAndDropController: dndController,
   });
 
   const commandDisposables = registerWebDavCommands(
