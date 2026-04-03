@@ -155,6 +155,8 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     realm: json.realm,
     cartridges: parseCartridges(json.cartridges),
     contentLibrary: json.contentLibrary,
+    catalogs: json.catalogs,
+    libraries: json.libraries,
     cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
@@ -240,6 +242,12 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.cartridges !== undefined) {
     result.cartridges = config.cartridges;
+  }
+  if (config.catalogs !== undefined) {
+    result.catalogs = config.catalogs;
+  }
+  if (config.libraries !== undefined) {
+    result.libraries = config.libraries;
   }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
@@ -367,6 +375,8 @@ export function mergeConfigsWithProtection(
       tenantId: overrides.tenantId ?? base.tenantId,
       cartridges: overrides.cartridges ?? base.cartridges,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
+      catalogs: overrides.catalogs ?? base.catalogs,
+      libraries: overrides.libraries ?? base.libraries,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,

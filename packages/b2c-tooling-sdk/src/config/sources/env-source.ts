@@ -38,6 +38,8 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_SHORTCODE: 'shortCode',
   SFCC_TENANT_ID: 'tenantId',
   SFCC_CARTRIDGES: 'cartridges',
+  SFCC_CATALOGS: 'catalogs',
+  SFCC_LIBRARIES: 'libraries',
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
@@ -53,7 +55,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
 };
 
 /** Fields that should be parsed as comma-separated arrays. */
-const ARRAY_FIELDS = new Set<keyof NormalizedConfig>(['scopes', 'authMethods', 'cartridges']);
+const ARRAY_FIELDS = new Set<keyof NormalizedConfig>(['scopes', 'authMethods', 'cartridges', 'catalogs', 'libraries']);
 
 /** Fields that should be parsed as booleans. */
 const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);

@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {WEBDAV_SCHEME, WebDavFileSystemProvider} from './webdav-fs-provider.js';
+import {WebDavMappingsProvider} from './webdav-mappings.js';
 import {WebDavTreeDataProvider} from './webdav-tree-provider.js';
 import {registerWebDavCommands} from './webdav-commands.js';
 
@@ -16,14 +17,24 @@ export function registerWebDavTree(context: vscode.ExtensionContext, configProvi
     isCaseSensitive: true,
   });
 
-  const treeProvider = new WebDavTreeDataProvider(configProvider, fsProvider);
+  const mappingsProvider = new WebDavMappingsProvider(configProvider);
+  mappingsProvider.seedFromConfig();
+
+  const treeProvider = new WebDavTreeDataProvider(configProvider, fsProvider, mappingsProvider);
 
   const treeView = vscode.window.createTreeView('b2cWebdavExplorer', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
   });
 
-  const commandDisposables = registerWebDavCommands(context, configProvider, treeProvider, fsProvider);
+  const commandDisposables = registerWebDavCommands(
+    context,
+    configProvider,
+    treeProvider,
+    treeView,
+    fsProvider,
+    mappingsProvider,
+  );
 
   // Auto-refresh when config changes (dw.json edit, manual reset, future instance switch)
   configProvider.onDidReset(() => {

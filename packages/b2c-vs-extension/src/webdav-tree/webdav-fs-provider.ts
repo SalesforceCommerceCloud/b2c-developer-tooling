@@ -22,6 +22,9 @@ export const WEBDAV_ROOTS: {key: string; path: string}[] = [
   {key: 'Securitylogs', path: 'Securitylogs'},
 ];
 
+/** Roots that require an ID sub-path before WebDAV PROPFIND is valid. */
+export const VIRTUAL_ROOTS = new Set(['Catalogs', 'Libraries']);
+
 const CACHE_TTL_MS = 30_000;
 
 const MIME_BY_EXT: Record<string, string> = {
