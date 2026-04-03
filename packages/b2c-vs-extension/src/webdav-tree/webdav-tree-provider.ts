@@ -40,7 +40,13 @@ export class WebDavTreeItem extends vscode.TreeItem {
         : vscode.TreeItemCollapsibleState.Collapsed;
     super(fileName, collapsible);
 
-    this.contextValue = nodeType;
+    // Use path-specific contextValues for virtual roots so menu when-clauses
+    // can distinguish Catalogs from Libraries.
+    if (nodeType === 'virtual-root') {
+      this.contextValue = webdavPath === 'Catalogs' ? 'virtual-root-catalogs' : 'virtual-root-libraries';
+    } else {
+      this.contextValue = nodeType;
+    }
     this.tooltip = webdavPath;
 
     if (nodeType === 'placeholder') {

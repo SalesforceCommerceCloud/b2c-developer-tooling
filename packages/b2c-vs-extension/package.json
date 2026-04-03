@@ -463,12 +463,12 @@
       "view/item/context": [
         {
           "command": "b2c-dx.webdav.addCatalog",
-          "when": "view == b2cWebdavExplorer && viewItem == virtual-root && resourcePath == /Catalogs",
+          "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",
           "group": "0_add@0"
         },
         {
           "command": "b2c-dx.webdav.addLibrary",
-          "when": "view == b2cWebdavExplorer && viewItem == virtual-root && resourcePath == /Libraries",
+          "when": "view == b2cWebdavExplorer && viewItem == virtual-root-libraries",
           "group": "0_add@0"
         },
         {
