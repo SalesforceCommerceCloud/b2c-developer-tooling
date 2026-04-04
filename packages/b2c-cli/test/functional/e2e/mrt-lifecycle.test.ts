@@ -32,13 +32,14 @@ describe('MRT Lifecycle E2E Tests', function () {
     ...(process.env.MRT_CLOUD_ORIGIN ? {MRT_CLOUD_ORIGIN: process.env.MRT_CLOUD_ORIGIN} : {}),
   };
 
-  let projectSlug: string;
-  let hasProject = false;
+  // Use a dedicated test project to avoid affecting other MRT resources
+  const projectSlug = process.env.MRT_PROJECT || 'b2c-cli';
+  const hasProject = true;
 
   before(async function () {
     // Check required environment variables for MRT
-    // Either MRT_API_KEY as env var OR ~/.mobify file must exist
-    const hasMrtApiKey = Boolean(process.env.MRT_API_KEY);
+    // Either MRT_API_KEY / SFCC_MRT_API_KEY as env var OR ~/.mobify file must exist
+    const hasMrtApiKey = Boolean(process.env.MRT_API_KEY || process.env.SFCC_MRT_API_KEY);
 
     if (!hasMrtApiKey) {
       // Try to check if ~/.mobify exists (CLI will auto-detect it)
@@ -60,32 +61,7 @@ describe('MRT Lifecycle E2E Tests', function () {
       }
     }
 
-    // Try to get a project from environment or discover one
-    if (process.env.MRT_PROJECT) {
-      projectSlug = process.env.MRT_PROJECT;
-      hasProject = true;
-      console.log(`✓ Using MRT project from env: ${projectSlug}`);
-    } else {
-      // Try to discover a project
-      try {
-        const result = await runCLI(['mrt', 'project', 'list', '--json'], {
-          timeout: TIMEOUTS.DEFAULT,
-          env: MRT_TEST_ENV,
-        });
-        if (result.exitCode === 0) {
-          const response = parseJSONOutput(result);
-          if (response.projects && response.projects.length > 0) {
-            projectSlug = response.projects[0].slug;
-            hasProject = true;
-            console.log(`✓ Discovered MRT project: ${projectSlug}`);
-          } else {
-            console.log('⚠ No MRT projects found, some tests will be skipped');
-          }
-        }
-      } catch {
-        console.log('⚠ Could not discover MRT project, some tests will be skipped');
-      }
-    }
+    console.log(`✓ Using MRT project: ${projectSlug}`);
   });
 
   describe('Step 1: User Profile', () => {
