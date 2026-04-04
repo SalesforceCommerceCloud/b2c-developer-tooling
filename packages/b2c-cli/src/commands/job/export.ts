@@ -129,15 +129,14 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     const hostname = this.resolvedConfig.values.hostname!;
 
-    // Safety evaluation — check rules for export job before executing
+    // Safety evaluation — check rules for export job before executing.
+    // Command-level rules are already evaluated generically in BaseCommand.init().
     const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId: 'sfcc-site-archive-export'});
-    const cmdEvaluation = this.safetyGuard.evaluate({type: 'command', commandId: this.id});
-    const evaluation = jobEvaluation.action === 'allow' ? cmdEvaluation : jobEvaluation;
-    if (evaluation.action === 'block') {
-      this.error(evaluation.reason, {exit: 1});
+    if (jobEvaluation.action === 'block') {
+      this.error(jobEvaluation.reason, {exit: 1});
     }
-    if (evaluation.action === 'confirm') {
-      await this.confirmOrBlock(evaluation);
+    if (jobEvaluation.action === 'confirm') {
+      await this.confirmOrBlock(jobEvaluation);
     }
 
     // Build data units configuration

@@ -161,6 +161,14 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.log(`  ${c.name} (${c.src})`);
     }
 
+    // After safety evaluation passes, temporarily allow WebDAV DELETE operations
+    // that are part of the deploy flow (cleanup of temp zip, --delete cartridge removal).
+    const cleanupSafetyRule = this.safetyGuard.temporarilyAddRule({
+      method: 'DELETE',
+      path: '**/Cartridges/**',
+      action: 'allow',
+    });
+
     try {
       // Optionally delete existing cartridges first
       if (this.flags.delete) {
@@ -240,6 +248,8 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         this.error(t('commands.code.deploy.failed', 'Deployment failed: {{message}}', {message: error.message}));
       }
       throw error;
+    } finally {
+      cleanupSafetyRule();
     }
   }
 }

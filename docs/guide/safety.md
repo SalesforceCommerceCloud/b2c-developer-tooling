@@ -112,11 +112,12 @@ Matches OCAPI job execution by job ID. This catches both direct job commands and
 
 #### CLI Command ID
 
-Matches CLI commands by their oclif command ID:
+Matches CLI commands by their oclif command ID. Command rules are enforced automatically for **every** command before `run()` executes -- no per-command opt-in is needed:
 
 ```json
 { "command": "sandbox:delete", "action": "confirm" }
 { "command": "sandbox:*", "action": "block" }
+{ "command": "code:deploy", "action": "block" }
 ```
 
 ### Evaluation Order

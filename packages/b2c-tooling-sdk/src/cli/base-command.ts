@@ -203,6 +203,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Update safety guard with config-provided safety settings (merges env + config)
     this.initializeSafetyGuard();
 
+    // Evaluate command-level safety rules for every command.
+    // This enforces rules like { command: "code:deploy", action: "block" } generically.
+    await this.evaluateCommandSafety();
+
     this.addTelemetryContext();
   }
 
@@ -750,6 +754,28 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         {level: config.level, confirm: config.confirm, ruleCount: config.rules?.length ?? 0},
         'Safety mode active',
       );
+    }
+  }
+
+  /**
+   * Evaluate command-level safety rules for the current command.
+   *
+   * This runs at the end of init() so every command is evaluated against
+   * command rules (e.g., `{ command: "code:deploy", action: "block" }`).
+   * If no command rule matches, this is a no-op — level-based blocking
+   * is handled by the HTTP middleware and assertDestructiveOperationAllowed().
+   */
+  private async evaluateCommandSafety(): Promise<void> {
+    const evaluation = this.safetyGuard.evaluate({
+      type: 'command',
+      commandId: this.id,
+    });
+
+    if (evaluation.action === 'block' && evaluation.rule) {
+      this.error(evaluation.reason, {exit: 1});
+    }
+    if (evaluation.action === 'confirm' && evaluation.rule) {
+      await this.confirmOrBlock(evaluation);
     }
   }
 
