@@ -325,8 +325,26 @@ export {getRole, listRoles} from './operations/roles/index.js';
 export {getOrg, getOrgByName, listOrgs} from './operations/orgs/index.js';
 
 // Safety - Protection against destructive operations
-export {getSafetyLevel, describeSafetyLevel, checkSafetyViolation, SafetyBlockedError} from './safety/index.js';
-export type {SafetyLevel, SafetyConfig} from './safety/index.js';
+export {
+  getSafetyLevel,
+  describeSafetyLevel,
+  checkSafetyViolation,
+  checkLevelViolation,
+  SafetyBlockedError,
+  SafetyConfirmationRequired,
+  SafetyGuard,
+  extractJobIdFromPath,
+  maxSafetyLevel,
+  isValidSafetyLevel,
+  parseSafetyLevelString,
+  resolveEffectiveSafetyConfig,
+  loadGlobalSafetyConfig,
+  isValidSafetyAction,
+  VALID_SAFETY_ACTIONS,
+  withSafetyConfirmation,
+} from './safety/index.js';
+export type {SafetyLevel, SafetyConfig, SafetyConfigFragment} from './safety/index.js';
+export type {SafetyAction, SafetyRule, SafetyOperation, SafetyEvaluation, ConfirmHandler} from './safety/index.js';
 
 // Defaults
 export {

@@ -95,6 +95,18 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       'show-log': showLog,
     } = this.flags;
 
+    // Safety evaluation — check rules for this job before executing
+    const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId});
+    const cmdEvaluation = this.safetyGuard.evaluate({type: 'command', commandId: this.id});
+    // Use the more restrictive evaluation
+    const evaluation = jobEvaluation.action === 'allow' ? cmdEvaluation : jobEvaluation;
+    if (evaluation.action === 'block') {
+      this.error(evaluation.reason, {exit: 1});
+    }
+    if (evaluation.action === 'confirm') {
+      await this.confirmOrBlock(evaluation);
+    }
+
     // Parse parameters or body
     const parameters = this.parseParameters(param || []);
     const rawBody = body ? this.parseBody(body) : undefined;

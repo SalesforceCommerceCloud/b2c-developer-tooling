@@ -13,6 +13,8 @@
  */
 import type {AuthMethod, AuthStrategy} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
+import type {SafetyLevel} from '../safety/safety-middleware.js';
+import type {SafetyRule} from '../safety/types.js';
 
 /**
  * A value that may be synchronous or a Promise.
@@ -114,6 +116,17 @@ export interface NormalizedConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+
+  // Safety
+  /** Safety configuration for this instance */
+  safety?: {
+    /** Safety level */
+    level?: SafetyLevel;
+    /** When true, level-blocked operations require confirmation instead of hard-blocking */
+    confirm?: boolean;
+    /** Ordered safety rules. First matching rule wins. */
+    rules?: SafetyRule[];
+  };
 }
 
 /**

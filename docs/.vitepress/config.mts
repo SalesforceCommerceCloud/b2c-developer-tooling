@@ -49,6 +49,7 @@ const guidesSidebar = [
       {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
+      {text: 'Safety Mode', link: '/guide/safety'},
       {text: 'Security', link: '/guide/security'},
       {text: 'Storefront Next', link: '/guide/storefront-next'},
       {text: 'MRT Utilities', link: '/guide/mrt-utilities'},

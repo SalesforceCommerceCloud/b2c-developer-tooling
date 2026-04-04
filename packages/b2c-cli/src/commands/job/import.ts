@@ -72,6 +72,17 @@ export default class JobImport extends JobCommand<typeof JobImport> {
 
     const hostname = this.resolvedConfig.values.hostname!;
 
+    // Safety evaluation — check rules for import job before executing
+    const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId: 'sfcc-site-archive-import'});
+    const cmdEvaluation = this.safetyGuard.evaluate({type: 'command', commandId: this.id});
+    const evaluation = jobEvaluation.action === 'allow' ? cmdEvaluation : jobEvaluation;
+    if (evaluation.action === 'block') {
+      this.error(evaluation.reason, {exit: 1});
+    }
+    if (evaluation.action === 'confirm') {
+      await this.confirmOrBlock(evaluation);
+    }
+
     // Create lifecycle context
     const context = this.createContext('job:import', {
       target,

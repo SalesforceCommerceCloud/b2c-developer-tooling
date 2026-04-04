@@ -66,41 +66,9 @@ This project uses [NPM trusted publishers](https://docs.npmjs.com/trusted-publis
 
 ## Operational Security: Safety Mode
 
-The CLI includes a **Safety Mode** feature via CLI checks and HTTP middleware that prevents accidental or unwanted destructive operations. This is particularly important when:
+The CLI includes a **Safety Mode** feature that prevents accidental or unwanted destructive operations via HTTP middleware and command-level checks. Safety mode supports configurable levels, per-instance and global rules, and interactive confirmation.
 
-- Providing the CLI as a tool to AI agents/LLMs
-- Working in production environments
-- Training new team members
-- Running commands from untrusted scripts
-
-### Safety Levels
-
-Configure via the `SFCC_SAFETY_LEVEL` environment variable:
-
-| Level | Description | Blocks |
-|-------|-------------|--------|
-| `NONE` | No restrictions (default) | Nothing |
-| `NO_DELETE` | Prevent deletions | DELETE operations |
-| `NO_UPDATE` | Prevent deletions and destructive updates | DELETE + reset/stop/restart |
-| `READ_ONLY` | Read-only mode | All writes (POST/PUT/PATCH/DELETE) |
-
-### Usage
-
-```bash
-# Default - no restrictions
-export SFCC_SAFETY_LEVEL=NONE
-
-# Prevent deletions
-export SFCC_SAFETY_LEVEL=NO_DELETE
-
-# Prevent deletions and destructive updates
-export SFCC_SAFETY_LEVEL=NO_UPDATE
-
-# Read-only mode
-export SFCC_SAFETY_LEVEL=READ_ONLY
-```
-
-Environment variables are used instead of command-line flags because LLMs control commands and flags, but not the environment.
+See the **[Safety Mode](/guide/safety)** guide for full documentation.
 
 ## Best Practices
 

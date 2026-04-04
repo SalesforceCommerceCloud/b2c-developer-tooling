@@ -87,6 +87,34 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /**
+   * Safety configuration for this instance.
+   *
+   * @example
+   * ```json
+   * {
+   *   "safety": {
+   *     "level": "NO_UPDATE",
+   *     "confirm": true,
+   *     "rules": [
+   *       { "job": "sfcc-site-archive-export", "action": "allow" },
+   *       { "command": "sandbox:*", "action": "confirm" }
+   *     ]
+   *   }
+   * }
+   * ```
+   */
+  safety?: {
+    level?: string;
+    confirm?: boolean;
+    rules?: Array<{
+      method?: string;
+      path?: string;
+      job?: string;
+      command?: string;
+      action: string;
+    }>;
+  };
 }
 
 /**
