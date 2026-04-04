@@ -192,14 +192,27 @@ export class SafetyGuard {
    */
   temporarilyAllow(operation: SafetyOperation): () => void {
     const rule = this.operationToRule(operation);
+    return this.temporarilyAddRule(rule);
+  }
+
+  /**
+   * Add a temporary safety rule for a scoped exemption.
+   *
+   * Unlike {@link temporarilyAllow} which derives a rule from an operation,
+   * this accepts an arbitrary rule — useful for granting broad temporary
+   * access (e.g., allowing WebDAV DELETE on Impex paths during a job export).
+   *
+   * Returns a cleanup function that removes the rule.
+   */
+  temporarilyAddRule(rule: SafetyRule): () => void {
     this.temporaryAllows.push(rule);
-    this.logger.trace({rule}, '[SafetyGuard] Added temporary allow');
+    this.logger.trace({rule}, '[SafetyGuard] Added temporary rule');
 
     return () => {
       const idx = this.temporaryAllows.indexOf(rule);
       if (idx >= 0) {
         this.temporaryAllows.splice(idx, 1);
-        this.logger.trace({rule}, '[SafetyGuard] Removed temporary allow');
+        this.logger.trace({rule}, '[SafetyGuard] Removed temporary rule');
       }
     };
   }

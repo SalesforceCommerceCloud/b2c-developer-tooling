@@ -184,6 +184,15 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       } as unknown as SiteArchiveExportResult & {localPath?: string; archiveKept?: boolean};
     }
 
+    // After safety evaluation passes, temporarily allow WebDAV operations
+    // that are part of the export flow (download GET, cleanup DELETE on Impex paths).
+    // Without this, the HTTP middleware would independently block the cleanup DELETE.
+    const cleanupSafetyRule = this.safetyGuard.temporarilyAddRule({
+      method: 'DELETE',
+      path: '**/Impex/**',
+      action: 'allow',
+    });
+
     this.log(
       t('commands.job.export.exporting', 'Exporting data from {{hostname}}...', {
         hostname,
@@ -274,6 +283,8 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         );
       }
       throw error;
+    } finally {
+      cleanupSafetyRule();
     }
   }
 

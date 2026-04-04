@@ -106,6 +106,14 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       } as unknown as SiteArchiveImportResult;
     }
 
+    // After safety evaluation passes, temporarily allow WebDAV operations
+    // that are part of the import flow (upload PUT, cleanup DELETE on Impex paths).
+    const cleanupSafetyRule = this.safetyGuard.temporarilyAddRule({
+      method: 'DELETE',
+      path: '**/Impex/**',
+      action: 'allow',
+    });
+
     if (remote) {
       this.log(
         t('commands.job.import.importingRemote', 'Importing {{target}} from {{hostname}}...', {
@@ -193,6 +201,8 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         );
       }
       throw error;
+    } finally {
+      cleanupSafetyRule();
     }
   }
 }
