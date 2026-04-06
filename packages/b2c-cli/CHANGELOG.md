@@ -1,5 +1,20 @@
 # @salesforce/b2c-cli
 
+## 1.1.0
+
+### Minor Changes
+
+- [#315](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/315) [`6771d7a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6771d7a8c2db7db259bf00d8d4d0d6393aa14fe6) - Add ODS sandbox management enhancements, including sandbox storage and settings commands, multi-realm usage reporting, and dedicated realm configuration support. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+  Keep sandbox realm workflows under `b2c sandbox realm` / `b2c ods realm` by removing top-level `b2c realm` aliases.
+
+- [#318](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/318) [`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e) - Added per-instance safety configuration with rule-based actions (allow/block/confirm) and interactive confirmation mode. Safety can now be configured in `dw.json` with granular rules for HTTP paths, job IDs, and CLI commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e)]:
+  - @salesforce/b2c-tooling-sdk@1.1.0
+
 ## 1.0.1
 
 ### Patch Changes
