@@ -8,6 +8,14 @@ import {expect} from 'chai';
 import {parseJSONOutput, runCLI, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
 
 /**
+ * MRT member list/get JSON uses `user` for the member's email per APIProjectMember;
+ * accept `email` only for backward compatibility if the API ever varies.
+ */
+function mrtMemberEmail(member: {user?: string; email?: string}): string | undefined {
+  return member.user ?? member.email;
+}
+
+/**
  * E2E Tests for MRT (Managed Runtime) Lifecycle
  *
  * Tests MRT operations including:
@@ -224,8 +232,9 @@ describe('MRT Lifecycle E2E Tests', function () {
       expect(response.members).to.be.an('array');
 
       if (response.members.length > 0) {
-        expect(response.members[0]).to.have.property('email');
-        expect(response.members[0]).to.have.property('role');
+        const first = response.members[0];
+        expect(mrtMemberEmail(first), 'member should include user (email)').to.be.a('string').and.not.empty;
+        expect(first).to.have.property('role');
       }
     });
 
@@ -248,7 +257,11 @@ describe('MRT Lifecycle E2E Tests', function () {
         this.skip();
       }
 
-      const memberEmail = listResponse.members[0].email;
+      const memberEmail = mrtMemberEmail(listResponse.members[0]);
+      if (!memberEmail) {
+        console.log('  ⚠ Member has no user/email field, skipping test');
+        this.skip();
+      }
 
       const result = await runCLIWithRetry(
         ['mrt', 'project', 'member', 'get', memberEmail, '--project', projectSlug, '--json'],
@@ -258,8 +271,8 @@ describe('MRT Lifecycle E2E Tests', function () {
       expect(result.exitCode, `Member get command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      // Response is a flat object, not nested under "member"
-      expect(response).to.have.property('email').that.equals(memberEmail);
+      // API returns `user` (email), not top-level `email`
+      expect(mrtMemberEmail(response)).to.equal(memberEmail);
       expect(response).to.have.property('role');
     });
   });
