@@ -83,8 +83,8 @@ jobs:
           done
           # Also check VS extension tag
           if [ "$HAS_CHANGES" = "false" ]; then
-            VSX_VERSION=$(node -p "require('./packages/b2c-vs-extension/package.json').version")
-            LAST_VSX_TAG=$(git tag -l "b2c-vs-extension@*" --sort=-v:refname | grep -v '@latest$' | head -1 | sed 's/b2c-vs-extension@//')
+            VSX_VERSION=$(node -p "require('./packages/vscode/core/package.json').version")
+            LAST_VSX_TAG=$(git tag -l "b2c-dx-core@*" --sort=-v:refname | grep -v '@latest$' | head -1 | sed 's/b2c-dx-core@//')
             if [ "$VSX_VERSION" != "$LAST_VSX_TAG" ]; then
               HAS_CHANGES=true
             fi
@@ -164,9 +164,9 @@ jobs:
           check_package "@salesforce/mrt-utilities" "packages/mrt-utilities" "mrt"
 
           # VS Code extension — compare against git tags (not npm)
-          LOCAL_VSX_VERSION=$(node -p "require('./packages/b2c-vs-extension/package.json').version")
-          LAST_VSX_TAG=$(git tag -l "b2c-vs-extension@*" --sort=-v:refname | grep -v '@latest$' | head -1 | sed 's/b2c-vs-extension@//')
-          echo "b2c-vs-extension: local=${LOCAL_VSX_VERSION} tag=${LAST_VSX_TAG:-none}"
+          LOCAL_VSX_VERSION=$(node -p "require('./packages/vscode/core/package.json').version")
+          LAST_VSX_TAG=$(git tag -l "b2c-dx-core@*" --sort=-v:refname | grep -v '@latest$' | head -1 | sed 's/b2c-dx-core@//')
+          echo "b2c-dx-core: local=${LOCAL_VSX_VERSION} tag=${LAST_VSX_TAG:-none}"
           if [ "$LOCAL_VSX_VERSION" != "$LAST_VSX_TAG" ]; then
             echo "publish_vsx=true" >> $GITHUB_OUTPUT
             echo "version_vsx=${LOCAL_VSX_VERSION}" >> $GITHUB_OUTPUT
@@ -205,7 +205,7 @@ jobs:
 
       - name: Run tests
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
-        run: pnpm --filter '!b2c-vs-extension' run test
+        run: pnpm --filter '!b2c-dx-core' run test
 
       - name: Publish SDK to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_sdk == 'true'
@@ -233,7 +233,7 @@ jobs:
 
       - name: Package VS Code extension
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
-        working-directory: packages/b2c-vs-extension
+        working-directory: packages/vscode/core
         run: pnpm run package
 
       - name: Create git tags
@@ -269,7 +269,7 @@ jobs:
           fi
 
           if [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+            TAG="b2c-dx-core@${{ steps.packages.outputs.version_vsx }}"
             git tag "$TAG"
             TAGS_CREATED="$TAGS_CREATED $TAG"
           fi
@@ -281,12 +281,12 @@ jobs:
             echo "No tags to create"
           fi
 
-      - name: Update b2c-vs-extension@latest tag
+      - name: Update b2c-dx-core@latest tag
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         run: |
-          git tag -f b2c-vs-extension@latest
-          git push origin b2c-vs-extension@latest --force
-          echo "Updated b2c-vs-extension@latest tag to $(git rev-parse HEAD)"
+          git tag -f b2c-dx-core@latest
+          git push origin b2c-dx-core@latest --force
+          echo "Updated b2c-dx-core@latest tag to $(git rev-parse HEAD)"
 
       - name: Update v1 Actions tag
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
@@ -345,9 +345,9 @@ jobs:
             fi
 
             if [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-              echo "## b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+              echo "## b2c-dx-core@${{ steps.packages.outputs.version_vsx }}"
               echo ""
-              extract_latest packages/b2c-vs-extension/CHANGELOG.md
+              extract_latest packages/vscode/core/CHANGELOG.md
               echo ""
             fi
 
@@ -372,7 +372,7 @@ jobs:
           elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+            RELEASE_TAG="b2c-dx-core@${{ steps.packages.outputs.version_vsx }}"
           elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
             RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
           else
@@ -409,7 +409,7 @@ jobs:
           elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+            RELEASE_TAG="b2c-dx-core@${{ steps.packages.outputs.version_vsx }}"
           else
             echo "No package release to upload to"
             exit 0
@@ -432,13 +432,13 @@ jobs:
           elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+            RELEASE_TAG="b2c-dx-core@${{ steps.packages.outputs.version_vsx }}"
           else
             echo "No release to upload to"
             exit 0
           fi
 
-          gh release upload "$RELEASE_TAG" packages/b2c-vs-extension/*.vsix
+          gh release upload "$RELEASE_TAG" packages/vscode/core/*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -447,13 +447,13 @@ jobs:
           steps.release-type.outputs.type == 'stable'
           && steps.packages.outputs.publish_vsx == 'true'
         run: |
-          VSX_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+          VSX_TAG="b2c-dx-core@${{ steps.packages.outputs.version_vsx }}"
 
           # Create a dedicated release for the extension (not latest — main releases own that)
           # Use --clobber on upload in case a previous run partially completed
           if gh release view "$VSX_TAG" >/dev/null 2>&1; then
             echo "Release $VSX_TAG already exists, uploading VSIX to it"
-            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix --clobber
+            gh release upload "$VSX_TAG" packages/vscode/core/*.vsix --clobber
           else
             gh release create "$VSX_TAG" \
               --title "VS Code Extension ${{ steps.packages.outputs.version_vsx }}" \
@@ -463,7 +463,7 @@ jobs:
 
           Download the `.vsix` file below and install via:
           ```
-          code --install-extension b2c-vs-extension-${{ steps.packages.outputs.version_vsx }}.vsix
+          code --install-extension b2c-dx-core-${{ steps.packages.outputs.version_vsx }}.vsix
           ```
 
           Or in VS Code: Extensions → ⋯ → Install from VSIX...
@@ -471,7 +471,7 @@ jobs:
           )"
 
             # Upload the VSIX to the dedicated release
-            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
+            gh release upload "$VSX_TAG" packages/vscode/core/*.vsix
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

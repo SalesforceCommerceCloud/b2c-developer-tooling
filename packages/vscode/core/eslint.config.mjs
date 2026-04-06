@@ -9,7 +9,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import tseslint from 'typescript-eslint';
 
-import {copyrightHeader, sharedRules, prettierPlugin} from '../../eslint.config.mjs';
+import {copyrightHeader, sharedRules, prettierPlugin} from '../../../eslint.config.mjs';
 
 const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.gitignore');
 headerPlugin.rules.header.meta.schema = false;

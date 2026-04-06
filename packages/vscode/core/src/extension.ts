@@ -4,13 +4,15 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
-import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {configureLogger, getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import type {B2CDXApi} from './api.js';
 import {B2CExtensionConfig} from './config-provider.js';
 import {registerContentTree} from './content-tree/index.js';
+import {showError} from './error-handler.js';
 import {registerLogs} from './logs/index.js';
 import {initializePlugins} from './plugins.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
@@ -104,7 +106,7 @@ function applyLogLevel(log: vscode.OutputChannel): void {
   }
 }
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<B2CDXApi | undefined> {
   const log = vscode.window.createOutputChannel('B2C DX');
 
   applyLogLevel(log);
@@ -127,10 +129,11 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('b2c-dx.promptAgent', showActivationError),
       vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
     );
+    return undefined;
   }
 }
 
-async function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
+async function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel): Promise<B2CDXApi> {
   // Initialize b2c-cli plugins before registering commands/views.
   // This ensures plugin config sources and middleware are available
   // before the first resolveConfig() call. Failures are non-fatal.
@@ -416,4 +419,25 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     configChangeListener,
   );
   log.appendLine('B2C DX extension activated.');
+
+  // --- Exported API for dependent extensions ---
+  const api: B2CDXApi = {
+    getConfig: () => configProvider.getConfig() ?? undefined,
+    getInstance: () => configProvider.getInstance() ?? undefined,
+    getWorkingDirectory: () => configProvider.getWorkingDirectory(),
+    onDidConfigChange: configProvider.onDidReset,
+    getLogger: () => getLogger(),
+    showError: (error, options) => showError(log, error, options),
+    createOAuth: (options) => {
+      const config = configProvider.getConfig();
+      if (!config) throw new Error('B2C DX Core: No configuration available. Cannot create OAuth strategy.');
+      return config.createOAuth(options);
+    },
+    createWebDavAuth: () => {
+      const config = configProvider.getConfig();
+      if (!config) throw new Error('B2C DX Core: No configuration available. Cannot create WebDAV auth.');
+      return config.createWebDavAuth();
+    },
+  };
+  return api;
 }

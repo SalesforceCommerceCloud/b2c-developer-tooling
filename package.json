@@ -14,6 +14,8 @@
     "lint:agent": "pnpm -r run lint:agent",
     "typecheck:agent": "pnpm -r run typecheck:agent",
     "build": "pnpm -r run build",
+    "build:extensions": "pnpm --filter './packages/vscode/*' run build",
+    "package:extensions": "pnpm --filter './packages/vscode/*' run package",
     "docs:api": "pnpm --filter @salesforce/b2c-dx-docs run docs:api",
     "docs:dev": "pnpm --filter @salesforce/b2c-dx-docs run docs:dev",
     "docs:build": "pnpm --filter @salesforce/b2c-dx-docs run docs:build",

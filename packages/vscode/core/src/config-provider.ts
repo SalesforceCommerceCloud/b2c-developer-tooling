@@ -322,5 +322,22 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.instance = null;
       this.log.appendLine(`[Config] Resolution failed: ${message}`);
     }
+    this.updateContextKeys();
+  }
+
+  /**
+   * Set VS Code context keys so dependent extensions can gate views/commands
+   * via `when` clauses without importing Core directly.
+   *
+   * Only Core sets `b2c:*` context keys (see PLAN_vscode_hld.md § Risk 6).
+   */
+  private updateContextKeys(): void {
+    const hasInstance = this.config?.hasB2CInstanceConfig() ?? false;
+    const hasOAuth = this.config?.hasOAuthConfig() ?? false;
+    const hasWebDav = this.config?.hasBasicAuthConfig() ?? false;
+
+    void vscode.commands.executeCommand('setContext', 'b2c:instance_configured', hasInstance);
+    void vscode.commands.executeCommand('setContext', 'b2c:has_oauth', hasOAuth);
+    void vscode.commands.executeCommand('setContext', 'b2c:has_webdav', hasWebDav);
   }
 }
