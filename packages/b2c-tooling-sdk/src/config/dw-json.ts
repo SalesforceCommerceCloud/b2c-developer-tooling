@@ -79,6 +79,10 @@ export interface DwJsonConfig {
   cartridges?: string | string[];
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
+  /** Catalog IDs for WebDAV browsing */
+  catalogs?: string[];
+  /** Library IDs for WebDAV browsing */
+  libraries?: string[];
   /** Optional CIP analytics host override */
   cipHost?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */

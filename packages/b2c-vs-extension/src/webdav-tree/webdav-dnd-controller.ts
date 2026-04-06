@@ -1,0 +1,245 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+import * as vscode from 'vscode';
+import type {B2CExtensionConfig} from '../config-provider.js';
+import {type WebDavFileSystemProvider, webdavPathToUri} from './webdav-fs-provider.js';
+import type {WebDavTreeItem} from './webdav-tree-provider.js';
+
+/** MIME type used for internal tree drag-and-drop. */
+const WEBDAV_TREE_MIME = 'application/vnd.code.tree.b2cWebdavExplorer';
+
+/** Droppable node types — virtual roots and placeholders are excluded. */
+const DROPPABLE_TYPES = new Set(['root', 'catalog-mapping', 'library-mapping', 'directory']);
+
+function getWebdavRoot(webdavPath: string): string {
+  return webdavPath.split('/')[0];
+}
+
+/**
+ * Drag-and-drop controller for the WebDAV browser tree.
+ *
+ * Supports:
+ * - Drop from local file system / VS Code explorer (upload)
+ * - Move within the same WebDAV root (WebDAV MOVE)
+ */
+export class WebDavDragAndDropController implements vscode.TreeDragAndDropController<WebDavTreeItem> {
+  readonly dragMimeTypes = [WEBDAV_TREE_MIME];
+  readonly dropMimeTypes = ['text/uri-list', WEBDAV_TREE_MIME];
+
+  constructor(
+    private configProvider: B2CExtensionConfig,
+    private fsProvider: WebDavFileSystemProvider,
+  ) {}
+
+  handleDrag(
+    source: readonly WebDavTreeItem[],
+    dataTransfer: vscode.DataTransfer,
+    _token: vscode.CancellationToken,
+  ): void {
+    // Only allow dragging files and directories, not roots/virtual-roots/placeholders
+    const draggable = source.filter((item) => item.nodeType === 'file' || item.nodeType === 'directory');
+    if (draggable.length === 0) return;
+
+    dataTransfer.set(WEBDAV_TREE_MIME, new vscode.DataTransferItem(draggable.map((item) => item.webdavPath)));
+  }
+
+  async handleDrop(
+    target: WebDavTreeItem | undefined,
+    dataTransfer: vscode.DataTransfer,
+    token: vscode.CancellationToken,
+  ): Promise<void> {
+    if (!target || !DROPPABLE_TYPES.has(target.nodeType)) return;
+
+    // Internal tree move/copy — validate the payload is actually our array of paths
+    const treePaths = dataTransfer.get(WEBDAV_TREE_MIME);
+    if (treePaths) {
+      const paths = treePaths.value;
+      if (Array.isArray(paths) && paths.length > 0 && typeof paths[0] === 'string' && paths[0].includes('/')) {
+        await this.handleTreeDrop(target, paths as string[], token);
+        return;
+      }
+    }
+
+    // External file drop (from OS or VS Code explorer)
+    const uriList = dataTransfer.get('text/uri-list');
+    if (uriList) {
+      const uriString = await uriList.asString();
+      const uris = uriString
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((uri) => vscode.Uri.parse(uri));
+      await this.handleExternalDrop(target, uris, token);
+    }
+  }
+
+  /**
+   * Handle internal tree move via WebDAV MOVE (same root only).
+   */
+  private async handleTreeDrop(
+    target: WebDavTreeItem,
+    sourcePaths: string[],
+    token: vscode.CancellationToken,
+  ): Promise<void> {
+    const instance = this.configProvider.getInstance();
+    if (!instance) return;
+
+    const targetRoot = getWebdavRoot(target.webdavPath);
+
+    for (const sourcePath of sourcePaths) {
+      if (token.isCancellationRequested) break;
+
+      const sourceRoot = getWebdavRoot(sourcePath);
+      if (sourceRoot !== targetRoot) {
+        vscode.window.showWarningMessage(`Cannot move files between ${sourceRoot} and ${targetRoot}.`);
+        continue;
+      }
+
+      const fileName = sourcePath.split('/').pop() ?? sourcePath;
+      const destinationPath = `${target.webdavPath}/${fileName}`;
+
+      // Don't move to the same location
+      if (sourcePath === destinationPath) continue;
+
+      try {
+        await vscode.window.withProgress(
+          {location: vscode.ProgressLocation.Notification, title: `Moving ${fileName}...`},
+          async () => {
+            await instance.webdav.move(sourcePath, destinationPath);
+          },
+        );
+
+        // Invalidate caches and notify tree to refresh source and target
+        const sourceParent = sourcePath.substring(0, sourcePath.lastIndexOf('/'));
+        this.fsProvider.clearCache(sourceParent);
+        this.fsProvider.clearCache(target.webdavPath);
+        this.fsProvider.fireDidChange(vscode.FileChangeType.Deleted, webdavPathToUri(sourcePath));
+        this.fsProvider.fireDidChange(vscode.FileChangeType.Created, webdavPathToUri(destinationPath));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`WebDAV: Move failed for ${fileName}: ${message}`);
+      }
+    }
+  }
+
+  /**
+   * Handle drop of local files/folders into the WebDAV tree (upload).
+   */
+  private async handleExternalDrop(
+    target: WebDavTreeItem,
+    uris: vscode.Uri[],
+    token: vscode.CancellationToken,
+  ): Promise<void> {
+    // Count total files for progress reporting
+    const totalFiles = await this.countFiles(uris);
+    const label = totalFiles === 1 ? (uris[0].path.split('/').pop() ?? 'file') : `${totalFiles} files`;
+
+    await vscode.window.withProgress(
+      {location: vscode.ProgressLocation.Notification, title: `Uploading ${label}...`, cancellable: true},
+      async (progress, progressToken) => {
+        let uploaded = 0;
+        const reportProgress = (fileName: string) => {
+          uploaded++;
+          progress.report({
+            message: totalFiles > 1 ? `${fileName} (${uploaded}/${totalFiles})` : fileName,
+            increment: (1 / totalFiles) * 100,
+          });
+        };
+
+        const effectiveToken = {
+          get isCancellationRequested() {
+            return token.isCancellationRequested || progressToken.isCancellationRequested;
+          },
+        };
+
+        for (const uri of uris) {
+          if (effectiveToken.isCancellationRequested) break;
+
+          try {
+            const stat = await vscode.workspace.fs.stat(uri);
+            if (stat.type === vscode.FileType.Directory) {
+              await this.uploadDirectory(target.webdavPath, uri, effectiveToken, reportProgress);
+            } else {
+              const fileName = uri.path.split('/').pop() ?? 'file';
+              await this.uploadFile(target.webdavPath, uri);
+              reportProgress(fileName);
+            }
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const fileName = uri.path.split('/').pop() ?? uri.toString();
+            vscode.window.showErrorMessage(`WebDAV: Upload failed for ${fileName}: ${message}`);
+          }
+        }
+      },
+    );
+
+    this.fsProvider.clearCache(target.webdavPath);
+  }
+
+  /** Count total files across URIs (recursing into directories). */
+  private async countFiles(uris: vscode.Uri[]): Promise<number> {
+    let count = 0;
+    for (const uri of uris) {
+      const stat = await vscode.workspace.fs.stat(uri);
+      if (stat.type === vscode.FileType.Directory) {
+        count += await this.countDirectoryFiles(uri);
+      } else {
+        count++;
+      }
+    }
+    return Math.max(count, 1);
+  }
+
+  private async countDirectoryFiles(uri: vscode.Uri): Promise<number> {
+    let count = 0;
+    const entries = await vscode.workspace.fs.readDirectory(uri);
+    for (const [name, type] of entries) {
+      if (type === vscode.FileType.Directory) {
+        count += await this.countDirectoryFiles(vscode.Uri.joinPath(uri, name));
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  private async uploadFile(targetDir: string, uri: vscode.Uri): Promise<void> {
+    const fileName = uri.path.split('/').pop() ?? 'file';
+    const destPath = `${targetDir}/${fileName}`;
+    const content = await vscode.workspace.fs.readFile(uri);
+
+    await this.fsProvider.writeFile(webdavPathToUri(destPath), content, {
+      create: true,
+      overwrite: true,
+    });
+  }
+
+  private async uploadDirectory(
+    targetDir: string,
+    uri: vscode.Uri,
+    token: {isCancellationRequested: boolean},
+    reportProgress: (fileName: string) => void,
+  ): Promise<void> {
+    const dirName = uri.path.split('/').pop() ?? 'folder';
+    const destDir = `${targetDir}/${dirName}`;
+
+    await this.fsProvider.createDirectory(webdavPathToUri(destDir));
+
+    const entries = await vscode.workspace.fs.readDirectory(uri);
+    for (const [name, type] of entries) {
+      if (token.isCancellationRequested) break;
+
+      const childUri = vscode.Uri.joinPath(uri, name);
+      if (type === vscode.FileType.Directory) {
+        await this.uploadDirectory(destDir, childUri, token, reportProgress);
+      } else {
+        await this.uploadFile(destDir, childUri);
+        reportProgress(name);
+      }
+    }
+  }
+}
