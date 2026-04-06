@@ -35,6 +35,8 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
   static examples = [
     '<%= config.bin %> <%= command.id %> zzzz --max-sandbox-ttl 72',
     '<%= config.bin %> <%= command.id %> zzzz --default-sandbox-ttl 24',
+    '<%= config.bin %> <%= command.id %> zzzz --emails dev@example.com,ops@example.com',
+    '<%= config.bin %> <%= command.id %> zzzz --local-users-allowed',
     '<%= config.bin %> <%= command.id %> zzzz --start-scheduler \'{"weekdays":["MONDAY"],"time":"08:00:00Z"}\'',
     '<%= config.bin %> <%= command.id %> zzzz --stop-scheduler "null"',
   ];
@@ -54,6 +56,13 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
       description:
         'Stop schedule JSON for sandboxes in this realm (use "null" to remove). Format: {"weekdays":[...],"time":"..."}',
     }),
+    emails: Flags.string({
+      description: 'Comma-separated list of notification email addresses at realm level',
+    }),
+    'local-users-allowed': Flags.boolean({
+      description: 'Enable or disable local user management for sandboxes in this realm',
+      allowNo: true,
+    }),
   } as const;
 
   async run(): Promise<RealmConfigurationResponse | undefined> {
@@ -66,13 +75,15 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
       flags['max-sandbox-ttl'] !== undefined ||
       flags['default-sandbox-ttl'] !== undefined ||
       flags['start-scheduler'] !== undefined ||
-      flags['stop-scheduler'] !== undefined;
+      flags['stop-scheduler'] !== undefined ||
+      flags.emails !== undefined ||
+      flags['local-users-allowed'] !== undefined;
 
     if (!hasAnyUpdateFlag) {
       this.error(
         t(
           'commands.realm.update.noChanges',
-          'No update flags specified. Use --max-sandbox-ttl, --default-sandbox-ttl, --start-scheduler, or --stop-scheduler.',
+          'No update flags specified. Use --max-sandbox-ttl, --default-sandbox-ttl, --start-scheduler, --stop-scheduler, --emails, or --local-users-allowed.',
         ),
       );
     }
@@ -97,6 +108,17 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
       if (flags['default-sandbox-ttl'] !== undefined) {
         body.sandbox.sandboxTTL.defaultValue = flags['default-sandbox-ttl'];
       }
+    }
+
+    if (flags.emails !== undefined) {
+      body.emails = flags.emails.split(',').map((email) => email.trim());
+    }
+
+    if (flags['local-users-allowed'] !== undefined) {
+      body.sandbox = body.sandbox ?? {};
+      // Not in RealmSandboxConfigurationUpdateModel in the published ODS spec; API accepts it on PATCH.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (body.sandbox as any).localUsersAllowed = flags['local-users-allowed'];
     }
 
     // Helper to parse scheduler flags (JSON or "null")

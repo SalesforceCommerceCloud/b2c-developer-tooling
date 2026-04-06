@@ -149,6 +149,7 @@ b2c sandbox create --realm <REALM>
 | `--ttl` | Time to live in hours (0 for infinite) | `24` |
 | `--profile` | Resource profile (medium, large, xlarge, xxlarge) | `medium` |
 | `--auto-scheduled` | Enable automatic start/stop scheduling | `false` |
+| `--emails` | Comma-separated list of notification email addresses | |
 | `--wait`, `-w` | Wait for sandbox to reach started or failed state | `false` |
 | `--poll-interval` | Polling interval in seconds when using --wait | `10` |
 | `--timeout` | Maximum wait time in seconds (0 for no timeout) | `600` |
@@ -176,6 +177,9 @@ b2c sandbox create --realm abcd --wait
 
 # Create with auto-scheduling enabled
 b2c sandbox create --realm abcd --auto-scheduled
+
+# Create with notification emails
+b2c sandbox create --realm abcd --emails dev@example.com,ops@example.com
 
 # Create without automatic permissions
 b2c sandbox create --realm abcd --no-set-permissions
@@ -513,6 +517,8 @@ b2c sandbox update <SANDBOXID> [FLAGS]
 | `--resource-profile` | Resource profile (`medium`, `large`, `xlarge`, `xxlarge`) |
 | `--tags` | Comma-separated list of tags |
 | `--emails` | Comma-separated list of notification email addresses |
+| `--start-scheduler` | Start schedule JSON (or `"null"` to remove existing scheduler) |
+| `--stop-scheduler` | Stop schedule JSON (or `"null"` to remove existing scheduler) |
 
 At least one flag is required.
 
@@ -540,6 +546,9 @@ b2c sandbox update zzzv-123 --resource-profile large
 # Set notification emails
 b2c sandbox update zzzv-123 --emails dev@example.com,qa@example.com
 
+# Enable automatic scheduling and set scheduler values
+b2c sandbox update zzzv-123 --auto-scheduled --start-scheduler '{"weekdays":["MONDAY"],"time":"08:00:00Z"}' --stop-scheduler "null"
+
 # Combine multiple updates
 b2c sandbox update zzzv-123 --ttl 48 --resource-profile xlarge --tags ci,nightly
 
@@ -551,6 +560,8 @@ b2c sandbox update zzzv-123 --ttl 48 --json
 
 - The `--ttl` value is added to the existing sandbox lifetime, not an absolute value. Together with previous extensions, it must adhere to the realm's maximum TTL configuration.
 - Setting `--ttl` to 0 or less gives the sandbox an infinite lifetime (subject to realm configuration).
+- `--auto-scheduled` controls whether automatic start/stop behavior is enabled for the sandbox.
+- `--start-scheduler` and `--stop-scheduler` define scheduler values, but scheduler automation is effective only when `--auto-scheduled` is enabled.
 
 ---
 
@@ -1071,6 +1082,8 @@ b2c realm update <REALM> [FLAGS]
 | `--default-sandbox-ttl` | Default sandbox TTL in hours when no TTL is specified at creation |
 | `--start-scheduler` | Start schedule JSON for sandboxes in this realm (use `"null"` to remove) |
 | `--stop-scheduler` | Stop schedule JSON for sandboxes in this realm (use `"null"` to remove) |
+| `--emails` | Comma-separated list of realm notification email addresses |
+| `--local-users-allowed` / `--no-local-users-allowed` | Enable or disable local users in realm sandbox configuration |
 
 The scheduler flags expect a JSON value or the literal string `"null"`:
 
@@ -1092,6 +1105,9 @@ b2c realm update zzzz \
 
 # Remove an existing stop scheduler
 b2c realm update zzzz --stop-scheduler "null"
+
+# Update realm emails and local user setting
+b2c realm update zzzz --emails dev@example.com,ops@example.com --local-users-allowed
 ```
 
 If no update flags are provided, the command fails with a helpful error explaining which flags can be used.
