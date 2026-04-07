@@ -129,6 +129,16 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     const hostname = this.resolvedConfig.values.hostname!;
 
+    // Safety evaluation — check rules for export job before executing.
+    // Command-level rules are already evaluated generically in BaseCommand.init().
+    const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId: 'sfcc-site-archive-export'});
+    if (jobEvaluation.action === 'block') {
+      this.error(jobEvaluation.reason, {exit: 1});
+    }
+    if (jobEvaluation.action === 'confirm') {
+      await this.confirmOrBlock(jobEvaluation);
+    }
+
     // Build data units configuration
     const dataUnits = this.buildDataUnits({
       dataUnitsJson,
@@ -172,6 +182,15 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         archiveFilename: '',
       } as unknown as SiteArchiveExportResult & {localPath?: string; archiveKept?: boolean};
     }
+
+    // After safety evaluation passes, temporarily allow WebDAV operations
+    // that are part of the export flow (download GET, cleanup DELETE on Impex paths).
+    // Without this, the HTTP middleware would independently block the cleanup DELETE.
+    const cleanupSafetyRule = this.safetyGuard.temporarilyAddRule({
+      method: 'DELETE',
+      path: '**/Impex/**',
+      action: 'allow',
+    });
 
     this.log(
       t('commands.job.export.exporting', 'Exporting data from {{hostname}}...', {
@@ -263,6 +282,8 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         );
       }
       throw error;
+    } finally {
+      cleanupSafetyRule();
     }
   }
 

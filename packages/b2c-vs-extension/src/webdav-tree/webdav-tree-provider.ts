@@ -5,7 +5,8 @@
  */
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
-import {type WebDavFileSystemProvider, WEBDAV_ROOTS, webdavPathToUri} from './webdav-fs-provider.js';
+import {type WebDavFileSystemProvider, WEBDAV_ROOTS, VIRTUAL_ROOTS, webdavPathToUri} from './webdav-fs-provider.js';
+import type {WebDavMappingsProvider} from './webdav-mappings.js';
 
 function formatFileSize(bytes: number | undefined): string {
   if (bytes === undefined || bytes === null) return '';
@@ -16,30 +17,47 @@ function formatFileSize(bytes: number | undefined): string {
   return `${(bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+export type WebDavNodeType =
+  | 'root'
+  | 'virtual-root'
+  | 'catalog-mapping'
+  | 'library-mapping'
+  | 'placeholder'
+  | 'directory'
+  | 'file';
+
 export class WebDavTreeItem extends vscode.TreeItem {
   constructor(
-    readonly nodeType: 'root' | 'directory' | 'file',
+    readonly nodeType: WebDavNodeType,
     readonly webdavPath: string,
     readonly fileName: string,
     readonly isCollection: boolean,
     readonly contentLength?: number,
   ) {
-    super(
-      fileName,
-      nodeType === 'file' ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed,
-    );
+    const collapsible =
+      nodeType === 'file' || nodeType === 'placeholder'
+        ? vscode.TreeItemCollapsibleState.None
+        : vscode.TreeItemCollapsibleState.Collapsed;
+    super(fileName, collapsible);
 
-    this.contextValue = nodeType;
+    // Use path-specific contextValues for virtual roots so menu when-clauses
+    // can distinguish Catalogs from Libraries.
+    if (nodeType === 'virtual-root') {
+      this.contextValue = webdavPath === 'Catalogs' ? 'virtual-root-catalogs' : 'virtual-root-libraries';
+    } else {
+      this.contextValue = nodeType;
+    }
     this.tooltip = webdavPath;
 
-    const resourceUri = webdavPathToUri(webdavPath);
+    if (nodeType === 'placeholder') {
+      this.iconPath = new vscode.ThemeIcon('info');
+      return;
+    }
 
-    if (nodeType === 'root') {
-      this.resourceUri = resourceUri;
-    } else if (nodeType === 'directory') {
-      this.resourceUri = resourceUri;
-    } else {
-      this.resourceUri = resourceUri;
+    const resourceUri = webdavPathToUri(webdavPath);
+    this.resourceUri = resourceUri;
+
+    if (nodeType === 'file') {
       if (contentLength !== undefined) {
         this.description = formatFileSize(contentLength);
       }
@@ -59,9 +77,13 @@ export class WebDavTreeDataProvider implements vscode.TreeDataProvider<WebDavTre
   constructor(
     private configProvider: B2CExtensionConfig,
     private fsProvider: WebDavFileSystemProvider,
+    private mappingsProvider: WebDavMappingsProvider,
   ) {
     // Auto-refresh the tree when the FS provider fires change events
     this.fsProvider.onDidChangeFile(() => {
+      this._onDidChangeTreeData.fire();
+    });
+    this.mappingsProvider.onDidChange(() => {
       this._onDidChangeTreeData.fire();
     });
   }
@@ -75,15 +97,108 @@ export class WebDavTreeDataProvider implements vscode.TreeDataProvider<WebDavTre
     return element;
   }
 
-  async getChildren(element?: WebDavTreeItem): Promise<WebDavTreeItem[]> {
-    if (!element) {
-      const instance = this.configProvider.getInstance();
-      if (!instance) {
-        return [];
-      }
-      return WEBDAV_ROOTS.map((r) => new WebDavTreeItem('root', r.path, r.key, true));
+  getParent(element: WebDavTreeItem): WebDavTreeItem | undefined {
+    if (element.nodeType === 'root' || element.nodeType === 'virtual-root') {
+      return undefined; // top-level roots have no parent
     }
 
+    // catalog-mapping / library-mapping → parent is the virtual root
+    if (element.nodeType === 'catalog-mapping') {
+      return new WebDavTreeItem('virtual-root', 'Catalogs', 'Catalogs', true);
+    }
+    if (element.nodeType === 'library-mapping') {
+      return new WebDavTreeItem('virtual-root', 'Libraries', 'Libraries', true);
+    }
+
+    if (element.nodeType === 'placeholder') {
+      return undefined;
+    }
+
+    // directory / file → parent is derived from webdavPath
+    const parentPath = element.webdavPath.includes('/')
+      ? element.webdavPath.substring(0, element.webdavPath.lastIndexOf('/'))
+      : '';
+
+    if (!parentPath) {
+      return undefined;
+    }
+
+    // Check if the parent path is a root-level entry
+    const rootEntry = WEBDAV_ROOTS.find((r) => r.path === parentPath);
+    if (rootEntry) {
+      const nodeType = VIRTUAL_ROOTS.has(rootEntry.key) ? 'virtual-root' : 'root';
+      return new WebDavTreeItem(nodeType, rootEntry.path, rootEntry.key, true);
+    }
+
+    // Check if the parent is a catalog or library mapping (e.g., "Catalogs/my-catalog")
+    const segments = parentPath.split('/');
+    if (segments.length === 2 && VIRTUAL_ROOTS.has(segments[0])) {
+      const mappingType = segments[0] === 'Catalogs' ? 'catalog-mapping' : 'library-mapping';
+      return new WebDavTreeItem(mappingType, parentPath, segments[1], true);
+    }
+
+    return new WebDavTreeItem('directory', parentPath, parentPath.split('/').pop() ?? parentPath, true);
+  }
+
+  /**
+   * Find a tree item by its webdav path and node type.
+   * Used by commands that need to reveal specific nodes.
+   */
+  findItem(nodeType: WebDavNodeType, webdavPath: string): WebDavTreeItem | undefined {
+    const fileName = webdavPath.split('/').pop() ?? webdavPath;
+    return new WebDavTreeItem(nodeType, webdavPath, fileName, true);
+  }
+
+  async getChildren(element?: WebDavTreeItem): Promise<WebDavTreeItem[]> {
+    if (!element) {
+      return this.getRootChildren();
+    }
+
+    if (element.nodeType === 'virtual-root') {
+      return this.getVirtualRootChildren(element);
+    }
+
+    // placeholder nodes have no children
+    if (element.nodeType === 'placeholder') {
+      return [];
+    }
+
+    // catalog-mapping, library-mapping, root, directory — all do PROPFIND
+    return this.getPropfindChildren(element);
+  }
+
+  private getRootChildren(): WebDavTreeItem[] {
+    const instance = this.configProvider.getInstance();
+    if (!instance) {
+      return [];
+    }
+    return WEBDAV_ROOTS.map((r) => {
+      const nodeType = VIRTUAL_ROOTS.has(r.key) ? 'virtual-root' : 'root';
+      return new WebDavTreeItem(nodeType, r.path, r.key, true);
+    });
+  }
+
+  private getVirtualRootChildren(element: WebDavTreeItem): WebDavTreeItem[] {
+    if (element.webdavPath === 'Catalogs') {
+      const ids = this.mappingsProvider.getCatalogIds();
+      if (ids.length === 0) {
+        return [new WebDavTreeItem('placeholder', '', 'No catalogs configured — right-click to add', false)];
+      }
+      return ids.map((id) => new WebDavTreeItem('catalog-mapping', `Catalogs/${id}`, id, true));
+    }
+
+    if (element.webdavPath === 'Libraries') {
+      const ids = this.mappingsProvider.getLibraryIds();
+      if (ids.length === 0) {
+        return [new WebDavTreeItem('placeholder', '', 'No libraries configured — right-click to add', false)];
+      }
+      return ids.map((id) => new WebDavTreeItem('library-mapping', `Libraries/${id}`, id, true));
+    }
+
+    return [];
+  }
+
+  private async getPropfindChildren(element: WebDavTreeItem): Promise<WebDavTreeItem[]> {
     try {
       const uri = webdavPathToUri(element.webdavPath);
       const entries = await this.fsProvider.readDirectory(uri);

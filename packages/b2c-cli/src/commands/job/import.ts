@@ -72,6 +72,16 @@ export default class JobImport extends JobCommand<typeof JobImport> {
 
     const hostname = this.resolvedConfig.values.hostname!;
 
+    // Safety evaluation — check rules for import job before executing.
+    // Command-level rules are already evaluated generically in BaseCommand.init().
+    const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId: 'sfcc-site-archive-import'});
+    if (jobEvaluation.action === 'block') {
+      this.error(jobEvaluation.reason, {exit: 1});
+    }
+    if (jobEvaluation.action === 'confirm') {
+      await this.confirmOrBlock(jobEvaluation);
+    }
+
     // Create lifecycle context
     const context = this.createContext('job:import', {
       target,
@@ -94,6 +104,14 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         archiveKept: false,
       } as unknown as SiteArchiveImportResult;
     }
+
+    // After safety evaluation passes, temporarily allow WebDAV operations
+    // that are part of the import flow (upload PUT, cleanup DELETE on Impex paths).
+    const cleanupSafetyRule = this.safetyGuard.temporarilyAddRule({
+      method: 'DELETE',
+      path: '**/Impex/**',
+      action: 'allow',
+    });
 
     if (remote) {
       this.log(
@@ -182,6 +200,8 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         );
       }
       throw error;
+    } finally {
+      cleanupSafetyRule();
     }
   }
 }

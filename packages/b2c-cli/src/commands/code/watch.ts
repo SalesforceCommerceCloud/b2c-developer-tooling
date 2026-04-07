@@ -56,6 +56,14 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
       this.log(t('commands.code.watch.codeVersion', 'Code Version: {{version}}', {version}));
     }
 
+    // Temporarily allow WebDAV DELETE on Cartridges paths for the watch lifecycle.
+    // The watcher DELETEs temp zip files after upload and syncs local file deletions.
+    const cleanupSafetyRule = this.safetyGuard.temporarilyAddRule({
+      method: 'DELETE',
+      path: '**/Cartridges/**',
+      action: 'allow',
+    });
+
     try {
       const result = await this.operations.watchCartridges(this.instance, this.cartridgePath, {
         ...this.cartridgeOptions,
@@ -92,6 +100,8 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
         this.error(t('commands.code.watch.failed', 'Watch failed: {{message}}', {message: error.message}));
       }
       throw error;
+    } finally {
+      cleanupSafetyRule();
     }
   }
 }

@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.2.9",
+  "version": "0.2.11",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -317,6 +317,36 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.webdav.addCatalog",
+        "title": "Add Catalog",
+        "icon": "$(add)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.removeCatalog",
+        "title": "Remove Catalog",
+        "icon": "$(remove)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.addLibrary",
+        "title": "Add Library",
+        "icon": "$(add)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.removeLibrary",
+        "title": "Remove Library",
+        "icon": "$(remove)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.browseWebdav",
+        "title": "Browse in WebDAV",
+        "icon": "$(folder-opened)",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.content.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -432,18 +462,38 @@
       ],
       "view/item/context": [
         {
+          "command": "b2c-dx.webdav.addCatalog",
+          "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",
+          "group": "0_add@0"
+        },
+        {
+          "command": "b2c-dx.webdav.addLibrary",
+          "when": "view == b2cWebdavExplorer && viewItem == virtual-root-libraries",
+          "group": "0_add@0"
+        },
+        {
+          "command": "b2c-dx.webdav.removeCatalog",
+          "when": "view == b2cWebdavExplorer && viewItem == catalog-mapping",
+          "group": "2_manage@1"
+        },
+        {
+          "command": "b2c-dx.webdav.removeLibrary",
+          "when": "view == b2cWebdavExplorer && viewItem == library-mapping",
+          "group": "2_manage@1"
+        },
+        {
           "command": "b2c-dx.webdav.newFile",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "1_modification@0"
         },
         {
           "command": "b2c-dx.webdav.newFolder",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "1_modification@1"
         },
         {
           "command": "b2c-dx.webdav.uploadFile",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "1_modification@2"
         },
         {
@@ -463,7 +513,7 @@
         },
         {
           "command": "b2c-dx.webdav.mountWorkspace",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "3_workspace@1"
         },
         {
@@ -485,6 +535,11 @@
           "command": "b2c-dx.content.removeLibrary",
           "when": "view == b2cContentExplorer && viewItem == library",
           "group": "2_manage@1"
+        },
+        {
+          "command": "b2c-dx.content.browseWebdav",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(library|static)$/",
+          "group": "3_webdav@1"
         },
         {
           "command": "b2c-dx.sandbox.create",
@@ -603,6 +658,18 @@
         },
         {
           "command": "b2c-dx.sandbox.extendExpiration",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.removeCatalog",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.removeLibrary",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.browseWebdav",
           "when": "false"
         },
         {

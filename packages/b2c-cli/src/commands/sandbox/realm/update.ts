@@ -16,7 +16,7 @@ type RealmConfigurationResponse = OdsComponents['schemas']['RealmConfigurationRe
  * Update realm-level ODS configuration (TTL and schedulers).
  */
 export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUpdate> {
-  static aliases = ['ods:realm:update', 'realm:update'];
+  static aliases = ['ods:realm:update'];
 
   static args = {
     realm: Args.string({

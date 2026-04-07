@@ -6,12 +6,12 @@
 
 import {expect} from 'chai';
 import {createSafetyMiddleware} from '@salesforce/b2c-tooling-sdk/clients';
-import {SafetyBlockedError} from '@salesforce/b2c-tooling-sdk';
+import {SafetyBlockedError, SafetyGuard} from '@salesforce/b2c-tooling-sdk';
 
 describe('clients/middleware - createSafetyMiddleware', () => {
   describe('HTTP request interception', () => {
     it('allows safe operations to pass through', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_DELETE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_DELETE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const request = new Request('https://api.example.com/items', {method: 'GET'});
@@ -21,7 +21,7 @@ describe('clients/middleware - createSafetyMiddleware', () => {
     });
 
     it('throws SafetyBlockedError for blocked operations', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_DELETE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_DELETE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const request = new Request('https://api.example.com/items/1', {method: 'DELETE'});
@@ -34,14 +34,14 @@ describe('clients/middleware - createSafetyMiddleware', () => {
         expect((error as SafetyBlockedError).method).to.equal('DELETE');
         expect((error as SafetyBlockedError).url).to.equal('https://api.example.com/items/1');
         expect((error as SafetyBlockedError).safetyLevel).to.equal('NO_DELETE');
-        expect((error as SafetyBlockedError).message).to.include('Delete operation blocked');
+        expect((error as SafetyBlockedError).message).to.include('blocked by safety level');
       }
     });
   });
 
   describe('NO_DELETE level middleware', () => {
     it('blocks DELETE requests', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_DELETE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_DELETE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const request = new Request('https://api.example.com/sandboxes/123', {method: 'DELETE'});
@@ -51,12 +51,12 @@ describe('clients/middleware - createSafetyMiddleware', () => {
         throw new Error('Expected SafetyBlockedError');
       } catch (error) {
         expect(error).to.be.instanceOf(SafetyBlockedError);
-        expect((error as SafetyBlockedError).message).to.include('Delete operation blocked');
+        expect((error as SafetyBlockedError).message).to.include('blocked by safety level');
       }
     });
 
     it('allows GET, POST, PUT, PATCH requests', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_DELETE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_DELETE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const methods = ['GET', 'POST', 'PUT', 'PATCH'];
@@ -71,7 +71,7 @@ describe('clients/middleware - createSafetyMiddleware', () => {
 
   describe('NO_UPDATE level middleware', () => {
     it('blocks DELETE requests', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_UPDATE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_UPDATE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const request = new Request('https://api.example.com/items/1', {method: 'DELETE'});
@@ -85,7 +85,7 @@ describe('clients/middleware - createSafetyMiddleware', () => {
     });
 
     it('blocks destructive POST operations', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_UPDATE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_UPDATE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const destructivePaths = [
@@ -103,13 +103,13 @@ describe('clients/middleware - createSafetyMiddleware', () => {
           throw new Error(`Expected SafetyBlockedError for ${url}`);
         } catch (error) {
           expect(error).to.be.instanceOf(SafetyBlockedError);
-          expect((error as SafetyBlockedError).message).to.include('Destructive operation blocked');
+          expect((error as SafetyBlockedError).message).to.include('blocked by safety level');
         }
       }
     });
 
     it('allows normal POST operations', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_UPDATE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_UPDATE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const safePaths = [
@@ -128,7 +128,7 @@ describe('clients/middleware - createSafetyMiddleware', () => {
 
   describe('READ_ONLY level middleware', () => {
     it('blocks all write operations', async () => {
-      const middleware = createSafetyMiddleware({level: 'READ_ONLY'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'READ_ONLY'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const writeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
@@ -141,14 +141,13 @@ describe('clients/middleware - createSafetyMiddleware', () => {
           throw new Error(`Expected SafetyBlockedError for ${method}`);
         } catch (error) {
           expect(error).to.be.instanceOf(SafetyBlockedError);
-          expect((error as SafetyBlockedError).message).to.include('Write operation blocked');
-          expect((error as SafetyBlockedError).message).to.include('READ_ONLY mode');
+          expect((error as SafetyBlockedError).message).to.include('blocked by safety level READ_ONLY');
         }
       }
     });
 
     it('allows GET operations', async () => {
-      const middleware = createSafetyMiddleware({level: 'READ_ONLY'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'READ_ONLY'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const request = new Request('https://api.example.com/items', {method: 'GET'});
@@ -160,7 +159,7 @@ describe('clients/middleware - createSafetyMiddleware', () => {
 
   describe('NONE level middleware', () => {
     it('allows all operations', async () => {
-      const middleware = createSafetyMiddleware({level: 'NONE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NONE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const allMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -175,7 +174,7 @@ describe('clients/middleware - createSafetyMiddleware', () => {
 
   describe('real-world scenarios', () => {
     it('protects against accidental sandbox deletion', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_DELETE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_DELETE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const request = new Request('https://api.example.com/sandboxes/prod-123', {method: 'DELETE'});
@@ -191,7 +190,7 @@ describe('clients/middleware - createSafetyMiddleware', () => {
     });
 
     it('protects against destructive operations on production', async () => {
-      const middleware = createSafetyMiddleware({level: 'NO_UPDATE'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'NO_UPDATE'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       const resetRequest = new Request('https://api.example.com/sandboxes/prod-123/reset', {method: 'POST'});
@@ -201,12 +200,12 @@ describe('clients/middleware - createSafetyMiddleware', () => {
         throw new Error('Expected SafetyBlockedError');
       } catch (error) {
         expect(error).to.be.instanceOf(SafetyBlockedError);
-        expect((error as SafetyBlockedError).message).to.include('Destructive operation blocked');
+        expect((error as SafetyBlockedError).message).to.include('blocked by safety level');
       }
     });
 
     it('enforces read-only access for audit/investigation scenarios', async () => {
-      const middleware = createSafetyMiddleware({level: 'READ_ONLY'});
+      const middleware = createSafetyMiddleware(new SafetyGuard({level: 'READ_ONLY'}));
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
 
       // Reading should work
