@@ -25,7 +25,7 @@ const server = setupServer();
 type DAPMessage = DebugProtocol.ProtocolMessage;
 
 /** Encode a DAP message into Content-Length framed bytes and write to stream. */
-function sendDAP(stream: PassThrough, message: DAPMessage): void {
+function sendDAP(stream: PassThrough, message: DAPMessage | DebugProtocol.Request): void {
   const json = JSON.stringify(message);
   const header = `Content-Length: ${Buffer.byteLength(json)}\r\n\r\n`;
   stream.write(header + json);
