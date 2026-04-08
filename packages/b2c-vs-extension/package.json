@@ -27,7 +27,8 @@
     "onCommand:b2c-dx.listWebDav",
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
-    "onCommand:b2c-dx.scaffold.generate"
+    "onCommand:b2c-dx.scaffold.generate",
+    "onDebugResolve:b2c-script"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -151,6 +152,41 @@
       {
         "view": "b2cSandboxExplorer",
         "contents": "No sandbox realms configured.\n\nSet \"realm\" in dw.json or add a realm manually.\n\n[Add Realm](command:b2c-dx.sandbox.addRealm)"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "b2c-script",
+        "label": "B2C Script Debugger",
+        "languages": ["javascript"],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "cartridgePath": {
+                "type": "string",
+                "description": "Path to cartridges directory (auto-detected from workspace by default)"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "b2c-script",
+            "request": "launch",
+            "name": "B2C Script Debugger"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "B2C Script Debugger",
+            "description": "Debug B2C Commerce server-side scripts",
+            "body": {
+              "type": "b2c-script",
+              "request": "launch",
+              "name": "B2C Script Debugger"
+            }
+          }
+        ]
       }
     ],
     "commands": [

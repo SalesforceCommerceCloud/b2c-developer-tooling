@@ -68,6 +68,8 @@ interface DAPClient {
   send(command: string, args?: Record<string, unknown>): Promise<DebugProtocol.Response>;
   /** Wait for a DAP event by name. */
   waitForEvent(event: string, timeoutMs?: number): Promise<DebugProtocol.Event>;
+  /** Wait for a DAP event matching a custom predicate. */
+  waitForEventMatching(predicate: (msg: DAPMessage) => boolean, timeoutMs?: number): Promise<DebugProtocol.Event>;
   /** Tear down streams so mocha can exit cleanly. */
   dispose(): void;
 }
@@ -121,6 +123,9 @@ function createDAPClient(adapter: B2CScriptDebugAdapter): DAPClient {
         (m) => m.type === 'event' && (m as DebugProtocol.Event).event === event,
         timeoutMs,
       ) as Promise<DebugProtocol.Event>;
+    },
+    waitForEventMatching(predicate: (msg: DAPMessage) => boolean, timeoutMs = 2000): Promise<DebugProtocol.Event> {
+      return waitFor(predicate, timeoutMs) as Promise<DebugProtocol.Event>;
     },
   };
 }
@@ -445,6 +450,105 @@ describe('operations/debug/dap-adapter (integration)', () => {
 
       const response = await client.send('configurationDone');
       expect(response.success).to.be.true;
+
+      await client.send('disconnect', {});
+      client.dispose();
+    });
+  });
+
+  describe('terminate', () => {
+    it('disconnects session and sends TerminatedEvent', async () => {
+      server.use(...sdapiHandlers());
+
+      const adapter = new B2CScriptDebugAdapter(makeConfig());
+      const client = createDAPClient(adapter);
+
+      await client.send('initialize', {adapterID: 'b2c-script', pathFormat: 'path'});
+      await client.send('launch', {});
+
+      const terminatedPromise = client.waitForEvent('terminated');
+      const response = await client.send('terminate');
+      expect(response.success).to.be.true;
+
+      const event = await terminatedPromise;
+      expect(event.event).to.equal('terminated');
+
+      client.dispose();
+    });
+  });
+
+  describe('logpoints', () => {
+    it('emits output and auto-resumes instead of stopping', async () => {
+      let resumeCalled = false;
+      server.use(
+        // Override handlers must come before sdapiHandlers() — MSW matches first handler
+        http.get(`${BASE_URL}/threads`, () =>
+          HttpResponse.json({
+            _v: '2.0',
+            script_threads: [
+              {
+                id: 1,
+                status: 'halted',
+                call_stack: [
+                  {
+                    index: 0,
+                    location: {
+                      function_name: 'doGet',
+                      line_number: 10,
+                      script_path: '/app_storefront/cartridge/controllers/Cart.js',
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        ),
+        http.post(`${BASE_URL}/breakpoints`, () =>
+          HttpResponse.json({
+            _v: '2.0',
+            breakpoints: [{id: 1, line_number: 10, script_path: '/app_storefront/cartridge/controllers/Cart.js'}],
+          }),
+        ),
+        http.get(`${BASE_URL}/threads/1/frames/0/eval`, ({request}) => {
+          const url = new URL(request.url);
+          const expr = url.searchParams.get('expr');
+          return HttpResponse.json({_v: '2.0', expression: expr, result: 'hello'});
+        }),
+        http.post(`${BASE_URL}/threads/1/resume`, () => {
+          resumeCalled = true;
+          return HttpResponse.json({_v: '2.0', id: 1, status: 'running', call_stack: []});
+        }),
+        ...sdapiHandlers(),
+      );
+
+      const adapter = new B2CScriptDebugAdapter(makeConfig({pollInterval: 50, keepaliveInterval: 100_000}));
+      const client = createDAPClient(adapter);
+
+      await client.send('initialize', {adapterID: 'b2c-script', pathFormat: 'path'});
+      await client.send('launch', {});
+
+      // Set a logpoint (breakpoint with logMessage)
+      await client.send('setBreakpoints', {
+        source: {path: `${CARTRIDGE_SRC}/cartridge/controllers/Cart.js`},
+        breakpoints: [{line: 10, logMessage: 'value is {myVar}'}],
+      });
+
+      // Wait for the logpoint output (poller will detect halted thread)
+      // Use a predicate to skip the "Connected" and "Set breakpoints" OutputEvents
+      const outputEvent = await client.waitForEventMatching(
+        (m) =>
+          m.type === 'event' &&
+          (m as DebugProtocol.Event).event === 'output' &&
+          (m as DebugProtocol.OutputEvent).body.output === 'value is hello\n',
+        3000,
+      );
+      expect((outputEvent as DebugProtocol.OutputEvent).body.output).to.equal('value is hello\n');
+
+      // Wait a tick for the async resume to complete after the output event
+      await new Promise((r) => setTimeout(r, 100));
+
+      // Verify auto-resume was called (thread should not stop)
+      expect(resumeCalled).to.be.true;
 
       await client.send('disconnect', {});
       client.dispose();

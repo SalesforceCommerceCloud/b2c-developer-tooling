@@ -87,6 +87,9 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
   /** Breakpoints keyed by server script_path (merged across all files) */
   private breakpointsBySource = new Map<string, BreakpointInput[]>();
 
+  /** Logpoint messages keyed by "script_path:line_number" */
+  private logpoints = new Map<string, string>();
+
   constructor(config?: DebugSessionConfig, callbacks: DebugSessionCallbacks = {}) {
     super();
     this.preConfig = config;
@@ -119,6 +122,8 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
       supportsEvaluateForHovers: true,
       supportTerminateDebuggee: true,
       supportsConfigurationDoneRequest: true,
+      supportsTerminateRequest: true,
+      supportsLogPoints: true,
     };
     this.sendResponse(response);
     // InitializedEvent is deferred to launchRequest — the SDAPI requires a
@@ -195,6 +200,19 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
     this.sendResponse(response);
   }
 
+  protected override async terminateRequest(
+    response: DebugProtocol.TerminateResponse,
+    _args: DebugProtocol.TerminateArguments,
+  ): Promise<void> {
+    try {
+      await this.session?.disconnect();
+    } catch {
+      // Best-effort cleanup
+    }
+    this.sendEvent(new TerminatedEvent());
+    this.sendResponse(response);
+  }
+
   // -----------------------------------------------------------------------
   // Breakpoints
   // -----------------------------------------------------------------------
@@ -224,12 +242,24 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
       return;
     }
 
+    // Clear logpoints for this source before rebuilding
+    for (const key of this.logpoints.keys()) {
+      if (key.startsWith(`${serverPath}:`)) {
+        this.logpoints.delete(key);
+      }
+    }
+
     // Update our local map for this source file
-    const inputs: BreakpointInput[] = (args.breakpoints ?? []).map((bp) => ({
-      line_number: bp.line,
-      script_path: serverPath,
-      ...(bp.condition ? {condition: bp.condition} : {}),
-    }));
+    const inputs: BreakpointInput[] = (args.breakpoints ?? []).map((bp) => {
+      if (bp.logMessage) {
+        this.logpoints.set(`${serverPath}:${bp.line}`, bp.logMessage);
+      }
+      return {
+        line_number: bp.line,
+        script_path: serverPath,
+        ...(bp.condition ? {condition: bp.condition} : {}),
+      };
+    });
 
     if (inputs.length > 0) {
       this.breakpointsBySource.set(serverPath, inputs);
@@ -405,9 +435,21 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
 
     try {
       const result = await this.session.client.evaluate(threadId, frameIndex, args.expression);
+
+      // Try to make the result expandable by checking if it has members
+      let variablesReference = 0;
+      try {
+        const members = await this.session.client.getMembers(threadId, frameIndex, args.expression);
+        if (members.object_members.length > 0) {
+          variablesReference = this.variableStore.getOrCreateReference(threadId, frameIndex, args.expression);
+        }
+      } catch {
+        // Not expandable — leave variablesReference as 0
+      }
+
       response.body = {
         result: result.result,
-        variablesReference: 0,
+        variablesReference,
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -486,6 +528,17 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
   private handleThreadStopped(thread: SdapiScriptThread): void {
     this.variableStore.clear();
     const topFrame = thread.call_stack?.[0];
+
+    // Check if this is a logpoint hit
+    if (topFrame) {
+      const loc = topFrame.location;
+      const logMessage = this.logpoints.get(`${loc.script_path}:${loc.line_number}`);
+      if (logMessage) {
+        void this.handleLogpoint(thread.id, topFrame.index, logMessage);
+        return;
+      }
+    }
+
     if (topFrame) {
       const loc = topFrame.location;
       const fn = loc.function_name || '<anonymous>';
@@ -496,6 +549,33 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
       );
     }
     this.sendEvent(new StoppedEvent('breakpoint', thread.id));
+  }
+
+  private async handleLogpoint(threadId: number, frameIndex: number, logMessage: string): Promise<void> {
+    // Interpolate {expression} placeholders by evaluating each on the server
+    let output = logMessage;
+    const placeholders = logMessage.match(/\{[^}]+\}/g);
+    if (placeholders && this.session) {
+      for (const placeholder of placeholders) {
+        const expr = placeholder.slice(1, -1);
+        try {
+          const result = await this.session.client.evaluate(threadId, frameIndex, expr);
+          output = output.replace(placeholder, result.result);
+        } catch {
+          output = output.replace(placeholder, `<${expr}: error>`);
+        }
+      }
+    }
+
+    this.sendEvent(new OutputEvent(output + '\n', 'console'));
+
+    // Auto-resume — logpoints don't stop
+    try {
+      await this.session?.resume(threadId);
+    } catch {
+      // If resume fails, fall through to a normal stop
+      this.sendEvent(new StoppedEvent('breakpoint', threadId));
+    }
   }
 
   private handleThreadContinued(_threadId: number): void {
