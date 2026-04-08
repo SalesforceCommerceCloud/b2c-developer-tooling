@@ -16,13 +16,28 @@ class B2CDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
 
   createDebugAdapterDescriptor(_session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
     const config = this.configProvider.getConfig();
-    if (!config) {
-      throw new Error('No B2C Commerce instance configured. Configure dw.json first.');
+    if (!config || !config.hasB2CInstanceConfig()) {
+      void vscode.window.showErrorMessage(
+        'B2C Script Debugger: No B2C Commerce instance configured. ' +
+          'Add hostname, username, and password to your configuration (dw.json).',
+      );
+      return undefined;
     }
 
     const values = config.values;
-    if (!values.hostname || !values.username || !values.password) {
-      throw new Error('Basic auth credentials (hostname, username, password) are required for the script debugger.');
+    if (!values.username || !values.password) {
+      void vscode.window.showErrorMessage(
+        'B2C Script Debugger: username and password (access key) are required for the script debugger. ' +
+          'Add them to your configuration (dw.json).',
+      );
+      return undefined;
+    }
+
+    if (!values.hostname) {
+      void vscode.window.showErrorMessage(
+        'B2C Script Debugger: No hostname configured. Add it to your configuration (dw.json).',
+      );
+      return undefined;
     }
 
     const workingDirectory = this.configProvider.getWorkingDirectory();

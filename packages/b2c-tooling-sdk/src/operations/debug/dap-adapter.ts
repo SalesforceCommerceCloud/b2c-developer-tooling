@@ -28,6 +28,7 @@ import {
 import type {DebugProtocol} from '@vscode/debugprotocol';
 
 import {DebugSessionManager} from './debug-session.js';
+import {SdapiError} from './sdapi-client.js';
 import {createSourceMapper, type SourceMapper} from './source-mapping.js';
 import {VariableStore} from './variable-store.js';
 import type {
@@ -176,7 +177,8 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
       // Signal ready for configuration now that the SDAPI client exists
       this.sendEvent(new InitializedEvent());
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
+      const msg = this.friendlyErrorMessage(error);
+      this.sendEvent(new OutputEvent(`Failed to connect: ${msg}\n`, 'important'));
       this.sendErrorResponse(response, 1001, `Failed to connect: ${msg}`);
     }
   }
@@ -632,6 +634,18 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
     const displayValue = member.value.length > 200 ? member.value.slice(0, 200) + '...' : member.value;
 
     return new Variable(member.name, displayValue, childRef);
+  }
+
+  private friendlyErrorMessage(error: unknown): string {
+    if (error instanceof SdapiError) {
+      if (error.status === 401) {
+        return 'Authentication failed — check that username and password (access key) are correct in your configuration (dw.json).';
+      }
+      if (error.status === 412) {
+        return 'Script debugger is not enabled on this instance. Enable it in Business Manager > Administration > Development Configuration.';
+      }
+    }
+    return error instanceof Error ? error.message : String(error);
   }
 
   private _nextBreakpointId = 1;
