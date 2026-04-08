@@ -401,6 +401,9 @@ importers:
 
   packages/b2c-tooling-sdk:
     dependencies:
+      '@vscode/debugadapter':
+        specifier: 1.68.0
+        version: 1.68.0
       applicationinsights:
         specifier: 2.9.8
         version: 2.9.8
@@ -3661,6 +3664,13 @@ packages:
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0
       vue: ^3.2.25
+
+  '@vscode/debugadapter@1.68.0':
+    resolution: {integrity: sha512-D6gk5Fw2y4FV8oYmltoXpj+VAZexxJFopN/mcZ6YcgzQE9dgq2L45Aj3GLxScJOD6GeLILcxJIaA8l3v11esGg==}
+    engines: {node: '>=14'}
+
+  '@vscode/debugprotocol@1.68.0':
+    resolution: {integrity: sha512-2J27dysaXmvnfuhFGhfeuxfHRXunqNPxtBoR3koiTOA9rdxWNDTa1zIFLCFMSHJ9MPTPKFcBeblsyaCJCIlQxg==}
 
   '@vscode/test-cli@0.0.12':
     resolution: {integrity: sha512-iYN0fDg29+a2Xelle/Y56Xvv7Nc8Thzq4VwpzAF/SIE6918rDicqfsQxV6w1ttr2+SOm+10laGuY9FG2ptEKsQ==}
@@ -12084,6 +12094,12 @@ snapshots:
     dependencies:
       vite: 5.4.21(@types/node@22.19.0)
       vue: 3.5.24(typescript@5.9.3)
+
+  '@vscode/debugadapter@1.68.0':
+    dependencies:
+      '@vscode/debugprotocol': 1.68.0
+
+  '@vscode/debugprotocol@1.68.0': {}
 
   '@vscode/test-cli@0.0.12':
     dependencies:

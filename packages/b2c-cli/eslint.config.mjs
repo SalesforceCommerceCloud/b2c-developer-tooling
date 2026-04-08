@@ -77,7 +77,7 @@ export default [
     },
   },
   {
-    files: ['src/commands/setup/**/*.ts', 'src/commands/slas/**/*.ts'],
+    files: ['src/commands/setup/**/*.ts', 'src/commands/slas/**/*.ts', 'src/commands/debug/**/*.ts'],
     rules: {
       // ESLint import resolver doesn't understand conditional exports (development condition)
       // but Node.js resolves them correctly at runtime

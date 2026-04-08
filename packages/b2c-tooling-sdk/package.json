@@ -364,6 +364,17 @@
         "types": "./dist/cjs/i18n/index.d.ts",
         "default": "./dist/cjs/i18n/index.js"
       }
+    },
+    "./operations/debug": {
+      "development": "./src/operations/debug/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/debug/index.d.ts",
+        "default": "./dist/esm/operations/debug/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/debug/index.d.ts",
+        "default": "./dist/cjs/operations/debug/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
@@ -403,12 +414,12 @@
     "@oclif/prettier-config": "catalog:",
     "@oclif/test": "catalog:",
     "@salesforce/dev-config": "catalog:",
-    "@types/tar-fs": "^2.0.4",
     "@types/chai": "catalog:",
     "@types/ejs": "^3.1.5",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
     "@types/sinon": "catalog:",
+    "@types/tar-fs": "^2.0.4",
     "@types/xml2js": "^0.4.14",
     "c8": "catalog:",
     "chai": "catalog:",
@@ -438,8 +449,8 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "@vscode/debugadapter": "1.68.0",
     "applicationinsights": "2.9.8",
-    "tar-fs": "3.1.2",
     "chokidar": "5.0.0",
     "cliui": "catalog:",
     "ejs": "3.1.10",
@@ -454,6 +465,7 @@
     "pino": "10.1.0",
     "pino-pretty": "13.1.2",
     "protobufjs": "7.5.4",
+    "tar-fs": "3.1.2",
     "undici": "7.19.2",
     "xml2js": "0.6.2"
   }
