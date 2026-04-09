@@ -1,5 +1,15 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.2.0
+
+### Minor Changes
+
+- [`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46) - Add B2C Commerce script debugger with SDAPI 2.0 DAP adapter (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#331](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/331) [`e6c6226`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6c6226c256b8d181917cc8c66fa4d7bf992e106) - Fix `code watch` WebDAV lock conflicts by serializing upload and delete operations so only one batch runs at a time. Failed uploads are now retried automatically. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.1.0
 
 ### Minor Changes
