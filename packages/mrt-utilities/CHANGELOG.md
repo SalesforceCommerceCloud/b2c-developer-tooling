@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.1.1
+
+### Patch Changes
+
+- [#334](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/334) [`331db17`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/331db1778c964baefec204be6ba69ba5ce0a4360) - Add Express 4 support, improve middleware error handling, and add dual-version Express test coverage. (Thanks [@bendvc](https://github.com/bendvc)!)
+
 ## 0.1.0
 
 ### Minor Changes
