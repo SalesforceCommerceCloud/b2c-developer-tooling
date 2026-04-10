@@ -7,6 +7,8 @@
 import express, {type Request, type Response, type NextFunction} from 'express';
 import fs from 'fs';
 import path from 'path';
+import http from 'node:http';
+import os from 'node:os';
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {
@@ -24,6 +26,70 @@ interface MockResponse extends Partial<Response> {
   sendStatus: sinon.SinonStub;
   set: sinon.SinonStub;
 }
+
+const startServer = async (app: express.Express): Promise<{server: http.Server; baseUrl: string}> => {
+  return new Promise((resolve) => {
+    const server = app.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port = typeof address === 'string' ? 0 : address?.port;
+      resolve({server, baseUrl: `http://127.0.0.1:${port}`});
+    });
+  });
+};
+
+const requestJson = async (
+  baseUrl: string,
+  requestPath: string,
+  options?: {headers?: Record<string, string>},
+): Promise<{status: number; headers: http.IncomingHttpHeaders; body: unknown}> => {
+  return new Promise((resolve, reject) => {
+    const url = new URL(requestPath, baseUrl);
+    const req = http.request(
+      url,
+      {
+        method: 'GET',
+        headers: options?.headers,
+      },
+      (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          const parsed = data ? JSON.parse(data) : null;
+          resolve({status: res.statusCode ?? 0, headers: res.headers, body: parsed});
+        });
+      },
+    );
+    req.on('error', reject);
+    req.end();
+  });
+};
+
+const requestText = async (
+  baseUrl: string,
+  requestPath: string,
+): Promise<{status: number; headers: http.IncomingHttpHeaders; body: string}> => {
+  return new Promise((resolve, reject) => {
+    const url = new URL(requestPath, baseUrl);
+    const req = http.request(url, {method: 'GET'}, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+      res.on('end', () => {
+        resolve({
+          status: res.statusCode ?? 0,
+          headers: res.headers,
+          body: Buffer.concat(chunks).toString('utf-8'),
+        });
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+};
 
 describe('middleware', () => {
   let mockRequest: Partial<Request>;
@@ -63,7 +129,10 @@ describe('middleware', () => {
       const middleware = createMRTRequestProcessorMiddleware('/path/to/processor.js', []);
 
       (mockRequest as Request).originalUrl = '/mobify/proxy/api/test';
-      await middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await new Promise<void>((resolve) => {
+        mockNext.callsFake(() => resolve());
+        middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      });
 
       expect(mockNext.calledOnce).to.be.true;
       stubExists.restore();
@@ -95,7 +164,10 @@ describe('middleware', () => {
         method: 'GET',
       } as Request;
 
-      await middleware(testRequest, mockResponse as Response, mockNext);
+      await new Promise<void>((resolve) => {
+        mockNext.callsFake(() => resolve());
+        middleware(testRequest, mockResponse as Response, mockNext);
+      });
 
       expect(mockResponse.sendStatus.called).to.be.false;
       expect(mockNext.calledOnce).to.be.true;
@@ -114,7 +186,10 @@ describe('middleware', () => {
         'content-type': 'application/json',
       };
 
-      await middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await new Promise<void>((resolve) => {
+        mockNext.callsFake(() => resolve());
+        middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      });
 
       expect((mockRequest as Request).headers['x-api-key']).to.be.undefined;
       expect((mockRequest as Request).headers['x-mobify-access-key']).to.be.undefined;
@@ -128,10 +203,44 @@ describe('middleware', () => {
       (mockRequest as Request).headers = {};
       (mockRequest as Request).originalUrl = '/test';
 
-      await middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await new Promise<void>((resolve) => {
+        mockNext.callsFake(() => resolve());
+        middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      });
 
       expect((mockRequest as Request).headers[X_MOBIFY_REQUEST_PROCESSOR_LOCAL]).to.equal('true');
       expect(mockNext.calledOnce).to.be.true;
+    });
+
+    it('forwards request processor errors via next', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mrt-processor-'));
+      const processorPath = path.join(tempDir, 'processor.mjs');
+      fs.writeFileSync(
+        processorPath,
+        "export function processRequest() { throw new Error('boom'); }",
+        'utf-8',
+      );
+
+      const middleware = createMRTRequestProcessorMiddleware(processorPath, []);
+
+      const testRequest = {
+        ...mockRequest,
+        path: '/test',
+      } as Request;
+
+      let nextStub: sinon.SinonStub | undefined;
+      await new Promise<void>((resolve) => {
+        nextStub = sinon.stub().callsFake(() => {
+          resolve();
+        });
+        middleware(testRequest, mockResponse as Response, nextStub as unknown as NextFunction);
+      });
+
+      if (!nextStub) {
+        throw new Error('Expected next to be called');
+      }
+      expect(nextStub.calledOnce).to.be.true;
+      expect(nextStub.getCall(0).args[0]).to.be.instanceOf(Error);
     });
   });
 
@@ -270,6 +379,88 @@ describe('middleware', () => {
 
       expect((mockRequest as Request).headers[X_MOBIFY_QUERYSTRING]).to.be.undefined;
       expect(mockNext.calledOnce).to.be.true;
+    });
+  });
+
+  describe('express integration', () => {
+    it('updates query from x-mobify-querystring header', async () => {
+      const app = express();
+      app.use(createMRTRequestProcessorMiddleware(undefined, []));
+      app.get('/test', (req, res) => {
+        res.json({
+          originalUrl: req.originalUrl,
+          query: req.query,
+          header: req.headers[X_MOBIFY_QUERYSTRING],
+        });
+      });
+
+      const {server, baseUrl} = await startServer(app);
+      try {
+        const response = await requestJson(baseUrl, '/test?foo=1', {
+          headers: {
+            [X_MOBIFY_QUERYSTRING]: 'bar=2',
+          },
+        });
+
+        expect(response.status).to.equal(200);
+        const body = response.body as {originalUrl: string; query: Record<string, string>; header?: string};
+        expect(body.originalUrl).to.equal('/test?bar=2');
+        expect(body.query).to.deep.equal({bar: '2'});
+        expect(body.header).to.be.undefined;
+      } finally {
+        server.close();
+      }
+    });
+
+    it('cleanup middleware updates query when request processor is not used', async () => {
+      const app = express();
+      app.use(createMRTCleanUpMiddleware());
+      app.get('/test', (req, res) => {
+        res.json({
+          originalUrl: req.originalUrl,
+          query: req.query,
+          header: req.headers[X_MOBIFY_QUERYSTRING],
+        });
+      });
+
+      const {server, baseUrl} = await startServer(app);
+      try {
+        const response = await requestJson(baseUrl, '/test?foo=1', {
+          headers: {
+            [X_MOBIFY_QUERYSTRING]: 'bar=2',
+          },
+        });
+
+        expect(response.status).to.equal(200);
+        const body = response.body as {originalUrl: string; query: Record<string, string>; header?: string};
+        expect(body.originalUrl).to.equal('/test?bar=2');
+        expect(body.query).to.deep.equal({bar: '2'});
+        expect(body.header).to.be.undefined;
+      } finally {
+        server.close();
+      }
+    });
+
+    it('serves static assets with MRT headers', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mrt-static-'));
+      const filePath = path.join(tempDir, 'test.txt');
+      fs.writeFileSync(filePath, 'hello', 'utf-8');
+
+      const app = express();
+      app.use('/static', createMRTStaticAssetServingMiddleware(tempDir));
+
+      const {server, baseUrl} = await startServer(app);
+      try {
+        const response = await requestText(baseUrl, '/static/test.txt');
+
+        expect(response.status).to.equal(200);
+        expect(response.body).to.equal('hello');
+        expect(response.headers['cache-control']).to.equal('max-age=0, nocache, nostore, must-revalidate');
+        expect(response.headers['content-type']).to.include('text/plain');
+        expect(response.headers.etag).to.exist;
+      } finally {
+        server.close();
+      }
     });
   });
 });
