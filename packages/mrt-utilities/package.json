@@ -115,6 +115,7 @@
     "eslint-plugin-header": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "express": "5.1.0",
+    "express4": "npm:express@4.21.2",
     "mocha": "catalog:",
     "prettier": "catalog:",
     "shx": "catalog:",
@@ -124,7 +125,7 @@
     "typescript-eslint": "catalog:"
   },
   "peerDependencies": {
-    "express": "5.1.0"
+    "express": "^4.0.0 || ^5.0.0"
   },
   "engines": {
     "node": ">=22.16.0"
