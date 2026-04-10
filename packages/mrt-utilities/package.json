@@ -79,9 +79,6 @@
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
     "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
-    "test:express5": "pnpm run test",
-    "test:express4": "NODE_OPTIONS=\"--require ./test/helpers/express4-alias.cjs\" pnpm run test",
-    "test:express:matrix": "pnpm run test:express5 && pnpm run test:express4",
     "test:watch": "mocha --watch \"test/**/*.test.ts\""
   },
   "dependencies": {
