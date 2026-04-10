@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
-- [#PR-XXXX](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/PR-XXXX) - Add Express 4 support, improve middleware error handling, and add dual-version Express test coverage.
+- [#334](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/334) - Add Express 4 support, improve middleware error handling, and add dual-version Express test coverage.
 
 ## 0.1.0
 
