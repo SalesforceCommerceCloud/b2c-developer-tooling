@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags, ux} from '@oclif/core';
-import {checkbox, confirm} from '@inquirer/prompts';
+import {checkbox, confirm, input} from '@inquirer/prompts';
 import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   type IdeType,
@@ -273,12 +273,17 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       }
     }
 
+    // Prompt for manual installation directory
+    let directory = this.flags.directory;
+    if (targetIdes.includes('manual') && !directory && !this.flags.force) {
+      directory = await input({
+        message: t('commands.setup.skills.manualDirectory', 'Installation directory:'),
+        default: '.agents/skills',
+      });
+    }
+
     // Show installation preview
-    const scope = this.flags.directory
-      ? `directory: ${this.flags.directory}`
-      : this.flags.global
-        ? 'global (user home)'
-        : 'project';
+    const scope = directory ? `directory: ${directory}` : this.flags.global ? 'global (user home)' : 'project';
     ux.stdout('');
     ux.stdout(
       t('commands.setup.skills.preview', 'Installing {{count}} skills to {{ides}} ({{scope}})', {
@@ -310,7 +315,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
           global: this.flags.global,
           update: this.flags.update,
           projectRoot: process.cwd(),
-          directory: this.flags.directory,
+          directory,
         });
       })
       .filter((p): p is Promise<InstallSkillsResult> => p !== null);
