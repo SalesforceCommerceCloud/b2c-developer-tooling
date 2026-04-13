@@ -77,6 +77,8 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     '<%= config.bin %> <%= command.id %> b2c --list',
     '<%= config.bin %> <%= command.id %> b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor',
     '<%= config.bin %> <%= command.id %> b2c --global --update --force',
+    '<%= config.bin %> <%= command.id %> b2c --ide agentforce-vibes',
+    '<%= config.bin %> <%= command.id %> b2c --ide manual --directory ./my-skills',
   ];
 
   static flags = {
@@ -91,9 +93,13 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       multiple: true,
     }),
     ide: Flags.string({
-      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual',
+      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual',
       options: ALL_IDE_TYPES,
       multiple: true,
+    }),
+    directory: Flags.string({
+      char: 'd',
+      description: 'Custom installation directory (overrides IDE default path)',
     }),
     global: Flags.boolean({
       char: 'g',
@@ -265,7 +271,11 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     }
 
     // Show installation preview
-    const scope = this.flags.global ? 'global (user home)' : 'project';
+    const scope = this.flags.directory
+      ? `directory: ${this.flags.directory}`
+      : this.flags.global
+        ? 'global (user home)'
+        : 'project';
     ux.stdout('');
     ux.stdout(
       t('commands.setup.skills.preview', 'Installing {{count}} skills to {{ides}} ({{scope}})', {
@@ -297,6 +307,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
           global: this.flags.global,
           update: this.flags.update,
           projectRoot: process.cwd(),
+          directory: this.flags.directory,
         });
       })
       .filter((p): p is Promise<InstallSkillsResult> => p !== null);

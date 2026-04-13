@@ -12,6 +12,19 @@ import type {IdeConfig, IdeType} from './types.js';
 const home = os.homedir();
 
 /**
+ * Get the Agentforce Vibes global skills directory based on platform.
+ */
+function getAgentforceVibesGlobalDir(): string {
+  const platform = process.platform;
+  if (platform === 'darwin') {
+    return path.join(home, 'Library', 'Application Support', 'Code', 'User', 'globalStorage');
+  } else if (platform === 'win32') {
+    return path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'Code', 'User', 'globalStorage');
+  }
+  return path.join(home, '.config', 'Code', 'User', 'globalStorage');
+}
+
+/**
  * IDE configurations with paths and detection logic.
  */
 export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
@@ -88,13 +101,26 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     },
     docsUrl: 'https://opencode.ai/',
   },
+  'agentforce-vibes': {
+    id: 'agentforce-vibes',
+    displayName: 'Agentforce Vibes',
+    paths: {
+      projectDir: '.a4drules/skills',
+      globalDir: getAgentforceVibesGlobalDir(),
+    },
+    detectInstalled: async () => {
+      // Check for the Agentforce extension's globalStorage entry
+      const globalStorageDir = getAgentforceVibesGlobalDir();
+      return fs.existsSync(path.join(globalStorageDir, 'salesforce.salesforcedx-einstein-gpt'));
+    },
+    docsUrl: 'https://developer.salesforce.com/docs/einstein/genai/guide/agentforce-in-ide.html',
+  },
   manual: {
     id: 'manual',
     displayName: 'Manual Installation',
     paths: {
-      // Manual mode uses same paths as Claude Code
-      projectDir: '.claude/skills',
-      globalDir: path.join(home, '.claude/skills'),
+      projectDir: '.agents/skills',
+      globalDir: path.join(home, '.agents/skills'),
     },
     detectInstalled: async () => {
       // Manual is always "available" as a fallback
@@ -106,7 +132,16 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
 /**
  * All supported IDE types in display order.
  */
-export const ALL_IDE_TYPES: IdeType[] = ['claude-code', 'cursor', 'windsurf', 'vscode', 'codex', 'opencode', 'manual'];
+export const ALL_IDE_TYPES: IdeType[] = [
+  'claude-code',
+  'cursor',
+  'windsurf',
+  'vscode',
+  'codex',
+  'opencode',
+  'agentforce-vibes',
+  'manual',
+];
 
 /**
  * Detect which IDEs are installed on the system.
@@ -143,8 +178,15 @@ export async function detectInstalledIdes(): Promise<IdeType[]> {
 export function getSkillInstallPath(
   ide: IdeType,
   skillName: string,
-  options: {global: boolean; projectRoot?: string},
+  options: {global: boolean; projectRoot?: string; directory?: string},
 ): string {
+  // Custom directory override — used as the base path directly
+  if (options.directory) {
+    const projectRoot = options.projectRoot || process.cwd();
+    const dir = path.isAbsolute(options.directory) ? options.directory : path.join(projectRoot, options.directory);
+    return path.join(dir, skillName);
+  }
+
   const config = IDE_CONFIGS[ide];
 
   if (options.global) {

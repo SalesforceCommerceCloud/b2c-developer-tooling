@@ -201,6 +201,34 @@ b2c setup skills b2c-cli --ide cursor --global --force
 
 See [Setup Commands](/cli/setup) for full CLI documentation.
 
+## Installation with Agentforce Vibes
+
+[Agentforce for VS Code](https://developer.salesforce.com/docs/einstein/genai/guide/agentforce-in-ide.html) (Agentforce Vibes) automatically detects skills placed in the `.a4drules/skills/` directory.
+
+### Using B2C CLI
+
+```bash
+# Install to project .a4drules/skills/ directory
+b2c setup skills b2c --ide agentforce-vibes
+b2c setup skills b2c-cli --ide agentforce-vibes
+
+# Install globally
+b2c setup skills b2c --ide agentforce-vibes --global
+```
+
+### Manual Setup
+
+Place skill directories in `.a4drules/skills/` (project) or your global storage directory:
+
+| Location | Scope |
+|----------|-------|
+| `.a4drules/skills/` | Project (recommended) |
+| `~/Library/Application Support/Code/User/globalStorage` | Global (macOS) |
+| `~/.config/Code/User/globalStorage` | Global (Linux) |
+| `%APPDATA%\Code\User\globalStorage` | Global (Windows) |
+
+When a global skill and project skill have the same name, the global skill takes precedence. Version control your project skills by committing `.a4drules/skills/` to your source repository so your team can share, review, and improve them together.
+
 ## Installation with Other IDEs
 
 The B2C skills follow the [Agent Skills](https://agentskills.io/home) standard and can be used with other AI-powered development tools.
@@ -253,7 +281,17 @@ Skills are installed to:
 
 ### Manual Installation
 
-For other AI-powered IDEs, download the skills zip files from the [latest GitHub release](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest):
+Use `--ide manual` to install to the default `.agents/skills/` directory, or specify a custom path with `--directory`:
+
+```bash
+# Install to .agents/skills/ (default for manual)
+b2c setup skills b2c --ide manual
+
+# Install to a custom directory
+b2c setup skills b2c --ide manual --directory ./my-skills
+```
+
+You can also download the skills zip files directly from the [latest GitHub release](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest):
 
 | Artifact | Contents |
 |----------|----------|
