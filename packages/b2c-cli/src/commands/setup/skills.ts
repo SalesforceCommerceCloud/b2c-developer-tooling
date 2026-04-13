@@ -224,12 +224,15 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
         return {};
       }
 
+      // Always include 'manual' as an option in the IDE list
+      const ideChoices: IdeType[] = detectedIdes.includes('manual') ? detectedIdes : [...detectedIdes, 'manual'];
+
       // Non-interactive: use all detected IDEs; Interactive: let user select
       targetIdes = this.flags.force
         ? detectedIdes
         : await checkbox({
             message: t('commands.setup.skills.selectIdes', 'Select target IDEs:'),
-            choices: detectedIdes.map((ide) => ({
+            choices: ideChoices.map((ide) => ({
               name: getIdeDisplayName(ide),
               value: ide,
             })),
