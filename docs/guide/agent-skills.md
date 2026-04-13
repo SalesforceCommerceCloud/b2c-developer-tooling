@@ -203,11 +203,14 @@ See [Setup Commands](/cli/setup) for full CLI documentation.
 
 ## Installation with Agentforce Vibes
 
-[Agentforce for VS Code](https://developer.salesforce.com/docs/einstein/genai/guide/agentforce-in-ide.html) (Agentforce Vibes) automatically detects skills placed in the `.a4drules/skills/` directory.
+[Skills in Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/skills.html) automatically detects skills placed in the `.a4drules/skills/` directory.
 
 ### Using B2C CLI
 
 ```bash
+# Autodetect
+b2c setup skills
+
 # Install to project .a4drules/skills/ directory
 b2c setup skills b2c --ide agentforce-vibes
 b2c setup skills b2c-cli --ide agentforce-vibes
