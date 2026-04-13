@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.14
+
+### Patch Changes
+
+- [`18f8d5c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18f8d5cc7cc4b5ab982a0ef8d4638f0a5728b86d) - Updated Agentforce Vibes skills documentation with correct link and autodetect example. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.13
 
 ### Patch Changes
