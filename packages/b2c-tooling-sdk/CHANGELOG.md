@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.3.1
+
+### Patch Changes
+
+- [`30de66b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/30de66bf59c250c5382a7427ba475049c68566cd) - Fix broken Agentforce skills documentation URL (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.3.0
 
 ### Minor Changes
