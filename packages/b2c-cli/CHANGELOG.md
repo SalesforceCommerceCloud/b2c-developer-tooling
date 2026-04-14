@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 1.3.1
+
+### Patch Changes
+
+- [`7333370`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7333370a750978a27d552b144914d8adc46a9097) - Improved skill trigger descriptions across all 37 B2C skills for better Claude Code skill invocation. Expanded eval sets from 5 to 10 queries per skill with realistic, organic test prompts. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.3.0
 
 ### Minor Changes
