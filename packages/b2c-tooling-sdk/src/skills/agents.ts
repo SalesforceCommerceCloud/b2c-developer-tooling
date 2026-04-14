@@ -113,7 +113,7 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
       const globalStorageDir = getAgentforceVibesGlobalDir();
       return fs.existsSync(path.join(globalStorageDir, 'salesforce.salesforcedx-einstein-gpt'));
     },
-    docsUrl: 'https://developer.salesforce.com/docs/einstein/genai/guide/agentforce-in-ide.html',
+    docsUrl: 'https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/skills.html',
   },
   manual: {
     id: 'manual',
