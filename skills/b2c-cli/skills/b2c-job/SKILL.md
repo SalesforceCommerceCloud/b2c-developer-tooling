@@ -38,24 +38,27 @@ Some system jobs (like search indexing) use non-standard request schemas. Use `-
 
 ```bash
 # run search index job for specific sites
-b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch","SiteGenesis"]}'
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":{"named_sites":["RefArch","SiteGenesis"]}}'
 
 # run search index job for a single site
-b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":{"named_sites":["RefArch"]}}'
 ```
 
 Note: `--body` and `-P` are mutually exclusive.
 
 ### Import Site Archives
 
-The `job import` command automatically waits for the import job to complete before returning. It does not use the `--wait` option.
+The `job import` command waits for the import job to complete by default.
 
 ```bash
-# import a local directory as a site archive
+# import a local directory as a site archive (waits for completion by default)
 b2c job import ./my-site-data
 
 # import a local zip file
 b2c job import ./export.zip
+
+# import and return immediately without waiting for completion
+b2c job import ./my-site-data --no-wait
 
 # keep the archive on the instance after import
 b2c job import ./my-site-data --keep-archive
@@ -158,8 +161,8 @@ b2c job search --json
 ### Wait for Job Completion
 
 ```bash
-# wait for a specific job execution to complete
-b2c job wait <execution-id>
+# wait for a specific job execution to complete (requires both job ID and execution ID)
+b2c job wait <job-id> <execution-id>
 ```
 
 ### More Commands
