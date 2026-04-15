@@ -72,8 +72,11 @@ b2c docs schema order
 # List all available schemas
 b2c docs schema --list
 
-# Output as JSON
-b2c docs schema catalog --json
+# Print the filesystem path to the schema file
+b2c docs schema catalog --path
+
+# Validate an XML file against a schema using xmllint
+xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 ```
 
 ## Common Classes
