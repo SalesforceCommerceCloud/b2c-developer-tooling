@@ -79,10 +79,9 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     }
 
     const parsed = dotenvParse(rawContent);
-    const allLocalVars = new Map(Object.entries(parsed));
 
     // Step 2: Filter out excluded prefixes
-    const localVars = filterByPrefix(allLocalVars, flags['exclude-prefix']);
+    const localVars = filterByPrefix(new Map(Object.entries(parsed)), flags['exclude-prefix']);
 
     // Step 3: Validate MRT target
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
@@ -106,16 +105,16 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
 
     // Step 4: Fetch current remote env vars
     this.requireMrtCredentials();
+    const {mrtOrigin: origin} = this.resolvedConfig.values;
+    const auth = this.getMrtAuth();
+
     ux.stdout(
       t('commands.mrt.env.var.push.fetching', 'Fetching remote env vars for {{project}}/{{environment}}...', {
         project,
         environment,
       }),
     );
-    const {variables} = await this.operations.listEnvVars(
-      {projectSlug: project, environment, origin: this.resolvedConfig.values.mrtOrigin},
-      this.getMrtAuth(),
-    );
+    const {variables} = await this.operations.listEnvVars({projectSlug: project, environment, origin}, auth);
     const remoteVars = new Map(variables.map((v) => [v.name, v.value]));
 
     // Step 5: Compute diff
@@ -153,10 +152,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     // Step 8: Push all variables in parallel, reporting per-variable results
     const results = await Promise.allSettled(
       toSync.map(({key, value}) =>
-        this.operations.setEnvVar(
-          {projectSlug: project, environment, key, value, origin: this.resolvedConfig.values.mrtOrigin},
-          this.getMrtAuth(),
-        ),
+        this.operations.setEnvVar({projectSlug: project, environment, key, value, origin}, auth),
       ),
     );
 
