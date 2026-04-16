@@ -119,15 +119,17 @@ describe('mrt env var push', () => {
     sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: [{name: 'PUBLIC__foo', value: 'bar'}]} as any);
+    const setBatchStub = sinon.stub().resolves(void 0);
     const setStub = sinon.stub().resolves(void 0);
-    command.operations = {...command.operations, listEnvVars: listStub, setEnvVar: setStub};
+    command.operations = {...command.operations, listEnvVars: listStub, setEnvVars: setBatchStub, setEnvVar: setStub};
 
     await command.run();
 
+    expect(setBatchStub.called).to.be.false;
     expect(setStub.called).to.be.false;
   });
 
-  it('calls setEnvVar for each changed variable when --yes is set', async () => {
+  it('calls setEnvVars (batch) for changed variables when --yes is set', async () => {
     const command = createCommand();
     stubParse(command, {file: '.env', 'exclude-prefix': ['MRT_'], yes: true});
     await command.init();
@@ -138,19 +140,21 @@ describe('mrt env var push', () => {
     sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: [{name: 'PUBLIC__foo', value: 'old-val'}]} as any);
+    const setBatchStub = sinon.stub().resolves(void 0);
     const setStub = sinon.stub().resolves(void 0);
-    command.operations = {...command.operations, listEnvVars: listStub, setEnvVar: setStub};
+    command.operations = {...command.operations, listEnvVars: listStub, setEnvVars: setBatchStub, setEnvVar: setStub};
 
     await command.run();
 
-    // Should have called setEnvVar twice: once for update, once for add
-    expect(setStub.callCount).to.equal(2);
-    const keys = setStub.getCalls().map((c: any) => c.args[0].key);
-    expect(keys).to.include('PUBLIC__foo');
-    expect(keys).to.include('PUBLIC__bar');
+    // Should use batch setEnvVars, not individual setEnvVar
+    expect(setBatchStub.calledOnce).to.be.true;
+    expect(setStub.called).to.be.false;
+    const vars = setBatchStub.firstCall.args[0].variables;
+    expect(vars).to.have.property('PUBLIC__foo', 'new-val');
+    expect(vars).to.have.property('PUBLIC__bar', 'added');
   });
 
-  it('does not call setEnvVar for excluded prefix variables', async () => {
+  it('does not call setEnvVars for excluded prefix variables', async () => {
     const command = createCommand();
     stubParse(command, {file: '.env', 'exclude-prefix': ['MRT_'], yes: true});
     await command.init();
@@ -161,17 +165,44 @@ describe('mrt env var push', () => {
     sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: []} as any);
+    const setBatchStub = sinon.stub().resolves(void 0);
     const setStub = sinon.stub().resolves(void 0);
-    command.operations = {...command.operations, listEnvVars: listStub, setEnvVar: setStub};
+    command.operations = {...command.operations, listEnvVars: listStub, setEnvVars: setBatchStub, setEnvVar: setStub};
 
     await command.run();
 
-    // MRT_PROJECT should be excluded; only PUBLIC__foo should be set
-    expect(setStub.callCount).to.equal(1);
-    expect(setStub.firstCall.args[0].key).to.equal('PUBLIC__foo');
+    // MRT_PROJECT should be excluded; only PUBLIC__foo should be set via batch
+    expect(setBatchStub.calledOnce).to.be.true;
+    expect(setStub.called).to.be.false;
+    const vars = setBatchStub.firstCall.args[0].variables;
+    expect(vars).to.have.property('PUBLIC__foo', 'bar');
+    expect(vars).to.not.have.property('MRT_PROJECT');
   });
 
-  it('reports per-variable failures and continues', async () => {
+  it('falls back to individual setEnvVar calls when setEnvVars batch fails', async () => {
+    const command = createCommand();
+    stubParse(command, {file: '.env', 'exclude-prefix': ['MRT_'], yes: true});
+    await command.init();
+
+    stubCommonAuth(command);
+    stubResolvedConfig(command);
+    stubEnvFile(command, 'GOOD_VAR=ok\nBAD_VAR=fail\n');
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'warn').returns(void 0);
+
+    const listStub = sinon.stub().resolves({variables: []} as any);
+    const setBatchStub = sinon.stub().rejects(new Error('batch API error'));
+    const setStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, listEnvVars: listStub, setEnvVars: setBatchStub, setEnvVar: setStub};
+
+    await command.run();
+
+    // Batch should be tried once, then fallback to individual calls
+    expect(setBatchStub.calledOnce).to.be.true;
+    expect(setStub.callCount).to.equal(2);
+  });
+
+  it('reports per-variable failures and continues when falling back from batch', async () => {
     const command = createCommand();
     stubParse(command, {file: '.env', 'exclude-prefix': ['MRT_'], yes: true});
     await command.init();
@@ -183,13 +214,14 @@ describe('mrt env var push', () => {
     const warnStub = sinon.stub(command, 'warn').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: []} as any);
+    const setBatchStub = sinon.stub().rejects(new Error('batch API error'));
     const setStub = sinon
       .stub()
       .onFirstCall()
       .resolves(void 0)
       .onSecondCall()
       .rejects(new Error('API error'));
-    command.operations = {...command.operations, listEnvVars: listStub, setEnvVar: setStub};
+    command.operations = {...command.operations, listEnvVars: listStub, setEnvVars: setBatchStub, setEnvVar: setStub};
 
     // Should not throw even if one var fails
     await command.run();
@@ -213,12 +245,14 @@ describe('mrt env var push', () => {
     sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: []} as any);
+    const setBatchStub = sinon.stub().resolves(void 0);
     const setStub = sinon.stub().resolves(void 0);
-    command.operations = {...command.operations, listEnvVars: listStub, setEnvVar: setStub};
+    command.operations = {...command.operations, listEnvVars: listStub, setEnvVars: setBatchStub, setEnvVar: setStub};
 
     // If prompt were called it would hang; --yes should skip it
     await command.run();
 
-    expect(setStub.calledOnce).to.be.true;
+    expect(setBatchStub.calledOnce).to.be.true;
+    expect(setStub.called).to.be.false;
   });
 });

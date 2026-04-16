@@ -5,11 +5,11 @@
  */
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
+import {parseEnv} from 'node:util';
 import {Flags, ux} from '@oclif/core';
 import {confirm} from '@inquirer/prompts';
-import {parse as dotenvParse} from 'dotenv';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {listEnvVars, setEnvVar} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {listEnvVars, setEnvVar, setEnvVars} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 import {filterByPrefix, computeEnvVarDiff, formatEnvVarDiffSummary} from '../../../../utils/mrt/env-var-diff.js';
 
@@ -59,6 +59,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
   protected operations = {
     listEnvVars,
     setEnvVar,
+    setEnvVars,
     readEnvFile: (path: string): string => readFileSync(path, 'utf8'),
   };
 
@@ -78,10 +79,13 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       throw error_;
     }
 
-    const parsed = dotenvParse(rawContent);
+    const parsed = parseEnv(rawContent);
 
     // Step 2: Filter out excluded prefixes
-    const localVars = filterByPrefix(new Map(Object.entries(parsed)), flags['exclude-prefix']);
+    const localVars = filterByPrefix(
+      new Map(Object.entries(parsed).filter((e): e is [string, string] => e[1] !== undefined)),
+      flags['exclude-prefix'],
+    );
 
     // Step 3: Validate MRT target
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
@@ -114,8 +118,11 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
         environment,
       }),
     );
-    const {variables} = await this.operations.listEnvVars({projectSlug: project, environment, origin}, auth);
-    const remoteVars = new Map(variables.map((v) => [v.name, v.value]));
+    const {variables: remoteVariables} = await this.operations.listEnvVars(
+      {projectSlug: project, environment, origin},
+      auth,
+    );
+    const remoteVars = new Map(remoteVariables.map((v) => [v.name, v.value]));
 
     // Step 5: Compute diff
     const diff = computeEnvVarDiff(localVars, remoteVars);
@@ -149,29 +156,46 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       }
     }
 
-    // Step 8: Push all variables in parallel, reporting per-variable results
-    const results = await Promise.allSettled(
-      toSync.map(({key, value}) =>
-        this.operations.setEnvVar({projectSlug: project, environment, key, value, origin}, auth),
-      ),
-    );
-
+    // Step 8: Push variables — try batch first, fall back to individual calls
     let pushed = 0;
     let failed = 0;
 
-    for (const [index, result] of results.entries()) {
-      const {key} = toSync[index];
-      if (result.status === 'fulfilled') {
+    const variables = Object.fromEntries(toSync.map(({key, value}) => [key, value]));
+    let batchSucceeded = false;
+
+    try {
+      await this.operations.setEnvVars({projectSlug: project, environment, variables, origin}, auth);
+      batchSucceeded = true;
+    } catch {
+      this.warn(t('commands.mrt.env.var.push.batchFailed', 'Batch push failed, retrying variables individually...'));
+    }
+
+    if (batchSucceeded) {
+      for (const {key} of toSync) {
         ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
-        pushed++;
-      } else {
-        this.warn(
-          t('commands.mrt.env.var.push.varFailed', '  ✗ {{key}}: {{message}}', {
-            key,
-            message: (result.reason as Error).message,
-          }),
-        );
-        failed++;
+      }
+      pushed = toSync.length;
+    } else {
+      const results = await Promise.allSettled(
+        toSync.map(({key, value}) =>
+          this.operations.setEnvVar({projectSlug: project, environment, key, value, origin}, auth),
+        ),
+      );
+
+      for (const [index, result] of results.entries()) {
+        const {key} = toSync[index];
+        if (result.status === 'fulfilled') {
+          ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
+          pushed++;
+        } else {
+          this.warn(
+            t('commands.mrt.env.var.push.varFailed', '  ✗ {{key}}: {{message}}', {
+              key,
+              message: (result.reason as Error).message,
+            }),
+          );
+          failed++;
+        }
       }
     }
 
