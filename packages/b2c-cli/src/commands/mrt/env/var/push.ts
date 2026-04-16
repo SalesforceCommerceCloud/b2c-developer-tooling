@@ -160,26 +160,19 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     let pushed = 0;
     let failed = 0;
 
-    const variables = Object.fromEntries(toSync.map(({key, value}) => [key, value]));
-    let batchSucceeded = false;
+    const baseParams = {projectSlug: project, environment, origin};
 
     try {
-      await this.operations.setEnvVars({projectSlug: project, environment, variables, origin}, auth);
-      batchSucceeded = true;
-    } catch {
-      this.warn(t('commands.mrt.env.var.push.batchFailed', 'Batch push failed, retrying variables individually...'));
-    }
-
-    if (batchSucceeded) {
+      const variables = Object.fromEntries(toSync.map(({key, value}) => [key, value]));
+      await this.operations.setEnvVars({...baseParams, variables}, auth);
       for (const {key} of toSync) {
         ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
       }
       pushed = toSync.length;
-    } else {
+    } catch {
+      this.warn(t('commands.mrt.env.var.push.batchFailed', 'Batch push failed, retrying variables individually...'));
       const results = await Promise.allSettled(
-        toSync.map(({key, value}) =>
-          this.operations.setEnvVar({projectSlug: project, environment, key, value, origin}, auth),
-        ),
+        toSync.map(({key, value}) => this.operations.setEnvVar({...baseParams, key, value}, auth)),
       );
 
       for (const [index, result] of results.entries()) {
