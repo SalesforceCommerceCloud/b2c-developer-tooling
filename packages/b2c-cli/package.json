@@ -22,7 +22,6 @@
     "@oclif/plugin-warn-if-update-available": "3.1.52",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "cliui": "catalog:",
-    "dotenv": "17.2.2",
     "glob": "catalog:",
     "marked": "15.0.12",
     "marked-terminal": "7.3.0",
