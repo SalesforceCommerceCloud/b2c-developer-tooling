@@ -5,7 +5,7 @@
  */
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import MrtEnvVarPush from '../../../../../src/commands/mrt/env/var/push.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../../helpers/stub-parse.js';
@@ -16,6 +16,7 @@ describe('mrt env var push', () => {
   beforeEach(async () => {
     isolateConfig();
     config = await Config.load();
+    sinon.stub(ux, 'stdout');
   });
 
   afterEach(() => {
@@ -116,7 +117,6 @@ describe('mrt env var push', () => {
     stubCommonAuth(command);
     stubResolvedConfig(command);
     stubEnvFile(command, 'PUBLIC__foo=bar\n');
-    sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: [{name: 'PUBLIC__foo', value: 'bar'}]} as any);
     const setBatchStub = sinon.stub().resolves(void 0);
@@ -137,7 +137,6 @@ describe('mrt env var push', () => {
     stubCommonAuth(command);
     stubResolvedConfig(command);
     stubEnvFile(command, 'PUBLIC__foo=new-val\nPUBLIC__bar=added\n');
-    sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: [{name: 'PUBLIC__foo', value: 'old-val'}]} as any);
     const setBatchStub = sinon.stub().resolves(void 0);
@@ -162,7 +161,6 @@ describe('mrt env var push', () => {
     stubCommonAuth(command);
     stubResolvedConfig(command);
     stubEnvFile(command, 'PUBLIC__foo=bar\nMRT_PROJECT=my-project\n');
-    sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: []} as any);
     const setBatchStub = sinon.stub().resolves(void 0);
@@ -187,7 +185,7 @@ describe('mrt env var push', () => {
     stubCommonAuth(command);
     stubResolvedConfig(command);
     stubEnvFile(command, 'GOOD_VAR=ok\nBAD_VAR=fail\n');
-    sinon.stub(command, 'log').returns(void 0);
+
     sinon.stub(command, 'warn').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: []} as any);
@@ -210,7 +208,6 @@ describe('mrt env var push', () => {
     stubCommonAuth(command);
     stubResolvedConfig(command);
     stubEnvFile(command, 'GOOD_VAR=ok\nBAD_VAR=fail\n');
-    const logStub = sinon.stub(command, 'log').returns(void 0);
     const warnStub = sinon.stub(command, 'warn').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: []} as any);
@@ -229,9 +226,7 @@ describe('mrt env var push', () => {
     expect(setStub.callCount).to.equal(2);
     // Failure should be logged as a warning
     const warnMessages = warnStub.getCalls().map((c: any) => c.args[0]);
-    const logMessages = logStub.getCalls().map((c: any) => c.args[0]);
-    const allMessages = [...warnMessages, ...logMessages].join(' ');
-    expect(allMessages).to.match(/fail|error/i);
+    expect(warnMessages.join(' ')).to.match(/fail|error/i);
   });
 
   it('skips confirmation prompt when --yes flag is set', async () => {
@@ -242,7 +237,6 @@ describe('mrt env var push', () => {
     stubCommonAuth(command);
     stubResolvedConfig(command);
     stubEnvFile(command, 'NEW_VAR=value\n');
-    sinon.stub(command, 'log').returns(void 0);
 
     const listStub = sinon.stub().resolves({variables: []} as any);
     const setBatchStub = sinon.stub().resolves(void 0);
