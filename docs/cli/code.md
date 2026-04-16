@@ -113,7 +113,8 @@ In addition to [global flags](./index#global-flags):
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--reload`, `-r` | Reload (re-activate) code version after deploy | `false` |
+| `--activate`, `-a` | Activate code version after deploy | `false` |
+| `--reload`, `-r` | Reload (toggle activation to force reload) code version after deploy | `false` |
 | `--delete` | Delete existing cartridges before upload | `false` |
 | `--cartridge`, `-c` | Include specific cartridge(s) (can be repeated) | |
 | `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (can be repeated) | |
@@ -127,8 +128,8 @@ b2c code deploy --server my-sandbox.demandware.net --code-version v1
 # Deploy from a specific directory
 b2c code deploy ./my-project --server my-sandbox.demandware.net --code-version v1
 
-# Deploy and reload the code version
-b2c code deploy --reload
+# Deploy and activate the code version
+b2c code deploy --activate
 
 # Deploy specific cartridges only
 b2c code deploy -c app_storefront_base -c plugin_applepay
@@ -139,8 +140,8 @@ b2c code deploy -x test_cartridge -x int_debug
 # Delete existing cartridges before upload
 b2c code deploy --delete
 
-# Delete and reload
-b2c code deploy --delete --reload
+# Delete and activate
+b2c code deploy --delete --activate
 
 # Using environment variables
 export SFCC_SERVER=my-sandbox.demandware.net

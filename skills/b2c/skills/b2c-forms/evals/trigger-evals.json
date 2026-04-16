@@ -1,7 +1,12 @@
 [
-  {"query": "How do I create a form XML definition with field validation in B2C Commerce? I need mandatory fields with regexp patterns and error messages.", "should_trigger": true},
-  {"query": "I'm building a profile edit form in SFRA. How do I use server.forms.getForm to prepopulate the form and handle the POST submission with CSRF protection?", "should_trigger": true},
-  {"query": "What are the available field types in B2C form XML definitions? I need to add a date field and a boolean checkbox to my checkout form.", "should_trigger": true},
-  {"query": "How do I add custom form fields to the Business Manager using form extensions in bm_extensions.xml?", "should_trigger": false},
-  {"query": "I need to validate an address input on the client side using JavaScript before the AJAX submission in my SFRA template.", "should_trigger": false}
+  {"query": "I'm adding a gift message option to our checkout. I need a form where the customer can enter a recipient name, a short message (max 200 chars), and check a box for gift wrapping. How do I set up the form definition and validation in SFRA?", "should_trigger": true},
+  {"query": "I'm building a profile edit page where the form should be prepopulated with the customer's current info. After they submit, I need to validate server-side and show errors inline if anything's wrong. What's the SFRA pattern for this?", "should_trigger": true},
+  {"query": "Our registration form isn't showing validation errors when a user submits with a bad email format. The form XML has a regexp pattern but the error message never appears in the template. What am I missing?", "should_trigger": true},
+  {"query": "I need to build a multi-step form for a custom product configurator — step 1 collects dimensions, step 2 collects material choices, step 3 shows a summary. Each step should validate before moving on, and the final submit needs CSRF protection. How do I wire this up in SFRA?", "should_trigger": true},
+  {"query": "I'm creating a 'contact us' form with name, email, subject dropdown, and a textarea for the message. I need to define it in the form XML, handle the POST in a controller, validate required fields, and then render a success message. Full walkthrough please.", "should_trigger": true},
+  {"query": "My form has a dropdown field for country selection that should dynamically update the state/province options. I've got the form XML with both fields defined but I'm not sure how to handle the dependent field population in SFRA — do I use server.forms.getForm() twice or is there an AJAX pattern?", "should_trigger": true},
+  {"query": "I need to add a custom page to Business Manager where admins can configure feature flags. How do I set that up with bm_extensions.xml?", "should_trigger": false},
+  {"query": "I want to add client-side JavaScript validation to our address form so it checks the zip code format before the user submits.", "should_trigger": false},
+  {"query": "How do I create content slot configuration attributes in Page Designer so a marketer can enter a title and description for a banner component?", "should_trigger": false},
+  {"query": "I'm building a React form component for our headless storefront that collects shipping info. What's the best library for form state and validation — Formik or React Hook Form?", "should_trigger": false}
 ]

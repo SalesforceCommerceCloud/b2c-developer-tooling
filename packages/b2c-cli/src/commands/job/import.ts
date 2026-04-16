@@ -39,6 +39,12 @@ export default class JobImport extends JobCommand<typeof JobImport> {
 
   static flags = {
     ...JobCommand.baseFlags,
+    wait: Flags.boolean({
+      char: 'w',
+      description: 'Wait for import job to complete',
+      default: true,
+      allowNo: true,
+    }),
     'keep-archive': Flags.boolean({
       char: 'k',
       description: 'Keep archive on instance after import',
@@ -52,6 +58,11 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     timeout: Flags.integer({
       char: 't',
       description: 'Timeout in seconds (default: no timeout)',
+    }),
+    'poll-interval': Flags.integer({
+      description: 'Polling interval in seconds when using --wait',
+      default: 3,
+      dependsOn: ['wait'],
     }),
     'show-log': Flags.boolean({
       description: 'Show job log on failure',
@@ -68,9 +79,26 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     this.requireWebDavCredentials();
 
     const {target} = this.args;
-    const {'keep-archive': keepArchive, remote, timeout, 'show-log': showLog = true} = this.flags;
+    const {
+      wait,
+      'keep-archive': keepArchive,
+      remote,
+      timeout,
+      'poll-interval': pollInterval,
+      'show-log': showLog = true,
+    } = this.flags;
 
     const hostname = this.resolvedConfig.values.hostname!;
+
+    // Safety evaluation — check rules for import job before executing.
+    // Command-level rules are already evaluated generically in BaseCommand.init().
+    const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId: 'sfcc-site-archive-import'});
+    if (jobEvaluation.action === 'block') {
+      this.error(jobEvaluation.reason, {exit: 1});
+    }
+    if (jobEvaluation.action === 'confirm') {
+      await this.confirmOrBlock(jobEvaluation);
+    }
 
     // Create lifecycle context
     const context = this.createContext('job:import', {
@@ -95,6 +123,14 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       } as unknown as SiteArchiveImportResult;
     }
 
+    // After safety evaluation passes, temporarily allow WebDAV operations
+    // that are part of the import flow (upload PUT, cleanup DELETE on Impex paths).
+    const cleanupSafetyRule = this.safetyGuard.temporarilyAddRule({
+      method: 'DELETE',
+      path: '**/Impex/**',
+      action: 'allow',
+    });
+
     if (remote) {
       this.log(
         t('commands.job.import.importingRemote', 'Importing {{target}} from {{hostname}}...', {
@@ -116,8 +152,10 @@ export default class JobImport extends JobCommand<typeof JobImport> {
 
       const result = await this.operations.siteArchiveImport(this.instance, importTarget, {
         keepArchive,
+        wait,
         waitOptions: {
           timeoutSeconds: timeout,
+          pollIntervalSeconds: pollInterval,
           onPoll: (info) => {
             if (!this.jsonEnabled()) {
               this.log(
@@ -131,13 +169,22 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         },
       });
 
-      const durationSec = result.execution.duration ? (result.execution.duration / 1000).toFixed(1) : 'N/A';
-      this.log(
-        t('commands.job.import.completed', 'Import completed: {{status}} (duration: {{duration}}s)', {
-          status: result.execution.exit_status?.code || result.execution.execution_status,
-          duration: durationSec,
-        }),
-      );
+      if (wait) {
+        const durationSec = result.execution.duration ? (result.execution.duration / 1000).toFixed(1) : 'N/A';
+        this.log(
+          t('commands.job.import.completed', 'Import completed: {{status}} (duration: {{duration}}s)', {
+            status: result.execution.exit_status?.code || result.execution.execution_status,
+            duration: durationSec,
+          }),
+        );
+      } else {
+        this.log(
+          t('commands.job.import.started', 'Import job started: {{executionId}} (status: {{status}})', {
+            executionId: result.execution.id,
+            status: result.execution.execution_status,
+          }),
+        );
+      }
 
       if (result.archiveKept) {
         this.log(
@@ -182,6 +229,8 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         );
       }
       throw error;
+    } finally {
+      cleanupSafetyRule();
     }
   }
 }

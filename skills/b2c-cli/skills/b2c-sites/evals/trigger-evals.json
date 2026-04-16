@@ -1,7 +1,12 @@
 [
-  {"query": "How do I get a list of all the storefront sites on my B2C sandbox?", "should_trigger": true},
-  {"query": "I need to find the site IDs configured on my instance so I can use them in an import command. What's the b2c command for that?", "should_trigger": true},
-  {"query": "Can I check which sites are online vs offline on my-sandbox.demandware.net using the CLI? I want JSON output for a script.", "should_trigger": true},
-  {"query": "How do I create a new storefront site on my B2C Commerce instance from scratch?", "should_trigger": false},
-  {"query": "I need to configure site preferences for RefArch. What XML format should I use for preferences.xml?", "should_trigger": false}
+  {"query": "I'm writing a deployment script and I need to pull the list of site IDs from our sandbox programmatically. I want the output as JSON so I can parse it with jq and feed the IDs into our import step.", "should_trigger": true},
+  {"query": "We just deployed a new cartridge called plugin_loyalty and I need to add it to the RefArch site's cartridge path, right after app_storefront_base. How do I do that without messing up the existing order?", "should_trigger": true},
+  {"query": "I'm trying to figure out which of our storefronts are actually online right now on the staging instance. Is there a quick way to check their status from the terminal?", "should_trigger": true},
+  {"query": "I need to verify that the cartridge path on our production instance matches what we have configured in our deployment manifest. How do I pull down the current cartridge path for a specific site?", "should_trigger": true},
+  {"query": "We're decommissioning two sites from our instance and I need to first check all the site IDs and their statuses before we start the removal process. Can I get a table view of everything from the CLI?", "should_trigger": true},
+  {"query": "Our deployment pipeline needs to reorder the cartridge path so that int_newpayment comes before int_oldpayment for the SiteGenesis site. I want to script this so it runs after every code deploy.", "should_trigger": true},
+  {"query": "I need to set up the XML for a new site preference that controls whether our loyalty feature is enabled. What's the metadata format for preferences.xml?", "should_trigger": false},
+  {"query": "How do I create a brand new storefront site in Business Manager with its own catalog and price book?", "should_trigger": false},
+  {"query": "I need to push my cartridge code to the sandbox after making changes to my controllers. What's the deploy command?", "should_trigger": false},
+  {"query": "I want to import a site archive with all the metadata and preferences onto a fresh sandbox. How do I structure the import directory?", "should_trigger": false}
 ]

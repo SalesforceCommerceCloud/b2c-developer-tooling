@@ -1,7 +1,12 @@
 [
-  {"query": "I need to pull sales analytics data for January from our production tenant abcd_prd. How do I run the sales-analytics report with b2c cip?", "should_trigger": true},
-  {"query": "What tables are available in CIP? I want to discover the aggregate tables and then run a custom SQL query against ccdw_aggr_sales_summary.", "should_trigger": true},
-  {"query": "How do I get search query performance metrics from Commerce Intelligence? I want to see top search terms and their conversion rates for our RefArch site.", "should_trigger": true},
-  {"query": "I need to export Page Designer content from the SharedLibrary. How do I list all pages using the b2c CLI?", "should_trigger": false},
-  {"query": "How do I set up OAuth client credentials in dw.json for the b2c CLI? My client-id and client-secret aren't being picked up.", "should_trigger": false}
+  {"query": "My manager wants a report on our January sales numbers from the production instance. I need to pull revenue and order count data broken down by day. How do I get this?", "should_trigger": true},
+  {"query": "I want to see what people are searching for on our storefront — top search terms and their conversion rates. Is there a way to pull search analytics from our commerce data?", "should_trigger": true},
+  {"query": "I need to run a custom SQL query against our commerce analytics data to calculate average order value by product category for Q4. What data tables are available and how do I query them?", "should_trigger": true},
+  {"query": "We're preparing for a quarterly business review and I need to export our key performance metrics — conversion rate, average basket size, and bounce rate — into a CSV for the last 90 days. How can I pull that programmatically?", "should_trigger": true},
+  {"query": "Our marketing team wants to understand which product categories are trending week-over-week. I need to query the analytics data to compare units sold and page views across categories for the past 6 weeks.", "should_trigger": true},
+  {"query": "I'm investigating a drop in checkout completion rate that started last Tuesday. I need to pull funnel metrics — sessions, add-to-carts, checkout starts, and orders — broken down hourly for the past 10 days so I can pinpoint when it changed.", "should_trigger": true},
+  {"query": "I need to export Page Designer content pages from our site library. How do I list and export them?", "should_trigger": false},
+  {"query": "My CLI isn't picking up the client credentials from dw.json. How do I debug the OAuth configuration?", "should_trigger": false},
+  {"query": "I need to query our product catalog to find all products in the 'electronics' category that have inventory below 10 units. Is there a way to search products via the API?", "should_trigger": false},
+  {"query": "How do I write a pipeline script that reads product data from the catalog and transforms it for an external feed?", "should_trigger": false}
 ]

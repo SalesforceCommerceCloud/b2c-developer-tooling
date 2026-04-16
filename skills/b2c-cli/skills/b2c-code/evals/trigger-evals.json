@@ -1,7 +1,12 @@
 [
-  {"query": "How do I deploy only app_storefront_base and plugin_applepay cartridges to my sandbox? I want to delete existing cartridges first and reload the code version.", "should_trigger": true},
-  {"query": "I want to watch for file changes during development and auto-upload to my instance. How does b2c code watch work?", "should_trigger": true},
-  {"query": "How do I list all code versions on my instance and activate a specific one? I also need to delete an old code version.", "should_trigger": true},
-  {"query": "I need to upload a site import archive to the instance via WebDAV. What's the command for that?", "should_trigger": false},
-  {"query": "My ISML templates have a bug where isprint is encoding HTML. How do I fix the encoding attribute in my cartridge templates?", "should_trigger": false}
+  {"query": "How do I deploy only app_storefront_base and plugin_applepay cartridges to my sandbox? I want to clean out the existing code version first.", "should_trigger": true},
+  {"query": "I want my local changes to auto-upload to the instance whenever I save a file. How do I set up file watching for development?", "should_trigger": true},
+  {"query": "How do I list all code versions on my instance and activate a specific one? I also need to delete an old version that's no longer used.", "should_trigger": true},
+  {"query": "I just finished building a new cartridge and need to push it to my sandbox for testing. What's the fastest way?", "should_trigger": true},
+  {"query": "Our release process requires deploying cartridges to staging, activating the new version, then verifying. Walk me through that workflow.", "should_trigger": true},
+  {"query": "I have a monorepo with multiple cartridges. How do I deploy a subset of them without uploading everything?", "should_trigger": true},
+  {"query": "I need to upload a site import archive to the IMPEX directory on my instance. What's the right approach?", "should_trigger": false},
+  {"query": "My ISML templates have a bug where isprint is double-encoding HTML entities. How do I fix the encoding attribute?", "should_trigger": false},
+  {"query": "How do I tail the error logs on my sandbox to debug a 500 error on the storefront?", "should_trigger": false},
+  {"query": "I need to run a site import job after uploading my data archive. How do I trigger the import?", "should_trigger": false}
 ]

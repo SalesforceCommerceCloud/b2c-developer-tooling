@@ -1,7 +1,12 @@
 [
-  {"query": "I need to purge the CDN cache for our storefront after a product data update. The zone is production-us and tenant is zzxy_prd.", "should_trigger": true},
-  {"query": "How do I add a custom SSL certificate to our eCDN zone? We have the cert.pem and key.pem files ready.", "should_trigger": true},
-  {"query": "Can you show me how to set up WAF rules and rate limiting on our B2C Commerce CDN zone to block bot traffic?", "should_trigger": true},
-  {"query": "How do I configure a CDN like Cloudflare in front of my Node.js Express application?", "should_trigger": false},
-  {"query": "I need to set up caching headers in my SFCC controller response so the browser caches the page for 1 hour.", "should_trigger": false}
+  {"query": "I need to purge the CDN cache for our storefront after a big product data update. How do I clear it for just the production zone?", "should_trigger": true},
+  {"query": "How do I add a custom SSL certificate to our eCDN zone? We have the cert and key PEM files ready to upload.", "should_trigger": true},
+  {"query": "We're getting hit by bots on our storefront. How do I set up WAF rules and rate limiting on the CDN to block them?", "should_trigger": true},
+  {"query": "I need to set up logpush so our CDN access logs go to our S3 bucket for analysis. How do I configure that?", "should_trigger": true},
+  {"query": "How do I configure MRT routing rules on the eCDN zone to route specific paths to our headless application?", "should_trigger": true},
+  {"query": "I want to enable Page Shield on our storefront zone to monitor third-party scripts and detect potential supply chain attacks.", "should_trigger": true},
+  {"query": "How do I configure a standalone Cloudflare CDN in front of my Node.js Express application?", "should_trigger": false},
+  {"query": "I need to set Cache-Control headers in my B2C controller response so the browser caches product pages for one hour.", "should_trigger": false},
+  {"query": "How do I deploy cartridges to my sandbox and activate the code version?", "should_trigger": false},
+  {"query": "I want to configure a reverse proxy with nginx to sit in front of my Commerce Cloud instance.", "should_trigger": false}
 ]

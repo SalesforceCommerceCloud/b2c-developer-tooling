@@ -1,7 +1,12 @@
 [
-  {"query": "I need to create a Custom SCAPI endpoint with a schema.yaml and api.json. How do I structure the rest-apis folder in my cartridge?", "should_trigger": true},
-  {"query": "My custom API returns 404 after deployment. How do I check registration status and debug why the endpoint isn't appearing?", "should_trigger": true},
-  {"query": "How do I use RESTResponseMgr to return a success response from my custom API script, and what OAuth scopes do I need for a shopper-facing endpoint?", "should_trigger": true},
-  {"query": "How do I call an external REST API from a B2C Commerce script using LocalServiceRegistry?", "should_trigger": false},
-  {"query": "I need to set up OCAPI permissions for the Data API to allow product imports from an external system.", "should_trigger": false}
+  {"query": "I need to create a REST endpoint that our mobile app can call to get personalized product recommendations. The endpoint should accept a customer ID and return a JSON array. How do I set up the cartridge folder structure with the api.json and schema files?", "should_trigger": true},
+  {"query": "My custom API endpoint returns 404 after deploying the cartridge. I've checked the code version is active and the cartridge is on the path. How do I verify the endpoint is registered and debug why it's not being found?", "should_trigger": true},
+  {"query": "I'm writing the OpenAPI 3.0 schema.yaml for my custom endpoint. It needs to accept a JSON body with an array of product IDs and return enriched product data. What are the supported schema features and any limitations I should know about?", "should_trigger": true},
+  {"query": "Our headless storefront needs a custom endpoint that combines data from multiple system objects into a single response. How do I use the script context in a custom API to access things like ProductMgr and CustomerMgr, and what's the right way to return the response?", "should_trigger": true},
+  {"query": "I need to set up OAuth scopes for my custom API so that only authenticated shoppers can call it, not guest users. How do I configure the scope in SLAS and reference it in my api.json?", "should_trigger": true},
+  {"query": "We're migrating from OCAPI to headless and need to replicate three custom OCAPI endpoints as custom SCAPI endpoints. What's the mapping between OCAPI hook patterns and the custom API script approach?", "should_trigger": true},
+  {"query": "How do I call an external payment gateway API from my B2C Commerce script? I need to set up a service with credentials and make an HTTP POST with a JSON body.", "should_trigger": false},
+  {"query": "I need to configure OCAPI permissions so our OMS can read and update orders via the Data API. Where do I set up the client ID permissions in Business Manager?", "should_trigger": false},
+  {"query": "How do I create a controller endpoint on the storefront that returns JSON for an AJAX autocomplete search? It needs to handle GET requests with a query parameter.", "should_trigger": false},
+  {"query": "I want to add a typed API client to the b2c-tooling-sdk that wraps the Shopper Search API. How do I generate types from the OpenAPI spec and set up the client factory?", "should_trigger": false}
 ]

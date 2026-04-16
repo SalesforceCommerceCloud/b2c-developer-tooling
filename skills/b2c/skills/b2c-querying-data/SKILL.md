@@ -1,6 +1,6 @@
 ---
 name: b2c-querying-data
-description: Best practices for querying products, orders, customers, and system objects in B2C Commerce. Use when writing product searches, order queries, customer/profile lookups, replacing database-intensive APIs, improving search performance, or diagnosing slow category/search pages. Covers ProductSearchModel, OrderMgr, CustomerMgr, SystemObjectMgr, index-friendly vs database-intensive APIs, and query performance pitfalls. For order lifecycle and status management, use b2c-ordering instead. For custom object CRUD, use b2c-custom-objects instead.
+description: Write efficient data queries in B2C Commerce for products, customers, and orders. Use this skill whenever the user needs to search products on a storefront page, look up customer profiles, query orders, paginate search results, or fix slow category pages. Also use when they ask about performance problems with data access, replacing database-intensive APIs with index-backed alternatives, or choosing between search vs query methods — even if they just say "my category page is slow" or "how do I find customers by email".
 ---
 
 # Querying Data in B2C Commerce

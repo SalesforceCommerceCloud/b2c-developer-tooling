@@ -1,6 +1,6 @@
 ---
 name: b2c-code
-description: Deploy and manage code versions/cartridges on B2C Commerce instances/sandboxes with the b2c cli. Always reference when using the CLI to upload cartridges, deploy code, activate code versions, manage code versions, or watch for file changes during development.
+description: Deploy cartridge code and manage code versions on B2C Commerce instances. Use this skill whenever the user needs to upload cartridges to a sandbox, activate or delete code versions, watch for local file changes during development, or deploy a subset of cartridges. Also use when pushing code to an instance or setting up a dev workflow with live reload -- even if they just say 'push my code to the sandbox' or 'how do I activate the new version'.
 ---
 
 # B2C Code Skill

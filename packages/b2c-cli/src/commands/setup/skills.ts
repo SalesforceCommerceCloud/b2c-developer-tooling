@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags, ux} from '@oclif/core';
-import {checkbox, confirm} from '@inquirer/prompts';
+import {checkbox, confirm, input} from '@inquirer/prompts';
 import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   type IdeType,
@@ -77,6 +77,8 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     '<%= config.bin %> <%= command.id %> b2c --list',
     '<%= config.bin %> <%= command.id %> b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor',
     '<%= config.bin %> <%= command.id %> b2c --global --update --force',
+    '<%= config.bin %> <%= command.id %> b2c --ide agentforce-vibes',
+    '<%= config.bin %> <%= command.id %> b2c --ide manual --directory ./my-skills',
   ];
 
   static flags = {
@@ -91,9 +93,13 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       multiple: true,
     }),
     ide: Flags.string({
-      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual',
+      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual',
       options: ALL_IDE_TYPES,
       multiple: true,
+    }),
+    directory: Flags.string({
+      char: 'd',
+      description: 'Custom installation directory (overrides IDE default path)',
     }),
     global: Flags.boolean({
       char: 'g',
@@ -218,12 +224,15 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
         return {};
       }
 
+      // Always include 'manual' as an option in the IDE list
+      const ideChoices: IdeType[] = detectedIdes.includes('manual') ? detectedIdes : [...detectedIdes, 'manual'];
+
       // Non-interactive: use all detected IDEs; Interactive: let user select
       targetIdes = this.flags.force
         ? detectedIdes
         : await checkbox({
             message: t('commands.setup.skills.selectIdes', 'Select target IDEs:'),
-            choices: detectedIdes.map((ide) => ({
+            choices: ideChoices.map((ide) => ({
               name: getIdeDisplayName(ide),
               value: ide,
             })),
@@ -264,8 +273,17 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       }
     }
 
+    // Prompt for manual installation directory
+    let directory = this.flags.directory;
+    if (targetIdes.includes('manual') && !directory && !this.flags.force) {
+      directory = await input({
+        message: t('commands.setup.skills.manualDirectory', 'Installation directory:'),
+        default: '.agents/skills',
+      });
+    }
+
     // Show installation preview
-    const scope = this.flags.global ? 'global (user home)' : 'project';
+    const scope = directory ? `directory: ${directory}` : this.flags.global ? 'global (user home)' : 'project';
     ux.stdout('');
     ux.stdout(
       t('commands.setup.skills.preview', 'Installing {{count}} skills to {{ides}} ({{scope}})', {
@@ -297,6 +315,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
           global: this.flags.global,
           update: this.flags.update,
           projectRoot: process.cwd(),
+          directory,
         });
       })
       .filter((p): p is Promise<InstallSkillsResult> => p !== null);

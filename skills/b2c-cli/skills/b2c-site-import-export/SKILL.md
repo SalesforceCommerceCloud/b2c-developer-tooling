@@ -1,6 +1,6 @@
 ---
 name: b2c-site-import-export
-description: Work with (B2C/SFCC/Demandware) site archive import archives and metadata XML patterns with the b2c cli. Always reference when using the CLI to work with site archive imports, add custom attributes, create system object extensions, configure site preferences, or understand import/export XML schemas.
+description: Import and export site archives with metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import site data, write metadata XML for custom attributes on products/orders/customers, define custom object types, configure site preferences via import, or work with site archive directory structure and IMPEX XML formats. Also use when the user asks about system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml, or any site archive import/export workflow — even if they just say they need to "push metadata" or "add a field to products".
 ---
 
 # Site Import/Export Skill
@@ -14,11 +14,11 @@ Use the `b2c` CLI plugin to import and export site archives on Salesforce B2C Co
 ### Import Local Directory
 
 ```bash
-# Import a local directory as a site archive
+# Import a local directory as a site archive (waits for completion by default)
 b2c job import ./my-site-data
 
-# Import and wait for completion
-b2c job import ./my-site-data --wait
+# Import and return immediately without waiting
+b2c job import ./my-site-data --no-wait
 
 # Import a local zip file
 b2c job import ./export.zip
@@ -27,7 +27,7 @@ b2c job import ./export.zip
 b2c job import ./my-site-data --keep-archive
 
 # Show job log if the import fails
-b2c job import ./my-site-data --wait --show-log
+b2c job import ./my-site-data --show-log
 ```
 
 ### Import Remote Archive
@@ -40,11 +40,11 @@ b2c job import existing-archive.zip --remote
 ## Export Commands
 
 ```bash
-# Export site data
-b2c job export
+# Export global metadata (waits for completion by default)
+b2c job export --global-data meta_data
 
-# Export with specific configuration
-b2c job export --wait
+# Export a site with specific data units
+b2c job export --site RefArch --site-data content,site_preferences
 ```
 
 ## Common Workflows
@@ -85,7 +85,7 @@ my-import/
 
 3. Import:
 ```bash
-b2c job import ./my-import --wait
+b2c job import ./my-import
 ```
 
 ### Adding Site Preferences
@@ -134,7 +134,7 @@ my-import/
 
 4. Import:
 ```bash
-b2c job import ./my-import --wait
+b2c job import ./my-import
 ```
 
 ### Creating a Custom Object Type
@@ -175,7 +175,7 @@ b2c job import ./my-import --wait
 
 2. Import:
 ```bash
-b2c job import ./my-import --wait
+b2c job import ./my-import
 ```
 
 ### Importing Custom Object Data
@@ -227,16 +227,16 @@ site-archive/
 b2c job search
 
 # Wait for a specific job execution
-b2c job wait <execution-id>
+b2c job wait <job-id> <execution-id>
 
 # View job logs on failure
-b2c job import ./my-data --wait --show-log
+b2c job import ./my-data --show-log
 ```
 
 ### Best Practices
 
 1. **Test imports on sandbox first** before importing to staging/production
-2. **Use `--wait`** to ensure import completes before continuing
+2. Import waits for completion by default — use `--no-wait` only when you want to return immediately
 3. **Use `--show-log`** to debug failed imports
 4. **Keep archives organized** by feature or change type
 5. **Version control your metadata** XML files

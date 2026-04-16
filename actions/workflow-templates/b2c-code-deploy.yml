@@ -18,4 +18,4 @@ jobs:
           username: ${{ secrets.SFCC_USERNAME }}
           password: ${{ secrets.SFCC_PASSWORD }}
           code-version: ${{ vars.SFCC_CODE_VERSION }}
-          reload: true
+          activate: true

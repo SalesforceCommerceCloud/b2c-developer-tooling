@@ -13,6 +13,9 @@
  */
 import type {AuthConfig} from '../auth/types.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
+import {parseSafetyLevelString} from '../safety/safety-middleware.js';
+import {isValidSafetyAction} from '../safety/types.js';
+import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
 import type {NormalizedConfig, ConfigWarning} from './types.js';
 
@@ -155,6 +158,8 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     realm: json.realm,
     cartridges: parseCartridges(json.cartridges),
     contentLibrary: json.contentLibrary,
+    catalogs: json.catalogs,
+    libraries: json.libraries,
     cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
@@ -167,6 +172,37 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // Safety
+    safety: mapDwJsonSafety(json.safety),
+  };
+}
+
+/**
+ * Maps and validates safety config from dw.json to normalized format.
+ */
+function mapDwJsonSafety(safety: DwJsonConfig['safety']): NormalizedConfig['safety'] {
+  if (!safety) return undefined;
+
+  const level = parseSafetyLevelString(safety.level);
+  const rules: SafetyRule[] | undefined = safety.rules
+    ?.filter((r) => isValidSafetyAction(r.action))
+    .map((r) => ({
+      method: r.method,
+      path: r.path,
+      job: r.job,
+      command: r.command,
+      action: r.action as SafetyRule['action'],
+    }));
+
+  // Only return if there's at least one meaningful field
+  if (level === undefined && safety.confirm === undefined && (!rules || rules.length === 0)) {
+    return undefined;
+  }
+
+  return {
+    level,
+    confirm: safety.confirm,
+    rules: rules && rules.length > 0 ? rules : undefined,
   };
 }
 
@@ -241,6 +277,12 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.cartridges !== undefined) {
     result.cartridges = config.cartridges;
   }
+  if (config.catalogs !== undefined) {
+    result.catalogs = config.catalogs;
+  }
+  if (config.libraries !== undefined) {
+    result.libraries = config.libraries;
+  }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
   }
@@ -261,6 +303,19 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.safety !== undefined) {
+    result.safety = {
+      level: config.safety.level,
+      confirm: config.safety.confirm,
+      rules: config.safety.rules?.map((r) => ({
+        method: r.method,
+        path: r.path,
+        job: r.job,
+        command: r.command,
+        action: r.action,
+      })),
+    };
   }
 
   return result;
@@ -367,6 +422,8 @@ export function mergeConfigsWithProtection(
       tenantId: overrides.tenantId ?? base.tenantId,
       cartridges: overrides.cartridges ?? base.cartridges,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
+      catalogs: overrides.catalogs ?? base.catalogs,
+      libraries: overrides.libraries ?? base.libraries,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,
@@ -381,6 +438,8 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // Safety
+      safety: overrides.safety ?? base.safety,
     },
     warnings,
     hostnameMismatch: false,

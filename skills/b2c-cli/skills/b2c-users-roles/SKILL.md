@@ -78,10 +78,10 @@ b2c am orgs list
 b2c am clients list
 
 # create an API client
-b2c am clients create --display-name "My Client" --org MyOrg
+b2c am clients create --name "My Client" --orgs MyOrg --password "securePassword123"
 
-# reset API client password
-b2c am clients password my-client-id
+# change API client password
+b2c am clients password my-client-id --current "oldPass" --new "newPass123"
 ```
 
 ## Business Manager Roles

@@ -1,6 +1,6 @@
 ---
 name: b2c-sites
-description: List and manage storefront sites and cartridge paths on B2C Commerce (SFCC/Demandware) instances with the b2c cli. Always reference when using the CLI to list storefront sites, find site IDs, check site status, view storefront configuration, site settings, channel IDs, or get a site list, or manage the ordered list of active cartridges on a site or Business Manager.
+description: List storefront sites, check site status, and manage cartridge paths on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to discover site IDs, check which storefronts are online or offline, get site configuration as JSON, or view/modify the ordered cartridge path for a site or Business Manager. Also use when the user needs site information for scripting, CI/CD pipelines, or as input to other commands — even if they just say "what sites do I have" or "add this cartridge to my site".
 ---
 
 # B2C Sites Skill

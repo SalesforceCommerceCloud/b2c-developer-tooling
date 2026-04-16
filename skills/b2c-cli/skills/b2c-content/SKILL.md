@@ -1,6 +1,6 @@
 ---
 name: b2c-content
-description: Export, list, and validate Page Designer pages and metadefinitions from B2C Commerce content libraries. Always reference when using the CLI to export, list, or validate Page Designer content, discover page IDs, or work with content library assets. Covers page designer JSON, content migration, library XML, content archive, site content, component export, and offline export.
+description: Export, list, and validate Page Designer content from B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages or components, list pages in a content library, validate page JSON or metadefinitions, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
 ---
 
 # B2C Content Skill

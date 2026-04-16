@@ -1,7 +1,12 @@
 [
-  {"query": "How do I register a hook in hooks.json for dw.ocapi.shop.basket.afterPOST? My cart totals are wrong and I think the hook is returning a Status that skips the system implementation.", "should_trigger": true},
-  {"query": "I need to implement dw.order.calculate and dw.order.payment.authorize hooks. Where do I put the hooks.json file and how do I reference it from package.json?", "should_trigger": true},
-  {"query": "How do I create a custom extension point using HookMgr.callHook and pass data between afterPOST and modifyPOSTResponse using request.custom?", "should_trigger": true},
-  {"query": "How do I set up Git hooks for pre-commit linting in the b2c-cli project?", "should_trigger": false},
-  {"query": "I need to add a webhook endpoint that gets called when an order is placed so our external OMS gets notified.", "should_trigger": false}
+  {"query": "I need to run custom validation logic every time a basket is modified through the Shop API. If the basket contains restricted items, I want to reject the request. How do I register a beforePATCH hook and return the right Status to block the operation?", "should_trigger": true},
+  {"query": "Our order totals are wrong after checkout -- the tax calculation isn't applying our custom rules. I think the dw.order.calculate hook is either not registered or another cartridge is overriding it. How do I debug hook registration order and cartridge path priority?", "should_trigger": true},
+  {"query": "I want to send order data to our analytics platform every time an order is placed. Where do I register a hook for order creation, and can I do async work in the hook or will it block the checkout flow?", "should_trigger": true},
+  {"query": "I'm implementing custom payment authorization using the dw.order.payment.authorize hook. My hooks.json is in the cartridge but the hook never fires. I verified the cartridge is on the path. What else could be wrong?", "should_trigger": true},
+  {"query": "We want to create our own extension point so other cartridges can plug into our loyalty module. Specifically, when loyalty points are redeemed, other cartridges should be able to react. How do I define and call a custom hook, and how do consuming cartridges register for it?", "should_trigger": true},
+  {"query": "I need to modify the OCAPI response for product searches to add a custom field. I know there's a modifyGETResponse hook for shop resources. How do I access the original response, add my field, and pass data from a beforeGET hook using request.custom?", "should_trigger": true},
+  {"query": "How do I set up Git pre-commit hooks to run our linter before every commit? I want to use husky or a similar tool in the project.", "should_trigger": false},
+  {"query": "I need to set up a webhook endpoint in our external Node.js service that receives order placement notifications from Commerce Cloud. How do I configure the outbound webhook?", "should_trigger": false},
+  {"query": "How do I add a new controller route that runs before the checkout page loads to check inventory availability? I want it as middleware in the SFRA controller chain.", "should_trigger": false},
+  {"query": "I need to create a custom job step that processes orders nightly. How do I set up the job module with execute and beforeStep functions?", "should_trigger": false}
 ]

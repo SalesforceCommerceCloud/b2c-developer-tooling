@@ -140,6 +140,7 @@ export async function installSkills(
         const targetPath = getSkillInstallPath(ide, sanitizedName, {
           global: options.global,
           projectRoot: options.projectRoot,
+          directory: options.directory,
         });
 
         // Get the base directory for path safety validation

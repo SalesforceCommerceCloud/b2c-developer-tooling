@@ -534,39 +534,43 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
  * ```
  */
 /**
- * Configuration for safety middleware.
+ * Safety middleware using SafetyGuard.
  */
-import type {SafetyConfig} from '../safety/safety-middleware.js';
-import {checkSafetyViolation, SafetyBlockedError} from '../safety/safety-middleware.js';
+import type {SafetyGuard} from '../safety/safety-guard.js';
+import {extractJobIdFromPath} from '../safety/safety-guard.js';
 
 /**
- * Creates safety middleware that blocks destructive operations.
+ * Creates safety middleware that evaluates HTTP requests against a SafetyGuard.
  *
- * This middleware intercepts HTTP requests BEFORE they are sent and blocks
- * destructive operations based on the configured safety level. It cannot be
- * bypassed by command-line flags since it operates at the HTTP layer.
+ * This middleware intercepts HTTP requests BEFORE they are sent. It evaluates
+ * each request against the guard's rules and level, throwing:
+ * - {@link SafetyBlockedError} for blocked operations
+ * - {@link SafetyConfirmationRequired} for operations needing confirmation
  *
- * @param config - Safety configuration
- * @returns Middleware that blocks destructive operations
+ * Callers that want confirmation support should wrap their SDK calls with
+ * {@link withSafetyConfirmation}. Otherwise, both error types propagate as errors.
+ *
+ * @param guard - The SafetyGuard instance
+ * @returns Middleware that evaluates operations against safety rules
  *
  * @example
  * ```typescript
+ * const guard = new SafetyGuard({ level: 'NO_DELETE' });
  * const client = createOdsClient(config, auth);
- * client.use(createSafetyMiddleware({ level: 'NO_DELETE' }));
+ * client.use(createSafetyMiddleware(guard));
  * ```
  */
-export function createSafetyMiddleware(config: SafetyConfig): Middleware {
-  const logger = getLogger();
-
+export function createSafetyMiddleware(guard: SafetyGuard): Middleware {
   return {
     async onRequest({request}) {
-      const errorMessage = checkSafetyViolation(request.method, request.url, config);
-
-      if (errorMessage) {
-        logger.warn({method: request.method, url: request.url, safetyLevel: config.level}, `[SAFETY] ${errorMessage}`);
-        throw new SafetyBlockedError(errorMessage, request.method, request.url, config.level);
-      }
-
+      const path = new URL(request.url, 'http://dummy').pathname;
+      guard.assert({
+        type: 'http',
+        method: request.method,
+        url: request.url,
+        path,
+        jobId: extractJobIdFromPath(path),
+      });
       return request;
     },
   };

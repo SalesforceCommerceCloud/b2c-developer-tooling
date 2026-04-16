@@ -1,7 +1,12 @@
 [
-  {"query": "How do I deploy my PWA Kit bundle to the staging environment on Managed Runtime?", "should_trigger": true},
-  {"query": "I need to set some environment variables on my MRT production environment. The project is called my-storefront and I need to set API_KEY and DEBUG.", "should_trigger": true},
-  {"query": "Can you show me how to list MRT projects, create a new environment called 'qa', and set up URL redirects?", "should_trigger": true},
-  {"query": "How do I configure my PWA Kit app's local development server to proxy SCAPI requests?", "should_trigger": false},
-  {"query": "I need to push my SFRA cartridge code to a sandbox instance. What's the deploy command?", "should_trigger": false}
+  {"query": "I've built my PWA Kit app locally and I need to deploy the bundle to our staging environment. What's the process for getting it up there?", "should_trigger": true},
+  {"query": "I need to set API_KEY and FEATURE_FLAGS environment variables on our production MRT environment for the my-storefront project. How do I do that?", "should_trigger": true},
+  {"query": "We're setting up our project for the first time and need to create a QA environment, connect it to our B2C instance, and configure some URL redirects. Walk me through the setup.", "should_trigger": true},
+  {"query": "I need to push a new build of our headless storefront to the staging target and then promote it to production once QA signs off. What's the workflow for managing bundles across environments?", "should_trigger": true},
+  {"query": "We're onboarding a new team and they need their own project and organization set up for their PWA storefront. I also need to create dev and staging environments under that project. How do I set all that up?", "should_trigger": true},
+  {"query": "Our production storefront needs a set of URL redirects — about 50 of them — for an SEO migration. I have the list in a file. What's the best way to push those redirect rules to the environment and verify they're active?", "should_trigger": true},
+  {"query": "How do I set up the local development proxy for my PWA Kit app so API requests go to the right sandbox?", "should_trigger": false},
+  {"query": "I need to upload my SFRA cartridge code to a sandbox instance. What command do I use for that?", "should_trigger": false},
+  {"query": "I'm trying to configure my Storefront Next composable app to connect to a B2C instance. Where do I put the API credentials and site ID in the project config?", "should_trigger": false},
+  {"query": "My local PWA dev server is throwing CORS errors when calling the Shopper API. How do I fix the proxy configuration in my ssr.js file?", "should_trigger": false}
 ]

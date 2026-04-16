@@ -367,6 +367,56 @@ export class WebDavClient {
   }
 
   /**
+   * Copies a file or directory.
+   *
+   * @param source - Source path relative to /webdav/Sites/
+   * @param destination - Destination path relative to /webdav/Sites/
+   * @param overwrite - Whether to overwrite if destination exists (default: true)
+   *
+   * @example
+   * await client.copy('Cartridges/v1/cartridge', 'Cartridges/v2/cartridge');
+   */
+  async copy(source: string, destination: string, overwrite = true): Promise<void> {
+    const destUrl = this.buildUrl(destination);
+    const response = await this.request(source, {
+      method: 'COPY',
+      headers: {
+        Destination: new URL(destUrl).pathname,
+        Overwrite: overwrite ? 'T' : 'F',
+      },
+    });
+
+    if (!response.ok) {
+      throw new HTTPError(`COPY failed: ${response.status} ${response.statusText}`, response, 'COPY');
+    }
+  }
+
+  /**
+   * Moves (renames) a file or directory.
+   *
+   * @param source - Source path relative to /webdav/Sites/
+   * @param destination - Destination path relative to /webdav/Sites/
+   * @param overwrite - Whether to overwrite if destination exists (default: true)
+   *
+   * @example
+   * await client.move('Cartridges/v1/old-name', 'Cartridges/v1/new-name');
+   */
+  async move(source: string, destination: string, overwrite = true): Promise<void> {
+    const destUrl = this.buildUrl(destination);
+    const response = await this.request(source, {
+      method: 'MOVE',
+      headers: {
+        Destination: new URL(destUrl).pathname,
+        Overwrite: overwrite ? 'T' : 'F',
+      },
+    });
+
+    if (!response.ok) {
+      throw new HTTPError(`MOVE failed: ${response.status} ${response.statusText}`, response, 'MOVE');
+    }
+  }
+
+  /**
    * Checks if a path exists.
    *
    * @param path - Path to check

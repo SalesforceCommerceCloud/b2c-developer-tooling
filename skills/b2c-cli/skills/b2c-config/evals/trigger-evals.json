@@ -1,7 +1,12 @@
 [
-  {"query": "My b2c CLI keeps connecting to the wrong sandbox. How do I check which config file and credentials are being used? I think my dw.json might be getting overridden by env vars.", "should_trigger": true},
-  {"query": "I need to set up multiple instances in my dw.json and switch between staging and production. How do I use b2c setup instance to manage them?", "should_trigger": true},
-  {"query": "How do I get an OAuth access token from the CLI for use in curl commands against OCAPI? I want to use b2c auth token with specific scopes.", "should_trigger": true},
-  {"query": "How do I deploy cartridges to my sandbox using b2c code deploy? I want to upload and activate the code version.", "should_trigger": false},
-  {"query": "I need to run a CIP analytics report but I'm getting a 403 unauthorized error. What API client role do I need for the tenant?", "should_trigger": false}
+  {"query": "My CLI keeps connecting to the wrong sandbox. How do I check which config file and credentials are being used? I think my dw.json is getting overridden by environment variables.", "should_trigger": true},
+  {"query": "I need to set up multiple instances in my configuration and switch between staging and production environments easily.", "should_trigger": true},
+  {"query": "How do I get an OAuth access token from the CLI for use in curl commands against OCAPI? I need specific scopes included.", "should_trigger": true},
+  {"query": "Authentication keeps failing with a 401 error when I try to deploy. How do I debug what credentials the CLI is actually sending?", "should_trigger": true},
+  {"query": "I just cloned the project and need to set up my dw.json with the sandbox hostname and API client credentials. What fields are required?", "should_trigger": true},
+  {"query": "How do I configure my VS Code workspace to use the B2C CLI for deployments? I want to integrate it with my editor tasks.", "should_trigger": true},
+  {"query": "How do I deploy cartridges to my sandbox and activate the new code version?", "should_trigger": false},
+  {"query": "I need to run a Commerce Insights analytics report but I'm getting a 403 error. What API client role do I need?", "should_trigger": false},
+  {"query": "How do I upload a site import archive to the IMPEX folder on my instance?", "should_trigger": false},
+  {"query": "I want to purge the CDN cache for our production storefront after a content update.", "should_trigger": false}
 ]

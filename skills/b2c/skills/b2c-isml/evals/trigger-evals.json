@@ -1,7 +1,12 @@
 [
-  {"query": "How do I loop through a list of products in an ISML template? I want to show each product name and price using isloop.", "should_trigger": true},
-  {"query": "I'm writing a storefront template and need to use the isdecorate pattern with isreplace for a shared page layout. Can you show me how the decorator works in templates/default/layouts?", "should_trigger": true},
-  {"query": "My isprint tag is outputting HTML-encoded markup instead of raw HTML. How do I disable encoding in ISML expressions and what's the ${...} syntax for calling URLUtils.url?", "should_trigger": true},
-  {"query": "How do I deploy my cartridge templates to the sandbox? The code version isn't activating after upload.", "should_trigger": false},
-  {"query": "I need to create a Page Designer component with regions and attribute_definition_groups for a hero banner. What should the JSON meta definition look like?", "should_trigger": false}
+  {"query": "I need to build a product listing template that loops through search results and shows each product's name, image, price, and a link to the detail page. Some products have sale prices that should show with strikethrough on the original. How do I structure the isloop and conditional display?", "should_trigger": true},
+  {"query": "I'm creating a shared page layout decorator that wraps all my storefront pages with a common header, footer, and sidebar. The content area should be replaceable by each page template. How does isdecorate work with isreplace and can I pass data to the decorator?", "should_trigger": true},
+  {"query": "My template is outputting escaped HTML entities instead of rendering the actual HTML. I have a content asset body that contains rich text and isprint is encoding everything. How do I output raw HTML safely and what's the difference between isprint encoding options?", "should_trigger": true},
+  {"query": "I need to create a reusable template module for a product tile that I can include from multiple templates. It should accept a product object and a display mode parameter. What's the pattern for creating and using custom template modules with isinclude?", "should_trigger": true},
+  {"query": "I'm trying to call a helper function from my ISML template using the ${} expression syntax. I want to format a price with the site's currency symbol. How do I access script modules and utility functions from ISML expressions?", "should_trigger": true},
+  {"query": "My template has a form that posts to a controller endpoint. I need to add CSRF protection, set up the form action URL with URLUtils, and handle displaying validation errors next to each field after a failed submission. What's the full ISML form pattern?", "should_trigger": true},
+  {"query": "I need to create a Page Designer component with a hero image, headline text, and a CTA button. What should the JSON type definition look like with attribute_definition_groups?", "should_trigger": false},
+  {"query": "How do I deploy my cartridge code to a sandbox? The code version upload seems to work but the templates aren't updating on the storefront.", "should_trigger": false},
+  {"query": "I want to build a React component for our PWA storefront that displays product recommendations in a carousel. How do I fetch the data from the Shopper Products API?", "should_trigger": false},
+  {"query": "How do I add custom logging inside my controller before rendering the template? I want to log the view data for debugging purposes.", "should_trigger": false}
 ]

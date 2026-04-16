@@ -30,7 +30,7 @@ import time
 import webbrowser
 from pathlib import Path
 
-from eval_lib import find_project_root, generate_html, parse_skill_md, run_eval
+from eval_lib import find_eval_project, find_project_root, generate_html, parse_skill_md, run_eval
 
 import anthropic
 
@@ -208,7 +208,7 @@ def run_loop(
     log_dir: Path | None = None,
 ) -> dict:
     """Run the eval + improvement loop."""
-    project_root = find_project_root()
+    project_root = find_eval_project()
     name, original_description, content = parse_skill_md(skill_path)
     current_description = description_override or original_description
 

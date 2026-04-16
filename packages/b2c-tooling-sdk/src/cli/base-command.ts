@@ -19,7 +19,15 @@ import type {
 import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
-import {getSafetyLevel, describeSafetyLevel} from '../safety/index.js';
+import {
+  getSafetyLevel,
+  describeSafetyLevel,
+  resolveEffectiveSafetyConfig,
+  loadGlobalSafetyConfig,
+} from '../safety/index.js';
+import {SafetyGuard} from '../safety/safety-guard.js';
+import type {SafetyEvaluation} from '../safety/types.js';
+import {confirm as safetyConfirm} from '../ux/confirm.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
@@ -129,6 +137,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected resolvedConfig!: ResolvedB2CConfig;
   protected logger!: Logger;
 
+  /** Safety guard for evaluating operations against safety rules and levels. */
+  protected safetyGuard: SafetyGuard = new SafetyGuard({level: 'NONE'});
+
   /** Telemetry instance for tracking command events */
   protected telemetry?: Telemetry;
 
@@ -166,8 +177,13 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // This must happen before any API clients are created
     this.registerExtraParamsMiddleware();
 
+    // Initialize safety guard with env-var-only config (before config resolution).
+    // The guard is updated with the full config after loadConfiguration().
+    this.safetyGuard = new SafetyGuard({level: getSafetyLevel('NONE')});
+
     // Register safety middleware FIRST (before any other middleware)
-    // This provides unbypassable protection at the HTTP layer
+    // The middleware reads this.safetyGuard lazily via closure, so it picks up
+    // the full config after initializeSafetyGuard() runs.
     this.registerSafetyMiddleware();
 
     // Collect middleware from plugins before any API clients are created
@@ -183,6 +199,13 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     await this.initTelemetryFromConfig();
 
     this.resolvedConfig = await this.loadConfiguration();
+
+    // Update safety guard with config-provided safety settings (merges env + config)
+    this.initializeSafetyGuard();
+
+    // Evaluate command-level safety rules for every command.
+    // This enforces rules like { command: "code:deploy", action: "block" } generically.
+    await this.evaluateCommandSafety();
 
     this.addTelemetryContext();
   }
@@ -624,36 +647,32 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * ```
    */
   protected assertDestructiveOperationAllowed(operationDescription?: string): void {
-    const safetyLevel = getSafetyLevel('NONE');
+    const evaluation = this.safetyGuard.evaluate({
+      type: 'command',
+      commandId: this.id,
+    });
 
-    if (safetyLevel === 'NONE') {
-      return; // No restrictions
+    if (evaluation.action === 'allow') {
+      return;
     }
 
     const operation = operationDescription || t('base.destructiveOperation', 'this destructive operation');
 
-    // Determine if this operation should be blocked
-    // We assume all calls to this method are for destructive operations
-    // The safety level determines blocking:
-    // - READ_ONLY: blocks all writes
-    // - NO_DELETE: blocks deletes (we assume this method is called for deletes/destructive ops)
-    // - NO_UPDATE: blocks deletes and resets
-    const shouldBlock = safetyLevel === 'READ_ONLY' || safetyLevel === 'NO_DELETE' || safetyLevel === 'NO_UPDATE';
-
-    if (shouldBlock) {
-      return this.error(
-        t(
-          'base.safetyModeBlocked',
-          'Cannot {{operation}}: blocked by safety level {{safetyLevel}}.\n\n{{description}}\n\nTo allow this operation, unset or change the SFCC_SAFETY_LEVEL environment variable.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security#operational-security-safety-mode',
-          {
-            operation,
-            safetyLevel,
-            description: describeSafetyLevel(safetyLevel),
-          },
-        ),
-        {exit: 1},
-      );
-    }
+    // For both 'block' and 'confirm' at the assertion level, we block.
+    // Commands that want to support confirmation should call confirmOrBlock() separately.
+    const safetyLevel = this.safetyGuard.config.level;
+    return this.error(
+      t(
+        'base.safetyModeBlocked',
+        'Cannot {{operation}}: blocked by your safety configuration (level: {{safetyLevel}}).\n\n{{description}}\n\nTo change this, update the "safety" section in your dw.json or the SFCC_SAFETY_LEVEL environment variable.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety',
+        {
+          operation,
+          safetyLevel,
+          description: describeSafetyLevel(safetyLevel),
+        },
+      ),
+      {exit: 1},
+    );
   }
 
   /**
@@ -701,31 +720,90 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
-   * Register safety middleware to block destructive operations.
-   * This provides unbypassable protection at the HTTP layer - cannot be circumvented
-   * by command-line flags since it operates on all HTTP requests.
+   * Register safety middleware that evaluates all HTTP requests against the SafetyGuard.
    *
-   * Safety level is determined by the SFCC_SAFETY_LEVEL environment variable:
-   * - NONE: No restrictions (default)
-   * - NO_DELETE: Block DELETE operations
-   * - NO_UPDATE: Block DELETE + destructive operations (reset/stop/restart)
-   * - READ_ONLY: Block all writes (GET only)
+   * The middleware reads `this.safetyGuard` lazily (via arrow function closure), so it
+   * picks up the full config after `initializeSafetyGuard()` runs. This allows the
+   * middleware to be registered early in init() before config resolution completes.
    */
   private registerSafetyMiddleware(): void {
-    const safetyLevel = getSafetyLevel('NONE');
-
-    // Only register if safety is enabled
-    if (safetyLevel === 'NONE') return;
-
-    // Safety mode is silent until it blocks something
-    // Error messages will be shown when operations are actually blocked
-
     globalMiddlewareRegistry.register({
       name: 'cli-safety-guard',
-      getMiddleware() {
-        return createSafetyMiddleware({level: safetyLevel});
+      getMiddleware: () => {
+        // Skip if no safety restrictions are configured
+        if (this.safetyGuard.config.level === 'NONE' && !this.safetyGuard.config.rules?.length) {
+          return undefined;
+        }
+        return createSafetyMiddleware(this.safetyGuard);
       },
     });
+  }
+
+  /**
+   * Update the safety guard with config-provided safety settings.
+   * Called after loadConfiguration() to merge env vars, global safety config,
+   * and per-instance dw.json config.
+   */
+  private initializeSafetyGuard(): void {
+    const globalSafety = loadGlobalSafetyConfig(this.config.configDir);
+    const config = resolveEffectiveSafetyConfig(this.resolvedConfig.values.safety, globalSafety);
+    this.safetyGuard = new SafetyGuard(config);
+
+    if (config.level !== 'NONE' || config.rules?.length || config.confirm) {
+      this.logger.debug(
+        {level: config.level, confirm: config.confirm, ruleCount: config.rules?.length ?? 0},
+        'Safety mode active',
+      );
+    }
+  }
+
+  /**
+   * Evaluate command-level safety rules for the current command.
+   *
+   * This runs at the end of init() so every command is evaluated against
+   * command rules (e.g., `{ command: "code:deploy", action: "block" }`).
+   * If no command rule matches, this is a no-op — level-based blocking
+   * is handled by the HTTP middleware and assertDestructiveOperationAllowed().
+   */
+  private async evaluateCommandSafety(): Promise<void> {
+    const evaluation = this.safetyGuard.evaluate({
+      type: 'command',
+      commandId: this.id,
+    });
+
+    if (evaluation.action === 'block' && evaluation.rule) {
+      this.error(evaluation.reason, {exit: 1});
+    }
+    if (evaluation.action === 'confirm' && evaluation.rule) {
+      await this.confirmOrBlock(evaluation);
+    }
+  }
+
+  /**
+   * Require interactive confirmation for a safety-guarded operation.
+   *
+   * If stdin is a TTY, prompts the user. Otherwise, blocks with an error message.
+   * The error message clearly indicates the block is from the user's own safety configuration.
+   *
+   * @param evaluation - The safety evaluation that triggered confirmation
+   * @throws Error if confirmation is denied or not possible
+   */
+  protected async confirmOrBlock(evaluation: SafetyEvaluation): Promise<void> {
+    if (!process.stdin.isTTY) {
+      this.error(
+        `Your safety configuration requires confirmation for this operation, ` +
+          `but no interactive session is available.\n\n  ${evaluation.reason}\n\n` +
+          `To change this, update the "safety" section in your dw.json or the SFCC_SAFETY_CONFIRM environment variable.`,
+        {exit: 1},
+      );
+    }
+
+    const confirmed = await safetyConfirm(
+      `Your safety configuration requires confirmation for this operation:\n  ${evaluation.reason}\n  Proceed?`,
+    );
+    if (!confirmed) {
+      this.error('Operation cancelled.', {exit: 1});
+    }
   }
 
   /**

@@ -51,7 +51,7 @@ b2c sandbox list                 # ✅ Allowed
 b2c sandbox create --realm test  # ❌ Blocked
 ```
 
-Safety Mode operates at the HTTP layer and cannot be bypassed by command-line flags. See the [Security Guide](/guide/security#operational-security-safety-mode) for detailed information.
+Safety Mode operates at the HTTP layer and cannot be bypassed by command-line flags. See the [Safety Mode](/guide/safety) guide for detailed information.
 
 ### Other Environment Variables
 
