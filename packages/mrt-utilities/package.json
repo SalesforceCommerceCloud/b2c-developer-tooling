@@ -40,6 +40,28 @@
         "default": "./dist/cjs/middleware/index.js"
       }
     },
+    "./middleware/express": {
+      "development": "./src/middleware/express.ts",
+      "import": {
+        "types": "./dist/esm/middleware/express.d.ts",
+        "default": "./dist/esm/middleware/express.js"
+      },
+      "require": {
+        "types": "./dist/cjs/middleware/express.d.ts",
+        "default": "./dist/cjs/middleware/express.js"
+      }
+    },
+    "./data-store": {
+      "development": "./src/data-store/index.ts",
+      "import": {
+        "types": "./dist/esm/data-store/index.d.ts",
+        "default": "./dist/esm/data-store/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/data-store/index.d.ts",
+        "default": "./dist/cjs/data-store/index.js"
+      }
+    },
     "./metrics": {
       "development": "./src/metrics/index.ts",
       "import": {
