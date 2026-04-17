@@ -1,7 +1,12 @@
 [
-  {"query": "My custom SCAPI endpoint is returning 404. How do I check if it's registered properly on tenant zzxy_prd?", "should_trigger": true},
-  {"query": "Can you list all the custom API endpoints and show me which ones failed registration? I need to see the error reasons.", "should_trigger": true},
-  {"query": "I ran b2c scapi custom status but some endpoints show not_registered. How do I debug what went wrong with the registration?", "should_trigger": true},
-  {"query": "I need to create a new custom SCAPI endpoint with a Shopper API that returns product recommendations. What's the process?", "should_trigger": false},
-  {"query": "How do I call the SCAPI Shopper Products API from my storefront JavaScript to get product details?", "should_trigger": false}
+  {"query": "I deployed my custom API endpoint yesterday but it's returning 404 when I try to call it. How do I check if it actually got registered on the tenant?", "should_trigger": true},
+  {"query": "I have several custom API endpoints and I need to see which ones are successfully deployed vs which ones failed registration. Some of them aren't working and I need to understand why.", "should_trigger": true},
+  {"query": "After deploying my custom SCAPI endpoint, the status shows 'not_registered'. How do I figure out what went wrong with the registration process?", "should_trigger": true},
+  {"query": "We just pushed a new version of our loyalty points API to production and I need to verify the endpoint is live before the mobile team starts integrating. How do I confirm the registration went through?", "should_trigger": true},
+  {"query": "I'm getting intermittent 404s on one of our custom endpoints — sometimes it works, sometimes it doesn't. I want to check the current registration state across all our custom APIs to see if something is flaky or partially deployed.", "should_trigger": true},
+  {"query": "Our CI pipeline deploys custom endpoints and I want to add a post-deploy verification step that checks the registration status and fails the build if any endpoint isn't properly registered. What information can I get about the registration state?", "should_trigger": true},
+  {"query": "I want to create a new custom REST API endpoint that returns personalized product recommendations. What's the cartridge structure and how do I define the route?", "should_trigger": false},
+  {"query": "How do I call the standard Shopper Products API from my storefront JavaScript to get product details by ID?", "should_trigger": false},
+  {"query": "I need to configure OCAPI resource permissions to allow my external system to access order data via the Data API.", "should_trigger": false},
+  {"query": "I'm writing the server-side handler logic for a custom API endpoint. How do I access the request body and return a JSON response with proper error handling?", "should_trigger": false}
 ]

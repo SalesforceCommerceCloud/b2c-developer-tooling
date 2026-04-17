@@ -1,7 +1,12 @@
 [
-  {"query": "I need to create a chunk-oriented job step that exports all orders from the last 30 days to a CSV file in the IMPEX directory. How do I set up the steptypes.json and the read/process/write functions?", "should_trigger": true},
-  {"query": "Where does steptypes.json go in the cartridge? I keep getting errors when my custom job step doesn't show up in Business Manager.", "should_trigger": true},
-  {"query": "Write a task-oriented job step script in scripts/steps/cleanupExpiredCoupons.js that deletes expired coupon codes and returns proper Status codes. Also need the steptypes.json entry for it.", "should_trigger": true},
-  {"query": "How do I run the product-export job on my sandbox using the CLI? I want to trigger it from the command line instead of Business Manager.", "should_trigger": false},
-  {"query": "I need to schedule a cron job on our Linux server to call the B2C Commerce API every hour to sync inventory data.", "should_trigger": false}
+  {"query": "I need to write a nightly job that exports all orders from the last 30 days to a CSV file. It should process them in chunks so it doesn't time out on large datasets. Where do I start with the cartridge structure?", "should_trigger": true},
+  {"query": "My custom job doesn't show up in Business Manager even though I deployed the cartridge. I think my step type definition file might be in the wrong place or have a formatting issue. How do I troubleshoot this?", "should_trigger": true},
+  {"query": "I need a batch script that runs every morning and deletes expired coupon codes from the database. It should log how many it cleaned up and return proper status codes so BM shows success/failure.", "should_trigger": true},
+  {"query": "I'm building a data sync job that needs to read 100k customer records, transform each one, and write the results to a remote SFTP endpoint. Should I use the chunk-oriented pattern with read/process/write phases or is a simple script step enough? What are the memory implications?", "should_trigger": true},
+  {"query": "I need to create a job step that accepts parameters from Business Manager — things like a date range, an email address for notifications, and a boolean to toggle dry-run mode. How do I define those parameters so they show up in the BM job configuration UI?",  "should_trigger": true},
+  {"query": "I wrote a task-oriented step that calls an external API for each product, but if one call fails the whole job aborts. I want it to skip failures and continue processing, then report a summary at the end. How do I handle errors gracefully in the step framework?", "should_trigger": true},
+  {"query": "How do I trigger the product-export job from the command line instead of logging into Business Manager every time?", "should_trigger": false},
+  {"query": "I need to schedule a cron job on our Linux server to call the B2C Commerce API every hour to sync inventory data.", "should_trigger": false},
+  {"query": "I want to monitor the status of currently running jobs on our sandbox and get alerts when one fails. Is there a dashboard or API for job execution history?", "should_trigger": false},
+  {"query": "Our existing reindex job is running too slowly. How do I check the job execution logs to see where the bottleneck is?", "should_trigger": false}
 ]

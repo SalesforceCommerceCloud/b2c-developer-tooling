@@ -27,7 +27,7 @@ import time
 import webbrowser
 from pathlib import Path
 
-from eval_lib import find_project_root, generate_eval_report_html, parse_skill_md, run_eval
+from eval_lib import find_eval_project, find_project_root, generate_eval_report_html, parse_skill_md, run_eval
 
 
 def discover_skills(search_dirs: list[str]) -> list[Path]:
@@ -74,7 +74,7 @@ def main():
         print(f"Report: {report_path}", file=sys.stderr)
         return
 
-    project_root = find_project_root()
+    project_root = find_eval_project()
 
     # Build list of skills to evaluate
     if args.skill_path:

@@ -1,7 +1,12 @@
 [
-  {"query": "I need to spin up a new ODS sandbox in realm zzpq with a 4 hour TTL for testing. How do I create one?", "should_trigger": true},
-  {"query": "Can you list all my running sandboxes and then restart the one at zzzv-123? It seems stuck.", "should_trigger": true},
-  {"query": "How do I stop my B2C on-demand sandbox using the realm-instance format? The instance is zzpq-013.", "should_trigger": true},
-  {"query": "I need to configure my sandbox's OCAPI settings to allow a new client ID access to the Data API.", "should_trigger": false},
-  {"query": "How do I deploy my cartridge code to the sandbox instance at zzpq-013.dx.commercecloud.salesforce.com?", "should_trigger": false}
+  {"query": "I need a fresh development instance for testing a new feature. Can you spin one up in our realm with a 4-hour TTL?", "should_trigger": true},
+  {"query": "I have a few sandboxes running and one of them seems frozen — it's not responding to requests. Can you list what I have running and then restart the stuck one?", "should_trigger": true},
+  {"query": "I'm done testing and want to shut down my on-demand sandbox at zzpq-013 to save resources. How do I stop it?", "should_trigger": true},
+  {"query": "I'm about to go on PTO for two weeks and I want to make sure my on-demand instances don't eat up the budget while I'm gone. Can you show me all my running instances so I can figure out which ones to tear down?", "should_trigger": true},
+  {"query": "Our QA team needs three separate environments spun up simultaneously for parallel testing of different feature branches. What's the quickest way to provision multiple instances and check their status?", "should_trigger": true},
+  {"query": "My on-demand instance was auto-stopped after hitting its TTL but I still need it for a few more hours. Can I bring it back up and extend the time, or do I need to create a new one?", "should_trigger": true},
+  {"query": "I need to configure OCAPI client permissions on my sandbox to allow a new API client access to the Data API.", "should_trigger": false},
+  {"query": "How do I push my cartridge code to the development instance so I can test my changes?", "should_trigger": false},
+  {"query": "I need to update the site preferences on my sandbox to enable a new feature flag. Where do I set that in the site configuration?", "should_trigger": false},
+  {"query": "How do I import a site archive containing promotions and content slots into my existing development instance?", "should_trigger": false}
 ]

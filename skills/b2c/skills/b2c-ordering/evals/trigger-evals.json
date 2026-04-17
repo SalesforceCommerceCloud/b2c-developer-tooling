@@ -1,7 +1,12 @@
 [
-  {"query": "How do I create an order from a basket in B2C Commerce? I need to handle payment authorization and set the confirmation status after placing the order.", "should_trigger": true},
-  {"query": "My order is stuck in FAILED status and I need to reopen it so the customer can retry checkout. Is there an undoFailOrder method or do I need to use failOrder with reopenBasket?", "should_trigger": true},
-  {"query": "I need to cancel an order via OrderMgr but only if it's in NEW or OPEN status. Also, can I undo a cancellation later and put it back to NEW?", "should_trigger": true},
-  {"query": "How do I query orders by customer email using SCAPI admin endpoints? I need to search orders via the REST API with an Account Manager token.", "should_trigger": false},
-  {"query": "I'm building a product search page and need to use ProductSearchModel to query products by category with refinements and paging.", "should_trigger": false}
+  {"query": "I'm implementing the place-order step of checkout. After the payment is authorized, how do I convert the basket to an order and set the right statuses so the order shows up as confirmed?", "should_trigger": true},
+  {"query": "A customer's order got stuck in FAILED status after a payment gateway timeout. They want to retry. Is there a way to reopen the basket from a failed order so they can go through checkout again?", "should_trigger": true},
+  {"query": "I need to build an order cancellation flow. The customer should be able to cancel if the order hasn't shipped yet. What status checks do I need and can I undo a cancellation if the warehouse hasn't processed it?", "should_trigger": true},
+  {"query": "I'm confused about the difference between order status, shipping status, confirmation status, and export status. When I create an order from a basket, what are the initial values for each and what are the valid transitions? I keep getting errors when I try to set them in the wrong sequence.", "should_trigger": true},
+  {"query": "We need to implement a partial return flow where a customer can return some items from an order. After the return is approved, I need to create a return case, update the order totals, and trigger a refund through our payment processor. What's the order-side flow for handling this?", "should_trigger": true},
+  {"query": "Our payment authorization hook is failing intermittently and I need to handle the case where the auth succeeds on retry but the order was already marked as failed. How do I implement proper payment failure handling during order placement so the customer can retry without creating duplicate orders?", "should_trigger": true},
+  {"query": "How do I search for orders by customer email using the admin REST API? I need to build a backend service that looks up recent orders.", "should_trigger": false},
+  {"query": "My product listing page is really slow. I think it's because I'm loading all products in the category at once instead of paginating. How do I fix the query?", "should_trigger": false},
+  {"query": "I need to build the checkout flow for our headless PWA storefront — create a basket, add items, set addresses, and submit. What sequence of Shopper API calls do I need?", "should_trigger": false},
+  {"query": "I'm trying to add a custom attribute to the Order object in the metadata XML so I can store a tracking number from our fulfillment system. What's the XML format?", "should_trigger": false}
 ]

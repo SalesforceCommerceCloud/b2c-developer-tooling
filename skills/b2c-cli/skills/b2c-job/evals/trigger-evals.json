@@ -1,7 +1,12 @@
 [
-  {"query": "I need to run the search index rebuild job on our sandbox for the RefArch site. How do I do that with b2c cli?", "should_trigger": true},
-  {"query": "How do I import a site archive zip file to my SFCC instance? I have an export.zip in my local directory.", "should_trigger": true},
-  {"query": "The sfcc-search-index-product-full-update job keeps failing. Can you show me how to run it with --show-log to see what's wrong?", "should_trigger": true},
-  {"query": "I need to create a new custom job step that processes orders in batches nightly. What's the pattern for writing the script?", "should_trigger": false},
-  {"query": "How do I schedule a cron job on my Linux server to run a backup script every night at midnight?", "should_trigger": false}
+  {"query": "The product search on our sandbox isn't returning newly added products. I think the search index is stale and needs a rebuild. How do I trigger that?", "should_trigger": true},
+  {"query": "I have a local folder with metadata XML and site preferences that I need to push to our dev instance. How do I import it and wait for it to finish?", "should_trigger": true},
+  {"query": "The nightly product export job keeps failing on our sandbox and I can't figure out why from Business Manager. Is there a way to run it and see the detailed logs?", "should_trigger": true},
+  {"query": "I just updated a bunch of product descriptions via a data feed and now I need to make sure the search index picks them up before our QA team tests tomorrow morning. How do I kick off a reindex and confirm it completed?", "should_trigger": true},
+  {"query": "I need to export our entire site configuration — preferences, payment methods, shipping config — as a site archive that I can then import into a different sandbox. What's the process to trigger that export and download the result?", "should_trigger": true},
+  {"query": "We have a scheduled import that runs at 2am but it seems to be stuck in a running state for over 3 hours. I need to check what's happening with it — is there a way to see the execution status and logs for currently running processes on the instance?", "should_trigger": true},
+  {"query": "I need to write a batch processing script that runs nightly to clean up expired promotions. What's the job step pattern?", "should_trigger": false},
+  {"query": "How do I set up a cron job on our CI server to automatically run our test suite every night?", "should_trigger": false},
+  {"query": "I need to deploy my updated cartridge code to the sandbox so the new controller changes take effect. What's the push command?", "should_trigger": false},
+  {"query": "I'm writing a custom chunk-oriented step module in my cartridge — where do I put the read/process/write functions and how does the steptypes.json definition work?", "should_trigger": false}
 ]

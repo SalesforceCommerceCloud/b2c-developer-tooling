@@ -1,6 +1,6 @@
 ---
 name: b2c-slas
-description: Manage SLAS (Shopper Login and API Access Service) clients for B2C Commerce (SFCC/Demandware) with the b2c cli. Always reference when using the CLI to create, update, list, or delete SLAS clients, manage shopper OAuth scopes (including custom scopes like c_loyalty), or configure shopper authentication for PWA/headless. SLAS is for shopper (customer) authentication, not admin APIs.
+description: Create, update, and manage SLAS (Shopper Login and API Access Service) clients using the b2c CLI. Use this skill whenever the user needs to provision a SLAS client, update OAuth scopes, rotate client secrets, get a shopper access token, or configure shopper authentication for headless, PWA, or Storefront Next (SFNext) storefronts — even if they just say "I need a shopper token" or "set up auth for my storefront".
 ---
 
 # B2C SLAS Skill

@@ -1,7 +1,12 @@
 [
-  {"query": "I need to add a custom menu item to Business Manager with a bm_extensions.xml file. How do I create a BM extension cartridge?", "should_trigger": true},
-  {"query": "How do I add a dialog action button to the order details page in Business Manager? I need to wire up an export button using xp-ref.", "should_trigger": true},
-  {"query": "I'm building a bm_ cartridge and need to create a menuaction that links to my controller. Can you show me the XML structure and how to set up permissions?", "should_trigger": true},
-  {"query": "How do I customize the storefront navigation menu to add a new category link in SFRA?", "should_trigger": false},
-  {"query": "I want to create an admin panel for managing products using a Custom API endpoint in headless commerce.", "should_trigger": false}
+  {"query": "I need to add an 'Export Orders' button to the order detail page in Business Manager. It should open a dialog that lets the merchant pick a date range and then trigger a pipeline. How do I set up the XML for the dialog action and wire it to my controller?", "should_trigger": true},
+  {"query": "We're building a custom admin tool for our merchandising team that lives inside BM. They need a new menu section under 'Merchant Tools' with two sub-items linking to custom pages. What's the cartridge structure and XML I need?", "should_trigger": true},
+  {"query": "I have an existing bm_ cartridge and I want to add a form extension to the site preferences page. The form should add a new field group with three text inputs. How do I define the form overlay in my extension cartridge?", "should_trigger": true},
+  {"query": "Our admin users need a custom dashboard inside Business Manager that shows real-time inventory levels across warehouses. I need to create the menu entry, the controller that fetches the data, and the template. Walk me through the full setup for a BM extension.", "should_trigger": true},
+  {"query": "I'm getting a 'menu action not found' error after deploying my Business Manager customization. The cartridge is on the path and the XML looks correct. What are the common pitfalls with bm_extensions.xml that could cause this?", "should_trigger": true},
+  {"query": "We need to restrict who can see our custom BM pages. How do I set up permissions for a Business Manager extension so only users with a specific role can access the menu items and dialog actions?", "should_trigger": true},
+  {"query": "How do I add a new category navigation link to the storefront header menu? I want it to appear between 'Women' and 'Men' in the top nav bar using the SFRA navigation controller.", "should_trigger": false},
+  {"query": "I need to build an admin panel for managing product recommendations. The panel will be a custom SCAPI endpoint that a React frontend calls -- what's the API structure?", "should_trigger": false},
+  {"query": "How do I create a custom object type definition in my site metadata XML so I can import it during deployment? I need a type with three indexed attributes.", "should_trigger": false},
+  {"query": "I want to customize the storefront checkout flow to add a gift message step. How do I extend the checkout controller and add the new template?", "should_trigger": false}
 ]

@@ -1,5 +1,40 @@
 # @salesforce/b2c-cli
 
+## 1.3.2
+
+### Patch Changes
+
+- Updated dependencies [[`30de66b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/30de66bf59c250c5382a7427ba475049c68566cd)]:
+  - @salesforce/b2c-tooling-sdk@1.3.1
+
+## 1.3.1
+
+### Patch Changes
+
+- [`7333370`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7333370a750978a27d552b144914d8adc46a9097) - Improved skill trigger descriptions across all 37 B2C skills for better Claude Code skill invocation. Expanded eval sets from 5 to 10 queries per skill with realistic, organic test prompts. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.3.0
+
+### Minor Changes
+
+- [#337](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/337) [`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e) - Add Agentforce Vibes (`--ide agentforce-vibes`) as a supported IDE target for `setup skills`, installing to `.a4drules/skills/`. Add `--directory` flag for custom installation paths. Change `manual` default directory to `.agents/skills/`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e)]:
+  - @salesforce/b2c-tooling-sdk@1.3.0
+
+## 1.2.0
+
+### Minor Changes
+
+- [`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46) - Add B2C Commerce script debugger with SDAPI 2.0 DAP adapter (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46), [`e6c6226`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6c6226c256b8d181917cc8c66fa4d7bf992e106)]:
+  - @salesforce/b2c-tooling-sdk@1.2.0
+
 ## 1.1.0
 
 ### Minor Changes

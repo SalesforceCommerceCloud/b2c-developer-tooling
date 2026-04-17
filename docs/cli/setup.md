@@ -375,30 +375,32 @@ b2c setup skills [SKILLSET]
 
 ### Flags
 
-| Flag             | Description                                                                   | Default     |
-| ---------------- | ----------------------------------------------------------------------------- | ----------- |
-| `--list`, `-l`   | List available skills without installing                                      | `false`     |
-| `--skill`        | Install specific skill(s) (can be repeated)                                   |             |
-| `--ide`          | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual | Auto-detect |
-| `--global`, `-g` | Install to user home directory (global scope)                                 | `false`     |
-| `--update`, `-u` | Update existing skills (overwrite)                                            | `false`     |
-| `--version`      | Specific release version                                                      | `latest`    |
-| `--force`        | Skip confirmation prompts (non-interactive)                                   | `false`     |
-| `--json`         | Output results as JSON                                                        | `false`     |
+| Flag                  | Description                                                                                    | Default     |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
+| `--list`, `-l`        | List available skills without installing                                                       | `false`     |
+| `--skill`             | Install specific skill(s) (can be repeated)                                                    |             |
+| `--ide`               | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual | Auto-detect |
+| `--directory`, `-d`   | Custom installation directory (overrides IDE default path)                                     |             |
+| `--global`, `-g`      | Install to user home directory (global scope)                                                  | `false`     |
+| `--update`, `-u`      | Update existing skills (overwrite)                                                             | `false`     |
+| `--version`           | Specific release version                                                                       | `latest`    |
+| `--force`             | Skip confirmation prompts (non-interactive)                                                    | `false`     |
+| `--json`              | Output results as JSON                                                                         | `false`     |
 
 ### Supported IDEs
 
-| IDE Value     | IDE Name                 | Project Path        | Global Path                   |
-| ------------- | ------------------------ | ------------------- | ----------------------------- |
-| `claude-code` | Claude Code              | `.claude/skills/`   | `~/.claude/skills/`           |
-| `cursor`      | Cursor                   | `.cursor/skills/`   | `~/.cursor/skills/`           |
-| `windsurf`    | Windsurf                 | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| `vscode`      | VS Code / GitHub Copilot | `.github/skills/`   | `~/.copilot/skills/`          |
-| `codex`       | OpenAI Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`            |
-| `opencode`    | OpenCode                 | `.opencode/skills/` | `~/.config/opencode/skills/`  |
-| `manual`      | Manual                   | `.claude/skills/`   | `~/.claude/skills/`           |
+| IDE Value          | IDE Name                 | Project Path          | Global Path                                         |
+| ------------------ | ------------------------ | --------------------- | --------------------------------------------------- |
+| `claude-code`      | Claude Code              | `.claude/skills/`     | `~/.claude/skills/`                                 |
+| `cursor`           | Cursor                   | `.cursor/skills/`     | `~/.cursor/skills/`                                 |
+| `windsurf`         | Windsurf                 | `.windsurf/skills/`   | `~/.codeium/windsurf/skills/`                       |
+| `vscode`           | VS Code / GitHub Copilot | `.github/skills/`     | `~/.copilot/skills/`                                |
+| `codex`            | OpenAI Codex CLI         | `.codex/skills/`      | `~/.codex/skills/`                                  |
+| `opencode`         | OpenCode                 | `.opencode/skills/`   | `~/.config/opencode/skills/`                        |
+| `agentforce-vibes` | Agentforce Vibes         | `.a4drules/skills/`   | `~/Library/Application Support/Code/User/globalStorage` (macOS) |
+| `manual`           | Manual                   | `.agents/skills/`     | `~/.agents/skills/`                                 |
 
-Use `manual` when you want to install to the Claude Code paths without marketplace recommendations.
+Use `agentforce-vibes` for Salesforce Agentforce for VS Code. Use `manual` for generic installation with a custom `--directory` path.
 
 ### Examples
 
@@ -421,6 +423,12 @@ b2c setup skills b2c --ide cursor --ide windsurf
 
 # Install specific skills only
 b2c setup skills b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor
+
+# Install to Agentforce Vibes (.a4drules/skills/)
+b2c setup skills b2c --ide agentforce-vibes
+
+# Install to a custom directory
+b2c setup skills b2c --ide manual --directory ./my-skills
 
 # Update existing skills
 b2c setup skills b2c --ide cursor --update
@@ -465,7 +473,7 @@ The marketplace provides:
 - Centralized plugin management
 - Version tracking
 
-Use `--ide manual` if you prefer manual installation to the same paths.
+Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes` to install to the `.a4drules/skills/` directory used by Salesforce Agentforce for VS Code.
 
 ### Skill Sets
 

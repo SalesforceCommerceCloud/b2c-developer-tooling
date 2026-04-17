@@ -7,21 +7,32 @@
 import type {APIGatewayProxyEvent, Context} from 'aws-lambda';
 import {PassThrough, type Writable} from 'stream';
 import {EventEmitter} from 'events';
-import express, {type Express} from 'express';
+import type {Express} from 'express';
 import {expect} from 'chai';
 import sinon from 'sinon';
+import {expressVersions} from '../helpers/express-versions.js';
 import {
   createStreamingLambdaAdapter,
   createExpressRequest,
   createExpressResponse,
 } from '@salesforce/mrt-utilities/streaming';
 
+type WritableWithChunksAndMetadata = Writable &
+  EventEmitter & {
+    chunks: Buffer[];
+    metadata: {statusCode: number; headers: Record<string, any>; cookies?: string[]};
+    getWrittenData: (encoding?: BufferEncoding) => Buffer | string;
+  };
+
 // Mock awslambda global
 const mockHttpResponseStream = {
   from: sinon
     .stub()
     .callsFake(
-      (stream: Writable, _metadata: {statusCode: number; headers: Record<string, any>; cookies?: string[]}) => {
+      (
+        stream: WritableWithChunksAndMetadata,
+        _metadata: {statusCode: number; headers: Record<string, any>; cookies?: string[]}) => {
+        stream.metadata = _metadata;
         return stream;
       },
     ),
@@ -34,7 +45,7 @@ const mockHttpResponseStream = {
 };
 
 // Mock stream type with Sinon stubs so assertions (e.g. .called, .calledWith) type-check
-type MockWritable = (Writable & EventEmitter) & {
+type MockWritable = WritableWithChunksAndMetadata & {
   write: sinon.SinonStub;
   end: sinon.SinonStub;
   destroy: sinon.SinonStub;
@@ -52,6 +63,8 @@ function createMockWritable(): MockWritable {
   stream.writableEnded = false;
   stream.writableFinished = false;
   stream.destroyed = false;
+  stream.chunks = chunks;
+  stream.metadata = undefined;
 
   stream.write = sinon.stub().callsFake((chunk: any) => {
     if (destroyed || ended) return false;
@@ -82,6 +95,11 @@ function createMockWritable(): MockWritable {
   stream.flush = sinon.stub().callsFake(() => {
     // Mock flush method
   });
+
+  stream.getWrittenData = function (encoding?: BufferEncoding) {
+    const data = Buffer.concat(this.chunks);
+    return encoding ? data.toString(encoding) : data;
+};
 
   return stream as MockWritable;
 }
@@ -230,26 +248,27 @@ function createMockContext(overrides?: Partial<Context>): Context {
 }
 
 describe('create-lambda-adapter', () => {
-  let mockResponseStream: MockWritable;
-  let mockApp: Express;
+  expressVersions.forEach(({label, express}) => {
+    describe(`create-lambda-adapter (${label})`, () => {
+      let mockResponseStream: MockWritable;
+      let mockApp: Express;
 
-  beforeEach(() => {
-    (globalThis as any).awslambda = {HttpResponseStream: mockHttpResponseStream};
-    mockResponseStream = createMockWritable();
-    mockApp = express();
-    mockHttpResponseStream.from.resetHistory();
-    mockHttpResponseStream.from.callsFake((stream) => stream);
-  });
+      beforeEach(() => {
+        (globalThis as any).awslambda = {HttpResponseStream: mockHttpResponseStream};
+        mockResponseStream = createMockWritable();
+        mockApp = express();
+        mockHttpResponseStream.from.resetHistory();
+      });
 
-  afterEach(() => {
-    mockHttpResponseStream.from.resetHistory();
-  });
+      afterEach(() => {
+        mockHttpResponseStream.from.resetHistory();
+      });
 
-  describe('createStreamingLambdaAdapter', () => {
-    it('should create a handler function', () => {
-      const handler = createStreamingLambdaAdapter(mockApp, mockResponseStream);
-      expect(typeof handler).to.equal('function');
-    });
+      describe('createStreamingLambdaAdapter', () => {
+        it('should create a handler function', () => {
+          const handler = createStreamingLambdaAdapter(mockApp, mockResponseStream);
+          expect(typeof handler).to.equal('function');
+        });
 
     it('should handle successful request', async function () {
       this.timeout(10000);
@@ -280,7 +299,7 @@ describe('create-lambda-adapter', () => {
 
       await handler(event, context);
 
-      expect(mockResponseStream.write.firstCall.args[0]).to.include('500 Internal Server Error');
+      expect(mockResponseStream.write.firstCall.args[0]).to.include('Error');
       expect(mockResponseStream.end.called).to.be.true;
     });
 
@@ -295,7 +314,7 @@ describe('create-lambda-adapter', () => {
 
       await handler(event, context);
 
-      expect(mockResponseStream.write.firstCall.args[0]).to.include('500 Internal Server Error');
+      expect(mockResponseStream.write.firstCall.args[0]).to.include('Error');
       expect(mockResponseStream.end.called).to.be.true;
     });
 
@@ -318,22 +337,80 @@ describe('create-lambda-adapter', () => {
       expect(closedStream.write.called).to.be.false;
     });
 
-    it('should handle stream without write method', async () => {
-      mockApp.get('/test', () => {
-        throw new Error('Test error');
-      });
+    it('should return status code 400 response for requests to streaming route with invalid path', async () => {
+      // We need a catch-all route to force the router to try to decode the path
+      const dummyCatchAllRoute = (_: any, res: any) => {
+        res.status(200).send('dummy catch-all route response');
+      };
+      try {
+        //express 4 style catch-all route, throws an error when installed 
+        // in express 5, see https://github.com/pillarjs/path-to-regexp#errors
+        mockApp.get('/*', dummyCatchAllRoute);
+      } catch (error) {
+        //express 5 style catch-all route
+        mockApp.get('/{*splat}', dummyCatchAllRoute);
+      }
 
-      const streamWithoutWrite = createMockWritable();
-      delete (streamWithoutWrite as any).write;
 
-      const handler = createStreamingLambdaAdapter(mockApp, streamWithoutWrite);
-      const event = createMockEvent({path: '/test'});
+      const handler = createStreamingLambdaAdapter(mockApp, mockResponseStream);
+      const event = createMockEvent({path: '/%80'});
       const context = createMockContext();
 
       await handler(event, context);
 
-      // Should not throw
-      expect(streamWithoutWrite.end.called).to.be.true;
+      expect(mockResponseStream.metadata.statusCode).to.equal(400);
+      expect(mockResponseStream.write.called).to.be.true;
+      expect(mockResponseStream.end.called).to.be.true;
+
+      const responseData = mockResponseStream.getWrittenData('utf-8');
+
+      // The response body returned by finalhandler depends on the NODE_ENV environment variable, when it is set to "production", a brief error page with the message "Bad Request" is returned, otherwise it returns a more detailed error page with a stack trace for a URIError exception
+      expect(responseData).to.contain('<title>Error</title>');
+      expect(responseData).to.match(/URIError|Bad Request/);
+    });
+
+    it('should return status code 404 response for requests to streaming route that explicitly raises to return a 404', async () => {
+      // A 404 implemented by throwing
+      mockApp.get('/intentional404', () => {
+        type ErrorWithStatus = Error & {status: number};
+        const err = new Error('Not Found') as ErrorWithStatus;
+        err.message = 'Not Found';
+        err.status = 404;
+        throw err;
+      });
+
+      const handler = createStreamingLambdaAdapter(mockApp, mockResponseStream);
+      const event = createMockEvent({path: '/intentional404'});
+      const context = createMockContext();
+
+      await handler(event, context);
+
+      //expect(mockResponseStream.write).toHaveBeenCalled();
+      expect(mockResponseStream.end.called).to.be.true;
+      expect(mockResponseStream.metadata.statusCode).to.equal(404);
+
+      expect(mockResponseStream.getWrittenData('utf-8')).to.contain('Not Found');
+    });
+
+    it('should stream status code 200 response for requests to an finalhandler style route', async () => {
+      mockApp.get('/simpleroute', (req, res) => {
+        // A hanlder that uses the response object in the style of https://github.com/pillarjs/finalhandler/blob/v2.1.0/index.js#L245-L280 which is used by express to handle the final response in case of an error
+        res.statusCode = 200;
+        res.statusMessage = 'OK';
+        const body = 'hello world';
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Length', Buffer.byteLength(body, 'utf8'));
+        res.end(body);
+      });
+
+      const handler = createStreamingLambdaAdapter(mockApp, mockResponseStream);
+      const event = createMockEvent({path: '/simpleroute'});
+      const context = createMockContext();
+
+      await handler(event, context);
+
+      expect(mockResponseStream.metadata.statusCode).to.equal(200);
+      expect(mockResponseStream.getWrittenData('utf-8')).to.equal('hello world');
     });
 
     it('should handle stream without end method in finally', async () => {
@@ -355,18 +432,18 @@ describe('create-lambda-adapter', () => {
     });
   });
 
-  describe('createExpressRequest', () => {
-    it('should create Express-like request object', () => {
-      const event = createMockEvent();
-      const context = createMockContext();
-      const req = createExpressRequest(event, context);
+      describe('createExpressRequest', () => {
+        it('should create Express-like request object', () => {
+          const event = createMockEvent();
+          const context = createMockContext();
+          const req = createExpressRequest(event, context);
 
-      expect(req.method).to.equal('GET');
-      expect(req.url).to.equal('/test');
-      expect(req.headers).to.exist;
-      // ServerlessRequest doesn't expose path, query, params, or apiGateway directly
-      // These are handled by Express middleware
-    });
+          expect(req.method).to.equal('GET');
+          expect(req.url).to.equal('/test');
+          expect(req.headers).to.exist;
+          // ServerlessRequest doesn't expose path, query, params, or apiGateway directly
+          // These are handled by Express middleware
+        });
 
     it('should decode base64 encoded body', () => {
       const body = Buffer.from('test body').toString('base64');
@@ -583,18 +660,18 @@ describe('create-lambda-adapter', () => {
     });
   });
 
-  describe('createExpressResponse', () => {
-    describe('writeHead', () => {
-      it('should set status code and headers', () => {
-        const event = createMockEvent({httpMethod: 'GET'});
-        const context = createMockContext();
-        const res = createExpressResponse(mockResponseStream, event, context);
-        res.writeHead(200, {'Content-Type': 'text/plain'});
+      describe('createExpressResponse', () => {
+        describe('writeHead', () => {
+          it('should set status code and headers', () => {
+            const event = createMockEvent({httpMethod: 'GET'});
+            const context = createMockContext();
+            const res = createExpressResponse(mockResponseStream, event, context);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
 
-        expect(res.statusCode).to.equal(200);
-        expect(mockHttpResponseStream.from.called).to.be.true;
-        expect(res.headersSent).to.be.true;
-      });
+            expect(res.statusCode).to.equal(200);
+            expect(mockHttpResponseStream.from.called).to.be.true;
+            expect(res.headersSent).to.be.true;
+          });
 
       it('should handle status message', () => {
         const event = createMockEvent({httpMethod: 'GET'});
@@ -1544,8 +1621,8 @@ describe('create-lambda-adapter', () => {
     });
   });
 
-  describe('createExpressRequest', () => {
-    describe('multiValueHeaders processing', () => {
+      describe('createExpressRequest', () => {
+        describe('multiValueHeaders processing', () => {
       it('should handle multiValueHeaders with length > 1', () => {
         const event: APIGatewayProxyEvent = {
           httpMethod: 'GET',
@@ -1781,8 +1858,8 @@ describe('create-lambda-adapter', () => {
     });
   });
 
-  describe('Edge cases and error handling', () => {
-    describe('initializeResponse edge cases', () => {
+      describe('Edge cases and error handling', () => {
+        describe('initializeResponse edge cases', () => {
       it('should handle closed stream in initializeResponse', () => {
         const closedStream = createMockWritable();
         (closedStream as any).writable = false;
@@ -2526,6 +2603,8 @@ describe('create-lambda-adapter', () => {
         const result = res.write(uint8Array);
 
         expect(result).to.be.true;
+      });
+    });
       });
     });
   });

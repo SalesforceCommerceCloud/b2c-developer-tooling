@@ -1,5 +1,5 @@
 ---
-description: AI agent skills and plugins for Claude Code, Cursor, and GitHub Copilot that enhance B2C Commerce development.
+description: AI agent skills and plugins for Agentforce Vibes, Claude Code, Codex, Cursor, GitHub Copilot that enhance B2C Commerce development.
 ---
 
 # Agent Skills & Plugins
@@ -201,6 +201,37 @@ b2c setup skills b2c-cli --ide cursor --global --force
 
 See [Setup Commands](/cli/setup) for full CLI documentation.
 
+## Installation with Agentforce Vibes
+
+[Skills in Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/skills.html) automatically detects skills placed in the `.a4drules/skills/` directory.
+
+### Using B2C CLI
+
+```bash
+# Autodetect
+b2c setup skills
+
+# Install to project .a4drules/skills/ directory
+b2c setup skills b2c --ide agentforce-vibes
+b2c setup skills b2c-cli --ide agentforce-vibes
+
+# Install globally
+b2c setup skills b2c --ide agentforce-vibes --global
+```
+
+### Manual Setup
+
+Place skill directories in `.a4drules/skills/` (project) or your global storage directory:
+
+| Location | Scope |
+|----------|-------|
+| `.a4drules/skills/` | Project (recommended) |
+| `~/Library/Application Support/Code/User/globalStorage` | Global (macOS) |
+| `~/.config/Code/User/globalStorage` | Global (Linux) |
+| `%APPDATA%\Code\User\globalStorage` | Global (Windows) |
+
+When a global skill and project skill have the same name, the global skill takes precedence. Version control your project skills by committing `.a4drules/skills/` to your source repository so your team can share, review, and improve them together.
+
 ## Installation with Other IDEs
 
 The B2C skills follow the [Agent Skills](https://agentskills.io/home) standard and can be used with other AI-powered development tools.
@@ -253,7 +284,17 @@ Skills are installed to:
 
 ### Manual Installation
 
-For other AI-powered IDEs, download the skills zip files from the [latest GitHub release](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest):
+Use `--ide manual` to install to the default `.agents/skills/` directory, or specify a custom path with `--directory`:
+
+```bash
+# Install to .agents/skills/ (default for manual)
+b2c setup skills b2c --ide manual
+
+# Install to a custom directory
+b2c setup skills b2c --ide manual --directory ./my-skills
+```
+
+You can also download the skills zip files directly from the [latest GitHub release](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest):
 
 | Artifact | Contents |
 |----------|----------|

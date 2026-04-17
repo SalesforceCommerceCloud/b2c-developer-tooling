@@ -1,7 +1,12 @@
 [
-  {"query": "I need to export the homepage Page Designer page from our SharedLibrary. How do I use b2c content export and can I also export matching pages with a regex pattern?", "should_trigger": true},
-  {"query": "How do I list all Page Designer pages in a site-private library? I want to see the tree structure and then export specific components.", "should_trigger": true},
-  {"query": "Can I export Page Designer content from a local library XML file without connecting to the instance? I have a library.xml I downloaded earlier.", "should_trigger": true},
-  {"query": "I want to create a new Page Designer component type with regions and attribute groups. What should my banner.json meta definition look like?", "should_trigger": false},
-  {"query": "How do I import a site archive back into my sandbox? I have an exported zip file I need to upload.", "should_trigger": false}
+  {"query": "I need to export the homepage Page Designer page from our shared content library so I can review its component structure.", "should_trigger": true},
+  {"query": "How do I list all Page Designer pages in a site-specific library? I want to see the full tree of pages and components.", "should_trigger": true},
+  {"query": "Can I export Page Designer content from a local library XML file without connecting to the instance? I downloaded the library earlier.", "should_trigger": true},
+  {"query": "I need to migrate Page Designer pages from staging to production. How do I export them and validate the content before importing?", "should_trigger": true},
+  {"query": "How do I find the page ID for a specific Page Designer page in my content library so I can export just that one?", "should_trigger": true},
+  {"query": "I want to validate our Page Designer metadefinitions against the actual page JSON to check for missing component types or broken references.", "should_trigger": true},
+  {"query": "I want to create a new Page Designer component type with custom regions and attribute groups. What should my JSON meta definition look like?", "should_trigger": false},
+  {"query": "How do I import a site archive zip file back into my sandbox? I have the export ready to upload.", "should_trigger": false},
+  {"query": "I need to edit content slot configurations in Business Manager for our category landing pages.", "should_trigger": false},
+  {"query": "How do I upload static assets like images and CSS to the library folder on my instance?", "should_trigger": false}
 ]

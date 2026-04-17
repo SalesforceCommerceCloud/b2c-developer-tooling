@@ -1,7 +1,12 @@
 [
-  {"query": "I need to add a custom attribute called 'vendorCode' to the Product system object type. Can you create the system-objecttype-extensions.xml with the attribute definition and a group for Business Manager?", "should_trigger": true},
-  {"query": "How do I define a custom object type for storing store locations with latitude, longitude, and phone fields in custom-objecttype-definitions.xml?", "should_trigger": true},
-  {"query": "I want to create a site preference that has different values for development, staging, and production instances. How do I set up the metadata XML and preferences.xml?", "should_trigger": true},
-  {"query": "How do I read a custom attribute value from a product in my SFRA controller? I'm trying to access product.custom.vendorCode but it's coming back undefined.", "should_trigger": false},
-  {"query": "I need to import product data from a CSV file into B2C Commerce. What's the XML format for the catalog import file with product names and prices?", "should_trigger": false}
+  {"query": "I need to add a 'vendorCode' text field to products so our merchandisers can see it in Business Manager. What does the XML look like and how do I group it with our other custom fields?", "should_trigger": true},
+  {"query": "We need a new object type to store our retail store locations with fields for latitude, longitude, phone, and hours. How do I define it so it's site-scoped and shows up in BM?", "should_trigger": true},
+  {"query": "I want to create a boolean site preference called 'enableLoyaltyProgram' that can have different values per instance. What's the XML structure for defining and setting it?", "should_trigger": true},
+  {"query": "I need to add an enum-of-strings attribute to Order called 'fulfillmentChannel' with values like 'warehouse', 'store', and 'dropship'. It should be searchable and required. What does the type-extension XML look like?", "should_trigger": true},
+  {"query": "We're defining a custom object type for caching API responses with a TTL. It needs a string key, a text blob for the JSON payload, a datetime for expiration, and it should be organization-scoped not site-scoped. Walk me through the full XML.", "should_trigger": true},
+  {"query": "I have a bunch of existing custom attributes scattered across different XML files from different developers. I want to reorganize them into proper attribute groups so they display nicely in Business Manager under logical tabs. How do attribute groups work in the metadata XML?", "should_trigger": true},
+  {"query": "I'm trying to read a custom attribute from a product in my controller but product.custom.vendorCode is coming back undefined even though I can see the value in Business Manager.", "should_trigger": false},
+  {"query": "I need to import a catalog of 5000 products from a CSV with names, prices, and images. What's the XML format for the catalog import?", "should_trigger": false},
+  {"query": "How do I query all custom objects of type 'StoreLocator' in my controller to display them on a map page? I need to filter by city and sort by distance.", "should_trigger": false},
+  {"query": "I want to import site preferences and metadata onto a new sandbox using the CLI. What's the directory structure for a site archive?", "should_trigger": false}
 ]

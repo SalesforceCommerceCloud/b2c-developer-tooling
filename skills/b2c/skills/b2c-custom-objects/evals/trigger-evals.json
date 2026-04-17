@@ -1,7 +1,12 @@
 [
-  {"query": "How do I use CustomObjectMgr to create and query custom objects in B2C Commerce? I need to store configuration data per site with Transaction.wrap.", "should_trigger": true},
-  {"query": "I'm trying to search custom objects via OCAPI Data API using a bool_query with term_query filters. What's the endpoint URL and request format?", "should_trigger": true},
-  {"query": "How do I set up a processing queue using custom objects? I need to create objects with a status field and query for pending items in a job.", "should_trigger": true},
-  {"query": "How do I add custom attributes to the Product system object in Business Manager?", "should_trigger": false},
-  {"query": "I need to create a custom object type definition in my site import XML for deployment. What's the metadata XML schema?", "should_trigger": false}
+  {"query": "I need to store order export tracking records so our job can pick up unprocessed orders. Each record should have an order number, status, and timestamp. How do I create these custom object instances in a transaction and query for ones with status 'pending'?", "should_trigger": true},
+  {"query": "I'm trying to search custom objects via the Data API with multiple filters -- I need records where status is 'active' AND created within the last 7 days. What's the OCAPI search endpoint URL and how do I structure the bool_query with term and range filters?", "should_trigger": true},
+  {"query": "Our integration stores API tokens in organization-scoped custom objects so all sites can access them. The token has an expiry field and I need to check if it's expired and update it atomically. How do I handle the read-then-write pattern safely with transactions?", "should_trigger": true},
+  {"query": "I need to implement a rate limiter using custom objects -- each object tracks an API key and request count per hour. How do I query by the compound key and increment the counter within a transaction?", "should_trigger": true},
+  {"query": "We're using the Shopper Custom Objects API from our PWA frontend to store customer wishlists. How does the shopper-scoped access work and what are the limitations compared to the Data API for custom objects?", "should_trigger": true},
+  {"query": "I have thousands of custom object records and my query is timing out. How do I paginate through results efficiently and are there indexing considerations I should know about for custom object attributes?", "should_trigger": true},
+  {"query": "How do I add a custom attribute called 'loyaltyTier' to the Product system object so it shows up in Business Manager and is available in search refinements?", "should_trigger": false},
+  {"query": "I need to create the XML metadata definition for a new custom object type with specific attribute types and indexing. What's the site import XML schema for object type definitions?", "should_trigger": false},
+  {"query": "How do I export content assets from a content library using the CLI? I want to back up our homepage slots before making changes.", "should_trigger": false},
+  {"query": "I want to cache the results of my custom object queries so I don't hit the database on every request. How do I set up a cache region for this?", "should_trigger": false}
 ]

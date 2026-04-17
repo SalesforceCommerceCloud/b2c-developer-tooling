@@ -1,6 +1,6 @@
 ---
 name: b2c-cip
-description: Run Commerce Intelligence Platform (CIP/CCAC) analytics reports, metadata discovery, and SQL queries with the b2c cli. Always reference when using the CLI to run analytics reports, query Commerce Intelligence data, discover CIP tables, or export KPI metrics. Also use when users ask about sales, search, or payment analytics.
+description: Run analytics reports and SQL queries against B2C Commerce Intelligence data using the b2c CLI. Use this skill whenever the user needs sales analytics, search query performance metrics, payment data, or KPI exports. Also use when they need to discover available data tables, run custom SQL, or pull aggregate reports — even if they just say "show me sales data" or "what are our top search terms".
 ---
 
 # B2C CIP Skill
@@ -31,7 +31,7 @@ cip
 
 ## Requirements
 
-- OAuth client credentials: `--client-id`, `--client-secret`
+- OAuth client credentials (resolved from CLI configuration, or override with `--client-id` / `--client-secret`)
 - CIP tenant: `--tenant-id` (or `--tenant`)
 - API client has `Salesforce Commerce API` role with tenant filter for your instance
 
@@ -59,13 +59,13 @@ Reports & Dashboards non-production URL: `https://ccac.stg.analytics.commerceclo
 
 ```bash
 # List warehouse tables
-b2c cip tables --tenant-id abcd_prd --client-id <client-id> --client-secret <client-secret>
+b2c cip tables --tenant-id abcd_prd
 
 # Filter table names
-b2c cip tables --tenant-id abcd_prd --pattern "ccdw_aggr_%" --client-id <client-id> --client-secret <client-secret>
+b2c cip tables --tenant-id abcd_prd --pattern "ccdw_aggr_%"
 
 # Describe table columns
-b2c cip describe ccdw_aggr_ocapi_request --tenant-id abcd_prd --client-id <client-id> --client-secret <client-secret>
+b2c cip describe ccdw_aggr_ocapi_request --tenant-id abcd_prd
 ```
 
 ## Known Tables
@@ -88,12 +88,10 @@ b2c cip report --help
 
 # Run a report
 b2c cip report sales-analytics \
+  --tenant-id abcd_prd \
   --site-id Sites-RefArch-Site \
   --from 2025-01-01 \
-  --to 2025-01-31 \
-  --tenant-id abcd_prd \
-  --client-id <client-id> \
-  --client-secret <client-secret>
+  --to 2025-01-31
 
 # Show report parameter contract
 b2c cip report top-referrers --describe
@@ -109,7 +107,7 @@ b2c cip report top-referrers --site-id Sites-RefArch-Site --limit 25 --staging -
 
 ```bash
 b2c cip report sales-analytics --site-id Sites-RefArch-Site --sql \
-  | b2c cip query --tenant-id abcd_prd --client-id <client-id> --client-secret <client-secret>
+  | b2c cip query --tenant-id abcd_prd
 ```
 
 ## Raw SQL Query Examples
@@ -117,8 +115,6 @@ b2c cip report sales-analytics --site-id Sites-RefArch-Site --sql \
 ```bash
 b2c cip query \
   --tenant-id abcd_prd \
-  --client-id <client-id> \
-  --client-secret <client-secret> \
   "SELECT * FROM ccdw_aggr_sales_summary LIMIT 10"
 ```
 

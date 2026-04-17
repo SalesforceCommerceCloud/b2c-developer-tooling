@@ -1,7 +1,12 @@
 [
-  {"query": "My checkout flow is throwing a 500 error on the sandbox. Can you pull the recent error logs to see what's happening?", "should_trigger": true},
-  {"query": "How do I tail the SFCC logs in real time while I'm debugging my custom controller?", "should_trigger": true},
-  {"query": "I need to search the B2C logs for PaymentProcessor errors in the last hour. Show me the b2c logs command with filters.", "should_trigger": true},
-  {"query": "How do I add Logger.error() calls in my B2C cartridge script to log custom error messages?", "should_trigger": false},
-  {"query": "Can you help me configure Winston logging levels in my Node.js Express app?", "should_trigger": false}
+  {"query": "Our checkout started throwing 500 errors about an hour ago on the sandbox. Can you pull the recent error logs so we can see what's going wrong?", "should_trigger": true},
+  {"query": "I'm debugging a custom controller and I want to watch the server logs in real time as I hit the endpoint. Is there a way to stream them from the terminal?", "should_trigger": true},
+  {"query": "We had a payment processing issue yesterday afternoon. I need to search the logs for PaymentProcessor errors between 2pm and 4pm to find the root cause.", "should_trigger": true},
+  {"query": "Something is intermittently causing a null pointer exception during the order placement flow on staging. I need to grab the last few hundred lines of the error log and filter for anything related to the order pipeline so I can see the full stack trace.", "should_trigger": true},
+  {"query": "I deployed a hotfix 20 minutes ago and I want to verify it's working. Can I tail the custom-error log on our production instance and filter for the specific error code ERR_INVENTORY_SYNC that was showing up before?", "should_trigger": true},
+  {"query": "Our support team reported that a customer got a blank page during checkout around 10:15 AM today. I need to pull the warn and error logs for that time window and look for any exceptions in the shipping calculation code.", "should_trigger": true},
+  {"query": "How do I add error logging calls in my B2C Commerce server-side script? I want to log to a custom log category.", "should_trigger": false},
+  {"query": "I need to configure Winston logging levels and file transports in my Node.js Express application.", "should_trigger": false},
+  {"query": "Is there a way to view server logs directly in Business Manager? I'm looking for the log viewer section in the admin panel.", "should_trigger": false},
+  {"query": "I'm adding a Logger.getLogger('mymodule') call to my script but the log statements aren't showing up. How do I configure the log level for my custom category in the logging preferences?", "should_trigger": false}
 ]

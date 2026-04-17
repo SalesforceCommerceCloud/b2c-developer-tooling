@@ -1,6 +1,6 @@
 ---
 name: b2c-isml
-description: Work with ISML templates in B2C Commerce. Use when writing storefront templates, using isprint/isset/isloop tags, understanding ISML expressions (${...}), or creating custom template modules. Covers tag syntax, expression language, and template includes.
+description: Build ISML templates with isprint, isset, isloop, isdecorate, isinclude tags, and ${...} expression syntax. Use this skill whenever the user needs to write or debug storefront templates, create decorator layouts with isreplace, build reusable template modules, control HTML encoding in output, or use ISML expression language for dynamic content. Also use when fixing template rendering issues -- even if they just say 'loop through products in the template' or 'my HTML is getting escaped'.
 ---
 
 # ISML Skill

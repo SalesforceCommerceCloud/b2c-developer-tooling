@@ -1,0 +1,22 @@
+<isdecorate template="common/layout/page">
+    <isscript>
+        var assets = require('*/cartridge/scripts/assets');
+        assets.addCss('/css/loyalty.css');
+    </isscript>
+
+    <div class="loyalty-dashboard">
+        <h1>${Resource.msg('loyalty.title', 'loyalty', null)}</h1>
+
+        <isif condition="${pdict.loyalty.isEnrolled}">
+            <div class="loyalty-points">
+                <span class="points-value">${pdict.loyalty.points}</span>
+                <span class="points-label">${Resource.msg('loyalty.points', 'loyalty', null)}</span>
+            </div>
+            <div class="loyalty-tier">
+                <isprint value="${pdict.loyalty.tier}" />
+            </div>
+        <iselse/>
+            <p>${Resource.msg('loyalty.notEnrolled', 'loyalty', null)}</p>
+        </isif>
+    </div>
+</isdecorate>

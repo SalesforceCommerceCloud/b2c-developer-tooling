@@ -1,7 +1,12 @@
 [
-  {"query": "I need to implement passwordless login using email OTP with SLAS. How does the callback flow work and how do I exchange the OTP for tokens?", "should_trigger": true},
-  {"query": "How do I bridge sessions between our PWA Kit and SFRA storefronts? We need seamless auth when users navigate between the two using dwsgst tokens.", "should_trigger": true},
-  {"query": "We're getting HTTP 409 errors when calling the SLAS trusted-system/token endpoint for the same shopper. How do I handle the 3-second protection window for TSOB?", "should_trigger": true},
-  {"query": "How do I create a new SLAS client using the b2c CLI with default scopes and a redirect URI for my storefront?", "should_trigger": false},
-  {"query": "I need to get a guest access token to call the Shopper Products API from my composable storefront. What's the basic client_credentials flow?", "should_trigger": false}
+  {"query": "We're building a PWA Kit storefront and our SFRA site shares the same customer base. When a logged-in user clicks through to the SFRA pages they lose their session. How do I keep them authenticated across both storefronts?", "should_trigger": true},
+  {"query": "Our checkout keeps getting 409 Conflict responses from the token endpoint when our backend service makes calls on behalf of shoppers. Two requests for the same customer hit within a couple seconds and the second one always fails. What's going on and how do we handle it?", "should_trigger": true},
+  {"query": "I want to let shoppers on our site log in without a password — just send them an email with a code they type in. What's the flow for implementing that kind of passwordless auth on B2C Commerce?", "should_trigger": true},
+  {"query": "Our access tokens are expiring mid-session and customers are getting logged out during checkout. I need to set up proper token refresh so the session stays alive, but I'm confused about when to use the refresh token vs requesting a new guest token. What's the right approach?", "should_trigger": true},
+  {"query": "We have a microservice that needs to place orders on behalf of customers — trusted system on behalf of (TSOB) flow. The service has client credentials but I'm not sure how to exchange them for a token that represents a specific shopper. Walk me through the token exchange.", "should_trigger": true},
+  {"query": "I'm getting a JWT back from the auth endpoint and I want to validate it server-side before trusting the claims. How do I verify the signature and what JWKS endpoint do I hit for the public keys? Also need to check the audience and issuer fields.", "should_trigger": true},
+  {"query": "I need to set up a new API client in Account Manager so our CI pipeline can deploy code to our sandbox. What scopes should I configure?", "should_trigger": false},
+  {"query": "How do I add products to a basket and start a checkout session from my composable storefront using the Shopper Baskets API?", "should_trigger": false},
+  {"query": "I want to manage our SLAS admin settings — rotate the client secret for our tenant and update the redirect URIs. Where do I do that in Account Manager?", "should_trigger": false},
+  {"query": "Our Shopper Baskets API call is returning a 401 and I think the issue is with the scope on the admin API client, not the shopper token. How do I check which scopes are assigned to a client ID?", "should_trigger": false}
 ]

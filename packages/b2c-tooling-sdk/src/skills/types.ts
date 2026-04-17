@@ -7,7 +7,15 @@
 /**
  * Supported IDE types for skill installation.
  */
-export type IdeType = 'claude-code' | 'cursor' | 'windsurf' | 'vscode' | 'codex' | 'opencode' | 'manual';
+export type IdeType =
+  | 'claude-code'
+  | 'cursor'
+  | 'windsurf'
+  | 'vscode'
+  | 'codex'
+  | 'opencode'
+  | 'agentforce-vibes'
+  | 'manual';
 
 /**
  * Skill set categories matching the plugins directory structure.
@@ -98,6 +106,8 @@ export interface InstallSkillsOptions {
   update: boolean;
   /** Project root for project-level installations */
   projectRoot?: string;
+  /** Custom directory override (used instead of IDE-specific project path) */
+  directory?: string;
 }
 
 /**
