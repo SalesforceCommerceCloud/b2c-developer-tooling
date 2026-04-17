@@ -1,5 +1,20 @@
 # @salesforce/b2c-cli
 
+## 1.4.0
+
+### Minor Changes
+
+- [#308](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/308) [`d5c9125`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d5c91252922145309cc973441dc65962d46f5fa9) - Add `b2c mrt env var push` command. Reads a local `.env` file, computes a diff against the current remote MRT environment variables, and pushes new or changed variables in a single batch request (with per-variable fallback). Supports `--file`, `--exclude-prefix`, and `--yes` flags. (Thanks [@vmarta](https://github.com/vmarta)!)
+
+### Patch Changes
+
+- [`52d7a6d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52d7a6dd12e3ba53ae3cf729ddf71a7f225f7b6e) - Fix inaccurate flags and commands in CLI skill documentation for job, ecdn, am, and users-roles skills (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a) - Add `--wait` / `--no-wait` flag to `b2c job import` command. Import waits for completion by default (preserving existing behavior); use `--no-wait` to return immediately after the job starts. Also adds `--poll-interval` flag for controlling poll frequency. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a)]:
+  - @salesforce/b2c-tooling-sdk@1.3.2
+
 ## 1.3.2
 
 ### Patch Changes
