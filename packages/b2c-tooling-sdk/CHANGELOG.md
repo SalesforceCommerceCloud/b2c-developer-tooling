@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.3.2
+
+### Patch Changes
+
+- [`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a) - Add `--wait` / `--no-wait` flag to `b2c job import` command. Import waits for completion by default (preserving existing behavior); use `--no-wait` to return immediately after the job starts. Also adds `--poll-interval` flag for controlling poll frequency. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.3.1
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @salesforce/mrt-utilities
 
+## 0.1.2
+
+### Patch Changes
+
+- [#345](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/345) [`abad5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/abad5e4e5fef192a88790943b4db1d50aea2b5aa) - Improved error handling in create-lambda-adapter.ts used for streaming support when deployed to Managed Runtime. (Thanks [@noahadams](https://github.com/noahadams)!)
+
+- [#349](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/349) [`bc0e4b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bc0e4b3b86d8481413c97be77d9d610f52d158f6) - Fixed CommonJS packaging for Node 22 by ensuring `require` entrypoints under `dist/cjs` are emitted as true CJS modules. Added dedicated `@salesforce/mrt-utilities/data-store` and `@salesforce/mrt-utilities/middleware/express` entrypoints so data-store imports do not have to load the Express middleware barrel during startup. (Thanks [@bendvc](https://github.com/bendvc)!)
+
 ## 0.1.1
 
 ### Patch Changes
