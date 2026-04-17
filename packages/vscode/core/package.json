@@ -11,6 +11,11 @@
   "categories": [
     "Other"
   ],
+  "exports": {
+    "./api": {
+      "types": "./src/api.ts"
+    }
+  },
   "dependencies": {
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
@@ -22,8 +27,6 @@
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
     "onFileSystem:b2c-content",
-    "onCommand:b2c-dx.openUI",
-    "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
@@ -154,16 +157,6 @@
       }
     ],
     "commands": [
-      {
-        "command": "b2c-dx.openUI",
-        "title": "Open Page Designer Assistant UI",
-        "category": "B2C DX - Page Designer Assistant"
-      },
-      {
-        "command": "b2c-dx.promptAgent",
-        "title": "Prompt Agent",
-        "category": "B2C DX"
-      },
       {
         "command": "b2c-dx.listWebDav",
         "title": "List WebDAV",

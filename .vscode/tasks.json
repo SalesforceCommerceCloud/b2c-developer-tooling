@@ -1,0 +1,20 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "build extensions",
+			"command": "pnpm run build:extensions",
+			"problemMatcher": [],
+			"group": { "kind": "build", "isDefault": true }
+		},
+		{
+			"type": "shell",
+			"label": "watch extensions",
+			"command": "pnpm --filter './packages/vscode/*' --parallel run watch",
+			"problemMatcher": [],
+			"isBackground": true,
+			"presentation": { "reveal": "never" }
+		}
+	]
+}

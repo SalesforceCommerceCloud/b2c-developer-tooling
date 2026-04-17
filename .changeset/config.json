@@ -6,7 +6,7 @@
   ],
   "commit": false,
   "fixed": [],
-  "linked": [["b2c-dx-core"]],
+  "linked": [["b2c-dx-core", "b2c-dx-sfnext", "b2c-dx"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

@@ -5,6 +5,8 @@ This is a monorepo project with the following packages:
 - `./packages/b2c-tooling-sdk` - the SDK/library for B2C Commerce operations; supports the CLI and can be used standalone
 - `./packages/b2c-dx-mcp` - Model Context Protocol server; also built with oclif
 - `./packages/vscode/core` - VS Code core extension (not published to npm; packaged as VSIX and versioned via git tags)
+- `./packages/vscode/storefront-next` - VS Code Storefront Next extension (Page Designer, scaffolding; packaged as VSIX)
+- `./packages/vscode/extension-pack` - VS Code extension pack (metadata-only; installs all B2C DX extensions)
 - `./docs` - documentation site (private `@salesforce/b2c-dx-docs` workspace package; not published to npm)
 
 ## Common Commands
@@ -186,7 +188,7 @@ Changeset guidelines:
   - HOW a consumer should update their code
 - Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
-Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-dx-core`, `@salesforce/b2c-dx-docs`
+Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-dx-core`, `b2c-dx-sfnext`, `b2c-dx`, `@salesforce/b2c-dx-docs`
 
 Create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 
