@@ -79,7 +79,7 @@ jobs:
       - name: Run VS Extension checks
         id: vs-extension-test
         if: always() && steps.cli-test.conclusion != 'cancelled'
-        working-directory: packages/b2c-vs-extension
+        working-directory: packages/vscode/core
         run: pnpm run typecheck:agent && pnpm run lint
 
       - name: Test Report

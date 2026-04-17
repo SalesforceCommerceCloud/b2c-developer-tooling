@@ -24,10 +24,10 @@ From the monorepo root:
 
 ```bash
 pnpm install
-pnpm --filter @salesforce/b2c-vs-extension run build
-pnpm --filter @salesforce/b2c-vs-extension run lint
-pnpm --filter @salesforce/b2c-vs-extension run format
-pnpm --filter @salesforce/b2c-vs-extension run test
+pnpm --filter b2c-dx-core run build
+pnpm --filter b2c-dx-core run lint
+pnpm --filter b2c-dx-core run format
+pnpm --filter b2c-dx-core run test
 ```
 
 The build bundles `@salesforce/b2c-tooling-sdk` into `dist/extension.js` with esbuild, so the extension works when installed from a `.vsix` without requiring a separate `node_modules` install (unlike the CLI, which declares the SDK as an npm dependency).
@@ -38,12 +38,12 @@ For iterating on both the extension and the SDK without rebuilding:
 
 1. Start the watcher in a terminal:
    ```bash
-   cd packages/b2c-vs-extension
+   cd packages/vscode/core
    pnpm run watch
    ```
    This uses esbuild with the `development` condition, resolving SDK imports to source `.ts` files directly — no SDK rebuild needed.
 
-2. Open `packages/b2c-vs-extension` in VS Code and select the **Run Extension (Dev)** launch configuration (F5). This launches an Extension Development Host without a preLaunchTask so it won't overwrite the watch output.
+2. Open `packages/vscode/core` in VS Code and select the **Run Extension (Dev)** launch configuration (F5). This launches an Extension Development Host without a preLaunchTask so it won't overwrite the watch output.
 
 3. After making changes, press **Cmd+Shift+F5** (Restart Debugging) to restart the extension host and pick up the new bundle.
 

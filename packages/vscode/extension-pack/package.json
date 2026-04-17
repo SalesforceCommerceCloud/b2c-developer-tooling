@@ -1,0 +1,27 @@
+{
+  "name": "b2c-dx",
+  "displayName": "B2C DX",
+  "description": "Complete B2C Commerce development tools for VS Code — instance management, WebDAV, content libraries, sandbox management, log tailing, scaffolding, and Storefront Next development.",
+  "version": "0.1.0",
+  "publisher": "salesforce",
+  "license": "Apache-2.0",
+  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
+  "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/vscode/extension-pack",
+  "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
+  "categories": [
+    "Extension Packs"
+  ],
+  "engines": {
+    "vscode": "^1.105.1"
+  },
+  "extensionPack": [
+    "salesforce.b2c-dx-core",
+    "salesforce.b2c-dx-sfnext"
+  ],
+  "scripts": {
+    "package": "pnpm exec vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "catalog:"
+  }
+}

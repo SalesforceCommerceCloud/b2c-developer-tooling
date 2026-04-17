@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch B2C Extensions",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode/core",
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode/storefront-next"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/packages/vscode/core/dist/**/*.js",
+        "${workspaceFolder}/packages/vscode/storefront-next/dist/**/*.js"
+      ],
+      "preLaunchTask": "build extensions"
+    }
+  ]
+}

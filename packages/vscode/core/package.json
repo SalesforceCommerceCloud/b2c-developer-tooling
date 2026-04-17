@@ -1,16 +1,21 @@
 {
-  "name": "b2c-vs-extension",
-  "displayName": "B2C DX VSCE",
-  "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
+  "name": "b2c-dx-core",
+  "displayName": "B2C DX Core",
+  "description": "Core B2C Commerce developer experience for VS Code — instance management, WebDAV, content libraries, log tailing, and scaffolding.",
   "version": "0.3.2",
-  "publisher": "Salesforce",
+  "publisher": "salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
-  "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/b2c-vs-extension",
+  "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/vscode/core",
   "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
   "categories": [
     "Other"
   ],
+  "exports": {
+    "./api": {
+      "types": "./src/api.ts"
+    }
+  },
   "dependencies": {
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
@@ -22,8 +27,6 @@
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
     "onFileSystem:b2c-content",
-    "onCommand:b2c-dx.openUI",
-    "onCommand:b2c-dx.promptAgent",
     "onCommand:b2c-dx.listWebDav",
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
@@ -192,16 +195,6 @@
       }
     ],
     "commands": [
-      {
-        "command": "b2c-dx.openUI",
-        "title": "Open Page Designer Assistant UI",
-        "category": "B2C DX - Page Designer Assistant"
-      },
-      {
-        "command": "b2c-dx.promptAgent",
-        "title": "Prompt Agent",
-        "category": "B2C DX"
-      },
       {
         "command": "b2c-dx.listWebDav",
         "title": "List WebDAV",
@@ -784,11 +777,11 @@
     "@eslint/compat": "catalog:",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
-    "@types/vscode": "^1.105.1",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.7.1",
-    "esbuild": "^0.24.0",
+    "@types/vscode": "catalog:",
+    "@vscode/test-cli": "catalog:",
+    "@vscode/test-electron": "catalog:",
+    "@vscode/vsce": "catalog:",
+    "esbuild": "catalog:",
     "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",

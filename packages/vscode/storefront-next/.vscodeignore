@@ -1,0 +1,17 @@
+.vscode/**
+.vscode-test/**
+src/**
+!src/page-designer/webview.html
+!src/page-designer/template/**
+out/**
+**/node_modules/**
+
+.gitignore
+**/tsconfig.json
+**/eslint.config.mjs
+**/*.map
+**/*.ts
+**/.vscode-test.*
+**/.pnpm-store/**
+**/.turbo/**
+packages/**

@@ -1,15 +1,9 @@
 .vscode/**
 .vscode-test/**
 src/**
-!src/webview.html
 !src/api-browser/swagger-webview.html
-!src/storefront-next-cartridge.html
-!src/scapi-explorer.html
-!src/ods-management.html
 out/**
 **/node_modules/**
-
-!src/template/**
 .gitignore
 **/tsconfig.json
 **/eslint.config.mjs

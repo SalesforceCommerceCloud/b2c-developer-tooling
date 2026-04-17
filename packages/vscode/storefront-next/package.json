@@ -1,0 +1,70 @@
+{
+  "name": "b2c-dx-sfnext",
+  "displayName": "B2C DX Storefront Next",
+  "description": "Storefront Next development tools — Page Designer Assistant, scaffolding, and component workflows.",
+  "version": "0.1.0",
+  "publisher": "salesforce",
+  "license": "Apache-2.0",
+  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
+  "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/vscode/storefront-next",
+  "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
+  "categories": [
+    "Other"
+  ],
+  "engines": {
+    "vscode": "^1.105.1"
+  },
+  "extensionDependencies": [
+    "salesforce.b2c-dx-core"
+  ],
+  "activationEvents": [
+    "onCommand:b2c-dx-sfnext.openPageDesigner"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "b2c-dx-sfnext.openPageDesigner",
+        "title": "Open Page Designer Assistant",
+        "category": "B2C DX - Storefront Next"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "b2c-dx-sfnext.openPageDesigner",
+          "when": "b2c:instance_configured"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node scripts/esbuild-bundle.mjs",
+    "watch": "node scripts/esbuild-bundle.mjs --watch",
+    "vscode:prepublish": "pnpm run typecheck:agent && node scripts/esbuild-bundle.mjs",
+    "package": "pnpm exec vsce package --no-dependencies",
+    "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc -p . --noEmit --pretty false",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
+  },
+  "dependencies": {
+    "b2c-dx-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@eslint/compat": "catalog:",
+    "@types/mocha": "catalog:",
+    "@types/node": "catalog:",
+    "@types/vscode": "catalog:",
+    "@vscode/vsce": "catalog:",
+    "esbuild": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-header": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  }
+}

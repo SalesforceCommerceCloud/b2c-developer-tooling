@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - packages/vscode/*
   - docs
 
 catalog:
@@ -9,6 +10,13 @@ catalog:
   glob: 13.0.0
   jsonschema: 1.5.0
   open: 11.0.0
+
+  # VS Code extension dev dependencies (shared across extensions)
+  '@types/vscode': ^1.105.1
+  '@vscode/vsce': ^3.7.1
+  '@vscode/test-cli': ^0.0.12
+  '@vscode/test-electron': ^2.5.2
+  esbuild: ^0.24.0
 
   # Dev dependencies (shared across packages)
   '@eslint/compat': ^1

@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - 'packages/b2c-vs-extension/**'
+      - 'packages/vscode/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'packages/b2c-vs-extension/**'
+      - 'packages/vscode/**'
 
 permissions:
   contents: read
@@ -58,5 +58,5 @@ jobs:
         run: pnpm -r run build
 
       - name: Run VS Extension tests
-        working-directory: packages/b2c-vs-extension
+        working-directory: packages/vscode/core
         run: xvfb-run -a pnpm run test
