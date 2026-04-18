@@ -9,17 +9,20 @@ Use the `b2c` CLI plugin to manage SCAPI Custom API endpoints and check their re
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli scapi custom status`).
 
-## Required: Tenant ID
+## Configuration
 
-The `--tenant-id` flag is **required** for all commands. The tenant ID identifies your B2C Commerce instance.
+Values like `tenantId` and `shortCode` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
 
-**Important:** The tenant ID is NOT the same as the organization ID:
-- **Tenant ID**: `zzxy_prd` (used with commands that require `--tenant-id`)
+## Tenant ID vs. Organization ID
+
+The tenant ID identifies your B2C Commerce instance. It is **not** the same as the organization ID:
+
+- **Tenant ID**: `zzxy_prd` (the `tenantId` value in dw.json, or `--tenant-id` override)
 - **Organization ID**: `f_ecom_zzxy_prd` (used in SCAPI URLs, has `f_ecom_` prefix)
 
 ### Deriving Tenant ID from Hostname
 
-For sandbox instances, you can derive the tenant ID from the hostname by replacing hyphens with underscores:
+For sandbox instances, derive the tenant ID from the hostname by replacing hyphens with underscores:
 
 | Hostname | Tenant ID |
 |----------|-----------|
@@ -34,41 +37,44 @@ For production instances, use your realm and instance identifier (e.g., `zzxy_pr
 ### Get Custom API Endpoint Status
 
 ```bash
-# list all Custom API endpoints for an organization
-b2c scapi custom status --tenant-id zzxy_prd
+# list all Custom API endpoints for the configured tenant
+b2c scapi custom status
 
 # list with JSON output
-b2c scapi custom status --tenant-id zzxy_prd --json
+b2c scapi custom status --json
+
+# target a different tenant than the active config
+b2c scapi custom status --tenant-id zzxy_prd
 ```
 
 ### Filter by Status
 
 ```bash
 # list only active endpoints
-b2c scapi custom status --tenant-id zzxy_prd --status active
+b2c scapi custom status --status active
 
 # list only endpoints that failed to register
-b2c scapi custom status --tenant-id zzxy_prd --status not_registered
+b2c scapi custom status --status not_registered
 ```
 
 ### Group by Type or Site
 
 ```bash
 # group endpoints by API type (Admin vs Shopper)
-b2c scapi custom status --tenant-id zzxy_prd --group-by type
+b2c scapi custom status --group-by type
 
 # group endpoints by site
-b2c scapi custom status --tenant-id zzxy_prd --group-by site
+b2c scapi custom status --group-by site
 ```
 
 ### Customize Output Columns
 
 ```bash
 # show extended columns (includes error reasons, sites, etc.)
-b2c scapi custom status --tenant-id zzxy_prd --extended
+b2c scapi custom status --extended
 
 # select specific columns to display
-b2c scapi custom status --tenant-id zzxy_prd --columns type,apiName,status,sites
+b2c scapi custom status --columns type,apiName,status,sites
 
 # available columns: type, apiName, apiVersion, cartridgeName, endpointPath, httpMethod, status, sites, securityScheme, operationId, schemaFile, implementationScript, errorReason, id
 ```
@@ -77,14 +83,15 @@ b2c scapi custom status --tenant-id zzxy_prd --columns type,apiName,status,sites
 
 ```bash
 # quickly find and diagnose failed Custom API registrations
-b2c scapi custom status --tenant-id zzxy_prd --status not_registered --columns type,apiName,endpointPath,errorReason
+b2c scapi custom status --status not_registered --columns type,apiName,endpointPath,errorReason
 ```
 
-### Configuration
+### Configuration Overrides
 
-The tenant ID and short code can be set via environment variables:
-- `SFCC_TENANT_ID`: Tenant ID (e.g., `zzxy_prd`, not the organization ID)
-- `SFCC_SHORTCODE`: SCAPI short code
+The tenant ID and short code can be overridden via flags or environment variables:
+
+- `--tenant-id` / `SFCC_TENANT_ID` / `tenantId` in dw.json
+- `--short-code` / `SFCC_SHORTCODE` / `shortCode` in dw.json
 
 ### More Commands
 

@@ -11,6 +11,17 @@ Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) A
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli slas client list`).
 
+## Configuration
+
+Values like `tenantId`, `shortCode`, `slasClientId`, and `slasClientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
+
+Relevant overrides:
+
+- `--tenant-id` / `SFCC_TENANT_ID` / `tenantId`
+- `--short-code` / `SFCC_SHORTCODE` / `shortCode`
+- `--slas-client-id` / `SFCC_SLAS_CLIENT_ID` / `slasClientId`
+- `--slas-client-secret` / `SFCC_SLAS_CLIENT_SECRET` / `slasClientSecret`
+
 ## When to Use
 
 Common scenarios requiring SLAS client management:
@@ -24,37 +35,40 @@ Common scenarios requiring SLAS client management:
 ### List SLAS Clients
 
 ```bash
-# list all SLAS clients for a tenant
-b2c slas client list --tenant-id abcd_123
+# list all SLAS clients for the configured tenant
+b2c slas client list
 
-# list with JSON output
-b2c slas client list --tenant-id abcd_123 --json
+# JSON output
+b2c slas client list --json
+
+# target a different tenant than the active config
+b2c slas client list --tenant-id abcd_123
 ```
 
 ### Get SLAS Client Details
 
 ```bash
 # get details for a specific SLAS client
-b2c slas client get my-client-id --tenant-id abcd_123
+b2c slas client get my-client-id
 ```
 
 ### Create SLAS Client
 
 ```bash
 # create a new SLAS client with default scopes (auto-generates UUID client ID)
-b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback
+b2c slas client create --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback
 
 # create with a specific client ID and custom scopes
-b2c slas client create my-client-id --tenant-id abcd_123 --channels RefArch --scopes sfcc.shopper-products,sfcc.shopper-search --redirect-uri http://localhost:3000/callback
+b2c slas client create my-client-id --channels RefArch --scopes sfcc.shopper-products,sfcc.shopper-search --redirect-uri http://localhost:3000/callback
 
 # create a public client
-b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --public
+b2c slas client create --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --public
 
 # create client without auto-creating tenant (if you manage tenants separately)
-b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --no-create-tenant
+b2c slas client create --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --no-create-tenant
 
 # output as JSON (useful for capturing the generated secret)
-b2c slas client create --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --json
+b2c slas client create --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --json
 ```
 
 Note: By default, the tenant is automatically created if it doesn't exist.
@@ -69,7 +83,6 @@ When testing a Custom API that requires custom scopes:
 # Create a private client with custom scope for testing
 # Replace c_my_scope with your API's custom scope from schema.yaml
 b2c slas client create \
-  --tenant-id zzpq_013 \
   --channels RefArch \
   --default-scopes \
   --scopes "c_my_scope" \
@@ -83,61 +96,51 @@ b2c slas client create \
 
 ### Get a Shopper Token
 
-Use `b2c slas token` to obtain a shopper access token for API testing:
+Use `b2c slas token` to obtain a shopper access token for API testing. The `--site-id` is specific to the request and must be provided per call.
 
 ```bash
 # Guest token with auto-discovery (finds first public SLAS client)
-b2c slas token --tenant-id abcd_123 --site-id RefArch
-
-# Guest token with explicit client (public PKCE flow)
-b2c slas token --slas-client-id my-client --tenant-id abcd_123 --short-code kv7kzm78 --site-id RefArch
-
-# Guest token with private client (client_credentials flow)
-b2c slas token --slas-client-id my-client --slas-client-secret sk_xxx --tenant-id abcd_123 --short-code kv7kzm78 --site-id RefArch
+b2c slas token --site-id RefArch
 
 # Registered customer token
-b2c slas token --tenant-id abcd_123 --site-id RefArch --shopper-login user@example.com --shopper-password secret
+b2c slas token --site-id RefArch --shopper-login user@example.com --shopper-password secret
 
 # JSON output (includes refresh token, expiry, usid, etc.)
-b2c slas token --tenant-id abcd_123 --site-id RefArch --json
+b2c slas token --site-id RefArch --json
 
 # Use token in a subsequent API call
-TOKEN=$(b2c slas token --tenant-id abcd_123 --site-id RefArch)
-curl -H "Authorization: Bearer $TOKEN" "https://kv7kzm78.api.commercecloud.salesforce.com/..."
-```
+TOKEN=$(b2c slas token --site-id RefArch)
+curl -H "Authorization: Bearer $TOKEN" "https://$SHORTCODE.api.commercecloud.salesforce.com/..."
 
-The `--slas-client-id` and `--slas-client-secret` can also be set via `SFCC_SLAS_CLIENT_ID` and `SFCC_SLAS_CLIENT_SECRET` environment variables, or `slasClientId` and `slasClientSecret` in dw.json.
+# Override the SLAS client explicitly (e.g., targeting a private client for client_credentials flow)
+b2c slas token --site-id RefArch --slas-client-id my-client --slas-client-secret sk_xxx
+```
 
 ### Update SLAS Client
 
 ```bash
 # update the display name
-b2c slas client update my-client-id --tenant-id abcd_123 --name "New Name"
+b2c slas client update my-client-id --name "New Name"
 
 # rotate the client secret
-b2c slas client update my-client-id --tenant-id abcd_123 --secret new-secret-value
+b2c slas client update my-client-id --secret new-secret-value
 
 # add scopes (appends to existing by default)
-b2c slas client update my-client-id --tenant-id abcd_123 --scopes sfcc.shopper-baskets
+b2c slas client update my-client-id --scopes sfcc.shopper-baskets
 
 # replace scopes instead of appending
-b2c slas client update my-client-id --tenant-id abcd_123 --scopes sfcc.shopper-baskets --replace
+b2c slas client update my-client-id --scopes sfcc.shopper-baskets --replace
 
 # replace channels
-b2c slas client update my-client-id --tenant-id abcd_123 --channels RefArch,SiteGenesis --replace
+b2c slas client update my-client-id --channels RefArch,SiteGenesis --replace
 ```
 
 ### Delete SLAS Client
 
 ```bash
 # delete a SLAS client
-b2c slas client delete my-client-id --tenant-id abcd_123
+b2c slas client delete my-client-id
 ```
-
-### Configuration
-
-The tenant ID can be set via environment variable:
-- `SFCC_TENANT_ID`: SLAS tenant ID (organization ID)
 
 ### More Commands
 
