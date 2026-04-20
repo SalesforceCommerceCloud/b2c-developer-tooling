@@ -165,6 +165,79 @@ jobs:
               github.rest.issues.create(issue);
             }
 
+  e2e-tests-windows:
+    name: e2e-tests (windows)
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x]
+    runs-on: windows-latest
+    environment: e2e-dev
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check for required secrets and vars
+        id: check-secrets
+        env:
+          SFCC_CLIENT_ID: ${{ vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          TEST_REALM: ${{ vars.TEST_REALM }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+        run: |
+          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ] && [ -n "$SFCC_SHORTCODE" ]; then
+            echo "has-secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "Windows E2E tests skipped - missing required variables" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Setup Windows machine
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        uses: ./.github/actions/setup-windows
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Build package
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        run: pnpm -r run build
+      - name: Run E2E Tests
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        id: e2e-test
+        working-directory: packages/b2c-cli
+        env:
+          SFCC_CLIENT_ID: ${{ inputs.sfcc_client_id || vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ inputs.sfcc_client_secret || secrets.SFCC_CLIENT_SECRET }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ inputs.sfcc_account_manager_host || vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ inputs.sfcc_sandbox_api_host || vars.SFCC_SANDBOX_API_HOST }}
+          TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
+          SFCC_MRT_CLOUD_ORIGIN: ${{ vars.SFCC_MRT_CLOUD_ORIGIN }}
+          SFCC_MRT_API_KEY: ${{ secrets.SFCC_MRT_API_KEY }}
+          NODE_ENV: test
+          SFCC_LOG_LEVEL: silent
+        run: |
+          echo "Running Windows E2E tests with realm: $TEST_REALM"
+          echo "Node version: $(node --version)"
+          pnpm run test:e2e:ci && pnpm run lint
+      - name: E2E Test Report
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
+        with:
+          name: E2E Test Results (Windows Node ${{ matrix.node-version }})
+          path: 'packages/b2c-cli/test-results.json'
+          reporter: mocha-json
+      - name: Upload E2E Test Results
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-test-results-windows-node-${{ matrix.node-version }}-${{ github.run_number }}
+          path: packages/b2c-cli/test-results.json
+          retention-days: 30
+
   mcp-e2e-tests:
     name: MCP E2E
     runs-on: ubuntu-latest

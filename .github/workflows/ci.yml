@@ -124,3 +124,56 @@ jobs:
             packages/b2c-tooling-sdk/coverage/
             packages/b2c-cli/coverage/
           retention-days: 30
+
+  test-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup Windows machine
+        uses: ./.github/actions/setup-windows
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Build packages
+        run: pnpm -r run build
+      - name: Run SDK tests
+        id: sdk-test
+        working-directory: packages/b2c-tooling-sdk
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run MCP tests
+        id: mcp-test
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-dx-mcp
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run CLI tests
+        id: cli-test
+        if: always() && steps.mcp-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-cli
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run VS Extension checks
+        if: always() && steps.cli-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-vs-extension
+        run: pnpm run typecheck:agent && pnpm run lint
+      - name: Test Report
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        with:
+          name: Test Results (Windows Node ${{ matrix.node-version }})
+          path: 'packages/*/test-results.json'
+          reporter: mocha-json
+      - name: Upload coverage reports
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-reports-windows-node-${{ matrix.node-version }}
+          path: |
+            packages/b2c-tooling-sdk/coverage/
+            packages/b2c-cli/coverage/
+          retention-days: 30
