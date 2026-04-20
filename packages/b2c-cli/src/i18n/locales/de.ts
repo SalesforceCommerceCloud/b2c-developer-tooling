@@ -53,6 +53,12 @@ export const de = {
         complete: 'Deployment abgeschlossen',
         failed: 'Deployment fehlgeschlagen: {{message}}',
       },
+      download: {
+        description: 'Cartridge-Code von einer B2C Commerce-Instanz herunterladen',
+        downloading: 'Lade Code-Version "{{version}}" von {{hostname}} herunter...',
+        summary: '{{count}} Cartridge(s) von Version "{{codeVersion}}" heruntergeladen',
+        failed: 'Download fehlgeschlagen: {{message}}',
+      },
     },
     sandbox: {
       create: {

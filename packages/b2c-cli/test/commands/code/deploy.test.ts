@@ -87,7 +87,9 @@ describe('code deploy', () => {
     const result = await command.run();
 
     expect(deleteStub.calledOnceWithExactly(instance, cartridges)).to.equal(true);
-    expect(uploadStub.calledOnceWithExactly(instance, cartridges)).to.equal(true);
+    expect(uploadStub.calledOnce).to.equal(true);
+    expect(uploadStub.firstCall.args[0]).to.equal(instance);
+    expect(uploadStub.firstCall.args[1]).to.equal(cartridges);
     expect(reloadStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
 
     expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: true});

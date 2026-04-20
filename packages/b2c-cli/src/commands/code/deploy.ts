@@ -177,7 +177,23 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       }
 
       // Upload cartridges
-      await this.operations.uploadCartridges(this.instance, cartridges);
+      const uploadPhaseLabels = {
+        archiving: t('commands.code.deploy.archiving', 'Creating cartridge archive'),
+        uploading: t('commands.code.deploy.uploading', 'Uploading archive'),
+        unzipping: t('commands.code.deploy.unzipping', 'Unzipping on server'),
+        cleanup: t('commands.code.deploy.cleanup', 'Cleaning up'),
+      };
+      await this.operations.uploadCartridges(this.instance, cartridges, {
+        onProgress: (info) => {
+          if (this.jsonEnabled()) return;
+          const label = uploadPhaseLabels[info.phase];
+          if (info.elapsedSeconds === 0) {
+            this.log(`  ${label}...`);
+          } else {
+            this.log(`  ${label}... (${info.elapsedSeconds}s elapsed)`);
+          }
+        },
+      });
 
       // Optionally activate or reload code version
       let activated = false;
