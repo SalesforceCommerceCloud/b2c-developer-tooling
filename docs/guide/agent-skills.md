@@ -42,7 +42,7 @@ copilot plugin install b2c@b2c-developer-tooling
 ```text [Codex]
 Open this repository as a workspace, then restart Codex. Open the plugin
 directory and select the "B2C Developer Tooling" marketplace — install
-b2c-cli, b2c, and/or b2c-dx-mcp from there.
+b2c-cli and/or b2c from there.
 ```
 
 ```bash [B2C CLI]
@@ -115,7 +115,9 @@ claude plugin marketplace remove b2c-developer-tooling
 
 ## Install Codex Plugin
 
-Open this repository as a workspace and restart Codex. Open the plugin directory, select the **B2C Developer Tooling** marketplace, and install any of `b2c-cli`, `b2c`, or `b2c-dx-mcp`.
+Open this repository as a workspace and restart Codex. Open the plugin directory, select the **B2C Developer Tooling** marketplace, and install `b2c-cli` and/or `b2c`.
+
+> **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
 
 ## Installation with B2C CLI
 

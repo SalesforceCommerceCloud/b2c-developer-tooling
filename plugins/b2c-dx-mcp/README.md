@@ -6,21 +6,14 @@ Part of the [B2C Developer Tooling](https://github.com/SalesforceCommerceCloud/b
 
 ## Installation
 
+**Claude Code:**
+
 ```bash
-# Claude Code
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-dx-mcp@b2c-developer-tooling
-
-# GitHub Copilot CLI
-copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-copilot plugin install b2c-dx-mcp@b2c-developer-tooling
 ```
 
-**VS Code (GitHub Copilot):** Command Palette → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling`.
-
-**Codex:** open the repo as a workspace, restart Codex, then install from the **B2C Developer Tooling** marketplace in the plugin directory.
-
-For standalone MCP setup and configuration, see the [MCP Server Overview](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/) and [MCP Installation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation).
+For other clients (VS Code, Copilot CLI, Codex, Cursor, etc.), install the MCP server directly — see the [MCP Server Overview](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/) and [MCP Installation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation).
 
 ## License
 

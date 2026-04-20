@@ -12,7 +12,7 @@ Salesforce B2C Commerce Command Line Tools.
 
 ## Agent Skills & Plugins
 
-Install B2C Commerce agent skills and plugins in your AI-powered editor. Four plugins are available: `b2c-cli` (CLI operations), `b2c` (development patterns), `b2c-experimental` (scaffolds), and `b2c-dx-mcp` (MCP server).
+Install B2C Commerce agent skills and plugins in your AI-powered editor. Three plugins are available: `b2c-cli` (CLI operations), `b2c` (development patterns), and `b2c-dx-mcp` (MCP server — Claude Code only).
 
 - **Claude Code**: run these commands in chat:
 
@@ -31,7 +31,6 @@ Install B2C Commerce agent skills and plugins in your AI-powered editor. Four pl
     copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
     copilot plugin install b2c-cli@b2c-developer-tooling
     copilot plugin install b2c@b2c-developer-tooling
-    copilot plugin install b2c-dx-mcp@b2c-developer-tooling
     ```
 
 - **Cursor**: add the marketplace from this repo URL in Cursor Settings → Plugins, then install `b2c-cli` / `b2c`.

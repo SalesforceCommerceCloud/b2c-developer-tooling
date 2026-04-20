@@ -1,6 +1,6 @@
 {
   "name": "b2c-cli",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "B2C CLI Skills for Salesforce Commerce Cloud development.",
   "author": {
     "name": "Salesforce"

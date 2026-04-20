@@ -27,18 +27,6 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
-    },
-    {
-      "name": "b2c-dx-mcp",
-      "source": {
-        "source": "local",
-        "path": "./plugins/b2c-dx-mcp"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
     }
   ]
 }
