@@ -29,16 +29,22 @@ cip
     └── top-referrers
 ```
 
+## Configuration
+
+Values like `tenantId`, `clientId`, and `clientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
+
+Relevant overrides:
+
+- `--tenant-id` (alias `--tenant`) / `SFCC_TENANT_ID` / `tenantId`
+- `--client-id` / `SFCC_CLIENT_ID` / `clientId`
+- `--client-secret` / `SFCC_CLIENT_SECRET` / `clientSecret`
+- `--cip-host` / `SFCC_CIP_HOST` to override the default host
+- `--staging` / `SFCC_CIP_STAGING` to force staging analytics host
+
 ## Requirements
 
-- OAuth client credentials (resolved from CLI configuration, or override with `--client-id` / `--client-secret`)
-- CIP tenant: `--tenant-id` (or `--tenant`)
+- OAuth client credentials (CIP supports client credentials only; `--user-auth` is not supported)
 - API client has `Salesforce Commerce API` role with tenant filter for your instance
-
-Optional:
-
-- `--cip-host` (or `SFCC_CIP_HOST`) to override the default host
-- `--staging` (or `SFCC_CIP_STAGING`) to force staging analytics host
 
 ::: warning Availability
 This feature is typically used with production analytics tenants (for example `abcd_prd`).
@@ -58,14 +64,17 @@ Reports & Dashboards non-production URL: `https://ccac.stg.analytics.commerceclo
 ## Metadata Discovery Examples
 
 ```bash
-# List warehouse tables
-b2c cip tables --tenant-id abcd_prd
+# List warehouse tables (uses configured tenant)
+b2c cip tables
 
 # Filter table names
-b2c cip tables --tenant-id abcd_prd --pattern "ccdw_aggr_%"
+b2c cip tables --pattern "ccdw_aggr_%"
 
 # Describe table columns
-b2c cip describe ccdw_aggr_ocapi_request --tenant-id abcd_prd
+b2c cip describe ccdw_aggr_ocapi_request
+
+# Target a different tenant than the active config
+b2c cip tables --tenant-id abcd_prd
 ```
 
 ## Known Tables
@@ -86,9 +95,8 @@ The list is derived from official JDBC documentation and intended as a quick dis
 # Show report commands
 b2c cip report --help
 
-# Run a report
+# Run a report (tenant resolves from config)
 b2c cip report sales-analytics \
-  --tenant-id abcd_prd \
   --site-id Sites-RefArch-Site \
   --from 2025-01-01 \
   --to 2025-01-31
@@ -107,15 +115,13 @@ b2c cip report top-referrers --site-id Sites-RefArch-Site --limit 25 --staging -
 
 ```bash
 b2c cip report sales-analytics --site-id Sites-RefArch-Site --sql \
-  | b2c cip query --tenant-id abcd_prd
+  | b2c cip query
 ```
 
 ## Raw SQL Query Examples
 
 ```bash
-b2c cip query \
-  --tenant-id abcd_prd \
-  "SELECT * FROM ccdw_aggr_sales_summary LIMIT 10"
+b2c cip query "SELECT * FROM ccdw_aggr_sales_summary LIMIT 10"
 ```
 
 You can also use:

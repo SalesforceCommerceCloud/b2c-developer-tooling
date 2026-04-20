@@ -17,9 +17,20 @@
 }
 
 /* Hero image sizing */
+.VPHero .container {
+  max-width: 100% !important;
+}
+
 .VPHero .image-container {
   max-width: 550px !important;
   padding: 24px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 960px) {
+  .VPHero .image-container {
+    margin-bottom: 0;
+  }
 }
 
 .VPHero .image-container .image-bg {
@@ -28,7 +39,6 @@
 
 .VPHero .image-container img {
   max-width: 550px !important;
-  /* width: 100%; */
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  max-height: 470px;
+  object-fit: contain;
 }

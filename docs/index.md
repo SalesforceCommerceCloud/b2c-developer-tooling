@@ -1,18 +1,22 @@
 ---
-description: Developer experience tools for Salesforce B2C Commerce - CLI, MCP Server, and SDK for AI-assisted development, deployment, and automation.
-layout: home
+description: Developer tools for Salesforce B2C Commerce — CLI, MCP Server, Agent Skills, and SDK. Build and operate B2C Commerce from the terminal or with AI coding agents.
+layout: b2c-home
+isHome: true
 
 hero:
   name: B2C DX
-  text: Salesforce Agentforce Commerce Developer Tools
-  tagline: Powerful CLI tools and AI-assisted development for B2C Commerce
+  text: Developer tools for Salesforce B2C Commerce
+  tagline: The full power of B2C Commerce, available as a CLI, Agent Skills, and IDE extensions — so you and your coding agent can build, deploy, and operate together.
   image:
-    src: /cli-screenshot.png
-    alt: B2C DX CLI
+    src: /hero-collage.png
+    alt: B2C DX — CLI, Agentforce Vibes, and Claude Code
   actions:
     - theme: brand
       text: Get Started
       link: /guide/
+    - theme: alt
+      text: Agent Skills
+      link: /guide/agent-skills
     - theme: alt
       text: MCP Server
       link: /mcp/
@@ -21,47 +25,79 @@ hero:
       link: /cli/
 
 features:
-  - icon: "\U0001F680"
-    title: Code Deployment
-    details: Deploy cartridges, activate code versions, and watch for changes with instant sync.
-    link: /cli/code
-    linkText: Learn more
   - icon: "\u26A1"
-    title: Job Execution
-    details: Run jobs, import/export site archives, and automate business processes.
-    link: /cli/jobs
-    linkText: Learn more
-  - icon: "\U0001F3D6\uFE0F"
-    title: Sandbox Management
-    details: Create, manage, and provision On-Demand Sandboxes programmatically.
-    link: /cli/sandbox
-    linkText: Learn more
+    title: CLI for Every Workflow
+    details: Deploy cartridges, run jobs, manage ODS and MRT, import/export site archives, work with WebDAV, and automate CI/CD — all from the terminal. The foundation everything else builds on.
+    link: /cli/
+    linkText: CLI reference
   - icon: "\U0001F9E0"
-    title: Agent Skills
-    details: AI skills for Claude Code, Cursor, and GitHub Copilot that teach assistants B2C Commerce development.
+    title: Coding Skills for Your AI Agent
+    details: 30+ preconfigured skills teach Claude Code, Cursor, Agentforce Vibes, Copilot, and Codex how B2C Commerce works — SCAPI, SLAS, SFRA, ISML, Page Designer, hooks, custom objects — and which CLI commands to run when.
     link: /guide/agent-skills
-    linkText: Learn more
+    linkText: Install skills
   - icon: "\U0001F916"
-    title: AI-Assisted Development
-    details: MCP Server for Claude, Cursor, and other AI tools to interact with your B2C instances.
+    title: MCP Server
+    details: A focused set of MCP tools that complement the CLI for agent-driven workflows. Pairs naturally with skills.
     link: /mcp/
-    linkText: Learn more
-  - icon: "\U0001F4E6"
-    title: SDK Library
-    details: Build custom integrations with @salesforce/b2c-tooling-sdk - the same SDK powering the CLI.
-    link: /api/
-    linkText: SDK Reference
-  - icon: "\U0001F510"
-    title: Account Management
-    details: Manage users, roles, organizations, and API clients in Account Manager via CLI and SDK.
-    link: /cli/account-manager
-    linkText: Learn more
+    linkText: MCP Server
 ---
 
-## Packages
+## Install the CLI
 
-| Package | Description |
-|---------|-------------|
-| [@salesforce/b2c-cli](https://www.npmjs.com/package/@salesforce/b2c-cli) | Command-line tools for B2C Commerce |
-| [@salesforce/b2c-dx-mcp](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp) | MCP Server for AI-assisted development |
-| [@salesforce/b2c-tooling-sdk](https://www.npmjs.com/package/@salesforce/b2c-tooling-sdk) | SDK library for custom integrations |
+::: code-group
+
+```bash [npm]
+npm install -g @salesforce/b2c-cli
+```
+
+```bash [npx]
+npx @salesforce/b2c-cli --help
+```
+
+```bash [Homebrew]
+brew install SalesforceCommerceCloud/tools/b2c-cli
+```
+
+:::
+
+## Install Agent Skills
+
+Detailed setup: [Agentforce Vibes](/guide/agent-skills#installation-with-agentforce-vibes) · [Claude Code](/guide/agent-skills#install-claude-plugin) · [Copilot](/guide/agent-skills#installation-with-other-ides) · [Codex](/guide/agent-skills#installation-with-other-ides) · [All IDEs](/guide/agent-skills)
+
+::: code-group
+
+```bash [Agentforce Vibes]
+# Marketplace install coming soon. For now, use the B2C CLI:
+npx @salesforce/b2c-cli setup skills --ide agentforce-vibes
+```
+
+```bash [Claude Code]
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Use --scope user to install globally (available in all projects)
+claude plugin install b2c-cli --scope project
+claude plugin install b2c --scope project
+```
+
+```text [Copilot (VS Code)]
+In VS Code, open the Command Palette (Cmd/Ctrl+Shift+P) and run:
+  Chat: Install Plugin from Source
+Then enter:
+  SalesforceCommerceCloud/b2c-developer-tooling
+```
+
+```bash [Copilot CLI]
+copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+copilot plugin install b2c-cli@b2c-developer-tooling
+copilot plugin install b2c@b2c-developer-tooling
+```
+
+```bash [Codex]
+# Marketplace install coming soon. For now, use the B2C CLI:
+npx @salesforce/b2c-cli setup skills --ide codex
+```
+
+```bash [B2C CLI]
+npx @salesforce/b2c-cli setup skills
+```
+
+:::
