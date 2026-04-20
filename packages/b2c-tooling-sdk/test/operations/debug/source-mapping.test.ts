@@ -45,17 +45,21 @@ describe('operations/debug/source-mapping', () => {
   });
 
   describe('toLocalPath', () => {
+    // The mapper resolves cartridge src paths via path.resolve(), which on
+    // Windows prepends the current drive letter (e.g. D:\workspace\...), so
+    // expected values must be built with path.resolve() to match. On POSIX
+    // path.resolve() is a no-op for already-absolute paths.
     it('converts a server script path to a local path', () => {
       const server = '/app_storefront/cartridge/controllers/Cart.js';
       expect(mapper.toLocalPath(server)).to.equal(
-        path.join('/workspace/cartridges/app_storefront', 'cartridge/controllers/Cart.js'),
+        path.resolve('/workspace/cartridges/app_storefront', 'cartridge/controllers/Cart.js'),
       );
     });
 
     it('handles different cartridges', () => {
       const server = '/bm_extensions/cartridge/scripts/helper.js';
       expect(mapper.toLocalPath(server)).to.equal(
-        path.join('/workspace/cartridges/bm_extensions', 'cartridge/scripts/helper.js'),
+        path.resolve('/workspace/cartridges/bm_extensions', 'cartridge/scripts/helper.js'),
       );
     });
 
@@ -70,7 +74,7 @@ describe('operations/debug/source-mapping', () => {
     it('handles paths without leading slash', () => {
       const server = 'app_storefront/cartridge/controllers/Cart.js';
       expect(mapper.toLocalPath(server)).to.equal(
-        path.join('/workspace/cartridges/app_storefront', 'cartridge/controllers/Cart.js'),
+        path.resolve('/workspace/cartridges/app_storefront', 'cartridge/controllers/Cart.js'),
       );
     });
   });
@@ -80,7 +84,9 @@ describe('operations/debug/source-mapping', () => {
       const local = '/workspace/cartridges/app_storefront/cartridge/controllers/Cart.js';
       const server = mapper.toServerPath(local);
       expect(server).to.not.be.undefined;
-      expect(mapper.toLocalPath(server!)).to.equal(local);
+      // Production resolves cartridge src via path.resolve(), so the round-trip
+      // returns an absolute path rooted to the current drive on Windows.
+      expect(mapper.toLocalPath(server!)).to.equal(path.resolve(local));
     });
   });
 });
