@@ -23,9 +23,9 @@ Install B2C Commerce agent skills and plugins in your AI-powered editor. Four pl
     /plugin install b2c-dx-mcp@b2c-developer-tooling
     ```
 
-- **VS Code (GitHub Copilot)**: Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling`. VS Code Copilot reads the same `.claude-plugin/` marketplace as Claude Code.
+- **VS Code (GitHub Copilot)**: Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling`.
 
-- **GitHub Copilot CLI**: also reads the same marketplace.
+- **GitHub Copilot CLI**:
 
     ```
     copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling

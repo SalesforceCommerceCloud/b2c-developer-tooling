@@ -6,8 +6,6 @@ Part of the [B2C Developer Tooling](https://github.com/SalesforceCommerceCloud/b
 
 ## Installation
 
-**Claude Code** and **GitHub Copilot CLI** both read the same `.claude-plugin/` marketplace:
-
 ```bash
 # Claude Code
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling

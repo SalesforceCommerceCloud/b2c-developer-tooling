@@ -6,15 +6,11 @@ description: AI agent skills and plugins for Salesforce B2C Commerce — teach A
 
 Turn your coding agent into a B2C Commerce specialist. Skills give Claude Code, Cursor, Agentforce Vibes, Copilot, and Codex deep platform expertise across the full stack — **SCAPI Custom APIs, SLAS authentication, SFRA controllers and forms, ISML, Page Designer, hooks, custom objects, custom job steps, web services** — and operational workflows like **deploying cartridges, running jobs, debugging 404s and logs, managing On-Demand Sandboxes, MRT/PWA Kit, eCDN, site archives, and IMPEX metadata XML**.
 
-Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with [Agentforce Vibes](#installation-with-agentforce-vibes), [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others. Skills teach your agent how B2C Commerce works and which B2C CLI commands to run and when — the CLI does the actual work against your instance.
+Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with [Agentforce Vibes](#installation-with-agentforce-vibes), [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others.
 
-The `.claude-plugin/` marketplace in this repository is read natively by both **Claude Code** and **GitHub Copilot** (VS Code and CLI), so the same install commands work across those clients. **Codex** reads a separate marketplace at `.agents/plugins/marketplace.json` (shipped in the repo root).
-
-Install from your IDE's plugin system (Claude Code below), the B2C CLI (`b2c setup skills`), or by dropping skills into your IDE's skills directory manually.
+Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
 
 ## Quick Start
-
-Install via your IDE's plugin marketplace where supported — otherwise use the B2C CLI installer:
 
 ::: code-group
 
@@ -44,10 +40,9 @@ copilot plugin install b2c@b2c-developer-tooling
 ```
 
 ```text [Codex]
-Open this repository as a workspace (Codex reads .agents/plugins/marketplace.json
-at the repo root), then restart Codex. The "B2C Developer Tooling" marketplace
-appears in the plugin directory — install b2c-cli, b2c, and/or b2c-dx-mcp
-from there.
+Open this repository as a workspace, then restart Codex. Open the plugin
+directory and select the "B2C Developer Tooling" marketplace — install
+b2c-cli, b2c, and/or b2c-dx-mcp from there.
 ```
 
 ```bash [B2C CLI]
@@ -56,34 +51,28 @@ npx @salesforce/b2c-cli setup skills
 
 :::
 
-For additional IDEs (Agentforce Vibes, Cursor, Windsurf, OpenCode) and full B2C CLI options see [Installation with B2C CLI](#installation-with-b2c-cli), [Installation with Agentforce Vibes](#installation-with-agentforce-vibes), or [Installation with Other IDEs](#installation-with-other-ides).
-
 ## Available Plugins
 
 <table>
   <colgroup>
     <col style="width: 12rem" />
-    <col style="width: 6rem" />
     <col />
   </colgroup>
   <thead>
-    <tr><th>Plugin</th><th>Type</th><th>Description</th></tr>
+    <tr><th>Plugin</th><th>Description</th></tr>
   </thead>
   <tbody>
     <tr>
       <td><a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-cli/skills"><code>b2c-cli</code></a></td>
-      <td>Skills</td>
       <td>B2C CLI commands and operations — code deployment, job execution, site archives, WebDAV, On-Demand Sandbox management</td>
     </tr>
     <tr>
       <td><a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c/skills"><code>b2c</code></a></td>
-      <td>Skills</td>
       <td>B2C Commerce development patterns — controllers, ISML, forms, localization, logging, metadata, web services, custom job steps, Page Designer, Business Manager extensions, Custom APIs</td>
     </tr>
     <tr>
       <td><a href="/mcp/"><code>b2c-dx-mcp</code></a></td>
-      <td>MCP</td>
-      <td>MCP server for AI-assisted B2C Commerce development with project-aware tooling. See <a href="/mcp/installation">MCP Installation</a></td>
+      <td>Automatic project type detection and B2C Commerce workflows for your AI assistant. See <a href="/mcp/installation">MCP Installation</a></td>
     </tr>
   </tbody>
 </table>
@@ -126,11 +115,7 @@ claude plugin marketplace remove b2c-developer-tooling
 
 ## Install Codex Plugin
 
-Codex reads plugin marketplaces from `.agents/plugins/marketplace.json`. This repository ships one at the repo root covering all three plugins (`b2c-cli`, `b2c`, `b2c-dx-mcp`).
-
-Open this repository as a workspace and restart Codex. The **B2C Developer Tooling** marketplace appears in the plugin directory — install any of the listed plugins from there.
-
-For a personal install across all projects, copy one or more plugin folders (e.g. `skills/b2c-cli/`) to `~/.codex/plugins/<plugin-name>/` and add an entry for each in `~/.agents/plugins/marketplace.json`. See the [Codex plugin build guide](https://developers.openai.com/codex/plugins/build) for the marketplace schema.
+Open this repository as a workspace and restart Codex. Open the plugin directory, select the **B2C Developer Tooling** marketplace, and install any of `b2c-cli`, `b2c`, or `b2c-dx-mcp`.
 
 ## Installation with B2C CLI
 
@@ -194,28 +179,19 @@ b2c setup skills b2c-cli --ide agentforce-vibes
 b2c setup skills b2c --ide agentforce-vibes --global
 ```
 
-Manual install directories:
-
-| Location | Scope |
-|----------|-------|
-| `.a4drules/skills/` | Project |
-| `~/Library/Application Support/Code/User/globalStorage` | Global (macOS) |
-| `~/.config/Code/User/globalStorage` | Global (Linux) |
-| `%APPDATA%\Code\User\globalStorage` | Global (Windows) |
-
 ## Installation with Other IDEs
 
 ::: tip
 Use [`b2c setup skills`](/cli/setup) for any supported IDE.
 :::
 
-| IDE | Flag | Project | User |
-|-----|------|---------|------|
-| [Cursor](https://cursor.com/docs/context/skills) | `--ide cursor` | `.cursor/skills/` | `~/.cursor/skills/` |
-| [Windsurf](https://docs.windsurf.com/) | `--ide windsurf` | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode` | `.github/skills/` | `~/.copilot/skills/` |
-| [Codex CLI](https://github.com/openai/codex) | `--ide codex` | `.codex/skills/` | `~/.codex/skills/` |
-| [OpenCode](https://opencode.ai/) | `--ide opencode` | `.opencode/skills/` | `~/.config/opencode/skills/` |
+| IDE | Flag |
+|-----|------|
+| [Cursor](https://cursor.com/docs/context/skills) | `--ide cursor` |
+| [Windsurf](https://docs.windsurf.com/) | `--ide windsurf` |
+| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode` |
+| [Codex CLI](https://github.com/openai/codex) | `--ide codex` |
+| [OpenCode](https://opencode.ai/) | `--ide opencode` |
 
 ### Manual Installation
 
@@ -226,14 +202,16 @@ b2c setup skills b2c --ide manual
 b2c setup skills b2c --ide manual --directory ./my-skills
 ```
 
-Or download skill zips from the [latest release](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest):
+For reference, the install locations each `--ide` flag writes to:
 
-```bash
-curl -LO https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest/download/b2c-cli-skills.zip
-curl -LO https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases/latest/download/b2c-skills.zip
-unzip b2c-cli-skills.zip -d /path/to/your/ide/skills/
-unzip b2c-skills.zip -d /path/to/your/ide/skills/
-```
+| IDE | Project | User |
+|-----|---------|------|
+| Cursor | `.cursor/skills/` | `~/.cursor/skills/` |
+| Windsurf | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| VS Code / Copilot | `.github/skills/` | `~/.copilot/skills/` |
+| Codex CLI | `.codex/skills/` | `~/.codex/skills/` |
+| OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` |
+| Agentforce Vibes | `.a4drules/skills/` | IDE's global storage |
 
 ## Usage Examples
 

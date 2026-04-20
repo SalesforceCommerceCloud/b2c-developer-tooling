@@ -40,7 +40,7 @@ This onboarding skill is part of the `b2c` plugin. For a full B2C Commerce setup
 | `vscode` (GitHub Copilot) | Command Palette (Cmd+Shift+P) → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling` |
 | GitHub Copilot CLI | `copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling` then `copilot plugin install b2c-cli@b2c-developer-tooling` and `copilot plugin install b2c-dx-mcp@b2c-developer-tooling` |
 | `cursor`      | Cursor Settings → Plugins → add marketplace URL `https://github.com/SalesforceCommerceCloud/b2c-developer-tooling`, then install `b2c-cli` and `b2c-dx-mcp` |
-| `codex`       | Open the repo as a workspace (Codex reads `.agents/plugins/marketplace.json` at the repo root), restart Codex, then install `b2c-cli` / `b2c` / `b2c-dx-mcp` from the **B2C Developer Tooling** marketplace in the plugin directory |
+| `codex`       | Open the repo as a workspace, restart Codex, then install `b2c-cli` / `b2c` / `b2c-dx-mcp` from the **B2C Developer Tooling** marketplace in the plugin directory |
 | `gemini-cli`  | `gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling` (run in terminal, not inside the CLI) |
 | `other`       | Use the file-copy installer below |
 
