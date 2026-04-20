@@ -7,6 +7,22 @@ description: Define custom attributes, custom object types, and site preferences
 
 This skill guides you through working with site metadata XML for Salesforce B2C Commerce, including custom attributes, custom objects, and site preferences.
 
+## Optional: validate before returning
+
+Before returning generated metadata XML to the user, you can validate it against the authoritative XSD (shipped with the `b2c` CLI) using the bundled script. This is optional but catches structural mistakes early (missing required attributes, wrong element nesting, invalid enum values).
+
+```bash
+node scripts/validate.mjs --file <your-file.xml> --schema <schema-name>
+
+# Common schemas
+node scripts/validate.mjs --file system-objecttype-extensions.xml --schema metadata
+node scripts/validate.mjs --file catalog.xml --schema catalog
+node scripts/validate.mjs --file preferences.xml --schema preferences
+```
+
+Requires `b2c` on PATH (or `B2C_CMD="npx @salesforce/b2c-cli"` env var) and system `xmllint`. Exit 0 = valid. Non-zero = validation errors printed to stderr. List all schemas: `b2c docs schema --list`.
+
+
 ## Overview
 
 Metadata defines the structure of your B2C Commerce data:

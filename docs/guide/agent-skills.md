@@ -6,7 +6,9 @@ description: AI agent skills and plugins for Agentforce Vibes, Claude Code, Code
 
 The B2C Developer Tooling project provides agent skills and plugins that enhance the AI-assisted development experience when working with Salesforce B2C Commerce projects.
 
-Skills plugins follow the [Agent Skills](https://agentskills.io/home) standard and can be used with multiple agentic IDEs including [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot, and VS Code. The marketplace also includes an MCP server plugin (`b2c-dx-mcp`).
+Skills plugins follow the [Agent Skills](https://agentskills.io/home) standard and can be used with multiple agentic IDEs including [Claude Code](https://claude.ai/code), GitHub Copilot (VS Code and CLI), Cursor, Codex, and Gemini CLI. The marketplace also includes an MCP server plugin (`b2c-dx-mcp`).
+
+The `.claude-plugin/` marketplace in this repository is read natively by both **Claude Code** and **GitHub Copilot** (VS Code and CLI), so the same install commands work across those clients.
 
 ## Overview
 
@@ -118,6 +120,34 @@ To remove the marketplace:
 ```bash
 claude plugin marketplace remove b2c-developer-tooling
 ```
+
+## Installation with GitHub Copilot
+
+GitHub Copilot reads the same `.claude-plugin/` marketplace as Claude Code, so the plugins install natively in both **VS Code** and the **Copilot CLI**.
+
+### VS Code (GitHub Copilot)
+
+Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run **Chat: Install Plugin From Source**. When prompted, enter the repo:
+
+```
+SalesforceCommerceCloud/b2c-developer-tooling
+```
+
+Install the plugins you want (`b2c-cli`, `b2c`, `b2c-dx-mcp`) from the picker.
+
+### GitHub Copilot CLI
+
+```bash
+# Add the marketplace
+copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Install plugins
+copilot plugin install b2c-cli@b2c-developer-tooling
+copilot plugin install b2c@b2c-developer-tooling
+copilot plugin install b2c-dx-mcp@b2c-developer-tooling
+```
+
+Refer to the [Copilot CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) for marketplace and install commands.
 
 ## Installation with Skills CLI
 
@@ -258,21 +288,20 @@ Skills are installed to:
 
 ### VS Code with GitHub Copilot
 
-See the [VS Code Agent Skills documentation](https://code.visualstudio.com/docs/copilot/customization/agent-skills) for configuration instructions.
+The recommended install path uses the native plugin marketplace — see [Installation with GitHub Copilot](#installation-with-github-copilot) above.
 
-Skills are installed to:
+If you need a file-copy install (for example, to pin a specific skill version to a project), `b2c setup skills --ide vscode` copies skills to:
+
 - **Project scope**: `.github/skills/` in your project
 - **User scope**: `~/.copilot/skills/`
 
-You can also append skill content to `.github/copilot-instructions.md` in your repository.
-
 ### Codex CLI
 
-See the [Codex documentation](https://github.com/openai/codex) for configuration instructions.
+Codex reads plugin marketplaces from `.agents/plugins/marketplace.json`. This repository ships one at the repo root covering all three plugins (`b2c-cli`, `b2c`, `b2c-dx-mcp`).
 
-Skills are installed to:
-- **Project scope**: `.codex/skills/` in your project
-- **User scope**: `~/.codex/skills/`
+To use it, clone or open the repository as a workspace, then restart Codex — the **B2C Developer Tooling** marketplace appears in the plugin directory, from which you can install any of the listed plugins.
+
+For a personal install across all projects, copy one or more plugin folders (e.g. `skills/b2c-cli/`) to `~/.codex/plugins/<plugin-name>/` and add an entry for each in `~/.agents/plugins/marketplace.json` (see the [Codex plugin build guide](https://developers.openai.com/codex/plugins/build) for the marketplace schema).
 
 ### OpenCode
 
