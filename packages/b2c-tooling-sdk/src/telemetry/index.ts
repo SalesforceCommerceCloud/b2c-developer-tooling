@@ -4,6 +4,15 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Internal telemetry module for the B2C CLI and MCP server. Not part of the
+ * public SDK surface — intentionally excluded from generated API documentation.
+ * External consumers should not rely on this module's API stability.
+ *
+ * @module telemetry
+ * @internal
+ */
+
 export type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} from './types.js';
 export {Telemetry} from './telemetry.js';
 
