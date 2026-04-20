@@ -7,16 +7,6 @@ description: Inspect and debug CLI configuration, instance connections, and auth
 
 The B2C CLI (`@salesforce/b2c-cli`) is a command-line tool for Salesforce B2C Commerce development. It provides commands organized by topic: `auth`, `code`, `webdav`, `sandbox`, `mrt`, `scapi`, `slas`, `ecdn`, `job`, `logs`, `sites`, `content`, `cip`, `setup`, and more. Use `b2c --help` or `b2c <topic> --help` for a full list.
 
-## Optional: validate a generated dw.json
-
-After writing or editing a `dw.json`, you can lint it structurally with the bundled script. The check is offline and requires no credentials — it validates JSON shape, recognized keys, and that at least one complete auth method is present.
-
-```bash
-node scripts/validate.mjs ./dw.json
-```
-
-Exit 0 = valid. Exit 1 = validation errors (e.g., no auth credentials). Exit 2 = file/parse error. Unknown keys are warnings, not errors.
-
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli setup inspect`).
 
 ## Authentication
