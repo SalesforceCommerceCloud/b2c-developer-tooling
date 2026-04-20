@@ -99,8 +99,8 @@ export async function commerceAppInstall(
   }
 
   // Upload to WebDAV Impex directory (same location as site archive imports)
-  const webdavUploadPath = `Impex/src/instance/${archiveFilename}`;
-  const appPath = `webdav/sites/impex/src/instance/${archiveFilename}`;
+  const webdavUploadPath = `Temp/${archiveFilename}`;
+  const appPath = `webdav/Sites/Temp/${archiveFilename}`;
 
   logger.debug({path: webdavUploadPath}, `Uploading CAP to ${webdavUploadPath}`);
   await instance.webdav.put(webdavUploadPath, archiveContent, 'application/zip');
@@ -123,7 +123,10 @@ export async function commerceAppInstall(
     } as unknown as string,
   });
 
-  if (error?.fault?.type === 'UnknownPropertyException') {
+  if (
+    error?.fault?.type === 'UnknownPropertyException' &&
+    (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
+  ) {
     // Retry with parameters format (internal/support users)
     logger.warn('Retrying with parameters format for internal users');
 
@@ -141,21 +144,11 @@ export async function commerceAppInstall(
     });
 
     if (retryError || !retryData) {
-      try {
-        await instance.webdav.delete(webdavUploadPath);
-      } catch {
-        // ignore cleanup errors
-      }
       throw new Error(retryError?.fault?.message ?? 'Failed to start install job');
     }
 
     execution = retryData;
   } else if (error || !data) {
-    try {
-      await instance.webdav.delete(webdavUploadPath);
-    } catch {
-      // ignore cleanup errors
-    }
     throw new Error(error?.fault?.message ?? 'Failed to start install job');
   } else {
     execution = data;

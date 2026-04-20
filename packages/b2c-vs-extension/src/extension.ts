@@ -11,6 +11,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
 import {registerCap} from './cap/index.js';
+import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
 import {registerLogs} from './logs/index.js';
 import {initializePlugins} from './plugins.js';
@@ -136,6 +137,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // This ensures plugin config sources and middleware are available
   // before the first resolveConfig() call. Failures are non-fatal.
   await initializePlugins();
+
+  registerJobLogViewer(context);
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   context.subscriptions.push(configProvider);

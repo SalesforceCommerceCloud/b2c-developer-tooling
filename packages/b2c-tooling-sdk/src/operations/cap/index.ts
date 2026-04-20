@@ -15,6 +15,8 @@
  * - {@link commerceAppInstall} - Install a CAP via the sfcc-install-commerce-app job
  * - {@link commerceAppUninstall} - Uninstall a CAP via the sfcc-uninstall-commerce-app job
  * - {@link commerceAppPackage} - Package a CAP directory into a distributable .zip
+ * - {@link discoverLocalApps} - Discover local CAPs by finding commerce-app.json files
+ * - {@link listInstalledApps} - List installed apps on an instance via commerce_feature_states export
  *
  * ## Usage
  *
@@ -24,6 +26,8 @@
  *   commerceAppInstall,
  *   commerceAppUninstall,
  *   commerceAppPackage,
+ *   discoverLocalApps,
+ *   listInstalledApps,
  * } from '@salesforce/b2c-tooling-sdk/operations/cap';
  *
  * // Validate locally
@@ -49,7 +53,7 @@ export type {CapValidationResult, CommerceAppManifest} from './validate.js';
 // Re-export JobExecutionError for convenience in CLI commands
 export {JobExecutionError} from '../jobs/run.js';
 
-export {commerceAppInstall} from './install.js';
+export {commerceAppInstall, readManifest} from './install.js';
 export type {CommerceAppInstallOptions, CommerceAppInstallResult} from './install.js';
 
 export {commerceAppUninstall} from './uninstall.js';
@@ -57,3 +61,11 @@ export type {CommerceAppUninstallOptions, CommerceAppUninstallResult} from './un
 
 export {commerceAppPackage} from './package.js';
 export type {CommerceAppPackageOptions, CommerceAppPackageResult} from './package.js';
+
+export {discoverLocalApps, listInstalledApps, parseCommerceFeatureStatesXml} from './list.js';
+export type {
+  CommerceFeatureState,
+  LocalCommerceApp,
+  ListInstalledAppsOptions,
+  ListInstalledAppsResult,
+} from './list.js';

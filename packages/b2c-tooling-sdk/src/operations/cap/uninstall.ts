@@ -79,7 +79,10 @@ export async function commerceAppUninstall(
     } as unknown as string,
   });
 
-  if (error?.fault?.type === 'UnknownPropertyException') {
+  if (
+    error?.fault?.type === 'UnknownPropertyException' &&
+    (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
+  ) {
     // Retry with parameters format (internal/support users)
     logger.warn('Retrying with parameters format for internal users');
 

@@ -12,13 +12,13 @@ import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
 import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
+import {openJobLog} from '../job-log-viewer.js';
 
 async function showJobError(err: unknown, instance: B2CInstance, label: string): Promise<void> {
   if (err instanceof JobExecutionError && err.execution.is_log_file_existing) {
     try {
       const log = await getJobLog(instance, err.execution);
-      const doc = await vscode.workspace.openTextDocument({content: log, language: 'log'});
-      await vscode.window.showTextDocument(doc);
+      await openJobLog(err.execution.id ?? 'job', log);
     } catch {
       // Fall through to generic error
     }
