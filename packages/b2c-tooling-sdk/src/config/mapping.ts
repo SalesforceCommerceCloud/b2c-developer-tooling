@@ -13,8 +13,29 @@
  */
 import type {AuthConfig} from '../auth/types.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
+import {parseSafetyLevelString} from '../safety/safety-middleware.js';
+import {isValidSafetyAction} from '../safety/types.js';
+import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
 import type {NormalizedConfig, ConfigWarning} from './types.js';
+
+/**
+ * Normalizes a URL origin string by ensuring it has an `https://` protocol prefix.
+ * Accepts both bare hostnames (`cloud.mobify.com`) and full URLs (`https://cloud.mobify.com`).
+ * Strips trailing slashes for consistency.
+ *
+ * @param origin - A hostname or URL origin string
+ * @returns The origin with `https://` protocol, or undefined if input is undefined
+ */
+export function normalizeOriginUrl(origin: string | undefined): string | undefined {
+  if (!origin) return undefined;
+  let normalized = origin;
+  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    normalized = `https://${normalized}`;
+  }
+  // Strip trailing slash for consistency
+  return normalized.replace(/\/+$/, '');
+}
 
 /**
  * Converts a kebab-case string to camelCase.
@@ -137,6 +158,8 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     realm: json.realm,
     cartridges: parseCartridges(json.cartridges),
     contentLibrary: json.contentLibrary,
+    catalogs: json.catalogs,
+    libraries: json.libraries,
     cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
@@ -149,6 +172,37 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // Safety
+    safety: mapDwJsonSafety(json.safety),
+  };
+}
+
+/**
+ * Maps and validates safety config from dw.json to normalized format.
+ */
+function mapDwJsonSafety(safety: DwJsonConfig['safety']): NormalizedConfig['safety'] {
+  if (!safety) return undefined;
+
+  const level = parseSafetyLevelString(safety.level);
+  const rules: SafetyRule[] | undefined = safety.rules
+    ?.filter((r) => isValidSafetyAction(r.action))
+    .map((r) => ({
+      method: r.method,
+      path: r.path,
+      job: r.job,
+      command: r.command,
+      action: r.action as SafetyRule['action'],
+    }));
+
+  // Only return if there's at least one meaningful field
+  if (level === undefined && safety.confirm === undefined && (!rules || rules.length === 0)) {
+    return undefined;
+  }
+
+  return {
+    level,
+    confirm: safety.confirm,
+    rules: rules && rules.length > 0 ? rules : undefined,
   };
 }
 
@@ -223,6 +277,12 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.cartridges !== undefined) {
     result.cartridges = config.cartridges;
   }
+  if (config.catalogs !== undefined) {
+    result.catalogs = config.catalogs;
+  }
+  if (config.libraries !== undefined) {
+    result.libraries = config.libraries;
+  }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
   }
@@ -243,6 +303,19 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.safety !== undefined) {
+    result.safety = {
+      level: config.safety.level,
+      confirm: config.safety.confirm,
+      rules: config.safety.rules?.map((r) => ({
+        method: r.method,
+        path: r.path,
+        job: r.job,
+        command: r.command,
+        action: r.action,
+      })),
+    };
   }
 
   return result;
@@ -349,6 +422,8 @@ export function mergeConfigsWithProtection(
       tenantId: overrides.tenantId ?? base.tenantId,
       cartridges: overrides.cartridges ?? base.cartridges,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
+      catalogs: overrides.catalogs ?? base.catalogs,
+      libraries: overrides.libraries ?? base.libraries,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,
@@ -363,6 +438,8 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // Safety
+      safety: overrides.safety ?? base.safety,
     },
     warnings,
     hostnameMismatch: false,
@@ -460,7 +537,10 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
  * await instance.webdav.mkcol('Cartridges/v1');
  * ```
  */
-export function createInstanceFromConfig(config: NormalizedConfig): B2CInstance {
+export function createInstanceFromConfig(
+  config: NormalizedConfig,
+  options?: {redirectUri?: string; openBrowser?: (url: string) => Promise<void>},
+): B2CInstance {
   if (!config.hostname) {
     throw new Error('Hostname is required. Set in dw.json or provide via overrides.');
   }
@@ -481,6 +561,15 @@ export function createInstanceFromConfig(config: NormalizedConfig): B2CInstance 
   };
 
   const authConfig = buildAuthConfigFromNormalized(config);
+
+  // Inject implicit auth options into OAuth config when present
+  if (authConfig.oauth && (options?.redirectUri || options?.openBrowser)) {
+    authConfig.oauth = {
+      ...authConfig.oauth,
+      redirectUri: options.redirectUri,
+      openBrowser: options.openBrowser,
+    };
+  }
 
   return new B2CInstance(instanceConfig, authConfig);
 }

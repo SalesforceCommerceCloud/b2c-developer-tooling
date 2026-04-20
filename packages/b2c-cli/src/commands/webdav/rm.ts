@@ -3,27 +3,10 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {WebDavCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
-
-/**
- * Simple confirmation prompt.
- */
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
-    });
-  });
-}
+import {confirm} from '../../prompts.js';
 
 interface RmResult {
   path: string;
@@ -31,6 +14,7 @@ interface RmResult {
 }
 
 export default class WebDavRm extends WebDavCommand<typeof WebDavRm> {
+  protected operations = {confirm};
   static args = {
     path: Args.string({
       description: 'Path to delete relative to root',
@@ -67,8 +51,8 @@ export default class WebDavRm extends WebDavCommand<typeof WebDavRm> {
 
     // Confirm deletion unless --force is used
     if (!this.flags.force) {
-      const confirmed = await confirm(
-        t('commands.webdav.rm.confirm', 'Are you sure you want to delete "{{path}}"? (y/n)', {path: fullPath}),
+      const confirmed = await this.operations.confirm(
+        t('commands.webdav.rm.confirm', 'Are you sure you want to delete "{{path}}"?', {path: fullPath}),
       );
 
       if (!confirmed) {

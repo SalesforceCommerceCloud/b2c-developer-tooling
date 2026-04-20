@@ -17,7 +17,7 @@ type RealmModel = OdsComponents['schemas']['RealmModel'];
  * Get details of a specific realm.
  */
 export default class SandboxRealmGet extends OdsCommand<typeof SandboxRealmGet> {
-  static aliases = ['ods:realm:get', 'realm:get'];
+  static aliases = ['ods:realm:get'];
 
   static args = {
     realm: Args.string({

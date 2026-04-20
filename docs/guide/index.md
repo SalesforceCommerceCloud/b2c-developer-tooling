@@ -1,13 +1,15 @@
 ---
-description: Introduction to the B2C CLI, MCP Server, and SDK for Salesforce B2C Commerce code deployment, site management, and sandbox operations.
+description: Introduction to the B2C CLI, MCP Server, Agent Skills, and SDK for Salesforce B2C Commerce — deploy code, run jobs, manage sandboxes, and build with AI coding agents.
 ---
 
 # Introduction
 
-The B2C Developer Tooling provides command-line and AI-assisted development tools for Salesforce B2C Commerce.
+B2C Developer Tooling exposes the B2C Commerce platform as commands, MCP tools, and coding skills — so you and your AI agents can build, deploy, and operate storefronts from the terminal or directly inside your IDE. No clicking through Business Manager to deploy, no context-switching to run a job, no manual copy-paste when your agent needs to touch a live sandbox.
 
-- **B2C CLI**: Command-line interface that you can use to deploy code, manage sandboxes, run jobs, and so on from the terminal.
-- **MCP Server**: AI-assisted development tools for Claude Code, Cursor, GitHub Copilot, and other AI assistants.
+- **B2C CLI** — a single command for every workflow: cartridge deploys, jobs, ODS/MRT, WebDAV, site archives, SLAS, eCDN, Account Manager, CI/CD.
+- **Agent Skills** — 30+ preconfigured skills that teach your coding agent (Claude Code, Cursor, Agentforce Vibes, Copilot, Codex) how B2C Commerce works — SCAPI Custom APIs, SLAS, SFRA controllers and forms, ISML, Page Designer, hooks, custom objects — and which CLI commands to run when.
+- **MCP Server** — a focused set of MCP tools that complement the CLI for agent-driven workflows.
+- **Tooling SDK** — everything the CLI does, available as a typed TypeScript SDK for custom integrations.
 
 ## Quick CLI Install
 
@@ -33,24 +35,44 @@ See the [CLI Installation Guide](./installation) for more installation options.
 
 The B2C DX MCP Server enables AI assistants to help with B2C Commerce development tasks.
 
-**Claude Code:**
+### Claude Code (Project Scope)
 
-::: code-group
+1. Open your project root in Claude Code.
+2. Install the plugin marketplace entry:
 
-```bash [Project Scope (Recommended)]
-cd /path/to/your/project
-claude mcp add --transport stdio --scope project b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+```bash
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-dx-mcp --scope project
 ```
 
-```bash [User Scope]
-claude mcp add --transport stdio --scope user b2c-dx -- npx -y @salesforce/b2c-dx-mcp --allow-non-ga-tools
+### Cursor (Project Scope)
+
+1. Open your project root.
+2. Create or edit `.cursor/mcp.json`.
+3. Add this entry under `mcpServers` (merge with existing config, do not replace the full file):
+
+```json
+"b2c-dx-mcp": {
+  "command": "npx",
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+}
 ```
 
-:::
+### GitHub Copilot (Project Scope)
 
-**Cursor:** [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+1. Open your project root.
+2. Create or edit `.vscode/mcp.json`.
+3. Add this entry under `servers` (merge with existing config, do not replace the full file):
 
-See the [MCP Server Installation Guide](/mcp/installation) for detailed setup instructions for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
+```json
+"b2c-dx-mcp": {
+  "type": "stdio",
+  "command": "npx",
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+}
+```
+
+See the [MCP Server Installation Guide](/mcp/installation) for full setup steps and troubleshooting.
 
 ## Next Steps
 

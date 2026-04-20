@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "0.10.0",
+  "version": "1.3.2",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -154,6 +154,28 @@
       "require": {
         "types": "./dist/cjs/operations/roles/index.d.ts",
         "default": "./dist/cjs/operations/roles/index.js"
+      }
+    },
+    "./operations/bm-roles": {
+      "development": "./src/operations/bm-roles/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/bm-roles/index.d.ts",
+        "default": "./dist/esm/operations/bm-roles/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/bm-roles/index.d.ts",
+        "default": "./dist/cjs/operations/bm-roles/index.js"
+      }
+    },
+    "./operations/sites": {
+      "development": "./src/operations/sites/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/sites/index.d.ts",
+        "default": "./dist/esm/operations/sites/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/sites/index.d.ts",
+        "default": "./dist/cjs/operations/sites/index.js"
       }
     },
     "./operations/orgs": {
@@ -320,6 +342,50 @@
         "types": "./dist/cjs/telemetry/index.d.ts",
         "default": "./dist/cjs/telemetry/index.js"
       }
+    },
+    "./operations/ods": {
+      "development": "./src/operations/ods/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/ods/index.d.ts",
+        "default": "./dist/esm/operations/ods/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/ods/index.d.ts",
+        "default": "./dist/cjs/operations/ods/index.js"
+      }
+    },
+    "./safety": {
+      "development": "./src/safety/index.ts",
+      "import": {
+        "types": "./dist/esm/safety/index.d.ts",
+        "default": "./dist/esm/safety/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/safety/index.d.ts",
+        "default": "./dist/cjs/safety/index.js"
+      }
+    },
+    "./i18n": {
+      "development": "./src/i18n/index.ts",
+      "import": {
+        "types": "./dist/esm/i18n/index.d.ts",
+        "default": "./dist/esm/i18n/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/i18n/index.d.ts",
+        "default": "./dist/cjs/i18n/index.js"
+      }
+    },
+    "./operations/debug": {
+      "development": "./src/operations/debug/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/debug/index.d.ts",
+        "default": "./dist/esm/operations/debug/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/debug/index.d.ts",
+        "default": "./dist/cjs/operations/debug/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
@@ -331,7 +397,7 @@
     "data"
   ],
   "scripts": {
-    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts",
+    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts && openapi-typescript specs/granular-replications-v1.yaml -o src/clients/granular-replications.generated.ts",
     "build": "pnpm run generate:types && pnpm run build:esm && pnpm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
@@ -359,12 +425,12 @@
     "@oclif/prettier-config": "catalog:",
     "@oclif/test": "catalog:",
     "@salesforce/dev-config": "catalog:",
-    "@types/archiver": "^7.0.0",
     "@types/chai": "catalog:",
     "@types/ejs": "^3.1.5",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
     "@types/sinon": "catalog:",
+    "@types/tar-fs": "^2.0.4",
     "@types/xml2js": "^0.4.14",
     "c8": "catalog:",
     "chai": "catalog:",
@@ -394,14 +460,15 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "@vscode/debugadapter": "1.68.0",
     "applicationinsights": "2.9.8",
-    "archiver": "7.0.1",
     "chokidar": "5.0.0",
     "cliui": "catalog:",
     "ejs": "3.1.10",
     "fuse.js": "7.1.0",
     "glob": "catalog:",
     "i18next": "25.7.4",
+    "jsonschema": "catalog:",
     "jszip": "3.10.1",
     "minimatch": "10.1.1",
     "open": "catalog:",
@@ -409,6 +476,7 @@
     "pino": "10.1.0",
     "pino-pretty": "13.1.2",
     "protobufjs": "7.5.4",
+    "tar-fs": "3.1.2",
     "undici": "7.19.2",
     "xml2js": "0.6.2"
   }

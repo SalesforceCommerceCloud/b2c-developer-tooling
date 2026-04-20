@@ -13,6 +13,8 @@
  */
 import type {AuthMethod, AuthStrategy} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
+import type {SafetyLevel} from '../safety/safety-middleware.js';
+import type {SafetyRule} from '../safety/types.js';
 
 /**
  * A value that may be synchronous or a Promise.
@@ -95,6 +97,12 @@ export interface NormalizedConfig {
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
 
+  /** Catalog IDs for WebDAV browsing */
+  catalogs?: string[];
+
+  /** Library IDs for WebDAV browsing */
+  libraries?: string[];
+
   // CIP
   /** Optional CIP analytics host override */
   cipHost?: string;
@@ -114,6 +122,17 @@ export interface NormalizedConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+
+  // Safety
+  /** Safety configuration for this instance */
+  safety?: {
+    /** Safety level */
+    level?: SafetyLevel;
+    /** When true, level-blocked operations require confirmation instead of hard-blocking */
+    confirm?: boolean;
+    /** Ordered safety rules. First matching rule wins. */
+    rules?: SafetyRule[];
+  };
 }
 
 /**
@@ -326,6 +345,10 @@ export interface CreateOAuthOptions {
   allowedMethods?: AuthMethod[];
   /** Additional OAuth scopes to request beyond those in config */
   scopes?: string[];
+  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  redirectUri?: string;
+  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  openBrowser?: (url: string) => Promise<void>;
 }
 
 /**
@@ -422,9 +445,10 @@ export interface ResolvedB2CConfig {
 
   /**
    * Creates a B2CInstance from the resolved configuration.
+   * @param options - Options for implicit OAuth (redirectUri, openBrowser)
    * @throws Error if hostname is not configured
    */
-  createB2CInstance(): B2CInstance;
+  createB2CInstance(options?: Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'>): B2CInstance;
 
   /**
    * Creates a Basic auth strategy.

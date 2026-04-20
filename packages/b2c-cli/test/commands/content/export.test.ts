@@ -131,7 +131,7 @@ describe('content export', () => {
     expect(args[4].offline).to.equal(true);
     expect(args[4].libraryFile).to.equal('./library.xml');
     expect(args[4].keepOrphans).to.equal(true);
-    expect(args[4].waitOptions).to.deep.equal({timeout: 120_000});
+    expect(args[4].waitOptions).to.deep.equal({timeoutSeconds: 120});
   });
 
   it('calls exportContent with correct arguments', async () => {

@@ -49,15 +49,31 @@ export interface ExecuteJobOptions {
 }
 
 /**
+ * Poll info passed to the onPoll callback during job waiting.
+ */
+export interface WaitForJobPollInfo {
+  /** Job ID being waited on. */
+  jobId: string;
+  /** Execution ID being waited on. */
+  executionId: string;
+  /** Seconds elapsed since waiting started. */
+  elapsedSeconds: number;
+  /** Current execution status (e.g., 'running', 'pending', 'finished'). */
+  status: string;
+}
+
+/**
  * Options for waiting on a job.
  */
 export interface WaitForJobOptions {
-  /** Polling interval in milliseconds (default: 3000) */
-  pollInterval?: number;
-  /** Maximum time to wait in milliseconds (default: no limit) */
-  timeout?: number;
-  /** Callback for progress updates */
-  onProgress?: (execution: JobExecution, elapsedMs: number) => void;
+  /** Polling interval in seconds (default: 3). */
+  pollIntervalSeconds?: number;
+  /** Maximum time to wait in seconds (default: no limit, 0 = no timeout). */
+  timeoutSeconds?: number;
+  /** Callback invoked on each poll with current status. */
+  onPoll?: (info: WaitForJobPollInfo) => void;
+  /** Custom sleep function for testing. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 /**
@@ -194,10 +210,10 @@ export async function getJobExecution(
  * // Simple wait
  * const result = await waitForJob(instance, 'my-job', 'exec-123');
  *
- * // With progress callback
+ * // With poll callback
  * const result = await waitForJob(instance, 'my-job', 'exec-123', {
- *   onProgress: (exec, elapsed) => {
- *     console.log(`Status: ${exec.execution_status}, elapsed: ${elapsed}ms`);
+ *   onPoll: (info) => {
+ *     console.log(`Status: ${info.status} (${info.elapsedSeconds}s elapsed)`);
  *   }
  * });
  * ```
@@ -209,25 +225,28 @@ export async function waitForJob(
   options: WaitForJobOptions = {},
 ): Promise<JobExecution> {
   const logger = getLogger();
-  const {pollInterval = 3000, timeout, onProgress} = options;
+  const {pollIntervalSeconds = 3, timeoutSeconds = 0, onPoll} = options;
 
+  const sleepFn = options.sleep ?? defaultSleep;
   const startTime = Date.now();
+  const pollIntervalMs = pollIntervalSeconds * 1000;
+  const timeoutMs = timeoutSeconds * 1000;
   let ticks = 0;
 
-  while (true) {
-    await sleep(pollInterval);
+  await sleepFn(pollIntervalMs);
 
-    const elapsed = Date.now() - startTime;
-    if (timeout && elapsed > timeout) {
+  while (true) {
+    const elapsedSeconds = Math.round((Date.now() - startTime) / 1000);
+
+    if (timeoutSeconds > 0 && Date.now() - startTime > timeoutMs) {
       throw new Error(`Timeout waiting for job ${jobId} execution ${executionId}`);
     }
 
     const execution = await getJobExecution(instance, jobId, executionId);
+    const currentStatus = execution.execution_status ?? 'unknown';
 
-    // Call progress callback
-    if (onProgress) {
-      onProgress(execution, elapsed);
-    }
+    logger.trace({jobId, executionId, elapsedSeconds, status: currentStatus}, '[Jobs] Job poll');
+    onPoll?.({jobId, executionId, elapsedSeconds, status: currentStatus});
 
     // Check for terminal states
     if (execution.execution_status === 'aborted' || execution.exit_status?.code === 'ERROR') {
@@ -247,12 +266,13 @@ export async function waitForJob(
     // Log periodic updates
     if (ticks % 5 === 0) {
       logger.debug(
-        {jobId, executionId, status: execution.execution_status, elapsed: elapsed / 1000},
-        `Waiting for job ${jobId} to finish (${(elapsed / 1000).toFixed(0)}s elapsed)...`,
+        {jobId, executionId, status: currentStatus, elapsed: elapsedSeconds},
+        `Waiting for job ${jobId} to finish (${elapsedSeconds}s elapsed)...`,
       );
     }
 
     ticks++;
+    await sleepFn(pollIntervalMs);
   }
 }
 
@@ -464,9 +484,8 @@ export async function getJobLog(instance: B2CInstance, execution: JobExecution):
   return new TextDecoder().decode(content);
 }
 
-/**
- * Helper function for sleeping.
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function defaultSleep(ms: number): Promise<void> {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }

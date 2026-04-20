@@ -334,7 +334,20 @@ export { Feature } from './newmodule/index.js';
 export type { FeatureConfig } from './newmodule/index.js';
 ```
 
-### 6. Build and test
+### 6. Add to TypeDoc entry points
+
+Add the new module's barrel file to `docs/typedoc.json` so API documentation is generated:
+
+```json
+{
+  "entryPoints": [
+    "...",
+    "../packages/b2c-tooling-sdk/src/newmodule/index.ts"
+  ]
+}
+```
+
+### 7. Build and test
 
 ```bash
 pnpm --filter @salesforce/b2c-tooling-sdk run build
@@ -393,7 +406,7 @@ import { WebDavClient } from '../../src/clients/webdav.js';
 3. Create `index.ts` barrel with module-level JSDoc
 4. Add export to `package.json` with development condition
 5. Optionally add to main `src/index.ts` exports
-6. Write tests in `test/` mirroring the src structure
-7. Run `pnpm run build` to verify compilation
-8. Run `pnpm run test` to verify tests pass
-9. Update TypeDoc entry points in `typedoc.json` if needed
+6. Add entry point to `docs/typedoc.json` for API doc generation
+7. Write tests in `test/` mirroring the src structure
+8. Run `pnpm run build` to verify compilation
+9. Run `pnpm run test` to verify tests pass

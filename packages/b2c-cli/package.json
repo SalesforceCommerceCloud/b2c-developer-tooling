@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "0.9.0",
+  "version": "1.4.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -98,6 +98,19 @@
     },
     "topicSeparator": " ",
     "topics": {
+      "bm": {
+        "description": "Manage Business Manager resources on an instance",
+        "subtopics": {
+          "roles": {
+            "description": "Manage instance-level Business Manager access roles",
+            "subtopics": {
+              "permissions": {
+                "description": "Get and set permissions for Business Manager roles"
+              }
+            }
+          }
+        }
+      },
       "auth": {
         "description": "Manage authentication credentials and tokens\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/auth.html"
       },
@@ -105,7 +118,7 @@
         "description": "Deploy and manage code versions on instances\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html"
       },
       "content": {
-        "description": "Export and manage Page Designer content libraries"
+        "description": "Export, list, and validate Page Designer content"
       },
       "cip": {
         "description": "Run CIP analytics SQL and curated reports\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.html"
@@ -170,7 +183,12 @@
         }
       },
       "sites": {
-        "description": "List and inspect storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html"
+        "description": "List and manage storefront sites\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html",
+        "subtopics": {
+          "cartridges": {
+            "description": "Manage site cartridge path (list, add, remove, set)"
+          }
+        }
       },
       "am": {
         "description": "Manage Account Manager resources",
@@ -245,12 +263,6 @@
                 "description": "OWASP ModSecurity package\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
               }
             }
-          },
-          "firewall": {
-            "description": "Manage custom firewall rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
-          },
-          "rate-limit": {
-            "description": "Manage rate limiting rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
           "logpush": {
             "description": "Manage log export configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",

@@ -71,6 +71,7 @@ export {
   createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
   createCdnZonesClient,
+  createGranularReplicationsClient,
   createCipClient,
   toOrganizationId,
   normalizeTenantId,
@@ -153,6 +154,19 @@ export type {
   ZonesEnvelope,
   CdnZonesPaths,
   CdnZonesComponents,
+  GranularReplicationsClient,
+  GranularReplicationsClientConfig,
+  GranularReplicationsError,
+  GranularReplicationsResponse,
+  ProductItem,
+  PriceTableItem,
+  ContentAssetItemPrivate,
+  ContentAssetItemShared,
+  PublishProcessResponse,
+  PublishProcessListResponse,
+  PublishIdResponse,
+  GranularReplicationsPaths,
+  GranularReplicationsComponents,
   CipClient,
   CipClientConfig,
   CipColumn,
@@ -209,6 +223,7 @@ export type {
   JobExecutionParameter,
   ExecuteJobOptions,
   WaitForJobOptions,
+  WaitForJobPollInfo,
   SearchJobExecutionsOptions,
   JobExecutionSearchResult,
   SiteArchiveImportOptions,
@@ -310,11 +325,34 @@ export {getRole, listRoles} from './operations/roles/index.js';
 export {getOrg, getOrgByName, listOrgs} from './operations/orgs/index.js';
 
 // Safety - Protection against destructive operations
-export {getSafetyLevel, describeSafetyLevel, checkSafetyViolation, SafetyBlockedError} from './safety/index.js';
-export type {SafetyLevel, SafetyConfig} from './safety/index.js';
+export {
+  getSafetyLevel,
+  describeSafetyLevel,
+  checkSafetyViolation,
+  checkLevelViolation,
+  SafetyBlockedError,
+  SafetyConfirmationRequired,
+  SafetyGuard,
+  extractJobIdFromPath,
+  maxSafetyLevel,
+  isValidSafetyLevel,
+  parseSafetyLevelString,
+  resolveEffectiveSafetyConfig,
+  loadGlobalSafetyConfig,
+  isValidSafetyAction,
+  VALID_SAFETY_ACTIONS,
+  withSafetyConfirmation,
+} from './safety/index.js';
+export type {SafetyLevel, SafetyConfig, SafetyConfigFragment} from './safety/index.js';
+export type {SafetyAction, SafetyRule, SafetyOperation, SafetyEvaluation, ConfirmHandler} from './safety/index.js';
 
 // Defaults
-export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from './defaults.js';
+export {
+  DEFAULT_ACCOUNT_MANAGER_HOST,
+  DEFAULT_ODS_HOST,
+  DEFAULT_PUBLIC_CLIENT_ID,
+  getDefaultPublicClientId,
+} from './defaults.js';
 
 // Version info
 export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';

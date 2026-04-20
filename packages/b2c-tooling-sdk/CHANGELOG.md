@@ -1,5 +1,85 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.3.2
+
+### Patch Changes
+
+- [`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a) - Add `--wait` / `--no-wait` flag to `b2c job import` command. Import waits for completion by default (preserving existing behavior); use `--no-wait` to return immediately after the job starts. Also adds `--poll-interval` flag for controlling poll frequency. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.3.1
+
+### Patch Changes
+
+- [`30de66b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/30de66bf59c250c5382a7427ba475049c68566cd) - Fix broken Agentforce skills documentation URL (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.3.0
+
+### Minor Changes
+
+- [#337](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/337) [`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e) - Add Agentforce Vibes (`--ide agentforce-vibes`) as a supported IDE target for `setup skills`, installing to `.a4drules/skills/`. Add `--directory` flag for custom installation paths. Change `manual` default directory to `.agents/skills/`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.2.0
+
+### Minor Changes
+
+- [`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46) - Add B2C Commerce script debugger with SDAPI 2.0 DAP adapter (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#331](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/331) [`e6c6226`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6c6226c256b8d181917cc8c66fa4d7bf992e106) - Fix `code watch` WebDAV lock conflicts by serializing upload and delete operations so only one batch runs at a time. Failed uploads are now retried automatically. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.1.0
+
+### Minor Changes
+
+- [#318](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/318) [`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e) - Added per-instance safety configuration with rule-based actions (allow/block/confirm) and interactive confirmation mode. Safety can now be configured in `dw.json` with granular rules for HTTP paths, job IDs, and CLI commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.0.1
+
+### Patch Changes
+
+- [`e597e61`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e597e6131b9965e88ef75954a935695fa7f6d70f) - Add `--activate` flag to `code deploy` for activating a code version after deploy without the toggle behavior of `--reload`. Both `--activate` and `--reload` now error on failure instead of silently continuing. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.0.0
+
+### Major Changes
+
+- [#303](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/303) [`c24e920`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c24e9204a5f253b773c43c0b30c064c7f4dec34a) - Release v1.0 — B2C Tooling SDK is now Generally Available. Added `./operations/ods`, `./safety`, and `./i18n` subpath exports. Consolidated all error types in `@salesforce/b2c-tooling-sdk/errors`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Minor Changes
+
+- [#305](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/305) [`7ad490a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ad490a508b7f993292bd8a326f7a6c49c92d70c) - Add `--wait` flag to `mrt bundle deploy` to poll until deployment completes, and align all SDK wait functions (`waitForJob`, `waitForEnv`) to a consistent pattern with structured `onPoll` callbacks, seconds-based options, and injectable `sleep` for testing. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.13.0
+
+### Minor Changes
+
+- [#293](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/293) [`b5d07fd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b5d07fd1d1086ee92b735d73502997bcad97dc7e) - Add Business Manager role management commands (`bm roles`) for instance-level access role CRUD, user assignment, and permissions via OCAPI Data API (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#285](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/285) [`cb74ce4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb74ce4c78a91cc49556f464be5124981a24c3ea) - Add `openBrowser` and `redirectUri` options to OAuth strategy creation, allowing callers to customize how the browser is opened and which redirect URI is used during implicit auth. The VS Code extension now uses `vscode.env.openExternal` and `vscode.env.asExternalUri` so implicit OAuth works in Codespaces and other remote environments. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#295](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/295) [`b7f78ca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b7f78ca6d2468e274b911c4fd1fc7c03a9e6b4fb) - Add site cartridge path management commands (`sites cartridges list|add|remove|set`) with `--bm` flag for Business Manager support and automatic fallback to site archive import when OCAPI permissions are unavailable (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#292](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/292) [`c10ddad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c10ddadf7277c93196c956b73af694f4f065a149) - Use a host-specific default public client ID for account-pod5.demandware.net Account Manager (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.12.0
+
+### Minor Changes
+
+- [`f7229b4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7229b4372bb23d8e107db75f722575c33f4a007) - Add `SFCC_REDIRECT_URI` environment variable to support implicit OAuth flow behind a proxy. Set this to your proxy URL when `localhost:8080` isn't directly reachable by the browser. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.11.0
+
+### Minor Changes
+
+- [#278](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/278) [`8c31081`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c31081b47e57e6a21e62425e6f19da036fc3e34) - Add `content validate` command to validate Page Designer metadefinition JSON files against bundled schemas. Supports auto-detection of schema types from file paths and content, or explicit `--type` flag. Includes glob pattern support for validating multiple files. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#274](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/274) [`e4b5094`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4b5094d9c1c2a60e1214bc236ce7ed84c5d158b) - Replace `archiver` with `tar-fs` for MRT bundle creation, removing deprecated `glob@10.5.0` from the production dependency tree (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.10.0
 
 ### Minor Changes

@@ -70,6 +70,8 @@ You can configure the CLI using environment variables:
 | `SFCC_SHORTCODE`              | SCAPI short code                                               |
 | `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                               |
 | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
+| `SFCC_REDIRECT_URI`           | Override redirect URI for implicit OAuth flow (e.g., when behind a proxy) |
+| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the implicit OAuth redirect server (default: `8080`) |
 | `SFCC_USERNAME`               | Basic auth username                                            |
 | `SFCC_PASSWORD`               | Basic auth password                                            |
 | `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |
@@ -82,7 +84,9 @@ You can configure the CLI using environment variables:
 | `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)           |
 | `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
 | `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
-| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/security#operational-security-safety-mode)) |
+| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/safety)) |
+| `SFCC_SAFETY_CONFIRM`         | Enable confirmation mode for safety: `true` or `1` (see [Safety Mode](/guide/safety#confirmation-mode)) |
+| `SFCC_SAFETY_CONFIG`          | Path to global safety config file (see [Safety Mode](/guide/safety#global-safety-config)) |
 
 ## .env File
 
@@ -147,6 +151,8 @@ For projects that work with multiple instances, use the `configs` array:
   ]
 }
 ```
+
+Each instance can have its own `safety` configuration for per-instance operational safety. See [Safety Mode](/guide/safety#per-instance-configuration) for details.
 
 Use the `-i` or `--instance` flag to select a specific configuration:
 

@@ -324,6 +324,12 @@ configureLogger({level: 'debug'});
 configureLogger({level: 'trace'});
 ```
 
+## Migrating from sfcc-ci
+
+If you're migrating from sfcc-ci's programmatic JavaScript API (`require('sfcc-ci')`),
+see the [SDK Migration Tutorial](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/sdk-migration)
+for side-by-side code examples, paradigm changes, and a full API mapping table.
+
 ## Documentation
 
 Full documentation is available at: https://salesforcecommercecloud.github.io/b2c-developer-tooling/

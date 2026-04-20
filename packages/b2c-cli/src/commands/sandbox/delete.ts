@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
@@ -15,23 +14,7 @@ import {
   type SandboxState,
 } from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
-
-/**
- * Simple confirmation prompt.
- */
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
-    });
-  });
-}
+import {confirm} from '../../prompts.js';
 
 /**
  * Command to delete an on-demand sandbox.
@@ -106,7 +89,7 @@ export default class SandboxDelete extends OdsCommand<typeof SandboxDelete> {
     // Confirm deletion unless --force is used
     if (!this.flags.force) {
       const confirmed = await confirm(
-        t('commands.sandbox.delete.confirm', 'Are you sure you want to delete sandbox "{{sandboxInfo}}"? (y/n)', {
+        t('commands.sandbox.delete.confirm', 'Are you sure you want to delete sandbox "{{sandboxInfo}}"?', {
           sandboxInfo,
         }),
       );

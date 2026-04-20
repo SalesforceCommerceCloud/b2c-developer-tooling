@@ -8,12 +8,20 @@ import cliui from 'cliui';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {EnvSource} from '@salesforce/b2c-tooling-sdk/config';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
+import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {withDocs} from '../../i18n/index.js';
 
 /**
  * Sensitive fields that should be masked by default.
  */
-const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>(['clientSecret', 'mrtApiKey', 'password', 'slasClientSecret']);
+const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>([
+  'certificatePassphrase',
+  'clientSecret',
+  'mrtApiKey',
+  'password',
+  'slasClientSecret',
+]);
 
 /**
  * JSON output structure for the inspect command.
@@ -85,15 +93,41 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       description: 'Show sensitive values unmasked (passwords, secrets, API keys)',
       default: false,
     }),
+    'account-manager-host': Flags.string({
+      description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
+      env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: async () => process.env.SFCC_LOGIN_URL || undefined,
+      helpGroup: 'AUTH',
+    }),
+    'cloud-origin': Flags.string({
+      description: `MRT cloud origin URL (default: ${DEFAULT_MRT_ORIGIN})`,
+      env: 'MRT_CLOUD_ORIGIN',
+      default: async () => process.env.SFCC_MRT_CLOUD_ORIGIN || undefined,
+      helpGroup: 'MRT',
+    }),
   };
 
   static hiddenAliases = ['config:show', 'config:inspect'];
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
+    const accountManagerHost = this.flags['account-manager-host'] as string | undefined;
+    const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
+
     // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
     // Other commands handle env vars via oclif flag mappings, but inspect needs to show them
     // as a config source since it doesn't have those flags.
-    return loadConfig({}, this.getBaseConfigOptions(), {before: [new EnvSource()]});
+    return loadConfig(
+      {
+        accountManagerHost,
+        mrtOrigin: cloudOrigin,
+      },
+      {
+        ...this.getBaseConfigOptions(),
+        accountManagerHost,
+        cloudOrigin,
+      },
+      {before: [new EnvSource()]},
+    );
   }
 
   async run(): Promise<SetupInspectResponse> {
@@ -169,7 +203,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       'Instance',
       [
         ['hostname', config.hostname],
-        ['webdavHostname', config.webdavHostname],
+        ...(config.webdavHostname ? [['webdavHostname', config.webdavHostname] as [string, unknown]] : []),
         ['codeVersion', config.codeVersion],
       ],
       fieldSources,
@@ -197,12 +231,27 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['clientSecret', config.clientSecret],
         ['scopes', config.scopes],
         ['authMethods', config.authMethods],
-        ['accountManagerHost', config.accountManagerHost],
-        ['sandboxApiHost', config.sandboxApiHost],
+        ...(config.accountManagerHost ? [['accountManagerHost', config.accountManagerHost] as [string, unknown]] : []),
+        ...(config.sandboxApiHost ? [['sandboxApiHost', config.sandboxApiHost] as [string, unknown]] : []),
       ],
       fieldSources,
       unmask,
     );
+
+    // TLS/mTLS section (only shown when at least one TLS field is configured)
+    if (config.certificate || config.certificatePassphrase || config.selfSigned) {
+      this.renderSection(
+        ui,
+        'TLS/mTLS',
+        [
+          ['certificate', config.certificate],
+          ['certificatePassphrase', config.certificatePassphrase],
+          ['selfSigned', config.selfSigned],
+        ],
+        fieldSources,
+        unmask,
+      );
+    }
 
     // SCAPI section
     this.renderSection(
@@ -224,7 +273,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['mrtProject', config.mrtProject],
         ['mrtEnvironment', config.mrtEnvironment],
         ['mrtApiKey', config.mrtApiKey],
-        ['mrtOrigin', config.mrtOrigin],
+        ...(config.mrtOrigin ? [['mrtOrigin', config.mrtOrigin] as [string, unknown]] : []),
       ],
       fieldSources,
       unmask,

@@ -236,5 +236,29 @@ export function registerContentCommands(
     vscode.window.showInformationMessage('Site archive imported successfully.');
   });
 
-  return [refresh, addLibrary, removeLibrary, exportCmd, exportNoAssets, exportAssets, filter, clearFilter, importCmd];
+  const browseWebdav = vscode.commands.registerCommand('b2c-dx.content.browseWebdav', async (node: ContentTreeItem) => {
+    if (!node) return;
+
+    if (node.nodeType === 'library') {
+      await vscode.commands.executeCommand('b2c-dx.webdav.revealLibrary', node.libraryId);
+    } else if (node.nodeType === 'static') {
+      // Static assets have a webdav path: Libraries/{libraryId}/default/{path}
+      const cleanPath = node.contentId.startsWith('/') ? node.contentId.slice(1) : node.contentId;
+      const webdavPath = `Libraries/${node.libraryId}/default/${cleanPath}`;
+      await vscode.commands.executeCommand('b2c-dx.webdav.revealPath', webdavPath);
+    }
+  });
+
+  return [
+    refresh,
+    addLibrary,
+    removeLibrary,
+    exportCmd,
+    exportNoAssets,
+    exportAssets,
+    filter,
+    clearFilter,
+    importCmd,
+    browseWebdav,
+  ];
 }

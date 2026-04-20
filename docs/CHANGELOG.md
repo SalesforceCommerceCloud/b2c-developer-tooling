@@ -1,5 +1,51 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.14
+
+### Patch Changes
+
+- [`18f8d5c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18f8d5cc7cc4b5ab982a0ef8d4638f0a5728b86d) - Updated Agentforce Vibes skills documentation with correct link and autodetect example. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.2.13
+
+### Patch Changes
+
+- [#318](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/318) [`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e) - Added per-instance safety configuration with rule-based actions (allow/block/confirm) and interactive confirmation mode. Safety can now be configured in `dw.json` with granular rules for HTTP paths, job IDs, and CLI commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.2.12
+
+### Patch Changes
+
+- [#305](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/305) [`7ad490a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ad490a508b7f993292bd8a326f7a6c49c92d70c) - Add `--wait` flag to `mrt bundle deploy` to poll until deployment completes, and align all SDK wait functions (`waitForJob`, `waitForEnv`) to a consistent pattern with structured `onPoll` callbacks, seconds-based options, and injectable `sleep` for testing. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.2.11
+
+### Patch Changes
+
+- [#293](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/293) [`b5d07fd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b5d07fd1d1086ee92b735d73502997bcad97dc7e) - Add Business Manager role management commands (`bm roles`) for instance-level access role CRUD, user assignment, and permissions via OCAPI Data API (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#286](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/286) [`5a6ab56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5a6ab56a2842065b7f1815539bc5a70911826e9c) - Add `mrt save-credentials` command to save MRT API credentials to the ~/.mobify file (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#293](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/293) [`b5d07fd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b5d07fd1d1086ee92b735d73502997bcad97dc7e) - Add SDK migration tutorial for sfcc-ci programmatic API users (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.2.10
+
+### Patch Changes
+
+- [#289](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/289) [`7287490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7287490d6ec4e3597822d0ee0e4d6775ae656845) - Document MCP server GA availability updates. CARTRIDGES, MRT, SCAPI, and PWAV3 tools are generally available and no longer require `--allow-non-ga-tools`; STOREFRONTNEXT tools remain in preview. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
+## 0.2.9
+
+### Patch Changes
+
+- [#287](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/287) [`a98d28d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a98d28d83c40da5ab2d6c1389b5aa7e290921473) - Clarified MCP documentation for quick install and configuration, including project-root setup steps, environment variable guidance, and MRT/theming tool setup details to reduce onboarding confusion. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
+## 0.2.8
+
+### Patch Changes
+
+- [#280](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/280) [`a58dd74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a58dd7437d133e6509946f7a73246a96f61f0673) - Refreshed the MCP and agent-skill documentation with clearer installation and configuration guidance, plus updated skill catalog references. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
 ## 0.2.7
 
 ### Patch Changes

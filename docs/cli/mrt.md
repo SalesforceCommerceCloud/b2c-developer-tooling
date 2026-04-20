@@ -20,6 +20,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt env access-control` | `list` | Manage access control headers |
 | `mrt bundle` | `deploy`, `list`, `history`, `download` | Manage bundles and deployments |
 | `mrt tail-logs` | | Tail real-time application logs |
+| `mrt save-credentials` | | Save MRT credentials to ~/.mobify |
 | `mrt user` | `profile`, `api-key`, `email-prefs` | Manage user settings |
 
 ## Global MRT Flags
@@ -55,15 +56,9 @@ MRT commands use API key authentication. The API key is configured in the Manage
 
 Provide the API key via one of these methods:
 
-1. **Command-line flag**: `--api-key your-api-key`
-2. **Environment variable**: `export MRT_API_KEY=your-api-key`
-3. **Mobify config file**: `~/.mobify` with `api_key` field
-
-```json
-{
-  "api_key": "your-mrt-api-key"
-}
-```
+1. **Save credentials** (recommended): `b2c mrt save-credentials --user you@example.com --api-key your-api-key`
+2. **Command-line flag**: `--api-key your-api-key`
+3. **Environment variable**: `export MRT_API_KEY=your-api-key`
 
 For complete setup instructions, see the [Authentication Guide](/guide/authentication#managed-runtime-api-key).
 
@@ -289,6 +284,8 @@ b2c mrt env create prod -p my-storefront --name "Production" \
 | `--enable-source-maps` | Enable source maps |
 | `--proxy` | Proxy configuration in format `path=host` (repeatable) |
 | `--wait`, `-w` | Wait for the environment to be ready before returning |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600` |
 
 ### b2c mrt env get
 
@@ -459,6 +456,9 @@ b2c mrt bundle deploy -p my-storefront --build-dir ./dist
 
 # Deploy existing bundle by ID
 b2c mrt bundle deploy 12345 -p my-storefront -e production
+
+# Deploy and wait for completion
+b2c mrt bundle deploy -p my-storefront -e staging --wait
 ```
 
 **Flags:**
@@ -470,6 +470,9 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
 | `--node-version`, `-n` | Node.js version for SSR | `22.x` |
 | `--ssr-param` | SSR parameters (key=value) | |
+| `--wait`, `-w` | Wait for the deployment to complete before returning | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `30` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600` |
 
 ### b2c mrt bundle list
 
@@ -536,6 +539,37 @@ b2c mrt tail-logs -p my-storefront -e staging --json
 | `--level` | Filter by log level (ERROR, WARN, INFO, DEBUG, etc.). Repeatable for multiple levels. |
 | `--search`, `-g` | Filter entries matching a regex pattern (case-insensitive) |
 | `--no-color` | Disable colored output |
+
+---
+
+## Save Credentials
+
+### b2c mrt save-credentials
+
+Save MRT credentials (username and API key) to the `~/.mobify` file. Prompts for confirmation before overwriting an existing file.
+
+```bash
+# Save credentials
+b2c mrt save-credentials --user user@example.com --api-key abc123
+
+# Overwrite without confirmation
+b2c mrt save-credentials --user user@example.com --api-key abc123 --yes
+
+# Save to a custom credentials file
+b2c mrt save-credentials --user user@example.com --api-key abc123 --credentials-file ./my-creds
+
+# Save for a specific cloud origin (writes to ~/.mobify--<hostname>)
+b2c mrt save-credentials --user user@example.com --api-key abc123 --cloud-origin https://cloud-staging.example.com
+```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--user` | MRT username (email). Required. |
+| `--api-key` | MRT API key. Required. |
+| `--cloud-origin` | MRT cloud origin URL. Determines the credentials file path (e.g., `~/.mobify--<hostname>`). |
+| `--credentials-file` | Explicit path to credentials file (overrides default `~/.mobify`). |
+| `--yes`, `-y` | Overwrite existing credentials without confirmation. |
 
 ---
 

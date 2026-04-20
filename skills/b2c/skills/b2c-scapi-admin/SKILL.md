@@ -1,6 +1,6 @@
 ---
 name: b2c-scapi-admin
-description: Consume SCAPI Admin APIs for backend integrations and data management. Use when building inventory sync, order management, catalog updates, or customer data integrations. Covers Account Manager OAuth, admin scopes, and common integration patterns.
+description: Integrate with SCAPI Admin APIs for server-to-server backend operations. Use this skill whenever the user needs to sync inventory via Admin APIs, manage orders or catalog data through SCAPI, build customer data integrations, configure Account Manager OAuth for admin scopes, or implement bulk data imports with NDJSON. Also use when querying admin endpoints for promotions, price books, or coupon management -- even if they just say 'pull orders from Commerce Cloud' or 'update product data via API'.
 ---
 
 # SCAPI Admin APIs

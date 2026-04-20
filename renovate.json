@@ -2,14 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    ":dependencyDashboard",
     ":semanticCommits",
     "group:allNonMajor"
   ],
   "vulnerabilityAlerts": {
-    "enabled": false
+    "enabled": true,
+    "labels": ["security"],
+    "schedule": ["at any time"]
   },
-  "gitAuthor": "Charles Lavery <clavery@salesforce.com>",
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
   "major": {
@@ -23,17 +23,17 @@
     },
     {
       "description": "Group TypeScript ecosystem",
-      "matchPackagePatterns": ["^typescript", "^@types/"],
+      "matchPackageNames": ["/^typescript/", "/^@types\\//"],
       "groupName": "typescript"
     },
     {
       "description": "Group ESLint ecosystem",
-      "matchPackagePatterns": ["eslint"],
+      "matchPackageNames": ["/eslint/"],
       "groupName": "eslint"
     },
     {
       "description": "Group testing tools",
-      "matchPackagePatterns": ["mocha", "chai", "sinon", "c8", "msw"],
+      "matchPackageNames": ["/mocha/", "/chai/", "/sinon/", "/c8/", "/msw/"],
       "groupName": "testing"
     },
     {

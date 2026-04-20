@@ -327,16 +327,19 @@ describe('registry', () => {
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
       const server = createMockServer();
       const flags: StartupFlags = {
-        toolsets: ['CARTRIDGES'],
+        toolsets: ['STOREFRONTNEXT'],
         allowNonGaTools: false,
       };
 
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // All current CARTRIDGES tools are non-GA (isGA: false)
-      // So none should be registered
-      expect(server.registeredTools).to.have.lengthOf(0);
+      // STOREFRONTNEXT-only tools are non-GA (isGA: false), so they should be skipped.
+      // Multi-toolset GA tools (mrt_bundle_push, scapi_*) that appear in STOREFRONTNEXT are still registered.
+      const sfnextOnlyTools = ['sfnext_get_guidelines', 'sfnext_add_page_designer_decorator'];
+      for (const toolName of sfnextOnlyTools) {
+        expect(server.registeredTools).to.not.include(toolName);
+      }
     });
 
     it('should register GA tools even when allowNonGaTools is false', async () => {
@@ -349,9 +352,17 @@ describe('registry', () => {
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // Currently all tools are non-GA placeholders
-      // This test documents expected behavior for when GA tools exist
-      // When GA tools are added, this test should be updated to verify they are registered
+      // GA tools from CARTRIDGES, MRT, SCAPI, PWAV3 should be registered
+      expect(server.registeredTools).to.include('cartridge_deploy');
+      expect(server.registeredTools).to.include('mrt_bundle_push');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
+      expect(server.registeredTools).to.include('pwakit_get_guidelines');
+
+      // STOREFRONTNEXT-only tools should NOT be registered (still non-GA)
+      expect(server.registeredTools).to.not.include('sfnext_get_guidelines');
+      expect(server.registeredTools).to.not.include('sfnext_add_page_designer_decorator');
     });
 
     describe('auto-discovery', () => {

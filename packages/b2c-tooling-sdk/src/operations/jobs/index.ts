@@ -85,6 +85,7 @@ export type {
   JobExecutionParameter,
   ExecuteJobOptions,
   WaitForJobOptions,
+  WaitForJobPollInfo,
   SearchJobExecutionsOptions,
   JobExecutionSearchResult,
 } from './run.js';

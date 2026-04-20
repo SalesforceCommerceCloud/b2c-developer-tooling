@@ -39,6 +39,17 @@
       "source": "./skills/b2c-experimental",
       "category": "productivity",
       "strict": false
+    },
+    {
+      "name": "b2c-dx-mcp",
+      "description": "MCP server for AI-assisted Salesforce B2C Commerce development with project-aware tooling for common workflows.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./plugins/b2c-dx-mcp",
+      "category": "productivity",
+      "strict": false
     }
   ]
 }

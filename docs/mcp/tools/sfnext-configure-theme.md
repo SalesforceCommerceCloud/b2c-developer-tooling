@@ -22,6 +22,28 @@ The tool guides you through a structured workflow: answer questions about your d
 
 - Storefront Next project
 
+## Custom Theming Files
+
+Add custom theming guidance files by setting the `THEMING_FILES` environment variable. The value is a JSON array of `{key, path}` objects. Paths are resolved relative to the project directory (absolute paths also supported). Custom files are loaded when `sfnext_configure_theme` initializes for the project and are available via the `fileKeys` parameter.
+
+Use this only when you need project-specific guidance (for example, brand rules or design-system constraints). If the default files are sufficient, you can skip `THEMING_FILES`.
+
+**In `.env` file (recommended):**
+
+```bash
+THEMING_FILES='[{"key":"brand-guidelines","path":"docs/brand-guidelines.md"}]'
+```
+
+**In MCP client `env` object:**
+
+```json
+{
+  "env": {
+    "THEMING_FILES": "[{\"key\":\"brand-guidelines\",\"path\":\"docs/brand-guidelines.md\"}]"
+  }
+}
+```
+
 ## Parameters
 
 | Parameter | Type | Required | Description |

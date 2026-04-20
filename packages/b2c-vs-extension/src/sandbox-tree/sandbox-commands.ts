@@ -11,13 +11,14 @@ import type {RealmTreeItem, SandboxTreeDataProvider, SandboxTreeItem} from './sa
 
 const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 
-function getOdsClientFromConfig(configProvider: SandboxConfigProvider) {
+async function getOdsClientFromConfig(configProvider: SandboxConfigProvider) {
   const config = configProvider.getConfigProvider().getConfig();
   if (!config) throw new Error('No B2C Commerce configuration found. Configure dw.json or SFCC_* env vars.');
   if (!config.hasOAuthConfig())
     throw new Error('OAuth credentials required. Set clientId and clientSecret in dw.json.');
   const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
-  return createOdsClient({host}, config.createOAuth());
+  const oauthOptions = await configProvider.getConfigProvider().getImplicitAuthOptions();
+  return createOdsClient({host}, config.createOAuth(oauthOptions));
 }
 
 const SANDBOX_DETAIL_SCHEME = 'b2c-sandbox';
@@ -103,7 +104,7 @@ export function registerSandboxCommands(
       {location: vscode.ProgressLocation.Notification, title: `Creating sandbox in realm ${realm}...`},
       async () => {
         try {
-          const odsClient = getOdsClientFromConfig(configProvider);
+          const odsClient = await getOdsClientFromConfig(configProvider);
           const result = await odsClient.POST('/sandboxes', {
             body: {realm: realm!, ttl, analyticsEnabled: false},
           });
@@ -139,7 +140,7 @@ export function registerSandboxCommands(
       {location: vscode.ProgressLocation.Notification, title: `Deleting sandbox ${node.sandbox.id}...`},
       async () => {
         try {
-          const odsClient = getOdsClientFromConfig(configProvider);
+          const odsClient = await getOdsClientFromConfig(configProvider);
           const result = await odsClient.DELETE('/sandboxes/{sandboxId}', {
             params: {path: {sandboxId: node.sandbox.id}},
           });
@@ -180,7 +181,7 @@ export function registerSandboxCommands(
       },
       async () => {
         try {
-          const odsClient = getOdsClientFromConfig(configProvider);
+          const odsClient = await getOdsClientFromConfig(configProvider);
           const result = await odsClient.POST('/sandboxes/{sandboxId}/operations', {
             params: {path: {sandboxId: node.sandbox.id}},
             body: {operation: operationType},
@@ -264,7 +265,7 @@ export function registerSandboxCommands(
         },
         async () => {
           try {
-            const odsClient = getOdsClientFromConfig(configProvider);
+            const odsClient = await getOdsClientFromConfig(configProvider);
             const result = await odsClient.PATCH('/sandboxes/{sandboxId}', {
               params: {path: {sandboxId: node.sandbox.id}},
               body: {ttl},

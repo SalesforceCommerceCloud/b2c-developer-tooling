@@ -32,7 +32,8 @@ export class ContentConfigProvider {
   }
 
   getContentLibrary(): string | undefined {
-    return this.configProvider.getConfig()?.values.contentLibrary;
+    const config = this.configProvider.getConfig();
+    return config?.values.contentLibrary ?? config?.values.libraries?.[0];
   }
 
   getLibraries(): BrowsedLibrary[] {

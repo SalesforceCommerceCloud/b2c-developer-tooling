@@ -71,6 +71,7 @@ describe('mrt bundle deploy', () => {
           'node-version': '20.x',
           'ssr-param': ['SSRProxyPath=/api', 'Foo=bar'],
           message: 'Test push',
+          wait: false,
         },
         {},
       );
@@ -90,22 +91,7 @@ describe('mrt bundle deploy', () => {
         projectSlug: 'my-project',
         target: 'staging',
       } as any);
-
-      // Inject the stub via operations property
-      (command as any).run = async function () {
-        this.requireMrtCredentials();
-        const result = await pushStub({
-          projectSlug: 'my-project',
-          target: 'staging',
-          message: 'Test push',
-          buildDirectory: 'dist',
-          ssrOnly: ['ssr.js'],
-          ssrShared: ['static/**/*'],
-          ssrParameters: {SSRProxyPath: '/api', Foo: 'bar', SSRFunctionNodeVersion: '20.x'},
-          origin: 'https://example.com',
-        });
-        return result;
-      };
+      command.operations = {...command.operations, pushBundle: pushStub};
 
       const result = await command.run();
 
@@ -182,7 +168,7 @@ describe('mrt bundle deploy', () => {
     it('calls createDeployment with bundleId and returns result', async () => {
       const command = createCommand();
 
-      stubParse(command, {project: 'my-project', environment: 'staging'}, {bundleId: 12_345});
+      stubParse(command, {project: 'my-project', environment: 'staging', wait: false}, {bundleId: 12_345});
       await command.init();
 
       stubCommonAuth(command);
@@ -193,23 +179,11 @@ describe('mrt bundle deploy', () => {
         .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
 
       const deployStub = sinon.stub().resolves({
-        id: 999,
-        bundle_id: 12_345,
-        target: 'staging',
+        bundleId: 12_345,
+        targetSlug: 'staging',
         status: 'pending',
       } as any);
-
-      // Mock the private method by overriding run
-      (command as any).run = async function () {
-        this.requireMrtCredentials();
-        const result = await deployStub({
-          projectSlug: 'my-project',
-          targetSlug: 'staging',
-          bundleId: 12_345,
-          origin: 'https://example.com',
-        });
-        return result;
-      };
+      command.operations = {...command.operations, createDeployment: deployStub};
 
       const result = await command.run();
 
@@ -218,7 +192,175 @@ describe('mrt bundle deploy', () => {
       expect(input.projectSlug).to.equal('my-project');
       expect(input.targetSlug).to.equal('staging');
       expect(input.bundleId).to.equal(12_345);
-      expect(result.bundle_id).to.equal(12_345);
+      expect(result.bundleId).to.equal(12_345);
+    });
+  });
+
+  describe('--wait flag', () => {
+    it('calls waitForEnv after deploying existing bundle', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {project: 'my-project', environment: 'staging', wait: true, 'poll-interval': 10, timeout: 600},
+        {bundleId: 12_345},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const deployStub = sinon.stub().resolves({bundleId: 12_345, targetSlug: 'staging', status: 'pending'} as any);
+      const waitStub = sinon.stub().resolves({slug: 'staging', state: 'ACTIVE', name: 'staging'} as any);
+      command.operations = {...command.operations, createDeployment: deployStub, waitForEnv: waitStub};
+
+      const result = await command.run();
+
+      expect(deployStub.calledOnce).to.equal(true);
+      expect(waitStub.calledOnce).to.equal(true);
+      expect(result.state).to.equal('ACTIVE');
+    });
+
+    it('calls waitForEnv after push with environment', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {
+          project: 'my-project',
+          environment: 'staging',
+          wait: true,
+          'poll-interval': 10,
+          timeout: 600,
+          'build-dir': 'build',
+          'ssr-only': 'ssr.js',
+          'ssr-shared': 'static/**/*',
+          'ssr-param': [],
+        },
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const pushStub = sinon.stub().resolves({
+        bundleId: 123,
+        deployed: true,
+        message: 'auto',
+        projectSlug: 'my-project',
+        target: 'staging',
+      } as any);
+      const waitStub = sinon.stub().resolves({slug: 'staging', state: 'ACTIVE', name: 'staging'} as any);
+      command.operations = {...command.operations, pushBundle: pushStub, waitForEnv: waitStub};
+
+      const result = await command.run();
+
+      expect(pushStub.calledOnce).to.equal(true);
+      expect(waitStub.calledOnce).to.equal(true);
+      expect(result.state).to.equal('ACTIVE');
+    });
+
+    it('skips waitForEnv when push has no target', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {
+          project: 'my-project',
+          wait: true,
+          'poll-interval': 10,
+          timeout: 600,
+          'build-dir': 'build',
+          'ssr-only': 'ssr.js',
+          'ssr-shared': 'static/**/*',
+          'ssr-param': [],
+        },
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(false);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'warn').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined}}));
+
+      const pushStub = sinon.stub().resolves({
+        bundleId: 123,
+        deployed: false,
+        message: 'auto',
+        projectSlug: 'my-project',
+      } as any);
+      const waitStub = sinon.stub().resolves({} as any);
+      command.operations = {...command.operations, pushBundle: pushStub, waitForEnv: waitStub};
+
+      const result = await command.run();
+
+      expect(pushStub.calledOnce).to.equal(true);
+      expect(waitStub.notCalled).to.equal(true);
+      expect(result.bundleId).to.equal(123);
+    });
+
+    it('does not call waitForEnv when --wait is not set', async () => {
+      const command = createCommand();
+
+      stubParse(command, {project: 'my-project', environment: 'staging', wait: false}, {bundleId: 12_345});
+      await command.init();
+
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const deployStub = sinon.stub().resolves({bundleId: 12_345, targetSlug: 'staging', status: 'pending'} as any);
+      const waitStub = sinon.stub().resolves({} as any);
+      command.operations = {...command.operations, createDeployment: deployStub, waitForEnv: waitStub};
+
+      await command.run();
+
+      expect(waitStub.notCalled).to.equal(true);
+    });
+
+    it('propagates waitForEnv errors', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {project: 'my-project', environment: 'staging', wait: true, 'poll-interval': 10, timeout: 600},
+        {bundleId: 12_345},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const deployStub = sinon.stub().resolves({bundleId: 12_345, targetSlug: 'staging', status: 'pending'} as any);
+      const waitStub = sinon.stub().rejects(new Error('Environment publish failed'));
+      command.operations = {...command.operations, createDeployment: deployStub, waitForEnv: waitStub};
+
+      try {
+        await command.run();
+        expect.fail('Expected error');
+      } catch (error: any) {
+        expect(error.message).to.include('publish failed');
+      }
     });
   });
 });

@@ -3,28 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteProject} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
-
-/**
- * Simple confirmation prompt.
- */
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
-    });
-  });
-}
+import {confirm} from '../../../prompts.js';
 
 /**
  * Delete result for JSON output.
@@ -78,7 +61,7 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
     // Confirm deletion unless --force is specified
     if (!force && !this.jsonEnabled()) {
       const confirmed = await confirm(
-        t('commands.mrt.project.delete.confirm', 'Are you sure you want to delete project "{{slug}}"? (y/n)', {slug}),
+        t('commands.mrt.project.delete.confirm', 'Are you sure you want to delete project "{{slug}}"?', {slug}),
       );
 
       if (!confirmed) {

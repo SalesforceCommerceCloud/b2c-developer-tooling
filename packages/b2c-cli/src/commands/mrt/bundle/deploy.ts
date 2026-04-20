@@ -8,9 +8,11 @@ import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   pushBundle,
   createDeployment,
+  waitForEnv,
   DEFAULT_SSR_PARAMETERS,
   type PushResult,
   type CreateDeploymentResult,
+  type MrtEnvironment,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -53,7 +55,7 @@ function parseSsrParams(params: string[]): Record<string, string> {
   return result;
 }
 
-type DeployResult = CreateDeploymentResult | PushResult;
+type DeployResult = CreateDeploymentResult | MrtEnvironment | PushResult;
 
 /**
  * Deploy a bundle to Managed Runtime.
@@ -86,6 +88,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     '<%= config.bin %> <%= command.id %> --project my-storefront --node-version 20.x',
     '<%= config.bin %> <%= command.id %> --project my-storefront --ssr-param SSRProxyPath=/api',
     '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging',
+    '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging --wait',
   ];
 
   static flags = {
@@ -116,6 +119,27 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       multiple: true,
       default: [],
     }),
+    wait: Flags.boolean({
+      char: 'w',
+      description: 'Wait for the deployment to complete before returning',
+      default: false,
+    }),
+    'poll-interval': Flags.integer({
+      description: 'Polling interval in seconds when using --wait',
+      default: 30,
+      dependsOn: ['wait'],
+    }),
+    timeout: Flags.integer({
+      description: 'Maximum time to wait in seconds when using --wait (0 for no timeout)',
+      default: 600,
+      dependsOn: ['wait'],
+    }),
+  };
+
+  protected operations = {
+    pushBundle,
+    createDeployment,
+    waitForEnv,
   };
 
   async run(): Promise<DeployResult> {
@@ -132,7 +156,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
   /**
    * Deploy an existing bundle to an environment.
    */
-  private async deployExistingBundle(bundleId: number): Promise<CreateDeploymentResult> {
+  private async deployExistingBundle(bundleId: number): Promise<CreateDeploymentResult | MrtEnvironment> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -153,7 +177,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     );
 
     try {
-      const result = await createDeployment(
+      const result = await this.operations.createDeployment(
         {
           projectSlug: project,
           targetSlug: environment,
@@ -174,12 +198,18 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
             },
           ),
         );
-        this.log(
-          t(
-            'commands.mrt.bundle.deploy.note',
-            'Note: Deployments are asynchronous. Use "b2c mrt env get" or the Runtime Admin dashboard to check status.',
-          ),
-        );
+        if (!this.flags.wait) {
+          this.log(
+            t(
+              'commands.mrt.bundle.deploy.note',
+              'Note: Deployments are asynchronous. Use "b2c mrt env get" or the Runtime Admin dashboard to check status.',
+            ),
+          );
+        }
+      }
+
+      if (this.flags.wait) {
+        return this.waitForDeployment(project, environment);
       }
 
       return result;
@@ -198,7 +228,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
   /**
    * Push a local build to create a new bundle.
    */
-  private async pushLocalBuild(): Promise<PushResult> {
+  private async pushLocalBuild(): Promise<MrtEnvironment | PushResult> {
     const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig.values;
     const {message} = this.flags;
 
@@ -227,7 +257,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }
 
     try {
-      const result = await pushBundle(
+      const result = await this.operations.pushBundle(
         {
           projectSlug: project,
           target,
@@ -256,6 +286,14 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         ),
       );
 
+      if (this.flags.wait) {
+        if (!target) {
+          this.warn('--wait was specified but no environment target was provided. Skipping wait.');
+          return result;
+        }
+        return this.waitForDeployment(project, target);
+      }
+
       return result;
     } catch (error) {
       if (error instanceof Error) {
@@ -263,5 +301,47 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       }
       throw error;
     }
+  }
+
+  /**
+   * Wait for a deployment to complete by polling the environment state.
+   */
+  private async waitForDeployment(project: string, environment: string): Promise<MrtEnvironment> {
+    this.log(
+      t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
+        environment,
+      }),
+    );
+
+    const envResult = await this.operations.waitForEnv(
+      {
+        projectSlug: project,
+        slug: environment,
+        origin: this.resolvedConfig.values.mrtOrigin,
+        pollIntervalSeconds: this.flags['poll-interval'],
+        timeoutSeconds: this.flags.timeout,
+        onPoll: (info) => {
+          if (!this.jsonEnabled()) {
+            this.log(
+              t('commands.mrt.bundle.deploy.state', '[{{elapsed}}s] State: {{state}}', {
+                elapsed: String(info.elapsedSeconds),
+                state: info.state,
+              }),
+            );
+          }
+        },
+      },
+      this.getMrtAuth(),
+    );
+
+    if (!this.jsonEnabled()) {
+      this.log(
+        t('commands.mrt.bundle.deploy.deployComplete', 'Deployment complete. Environment is {{state}}.', {
+          state: envResult.state ?? 'unknown',
+        }),
+      );
+    }
+
+    return envResult;
   }
 }

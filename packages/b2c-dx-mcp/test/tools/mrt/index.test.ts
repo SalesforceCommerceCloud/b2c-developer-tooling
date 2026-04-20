@@ -155,8 +155,8 @@ describe('tools/mrt', () => {
       expect(tool.toolsets).to.have.lengthOf(3);
     });
 
-    it('should not be GA (generally available)', () => {
-      expect(tool.isGA).to.be.false;
+    it('should be GA (generally available)', () => {
+      expect(tool.isGA).to.be.true;
     });
   });
 

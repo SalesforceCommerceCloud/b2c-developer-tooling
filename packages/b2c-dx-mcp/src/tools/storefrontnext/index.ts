@@ -46,7 +46,6 @@ export function createStorefrontNextTools(loadServices: () => Promise<Services> 
     createDeveloperGuidelinesTool(loadServices),
     createPageDesignerDecoratorTool(loadServices),
     createSiteThemingTool(loadServices),
-    createPageDesignerDecoratorTool(loadServices),
     createFigmaToComponentTool(loadServices),
     createGenerateComponentTool(loadServices),
     createMapTokensToThemeTool(loadServices),

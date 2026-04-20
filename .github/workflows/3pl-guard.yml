@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Detect net-new dependencies and enforce review label
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const reviewLabel = 'needs-3pl-review';

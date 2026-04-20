@@ -44,8 +44,8 @@ jobs:
     environment: e2e-dev
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - name: Check for required secrets and vars
@@ -74,9 +74,7 @@ jobs:
             echo "  - SFCC_MRT_CLOUD_ORIGIN (var): ${SFCC_MRT_CLOUD_ORIGIN:+✓}" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.17.1
+        uses: pnpm/action-setup@v5
 
       - name: Get pnpm store directory
         shell: bash
@@ -84,13 +82,13 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-            
+
       - name: Install dependencies
         if: steps.check-secrets.outputs.has-secrets == 'true'
         run: pnpm install --frozen-lockfile
@@ -123,7 +121,7 @@ jobs:
           pnpm run test:e2e:ci && pnpm run lint
 
       - name: E2E Test Report
-        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         with:
           name: E2E Test Results (Node ${{ matrix.node-version }})
@@ -132,7 +130,7 @@ jobs:
 
       - name: Upload E2E Test Results
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-test-results-node-${{ matrix.node-version }}-${{ github.run_number }}
           path: packages/b2c-cli/test-results.json
@@ -140,7 +138,7 @@ jobs:
 
       - name: Notify on Failure
         if: failure() && github.event_name == 'schedule' && steps.check-secrets.outputs.has-secrets == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const issue = {
@@ -172,21 +170,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22.x'
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.17.1
+        uses: pnpm/action-setup@v5
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
         run: |
           echo "store_path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-store.outputs.store_path }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}

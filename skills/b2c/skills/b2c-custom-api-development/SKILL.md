@@ -1,6 +1,6 @@
 ---
 name: b2c-custom-api-development
-description: Develop Custom SCAPI endpoints for B2C Commerce. Use when creating REST APIs, defining api.json routes, writing schema.yaml (OAS 3.0), or building headless commerce integrations. Covers cartridge structure, endpoint implementation, and OAuth scope configuration.
+description: Develop Custom SCAPI REST endpoints with api.json routes, schema.yaml definitions, and OAuth scope configuration. Use this skill whenever the user needs to create a custom API on the Commerce platform, define OpenAPI 3.0 schemas for request/response, structure the rest-apis cartridge folder, or debug endpoint registration and 404 issues. Also use when building headless commerce integrations -- even if they just say 'custom REST endpoint' or 'expose my script as an API'.
 ---
 
 # Custom API Development Skill

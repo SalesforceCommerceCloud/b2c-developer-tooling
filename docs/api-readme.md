@@ -18,21 +18,37 @@ The SDK is organized into focused submodules that can be imported individually:
 
 ```
 @salesforce/b2c-tooling-sdk
-├── /config          # Configuration resolution (dw.json, env vars)
-├── /auth            # Authentication strategies (OAuth, Basic, API Key)
-├── /clients         # Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT)
-├── /logging         # Pino-based logging configuration
+├── /config              # Configuration resolution (dw.json, env vars)
+├── /auth                # Authentication strategies (OAuth, Basic, API Key)
+├── /clients             # Low-level API clients (WebDAV, OCAPI, SLAS, ODS, MRT, AM)
+├── /instance            # B2CInstance wrapper for per-instance operations
+├── /logging             # Pino-based logging configuration
+├── /errors              # Shared error types
 │
-├── /operations/code # Code deployment, cartridge management
-├── /operations/cip  # Curated CIP analytics reports and SQL helpers
-├── /operations/jobs # Job execution, site archive import/export
-├── /operations/logs # Log tailing and retrieval
-├── /operations/mrt  # Managed Runtime bundle operations
-├── /operations/ods  # On-demand sandbox utilities
+├── /operations/code     # Code deployment, cartridge management
+├── /operations/content  # Page Designer content export
+├── /operations/cip      # Curated CIP analytics reports and SQL helpers
+├── /operations/jobs     # Job execution, site archive import/export
+├── /operations/logs     # Log tailing and retrieval
+├── /operations/mrt      # Managed Runtime bundle operations
+├── /operations/ods      # On-demand sandbox utilities
+├── /operations/debug    # B2C Script Debugger (SDAPI + DAP adapter)
+├── /operations/users    # Account Manager users
+├── /operations/roles    # Account Manager roles
+├── /operations/bm-roles # Business Manager roles
+├── /operations/orgs     # Account Manager organizations
+├── /operations/sites    # Storefront site info and cartridge paths
 │
-├── /scaffold        # Scaffold discovery, generation, and validation
-├── /docs            # B2C Script API documentation search
-└── /schemas         # OpenAPI schema utilities
+├── /slas                # SLAS helpers
+├── /safety              # Safety-mode confirmation middleware
+├── /discovery           # Instance discovery helpers
+├── /skills              # Agent Skills installer
+├── /plugins             # Plugin manifest + SDK hooks
+├── /scaffold            # Scaffold discovery, generation, and validation
+├── /docs                # B2C Script API documentation search
+├── /schemas             # OpenAPI schema utilities
+├── /cli                 # Shared CLI-side helpers
+└── /i18n                # Message loading / translations
 ```
 
 Import from specific submodules to access their functionality:

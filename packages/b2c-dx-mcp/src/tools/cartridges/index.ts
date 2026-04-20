@@ -86,7 +86,7 @@ function createCartridgeDeployTool(
         'Requires the instance to have a code version configured. ' +
         "After deploy, add new cartridges to your site's cartridge path in Business Manager: Sites → Manage Sites → [site] → Settings tab → Cartridges.",
       toolsets: ['CARTRIDGES'],
-      isGA: false,
+      isGA: true,
       requiresInstance: true,
       inputSchema: {
         directory: z

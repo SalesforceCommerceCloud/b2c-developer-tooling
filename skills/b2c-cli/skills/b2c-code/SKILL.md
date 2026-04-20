@@ -1,6 +1,6 @@
 ---
 name: b2c-code
-description: Deploy and manage code versions/cartridges on B2C Commerce instances/sandboxes with the b2c cli. Always reference when using the CLI to upload cartridges, deploy code, activate code versions, manage code versions, or watch for file changes during development.
+description: Deploy cartridge code and manage code versions on B2C Commerce instances. Use this skill whenever the user needs to upload cartridges to a sandbox, activate or delete code versions, watch for local file changes during development, or deploy a subset of cartridges. Also use when pushing code to an instance or setting up a dev workflow with live reload -- even if they just say 'push my code to the sandbox' or 'how do I activate the new version'.
 ---
 
 # B2C Code Skill
@@ -88,8 +88,11 @@ b2c code delete <version-name>
 
 See `b2c code --help` for a full list of available commands and options in the `code` topic.
 
+> **Note:** `b2c code deploy` uploads cartridge *code* to an instance. To manage which cartridges are *active on a site* (the cartridge path), see the `b2c-cli:b2c-sites` skill for the `b2c sites cartridges` commands.
+
 ## Related Skills
 
+- `b2c-cli:b2c-sites` - Manage site cartridge paths (list, add, remove, set active cartridges)
 - `b2c-cli:b2c-scapi-custom` - Check Custom API registration status after deployment
 - `b2c-cli:b2c-webdav` - Low-level file operations (delete cartridges, list files)
 - `b2c:b2c-custom-api-development` - Creating Custom API endpoints

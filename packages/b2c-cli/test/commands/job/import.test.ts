@@ -93,6 +93,48 @@ describe('job import', () => {
     expect(result.execution.exit_status.code).to.equal('skipped');
   });
 
+  it('passes wait:false to siteArchiveImport when --no-wait is set', async () => {
+    const command: any = await createCommand({wait: false, json: true}, {target: './dir'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const importStub = sinon.stub().resolves({
+      execution: {id: 'exec-1', execution_status: 'running'} as any,
+      archiveFilename: 'import-123.zip',
+      archiveKept: true,
+    });
+    command.operations = {...command.operations, siteArchiveImport: importStub};
+
+    const result = await command.run();
+
+    expect(importStub.calledOnce).to.equal(true);
+    const options = importStub.getCall(0).args[2];
+    expect(options.wait).to.equal(false);
+    expect(result.execution.execution_status).to.equal('running');
+  });
+
+  it('passes wait:true to siteArchiveImport by default', async () => {
+    const command: any = await createCommand({wait: true, json: true}, {target: './dir'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const importStub = sinon.stub().resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'a.zip',
+      archiveKept: false,
+    });
+    command.operations = {...command.operations, siteArchiveImport: importStub};
+
+    await command.run();
+
+    const options = importStub.getCall(0).args[2];
+    expect(options.wait).to.equal(true);
+  });
+
   it('shows job log and errors on JobExecutionError when show-log is true', async () => {
     const command: any = await createCommand({json: true}, {target: './dir'});
     stubCommon(command);

@@ -25,8 +25,8 @@ const TEST_HOST = 'test.demandware.net';
 const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
 const OCAPI_BASE = `https://${TEST_HOST}/s/-/dw/data/v25_6`;
 
-// Use short poll interval for fast tests (default is 3000ms)
-const FAST_WAIT_OPTIONS = {pollInterval: 10};
+// Use short poll interval for fast tests
+const FAST_WAIT_OPTIONS = {pollIntervalSeconds: 1, sleep: () => Promise.resolve()};
 
 describe('operations/jobs/site-archive', () => {
   const server = setupServer();
@@ -337,6 +337,53 @@ describe('operations/jobs/site-archive', () => {
       const paths = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
       const archiveRoot = result.archiveFilename.replace(/\.zip$/, '');
       expect(paths).to.include(`${archiveRoot}/libraries/mylib/library.xml`);
+    });
+
+    it('should return immediately without polling when wait is false', async () => {
+      const zipPath = path.join(tempDir, 'test.zip');
+      fs.writeFileSync(zipPath, Buffer.from('PK\x03\x04'));
+
+      let polled = false;
+      let deleteRequested = false;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          if (request.method === 'PUT') {
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'DELETE') {
+            deleteRequested = true;
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
+        }),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
+          return HttpResponse.json({
+            id: 'exec-nowait',
+            execution_status: 'running',
+          });
+        }),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-nowait`, () => {
+          polled = true;
+          return HttpResponse.json({
+            id: 'exec-nowait',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          });
+        }),
+      );
+
+      const result = await siteArchiveImport(mockInstance, zipPath, {
+        wait: false,
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      expect(result.execution.id).to.equal('exec-nowait');
+      expect(result.execution.execution_status).to.equal('running');
+      expect(result.archiveKept).to.be.true;
+      expect(polled).to.be.false;
+      expect(deleteRequested).to.be.false;
     });
 
     it('should throw JobExecutionError when import fails', async () => {

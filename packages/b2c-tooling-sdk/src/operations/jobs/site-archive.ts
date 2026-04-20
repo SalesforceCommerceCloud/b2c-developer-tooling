@@ -26,6 +26,8 @@ const EXPORT_JOB_ID = 'sfcc-site-archive-export';
 export interface SiteArchiveImportOptions {
   /** Keep archive on instance after import (default: false) */
   keepArchive?: boolean;
+  /** Whether to wait for job completion (default: true) */
+  wait?: boolean;
   /** Wait options for job completion */
   waitOptions?: WaitForJobOptions;
 }
@@ -99,7 +101,7 @@ export async function siteArchiveImport(
   options: SiteArchiveImportOptions & {archiveName?: string} = {},
 ): Promise<SiteArchiveImportResult> {
   const logger = getLogger();
-  const {keepArchive = false, waitOptions, archiveName} = options;
+  const {keepArchive = false, wait = true, waitOptions, archiveName} = options;
 
   let zipFilename: string;
   let needsUpload = true;
@@ -202,32 +204,34 @@ export async function siteArchiveImport(
 
   logger.debug({jobId: IMPORT_JOB_ID, executionId: execution.id}, `Import job started: ${execution.id}`);
 
-  // Wait for completion
-  try {
-    execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id!, waitOptions);
-  } catch (error) {
-    if (error instanceof JobExecutionError) {
-      // Try to get log file
-      try {
-        const log = await getJobLog(instance, error.execution);
-        logger.error({jobId: IMPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
-      } catch {
-        logger.error({jobId: IMPORT_JOB_ID}, 'Could not retrieve job log');
+  if (wait) {
+    // Wait for completion
+    try {
+      execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id!, waitOptions);
+    } catch (error) {
+      if (error instanceof JobExecutionError) {
+        // Try to get log file
+        try {
+          const log = await getJobLog(instance, error.execution);
+          logger.error({jobId: IMPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
+        } catch {
+          logger.error({jobId: IMPORT_JOB_ID}, 'Could not retrieve job log');
+        }
       }
+      throw error;
     }
-    throw error;
-  }
 
-  // Clean up archive if not keeping
-  if (!keepArchive && needsUpload) {
-    await instance.webdav.delete(uploadPath);
-    logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
+    // Clean up archive if not keeping
+    if (!keepArchive && needsUpload) {
+      await instance.webdav.delete(uploadPath);
+      logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
+    }
   }
 
   return {
     execution,
     archiveFilename: zipFilename,
-    archiveKept: keepArchive,
+    archiveKept: wait ? keepArchive : true,
   };
 }
 

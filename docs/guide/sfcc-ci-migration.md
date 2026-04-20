@@ -8,6 +8,11 @@ description: Migrate from sfcc-ci to @salesforce/b2c-cli with command mappings, 
 
 If you haven't installed the B2C CLI yet, see the [Installation guide](./installation).
 
+::: tip Migrating from sfcc-ci's JavaScript API?
+If you use `require('sfcc-ci')` in Node.js scripts, see the
+[SDK Migration Guide](./sdk-migration) for side-by-side code examples.
+:::
+
 ## Authentication
 
 The biggest change from sfcc-ci is how authentication works by default.
@@ -72,6 +77,17 @@ The B2C CLI's canonical syntax uses spaces instead of colons (e.g., `b2c code de
 | `sfcc-ci instance:import <archive>` | `b2c content import <archive>` | Or `b2c job run sfcc-site-archive-import` |
 | `sfcc-ci instance:export` | `b2c content export` | See [Content commands](/cli/content) |
 
+### Cartridge Path
+
+| sfcc-ci | b2c-cli | Notes |
+|---------|---------|-------|
+| `sfcc-ci cartridge:add <name> --siteid <id>` | `b2c sites cartridges add <name> --site-id <id>` | Supports `--position` and `--target` flags |
+| _(no equivalent)_ | `b2c sites cartridges list --site-id <id>` | List the active cartridge path |
+| _(no equivalent)_ | `b2c sites cartridges remove <name> --site-id <id>` | Remove a cartridge from the path |
+| _(no equivalent)_ | `b2c sites cartridges set <path> --site-id <id>` | Replace the entire cartridge path |
+
+The B2C CLI also supports the Business Manager cartridge path via the `--bm` flag (shorthand for `--site-id Sites-Site`). When OCAPI direct permissions are unavailable, the commands automatically fall back to site archive import/export. See [Sites commands](/cli/sites#cartridge-commands) for details.
+
 ### Jobs
 
 | sfcc-ci | b2c-cli | Notes |
@@ -106,19 +122,22 @@ Sandbox commands map directly, with spaces replacing colons:
 | `sfcc-ci slas:client:list` | `b2c slas client list` |
 | `sfcc-ci slas:client:delete` | `b2c slas client delete` |
 
-### User / Org / Role (Account Manager)
+### User / Org / Role
 
-Account Manager operations are under the `am` topic:
+Account Manager operations are under the `am` topic. Instance-level Business Manager role management is under the `bm` topic:
 
-| sfcc-ci | b2c-cli |
-|---------|---------|
-| `sfcc-ci user:list` | `b2c am users list` |
-| `sfcc-ci user:create` | `b2c am users create` |
-| `sfcc-ci user:delete` | `b2c am users delete` |
-| `sfcc-ci org:list` | `b2c am orgs list` |
-| `sfcc-ci role:list` | `b2c am roles list` |
-| `sfcc-ci role:grant` | `b2c am roles grant` |
-| `sfcc-ci role:revoke` | `b2c am roles revoke` |
+| sfcc-ci | b2c-cli | Notes |
+|---------|---------|-------|
+| `sfcc-ci user:list` | `b2c am users list` | |
+| `sfcc-ci user:create` | `b2c am users create` | |
+| `sfcc-ci user:delete` | `b2c am users delete` | |
+| `sfcc-ci org:list` | `b2c am orgs list` | |
+| `sfcc-ci role:list` | `b2c am roles list` | Account Manager roles |
+| `sfcc-ci role:list -i <instance>` | `b2c bm roles list` | Instance BM roles |
+| `sfcc-ci role:grant` | `b2c am roles grant` | Account Manager roles |
+| `sfcc-ci role:grant -i <instance>` | `b2c bm roles grant` | Instance BM roles |
+| `sfcc-ci role:revoke` | `b2c am roles revoke` | Account Manager roles |
+| `sfcc-ci role:revoke -i <instance>` | `b2c bm roles revoke` | Instance BM roles |
 
 ## Environment Variables
 
@@ -212,4 +231,5 @@ The B2C CLI provides official GitHub Actions that handle installation, credentia
 - [Authentication Setup](./authentication) — configure API clients, OCAPI, and WebDAV
 - [Configuration](./configuration) — environment variables, dw.json, and instance management
 - [CI/CD with GitHub Actions](./ci-cd) — official GitHub Actions for automation
+- [SDK Migration (Programmatic API)](./sdk-migration) — migrate from sfcc-ci's JavaScript API to the SDK
 - [CLI Reference](/cli/) — browse all available commands
