@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.1.3
+
+### Patch Changes
+
+- [#361](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/361) [`ba2bca5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba2bca527d83c274b230a307f862697205872e92) - Updated the `qs` dependency to `6.14.1` to address a security vulnerability in `6.14.0`. (Thanks [@bendvc](https://github.com/bendvc)!)
+
 ## 0.1.2
 
 ### Patch Changes

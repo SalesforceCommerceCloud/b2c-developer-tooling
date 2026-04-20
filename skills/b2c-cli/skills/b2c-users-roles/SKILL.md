@@ -89,7 +89,10 @@ b2c am clients password my-client-id --current "oldPass" --new "newPass123"
 BM role commands operate on a specific Commerce Cloud instance (via `--server` or config).
 
 ```bash
-# list BM roles on an instance
+# list BM roles on the configured instance
+b2c bm roles list
+
+# target a different instance
 b2c bm roles list --server my-sandbox.demandware.net
 
 # get role details (with user list)
