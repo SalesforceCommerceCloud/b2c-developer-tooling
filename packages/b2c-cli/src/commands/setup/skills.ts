@@ -16,6 +16,7 @@ import {
   downloadSkillsArtifact,
   scanSkills,
   installSkills,
+  isSkillInstalled,
   getIdeDisplayName,
   getIdeDocsUrl,
   findSkillsByName,
@@ -305,6 +306,34 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       }
     }
 
+    // Detect already-installed skills and prompt to upgrade (unless --update or --force set)
+    let update = this.flags.update;
+    if (!update && !this.flags.force) {
+      const existingCount = skillsToInstall.reduce((count, skill) => {
+        return (
+          count +
+          targetIdes.filter((ide) =>
+            isSkillInstalled(skill.name, ide, {
+              global: this.flags.global,
+              projectRoot: process.cwd(),
+              directory,
+            }),
+          ).length
+        );
+      }, 0);
+
+      if (existingCount > 0) {
+        update = await confirm({
+          message: t(
+            'commands.setup.skills.confirmUpgrade',
+            '{{count}} skill(s) are already installed. Overwrite with the new version?',
+            {count: existingCount},
+          ),
+          default: true,
+        });
+      }
+    }
+
     // Install skills for all skillsets in parallel
     const installPromises = skillsets
       .map((skillset) => {
@@ -313,7 +342,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
         return installSkills(skillsForSet, skillsDirs[skillset], {
           ides: targetIdes,
           global: this.flags.global,
-          update: this.flags.update,
+          update,
           projectRoot: process.cwd(),
           directory,
         });
