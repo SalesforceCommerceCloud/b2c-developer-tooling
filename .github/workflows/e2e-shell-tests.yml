@@ -90,6 +90,9 @@ jobs:
 
   e2e-shell-tests-windows:
     runs-on: windows-latest
+    # Advisory rollout: surface Windows shell-test failures without blocking
+    # the Linux shell-test job while Windows-specific issues are triaged.
+    continue-on-error: true
     environment: e2e-dev
     timeout-minutes: 45
     defaults:

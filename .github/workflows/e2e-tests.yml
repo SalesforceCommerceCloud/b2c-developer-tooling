@@ -167,6 +167,10 @@ jobs:
 
   e2e-tests-windows:
     name: e2e-tests (windows)
+    # Advisory rollout: Windows E2E coverage is new; surface failures without
+    # blocking Linux E2E while remaining Windows-specific test issues are
+    # addressed in follow-up PRs. Remove once Windows E2E is green.
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:

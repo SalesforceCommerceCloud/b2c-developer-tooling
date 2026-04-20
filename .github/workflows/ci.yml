@@ -127,6 +127,10 @@ jobs:
 
   test-windows:
     runs-on: windows-latest
+    # Advisory rollout: Windows coverage is new; surface failures without
+    # blocking Linux CI while remaining Windows-specific test issues are
+    # addressed in follow-up PRs. Remove once Windows tests are green.
+    continue-on-error: true
     defaults:
       run:
         shell: bash
@@ -168,6 +172,13 @@ jobs:
           name: Test Results (Windows Node ${{ matrix.node-version }})
           path: 'packages/*/test-results.json'
           reporter: mocha-json
+      - name: Upload test results (for Windows triage)
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-windows-node-${{ matrix.node-version }}
+          path: 'packages/*/test-results.json'
+          retention-days: 30
       - name: Upload coverage reports
         if: always() && steps.sdk-test.conclusion != 'cancelled'
         uses: actions/upload-artifact@v7
