@@ -626,7 +626,7 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       qs:
-        specifier: '>=6.14.1'
+        specifier: 6.14.1
         version: 6.14.1
       set-cookie-parser:
         specifier: 2.7.1
