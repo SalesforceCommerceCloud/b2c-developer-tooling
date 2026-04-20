@@ -16,7 +16,8 @@
       "license": "Apache-2.0",
       "source": "./skills/b2c-cli",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.0.0"
     },
     {
       "name": "b2c",
@@ -27,7 +28,8 @@
       "license": "Apache-2.0",
       "source": "./skills/b2c",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.0.0"
     },
     {
       "name": "b2c-dx-mcp",

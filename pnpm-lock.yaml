@@ -723,6 +723,8 @@ importers:
         specifier: 'catalog:'
         version: 8.54.0(eslint@9.39.1)(typescript@5.9.3)
 
+  skills: {}
+
 packages:
 
   '@antfu/install-pkg@1.1.0':

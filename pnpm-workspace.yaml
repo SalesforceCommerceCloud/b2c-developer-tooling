@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - docs
+  - skills
 
 catalog:
   # Production dependencies (exact versions for published packages)
