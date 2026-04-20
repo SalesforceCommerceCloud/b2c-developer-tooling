@@ -1,5 +1,25 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import {defineConfig} from 'vitepress';
+import {groupIconMdPlugin, groupIconVitePlugin} from 'vitepress-plugin-group-icons';
 import typedocSidebar from '../api/typedoc-sidebar.json';
+
+// Copy source .md files to the build output so pages can be fetched as raw
+// markdown (powers the "View as Markdown" / "Copy for LLM" buttons).
+function copyMarkdownSources(srcDir: string, outDir: string) {
+  const entries = fs.readdirSync(srcDir, {withFileTypes: true});
+  for (const entry of entries) {
+    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+    const src = path.join(srcDir, entry.name);
+    const dest = path.join(outDir, entry.name);
+    if (entry.isDirectory()) {
+      fs.mkdirSync(dest, {recursive: true});
+      copyMarkdownSources(src, dest);
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      fs.copyFileSync(src, dest);
+    }
+  }
+}
 
 // Build configuration from environment
 const isDevBuild = process.env.IS_DEV_BUILD === 'true';
@@ -152,18 +172,63 @@ export default defineConfig({
 
   head: [['script', {}, versionSwitchScript]],
 
+  // Git-based "Last updated" timestamps (overridable per-page via frontmatter)
+  lastUpdated: true,
+
   // Ignore dead links in api-readme.md (links are valid after TypeDoc generates the API docs)
   ignoreDeadLinks: [/^\.\/clients\//],
 
-  // Show deeper heading levels in the outline
+  buildEnd(siteConfig) {
+    copyMarkdownSources(siteConfig.srcDir, siteConfig.outDir);
+  },
+
+  // Show deeper heading levels in the outline; register group-icons md plugin
   markdown: {
     toc: {level: [2, 3, 4]},
+    config(md) {
+      md.use(groupIconMdPlugin);
+    },
+  },
+
+  vite: {
+    plugins: [
+      groupIconVitePlugin({
+        customIcon: {
+          npx: 'vscode-icons:file-type-npm',
+          homebrew: 'logos:homebrew',
+          'agentforce vibes': {
+            light:
+              '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 56" fill="#333"><path d="M34 18h-7.9l6.8-15.2c0-.2.1-.5.1-.8 0-1.1-.9-2-2-2H9c-.9 0-1.7.6-1.9 1.5l-7 26c0 .2-.1.3-.1.5 0 1.1.9 2 2 2h7.5L4 53.5c0 .1-.1.3-.1.5 0 1.1.9 2 2 2 .6 0 1.2-.3 1.5-.7l28-34c.3-.4.5-.8.5-1.3.1-1.1-.8-2-1.9-2Z"/></svg>',
+            dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 56" fill="#e8e8e8"><path d="M34 18h-7.9l6.8-15.2c0-.2.1-.5.1-.8 0-1.1-.9-2-2-2H9c-.9 0-1.7.6-1.9 1.5l-7 26c0 .2-.1.3-.1.5 0 1.1.9 2 2 2h7.5L4 53.5c0 .1-.1.3-.1.5 0 1.1.9 2 2 2 .6 0 1.2-.3 1.5-.7l28-34c.3-.4.5-.8.5-1.3.1-1.1-.8-2-1.9-2Z"/></svg>',
+          },
+          'claude code': 'logos:claude-icon',
+          'copilot (vs code)': 'logos:visual-studio-code',
+          'copilot cli': {
+            light: 'logos:github-copilot',
+            dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#e8e8e8"><path d="M21.4 14.3A10 10 0 0 0 22 11C22 5.5 17.5 1 12 1S2 5.5 2 11c0 1.1.2 2.2.6 3.3A5 5 0 0 0 0 18.5C0 21 2 23 4.5 23H6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H5c-.3 0-.5-.2-.5-.5S4.7 16 5 16h1a3 3 0 0 1 3 3v3a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-3a3 3 0 0 1 3-3h1c.3 0 .5.2.5.5s-.2.5-.5.5h-1a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h1.5c2.5 0 4.5-2 4.5-4.5a5 5 0 0 0-2.6-4.2zM8.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm7 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>',
+          },
+          codex: {
+            light: 'simple-icons:openai',
+            dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#e8e8e8"><path d="M22.3 8.6a5.8 5.8 0 0 0-.5-4.8 5.9 5.9 0 0 0-6.4-2.8A5.8 5.8 0 0 0 11 0a5.9 5.9 0 0 0-5.6 4A5.8 5.8 0 0 0 1.5 6.6a5.9 5.9 0 0 0 .7 6.8 5.8 5.8 0 0 0 .5 4.8 5.9 5.9 0 0 0 6.4 2.8A5.8 5.8 0 0 0 13 22a5.9 5.9 0 0 0 5.6-4 5.8 5.8 0 0 0 3.9-2.6 5.9 5.9 0 0 0-.7-6.8zM13 20.6a4.4 4.4 0 0 1-2.8-1l.2-.1 4.6-2.6a.7.7 0 0 0 .4-.7V10l2 1.1v5.7a4.4 4.4 0 0 1-4.4 3.8zm-9.4-3.5c-.6-1-.8-2.1-.5-3.2l.2.1 4.6 2.6a.7.7 0 0 0 .8 0l5.6-3.2v2.3l-4.7 2.7a4.4 4.4 0 0 1-6-1.3zM2.3 7.9A4.4 4.4 0 0 1 4.6 6v.2l.1 5.3a.7.7 0 0 0 .3.6l5.6 3.2-2 1.1L4 13.8A4.4 4.4 0 0 1 2.3 8zM18 10l-5.6-3.2 2-1.2 4.6 2.7a4.4 4.4 0 0 1-.7 7.9v-5.5a.7.7 0 0 0-.3-.6zm2-3.2-.2-.1-4.6-2.7a.7.7 0 0 0-.8 0L8.8 7.3V5l4.7-2.7a4.4 4.4 0 0 1 6.5 4.6zm-12 4L6 9.7V4a4.4 4.4 0 0 1 7.2-3.4l-.2.1L8.4 3.3a.7.7 0 0 0-.4.7zm1-2.2 2.5-1.4 2.5 1.4v2.9L9.5 13l-2.5-1.5z"/></svg>',
+          },
+          'b2c cli': 'logos:salesforce',
+        },
+      }),
+    ],
   },
 
   themeConfig: {
     logo: '/logo.svg',
     outline: {
       level: [2, 3],
+    },
+    editLink: {
+      pattern: 'https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/edit/main/docs/:path',
+      text: 'Suggest changes to this page',
+    },
+    lastUpdated: {
+      text: 'Last updated',
+      formatOptions: {dateStyle: 'medium'},
     },
     nav: [
       {text: 'Guides', link: '/guide/'},
@@ -199,6 +264,16 @@ export default defineConfig({
 
     search: {
       provider: 'local',
+      options: {
+        detailedView: true,
+        miniSearch: {
+          searchOptions: {
+            fuzzy: 0.2,
+            prefix: true,
+            boost: {title: 4, text: 2, titles: 1},
+          },
+        },
+      },
     },
   },
 });

@@ -1,13 +1,15 @@
 ---
-description: Introduction to the B2C CLI, MCP Server, and SDK for Salesforce B2C Commerce code deployment, site management, and sandbox operations.
+description: Introduction to the B2C CLI, MCP Server, Agent Skills, and SDK for Salesforce B2C Commerce — deploy code, run jobs, manage sandboxes, and build with AI coding agents.
 ---
 
 # Introduction
 
-The B2C Developer Tooling provides command-line and AI-assisted development tools for Salesforce B2C Commerce.
+B2C Developer Tooling exposes the B2C Commerce platform as commands, MCP tools, and coding skills — so you and your AI agents can build, deploy, and operate storefronts from the terminal or directly inside your IDE. No clicking through Business Manager to deploy, no context-switching to run a job, no manual copy-paste when your agent needs to touch a live sandbox.
 
-- **B2C CLI**: Command-line interface that you can use to deploy code, manage sandboxes, run jobs, and so on from the terminal.
-- **MCP Server**: AI-assisted development tools for Claude Code, Cursor, GitHub Copilot, and other AI assistants.
+- **B2C CLI** — a single command for every workflow: cartridge deploys, jobs, ODS/MRT, WebDAV, site archives, SLAS, eCDN, Account Manager, CI/CD.
+- **Agent Skills** — 30+ preconfigured skills that teach your coding agent (Claude Code, Cursor, Agentforce Vibes, Copilot, Codex) how B2C Commerce works — SCAPI Custom APIs, SLAS, SFRA controllers and forms, ISML, Page Designer, hooks, custom objects — and which CLI commands to run when.
+- **MCP Server** — a focused set of MCP tools that complement the CLI for agent-driven workflows.
+- **Tooling SDK** — everything the CLI does, available as a typed TypeScript SDK for custom integrations.
 
 ## Quick CLI Install
 
