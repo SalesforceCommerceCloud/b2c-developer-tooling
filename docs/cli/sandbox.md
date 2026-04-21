@@ -12,7 +12,7 @@ These commands were previously available as `b2c ods <command>`. The `ods` prefi
 
 ## Sandbox ID Formats
 
-Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`) accept two ID formats:
+Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`, `operations list`, `operations get`) accept two ID formats:
 
 | Format | Example | Description |
 |--------|---------|-------------|
@@ -392,6 +392,106 @@ b2c sandbox restart zzzv_123 --json
 
 ---
 
+## b2c sandbox operations list {#b2c-sandbox-operations-list}
+
+List past and current **operations** on a sandbox (for example start, stop, restart, reset, create, delete, upgrade). This maps to the ODS API `GET /sandboxes/{sandboxId}/operations` endpoint.
+
+To **request** a lifecycle operation (`start`, `stop`, `restart`, `reset`), use `b2c sandbox start|stop|restart|reset` instead; those commands call `POST /sandboxes/{sandboxId}/operations`.
+
+### Usage
+
+```bash
+b2c sandbox operations list <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Flags
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--from` | | Earliest operation time (ISO 8601). If omitted, the API defaults to roughly the last 30 days. | |
+| `--to` | | Latest operation time (ISO 8601). If omitted, the API defaults to now. | |
+| `--operation-state` | | Filter by lifecycle state: `pending`, `running`, or `finished` | |
+| `--status` | | Filter finished operations by outcome: `success` or `failure` | |
+| `--operation` | | Filter by operation type: `start`, `stop`, `restart`, `reset`, `create`, `delete`, `upgrade` | |
+| `--sort-order` | | Sort order: `asc` or `desc` | |
+| `--sort-by` | | Sort field: `created`, `operation_state`, `status`, or `operation` | |
+| `--page` | | Page index (0-based) | |
+| `--per-page` | | Page size (API default is typically 20) | |
+| `--columns`, `-c` | | Columns to display (comma-separated); see **Available columns** below | |
+| `--extended`, `-x` | | Include extended columns (for example `operationBy`) | `false` |
+
+### Available columns
+
+`id`, `operation`, `operationState`, `status`, `sandboxState`, `createdAt`, `operationBy` (extended)
+
+**Default columns:** `operation`, `operationState`, `status`, `sandboxState`, `createdAt`, `id`
+
+### Examples
+
+```bash
+# List recent operations for a sandbox
+b2c sandbox operations list zzzv-123
+
+# Only finished operations
+b2c sandbox operations list zzzv-123 --operation-state finished
+
+# Date range and paging
+b2c sandbox operations list zzzv-123 --from 2025-01-01 --to 2025-12-31 --page 0 --per-page 50
+
+# Custom columns
+b2c sandbox operations list zzzv-123 --columns operation,operationState,status,createdAt
+
+# Full API response (includes paging metadata when present)
+b2c sandbox operations list zzzv-123 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a one-line paging summary when metadata is present, then a table of operations. Use `--json` to inspect `metadata` (page, totals) and the raw `data` array.
+
+---
+
+## b2c sandbox operations get {#b2c-sandbox-operations-get}
+
+Return details for a **single** sandbox operation by its operation UUID (maps to `GET /sandboxes/{sandboxId}/operations/{operationId}`). Use the operation `id` from `b2c sandbox operations list` or from the JSON output of `b2c sandbox start|stop|restart|reset` when using `--json`.
+
+### Usage
+
+```bash
+b2c sandbox operations get <SANDBOXID> <OPERATIONID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| `OPERATIONID` | Operation UUID | Yes |
+
+### Examples
+
+```bash
+# Show operation details (human-readable)
+b2c sandbox operations get zzzv-123 550e8400-e29b-41d4-a716-446655440000
+
+# Operation as JSON (sandbox operation model only)
+b2c sandbox operations get zzzv-123 550e8400-e29b-41d4-a716-446655440000 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a short **Operation Details** block including operation type, state, outcome, sandbox state, created time, and who ran the operation when available.
+
+With `--json`, the command returns the **operation object** (not the full API envelope), consistent with `b2c sandbox get`.
+
+---
+
 ## b2c sandbox delete
 
 Delete an on-demand sandbox.
@@ -696,6 +796,7 @@ Alias commands are available both under the `sandbox` topic and the legacy `ods`
 
 - `b2c sandbox alias create`
 - `b2c sandbox alias list`
+- `b2c sandbox alias get`
 - `b2c sandbox alias delete`
 
 ### b2c sandbox alias create
@@ -789,6 +890,39 @@ When listing multiple aliases without `--json`, the command prints a table with:
 - Status
 - Whether the alias is unique
 - DNS verification record (if any)
+
+For **one alias** by ID, you can also use **`b2c sandbox alias get`** (same API as `list --alias-id`).
+
+### b2c sandbox alias get {#b2c-sandbox-alias-get}
+
+Get details for a **single** hostname alias (ODS API `GET /sandboxes/{sandboxId}/aliases/{sandboxAliasId}`). This is equivalent to `b2c sandbox alias list <SANDBOXID> --alias-id <ALIASID>` but uses positional arguments only.
+
+#### Usage
+
+```bash
+b2c sandbox alias get <SANDBOXID> <ALIASID>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| `ALIASID` | Alias UUID | Yes |
+
+#### Examples
+
+```bash
+# Human-readable details
+b2c sandbox alias get zzzv-123 some-alias-uuid
+
+# Alias object as JSON (same shape as list/get for a single alias)
+b2c sandbox alias get zzzv-123 some-alias-uuid --json
+```
+
+#### Output
+
+When not using `--json`, the command prints an **Alias Details** section (hostname, status, uniqueness, DNS TXT verification, registration URL when present, optional cookie hint). With `--json`, it returns the **alias object** only.
 
 ### b2c sandbox alias delete
 
