@@ -1,5 +1,27 @@
 # @salesforce/b2c-cli
 
+## 1.5.0
+
+### Minor Changes
+
+- [#366](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/366) [`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be) - Add `b2c code download` command to download cartridge code from a B2C Commerce instance, with support for cartridge filtering, mirror mode, and progress reporting (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#355](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/355) [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501) - `b2c setup skills` now prompts to overwrite already-installed skills in interactive mode instead of silently skipping them with a "use --update to overwrite" message. The existing `--update` and `--force` flags still work non-interactively. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#355](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/355) [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501) - Refine b2c CLI skills (`scapi-schemas`, `scapi-custom`, `slas`, `ecdn`, `cip`, `users-roles`) to show config-first idiomatic usage. Examples now assume values like `tenantId`, `shortCode`, and `clientId` are resolved from `dw.json` / `SFCC_*` env vars, with flags shown only as overrides. This prevents coding agents from prompting users for values that are already configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#365](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/365) [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859) - Broaden skills-plugin install support and improve the installation docs. (Thanks [@clavery](https://github.com/clavery)!)
+  - Add a Codex plugin marketplace so the three plugins (`b2c-cli`, `b2c`, `b2c-dx-mcp`) can be installed directly from Codex CLI's plugin directory.
+  - Add a new `b2c-onboarding` skill (in the `b2c` plugin) that walks new developers through CLI verify, `dw.json` setup, sandbox connect, and first cartridge deploy, then hands off to the topic-specific skill for the user's goal.
+  - Add per-plugin READMEs with install instructions for each supported client.
+  - Document Copilot CLI + VS Code Copilot install paths and the Codex marketplace install path.
+  - Remove the `b2c-experimental` plugin from the public marketplace.
+
+- Updated dependencies [[`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be), [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501), [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859)]:
+  - @salesforce/b2c-tooling-sdk@1.4.0
+
 ## 1.4.0
 
 ### Minor Changes
