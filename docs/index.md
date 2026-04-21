@@ -1,5 +1,5 @@
 ---
-description: Developer tools for Salesforce B2C Commerce — CLI, MCP Server, Agent Skills, and SDK. Build and operate B2C Commerce from the terminal or with AI coding agents.
+description: The full power of B2C Commerce, available as a CLI, Agent Skills, and IDE extensions — so you and your coding agent can build, deploy, and operate together.
 layout: b2c-home
 isHome: true
 

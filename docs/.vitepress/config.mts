@@ -218,7 +218,7 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/logo.svg',
+    logo: '/logo-mark.svg',
     outline: {
       level: [2, 3],
     },
