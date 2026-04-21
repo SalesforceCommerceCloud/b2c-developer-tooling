@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.16
+
+### Patch Changes
+
+- [`396dbc9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/396dbc98330a7b2112f2a13330e3008fa4bbbb00) - Test changeset to verify release workflow triggers PR checks correctly (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.15
 
 ### Patch Changes
