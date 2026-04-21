@@ -7,6 +7,7 @@ import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   commerceAppUninstall,
+  listInstalledApps,
   JobExecutionError,
   type CommerceAppUninstallResult,
 } from '@salesforce/b2c-tooling-sdk/operations/cap';
@@ -27,19 +28,15 @@ export default class CapUninstall extends JobCommand<typeof CapUninstall> {
 
   static enableJsonFlag = true;
 
-  static examples = ['<%= config.bin %> <%= command.id %> avalara-tax --domain tax --site RefArch'];
+  static examples = ['<%= config.bin %> <%= command.id %> avalara-tax --site-id RefArch'];
 
   static flags = {
     ...JobCommand.baseFlags,
-    domain: Flags.string({
-      char: 'd',
-      description: 'Commerce app domain (e.g. tax, shipping, fraud)',
-      required: true,
-    }),
-    site: Flags.string({
+    'site-id': Flags.string({
       char: 's',
       description: 'Site ID to uninstall the Commerce App from',
       required: true,
+      aliases: ['site'],
     }),
     timeout: Flags.integer({
       char: 't',
@@ -49,14 +46,41 @@ export default class CapUninstall extends JobCommand<typeof CapUninstall> {
 
   protected operations = {
     commerceAppUninstall,
+    listInstalledApps,
   };
 
   async run(): Promise<CommerceAppUninstallResult> {
     this.requireOAuthCredentials();
+    this.requireWebDavCredentials();
 
     const {appName} = this.args;
-    const {domain, site, timeout} = this.flags;
+    const {'site-id': site, timeout} = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
+
+    this.log(
+      t('commands.cap.uninstall.lookingUp', 'Looking up {{appName}} on {{hostname}} (site: {{site}})...', {
+        appName,
+        hostname,
+        site,
+      }),
+    );
+
+    const listResult = await this.operations.listInstalledApps(this.instance, {
+      sites: [site],
+      waitOptions: {timeoutSeconds: timeout || undefined},
+    });
+
+    const feature = listResult.features.find((f) => f.featureName === appName);
+    if (!feature) {
+      this.error(
+        t('commands.cap.uninstall.notFound', 'Commerce App "{{appName}}" not found on site {{site}}', {
+          appName,
+          site,
+        }),
+      );
+    }
+
+    const domain = feature.featureDomain;
 
     this.log(
       t('commands.cap.uninstall.uninstalling', 'Uninstalling {{appName}} from {{hostname}} (site: {{site}})...', {
@@ -84,14 +108,13 @@ export default class CapUninstall extends JobCommand<typeof CapUninstall> {
       const result = await this.operations.commerceAppUninstall(this.instance, appName, domain, {
         siteId: site,
         waitOptions: {
-          timeout: timeout ? timeout * 1000 : undefined,
-          onProgress: (exec, elapsed) => {
+          timeoutSeconds: timeout || undefined,
+          onPoll: (info) => {
             if (!this.jsonEnabled()) {
-              const elapsedSec = Math.floor(elapsed / 1000);
               this.log(
                 t('commands.cap.uninstall.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.execution_status,
-                  elapsed: elapsedSec.toString(),
+                  status: info.status,
+                  elapsed: Math.floor(info.elapsedSeconds).toString(),
                 }),
               );
             }

@@ -36,14 +36,14 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
 
   static flags = {
     ...JobCommand.baseFlags,
-    site: Flags.string({
+    'site-id': Flags.string({
       char: 's',
       description: 'Site ID to install the Commerce App on',
       required: true,
+      aliases: ['site'],
     }),
-    'keep-archive': Flags.boolean({
-      char: 'k',
-      description: 'Keep the uploaded zip on the instance after install',
+    'clean-archive': Flags.boolean({
+      description: 'Delete the uploaded zip from the instance after install',
       default: false,
     }),
     timeout: Flags.integer({
@@ -66,7 +66,7 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
     this.requireWebDavCredentials();
 
     const {path} = this.args;
-    const {site, 'keep-archive': keepArchive, timeout, 'skip-validate': skipValidate} = this.flags;
+    const {'site-id': site, 'clean-archive': cleanArchive, timeout, 'skip-validate': skipValidate} = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
 
     // Validate first unless skipped
@@ -117,16 +117,15 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
     try {
       const result = await this.operations.commerceAppInstall(this.instance, path, {
         siteId: site,
-        keepArchive,
+        keepArchive: !cleanArchive,
         waitOptions: {
-          timeout: timeout ? timeout * 1000 : undefined,
-          onProgress: (exec, elapsed) => {
+          timeoutSeconds: timeout || undefined,
+          onPoll: (info) => {
             if (!this.jsonEnabled()) {
-              const elapsedSec = Math.floor(elapsed / 1000);
               this.log(
                 t('commands.cap.install.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                  status: exec.execution_status,
-                  elapsed: elapsedSec.toString(),
+                  status: info.status,
+                  elapsed: Math.floor(info.elapsedSeconds).toString(),
                 }),
               );
             }

@@ -11,7 +11,6 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import JSZip from 'jszip';
 import * as xml2js from 'xml2js';
 import {B2CInstance} from '../../instance/index.js';
@@ -20,12 +19,6 @@ import {siteArchiveExportToBuffer} from '../jobs/site-archive.js';
 import type {JobExecution, WaitForJobOptions} from '../jobs/run.js';
 import {readManifest} from './install.js';
 import type {CommerceAppManifest} from './validate.js';
-
-const STUB_FIXTURE_PATH = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'commerce-feature-states-stub.xml',
-);
 
 /**
  * A commerce feature state parsed from the commerce-feature-states.xml export.
@@ -69,11 +62,9 @@ export interface ListInstalledAppsOptions {
  */
 export interface ListInstalledAppsResult {
   /** Parsed commerce feature states from all queried sites. */
-  states: CommerceFeatureState[];
-  /** Job execution details (undefined if stub fallback was used). */
-  execution?: JobExecution;
-  /** Whether the stub fixture was used as a fallback. */
-  usedStub: boolean;
+  features: CommerceFeatureState[];
+  /** Job execution details. */
+  execution: JobExecution;
 }
 
 /**
@@ -155,7 +146,7 @@ function findCommerceApps(dir: string, apps: LocalCommerceApp[], logger: ReturnT
  * @example
  * ```typescript
  * const result = await listInstalledApps(instance);
- * for (const state of result.states) {
+ * for (const state of result.features) {
  *   console.log(`${state.featureName} (${state.installStatus}) on ${state.siteId}`);
  * }
  * ```
@@ -174,7 +165,7 @@ export async function listInstalledApps(
   } else {
     logger.debug('No sites specified, discovering all sites via OCAPI');
     const {data, error} = await instance.ocapi.GET('/sites', {
-      params: {query: {select: '(*)'}},
+      params: {query: {select: '(**)'}},
     });
     if (error || !data) {
       throw new Error(error?.fault?.message ?? 'Failed to list sites');
@@ -184,7 +175,7 @@ export async function listInstalledApps(
   }
 
   if (siteIds.length === 0) {
-    return {states: [], usedStub: false};
+    return {features: [], execution: undefined as unknown as JobExecution};
   }
 
   // Build export configuration for all sites with commerce_feature_states
@@ -193,38 +184,27 @@ export async function listInstalledApps(
     sitesConfig[siteId] = {commerce_feature_states: true};
   }
 
-  try {
-    logger.debug({siteIds}, 'Attempting commerce_feature_states export');
-    const exportResult = await siteArchiveExportToBuffer(instance, {sites: sitesConfig}, {waitOptions});
+  logger.debug({siteIds}, 'Exporting commerce_feature_states');
+  const exportResult = await siteArchiveExportToBuffer(instance, {sites: sitesConfig}, {waitOptions});
 
-    const states = await parseExportArchive(exportResult.data);
-    return {states, execution: exportResult.execution, usedStub: false};
-  } catch (err) {
-    // Fall back to stub fixture when the data unit is not supported
-    logger.warn({error: err}, 'commerce_feature_states export failed, falling back to stub fixture');
-
-    const stubXml = fs.readFileSync(STUB_FIXTURE_PATH, 'utf-8');
-    const states: CommerceFeatureState[] = [];
-    for (const siteId of siteIds) {
-      const siteStates = await parseCommerceFeatureStatesXml(stubXml, siteId);
-      states.push(...siteStates);
-    }
-    return {states, usedStub: true};
-  }
+  const states = await parseExportArchive(exportResult.data);
+  return {features: states, execution: exportResult.execution};
 }
 
 /**
  * Parses a site archive export zip for commerce-feature-states.xml files.
  */
 async function parseExportArchive(data: Buffer): Promise<CommerceFeatureState[]> {
+  const logger = getLogger();
   const zip = await JSZip.loadAsync(data);
   const states: CommerceFeatureState[] = [];
+  const filePaths = Object.keys(zip.files).filter((p) => !zip.files[p].dir);
+
+  logger.debug({filePaths}, `Export archive contains ${filePaths.length} file(s)`);
 
   for (const [filePath, entry] of Object.entries(zip.files)) {
     if (entry.dir) continue;
 
-    // Match sites/<archiveRoot>/sites/<siteId>/commerce-feature-states.xml
-    // or sites/<siteId>/commerce-feature-states.xml
     const match = filePath.match(/sites\/([^/]+)\/commerce-feature-states\.xml$/);
     if (match) {
       const siteId = match[1];
@@ -249,6 +229,8 @@ export async function parseCommerceFeatureStatesXml(xml: string, siteId: string)
     explicitArray: false,
     tagNameProcessors: [(name: string) => name.replace(/^[^:]+:/, '')],
   });
+
+  if (!parsed) return [];
 
   const root = parsed['commerce-feature-states'];
   if (!root) return [];
@@ -278,7 +260,15 @@ export async function parseCommerceFeatureStatesXml(xml: string, siteId: string)
     let installationMetadata: unknown;
     if (typeof entry['installation-metadata'] === 'string') {
       try {
-        installationMetadata = JSON.parse(entry['installation-metadata'] as string) as unknown;
+        const parsed = JSON.parse(entry['installation-metadata'] as string) as Record<string, unknown>;
+        if (typeof parsed.impexUninstallData === 'string') {
+          try {
+            parsed.impexUninstallData = JSON.parse(parsed.impexUninstallData as string);
+          } catch {
+            // leave as string
+          }
+        }
+        installationMetadata = parsed;
       } catch {
         // Leave as undefined if not valid JSON
       }

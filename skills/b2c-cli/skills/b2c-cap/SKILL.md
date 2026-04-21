@@ -1,15 +1,59 @@
 ---
 name: b2c-cap
-description: Manage Commerce App Packages (CAPs) using the b2c CLI. Use when validating, packaging, installing, or uninstalling Commerce App Packages on B2C Commerce instances.
+description: Manage Commerce App Packages (CAPs) and commerce features using the b2c CLI. Use when validating, packaging, installing, uninstalling, listing, or pulling Commerce App Packages and commerce features on B2C Commerce instances, viewing configuration tasks, or pulling app sources for cartridge deployment or Storefront Next development.
 ---
 
 # B2C CAP Skill
 
-Use the `b2c` CLI plugin to **validate, package, install, and uninstall** Commerce App Packages (CAPs) on Salesforce B2C Commerce instances.
+Use the `b2c` CLI plugin to **validate, package, install, uninstall, list, and pull** Commerce App Packages (CAPs) and commerce features on Salesforce B2C Commerce instances.
 
-> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli cap validate`).
+> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli cap list`).
 
 ## Examples
+
+### List Installed Features
+
+```bash
+# list all commerce features across all sites
+b2c cap list
+
+# list features for specific sites
+b2c cap list --site-id RefArch,SiteGenesis
+
+# list with full JSON output (includes config tasks and installation metadata)
+b2c cap list --json
+
+# list locally detected CAP directories
+b2c cap list --local
+```
+
+### Pull App Sources
+
+Pull installed Commerce App source packages for cartridge deployment or Storefront Next (`sfnext`) development. Pulled apps are extracted into `./commerce-apps/{name}/` and contain cartridges, IMPEX data, and `storefront-next/` extensions ready for use with the `sfnext` CLI.
+
+```bash
+# pull all registry apps to ./commerce-apps
+b2c cap pull
+
+# pull a specific app by name
+b2c cap pull avalara-tax
+
+# pull to a custom output directory
+b2c cap pull --output ./my-apps
+
+# pull apps installed on a specific site
+b2c cap pull --site-id RefArch
+```
+
+### View Configuration Tasks
+
+```bash
+# show configuration tasks with clickable BM links
+b2c cap tasks avalara-tax --site-id RefArch
+
+# get tasks as JSON
+b2c cap tasks avalara-tax --site-id RefArch --json
+```
 
 ### Validate a CAP
 
@@ -38,26 +82,26 @@ b2c cap package ./commerce-avalara-tax-app-v0.2.5 --output ./dist/my-app.zip
 
 ```bash
 # install a CAP directory on an instance
-b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site RefArch
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch
 
 # install a pre-packaged zip
-b2c cap install ./commerce-avalara-tax-app-v0.2.5.zip --site RefArch
+b2c cap install ./commerce-avalara-tax-app-v0.2.5.zip --site-id RefArch
 
 # install with a timeout
-b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site RefArch --timeout 600
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --timeout 600
 
 # skip validation before install
-b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site RefArch --skip-validate
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --skip-validate
 
-# keep the uploaded archive on the instance
-b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site RefArch --keep-archive
+# remove the uploaded archive after install
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --clean-archive
 ```
 
 ### Uninstall a CAP
 
 ```bash
-# uninstall a commerce app
-b2c cap uninstall avalara-tax --domain tax --site RefArch
+# uninstall a commerce app (domain is looked up automatically)
+b2c cap uninstall avalara-tax --site-id RefArch
 ```
 
 ### More Commands
@@ -68,3 +112,4 @@ See `b2c cap --help` for a full list of available commands and options in the `c
 
 - `b2c-cli:b2c-job` - For running general jobs and site archive import/export
 - `b2c-cli:b2c-site-import-export` - For site archive structure and metadata XML patterns
+- `b2c-cli:b2c-code` - For deploying cartridges pulled from Commerce Apps

@@ -63,6 +63,9 @@ export {commerceAppPackage} from './package.js';
 export type {CommerceAppPackageOptions, CommerceAppPackageResult} from './package.js';
 
 export {discoverLocalApps, listInstalledApps, parseCommerceFeatureStatesXml} from './list.js';
+
+export {pullCommerceApps} from './pull.js';
+export type {PullCommerceAppsOptions, PullCommerceAppsResult, PulledApp, PullSource} from './pull.js';
 export type {
   CommerceFeatureState,
   LocalCommerceApp,

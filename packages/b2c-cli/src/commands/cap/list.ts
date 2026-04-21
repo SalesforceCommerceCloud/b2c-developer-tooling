@@ -45,8 +45,16 @@ const REMOTE_COLUMNS: Record<string, ColumnDef<CommerceFeatureState>> = {
     get: (s) => s.siteId,
   },
   featureName: {
-    header: 'App',
+    header: 'Name',
     get: (s) => s.featureName,
+  },
+  featureType: {
+    header: 'Type',
+    get: (s) => s.featureType,
+  },
+  featureSource: {
+    header: 'Source',
+    get: (s) => FEATURE_SOURCE_LABELS[s.featureSource] ?? s.featureSource,
   },
   installStatus: {
     header: 'Install Status',
@@ -70,7 +78,21 @@ const REMOTE_COLUMNS: Record<string, ColumnDef<CommerceFeatureState>> = {
   },
 };
 
-const REMOTE_DEFAULT_COLUMNS = ['siteId', 'featureName', 'installStatus', 'configStatus', 'version', 'installedAt'];
+const FEATURE_SOURCE_LABELS: Record<string, string> = {
+  WebDAV: 'CUSTOM',
+  AppRegistry: 'REGISTRY',
+};
+
+const REMOTE_DEFAULT_COLUMNS = [
+  'siteId',
+  'featureName',
+  'featureType',
+  'featureSource',
+  'installStatus',
+  'configStatus',
+  'version',
+  'installedAt',
+];
 
 export default class CapList extends JobCommand<typeof CapList> {
   static description = withDocs(
@@ -84,7 +106,7 @@ export default class CapList extends JobCommand<typeof CapList> {
     '<%= config.bin %> <%= command.id %> --local',
     '<%= config.bin %> <%= command.id %> --local --project-directory ./my-workspace',
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --site RefArch',
+    '<%= config.bin %> <%= command.id %> --site-id RefArch',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
@@ -95,12 +117,13 @@ export default class CapList extends JobCommand<typeof CapList> {
       description: 'List locally detected Commerce App Packages (no instance required)',
       default: false,
     }),
-    site: Flags.string({
+    'site-id': Flags.string({
       char: 's',
       description: 'Site IDs to query (comma-separated). If omitted, queries all sites.',
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
+      aliases: ['site'],
     }),
     timeout: Flags.integer({
       char: 't',
@@ -114,13 +137,13 @@ export default class CapList extends JobCommand<typeof CapList> {
   };
 
   async run(): Promise<ListInstalledAppsResult | LocalCommerceApp[]> {
-    const {local, site, timeout} = this.flags;
+    const {local, 'site-id': siteId, timeout} = this.flags;
 
     if (local) {
       return this.runLocal();
     }
 
-    return this.runRemote(site, timeout);
+    return this.runRemote(siteId, timeout);
   }
 
   private async runLocal(): Promise<LocalCommerceApp[]> {
@@ -157,14 +180,13 @@ export default class CapList extends JobCommand<typeof CapList> {
     const result = await this.operations.listInstalledApps(this.instance, {
       sites: site,
       waitOptions: {
-        timeout: timeout ? timeout * 1000 : undefined,
-        onProgress: (exec, elapsed) => {
+        timeoutSeconds: timeout || undefined,
+        onPoll: (info) => {
           if (!this.jsonEnabled()) {
-            const elapsedSec = Math.floor(elapsed / 1000);
             this.log(
               t('commands.cap.list.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                status: exec.execution_status,
-                elapsed: elapsedSec.toString(),
+                status: info.status,
+                elapsed: Math.floor(info.elapsedSeconds).toString(),
               }),
             );
           }
@@ -172,25 +194,19 @@ export default class CapList extends JobCommand<typeof CapList> {
       },
     });
 
-    if (result.usedStub) {
-      this.warn(
-        t('commands.cap.list.stubWarning', 'commerce_feature_states export is not yet supported — showing stub data.'),
-      );
-    }
-
-    if (result.states.length === 0) {
+    if (result.features.length === 0) {
       this.log(t('commands.cap.list.noInstalledApps', 'No installed Commerce Apps found.'));
       return result;
     }
 
     this.log(
       t('commands.cap.list.foundRemote', 'Found {{count}} installed Commerce App(s):', {
-        count: result.states.length,
+        count: result.features.length,
       }),
     );
 
     if (!this.jsonEnabled()) {
-      createTable(REMOTE_COLUMNS).render(result.states, REMOTE_DEFAULT_COLUMNS);
+      createTable(REMOTE_COLUMNS).render(result.features, REMOTE_DEFAULT_COLUMNS);
     }
 
     return result;

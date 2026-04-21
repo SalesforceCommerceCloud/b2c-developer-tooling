@@ -318,6 +318,37 @@ export {
   revokeRole,
 } from './operations/users/index.js';
 
+// Operations - CAP (Commerce App Packages)
+export {
+  validateCap,
+  commerceAppInstall,
+  commerceAppUninstall,
+  commerceAppPackage,
+  discoverLocalApps,
+  listInstalledApps,
+  parseCommerceFeatureStatesXml,
+  readManifest,
+  pullCommerceApps,
+} from './operations/cap/index.js';
+export type {
+  CapValidationResult,
+  CommerceAppManifest,
+  CommerceAppInstallOptions,
+  CommerceAppInstallResult,
+  CommerceAppUninstallOptions,
+  CommerceAppUninstallResult,
+  CommerceAppPackageOptions,
+  CommerceAppPackageResult,
+  CommerceFeatureState,
+  LocalCommerceApp,
+  ListInstalledAppsOptions,
+  ListInstalledAppsResult,
+  PullCommerceAppsOptions,
+  PullCommerceAppsResult,
+  PulledApp,
+  PullSource,
+} from './operations/cap/index.js';
+
 // Operations - Roles
 export {getRole, listRoles} from './operations/roles/index.js';
 

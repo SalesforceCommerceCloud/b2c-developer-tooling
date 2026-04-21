@@ -98,11 +98,12 @@ export async function commerceAppInstall(
     throw new Error(`Target must be a directory or .zip file: ${target}`);
   }
 
-  // Upload to WebDAV Impex directory (same location as site archive imports)
-  const webdavUploadPath = `Temp/${archiveFilename}`;
-  const appPath = `webdav/Sites/Temp/${archiveFilename}`;
+  const uploadDir = 'Impex/commerce-apps';
+  const webdavUploadPath = `${uploadDir}/${archiveFilename}`;
+  const appPath = `webdav/Sites/${webdavUploadPath}`;
 
   logger.debug({path: webdavUploadPath}, `Uploading CAP to ${webdavUploadPath}`);
+  await instance.webdav.mkcol(uploadDir);
   await instance.webdav.put(webdavUploadPath, archiveContent, 'application/zip');
   logger.debug({path: webdavUploadPath}, `CAP uploaded: ${webdavUploadPath}`);
 
