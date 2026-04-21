@@ -2,4 +2,4 @@
 '@salesforce/b2c-dx-docs': patch
 ---
 
-Verify release workflow with ci-gate and PAT-triggered checks
+Verify release workflow with PAT-triggered checks and release label
