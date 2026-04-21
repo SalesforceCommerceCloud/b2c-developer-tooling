@@ -232,6 +232,7 @@ export default defineConfig({
     },
     nav: [
       {text: 'Guides', link: '/guide/'},
+      {text: 'Skills', link: '/guide/agent-skills'},
       {text: 'MCP', link: '/mcp/'},
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},
