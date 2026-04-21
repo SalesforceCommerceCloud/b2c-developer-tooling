@@ -55,7 +55,14 @@ describe('mrt save-credentials', () => {
     expect(content).to.deep.equal({username: 'user@example.com', api_key: 'abc123'});
   });
 
-  it('sets file permissions to 0o600', async () => {
+  it('sets file permissions to 0o600', async function () {
+    // NTFS does not honor POSIX permission bits: fs.chmod(0o600) silently
+    // leaves the mode as 0o666, so the assertion can only be validated on
+    // POSIX platforms. Credential files on Windows are protected via ACLs,
+    // not mode bits.
+    if (process.platform === 'win32') {
+      this.skip();
+    }
     const credFile = path.join(tempDir, '.mobify');
     const command = createCommand({
       user: 'user@example.com',

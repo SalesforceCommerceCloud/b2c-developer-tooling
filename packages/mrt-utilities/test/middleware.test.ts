@@ -220,11 +220,7 @@ describe('middleware', () => {
         it('forwards request processor errors via next', async () => {
           const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mrt-processor-'));
           const processorPath = path.join(tempDir, 'processor.mjs');
-          fs.writeFileSync(
-            processorPath,
-            "export function processRequest() { throw new Error('boom'); }",
-            'utf-8',
-          );
+          fs.writeFileSync(processorPath, "export function processRequest() { throw new Error('boom'); }", 'utf-8');
 
           const middleware = createMRTRequestProcessorMiddleware(processorPath, []);
 

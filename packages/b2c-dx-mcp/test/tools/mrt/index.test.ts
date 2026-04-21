@@ -483,7 +483,10 @@ describe('tools/mrt', () => {
 
     it('should use default build directory when buildDirectory is not provided', async () => {
       const projectDir = '/path/to/project';
-      const expectedDefaultPath = path.join(projectDir, 'build');
+      // services.resolveWithProjectDirectory() uses path.resolve() which on
+      // Windows prepends the current drive letter; path.join() does not, so
+      // use path.resolve() here to match production on both POSIX and Windows.
+      const expectedDefaultPath = path.resolve(projectDir, 'build');
 
       const mockResult: PushResult = {
         bundleId: 888,
@@ -628,7 +631,7 @@ describe('tools/mrt', () => {
   describe('mrt_bundle_push project-type defaults', () => {
     it('should use Storefront Next defaults when storefront-next is detected and args omitted', async () => {
       const projectDir = '/path/to/sfnext-project';
-      const expectedResolvedPath = path.join(projectDir, 'build');
+      const expectedResolvedPath = path.resolve(projectDir, 'build');
 
       const mockResult: PushResult = {
         bundleId: 100,
@@ -662,7 +665,7 @@ describe('tools/mrt', () => {
 
     it('should use PWA Kit v3 defaults when pwa-kit-v3 is detected and args omitted', async () => {
       const projectDir = '/path/to/pwakit-project';
-      const expectedResolvedPath = path.join(projectDir, 'build');
+      const expectedResolvedPath = path.resolve(projectDir, 'build');
 
       const mockResult: PushResult = {
         bundleId: 101,
@@ -696,7 +699,7 @@ describe('tools/mrt', () => {
 
     it('should use generic defaults when no project type detected', async () => {
       const projectDir = '/path/to/unknown-project';
-      const expectedResolvedPath = path.join(projectDir, 'build');
+      const expectedResolvedPath = path.resolve(projectDir, 'build');
 
       const mockResult: PushResult = {
         bundleId: 102,
