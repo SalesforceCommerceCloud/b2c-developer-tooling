@@ -32,6 +32,7 @@
     margin-bottom: 0;
     transform: none;
     max-width: 100% !important;
+    margin-left: 60px;
   }
 }
 
@@ -43,4 +44,18 @@
   max-width: 600px !important;
   max-height: 500px;
   object-fit: contain;
+}
+
+/* Home features icon treatment */
+.VPFeature .box .icon {
+  background-color: var(--vp-c-brand-soft);
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+  border-radius: 12px;
+}
+
+.VPFeature .box .icon img {
+  width: 32px;
+  height: 32px;
 }

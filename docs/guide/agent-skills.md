@@ -39,10 +39,10 @@ copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
 ```
 
-```text [Codex]
-Open this repository as a workspace, then restart Codex. Open the plugin
-directory and select the "B2C Developer Tooling" marketplace — install
-b2c-cli and/or b2c from there.
+```bash [Codex]
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Then in Codex, run /plugins, select the "B2C Developer Tooling"
+# marketplace, and select and install the desired plugins.
 ```
 
 ```bash [B2C CLI]
@@ -115,7 +115,22 @@ claude plugin marketplace remove b2c-developer-tooling
 
 ## Install Codex Plugin
 
-Open this repository as a workspace and restart Codex. Open the plugin directory, select the **B2C Developer Tooling** marketplace, and install `b2c-cli` and/or `b2c`.
+Add the marketplace:
+
+```bash
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+```
+
+Then in Codex run `/plugins`, select the **B2C Developer Tooling** marketplace, and select and install the desired plugins.
+
+Codex does not yet support installing plugins from the command line — installs happen from the interactive `/plugins` picker. You can also point Codex at a local marketplace directory by running `codex plugin marketplace add <path-to-dir>`.
+
+Upgrade or remove the marketplace later with:
+
+```bash
+codex plugin marketplace upgrade b2c-developer-tooling
+codex plugin marketplace remove b2c-developer-tooling
+```
 
 > **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
 

@@ -25,17 +25,26 @@ hero:
       link: /cli/
 
 features:
-  - icon: "\u26A1"
+  - icon:
+      src: /icons/cli.svg
+      width: 48
+      height: 48
     title: CLI for Every Workflow
     details: Deploy cartridges, run jobs, manage ODS and MRT, import/export site archives, work with WebDAV, and automate CI/CD — all from the terminal. The foundation everything else builds on.
-    link: /cli/
-    linkText: CLI reference
-  - icon: "\U0001F9E0"
+    link: /guide/
+    linkText: Get started
+  - icon:
+      src: /icons/skills.svg
+      width: 48
+      height: 48
     title: Coding Skills for Your AI Agent
     details: 30+ preconfigured skills teach Claude Code, Cursor, Agentforce Vibes, Copilot, and Codex how B2C Commerce works — SCAPI, SLAS, SFRA, ISML, Page Designer, hooks, custom objects — and which CLI commands to run when.
     link: /guide/agent-skills
     linkText: Install skills
-  - icon: "\U0001F916"
+  - icon:
+      src: /icons/mcp.svg
+      width: 48
+      height: 48
     title: MCP Server
     details: A focused set of MCP tools that complement the CLI for agent-driven workflows. Pairs naturally with skills.
     link: /mcp/
@@ -66,11 +75,6 @@ Detailed setup: [Agentforce Vibes](/guide/agent-skills#installation-with-agentfo
 
 ::: code-group
 
-```bash [Agentforce Vibes]
-# Marketplace install coming soon. For now, use the B2C CLI:
-npx @salesforce/b2c-cli setup skills --ide agentforce-vibes
-```
-
 ```bash [Claude Code]
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Use --scope user to install globally (available in all projects)
@@ -92,9 +96,16 @@ copilot plugin install b2c@b2c-developer-tooling
 ```
 
 ```bash [Codex]
-# Marketplace install coming soon. For now, use the B2C CLI:
-npx @salesforce/b2c-cli setup skills --ide codex
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Then in Codex, run /plugins, select the "B2C Developer Tooling"
+# marketplace, and select and install the desired plugins.
 ```
+
+```bash [Agentforce Vibes]
+# Marketplace install coming soon. For now, use the B2C CLI:
+npx @salesforce/b2c-cli setup skills --ide agentforce-vibes
+```
+
 
 ```bash [B2C CLI]
 npx @salesforce/b2c-cli setup skills

@@ -1,6 +1,6 @@
 {
   "name": "b2c-developer-tooling",
-  "interface": {
+   "interface": {
     "displayName": "B2C Developer Tooling"
   },
   "plugins": [
