@@ -96,6 +96,13 @@ jobs:
               HAS_CHANGES=true
             fi
           fi
+          # Also check agent-plugins tag
+          if [ "$HAS_CHANGES" = "false" ]; then
+            PLUGINS_VERSION=$(node -p "require('./skills/package.json').version")
+            if ! git rev-parse "b2c-agent-plugins@${PLUGINS_VERSION}" >/dev/null 2>&1; then
+              HAS_CHANGES=true
+            fi
+          fi
           if [ "$HAS_CHANGES" = "false" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             echo "::notice::All package versions match npm — nothing to publish"
@@ -183,6 +190,16 @@ jobs:
             echo "version_docs=${DOCS_VERSION}" >> $GITHUB_OUTPUT
           fi
           echo "@salesforce/b2c-docs: version=${DOCS_VERSION}"
+
+          # Check if agent-plugins version changed (private package — uses git tag)
+          PLUGINS_VERSION=$(node -p "require('./skills/package.json').version")
+          if git rev-parse "b2c-agent-plugins@${PLUGINS_VERSION}" >/dev/null 2>&1; then
+            echo "publish_plugins=false" >> $GITHUB_OUTPUT
+          else
+            echo "publish_plugins=true" >> $GITHUB_OUTPUT
+            echo "version_plugins=${PLUGINS_VERSION}" >> $GITHUB_OUTPUT
+          fi
+          echo "@salesforce/b2c-agent-plugins: version=${PLUGINS_VERSION}"
 
       - name: Create snapshot versions
         if: steps.release-type.outputs.type == 'nightly'
@@ -357,6 +374,13 @@ jobs:
               extract_latest docs/CHANGELOG.md
               echo ""
             fi
+
+            if [[ "${{ steps.packages.outputs.publish_plugins }}" == "true" && -f skills/CHANGELOG.md ]]; then
+              echo "## Agent Skills Plugins"
+              echo ""
+              extract_latest skills/CHANGELOG.md
+              echo ""
+            fi
           } > /tmp/release-notes.md
 
       - name: Create GitHub Release
@@ -375,6 +399,8 @@ jobs:
             RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
             RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
+          elif [[ "${{ steps.packages.outputs.publish_plugins }}" == "true" ]]; then
+            RELEASE_TAG="b2c-agent-plugins@${{ steps.packages.outputs.version_plugins }}"
           else
             echo "No packages published, skipping release"
             exit 0
@@ -385,7 +411,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Package skills artifacts
-        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_plugins == 'true'
         run: |
           # Create b2c-skills.zip containing skills/b2c/skills/
           cd skills/b2c && zip -r ../../b2c-skills.zip skills/
@@ -397,9 +423,9 @@ jobs:
           ls -la *.zip
 
       - name: Upload skills to release
-        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_plugins == 'true'
         run: |
-          # Determine the release tag (same logic as Create GitHub Release)
+          # Determine the release tag (same priority as Create GitHub Release)
           if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
           elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
@@ -410,9 +436,10 @@ jobs:
             RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
             RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+          elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
+            RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
           else
-            echo "No package release to upload to"
-            exit 0
+            RELEASE_TAG="b2c-agent-plugins@${{ steps.packages.outputs.version_plugins }}"
           fi
 
           gh release upload "$RELEASE_TAG" b2c-skills.zip b2c-cli-skills.zip

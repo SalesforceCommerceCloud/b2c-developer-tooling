@@ -1,0 +1,40 @@
+{
+  "name": "b2c",
+  "version": "1.0.0",
+  "description": "B2C Commerce development skills including Custom API development guides.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "sfra",
+    "scapi",
+    "ocapi"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "B2C Commerce Dev",
+    "shortDescription": "B2C Commerce development patterns and API guidance.",
+    "longDescription": "Skills for Salesforce B2C Commerce development — controllers, ISML templates, hooks, forms, Custom APIs, services, Page Designer, and Business Manager extensions.",
+    "developerName": "Salesforce",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "logo": "./assets/logo.svg",
+    "composerIcon": "./assets/logo.svg",
+    "brandColor": "#0D9DDA",
+    "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+    "defaultPrompt": [
+      "Build a SCAPI Custom API for loyalty information",
+      "Add logging to my checkout controller",
+      "Create an HTTP service for a payment gateway",
+      "Add a Page Designer component"
+    ]
+  }
+}
