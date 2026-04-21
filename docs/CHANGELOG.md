@@ -1,5 +1,28 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.16
+
+### Patch Changes
+
+- [`396dbc9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/396dbc98330a7b2112f2a13330e3008fa4bbbb00) - Verify release workflow with PAT-triggered checks and release label (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.2.15
+
+### Patch Changes
+
+- [#365](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/365) [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859) - Broaden skills-plugin install support and improve the installation docs. (Thanks [@clavery](https://github.com/clavery)!)
+  - Add a Codex plugin marketplace so the three plugins (`b2c-cli`, `b2c`, `b2c-dx-mcp`) can be installed directly from Codex CLI's plugin directory.
+  - Add a new `b2c-onboarding` skill (in the `b2c` plugin) that walks new developers through CLI verify, `dw.json` setup, sandbox connect, and first cartridge deploy, then hands off to the topic-specific skill for the user's goal.
+  - Add per-plugin READMEs with install instructions for each supported client.
+  - Document Copilot CLI + VS Code Copilot install paths and the Codex marketplace install path.
+  - Remove the `b2c-experimental` plugin from the public marketplace.
+
+- [#363](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/363) [`e79e275`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e79e27502be7fdada7680a81a3c3b46e115c6f39) - Upgrade documentation site to VitePress 2.0.0-alpha. Adds package-manager (Thanks [@clavery](https://github.com/clavery)!)
+  icons in `::: code-group` tabs (npm, pnpm, yarn, Homebrew), "Edit this page
+  on GitHub" links, git-based "Last updated" timestamps, and improved local
+  search ranking. Generated SDK API pages under `/api/` have edit and
+  last-updated UI suppressed since they are regenerated on every build.
+
 ## 0.2.14
 
 ### Patch Changes

@@ -5,7 +5,8 @@
  */
 
 import {readFileSync, existsSync} from 'node:fs';
-import {join, dirname, basename} from 'node:path';
+import nodePath from 'node:path';
+const {join, dirname, basename} = nodePath;
 import {createRequire} from 'node:module';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
@@ -56,21 +57,21 @@ export interface ThemingGuidance {
 type ParsedQuestion = {id: string; question: string; category: string; required: boolean};
 
 function parseWorkflowSection(content: string): ThemingGuidance['workflow'] {
-  const workflowMatch = content.match(/##\s*🔄\s*WORKFLOW[^#]*(?=##|$)/is);
+  const workflowMatch = content.match(/##\s*\u{1F504}\s*WORKFLOW[^#]*(?=##|$)/isu);
   if (!workflowMatch) return undefined;
 
-  const workflowContent = workflowMatch[0].replace(/##\s*🔄\s*WORKFLOW[^\n]*\n?/i, '').trim();
+  const workflowContent = workflowMatch[0].replace(/##\s*\u{1F504}\s*WORKFLOW[^\n]*\n?/iu, '').trim();
   const stepMatches = workflowContent.match(/^\d+\.\s+(.+)$/gm);
   const steps = stepMatches ? stepMatches.map((step) => step.replace(/^\d+\.\s+/, '').trim()) : [];
 
-  const extractionMatch = workflowContent.match(/###\s*📝\s*EXTRACTION[^#]*(?=###|$)/is);
+  const extractionMatch = workflowContent.match(/###\s*\u{1F4DD}\s*EXTRACTION[^#]*(?=###|$)/isu);
   const extractionInstructions = extractionMatch
-    ? extractionMatch[0].replace(/###\s*📝\s*EXTRACTION[^\n]*\n?/i, '').trim()
+    ? extractionMatch[0].replace(/###\s*\u{1F4DD}\s*EXTRACTION[^\n]*\n?/iu, '').trim()
     : undefined;
 
-  const checklistMatch = workflowContent.match(/###\s*✅\s*PRE-IMPLEMENTATION[^#]*(?=###|$)/is);
+  const checklistMatch = workflowContent.match(/###\s*\u2705\s*PRE-IMPLEMENTATION[^#]*(?=###|$)/is);
   const preImplementationChecklist = checklistMatch
-    ? checklistMatch[0].replace(/###\s*✅\s*PRE-IMPLEMENTATION[^\n]*\n?/i, '').trim()
+    ? checklistMatch[0].replace(/###\s*\u2705\s*PRE-IMPLEMENTATION[^\n]*\n?/i, '').trim()
     : undefined;
 
   if (steps.length > 0 || extractionInstructions || preImplementationChecklist) {
@@ -80,10 +81,10 @@ function parseWorkflowSection(content: string): ThemingGuidance['workflow'] {
 }
 
 function parseValidationSection(content: string): ThemingGuidance['validation'] {
-  const validationMatch = content.match(/##\s*✅\s*VALIDATION[^#]*(?=##|$)/is);
+  const validationMatch = content.match(/##\s*\u2705\s*VALIDATION[^#]*(?=##|$)/is);
   if (!validationMatch) return undefined;
 
-  const validationContent = validationMatch[0].replace(/##\s*✅\s*VALIDATION[^\n]*\n?/i, '').trim();
+  const validationContent = validationMatch[0].replace(/##\s*\u2705\s*VALIDATION[^\n]*\n?/i, '').trim();
 
   const colorValidationMatch = validationContent.match(/###\s*A\.\s*Color[^#]*(?=###|$)/is);
   const colorValidation = colorValidationMatch
@@ -414,27 +415,31 @@ function parseThemingMDC(content: string, filePath: string): ThemingGuidance {
   const validation = parseValidationSection(content);
   if (validation) guidance.validation = validation;
 
-  const criticalSections = content.match(/##\s*⚠️\s*CRITICAL[^#]*/gi) || [];
-  const specificationSections = content.match(/##\s*📋[^#]*/gi) || [];
+  // Emoji prefixes use explicit code points (U+26A0 WARNING SIGN with optional
+  // U+FE0F VARIATION SELECTOR-16; U+1F4CB CLIPBOARD) so that regex literals do
+  // not depend on how the source file is decoded by the TS/Node runtime on
+  // different platforms. Also tolerate \r before newlines for CRLF checkouts.
+  const criticalSections = content.match(/##\s*\u26A0\uFE0F?\s*CRITICAL[^#]*/gi) || [];
+  const specificationSections = content.match(/##\s*\u{1F4CB}[^#]*/giu) || [];
 
   for (const section of criticalSections) {
-    const titleMatch = section.match(/##\s*⚠️\s*CRITICAL:\s*(.+?)\n/);
+    const titleMatch = section.match(/##\s*\u26A0\uFE0F?\s*CRITICAL:\s*(.+?)\r?\n/);
     const title = titleMatch ? titleMatch[1].trim() : 'Critical Rule';
     guidance.guidelines.push({
       category: 'critical',
       title,
-      content: section.replace(/##\s*⚠️\s*CRITICAL[^\n]*\n/, '').trim(),
+      content: section.replace(/##\s*\u26A0\uFE0F?\s*CRITICAL[^\n]*\n/, '').trim(),
       critical: true,
     });
   }
 
   for (const section of specificationSections) {
-    const titleMatch = section.match(/##\s*📋\s*(.+?)\n/);
+    const titleMatch = section.match(/##\s*\u{1F4CB}\s*(.+?)\r?\n/u);
     const title = titleMatch ? titleMatch[1].trim() : 'Specification Rule';
     guidance.guidelines.push({
       category: 'specification',
       title,
-      content: section.replace(/##\s*📋[^\n]*\n/, '').trim(),
+      content: section.replace(/##\s*\u{1F4CB}[^\n]*\n/u, '').trim(),
       critical: false,
     });
   }
@@ -541,7 +546,9 @@ class ThemingStore {
   private loadThemingFilesFromEnv(envValue: string, root: string): void {
     const files = JSON.parse(envValue) as Array<{key: string; path: string}>;
     for (const {key, path: filePath} of files) {
-      const fullPath = filePath.startsWith('/') ? filePath : join(root, filePath);
+      // Use path.isAbsolute to detect absolute paths on both POSIX (/foo) and
+      // Windows (C:\foo); filePath.startsWith('/') misses Windows drive paths.
+      const fullPath = nodePath.isAbsolute(filePath) ? filePath : join(root, filePath);
       this.tryLoadEnvFile(key, fullPath);
     }
   }

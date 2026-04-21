@@ -1,11 +1,11 @@
 ---
 name: b2c-code
-description: Deploy cartridge code and manage code versions on B2C Commerce instances. Use this skill whenever the user needs to upload cartridges to a sandbox, activate or delete code versions, watch for local file changes during development, or deploy a subset of cartridges. Also use when pushing code to an instance or setting up a dev workflow with live reload -- even if they just say 'push my code to the sandbox' or 'how do I activate the new version'.
+description: Deploy, download, and manage cartridge code versions on B2C Commerce instances. Use this skill whenever the user needs to upload or download cartridges to/from a sandbox, activate or delete code versions, watch for local file changes during development, or deploy a subset of cartridges. Also use when pushing code to an instance, pulling code from an instance, or setting up a dev workflow with live reload -- even if they just say 'push my code to the sandbox', 'download the code', or 'how do I activate the new version'.
 ---
 
 # B2C Code Skill
 
-Use the `b2c` CLI to deploy and manage code versions on Salesforce B2C Commerce instances.
+Use the `b2c` CLI to deploy, download, and manage code versions on Salesforce B2C Commerce instances.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli code deploy`).
 
@@ -34,6 +34,28 @@ b2c code deploy -c app_storefront_base -c plugin_applepay
 
 # exclude specific cartridges from deployment
 b2c code deploy -x test_cartridge
+```
+
+### Download Cartridges
+
+```bash
+# download all cartridges from the active code version
+b2c code download
+
+# download to a specific directory
+b2c code download -o ./downloaded
+
+# download from a specific server and code version
+b2c code download --server my-sandbox.demandware.net --code-version v1
+
+# download only specific cartridges
+b2c code download -c app_storefront_base -c plugin_applepay
+
+# exclude specific cartridges from download
+b2c code download -x test_cartridge
+
+# mirror: extract to local cartridge project locations
+b2c code download --mirror
 ```
 
 ### Watch for Changes

@@ -21,7 +21,7 @@
     "skills:eval": "uv run skills/eval/run_eval.py --model us.anthropic.claude-sonnet-4-6 --verbose",
     "skills:eval:optimize": "uv run skills/eval/run_loop.py --model us.anthropic.claude-sonnet-4-6 --verbose",
     "changeset": "changeset",
-    "version": "changeset version",
+    "version": "changeset version && node scripts/sync-plugin-versions.mjs && date -u > .changeset/RELEASE",
     "release": "echo 'Releases are handled by CI (publish.yml). Use workflow_dispatch for manual releases.' && exit 1"
   },
   "keywords": [],

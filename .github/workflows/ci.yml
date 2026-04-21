@@ -124,3 +124,105 @@ jobs:
             packages/b2c-tooling-sdk/coverage/
             packages/b2c-cli/coverage/
           retention-days: 30
+
+  test-windows:
+    runs-on: windows-latest
+    # Advisory rollout: Windows coverage is new; surface failures without
+    # blocking Linux CI while remaining Windows-specific test issues are
+    # addressed in follow-up PRs. Remove once Windows tests are green.
+    continue-on-error: true
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x, 24.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup Windows machine
+        uses: ./.github/actions/setup-windows
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Build packages
+        run: pnpm -r run build
+      - name: Run SDK tests
+        id: sdk-test
+        working-directory: packages/b2c-tooling-sdk
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run MCP tests
+        id: mcp-test
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-dx-mcp
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run CLI tests
+        id: cli-test
+        if: always() && steps.mcp-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-cli
+        # Use the Windows-specific script (test:ci:win) to bypass c8's
+        # coverage threshold check. V8 coverage on Windows double-counts
+        # some TS source files (distinct URL casing emitted by the tsx
+        # loader), which drops the reported function-coverage number below
+        # the Linux-calibrated 70% threshold even though the tests pass.
+        # Coverage is still generated and uploaded for inspection.
+        run: pnpm run pretest && pnpm run test:ci:win && pnpm run lint
+      - name: Run VS Extension checks
+        if: always() && steps.cli-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-vs-extension
+        run: pnpm run typecheck:agent && pnpm run lint
+      - name: Print Windows test failures
+        # Mocha's JSON reporter swallows stdout, so Windows-only failures are
+        # invisible in the step log. Parse the per-package test-results.json
+        # and echo failing test titles + error messages to the job log for triage.
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const reports = [
+              'packages/b2c-tooling-sdk/test-results.json',
+              'packages/b2c-dx-mcp/test-results.json',
+              'packages/b2c-cli/test-results.json',
+            ];
+            let totalFailures = 0;
+            for (const report of reports) {
+              if (!fs.existsSync(report)) continue;
+              const data = JSON.parse(fs.readFileSync(report, 'utf8'));
+              const failures = data.failures || [];
+              if (failures.length === 0) continue;
+              totalFailures += failures.length;
+              console.log('\n=== ' + report + ' (' + failures.length + ' failures) ===');
+              for (const f of failures) {
+                console.log('\n✖ ' + f.fullTitle);
+                if (f.err && f.err.message) console.log('  message: ' + f.err.message.split('\n')[0]);
+                if (f.err && f.err.stack) console.log('  stack: ' + f.err.stack.split('\n').slice(0, 5).join('\n         '));
+              }
+            }
+            if (totalFailures === 0) console.log('No Windows test failures reported.');
+            else console.log('\nTotal Windows failures: ' + totalFailures);
+          "
+      - name: Test Report
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        with:
+          name: Test Results (Windows Node ${{ matrix.node-version }})
+          path: 'packages/*/test-results.json'
+          reporter: mocha-json
+      - name: Upload test results (for Windows triage)
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-windows-node-${{ matrix.node-version }}
+          path: 'packages/*/test-results.json'
+          retention-days: 30
+      - name: Upload coverage reports
+        if: always() && steps.sdk-test.conclusion != 'cancelled'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-reports-windows-node-${{ matrix.node-version }}
+          path: |
+            packages/b2c-tooling-sdk/coverage/
+            packages/b2c-cli/coverage/
+          retention-days: 30

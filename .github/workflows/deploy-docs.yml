@@ -84,8 +84,11 @@ jobs:
       - name: Build stable documentation from release tag
         if: steps.release.outputs.exists == 'true'
         run: |
-          # Save config from main (has version dropdown and dynamic base path)
+          # Save docs build files from main (config has version dropdown/dynamic
+          # base path, and package.json/lockfile have its dependencies)
           cp docs/.vitepress/config.mts /tmp/config.mts
+          cp docs/package.json /tmp/docs-package.json
+          cp pnpm-lock.yaml /tmp/pnpm-lock.yaml
 
           # Remove S3-extracted uxstudio files before checkout to avoid conflicts
           # (older tags still have these files tracked in git)
@@ -101,8 +104,10 @@ jobs:
           tar -xzf /tmp/uxstudio-4.5.tar.gz -C docs/public/uxstudio
           tar -xzf /tmp/uxstudio-4.6.tar.gz -C docs/public/uxstudio
 
-          # Restore config from main (has version dropdown and dynamic base path)
+          # Restore docs build files from main so dependencies match the config
           cp /tmp/config.mts docs/.vitepress/config.mts
+          cp /tmp/docs-package.json docs/package.json
+          cp /tmp/pnpm-lock.yaml pnpm-lock.yaml
 
           # Build at release tag with main's config (no IS_DEV_BUILD = stable at root)
           pnpm install --frozen-lockfile

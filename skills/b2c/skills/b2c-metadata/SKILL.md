@@ -7,6 +7,7 @@ description: Define custom attributes, custom object types, and site preferences
 
 This skill guides you through working with site metadata XML for Salesforce B2C Commerce, including custom attributes, custom objects, and site preferences.
 
+
 ## Overview
 
 Metadata defines the structure of your B2C Commerce data:
