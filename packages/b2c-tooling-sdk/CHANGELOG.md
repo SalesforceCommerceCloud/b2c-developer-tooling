@@ -1,5 +1,17 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.4.0
+
+### Minor Changes
+
+- [#366](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/366) [`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be) - Add `b2c code download` command to download cartridge code from a B2C Commerce instance, with support for cartridge filtering, mirror mode, and progress reporting (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#355](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/355) [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501) - `b2c setup skills` now prompts to overwrite already-installed skills in interactive mode instead of silently skipping them with a "use --update to overwrite" message. The existing `--update` and `--force` flags still work non-interactively. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#365](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/365) [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859) - Skills installer (`b2c setup skills`) now resolves the latest skills release by querying GitHub for releases that actually carry skills zips, instead of relying on GitHub's opinionated "latest release" endpoint. Falls back to a CDN-backed lookup when the GitHub API is rate-limited. Zip downloads continue to use the GitHub release CDN with no API calls. Resolved versions are cached locally for 1 hour to keep consecutive installs fast. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.3.2
 
 ### Patch Changes
