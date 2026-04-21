@@ -100,6 +100,7 @@
     "format:check": "prettier --check .",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
     "test:watch": "mocha --watch \"test/**/*.test.ts\""
   },
