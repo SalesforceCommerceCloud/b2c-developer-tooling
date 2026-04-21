@@ -57,6 +57,11 @@
                         <xsd:documentation>Please note: This element is NOT supported for custom menu actions.</xsd:documentation>
                     </xsd:annotation>
                 </xsd:element>
+                <xsd:element ref="scapis" minOccurs="0">
+                    <xsd:annotation>
+                        <xsd:documentation>SCAPI paths for BM module permissions. Please note: This element is NOT supported for custom menu actions.</xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
                 <xsd:element name="required-features" type="complexType.Features" minOccurs="0" maxOccurs="1">
                     <xsd:annotation>
                         <xsd:documentation>Please note: This element is NOT supported for custom menu actions.</xsd:documentation>
@@ -163,6 +168,19 @@
         </xsd:complexType>
     </xsd:element>
     <xsd:element name="api">
+        <xsd:complexType mixed="false">
+            <xsd:attribute name="path" type="xsd:string" use="required"/>
+            <xsd:attribute name="methods" type="ApiMethods" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="scapis">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element ref="scapi" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="scapi">
         <xsd:complexType mixed="false">
             <xsd:attribute name="path" type="xsd:string" use="required"/>
             <xsd:attribute name="methods" type="ApiMethods" use="required"/>
