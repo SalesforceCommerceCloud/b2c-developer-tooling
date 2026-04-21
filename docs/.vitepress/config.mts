@@ -218,7 +218,7 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/logo.svg',
+    logo: '/logo-mark.svg',
     outline: {
       level: [2, 3],
     },
@@ -232,6 +232,7 @@ export default defineConfig({
     },
     nav: [
       {text: 'Guides', link: '/guide/'},
+      {text: 'Skills', link: '/guide/agent-skills'},
       {text: 'MCP', link: '/mcp/'},
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},

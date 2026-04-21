@@ -1,0 +1,32 @@
+{
+  "name": "b2c-developer-tooling",
+   "interface": {
+    "displayName": "B2C Developer Tooling"
+  },
+  "plugins": [
+    {
+      "name": "b2c-cli",
+      "source": {
+        "source": "local",
+        "path": "./skills/b2c-cli"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "b2c",
+      "source": {
+        "source": "local",
+        "path": "./skills/b2c"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

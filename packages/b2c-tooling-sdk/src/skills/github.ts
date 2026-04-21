@@ -14,6 +14,8 @@ import {getLogger} from '../logging/logger.js';
 const GITHUB_REPO = 'SalesforceCommerceCloud/b2c-developer-tooling';
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_DOWNLOAD_BASE = 'https://github.com';
+const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com';
+const LATEST_VERSION_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 /**
  * Asset filename patterns for skill archives.
@@ -24,19 +26,125 @@ const ASSET_NAMES: Record<SkillSet, string> = {
 };
 
 /**
- * Build direct download URL for a release asset.
- * These URLs don't require API calls and avoid rate limiting.
- *
- * @param version - 'latest' or specific version tag
- * @param assetName - Name of the asset file
- * @returns Direct download URL
+ * Build a direct CDN download URL for a release asset.
+ * Assumes a concrete tag — call `resolveLatestVersion()` first if you have 'latest'.
  */
-function getDirectDownloadUrl(version: string, assetName: string): string {
-  if (version === 'latest') {
-    return `${GITHUB_DOWNLOAD_BASE}/${GITHUB_REPO}/releases/latest/download/${assetName}`;
-  }
-  const tag = version.startsWith('v') ? version : `v${version}`;
+function buildDownloadUrl(tag: string, assetName: string): string {
   return `${GITHUB_DOWNLOAD_BASE}/${GITHUB_REPO}/releases/download/${tag}/${assetName}`;
+}
+
+/**
+ * Tag name used for skill-only releases (matches publish.yml).
+ */
+function pluginsTag(version: string): string {
+  const bare = version.replace(/^v/, '');
+  return `b2c-agent-plugins@${bare}`;
+}
+
+/**
+ * File path for the resolved-latest-version cache.
+ */
+function getLatestVersionCachePath(): string {
+  return path.join(getCacheDir(), '.latest-version.json');
+}
+
+/**
+ * Read a cached "latest" version if still fresh (1-hour TTL).
+ */
+function readLatestVersionCache(): string | null {
+  try {
+    const p = getLatestVersionCachePath();
+    if (!fs.existsSync(p)) return null;
+    const entry = JSON.parse(fs.readFileSync(p, 'utf-8')) as {version: string; resolvedAt: string};
+    const age = Date.now() - new Date(entry.resolvedAt).getTime();
+    if (age > LATEST_VERSION_CACHE_TTL_MS) return null;
+    return entry.version;
+  } catch {
+    return null;
+  }
+}
+
+function writeLatestVersionCache(version: string): void {
+  try {
+    const p = getLatestVersionCachePath();
+    fs.mkdirSync(path.dirname(p), {recursive: true});
+    fs.writeFileSync(p, JSON.stringify({version, resolvedAt: new Date().toISOString()}));
+  } catch {
+    // Caching is best-effort
+  }
+}
+
+/**
+ * Detect whether a fetch response is an unauthenticated GitHub rate-limit.
+ */
+function isRateLimited(response: Response): boolean {
+  if (response.status !== 403 && response.status !== 429) return false;
+  const remaining = response.headers.get('x-ratelimit-remaining');
+  return remaining === '0' || response.status === 429;
+}
+
+/**
+ * Resolve the version of the most recent skills release.
+ *
+ * Strategy:
+ *   1. API primary — paginate /releases and return the first entry that has
+ *      a skills asset attached.
+ *   2. Rate-limit fallback — fetch skills/package.json from main via
+ *      raw.githubusercontent.com. This is the version that will be tagged
+ *      b2c-agent-plugins@<version> at release time.
+ *
+ * Caches the resolved version for 1 hour to avoid re-resolving on consecutive
+ * calls within the same session. Always returns a bare version string like
+ * "1.2.3" (no 'v' prefix, no tag format).
+ */
+async function resolveLatestVersion(): Promise<string> {
+  const logger = getLogger();
+
+  const cached = readLatestVersionCache();
+  if (cached) {
+    logger.debug({version: cached}, 'Using cached latest version');
+    return cached;
+  }
+
+  // Primary — GitHub REST API with asset filtering
+  try {
+    const releases = await listReleases(30);
+    if (releases.length > 0) {
+      const version = releases[0].version;
+      writeLatestVersionCache(version);
+      return version;
+    }
+    logger.warn('GitHub API returned no releases with skills artifacts; falling back to main branch');
+  } catch (err) {
+    const isRateLimit = err instanceof Error && /rate.?limit|403|429/i.test(err.message);
+    if (isRateLimit) {
+      logger.warn(
+        {err: (err as Error).message},
+        'GitHub API rate-limited; falling back to main branch for version resolution',
+      );
+    } else {
+      logger.warn(
+        {err: (err as Error).message},
+        'GitHub API unavailable; falling back to main branch for version resolution',
+      );
+    }
+  }
+
+  // Fallback — read skills/package.json from main via raw.githubusercontent.com
+  const rawUrl = `${GITHUB_RAW_BASE}/${GITHUB_REPO}/main/skills/package.json`;
+  logger.debug({url: rawUrl}, 'Fetching version from raw.githubusercontent.com');
+  const response = await fetch(rawUrl, {headers: {'User-Agent': 'b2c-cli'}});
+  if (!response.ok) {
+    throw new Error(
+      `Unable to resolve latest skills version: raw fetch failed with ${response.status} ${response.statusText}`,
+    );
+  }
+  const data = (await response.json()) as {version?: string};
+  if (!data.version) {
+    throw new Error('Unable to resolve latest skills version: skills/package.json has no version field');
+  }
+  writeLatestVersionCache(data.version);
+  return data.version;
 }
 
 /**
@@ -80,11 +188,22 @@ function parseRelease(release: {
  */
 export async function getRelease(version: string = 'latest'): Promise<ReleaseInfo> {
   const logger = getLogger();
-  const endpoint =
-    version === 'latest'
-      ? `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases/latest`
-      : `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases/tags/${version.startsWith('v') ? version : `v${version}`}`;
 
+  // For 'latest', resolve to a concrete tag via the skills-aware resolver.
+  // This avoids GitHub's /releases/latest endpoint, which returns whichever
+  // release GitHub flags as latest regardless of whether it contains skills.
+  let tag: string;
+  if (version === 'latest') {
+    const resolved = await resolveLatestVersion();
+    tag = pluginsTag(resolved);
+  } else if (/^b2c-agent-plugins@/.test(version) || version.includes('@')) {
+    // Caller passed an explicit tag (including other packages' tags, for tests/internal use).
+    tag = version;
+  } else {
+    tag = pluginsTag(version);
+  }
+
+  const endpoint = `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases/tags/${encodeURIComponent(tag)}`;
   logger.debug({endpoint}, 'Fetching release info');
 
   const response = await fetch(endpoint, {
@@ -96,7 +215,10 @@ export async function getRelease(version: string = 'latest'): Promise<ReleaseInf
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error(`Release not found: ${version}`);
+      throw new Error(`Release not found: ${tag}`);
+    }
+    if (isRateLimited(response)) {
+      throw new Error(`GitHub API rate-limited while fetching release ${tag}`);
     }
     throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
   }
@@ -167,18 +289,6 @@ export function getCachedArtifact(version: string, skillSet: SkillSet): CachedAr
 }
 
 /**
- * Extract version tag from a GitHub release download URL.
- * URLs follow pattern: .../releases/download/{tag}/...
- *
- * @param url - The final URL after redirects
- * @returns Version tag or null if not found
- */
-function extractVersionFromUrl(url: string): string | null {
-  const match = url.match(/\/releases\/download\/([^/]+)\//);
-  return match ? match[1] : null;
-}
-
-/**
  * Download and extract skills artifact.
  * Uses direct download URLs to avoid GitHub API rate limits.
  *
@@ -192,18 +302,23 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
   const {version = 'latest', forceDownload = false} = options;
   const assetName = ASSET_NAMES[skillSet];
 
-  // For specific versions, check cache first (before any network calls)
-  if (version !== 'latest' && !forceDownload) {
-    const versionTag = version.startsWith('v') ? version : `v${version}`;
-    const cached = getCachedArtifact(versionTag, skillSet);
+  // Resolve 'latest' to a concrete version before any download or cache lookup.
+  // This keeps the cache keyed to real version tags and avoids GitHub's opinionated
+  // /releases/latest endpoint, which may point at a release that has no skills zips.
+  const resolvedVersion = version === 'latest' ? await resolveLatestVersion() : version.replace(/^v/, '');
+  const tag = pluginsTag(resolvedVersion);
+
+  // Check cache for the resolved version
+  if (!forceDownload) {
+    const cached = getCachedArtifact(resolvedVersion, skillSet);
     if (cached && fs.existsSync(cached.path)) {
-      logger.debug({version: versionTag, skillSet, path: cached.path}, 'Using cached skills');
+      logger.debug({version: resolvedVersion, skillSet, path: cached.path}, 'Using cached skills');
       return cached.path;
     }
   }
 
-  // Build direct download URL (avoids API rate limits)
-  const downloadUrl = getDirectDownloadUrl(version, assetName);
+  // Download from the CDN — no API rate limit on this path.
+  const downloadUrl = buildDownloadUrl(tag, assetName);
   logger.debug({url: downloadUrl, skillSet}, 'Downloading skills artifact');
 
   // Download artifact - GitHub will redirect to the actual file
@@ -216,34 +331,17 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error(
-        `Skills artifact '${assetName}' not found for ${version === 'latest' ? 'latest release' : `version ${version}`}`,
-      );
+      throw new Error(`Skills artifact '${assetName}' not found for release ${tag}`);
     }
     throw new Error(`Failed to download skills: ${response.status} ${response.statusText}`);
   }
 
-  // Extract actual version from the final URL (after redirects)
-  const actualVersion = extractVersionFromUrl(response.url) || version;
-
-  // Check cache for the resolved version (for 'latest' which we now know the real tag)
-  // Only use cache if we actually resolved a real version — if actualVersion is still
-  // 'latest' (e.g., redirect URL didn't contain the tag), we must re-extract since
-  // we can't tell if the cached 'latest' is stale.
-  if (version === 'latest' && actualVersion !== 'latest' && !forceDownload) {
-    const cached = getCachedArtifact(actualVersion, skillSet);
-    if (cached && fs.existsSync(cached.path)) {
-      logger.debug({version: actualVersion, skillSet, path: cached.path}, 'Using cached skills (resolved latest)');
-      return cached.path;
-    }
-  }
-
   const zipBuffer = Buffer.from(await response.arrayBuffer());
-  logger.debug({size: zipBuffer.length, version: actualVersion}, 'Downloaded skills archive');
+  logger.debug({size: zipBuffer.length, version: resolvedVersion}, 'Downloaded skills archive');
 
   // Extract to cache directory
   const cacheDir = options.cacheDir || getCacheDir();
-  const extractDir = path.join(cacheDir, actualVersion, skillSet);
+  const extractDir = path.join(cacheDir, resolvedVersion, skillSet);
 
   // Clean existing extraction if present
   if (fs.existsSync(extractDir)) {
@@ -278,7 +376,7 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
 
   // Write cache manifest
   const manifest: CachedArtifact = {
-    version: actualVersion,
+    version: resolvedVersion,
     path: extractDir,
     downloadedAt: new Date().toISOString(),
   };

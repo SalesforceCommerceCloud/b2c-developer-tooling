@@ -63,7 +63,7 @@ Safety Mode operates at the HTTP layer and cannot be bypassed by command-line fl
 
 ### Instance Operations
 
-- [Code Commands](./code) - Deploy cartridges and manage code versions
+- [Code Commands](./code) - Deploy, download, and manage code versions
 - [Job Commands](./jobs) - Execute and monitor jobs, import/export site archives
 - [Sites Commands](./sites) - List and manage sites
 - [WebDAV Commands](./webdav) - File operations on instance WebDAV
