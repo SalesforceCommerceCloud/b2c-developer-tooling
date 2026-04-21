@@ -76,8 +76,8 @@ export function registerCapCommands(
           await commerceAppInstall(instance, capPath, {
             siteId,
             waitOptions: {
-              onProgress: (exec) => {
-                progress.report({message: `Status: ${exec.execution_status}`});
+              onPoll: (info) => {
+                progress.report({message: `Status: ${info.status}`});
               },
             },
           });
