@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          token: ${{ secrets.CHANGESETS_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
@@ -42,8 +40,9 @@ jobs:
           version: pnpm run version
           title: 'Next Release: changelog and version packages'
           commit: 'chore: version packages'
+          labels: release
         env:
-          GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger publish workflow
         if: steps.changesets.outputs.hasChangesets == 'false'

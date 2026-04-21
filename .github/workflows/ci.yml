@@ -22,6 +22,7 @@ env:
 
 jobs:
   test:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'release') }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -124,3 +125,15 @@ jobs:
             packages/b2c-tooling-sdk/coverage/
             packages/b2c-cli/coverage/
           retention-days: 30
+
+  ci-gate:
+    if: always()
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          if [[ "${{ needs.test.result }}" == "success" || "${{ needs.test.result }}" == "skipped" ]]; then
+            exit 0
+          fi
+          exit 1
