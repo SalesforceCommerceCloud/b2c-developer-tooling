@@ -22,6 +22,82 @@ def find_project_root() -> Path:
     return current
 
 
+def find_eval_project() -> Path:
+    """Return the path to the isolated eval project.
+
+    The eval project is a minimal B2C Commerce storefront with all real
+    skills copied into .claude/skills/.  Skills are tested with their
+    real names, descriptions, and content — and all skills are present
+    simultaneously so inter-skill competition is captured.
+    """
+    eval_dir = Path(__file__).resolve().parent
+    project_dir = eval_dir / "project"
+    if project_dir.is_dir() and (project_dir / ".claude").is_dir():
+        _ensure_git_repo(project_dir)
+        _sync_skills(eval_dir, project_dir)
+        return project_dir
+    return find_project_root()
+
+
+def _ensure_git_repo(project_dir: Path) -> None:
+    """Initialize a git repo in the eval project if one doesn't exist.
+
+    The eval project needs its own .git so claude -p doesn't walk up
+    and find the main repo's CLAUDE.md and .claude-plugin config.
+    The .git is not committed to the outer repo — it's created at runtime.
+    """
+    if not (project_dir / ".git").is_dir():
+        subprocess.run(
+            ["git", "init"],
+            cwd=project_dir, capture_output=True,
+        )
+        subprocess.run(
+            ["git", "add", "-A"],
+            cwd=project_dir, capture_output=True,
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "eval project"],
+            cwd=project_dir, capture_output=True,
+        )
+
+
+def _sync_skills(eval_dir: Path, project_dir: Path) -> None:
+    """Copy real skill directories into the eval project's .claude/skills/.
+
+    Copies each skill's SKILL.md and references/ directory (if present)
+    into .claude/skills/<skill-name>/, which is the standard location
+    for project-level skills.  Skips evals/ directories since those are
+    not part of the distributed skill.
+    """
+    import shutil
+
+    repo_root = eval_dir.parent.parent  # skills/eval/ -> repo root
+    target_root = project_dir / ".claude" / "skills"
+    target_root.mkdir(parents=True, exist_ok=True)
+
+    # Discover all skill directories that have a SKILL.md
+    for plugin_dir in ("b2c", "b2c-cli", "b2c-experimental"):
+        skills_parent = repo_root / "skills" / plugin_dir / "skills"
+        if not skills_parent.is_dir():
+            continue
+        for skill_dir in skills_parent.iterdir():
+            if not (skill_dir / "SKILL.md").is_dir() and (skill_dir / "SKILL.md").exists():
+                dest = target_root / skill_dir.name
+                # Re-copy if SKILL.md is newer than the copy
+                dest_skill = dest / "SKILL.md"
+                if dest_skill.exists() and dest_skill.stat().st_mtime >= (skill_dir / "SKILL.md").stat().st_mtime:
+                    continue
+                # Clean and copy
+                if dest.exists():
+                    shutil.rmtree(dest)
+                dest.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(skill_dir / "SKILL.md", dest / "SKILL.md")
+                # Copy references/ if present
+                refs = skill_dir / "references"
+                if refs.is_dir():
+                    shutil.copytree(refs, dest / "references")
+
+
 def parse_skill_md(skill_path: Path) -> tuple[str, str, str]:
     """Parse a SKILL.md file, returning (name, description, full_content)."""
     content = (skill_path / "SKILL.md").read_text()
@@ -64,6 +140,23 @@ def parse_skill_md(skill_path: Path) -> tuple[str, str, str]:
     return name, description, content
 
 
+def _skill_matches(value: str, skill_name: str) -> bool:
+    """Check if a Skill tool input or Read file path references this skill.
+
+    Matches the bare skill name (e.g. 'b2c-metadata') or any namespaced
+    variant (e.g. 'b2c:b2c-metadata', 'b2c-cli:b2c-logs').
+    """
+    # Exact match or namespace:name match
+    if value == skill_name:
+        return True
+    if value.endswith(f":{skill_name}"):
+        return True
+    # Substring in a file path (for Read tool detection)
+    if f"/{skill_name}/" in value or f"/{skill_name}." in value:
+        return True
+    return False
+
+
 def run_single_query(
     query: str,
     skill_name: str,
@@ -74,134 +167,127 @@ def run_single_query(
 ) -> bool:
     """Run a single query and return whether the skill was triggered.
 
-    Creates a command file in .claude/commands/ so it appears in Claude's
-    available_skills list, then runs `claude -p` with the raw query.
-    Uses --include-partial-messages to detect triggering early from
-    stream events.
+    All skills are pre-installed in the eval project's .claude/skills/
+    directory.  Runs `claude -p` with the raw query and detects whether
+    Claude invokes the Skill tool (or reads the SKILL.md) for the
+    skill under test.
     """
-    unique_id = uuid.uuid4().hex[:8]
-    clean_name = f"{skill_name}-skill-{unique_id}"
-    project_commands_dir = Path(project_root) / ".claude" / "commands"
-    command_file = project_commands_dir / f"{clean_name}.md"
+    cmd = [
+        "claude",
+        "-p", query,
+        "--output-format", "stream-json",
+        "--verbose",
+        "--include-partial-messages",
+    ]
+    if model:
+        cmd.extend(["--model", model])
+
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        cwd=project_root,
+        env=env,
+    )
+
+    start_time = time.time()
+    buffer = ""
+    pending_tool_name = None
+    accumulated_json = ""
+    triggered = False
 
     try:
-        project_commands_dir.mkdir(parents=True, exist_ok=True)
-        indented_desc = "\n  ".join(skill_description.split("\n"))
-        command_content = (
-            f"---\n"
-            f"description: |\n"
-            f"  {indented_desc}\n"
-            f"---\n\n"
-            f"# {skill_name}\n\n"
-            f"This skill handles: {skill_description}\n"
-        )
-        command_file.write_text(command_content)
+        while time.time() - start_time < timeout:
+            if process.poll() is not None:
+                remaining = process.stdout.read()
+                if remaining:
+                    buffer += remaining.decode("utf-8", errors="replace")
+                break
 
-        cmd = [
-            "claude",
-            "-p", query,
-            "--output-format", "stream-json",
-            "--verbose",
-            "--include-partial-messages",
-        ]
-        if model:
-            cmd.extend(["--model", model])
+            ready, _, _ = select.select([process.stdout], [], [], 1.0)
+            if not ready:
+                continue
 
-        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+            chunk = os.read(process.stdout.fileno(), 8192)
+            if not chunk:
+                break
+            buffer += chunk.decode("utf-8", errors="replace")
 
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            cwd=project_root,
-            env=env,
-        )
-
-        start_time = time.time()
-        buffer = ""
-        pending_tool_name = None
-        accumulated_json = ""
-        triggered = False
-
-        try:
-            while time.time() - start_time < timeout:
-                if process.poll() is not None:
-                    remaining = process.stdout.read()
-                    if remaining:
-                        buffer += remaining.decode("utf-8", errors="replace")
-                    break
-
-                ready, _, _ = select.select([process.stdout], [], [], 1.0)
-                if not ready:
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                line = line.strip()
+                if not line:
                     continue
 
-                chunk = os.read(process.stdout.fileno(), 8192)
-                if not chunk:
-                    break
-                buffer += chunk.decode("utf-8", errors="replace")
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
 
-                while "\n" in buffer:
-                    line, buffer = buffer.split("\n", 1)
-                    line = line.strip()
-                    if not line:
-                        continue
+                if event.get("type") == "stream_event":
+                    se = event.get("event", {})
+                    se_type = se.get("type", "")
 
-                    try:
-                        event = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-
-                    if event.get("type") == "stream_event":
-                        se = event.get("event", {})
-                        se_type = se.get("type", "")
-
-                        if se_type == "content_block_start":
-                            cb = se.get("content_block", {})
-                            if cb.get("type") == "tool_use":
-                                tool_name = cb.get("name", "")
-                                if tool_name in ("Skill", "Read"):
-                                    pending_tool_name = tool_name
-                                    accumulated_json = ""
-                                else:
-                                    return False
-
-                        elif se_type == "content_block_delta" and pending_tool_name:
-                            delta = se.get("delta", {})
-                            if delta.get("type") == "input_json_delta":
-                                accumulated_json += delta.get("partial_json", "")
-                                if clean_name in accumulated_json:
-                                    return True
-
-                        elif se_type in ("content_block_stop", "message_stop"):
-                            if pending_tool_name:
-                                return clean_name in accumulated_json
-                            if se_type == "message_stop":
+                    if se_type == "content_block_start":
+                        cb = se.get("content_block", {})
+                        if cb.get("type") == "tool_use":
+                            tool_name = cb.get("name", "")
+                            if tool_name in ("Skill", "Read"):
+                                pending_tool_name = tool_name
+                                accumulated_json = ""
+                            else:
                                 return False
 
-                    elif event.get("type") == "assistant":
-                        message = event.get("message", {})
-                        for content_item in message.get("content", []):
-                            if content_item.get("type") != "tool_use":
-                                continue
-                            tool_name = content_item.get("name", "")
-                            tool_input = content_item.get("input", {})
-                            if tool_name == "Skill" and clean_name in tool_input.get("skill", ""):
-                                triggered = True
-                            elif tool_name == "Read" and clean_name in tool_input.get("file_path", ""):
-                                triggered = True
-                            return triggered
+                    elif se_type == "content_block_delta" and pending_tool_name:
+                        delta = se.get("delta", {})
+                        if delta.get("type") == "input_json_delta":
+                            accumulated_json += delta.get("partial_json", "")
+                            # Early exit: check partial JSON for skill name
+                            if f'"{skill_name}"' in accumulated_json:
+                                return True
+                            if f":{skill_name}" in accumulated_json:
+                                return True
 
-                    elif event.get("type") == "result":
+                    elif se_type in ("content_block_stop", "message_stop"):
+                        if pending_tool_name:
+                            # Parse the completed JSON to check properly
+                            try:
+                                tool_input = json.loads(accumulated_json)
+                            except json.JSONDecodeError:
+                                tool_input = {}
+                            if pending_tool_name == "Skill":
+                                return _skill_matches(tool_input.get("skill", ""), skill_name)
+                            elif pending_tool_name == "Read":
+                                return _skill_matches(tool_input.get("file_path", ""), skill_name)
+                            return False
+                        if se_type == "message_stop":
+                            return False
+
+                elif event.get("type") == "assistant":
+                    message = event.get("message", {})
+                    for content_item in message.get("content", []):
+                        if content_item.get("type") != "tool_use":
+                            continue
+                        tool_name = content_item.get("name", "")
+                        tool_input = content_item.get("input", {})
+                        if tool_name == "Skill":
+                            if _skill_matches(tool_input.get("skill", ""), skill_name):
+                                triggered = True
+                        elif tool_name == "Read":
+                            if _skill_matches(tool_input.get("file_path", ""), skill_name):
+                                triggered = True
                         return triggered
-        finally:
-            if process.poll() is None:
-                process.kill()
-                process.wait()
 
-        return triggered
+                elif event.get("type") == "result":
+                    return triggered
     finally:
-        if command_file.exists():
-            command_file.unlink()
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+
+    return triggered
 
 
 def run_eval(

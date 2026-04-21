@@ -1,7 +1,12 @@
 [
-  {"query": "How do I upload a zip file to the IMPEX directory on my B2C instance using the CLI?", "should_trigger": true},
-  {"query": "I need to delete an old cartridge called app_mysite from code version v25_1_0. How do I do that with webdav rm?", "should_trigger": true},
-  {"query": "Can I list the files in the cartridges WebDAV root and then download one of them to my local machine?", "should_trigger": true},
-  {"query": "How do I tail the error logs on my sandbox in real time?", "should_trigger": false},
-  {"query": "I want to deploy my cartridge code to the sandbox. What's the b2c command for code deployment?", "should_trigger": false}
+  {"query": "How do I upload a zip file to the IMPEX directory on my instance so I can run a site import job on it?", "should_trigger": true},
+  {"query": "I need to delete an old directory from the cartridges WebDAV root. How do I remove files remotely?", "should_trigger": true},
+  {"query": "Can I list the files on my sandbox instance and then download a specific export file to my local machine?", "should_trigger": true},
+  {"query": "I need to unzip an archive that's already on the instance in the IMPEX upload directory. Can I do that remotely?", "should_trigger": true},
+  {"query": "How do I create a new directory on the instance and upload multiple files into it?", "should_trigger": true},
+  {"query": "I want to check what's in the IMPEX share folder on our staging instance to see if the nightly export ran successfully.", "should_trigger": true},
+  {"query": "How do I tail the error logs on my sandbox in real time to debug a production issue?", "should_trigger": false},
+  {"query": "I want to deploy my cartridge code to the sandbox and activate the new code version.", "should_trigger": false},
+  {"query": "How do I trigger a site import job after uploading my data archive to the instance?", "should_trigger": false},
+  {"query": "I need to set up file watching so my local code changes auto-sync to the sandbox during development.", "should_trigger": false}
 ]

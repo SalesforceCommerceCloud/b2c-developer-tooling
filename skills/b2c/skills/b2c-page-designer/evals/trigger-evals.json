@@ -1,7 +1,12 @@
 [
-  {"query": "I created a new Page Designer component but it doesn't show up in the editor. The JSON has enum attributes with value/display_value objects. What am I doing wrong?", "should_trigger": true},
-  {"query": "How do I set up a Page Designer page type with multiple regions? I need a hero region that only allows one component and a content region with no restrictions.", "should_trigger": true},
-  {"query": "My Page Designer component is in a subfolder under experience/components/assets/hero_image_block. What should the component type ID be and how do I wire up the Template() path in the JS script file?", "should_trigger": true},
-  {"query": "How do I export Page Designer pages from a content library using the b2c CLI? I want to get the JSON for my homepage.", "should_trigger": false},
-  {"query": "I need to add an isloop inside my ISML template to iterate over product tiles. How does the loopstate variable work with odd/even rows?", "should_trigger": false}
+  {"query": "I created a new component type for a hero banner with an image, headline, and CTA button, but it doesn't show up in the Page Designer editor when I try to add it to a page. The JSON file is in experience/components/assets/. What could be wrong?", "should_trigger": true},
+  {"query": "I need to build a page type for a landing page with three regions: a full-width hero at the top, a two-column content area in the middle, and a product carousel at the bottom. How do I define the regions with size constraints in the page type JSON?", "should_trigger": true},
+  {"query": "My component type is in a subfolder under experience/components/commerce/product_tile_grid. I'm confused about what the component type ID should be and how the rendering script path maps to the folder structure. Can you explain the naming convention?", "should_trigger": true},
+  {"query": "I have an enum attribute in my component type definition and the values are showing as '[object Object]' in the editor instead of the display labels. I defined them as objects with value and display_value properties. What's the correct format?", "should_trigger": true},
+  {"query": "I need to create a component that lets merchandisers pick a category and display its products. The component should have a category attribute, a 'products per row' dropdown, and a toggle for showing/hiding prices. Walk me through the full attribute_definition_groups setup.", "should_trigger": true},
+  {"query": "We're building a modular homepage where merchandisers can arrange content blocks freely. I need a page type with a single region that accepts up to 20 components of any type. How do I configure the region to be flexible but set a max component count?", "should_trigger": true},
+  {"query": "How do I export Page Designer pages from our production site using the CLI so I can import them into our staging sandbox?", "should_trigger": false},
+  {"query": "I need to add an isloop inside my ISML template to iterate over product tiles and alternate the row background color. How does the loop status variable work for even/odd detection?", "should_trigger": false},
+  {"query": "How do I create a content slot configuration that shows different banners based on customer group? I want to target logged-in vs guest users.", "should_trigger": false},
+  {"query": "I want to build a reusable template module for a product card that I can include from multiple ISML templates. What's the isinclude pattern for passing parameters?", "should_trigger": false}
 ]

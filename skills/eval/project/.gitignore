@@ -1,0 +1,6 @@
+# Claude Code creates these at runtime
+.claude/settings.json
+
+# Eval harness populates skills at runtime
+.claude/skills/
+!.claude/skills/.gitignore

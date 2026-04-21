@@ -13,6 +13,7 @@
     "../packages/b2c-tooling-sdk/src/operations/jobs/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/logs/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/mrt/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/debug/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/ods/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/users/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/roles/index.ts",
@@ -32,7 +33,11 @@
   ],
   "exclude": ["**/*.generated.ts"],
   "out": "./api",
-  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter", "typedoc-vitepress-theme"],
+  "frontmatterGlobals": {
+    "editLink": false,
+    "lastUpdated": false
+  },
   "tsconfig": "../packages/b2c-tooling-sdk/tsconfig.json",
   "readme": "./api-readme.md",
   "excludePrivate": true,

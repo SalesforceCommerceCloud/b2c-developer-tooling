@@ -1,7 +1,12 @@
 [
-  {"query": "I need to add French Canadian (fr_CA) translations for our checkout flow. Where do I put the .properties files and how does the locale fallback chain work?", "should_trigger": true},
-  {"query": "How do I use Resource.msgf in an ISML template to display a parameterized message like 'You have {0} items in your cart'? I keep getting the raw key instead of the translated string.", "should_trigger": true},
-  {"query": "We're building a language switcher component for SFRA. How do I iterate over Site.current.allowedLocales and generate locale-specific URLs for each language?", "should_trigger": true},
-  {"query": "How do I set the localizable-flag on a custom attribute in system-objecttype-extensions.xml so it can have different values per locale?", "should_trigger": false},
-  {"query": "I need to configure which locales are enabled for our B2C Commerce site in Business Manager. Where are the site locale settings?", "should_trigger": false}
+  {"query": "We're launching in Canada and need to add French translations for the entire checkout flow. Where do the translation files go in the cartridge and how does the fallback work if a key is missing in fr_CA?", "should_trigger": true},
+  {"query": "I have a message that says 'You have X items in your cart' and I need it to work in English and Spanish with the number filled in dynamically. How do I set up parameterized translated strings in my templates?", "should_trigger": true},
+  {"query": "We need a language switcher dropdown in the header that lets customers switch between English, French, and German. How do I get the list of available locales and generate the right URLs for each?", "should_trigger": true},
+  {"query": "Our site needs to display prices in EUR for Germany and GBP for the UK, with the correct currency symbol placement and decimal formatting for each locale. How does the currency formatting work in ISML templates and controllers?", "should_trigger": true},
+  {"query": "I'm getting the wrong date format on our Japanese locale — it's showing MM/DD/YYYY instead of YYYY/MM/DD. Where do I configure the date and time display patterns per locale in SFRA? Is it in the .properties files or somewhere else?", "should_trigger": true},
+  {"query": "We have about 2000 translation keys across our cartridges and some are definitely missing French translations. Is there a way to audit which keys don't have translations in a specific locale? Also, how does Resource.msg handle a missing key — does it fall back to default or throw an error?", "should_trigger": true},
+  {"query": "I'm adding a custom attribute to the Product object and I need it to support different values per locale. What flag do I set in the metadata XML?", "should_trigger": false},
+  {"query": "Where in Business Manager do I enable or disable locales for our storefront site? I can't find the setting.", "should_trigger": false},
+  {"query": "I need to set up a React i18n system for our headless storefront using react-intl. How do I load locale bundles dynamically and handle pluralization in JSX?", "should_trigger": false},
+  {"query": "Our Node.js middleware service needs to format dates and numbers based on the Accept-Language header. Should I use Intl.DateTimeFormat or a library like date-fns with locales?", "should_trigger": false}
 ]

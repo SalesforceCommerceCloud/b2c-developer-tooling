@@ -17,9 +17,23 @@
 }
 
 /* Hero image sizing */
+.VPHero .container {
+  max-width: calc(var(--vp-layout-max-width) - 100px);
+}
+
 .VPHero .image-container {
-  max-width: 550px !important;
+  max-width: 600px !important;
   padding: 24px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 960px) {
+  .VPHero .image-container {
+    margin-bottom: 0;
+    transform: none;
+    max-width: 100% !important;
+    margin-left: 60px;
+  }
 }
 
 .VPHero .image-container .image-bg {
@@ -27,8 +41,21 @@
 }
 
 .VPHero .image-container img {
-  max-width: 550px !important;
-  /* width: 100%; */
+  max-width: 600px !important;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+/* Home features icon treatment */
+.VPFeature .box .icon {
+  background-color: var(--vp-c-brand-soft);
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.VPFeature .box .icon img {
+  width: 32px;
+  height: 32px;
 }

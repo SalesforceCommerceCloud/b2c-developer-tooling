@@ -1,7 +1,12 @@
 [
-  {"query": "I need to create a new B2C cartridge called app_custom_loyalty with a controller and a hook. Can I use the scaffold commands to generate these?", "should_trigger": true},
-  {"query": "How do I scaffold a custom SCAPI endpoint for a loyalty points API? I want to generate the boilerplate with b2c scaffold custom-api.", "should_trigger": true},
-  {"query": "I want to generate a Page Designer component called heroCarousel in the content group. What's the scaffold command for that and can I do a dry-run first?", "should_trigger": true},
-  {"query": "How do I deploy my cartridge code to a B2C sandbox instance using the b2c CLI? I need to push cartridges and activate the code version.", "should_trigger": false},
-  {"query": "I'm writing a custom job step that processes orders in chunks. What's the pattern for implementing the read/process/write methods in the chunk step type?", "should_trigger": false}
+  {"query": "I'm starting a new loyalty feature and need a fresh cartridge called app_custom_loyalty with a controller and a hook wired up. What's the fastest way to set up the boilerplate?", "should_trigger": true},
+  {"query": "I need to add a new custom REST API endpoint for a loyalty points service. I want the boilerplate generated — the route definition, the schema, and the handler script. Can you set that up?", "should_trigger": true},
+  {"query": "I want to create a Page Designer component called heroCarousel for our homepage. I'd like to preview what files get created before actually writing them. How do I generate it?", "should_trigger": true},
+  {"query": "We're starting a new project and I need to generate two controllers — one for account pages and one for the wishlist feature — along with their corresponding ISML templates. Can you scaffold both at once?", "should_trigger": true},
+  {"query": "I need to wire up a new hook for the order placement flow. I want the hook definition, the registration in hooks.json, and a skeleton implementation script. What's the quickest way to generate all of that?", "should_trigger": true},
+  {"query": "I'm adding a scheduled job to our cartridge that processes abandoned carts. I need the step type definition and the skeleton module with the execute function. Can you generate the boilerplate files for a new job step?", "should_trigger": true},
+  {"query": "How do I push my cartridge code to a sandbox instance and activate the new code version?", "should_trigger": false},
+  {"query": "I'm implementing a batch job that processes orders in chunks. What's the read/process/write pattern and where does the step type definition go?", "should_trigger": false},
+  {"query": "I need to configure the attributes and rendering template for an existing Page Designer component. How do I add a new attribute group to the component's JSON definition?", "should_trigger": false},
+  {"query": "My controller is throwing an error when I try to call a model method. How do I debug the server-side script execution and check the request parameters?", "should_trigger": false}
 ]

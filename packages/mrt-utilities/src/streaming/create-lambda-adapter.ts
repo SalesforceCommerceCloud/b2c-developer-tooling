@@ -115,7 +115,7 @@ export function createStreamingLambdaAdapter(
 
       if (isStreamOpen && typeof responseStream.write === 'function') {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        responseStream.write(`HTTP/1.1 500 Internal Server Error\r\n\r\nInternal Server Error: ${errorMessage}`);
+        responseStream.write(`Internal Server Error: ${errorMessage}`);
       } else {
         console.error('[error handler] Cannot write error - stream is closed');
       }
@@ -163,34 +163,20 @@ async function streamResponse(
       }
     };
 
+    // See events defined for hhtp.serverResponse interface here:
+    // https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpserverresponse
+
     // Handle response finish
-    expressResponse.once('finish', () => {
-      resolveOnce();
-    });
+    expressResponse.once('finish', resolveOnce);
+    // handle response close, either after a 'finish' or if underlying
+    // connection is closed early
+    expressResponse.once('close', resolveOnce);
 
     // Handle response errors
-    expressResponse.once('error', (err: Error) => {
-      rejectOnce(err);
-    });
+    expressResponse.once('error', rejectOnce);
 
     try {
-      app(expressRequest, expressResponse, (err) => {
-        if (err) {
-          console.error('Express app error:', err);
-          rejectOnce(err);
-        } else {
-          // If response has finished, resolveOnce will be called by the finish event
-          // Otherwise, resolve after a short delay to allow async operations
-          if (expressResponse.finished) {
-            resolveOnce();
-          } else {
-            // Wait a bit for the response to finish
-            setTimeout(() => {
-              resolveOnce();
-            }, 10);
-          }
-        }
-      });
+      app(expressRequest, expressResponse);
     } catch (error) {
       console.error('Error in streamResponse:', error);
       rejectOnce(error as Error);
@@ -530,6 +516,7 @@ export function createExpressResponse(
 
     if (!isStreamOpen()) {
       console.error('Cannot initialize response - stream is closed');
+      emitCloseOnce(response);
       return;
     }
 
@@ -557,7 +544,7 @@ export function createExpressResponse(
     // Create HttpResponseStream with metadata
     // This writes the HTTP status and headers to the stream
     const metadata: StreamMetadata = {
-      statusCode,
+      statusCode: response.statusCode || statusCode,
       headers,
     };
 
@@ -569,6 +556,15 @@ export function createExpressResponse(
     metadata.headers = convertHeaders(metadata.headers);
 
     httpResponseStream = awslambda.HttpResponseStream.from(responseStream, metadata);
+
+    // Bind 'finish' and 'close' handlers to emit the same events on the response object
+    httpResponseStream.on('finish', () => {
+      response.finished = true;
+      response.emit('finish');
+    });
+    httpResponseStream.on('close', () => {
+      response.emit('close');
+    });
 
     // Set up compression stream if compression is enabled
     // The compression stream pipes to httpResponseStream, which pipes to responseStream
@@ -670,7 +666,7 @@ export function createExpressResponse(
       reasonPhrase = undefined;
     }
 
-    statusCode = code || statusCode;
+    statusCode = code || this.statusCode || statusCode;
     this.statusCode = statusCode;
 
     // Set statusMessage if provided
@@ -699,6 +695,7 @@ export function createExpressResponse(
   res.write = function (chunk: string | Buffer | Uint8Array): boolean {
     if (!isStreamOpen()) {
       console.error(`Cannot write - stream is closed`);
+      emitCloseOnce(this);
       return false;
     }
 
@@ -729,6 +726,15 @@ export function createExpressResponse(
     }
   };
 
+  let emittedClose = false;
+  const emitCloseOnce = (response: ExpressResponse) => {
+    if (emittedClose) {
+      return;
+    }
+    response.emit('close');
+    emittedClose = true;
+  };
+
   /**
    * Ends the appropriate stream(s) and emits the finish event
    * If compression is enabled, ends the compression stream which will automatically
@@ -737,40 +743,21 @@ export function createExpressResponse(
    * @param response - The Express response object to emit finish event on
    */
   const endStream = (response: ExpressResponse): void => {
-    if (shouldCompress && compressionStream) {
-      try {
-        // Flush compression stream to ensure all buffered data is written
-        _flush();
-        // End compression stream - this will automatically end httpResponseStream
-        // due to the pipe with { end: true } option
-        compressionStream.end(() => {
-          response.finished = true;
-          response.emit('finish');
-        });
-      } catch (error) {
-        console.error(`Error ending compression stream:`, error);
-        // Still emit finish even if there was an error
-        response.finished = true;
-        response.emit('finish');
-      }
-    } else if (httpResponseStream && httpResponseStream.writable) {
-      // No compression, end httpResponseStream directly
+    const stream = (shouldCompress && compressionStream) || (httpResponseStream?.writable && httpResponseStream);
+    if (stream) {
       try {
         _flush();
-        httpResponseStream.end(() => {
-          response.finished = true;
-          response.emit('finish');
-        });
+        stream.end();
       } catch (error) {
-        console.error(`Error ending httpResponseStream:`, error);
+        console.error(`Error ending stream:`, error);
         response.finished = true;
-        response.emit('finish');
+        emitCloseOnce(response);
       }
     } else {
       console.error(`Cannot call end() - stream is closed`);
       // Still emit finish to prevent hanging
       response.finished = true;
-      response.emit('finish');
+      emitCloseOnce(response);
     }
   };
 
@@ -778,6 +765,7 @@ export function createExpressResponse(
   res.end = function (chunk?: string | Buffer | Uint8Array) {
     if (!isStreamOpen()) {
       console.error(`Cannot end - stream is already closed`);
+      emitCloseOnce(this);
       return this;
     }
 
@@ -808,9 +796,8 @@ export function createExpressResponse(
   // Add Express-specific methods that aren't in ServerResponse
   res.status = function (code: number, message?: string) {
     this.statusCode = code;
-    statusCode = code;
     if (message !== undefined) {
-      statusMessage = message;
+      this.statusMessage = message;
     }
     return this;
   };
@@ -855,6 +842,7 @@ export function createExpressResponse(
     if (!responseStarted) {
       if (!isStreamOpen()) {
         console.error('[res.flushHeaders] Cannot flush headers - stream is closed');
+        emitCloseOnce(this);
         return this;
       }
 
@@ -901,6 +889,7 @@ export function createExpressResponse(
   res.flush = function () {
     if (!isStreamOpen()) {
       console.error(`Cannot flush - stream is closed`);
+      emitCloseOnce(this);
       return this;
     }
 

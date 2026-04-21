@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="skillsGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00A1E0"/>
+      <stop offset="1" stop-color="#0070D2"/>
+    </linearGradient>
+  </defs>
+  <path d="M20 4l3.2 8.8L32 16l-8.8 3.2L20 28l-3.2-8.8L8 16l8.8-3.2L20 4z" fill="url(#skillsGrad)"/>
+  <path d="M35 24l1.8 4.9L41.7 30.7l-4.9 1.8L35 37.4l-1.8-4.9L28.3 30.7l4.9-1.8L35 24z" fill="url(#skillsGrad)" opacity="0.75"/>
+  <path d="M12 34l1.2 3.3 3.3 1.2-3.3 1.2L12 43l-1.2-3.3L7.5 38.5l3.3-1.2L12 34z" fill="url(#skillsGrad)" opacity="0.55"/>
+</svg>

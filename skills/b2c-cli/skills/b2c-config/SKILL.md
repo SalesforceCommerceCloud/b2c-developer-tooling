@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: View and debug b2c CLI configuration and understand where credentials come from. Always reference when using the CLI to inspect configuration, manage instances, retrieve OAuth tokens, or set up IDE integration. Also use when authentication fails, connection errors occur, or the wrong instance is being used.
+description: Inspect and debug CLI configuration, instance connections, and authentication. Use this skill whenever the user needs to check which dw.json or credentials are active, manage multiple instance profiles, retrieve OAuth tokens for scripting, troubleshoot authentication failures or connection errors, or integrate with VS Code or other editors. Also use when environment variables override config or the wrong sandbox is being targeted -- even if they just say 'why is it connecting to the wrong instance' or 'get me an access token'.
 ---
 
 # B2C Config Skill

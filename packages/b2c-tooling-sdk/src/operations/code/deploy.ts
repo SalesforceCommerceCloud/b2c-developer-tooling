@@ -16,6 +16,22 @@ const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 /**
  * Options for deploying cartridges.
  */
+/** Progress info passed to the upload onProgress callback. */
+export interface UploadProgressInfo {
+  /** Current operation phase */
+  phase: 'archiving' | 'uploading' | 'unzipping' | 'cleanup';
+  /** Seconds elapsed since the current phase started */
+  elapsedSeconds: number;
+}
+
+/**
+ * Options for upload progress reporting.
+ */
+export interface UploadOptions {
+  /** Callback for progress updates. Called when a phase starts (elapsedSeconds=0) and periodically thereafter. */
+  onProgress?: (info: UploadProgressInfo) => void;
+}
+
 export interface DeployOptions extends FindCartridgesOptions {
   /** Activate the code version after deploy */
   activate?: boolean;
@@ -23,6 +39,8 @@ export interface DeployOptions extends FindCartridgesOptions {
   reload?: boolean;
   /** Delete existing cartridges before uploading */
   delete?: boolean;
+  /** Callback for progress updates during long-running operations */
+  onProgress?: UploadOptions['onProgress'];
 }
 
 /**
@@ -125,7 +143,11 @@ export async function deleteCartridges(instance: B2CInstance, cartridges: Cartri
  * await uploadCartridges(instance, cartridges);
  * ```
  */
-export async function uploadCartridges(instance: B2CInstance, cartridges: CartridgeMapping[]): Promise<void> {
+export async function uploadCartridges(
+  instance: B2CInstance,
+  cartridges: CartridgeMapping[],
+  options?: UploadOptions,
+): Promise<void> {
   const logger = getLogger();
   const codeVersion = instance.config.codeVersion;
 
@@ -140,8 +162,22 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
   const webdav = instance.webdav;
   const now = Date.now();
   const uploadPath = `Cartridges/_sync-${now}.zip`;
+  const onProgress = options?.onProgress;
+
+  // Progress helper: fires immediately (0s) then every 5s until stopped
+  const PROGRESS_INTERVAL_MS = 5_000;
+  function startProgress(phase: UploadProgressInfo['phase']): () => void {
+    const start = Date.now();
+    onProgress?.({phase, elapsedSeconds: 0});
+    if (!onProgress) return () => {};
+    const interval = setInterval(() => {
+      onProgress({phase, elapsedSeconds: Math.round((Date.now() - start) / 1000)});
+    }, PROGRESS_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }
 
   // Create zip archive
+  onProgress?.({phase: 'archiving', elapsedSeconds: 0});
   logger.debug('Creating cartridge archive...');
   const zip = new JSZip();
 
@@ -157,11 +193,14 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
   logger.debug({size: buffer.length}, `Archive created: ${buffer.length} bytes`);
 
   // Upload archive
+  let stopProgress = startProgress('uploading');
   logger.debug({uploadPath}, 'Uploading archive...');
   await webdav.put(uploadPath, buffer, 'application/zip');
+  stopProgress();
   logger.debug('Archive uploaded');
 
   // Unzip on server
+  stopProgress = startProgress('unzipping');
   logger.debug('Unzipping archive on server...');
   const response = await webdav.request(uploadPath, {
     method: 'POST',
@@ -170,6 +209,7 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
       'Content-Type': 'application/x-www-form-urlencoded',
     },
   });
+  stopProgress();
 
   if (!response.ok) {
     const text = await response.text();
@@ -178,6 +218,7 @@ export async function uploadCartridges(instance: B2CInstance, cartridges: Cartri
   logger.debug('Archive unzipped');
 
   // Delete temporary archive (best-effort cleanup)
+  onProgress?.({phase: 'cleanup', elapsedSeconds: 0});
   try {
     await webdav.delete(uploadPath);
     logger.debug('Temporary archive deleted');
@@ -261,7 +302,7 @@ export async function findAndDeployCartridges(
   }
 
   // Upload cartridges
-  await uploadCartridges(instance, cartridges);
+  await uploadCartridges(instance, cartridges, {onProgress: options.onProgress});
 
   // Optionally activate or reload
   let activated = false;

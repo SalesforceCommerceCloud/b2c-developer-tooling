@@ -76,7 +76,12 @@ export async function invokeHook<TResult>(
   logger?: Logger,
 ): Promise<TResult | undefined> {
   try {
-    const mod = await dynamicImport(hookFilePath);
+    // On Windows, Node's dynamic import() rejects raw filesystem paths (backslashes,
+    // drive letters) and requires a file:// URL. pathToFileURL handles both POSIX
+    // and Windows correctly, so normalize before importing.
+    const {pathToFileURL} = await import('node:url');
+    const importSpecifier = pathToFileURL(hookFilePath).href;
+    const mod = await dynamicImport(importSpecifier);
     const hookFn = (mod.default ?? mod) as (...args: unknown[]) => Promise<TResult>;
 
     if (typeof hookFn !== 'function') {

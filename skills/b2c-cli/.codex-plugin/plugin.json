@@ -1,0 +1,40 @@
+{
+  "name": "b2c-cli",
+  "version": "1.1.0",
+  "description": "B2C CLI Skills for Salesforce Commerce Cloud development.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "sfra",
+    "scapi",
+    "ocapi"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "B2C CLI",
+    "shortDescription": "Use the Salesforce B2C Commerce CLI from your AI assistant.",
+    "longDescription": "Skills for driving the Salesforce B2C Commerce CLI — deploy cartridges, run jobs, manage On-Demand Sandboxes, stream logs, and perform WebDAV operations without leaving your editor.",
+    "developerName": "Salesforce",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "logo": "./assets/logo.svg",
+    "composerIcon": "./assets/logo.svg",
+    "brandColor": "#0D9DDA",
+    "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+    "defaultPrompt": [
+      "Deploy the cartridges in ./cartridges to my sandbox",
+      "Run the reindex job on my sandbox",
+      "Create a new On-Demand Sandbox with a 48-hour TTL",
+      "Tail the latest error logs from my instance"
+    ]
+  }
+}

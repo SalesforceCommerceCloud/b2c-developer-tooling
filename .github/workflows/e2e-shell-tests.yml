@@ -87,3 +87,67 @@ jobs:
           echo "Running E2E shell tests with realm: ${TEST_REALM}"
           cd packages/b2c-cli
           ./test/functional/e2e_cli_test.sh
+
+  e2e-shell-tests-windows:
+    runs-on: windows-latest
+    # Advisory rollout: surface Windows shell-test failures without blocking
+    # the Linux shell-test job while Windows-specific issues are triaged.
+    continue-on-error: true
+    environment: e2e-dev
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check for required secrets and vars
+        id: check-secrets
+        env:
+          SFCC_CLIENT_ID: ${{ vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          TEST_REALM: ${{ vars.TEST_REALM }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+        run: |
+          missing=""
+          [ -z "$SFCC_CLIENT_ID" ] && missing="$missing SFCC_CLIENT_ID"
+          [ -z "$SFCC_CLIENT_SECRET" ] && missing="$missing SFCC_CLIENT_SECRET"
+          [ -z "$TEST_REALM" ] && missing="$missing TEST_REALM"
+          [ -z "$SFCC_ACCOUNT_MANAGER_HOST" ] && missing="$missing SFCC_ACCOUNT_MANAGER_HOST"
+          [ -z "$SFCC_SANDBOX_API_HOST" ] && missing="$missing SFCC_SANDBOX_API_HOST"
+          [ -z "$SFCC_SHORTCODE" ] && missing="$missing SFCC_SHORTCODE"
+
+          if [ -z "$missing" ]; then
+            echo "has-secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "Windows E2E shell tests skipped - missing required variables:$missing" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Setup Windows machine
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        uses: ./.github/actions/setup-windows
+        with:
+          node-version: '24'
+
+      - name: Build packages
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        run: pnpm -r run build
+
+      - name: Run E2E Shell Tests
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        env:
+          SFCC_CLIENT_ID: ${{ vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          TEST_REALM: ${{ vars.TEST_REALM }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
+          CURL_EXTRA_HEADERS: ${{ secrets.CURL_EXTRA_HEADERS }}
+        run: |
+          echo "Running Windows E2E shell tests with realm: ${TEST_REALM}"
+          cd packages/b2c-cli
+          ./test/functional/e2e_cli_test.sh

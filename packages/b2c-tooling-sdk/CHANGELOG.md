@@ -1,5 +1,45 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.4.0
+
+### Minor Changes
+
+- [#366](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/366) [`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be) - Add `b2c code download` command to download cartridge code from a B2C Commerce instance, with support for cartridge filtering, mirror mode, and progress reporting (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#355](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/355) [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501) - `b2c setup skills` now prompts to overwrite already-installed skills in interactive mode instead of silently skipping them with a "use --update to overwrite" message. The existing `--update` and `--force` flags still work non-interactively. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#365](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/365) [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859) - Skills installer (`b2c setup skills`) now resolves the latest skills release by querying GitHub for releases that actually carry skills zips, instead of relying on GitHub's opinionated "latest release" endpoint. Falls back to a CDN-backed lookup when the GitHub API is rate-limited. Zip downloads continue to use the GitHub release CDN with no API calls. Resolved versions are cached locally for 1 hour to keep consecutive installs fast. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.3.2
+
+### Patch Changes
+
+- [`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a) - Add `--wait` / `--no-wait` flag to `b2c job import` command. Import waits for completion by default (preserving existing behavior); use `--no-wait` to return immediately after the job starts. Also adds `--poll-interval` flag for controlling poll frequency. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.3.1
+
+### Patch Changes
+
+- [`30de66b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/30de66bf59c250c5382a7427ba475049c68566cd) - Fix broken Agentforce skills documentation URL (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.3.0
+
+### Minor Changes
+
+- [#337](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/337) [`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e) - Add Agentforce Vibes (`--ide agentforce-vibes`) as a supported IDE target for `setup skills`, installing to `.a4drules/skills/`. Add `--directory` flag for custom installation paths. Change `manual` default directory to `.agents/skills/`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.2.0
+
+### Minor Changes
+
+- [`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46) - Add B2C Commerce script debugger with SDAPI 2.0 DAP adapter (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#331](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/331) [`e6c6226`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6c6226c256b8d181917cc8c66fa4d7bf992e106) - Fix `code watch` WebDAV lock conflicts by serializing upload and delete operations so only one batch runs at a time. Failed uploads are now retried automatically. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.1.0
 
 ### Minor Changes

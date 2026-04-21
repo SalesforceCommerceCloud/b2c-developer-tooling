@@ -1,5 +1,5 @@
 ---
-description: Commands for deploying cartridges, activating code versions, and watching for file changes on B2C Commerce instances.
+description: Commands for deploying, downloading, activating code versions, and watching for file changes on B2C Commerce instances.
 ---
 
 # Code Commands
@@ -12,12 +12,12 @@ Code commands use different authentication depending on the operation:
 
 | Operation | Auth Required |
 |-----------|--------------|
-| `code deploy`, `code watch` | WebDAV (Basic Auth or OAuth) |
+| `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth or OAuth) |
 | `code list`, `code activate`, `code delete` | OAuth + OCAPI |
 
-### WebDAV Operations (deploy, watch)
+### WebDAV Operations (deploy, download, watch)
 
-File upload operations require WebDAV access. Basic authentication is recommended:
+File transfer operations require WebDAV access. Basic authentication is recommended:
 
 ```bash
 export SFCC_USERNAME=your-bm-username
@@ -154,6 +154,78 @@ b2c code deploy
 ### Cartridge Discovery
 
 Cartridges are discovered by searching for `.project` files (Eclipse project markers commonly used in SFCC development). The directory containing the `.project` file is considered a cartridge.
+
+---
+
+## b2c code download
+
+Download cartridge code from a B2C Commerce instance.
+
+This command triggers server-side zipping of the code version, downloads the archive, and extracts cartridges locally. It is the inverse of `code deploy`.
+
+### Usage
+
+```bash
+b2c code download [CARTRIDGEPATH]
+```
+
+### Arguments
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `CARTRIDGEPATH` | Path to search for local cartridges (used with `--mirror`) | `.` (current directory) |
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--output`, `-o` | Output directory for downloaded cartridges | `cartridges` |
+| `--mirror`, `-m` | Extract cartridges to their local project locations | `false` |
+| `--cartridge`, `-c` | Include specific cartridge(s) (can be repeated) | |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (can be repeated) | |
+
+### Examples
+
+```bash
+# Download all cartridges from the active code version
+b2c code download --server my-sandbox.demandware.net
+
+# Download to a specific output directory
+b2c code download -o ./downloaded
+
+# Download a specific code version
+b2c code download --server my-sandbox.demandware.net --code-version v1
+
+# Download only specific cartridges
+b2c code download -c app_storefront_base -c plugin_applepay
+
+# Exclude certain cartridges
+b2c code download -x test_cartridge -x int_debug
+
+# Mirror: extract to local cartridge project locations
+b2c code download --mirror
+
+# Using environment variables
+export SFCC_SERVER=my-sandbox.demandware.net
+export SFCC_CODE_VERSION=v1
+export SFCC_USERNAME=my-user
+export SFCC_PASSWORD=my-access-key
+b2c code download -o ./backup
+```
+
+### Mirror Mode
+
+With `--mirror`, instead of extracting all cartridges into the output directory, each cartridge is extracted to its local project location (discovered via `.project` files, same as deploy). This is useful for syncing remote code changes back to your local project.
+
+If a cartridge exists remotely but not locally, it is extracted to the output directory as a fallback.
+
+### Notes
+
+- If no `--code-version` is specified, the command auto-discovers the active code version via OCAPI (requires OAuth credentials)
+- Existing file permissions are preserved when overwriting files
+- The server-side zip is cleaned up automatically after download
 
 ---
 

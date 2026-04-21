@@ -16,7 +16,8 @@
       "license": "Apache-2.0",
       "source": "./skills/b2c-cli",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.1.0"
     },
     {
       "name": "b2c",
@@ -27,18 +28,8 @@
       "license": "Apache-2.0",
       "source": "./skills/b2c",
       "category": "productivity",
-      "strict": false
-    },
-    {
-      "name": "b2c-experimental",
-      "description": "Experimental B2C Commerce skills including scaffold templates. Not installed by default.",
-      "author": {
-        "name": "Salesforce"
-      },
-      "license": "Apache-2.0",
-      "source": "./skills/b2c-experimental",
-      "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.1.0"
     },
     {
       "name": "b2c-dx-mcp",

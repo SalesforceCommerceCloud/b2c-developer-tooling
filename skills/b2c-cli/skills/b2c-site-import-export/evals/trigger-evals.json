@@ -1,7 +1,12 @@
 [
-  {"query": "I need to add a custom attribute called 'vendorCode' to the Product system object on my sandbox. How do I set up the XML and import it?", "should_trigger": true},
-  {"query": "How do I import a site archive directory into my B2C instance? I have a folder with metadata XML files ready to go.", "should_trigger": true},
-  {"query": "I'm trying to create a custom object type called FeatureFlags with a boolean 'enabled' attribute. What's the XML format for custom-objecttype-definitions.xml?", "should_trigger": true},
-  {"query": "How do I upload a cartridge zip file to my sandbox using WebDAV?", "should_trigger": false},
-  {"query": "I need to export all my product data from Business Manager as a CSV. What's the best approach?", "should_trigger": false}
+  {"query": "I need to add a 'loyaltyTier' attribute to the Customer profile on our sandbox. I've got some XML written but I'm not sure about the right directory structure or how to push it up to the instance.", "should_trigger": true},
+  {"query": "We have a folder with metadata XML and preferences files that define our feature flags. How do I get this imported onto our dev instance so the new attributes show up in Business Manager?", "should_trigger": true},
+  {"query": "I'm setting up a new custom object type for storing per-site API credentials. What does the XML format look like for the type definition and what does the import directory layout need to be?", "should_trigger": true},
+  {"query": "I need to export the full site configuration from our staging instance so I can diff it against production before we go live. What's the best way to pull down all the metadata, preferences, and custom object definitions as XML files?", "should_trigger": true},
+  {"query": "We're setting up a new sandbox and I need to replicate the entire configuration from another instance — site preferences, custom attributes, payment methods, shipping configs, the works. How do I package all that into a site archive and import it?", "should_trigger": true},
+  {"query": "I have a sites/site_template/meta directory with a bunch of XML files but the import keeps failing with a schema validation error. The error message references system-objecttype-extensions.xml line 47. How do I debug what's wrong with my archive structure?", "should_trigger": true},
+  {"query": "I need to download the log files from my sandbox to debug a checkout error that happened this morning.", "should_trigger": false},
+  {"query": "How do I push my cartridge code changes up to the sandbox so I can test them? I've been editing files locally in my IDE.", "should_trigger": false},
+  {"query": "I want to import a product catalog from a CSV file with 10,000 SKUs. The CSV has columns for product ID, name, price, and image URL. What's the fastest way to get this data into the system?", "should_trigger": false},
+  {"query": "I need to deploy my updated SFRA cartridge code to the sandbox. I've made changes to controllers and templates in app_storefront_base. What's the upload command?", "should_trigger": false}
 ]

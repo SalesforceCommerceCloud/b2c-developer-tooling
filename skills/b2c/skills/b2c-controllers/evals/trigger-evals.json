@@ -1,7 +1,12 @@
 [
-  {"query": "I need to create a new SFRA controller that handles GET requests to show a store locator page and POST requests to return JSON search results. How do I use server.get and server.post with middleware?", "should_trigger": true},
-  {"query": "How do I extend the existing Cart controller to append custom data to the Cart-Show route? I want to add loyalty points info to the view data without replacing the whole controller.", "should_trigger": true},
-  {"query": "I'm building a classic (non-SFRA) controller endpoint that returns JSON for an AJAX call. How do I use exports with .public = true and write JSON to the response?", "should_trigger": true},
-  {"query": "How do I generate a URL to the Product-Show endpoint in an ISML template? I need to pass the pid as a query parameter using URLUtils.", "should_trigger": false},
-  {"query": "I need to create a new CLI command in oclif that lists all the controllers deployed to a sandbox. What's the right way to add it to packages/b2c-cli?", "should_trigger": false}
+  {"query": "I need to build a store locator page that accepts GET requests to show the form and POST requests with a zip code to return nearby stores as JSON. The GET should render an ISML template and the POST should return res.json. How do I structure this with middleware?", "should_trigger": true},
+  {"query": "I want to extend the existing Cart-Show route to append loyalty points data to the view without replacing the original controller. I heard I can use server.append -- how does that work and what are the gotchas with view data merging?", "should_trigger": true},
+  {"query": "We have a legacy pipeline-based controller that needs to be converted to SFRA style. The current controller uses exports and response.renderJSON. What's the equivalent pattern using server.get and res.json?", "should_trigger": true},
+  {"query": "I'm building an AJAX endpoint that needs to check if the user is logged in before processing the request. How do I chain middleware functions in the route definition so the auth check runs before my handler?", "should_trigger": true},
+  {"query": "My controller route is returning a 500 error and I can't figure out why. The server.get callback looks correct but I think the issue is with how I'm calling next() in my custom middleware. How does the middleware chain execution order work?", "should_trigger": true},
+  {"query": "I need to create a controller that handles form submissions for a contact-us page. The form data comes as POST parameters and I need to validate fields, show errors back on the same page, or redirect to a thank-you page on success. What's the full pattern?", "should_trigger": true},
+  {"query": "How do I generate a URL to the Product-Show route from inside a script module? I need to build a redirect URL with query parameters for a product ID and color variant.", "should_trigger": false},
+  {"query": "I need to create a new CLI command in the b2c-cli package that lists all cartridges on a sandbox. What base class should I extend and how do I add flags?", "should_trigger": false},
+  {"query": "I want to add a custom REST API endpoint under /custom/ that external systems can call. How do I set up the api.json and schema.yaml for the route?", "should_trigger": false},
+  {"query": "How do I register a hook that runs after every basket modification via the Shop API? I want to recalculate shipping promotions.", "should_trigger": false}
 ]

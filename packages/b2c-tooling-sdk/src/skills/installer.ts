@@ -88,7 +88,7 @@ async function copyDirectory(source: string, target: string): Promise<number> {
 export function isSkillInstalled(
   skillName: string,
   ide: IdeType,
-  options: {global: boolean; projectRoot?: string},
+  options: {global: boolean; projectRoot?: string; directory?: string},
 ): boolean {
   const installPath = getSkillInstallPath(ide, skillName, options);
   return fs.existsSync(installPath);
@@ -140,6 +140,7 @@ export async function installSkills(
         const targetPath = getSkillInstallPath(ide, sanitizedName, {
           global: options.global,
           projectRoot: options.projectRoot,
+          directory: options.directory,
         });
 
         // Get the base directory for path safety validation

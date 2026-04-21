@@ -1,7 +1,12 @@
 [
-  {"query": "I need to cache external API responses in my B2C cartridge using CacheMgr. How do I set up caches.json and use the get/put methods?", "should_trigger": true},
-  {"query": "My custom cache entries keep disappearing. What's the max entry size and when do caches get invalidated in B2C Commerce?", "should_trigger": true},
-  {"query": "How do I define a cache with expireAfterSeconds in caches.json and reference it from package.json in my cartridge?", "should_trigger": true},
-  {"query": "How do I configure HTTP caching headers for my SCAPI custom endpoint responses?", "should_trigger": false},
-  {"query": "I want to improve page load performance on my storefront. Should I enable CDN caching or use page-level caching in B2C?", "should_trigger": false}
+  {"query": "I'm calling an external pricing API on every product detail page hit and it's too slow. I want to cache the responses for 5 minutes per product ID. How do I set up the caches.json definition and use the cache API in my script?", "should_trigger": true},
+  {"query": "My cached data disappears way sooner than the TTL I configured. The cache definition says 3600 seconds but entries seem to vanish after a minute. What affects cache eviction and what are the size limits I need to worry about?", "should_trigger": true},
+  {"query": "I need to implement a cache warming strategy for our category navigation data. On cache miss I want to load from the database and populate the cache. How do I use the loader pattern with the cache get method?", "should_trigger": true},
+  {"query": "We have a custom cache storing currency exchange rates that should be invalidated when a job updates the rates. How do I programmatically clear specific cache entries or the entire cache region from a job script?", "should_trigger": true},
+  {"query": "I'm defining caches.json for the first time in my cartridge. I need two cache regions -- one for API responses with a 10-minute TTL and one for computed recommendation data with a 1-hour TTL. What's the full JSON schema and how do I reference it in package.json?", "should_trigger": true},
+  {"query": "Our site has multiple cartridges each defining their own caches. Can cache regions from different cartridges conflict? How does the platform resolve caches.json across the cartridge path and what happens if two cartridges define the same region name?", "should_trigger": true},
+  {"query": "How do I set Cache-Control and Expires headers on my SCAPI custom endpoint response so CDN and browser caching work correctly?", "should_trigger": false},
+  {"query": "Our storefront pages are loading slowly and I think CDN caching isn't working. How do I check if pages are being served from the CDN cache and configure page-level caching rules?", "should_trigger": false},
+  {"query": "I need to store frequently accessed configuration data per site. Should I use custom objects or is there a better persistence mechanism for key-value pairs?", "should_trigger": false},
+  {"query": "How do I implement Redis caching for our headless storefront's Node.js middleware layer that sits in front of Commerce APIs?", "should_trigger": false}
 ]

@@ -1,6 +1,6 @@
 ---
 name: b2c-scapi-schemas
-description: Browse and retrieve (B2C/SFCC/Demandware) SCAPI OpenAPI schemas with the b2c cli. Always reference when using the CLI to browse SCAPI schemas, check API request/response formats, explore available endpoints, or understand SCAPI data models.
+description: Browse and retrieve SCAPI OpenAPI schema specifications. Use this skill whenever the user needs to list available SCAPI APIs, inspect endpoint paths or request/response shapes, explore data models for products or orders, check which fields an API returns, or understand SCAPI versioning. Also use when looking up API details before building an integration -- even if they just say 'what fields does the product API return' or 'show me the SCAPI endpoints'.
 ---
 
 # B2C SCAPI Schemas Skill
@@ -9,17 +9,20 @@ Use the `b2c` CLI plugin to browse and retrieve SCAPI OpenAPI schema specificati
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli scapi schemas list`).
 
-## Required: Tenant ID
+## Configuration
 
-The `--tenant-id` flag is **required** for all commands. The tenant ID identifies your B2C Commerce instance.
+Values like `tenantId` and `shortCode` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
 
-**Important:** The tenant ID is NOT the same as the organization ID:
-- **Tenant ID**: `zzxy_prd` (used with commands that require `--tenant-id`)
+## Tenant ID vs. Organization ID
+
+The tenant ID identifies your B2C Commerce instance for SCAPI calls. It is **not** the same as the organization ID:
+
+- **Tenant ID**: `zzxy_prd` (the `tenantId` value in dw.json, or `--tenant-id` override)
 - **Organization ID**: `f_ecom_zzxy_prd` (used in SCAPI URLs, has `f_ecom_` prefix)
 
 ### Deriving Tenant ID from Hostname
 
-For sandbox instances, you can derive the tenant ID from the hostname by replacing hyphens with underscores:
+For sandbox instances, derive the tenant ID from the hostname by replacing hyphens with underscores:
 
 | Hostname | Tenant ID |
 |----------|-----------|
@@ -34,24 +37,27 @@ For production instances, use your realm and instance identifier (e.g., `zzxy_pr
 ### List Available Schemas
 
 ```bash
-# list all available SCAPI schemas
-b2c scapi schemas list --tenant-id zzxy_prd
+# list all available SCAPI schemas (uses configured tenant)
+b2c scapi schemas list
 
 # list with JSON output
-b2c scapi schemas list --tenant-id zzxy_prd --json
+b2c scapi schemas list --json
+
+# target a different tenant than the active config
+b2c scapi schemas list --tenant-id zzxy_prd
 ```
 
 ### Filter Schemas
 
 ```bash
 # filter by API family (e.g., product, checkout, search)
-b2c scapi schemas list --tenant-id zzxy_prd --api-family product
+b2c scapi schemas list --api-family product
 
 # filter by API name
-b2c scapi schemas list --tenant-id zzxy_prd --api-name shopper-products
+b2c scapi schemas list --api-name shopper-products
 
 # filter by status
-b2c scapi schemas list --tenant-id zzxy_prd --status current
+b2c scapi schemas list --status current
 ```
 
 ### Get Schema (Collapsed/Outline - Default)
@@ -60,10 +66,10 @@ By default, schemas are output in a collapsed format optimized for context effic
 
 ```bash
 # get collapsed schema (paths show methods, schemas show names only)
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd
+b2c scapi schemas get product shopper-products v1
 
 # save to file
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd > schema.json
+b2c scapi schemas get product shopper-products v1 > schema.json
 ```
 
 ### Get Schema with Selective Expansion
@@ -72,20 +78,20 @@ Expand only the parts of the schema you need:
 
 ```bash
 # expand specific paths
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-paths /products,/products/{productId}
+b2c scapi schemas get product shopper-products v1 --expand-paths /products,/products/{productId}
 
 # expand specific schemas
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-schemas Product,ProductResult
+b2c scapi schemas get product shopper-products v1 --expand-schemas Product,ProductResult
 
 # combine expansions
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-paths /products --expand-schemas Product
+b2c scapi schemas get product shopper-products v1 --expand-paths /products --expand-schemas Product
 ```
 
 ### Get Full Schema
 
 ```bash
 # get full schema without any collapsing
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --expand-all
+b2c scapi schemas get product shopper-products v1 --expand-all
 ```
 
 ### List Available Paths/Schemas/Examples
@@ -94,40 +100,41 @@ Discover what's available in a schema before expanding:
 
 ```bash
 # list all paths in the schema
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-paths
+b2c scapi schemas get product shopper-products v1 --list-paths
 
 # list all schema names
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-schemas
+b2c scapi schemas get product shopper-products v1 --list-schemas
 
 # list all examples
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --list-examples
+b2c scapi schemas get product shopper-products v1 --list-examples
 ```
 
 ### Output Formats
 
 ```bash
 # output as YAML
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --yaml
+b2c scapi schemas get product shopper-products v1 --yaml
 
 # output wrapped JSON with metadata (apiFamily, apiName, apiVersion, schema)
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --json
+b2c scapi schemas get product shopper-products v1 --json
 ```
 
 ### Custom Properties
 
 ```bash
 # include custom properties (default behavior)
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd
+b2c scapi schemas get product shopper-products v1
 
 # exclude custom properties
-b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --no-expand-custom-properties
+b2c scapi schemas get product shopper-products v1 --no-expand-custom-properties
 ```
 
-### Configuration
+### Configuration Overrides
 
-The tenant ID and short code can be set via environment variables:
-- `SFCC_TENANT_ID`: Tenant ID (e.g., `zzxy_prd`, not the organization ID)
-- `SFCC_SHORTCODE`: SCAPI short code
+The tenant ID and short code can be overridden via flags or environment variables:
+
+- `--tenant-id` / `SFCC_TENANT_ID` / `tenantId` in dw.json
+- `--short-code` / `SFCC_SHORTCODE` / `shortCode` in dw.json
 
 ### More Commands
 

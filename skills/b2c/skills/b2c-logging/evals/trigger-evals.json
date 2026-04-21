@@ -1,7 +1,12 @@
 [
-  {"query": "How do I write to a custom log file in B2C Commerce? I want my payment integration logs to go to a separate file instead of the default custom log.", "should_trigger": true},
-  {"query": "What's the right way to use Logger.getLogger with categories? I want to add debug logging to my checkout controller but only enable it when needed.", "should_trigger": true},
-  {"query": "I'm building an order export script and need to add logging with NDC so I can trace each order through the processing pipeline. Show me how to use the nested diagnostic context.", "should_trigger": true},
-  {"query": "How do I view the server logs in Business Manager? I'm trying to find error messages from yesterday's failed job run.", "should_trigger": false},
-  {"query": "I want to set up the logger instance in my b2c-tooling-sdk module using the @salesforce/b2c-tooling-sdk/logger package.", "should_trigger": false}
+  {"query": "I'm building a payment integration and want all the payment-related log messages to go to a separate log file so I can find them easily in Business Manager. How do I create a named logger that writes to its own file?", "should_trigger": true},
+  {"query": "I've added Logger.debug calls throughout my checkout controller but nothing appears in the logs. I think the debug level might be disabled. How do log levels and categories work, and how do I enable debug logging for just my cartridge?", "should_trigger": true},
+  {"query": "Our order processing job handles thousands of orders and I need to trace each order through the entire pipeline in the logs. How do I use nested diagnostic context to tag log entries with the order number?", "should_trigger": true},
+  {"query": "I want to add structured error logging to my hook implementation. When an exception occurs, I need to log the error message, stack trace, and relevant business data like order ID and payment method. What's the best practice for error logging in scripts?", "should_trigger": true},
+  {"query": "I have multiple cartridges all logging to the same category and it's getting noisy. How do I organize log categories across cartridges so I can filter logs per module? Is there a naming convention I should follow?", "should_trigger": true},
+  {"query": "My custom API endpoint needs logging for request/response data during development but I want to minimize logging overhead in production. How do I use isDebugEnabled checks and what's the performance impact of different log levels?", "should_trigger": true},
+  {"query": "How do I view and download server logs from Business Manager? I need to find error messages from a failed job that ran yesterday afternoon.", "should_trigger": false},
+  {"query": "I want to set up the logger instance in my Node.js SDK module using the @salesforce/b2c-tooling-sdk/logger package. How do I configure log levels for local development?", "should_trigger": false},
+  {"query": "How do I stream real-time log output from my sandbox using the b2c CLI? I want to tail the logs while testing my checkout flow.", "should_trigger": false},
+  {"query": "I need to set up error monitoring with an external service like Sentry. How do I send Commerce Cloud errors to an external logging platform?", "should_trigger": false}
 ]

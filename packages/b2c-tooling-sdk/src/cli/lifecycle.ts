@@ -50,6 +50,7 @@ export type B2COperationType =
   | 'job:import'
   | 'job:export'
   | 'code:deploy'
+  | 'code:download'
   | 'code:activate'
   | 'site-archive:import'
   | 'site-archive:export';

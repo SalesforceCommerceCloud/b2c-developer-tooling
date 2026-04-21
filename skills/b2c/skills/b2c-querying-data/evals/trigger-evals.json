@@ -1,7 +1,12 @@
 [
-  {"query": "My category page is slow and I'm using Category.getProducts() to list products. How should I replace this with ProductSearchModel for better performance?", "should_trigger": true},
-  {"query": "I need to search customer profiles by email using CustomerMgr. Should I use searchProfiles or queryProfiles, and what are the performance differences?", "should_trigger": true},
-  {"query": "How do I page through product search results using PagingModel with ProductSearchModel? Also, how do I add refinements for color and price range?", "should_trigger": true},
-  {"query": "I need to create an order from a basket and manage the order status transitions from CREATED to NEW to COMPLETED using OrderMgr.", "should_trigger": false},
-  {"query": "How do I create and query custom objects in B2C Commerce? I need to store loyalty point records using CustomObjectMgr.", "should_trigger": false}
+  {"query": "Our category listing page takes 8 seconds to load on categories with 500+ products. I think we're calling getProducts() directly on the category object. What's the right way to query products for a storefront page?", "should_trigger": true},
+  {"query": "I need to look up customers by email address in a job step. There seem to be multiple ways to search customer profiles and I'm not sure which one is safe for large datasets.", "should_trigger": true},
+  {"query": "I'm building a product search results page with filters for color, size, and price range, plus pagination showing 24 products per page. What's the best approach for querying and paging through the results?", "should_trigger": true},
+  {"query": "I need to find all orders placed in the last 7 days that have a specific custom attribute value. I'm currently iterating through all orders with a SeekableIterator but it's incredibly slow on our production data. What's the performant way to query orders with filters?", "should_trigger": true},
+  {"query": "I have a controller that loads product recommendations by iterating through a collection and calling getProduct() for each ID. With 50+ recommendations it takes forever. Is there a bulk lookup approach or a way to preload these efficiently?", "should_trigger": true},
+  {"query": "I need to implement typeahead search suggestions that return results in under 200ms. The query needs to search across product names, brand names, and category names. What API or search model should I use, and how do I handle the partial-match requirement?", "should_trigger": true},
+  {"query": "I'm implementing the order placement step in checkout. After payment auth succeeds, I need to create the order from the basket and set the confirmation status.", "should_trigger": false},
+  {"query": "I need to store and retrieve loyalty point records for each customer. Should I use a custom object for this?", "should_trigger": false},
+  {"query": "I want to define a new custom object type for storing product reviews, with fields for rating, title, and body text. What's the metadata XML?", "should_trigger": false},
+  {"query": "I need to call the Shopper Search API from our headless storefront to get product results with facets. What's the endpoint and how do I pass refinement parameters?", "should_trigger": false}
 ]

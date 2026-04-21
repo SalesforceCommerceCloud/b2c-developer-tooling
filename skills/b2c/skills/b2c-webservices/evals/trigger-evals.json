@@ -1,7 +1,12 @@
 [
-  {"query": "I need to call an external REST API from a B2C Commerce script using LocalServiceRegistry. How do I set up the service with createRequest, parseResponse, and filterLogMessage callbacks?", "should_trigger": true},
-  {"query": "My service call keeps returning SERVICE_UNAVAILABLE with CIRCUIT_BROKEN. How does the circuit breaker work in the B2C service framework and how do I configure the profile settings?", "should_trigger": true},
-  {"query": "I want to set up an SFTP service to download inventory files from a vendor. How do I configure the service credentials and use the FTP service type with LocalServiceRegistry?", "should_trigger": true},
-  {"query": "How do I make HTTP requests from my Node.js script in the b2c-tooling-sdk package? I need to call the OCAPI data API.", "should_trigger": false},
-  {"query": "I need to configure services.xml for importing service definitions via site archive, but I'm only adding custom attributes to the service credential object type in the metadata.", "should_trigger": false}
+  {"query": "I need to call a third-party payment gateway REST API from my B2C cartridge. How do I set up LocalServiceRegistry with createRequest and parseResponse callbacks?", "should_trigger": true},
+  {"query": "My service call keeps returning SERVICE_UNAVAILABLE with CIRCUIT_BROKEN. How do I configure the circuit breaker thresholds and retry intervals in the service profile?", "should_trigger": true},
+  {"query": "We need to download daily inventory files from a vendor's SFTP server inside a B2C job step. How do I configure the FTP service credentials and connect?", "should_trigger": true},
+  {"query": "I'm integrating with a shipping provider that uses SOAP/WSDL. How do I set up a SOAP web service in B2C Commerce and send the request envelope?", "should_trigger": true},
+  {"query": "How do I mask sensitive data like credit card numbers in my service call logs? I see a filterLogMessage callback but not sure how to use it.", "should_trigger": true},
+  {"query": "I want to call an external tax calculation API from my cart controller. The service needs custom HTTP headers and a JSON body. Where do I configure the credentials and URL?", "should_trigger": true},
+  {"query": "How do I make HTTP requests from my Node.js tooling script to call the OCAPI data API? I'm working in the b2c-tooling-sdk package.", "should_trigger": false},
+  {"query": "I need to import service definitions from a site archive. How do I structure the services.xml for a site import job?", "should_trigger": false},
+  {"query": "How do I set up a webhook endpoint in my Express server to receive order notifications from Commerce Cloud?", "should_trigger": false},
+  {"query": "I need to configure the OCAPI shop API settings in Business Manager to allow product search from my mobile app.", "should_trigger": false}
 ]

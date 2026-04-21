@@ -1,7 +1,12 @@
 [
-  {"query": "I need to sync inventory from our warehouse system to B2C Commerce using the Inventory IMPEX API. How do I do bulk imports with NDJSON format for 5000+ SKUs?", "should_trigger": true},
-  {"query": "How do I get an admin OAuth token from Account Manager to call SCAPI admin endpoints? I need the right scopes for updating products and reading orders.", "should_trigger": true},
-  {"query": "I'm building a backend integration to search customers and update promotions via SCAPI admin APIs. What scopes do I need and how do I handle rate limiting?", "should_trigger": true},
-  {"query": "How do I fetch product details from the Shopper Products API in my PWA storefront? I need to use the select parameter to reduce response size.", "should_trigger": false},
-  {"query": "I need to create an order from a basket using OrderMgr.createOrder in a B2C controller with proper Transaction.wrap handling.", "should_trigger": false}
+  {"query": "I need to sync inventory from our warehouse system to Commerce Cloud. We have 5000+ SKUs and need to do bulk imports in NDJSON format. What's the best approach?", "should_trigger": true},
+  {"query": "How do I get an admin OAuth token from Account Manager so I can call backend APIs to update products and read orders?", "should_trigger": true},
+  {"query": "We're building a nightly job that pulls all orders placed in the last 24 hours and pushes them to our ERP. How should we authenticate and paginate through the results?", "should_trigger": true},
+  {"query": "I want to update promotion assignments and coupon codes programmatically from our marketing platform. What scopes and endpoints do I need for that?", "should_trigger": true},
+  {"query": "Our customer service app needs to search customers by email and update their profile attributes. How do I handle rate limiting when querying thousands of records?", "should_trigger": true},
+  {"query": "I need to bulk-update price books from a CSV feed every night. What's the right admin endpoint and authentication flow for server-to-server integration?", "should_trigger": true},
+  {"query": "How do I fetch product details in my PWA storefront React component? I need to reduce the response size with a select parameter for the product display page.", "should_trigger": false},
+  {"query": "I need to create an order from a basket using OrderMgr.createOrder in a B2C controller pipeline with proper Transaction.wrap handling.", "should_trigger": false},
+  {"query": "How do I configure a SLAS private client for my headless storefront so shoppers can log in with their credentials?", "should_trigger": false},
+  {"query": "I want to add a custom attribute to the Product system object in Business Manager and make it searchable.", "should_trigger": false}
 ]

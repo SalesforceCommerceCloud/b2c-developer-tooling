@@ -1,7 +1,12 @@
 [
-  {"query": "I need to onboard a new developer. Create a user in Account Manager and grant them bm-admin role scoped to our zzxy_prd tenant.", "should_trigger": true},
-  {"query": "How do I create an API client in Account Manager for our CI/CD pipeline with the SALESFORCE_COMMERCE_API role?", "should_trigger": true},
-  {"query": "Can you list all users in our Account Manager org and show me which ones have the bm-admin role? I want to audit permissions.", "should_trigger": true},
-  {"query": "How do I create a SLAS client for my headless storefront to handle shopper login?", "should_trigger": false},
-  {"query": "I need to configure OAuth scopes for my SCAPI integration. Where do I set up the client credentials?", "should_trigger": false}
+  {"query": "I need to onboard a new developer. Create a user in Account Manager and grant them the bm-admin role scoped to our production tenant.", "should_trigger": true},
+  {"query": "How do I create an API client for our CI/CD pipeline that has permissions to deploy code and import site data?", "should_trigger": true},
+  {"query": "Can you list all users in our organization and show which ones have admin roles? I want to audit permissions before our security review.", "should_trigger": true},
+  {"query": "A contractor left our team. I need to remove their Account Manager user and revoke all their role assignments across tenants.", "should_trigger": true},
+  {"query": "I need to look up which organization ID our sandbox belongs to so I can assign the right roles to a new team member.", "should_trigger": true},
+  {"query": "We're setting up a new project and need to create an API client with the SALESFORCE_COMMERCE_API role and scope it to two tenants.", "should_trigger": true},
+  {"query": "How do I create a SLAS client for my headless storefront to handle shopper login and guest sessions?", "should_trigger": false},
+  {"query": "I need to configure OAuth scopes for my SCAPI integration. Where do I set the allowed scopes on my client credentials?", "should_trigger": false},
+  {"query": "How do I grant a Business Manager user access to specific sites using site-level roles in BM itself?", "should_trigger": false},
+  {"query": "I want to set up SSO with our corporate identity provider for Business Manager logins.", "should_trigger": false}
 ]

@@ -1,7 +1,12 @@
 [
-  {"query": "I need to create a SLAS client with a custom scope c_loyalty for testing my Custom API. How do I do that with the CLI?", "should_trigger": true},
-  {"query": "How do I get a shopper access token for my RefArch site? I want to use it to test SCAPI endpoints with curl.", "should_trigger": true},
-  {"query": "I need to update the scopes on my existing SLAS client and rotate the client secret. What are the commands?", "should_trigger": true},
-  {"query": "How do I get an admin API token to authenticate OCAPI requests from my CI pipeline?", "should_trigger": false},
-  {"query": "I need to create an API client in Account Manager for my B2C integration. What roles should it have?", "should_trigger": false}
+  {"query": "I'm setting up authentication for our new headless storefront and I need to create a client with the right scopes, including a custom c_loyalty scope for our loyalty API. How do I provision this?", "should_trigger": true},
+  {"query": "I need a shopper access token to test some API endpoints with curl. What's the quickest way to get one for my RefArch site?", "should_trigger": true},
+  {"query": "Our security team wants us to rotate the client secret on our existing shopper auth client and also add a new scope. How do I update it?", "should_trigger": true},
+  {"query": "We're launching a new mobile app that needs its own auth client separate from our web storefront. I need to create it with a specific set of allowed scopes and a particular redirect URI. Walk me through provisioning that.", "should_trigger": true},
+  {"query": "I need to clean up old auth clients that were created during development. Can I get a list of all the shopper login clients on our tenant so I can identify which ones are safe to delete?", "should_trigger": true},
+  {"query": "We're migrating from session-based auth to token-based for our PWA and I need to understand how to set up the client credentials for guest and registered shopper flows. I also need to make sure the scopes cover our custom APIs.", "should_trigger": true},
+  {"query": "I need an admin API token so my CI pipeline can make Data API calls to import product data. How do I authenticate?", "should_trigger": false},
+  {"query": "How do I set up an API client in Account Manager with the right roles for deploying code to our sandboxes?", "should_trigger": false},
+  {"query": "I want to implement passwordless login using magic links in my storefront. What's the flow for sending a login email and handling the callback?", "should_trigger": false},
+  {"query": "My dw.json has client_id and client_secret for the CLI but it's not authenticating. How do I troubleshoot the OAuth token exchange?", "should_trigger": false}
 ]

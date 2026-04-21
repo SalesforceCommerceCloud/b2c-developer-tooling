@@ -1,7 +1,12 @@
 [
-  {"query": "How do I search for products using the Shopper Search SCAPI endpoint? I need to call the product-search API from my PWA Kit storefront with proper auth headers.", "should_trigger": true},
-  {"query": "I'm building a headless checkout flow and need to create a basket, add items, and submit an order using the Shopper Baskets and Shopper Orders SCAPI endpoints.", "should_trigger": true},
-  {"query": "How do I use the Shopper Context API to set personalization data like source codes and customer group IDs? What are the quota limits for production vs non-production?", "should_trigger": true},
-  {"query": "I need to update product catalog data and inventory levels from a backend service using admin API tokens from Account Manager.", "should_trigger": false},
-  {"query": "How do I implement passwordless email OTP login with SLAS? I need the callback flow to send a one-time password to the shopper.", "should_trigger": false}
+  {"query": "I'm building a product listing page in our PWA Kit app and need to search products by category with sorting and pagination. What API do I call and how do I handle the authentication headers?", "should_trigger": true},
+  {"query": "I need to build the full checkout flow for our headless storefront — create a basket, add line items, set shipping address, apply a promo code, and then submit the order. What's the sequence of API calls?", "should_trigger": true},
+  {"query": "We want to personalize the shopping experience by passing the customer's loyalty tier and source code to the API so product prices reflect their discount level. How do I set up that context?", "should_trigger": true},
+  {"query": "Our composable storefront needs a 'My Orders' page where logged-in customers can see their order history with line item details, shipment tracking, and the ability to reorder. Which endpoints do I hit and what does the response shape look like?", "should_trigger": true},
+  {"query": "I'm building a wishlist feature for our headless app. Customers should be able to add products, view their list, remove items, and share the wishlist via a URL. What are the API calls for managing shopper product lists?", "should_trigger": true},
+  {"query": "We're implementing store pickup in our PWA Kit storefront. I need to search for nearby stores based on the customer's zip code, check inventory availability at those stores, and let the customer select a pickup location during checkout. Which APIs do I combine for this?", "should_trigger": true},
+  {"query": "I need to update product inventory levels and catalog data from our warehouse system using a backend service with admin credentials.", "should_trigger": false},
+  {"query": "I want to let customers log in with just an email code instead of a password. What's the flow for implementing that kind of passwordless authentication?", "should_trigger": false},
+  {"query": "I need to write a job step that exports orders to our ERP system nightly. It should process orders in chunks and write XML to an SFTP endpoint.", "should_trigger": false},
+  {"query": "How do I sync our product catalog from the ERP into B2C Commerce using the Data API? I need to create and update products with images and prices from a backend service.", "should_trigger": false}
 ]

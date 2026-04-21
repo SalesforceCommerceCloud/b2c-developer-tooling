@@ -1,6 +1,6 @@
 ---
 name: b2c-mrt
-description: Deploy and manage (B2C/SFCC/Demandware) Managed Runtime (MRT) storefronts using the b2c cli. Always reference when using the CLI to deploy MRT bundles, manage MRT environments, set environment variables, configure redirects, or manage MRT projects and organizations.
+description: Deploy and manage Managed Runtime (MRT) storefronts using the b2c CLI. Use this skill whenever the user needs to deploy a PWA Kit bundle, manage MRT environments and projects, set environment variables, configure URL redirects, or manage organization connections — even if they just say "deploy my PWA" or "set up a staging environment".
 ---
 
 # B2C MRT Skill

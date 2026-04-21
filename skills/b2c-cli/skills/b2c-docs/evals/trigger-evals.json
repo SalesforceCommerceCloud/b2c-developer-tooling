@@ -1,7 +1,12 @@
 [
-  {"query": "How do I look up the dw.order.Basket class methods? I need to know what's available for modifying basket line items.", "should_trigger": true},
-  {"query": "b2c docs search isn't finding anything for ProductMgr. Can you show me how to read the full Script API docs for that class?", "should_trigger": true},
-  {"query": "I need the XSD schema for the catalog import format. What fields are required for product import XML?", "should_trigger": true},
-  {"query": "How do I write API documentation for our new SDK module in the docs/ folder?", "should_trigger": false},
-  {"query": "I want to search for all usages of ProductMgr in our codebase cartridges to refactor them.", "should_trigger": false}
+  {"query": "I'm writing a checkout controller and I need to know what methods are available on the Basket object. Can you look up the API docs for me? Specifically I need to know how to add a coupon and get the shipping cost.", "should_trigger": true},
+  {"query": "I need to understand the XML schema for product catalog imports. What fields are required vs optional, and what does a valid catalog.xml look like according to the schema?", "should_trigger": true},
+  {"query": "I'm trying to generate a URL to a specific product page in my controller but I'm not sure which URL generation class to use or what parameters it takes. Can you check the API reference?", "should_trigger": true},
+  {"query": "I'm building a custom payment processor and I need to look up the OrderPaymentInstrument properties — specifically how to get the payment method, amount, and transaction details. What does the interface look like?", "should_trigger": true},
+  {"query": "I need to validate incoming XML for a site import but I'm not sure what the schema allows for promotions. What elements and attributes are valid inside a <campaign> node according to the XSD?", "should_trigger": true},
+  {"query": "I'm extending a pipeline to send transactional emails and I need to know which class handles email sending on the server side — what are the constructor arguments and how do I set the template and recipient?", "should_trigger": true},
+  {"query": "How do I write JSDoc API documentation for the new SDK module I'm adding to the docs/ folder in this project?", "should_trigger": false},
+  {"query": "I want to find all the places in our cartridges where we call ProductMgr so I can refactor them to use a wrapper.", "should_trigger": false},
+  {"query": "What's the general process for setting up a new B2C Commerce sandbox and connecting it to Business Manager?", "should_trigger": false},
+  {"query": "I need to search our cartridge codebase for everywhere we import dw.web.Resource so I can audit our localization strings.", "should_trigger": false}
 ]

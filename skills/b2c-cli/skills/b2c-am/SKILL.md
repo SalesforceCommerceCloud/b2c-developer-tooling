@@ -1,6 +1,6 @@
 ---
 name: b2c-am
-description: Manage Account Manager resources (API clients, users, roles, organizations) with the b2c cli. Use this skill whenever working with SFCC/B2C Commerce user management, role assignments, API client provisioning, organization lookup, user onboarding/offboarding, or auditing Account Manager permissions. Also use when granting Business Manager roles, creating API clients for CI/CD, or managing tenant-scoped role assignments.
+description: Manage Account Manager resources including API clients, users, roles, and organizations. Use this skill whenever the user needs to create or update API clients, onboard or offboard developers, assign Business Manager roles scoped to tenants, audit user permissions, look up organizations, or provision API clients for CI/CD pipelines. Also use when managing role assignments or querying Account Manager data -- even if they just say 'add a new developer' or 'set up an API client'.
 ---
 
 # B2C Account Manager Skill
@@ -48,7 +48,7 @@ b2c am clients list --json
 b2c am clients get <api-client-id>
 
 # with expanded organizations and roles
-b2c am clients get <api-client-id> --expand organizations --expand roles
+b2c am clients get <api-client-id> --expand organizations,roles
 ```
 
 ### Create Client

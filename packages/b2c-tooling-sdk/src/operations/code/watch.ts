@@ -156,111 +156,131 @@ export async function watchCartridges(
   const filesToUpload = new Set<string>();
   const filesToDelete = new Set<string>();
   let lastErrorTime = 0;
+  let isProcessing = false;
 
   /**
-   * Processes batched file changes.
+   * Processes all pending file changes, serializing WebDAV operations.
+   * Only one instance runs at a time — if new changes accumulate during
+   * processing, the while loop picks them up in the next iteration.
    */
-  const processChanges = debounce(async () => {
-    const now = Date.now();
+  async function runProcessing(): Promise<void> {
+    if (isProcessing) return;
+    isProcessing = true;
 
-    // Rate limit on errors
-    if (now - lastErrorTime < 5000) {
-      logger.debug('Rate limiting after recent error, waiting...');
-      return;
-    }
+    try {
+      while (filesToUpload.size > 0 || filesToDelete.size > 0) {
+        // Rate limit on errors — wait instead of dropping items
+        const timeSinceError = Date.now() - lastErrorTime;
+        if (timeSinceError < 5000) {
+          const waitTime = 5000 - timeSinceError;
+          logger.debug({waitTime}, 'Rate limiting after recent error, waiting...');
+          await new Promise((resolve) => setTimeout(resolve, waitTime));
+        }
 
-    const uploadFiles = Array.from(filesToUpload)
-      .map((f) => fileToCartridgePath(f, cartridges))
-      .filter((f): f is NonNullable<typeof f> => f !== undefined);
+        const uploadFiles = Array.from(filesToUpload)
+          .map((f) => fileToCartridgePath(f, cartridges))
+          .filter((f): f is NonNullable<typeof f> => f !== undefined);
 
-    const deleteFiles = Array.from(filesToDelete)
-      .map((f) => fileToCartridgePath(f, cartridges))
-      .filter((f): f is NonNullable<typeof f> => f !== undefined);
+        const deleteFiles = Array.from(filesToDelete)
+          .map((f) => fileToCartridgePath(f, cartridges))
+          .filter((f): f is NonNullable<typeof f> => f !== undefined);
 
-    filesToUpload.clear();
-    filesToDelete.clear();
+        filesToUpload.clear();
+        filesToDelete.clear();
 
-    // Filter out files that no longer exist
-    const validUploadFiles = uploadFiles.filter((f) => {
-      if (!fs.existsSync(f.src)) {
-        logger.debug({file: f.src}, 'Skipping missing file');
-        return false;
-      }
-      return true;
-    });
+        // Filter out files that no longer exist
+        const validUploadFiles = uploadFiles.filter((f) => {
+          if (!fs.existsSync(f.src)) {
+            logger.debug({file: f.src}, 'Skipping missing file');
+            return false;
+          }
+          return true;
+        });
 
-    // Upload files
-    if (validUploadFiles.length > 0) {
-      const uploadPath = `${webdavLocation}/_upload-${now}.zip`;
+        // Upload files
+        if (validUploadFiles.length > 0) {
+          const uploadPath = `${webdavLocation}/_upload-${Date.now()}.zip`;
 
-      try {
-        const zip = new JSZip();
-
-        for (const f of validUploadFiles) {
           try {
-            const content = await fs.promises.readFile(f.src);
-            zip.file(f.dest, content);
+            const zip = new JSZip();
+
+            for (const f of validUploadFiles) {
+              try {
+                const content = await fs.promises.readFile(f.src);
+                zip.file(f.dest, content);
+              } catch (error) {
+                logger.warn({file: f.src, error}, 'Failed to add file to archive');
+              }
+            }
+
+            const buffer = await zip.generateAsync({
+              type: 'nodebuffer',
+              compression: 'DEFLATE',
+              compressionOptions: {level: 5},
+            });
+
+            await webdav.put(uploadPath, buffer, 'application/zip');
+            logger.debug({uploadPath}, 'Archive uploaded');
+
+            const response = await webdav.request(uploadPath, {
+              method: 'POST',
+              body: UNZIP_BODY,
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`Unzip failed: ${response.status}`);
+            }
+
+            await webdav.delete(uploadPath);
+
+            logger.debug(
+              {fileCount: validUploadFiles.length, server: instance.config.hostname},
+              `Uploaded ${validUploadFiles.length} file(s)`,
+            );
+
+            options.onUpload?.(validUploadFiles.map((f) => f.dest));
           } catch (error) {
-            logger.warn({file: f.src, error}, 'Failed to add file to archive');
+            lastErrorTime = Date.now();
+            // Re-queue so the while loop retries after rate-limit wait
+            for (const f of validUploadFiles) {
+              filesToUpload.add(f.src);
+            }
+            const err = error instanceof Error ? error : new Error(String(error));
+            logger.error({error: err}, `Upload error: ${err.message}`);
+            options.onError?.(err);
           }
         }
 
-        const buffer = await zip.generateAsync({
-          type: 'nodebuffer',
-          compression: 'DEFLATE',
-          compressionOptions: {level: 5},
-        });
+        // Skip deletes for any file that was also uploaded in this batch (disk state wins)
+        const uploadedPaths = new Set(validUploadFiles.map((f) => f.dest));
+        const filesToDeleteFiltered = deleteFiles.filter((f) => !uploadedPaths.has(f.dest));
 
-        await webdav.put(uploadPath, buffer, 'application/zip');
-        logger.debug({uploadPath}, 'Archive uploaded');
+        if (filesToDeleteFiltered.length > 0) {
+          logger.debug({fileCount: filesToDeleteFiltered.length}, `Deleting ${filesToDeleteFiltered.length} file(s)`);
 
-        const response = await webdav.request(uploadPath, {
-          method: 'POST',
-          body: UNZIP_BODY,
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        });
+          for (const f of filesToDeleteFiltered) {
+            const deletePath = `${webdavLocation}/${f.dest}`;
+            try {
+              await webdav.delete(deletePath);
+              logger.info({path: deletePath}, `Deleted: ${deletePath}`);
+            } catch (error) {
+              logger.debug({path: deletePath, error}, `Failed to delete ${deletePath}`);
+            }
+          }
 
-        if (!response.ok) {
-          throw new Error(`Unzip failed: ${response.status}`);
-        }
-
-        await webdav.delete(uploadPath);
-
-        logger.debug(
-          {fileCount: validUploadFiles.length, server: instance.config.hostname},
-          `Uploaded ${validUploadFiles.length} file(s)`,
-        );
-
-        options.onUpload?.(validUploadFiles.map((f) => f.dest));
-      } catch (error) {
-        lastErrorTime = now;
-        const err = error instanceof Error ? error : new Error(String(error));
-        logger.error({error: err}, `Upload error: ${err.message}`);
-        options.onError?.(err);
-      }
-    }
-
-    // Delete files (filter out recently uploaded to prevent conflicts)
-    const recentlyUploadedPaths = new Set(validUploadFiles.map((f) => f.dest));
-    const filesToDeleteFiltered = deleteFiles.filter((f) => !recentlyUploadedPaths.has(f.dest));
-
-    if (filesToDeleteFiltered.length > 0) {
-      logger.debug({fileCount: filesToDeleteFiltered.length}, `Deleting ${filesToDeleteFiltered.length} file(s)`);
-
-      for (const f of filesToDeleteFiltered) {
-        const deletePath = `${webdavLocation}/${f.dest}`;
-        try {
-          await webdav.delete(deletePath);
-          logger.info({path: deletePath}, `Deleted: ${deletePath}`);
-        } catch (error) {
-          logger.debug({path: deletePath, error}, `Failed to delete ${deletePath}`);
+          options.onDelete?.(filesToDeleteFiltered.map((f) => f.dest));
         }
       }
-
-      options.onDelete?.(filesToDeleteFiltered.map((f) => f.dest));
+    } finally {
+      isProcessing = false;
     }
+  }
+
+  const scheduleProcessing = debounce(() => {
+    void runProcessing();
   }, debounceTime);
 
   // Set up file watcher
@@ -278,10 +298,12 @@ export async function watchCartridges(
 
     if (event === 'change' || event === 'add') {
       filesToUpload.add(fullPath);
-      processChanges();
+      filesToDelete.delete(fullPath);
+      scheduleProcessing();
     } else if (event === 'unlink') {
       filesToDelete.add(fullPath);
-      processChanges();
+      filesToUpload.delete(fullPath);
+      scheduleProcessing();
     }
   });
 
