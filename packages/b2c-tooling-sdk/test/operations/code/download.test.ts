@@ -254,8 +254,13 @@ describe('operations/code/download', () => {
       expect(result.cartridges).to.deep.equal(['app_storefront']);
     });
 
-    it('should preserve existing file permissions', async () => {
-      // Create a file with specific permissions
+    it('should preserve existing file permissions', async function () {
+      // NTFS does not honor POSIX permission bits: fs.chmod(0o755) silently
+      // leaves the mode as 0o666, so this assertion can only be validated on
+      // POSIX platforms.
+      if (process.platform === 'win32') {
+        this.skip();
+      }
       const cartridgeDir = path.join(tempDir, 'app_storefront');
       fs.mkdirSync(cartridgeDir, {recursive: true});
       const filePath = path.join(cartridgeDir, 'main.js');
