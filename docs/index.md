@@ -71,7 +71,7 @@ brew install SalesforceCommerceCloud/tools/b2c-cli
 
 ## Install Agent Skills
 
-Detailed setup: [Agentforce Vibes](/guide/agent-skills#installation-with-agentforce-vibes) · [Claude Code](/guide/agent-skills#install-claude-plugin) · [Copilot](/guide/agent-skills#installation-with-other-ides) · [Codex](/guide/agent-skills#installation-with-other-ides) · [All IDEs](/guide/agent-skills)
+Detailed setup: [Claude Code](/guide/agent-skills#claude-code) · [Codex](/guide/agent-skills#codex) · [Copilot](/guide/agent-skills#other-ides) · [Agentforce Vibes](/guide/agent-skills#agentforce-vibes) · [All IDEs](/guide/agent-skills)
 
 ::: code-group
 

@@ -4,20 +4,13 @@ description: AI agent skills and plugins for Salesforce B2C Commerce — teach A
 
 # Agent Skills & Plugins
 
-Turn your coding agent into a B2C Commerce specialist. Skills give Claude Code, Cursor, Agentforce Vibes, Copilot, and Codex deep platform expertise across the full stack — **SCAPI Custom APIs, SLAS authentication, SFRA controllers and forms, ISML, Page Designer, hooks, custom objects, custom job steps, web services** — and operational workflows like **deploying cartridges, running jobs, debugging 404s and logs, managing On-Demand Sandboxes, MRT/PWA Kit, eCDN, site archives, and IMPEX metadata XML**.
+Turn your coding agent into a B2C Commerce specialist. Skills cover the full platform — storefront and headless development, operational workflows, and everything in between — so your agent knows both how B2C Commerce works and which CLI commands to run.
 
-Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with [Agentforce Vibes](#installation-with-agentforce-vibes), [Claude Code](https://claude.ai/code), Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others.
-
-Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
+Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with Agentforce Vibes, Claude Code, Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others. Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
 
 ## Quick Start
 
 ::: code-group
-
-```bash [Agentforce Vibes]
-# Marketplace install coming soon. For now, use the B2C CLI:
-npx @salesforce/b2c-cli setup skills --ide agentforce-vibes
-```
 
 ```bash [Claude Code]
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
@@ -43,6 +36,11 @@ copilot plugin install b2c@b2c-developer-tooling
 codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Then in Codex, run /plugins, select the "B2C Developer Tooling"
 # marketplace, and select and install the desired plugins.
+```
+
+```bash [Agentforce Vibes]
+# Marketplace install coming soon. For now, use the B2C CLI:
+npx @salesforce/b2c-cli setup skills --ide agentforce-vibes
 ```
 
 ```bash [B2C CLI]
@@ -77,7 +75,7 @@ npx @salesforce/b2c-cli setup skills
   </tbody>
 </table>
 
-## Install Claude Plugin
+## Claude Code
 
 Add the marketplace:
 
@@ -113,7 +111,7 @@ claude plugin uninstall b2c-cli@b2c-developer-tooling
 claude plugin marketplace remove b2c-developer-tooling
 ```
 
-## Install Codex Plugin
+## Codex
 
 Add the marketplace:
 
@@ -134,7 +132,7 @@ codex plugin marketplace remove b2c-developer-tooling
 
 > **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
 
-## Installation with B2C CLI
+## B2C CLI
 
 Interactive — select skillsets and IDEs:
 
@@ -186,7 +184,7 @@ b2c setup skills b2c-cli --ide cursor --global --force
 
 See [Setup Commands](/cli/setup) for full documentation.
 
-## Installation with Agentforce Vibes
+## Agentforce Vibes
 
 See [Skills in Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/skills.html) for platform details.
 
@@ -196,7 +194,7 @@ b2c setup skills b2c-cli --ide agentforce-vibes
 b2c setup skills b2c --ide agentforce-vibes --global
 ```
 
-## Installation with Other IDEs
+## Other IDEs
 
 ::: tip
 Use [`b2c setup skills`](/cli/setup) for any supported IDE.
