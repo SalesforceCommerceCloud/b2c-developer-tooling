@@ -40,7 +40,12 @@ jobs:
           version: pnpm run version
           title: 'Next Release: changelog and version packages'
           commit: 'chore: version packages'
-          labels: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add release label to PR
+        if: steps.changesets.outputs.pullRequestNumber
+        run: gh pr edit ${{ steps.changesets.outputs.pullRequestNumber }} --add-label release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
