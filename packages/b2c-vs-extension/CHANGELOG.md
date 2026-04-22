@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.4.1
+
+### Patch Changes
+
+- [`bad9034`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bad903469353654a4b3cdbafecf2cbce5a863ea1) - Improved CAP skill with better guidance and UX refinements (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`1b07a5d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b07a5d400a3c684c391940bbd44c0dfa80d5dc9) - Fix OAuth redirect URI trailing slash mismatch that caused authentication failures in VS Code (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.0
 
 ### Minor Changes
