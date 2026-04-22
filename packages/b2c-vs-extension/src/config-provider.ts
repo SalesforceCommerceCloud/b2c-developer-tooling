@@ -248,7 +248,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     const externalUri = await vscode.env.asExternalUri(localUri);
 
     return {
-      redirectUri: process.env.SFCC_REDIRECT_URI || externalUri.toString(/* skipEncoding */ true),
+      redirectUri: (process.env.SFCC_REDIRECT_URI || externalUri.toString(/* skipEncoding */ true)).replace(/\/$/, ''),
       openBrowser: async (url: string) => {
         await vscode.env.openExternal(vscode.Uri.parse(url));
       },
