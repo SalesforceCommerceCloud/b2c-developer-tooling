@@ -1,0 +1,9 @@
+{
+  "components": [
+    {
+      "targetId": "checkout.orderSummary.tax",
+      "path": "extensions/avalara-tax/components/tax-breakdown.tsx",
+      "order": 0
+    }
+  ]
+}

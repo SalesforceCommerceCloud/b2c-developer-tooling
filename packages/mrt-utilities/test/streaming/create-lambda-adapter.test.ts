@@ -347,7 +347,7 @@ describe('create-lambda-adapter', () => {
             //express 4 style catch-all route, throws an error when installed
             // in express 5, see https://github.com/pillarjs/path-to-regexp#errors
             mockApp.get('/*', dummyCatchAllRoute);
-          } catch (error) {
+          } catch {
             //express 5 style catch-all route
             mockApp.get('/{*splat}', dummyCatchAllRoute);
           }

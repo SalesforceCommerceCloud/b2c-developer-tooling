@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Verify Avalara Service Profile",
+    "description": "Confirm the Avalara service profile is configured correctly in Operations > Services > Profiles.",
+    "link": "/on/demandware.store/Sites-Site/default/ServiceProfile-DisplayAll",
+    "taskNumber": "1"
+  },
+  {
+    "name": "Verify Avalara Service Credentials",
+    "description": "Confirm the Avalara service credentials are configured correctly in Operations > Services > Credentials.",
+    "link": "/on/demandware.store/Sites-Site/default/ServiceCredential-DisplayAll",
+    "taskNumber": "2"
+  },
+  {
+    "name": "Verify Avalara Service Definition",
+    "description": "Confirm the Avalara service definition is configured correctly in Operations > Services.",
+    "link": "/on/demandware.store/Sites-Site/default/Service-DisplayAll",
+    "taskNumber": "3"
+  },
+  {
+    "name": "Verify Custom Site Preferences",
+    "description": "Confirm Avalara custom site preferences (e.g. AvaTax preference group) in Merchant Tools > Site Preferences.",
+    "link": "/on/demandware.store/Sites-Site/default/ViewApplication-BM?SelectedMenuItem=site-prefs_custom_prefs#/?preference#site_preference_group_attributes!id!AvaTax",
+    "taskNumber": "4"
+  }
+]

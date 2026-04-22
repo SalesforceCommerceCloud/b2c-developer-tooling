@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<preferences xmlns="http://www.demandware.com/xml/impex/preferences/2007-03-31">
+    <custom-preferences>
+        <all-instances>
+            <!-- AvaTax Custom Preferences -->
+            <!-- Boolean preferences: use "1" for true, "0" for false -->
+            <preference preference-id="ATEnable">1</preference>
+            <preference preference-id="ATEnableAddressValidation">1</preference>
+            <preference preference-id="ATEnableTesting">1</preference>
+            <preference preference-id="AtCommitTransaction">0</preference>
+            <preference preference-id="AtDocumentCommitAllowed">1</preference>
+            
+            <!-- String preferences -->
+            <preference preference-id="AtCompanyCode"></preference>
+            <preference preference-id="ATDefaultShippingMethodTaxCode">FR</preference>
+            <preference preference-id="ATCustomCustomerCode"></preference>
+            <preference preference-id="AtShipFromCity"></preference>
+            <preference preference-id="AtShipFromCountryCode"></preference>
+            <preference preference-id="AtShipFromLine1"></preference>
+            <preference preference-id="AtShipFromLine2"></preference>
+            <preference preference-id="AtShipFromLine3"></preference>
+            <preference preference-id="AtShipFromLocationCode"></preference>
+            <preference preference-id="AtShipFromStateCode"></preference>
+            <preference preference-id="AtShipFromZipCode"></preference>
+            
+            <!-- Enum preference: use the actual value, not the display name -->
+            <preference preference-id="ATCustomerCode">customer_number</preference>
+        </all-instances>
+    </custom-preferences>
+</preferences>

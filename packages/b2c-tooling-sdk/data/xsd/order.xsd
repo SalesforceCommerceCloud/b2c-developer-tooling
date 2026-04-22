@@ -1197,6 +1197,8 @@
             <xsd:enumeration value="Snapchat" />
             <xsd:enumeration value="WhatsApp" />
             <xsd:enumeration value="YouTube" />
+            <xsd:enumeration value="ChatGPT" />
+            <xsd:enumeration value="Gemini" />
         </xsd:restriction>
     </xsd:simpleType>
 

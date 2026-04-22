@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+    <service-credential service-credential-id="credentials.avatax.rest">
+        <url>https://sandbox-rest.avatax.com/</url>
+        <user-id>avataxuser</user-id>
+        <password encrypted="true" encryption-type="common.export">password</password>
+    </service-credential>
+
+    <service-profile service-profile-id="profile.avatax.rest">
+        <timeout-millis>20000</timeout-millis>
+        <rate-limit-enabled>false</rate-limit-enabled>
+        <rate-limit-calls>0</rate-limit-calls>
+        <rate-limit-millis>0</rate-limit-millis>
+        <cb-enabled>false</cb-enabled>
+        <cb-calls>0</cb-calls>
+        <cb-millis>0</cb-millis>
+    </service-profile>
+
+    <service service-id="avatax.rest.all">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>false</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>profile.avatax.rest</profile-id>
+        <credential-id>credentials.avatax.rest</credential-id>
+    </service>
+</services>
