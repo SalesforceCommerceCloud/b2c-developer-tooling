@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -28,7 +28,9 @@
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
     "onCommand:b2c-dx.scaffold.generate",
-    "onDebugResolve:b2c-script"
+    "onCommand:b2c-dx.cap.install",
+    "onDebugResolve:b2c-script",
+    "workspaceContains:**/commerce-app.json"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -64,6 +66,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the API Browser for exploring SCAPI schemas."
+        },
+        "b2c-dx.features.cap": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Commerce App Package (CAP) commands and file decorations."
         },
         "b2c-dx.logLevel": {
           "type": "string",
@@ -453,6 +460,12 @@
         "command": "b2c-dx.resetProjectRoot",
         "title": "Reset B2C Commerce Root to Auto-Detect",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.cap.install",
+        "title": "Install Commerce App (CAP)",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -659,6 +672,11 @@
           "command": "b2c-dx.content.import",
           "when": "explorerResourceIsFolder",
           "group": "2_import"
+        },
+        {
+          "command": "b2c-dx.cap.install",
+          "when": "explorerResourceIsFolder && resource in b2c-dx.capDirectories",
+          "group": "3_cap"
         }
       ],
       "commandPalette": [
@@ -760,6 +778,10 @@
         },
         {
           "command": "b2c-dx.setProjectRoot",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cap.install",
           "when": "false"
         }
       ]

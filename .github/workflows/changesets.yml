@@ -32,6 +32,9 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
+      - name: Configure git push credentials
+        run: git remote set-url origin https://x-access-token:${{ secrets.CHANGESETS_TOKEN }}@github.com/${{ github.repository }}
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

@@ -8,5 +8,6 @@
       "@salesforce/b2c-tooling-sdk/*": ["../src/*/index.ts", "../src/*"]
     }
   },
-  "include": ["./**/*", "../src/**/*", "../../../types/**/*"]
+  "include": ["./**/*", "../src/**/*", "../../../types/**/*"],
+  "exclude": ["./fixtures/**/*.tsx"]
 }

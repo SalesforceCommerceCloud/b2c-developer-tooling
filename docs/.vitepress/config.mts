@@ -73,6 +73,7 @@ const guidesSidebar = [
       {text: 'Security', link: '/guide/security'},
       {text: 'Storefront Next', link: '/guide/storefront-next'},
       {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
+      {text: 'Commerce Apps (CAPs)', link: '/guide/commerce-apps'},
     ],
   },
   {
@@ -103,6 +104,7 @@ const referenceSidebar = [
       {text: 'Auth', link: '/cli/auth'},
       {text: 'BM Roles', link: '/cli/bm-roles'},
       {text: 'CIP', link: '/cli/cip'},
+      {text: 'CAP (Commerce Apps)', link: '/cli/cap'},
       {text: 'Code', link: '/cli/code'},
       {text: 'Content', link: '/cli/content'},
       {text: 'Custom APIs', link: '/cli/custom-apis'},

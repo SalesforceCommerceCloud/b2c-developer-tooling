@@ -13,6 +13,7 @@ import JSZip from 'jszip';
 import * as xml2js from 'xml2js';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
+import {openJobLog} from '../job-log-viewer.js';
 
 export const CONTENT_SCHEME = 'b2c-content';
 
@@ -169,8 +170,7 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
       if (err instanceof JobExecutionError && err.execution.is_log_file_existing) {
         try {
           const log = await getJobLog(instance, err.execution);
-          const doc = await vscode.workspace.openTextDocument({content: log, language: 'log'});
-          await vscode.window.showTextDocument(doc);
+          await openJobLog(err.execution.id ?? 'job', log);
         } catch {
           // Fall through to generic error
         }

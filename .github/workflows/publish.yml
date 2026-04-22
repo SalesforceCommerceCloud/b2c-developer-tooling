@@ -226,24 +226,32 @@ jobs:
 
       - name: Publish SDK to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_sdk == 'true'
+        id: publish-sdk
+        continue-on-error: true
         run: >-
           pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks
           --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_sdk }}
 
       - name: Publish CLI to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_cli == 'true'
+        id: publish-cli
+        continue-on-error: true
         run: >-
           pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks
           --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_cli }}
 
       - name: Publish MCP to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_mcp == 'true'
+        id: publish-mcp
+        continue-on-error: true
         run: >-
           pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks
           --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_mcp }}
 
       - name: Publish MRT Utilities to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_mrt == 'true'
+        id: publish-mrt
+        continue-on-error: true
         run: >-
           pnpm --filter @salesforce/mrt-utilities publish --provenance --no-git-checks
           --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_mrt }}
@@ -536,3 +544,13 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail if any publish failed
+        if: always() && (steps.publish-sdk.outcome == 'failure' || steps.publish-cli.outcome == 'failure' || steps.publish-mcp.outcome == 'failure' || steps.publish-mrt.outcome == 'failure')
+        run: |
+          echo "::error::One or more npm publishes failed:"
+          [[ "${{ steps.publish-sdk.outcome }}" == "failure" ]] && echo "  - SDK"
+          [[ "${{ steps.publish-cli.outcome }}" == "failure" ]] && echo "  - CLI"
+          [[ "${{ steps.publish-mcp.outcome }}" == "failure" ]] && echo "  - MCP"
+          [[ "${{ steps.publish-mrt.outcome }}" == "failure" ]] && echo "  - MRT"
+          exit 1
