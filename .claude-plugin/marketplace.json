@@ -41,6 +41,36 @@
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
       "strict": false
+    },
+    {
+      "name": "cap-dev",
+      "description": "Skills for scaffolding, packaging, validating, and submitting Commerce App Packages (CAPs) for Salesforce Commerce Cloud.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "homepage": "https://github.com/SalesforceCommerceCloud/commerce-apps",
+      "repository": "https://github.com/SalesforceCommerceCloud/commerce-apps",
+      "license": "Apache-2.0",
+      "source": {
+        "source": "git-subdir",
+        "url": "SalesforceCommerceCloud/commerce-apps",
+        "path": ".claude",
+        "ref": "feature/codex-copilot-plugin-docs"
+      },
+      "category": "productivity",
+      "keywords": [
+        "salesforce",
+        "commerce-apps",
+        "commerce-cloud",
+        "cap",
+        "impex"
+      ],
+      "interface": {
+        "displayName": "Commerce Apps Dev",
+        "shortDescription": "Scaffold, validate, package, and submit Commerce App Packages.",
+        "longDescription": "Skills for building Salesforce Commerce Cloud app packages — scaffold new apps (UI-only, backend-only, or fullstack), generate IMPEX configurations for services, custom objects, and site preferences, validate packages against registry requirements, and submit pull requests to the commerce-apps registry."
+      },
+      "strict": false
     }
   ]
 }

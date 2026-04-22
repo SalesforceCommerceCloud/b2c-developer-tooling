@@ -46,6 +46,7 @@
 export type {
   IdeType,
   SkillSet,
+  SkillSourceConfig,
   IdePaths,
   IdeConfig,
   SkillMetadata,
@@ -58,6 +59,9 @@ export type {
   InstallSkillsResult,
   CachedArtifact,
 } from './types.js';
+
+// Skill source registry
+export {SKILL_SOURCES, getSkillSource, ALL_SKILL_SETS} from './sources.js';
 
 // Agent/IDE utilities
 export {
