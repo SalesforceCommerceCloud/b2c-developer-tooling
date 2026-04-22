@@ -17,7 +17,11 @@ const CAP_DIRECTORIES_CONTEXT_KEY = 'b2c-dx.capDirectories';
  * - Context key: tracks CAP directories so the context menu only appears on CAP folders
  * - Install command: right-click a CAP folder to install it
  */
-export function registerCap(context: vscode.ExtensionContext, configProvider: B2CExtensionConfig): void {
+export function registerCap(
+  context: vscode.ExtensionContext,
+  configProvider: B2CExtensionConfig,
+  log: vscode.OutputChannel,
+): void {
   // File decoration provider
   const decorator = new CapFileDecorationProvider();
   context.subscriptions.push(vscode.window.registerFileDecorationProvider(decorator));
@@ -33,14 +37,18 @@ export function registerCap(context: vscode.ExtensionContext, configProvider: B2
     for (const u of capUris) {
       obj[u] = true;
     }
+    log.appendLine(`CAP: setting context with ${capUris.size} directory(ies): ${[...capUris].join(', ')}`);
     vscode.commands.executeCommand('setContext', CAP_DIRECTORIES_CONTEXT_KEY, obj);
   }
 
   async function scanCapDirectories(): Promise<void> {
     capUris.clear();
+    log.appendLine('CAP: scanning workspace for commerce-app.json files...');
     const files = await vscode.workspace.findFiles('**/commerce-app.json');
+    log.appendLine(`CAP: found ${files.length} commerce-app.json file(s)`);
     for (const f of files) {
       const dirUri = vscode.Uri.file(path.dirname(f.fsPath));
+      log.appendLine(`CAP: registered directory ${dirUri.toString()}`);
       capUris.add(dirUri.toString());
     }
     updateCapContext();

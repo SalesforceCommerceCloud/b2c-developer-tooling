@@ -1,6 +1,6 @@
 ---
 name: b2c-cap
-description: Manage Commerce App Packages (CAPs) and commerce features using the b2c CLI. Use when validating, packaging, installing, uninstalling, listing, or pulling Commerce App Packages and commerce features on B2C Commerce instances, viewing configuration tasks, or pulling app sources for cartridge deployment or Storefront Next development.
+description: Manage Commerce App Packages (CAPs), also called commerce apps or apps, and commerce features using the b2c CLI. Use this skill whenever the user needs to validate, package, install, uninstall, list, or pull commerce apps on B2C Commerce instances, view configuration tasks, or pull app sources for cartridge deployment or Storefront Next development. Also use when checking which apps are installed on an instance, inspecting app details or versions, or managing app lifecycle — even if they just say "what apps do I have", "list my commerce apps", "which CAPs are installed", "install this app", "pull app sources", or "show installed apps".
 ---
 
 # B2C CAP Skill

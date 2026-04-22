@@ -401,7 +401,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     registerApiBrowser(context, configProvider, log);
   }
   if (settings.get<boolean>('features.cap', true)) {
-    registerCap(context, configProvider);
+    registerCap(context, configProvider, log);
   }
 
   registerDebugger(context, configProvider);
