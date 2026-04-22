@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.6.0
+
+### Minor Changes
+
+- [#373](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/373) [`1dc1ee5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dc1ee55642f0d478d260867d538f02e32057d7e) - Add support for Commerce Apps (CAP) development skills via `b2c setup skills cap-dev`. Introduces a skill source registry to support external skill repositories alongside existing release-artifact sources. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.5.0
 
 ### Minor Changes

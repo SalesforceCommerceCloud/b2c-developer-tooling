@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.1.2
+
+### Patch Changes
+
+- [`453f9e1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/453f9e18a328807c631ded9be94d6db47044f06c) - Add Commerce Apps Dev (cap-dev) skill set to Claude Code and Codex marketplace configurations (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.1.1
 
 ### Patch Changes
