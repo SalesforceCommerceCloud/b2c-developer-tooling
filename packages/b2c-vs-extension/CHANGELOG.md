@@ -1,5 +1,26 @@
 # Change Log
 
+## 0.4.0
+
+### Minor Changes
+
+- [#370](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/370) [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a) - Add `cap` command topic for Commerce App Package (CAP) management. (Thanks [@clavery](https://github.com/clavery)!)
+
+  New commands:
+  - `b2c cap validate` — validates CAP structure, manifest, and cartridge rules locally
+  - `b2c cap package` — packages a CAP directory into a distributable `.zip`
+  - `b2c cap install` — installs a CAP on an instance via WebDAV + `sfcc-install-commerce-app` job
+  - `b2c cap uninstall` — uninstalls a CAP via `sfcc-uninstall-commerce-app` job
+
+  New SDK exports in `@salesforce/b2c-tooling-sdk/operations/cap`: `validateCap`, `commerceAppInstall`, `commerceAppUninstall`, `commerceAppPackage`.
+
+  The VS Code extension gains CAP directory detection (badge decoration) and an "Install Commerce App (CAP)" context menu action.
+
+### Patch Changes
+
+- Updated dependencies [[`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a), [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a)]:
+  - @salesforce/b2c-tooling-sdk@1.5.0
+
 ## 0.3.4
 
 ### Patch Changes

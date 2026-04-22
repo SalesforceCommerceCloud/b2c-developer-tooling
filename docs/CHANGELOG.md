@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.17
+
+### Patch Changes
+
+- [#370](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/370) [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a) - Add `cap list`, `cap tasks`, and `cap pull` commands for managing installed Commerce Apps (Thanks [@clavery](https://github.com/clavery)!)
+  - `cap list` exports and parses `commerce_feature_states` to show installed features with type, source, status, and version
+  - `cap tasks` displays configuration tasks for an installed app with clickable Business Manager links
+  - `cap pull` downloads and extracts installed app source packages for cartridge deployment or Storefront Next development
+  - Standardize all cap commands to use `--site-id` flag (with `--site` as alias)
+  - `cap uninstall` no longer requires `--domain` — looks it up automatically from the feature state
+  - `cap install` now keeps the archive on the instance by default (use `--clean-archive` to remove)
+
+- [`db5648f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db5648ff2a119a3e3b0ad165905eb8cc322d964b) - Improved release workflow reliability (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.16
 
 ### Patch Changes
