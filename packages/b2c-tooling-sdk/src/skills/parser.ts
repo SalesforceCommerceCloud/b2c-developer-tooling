@@ -6,44 +6,38 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import yaml from 'js-yaml';
 import type {SkillMetadata, SkillSet} from './types.js';
 import {getLogger} from '../logging/logger.js';
 
 /**
- * Parse simple YAML-like frontmatter from SKILL.md content.
- * Only supports basic key: value pairs (name and description).
+ * Parse YAML frontmatter from SKILL.md content.
+ * Supports both simple key: value and YAML block scalars (e.g., description: >-).
  *
  * @param content - File content with frontmatter
  * @returns Parsed frontmatter or null if invalid
  */
 export function parseSkillFrontmatter(content: string): {name: string; description: string} | null {
-  // Match frontmatter between --- delimiters
   const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
   if (!match) {
     return null;
   }
 
-  const frontmatter = match[1];
-  const result: {name?: string; description?: string} = {};
+  try {
+    const parsed = yaml.load(match[1]) as Record<string, unknown> | null;
+    if (!parsed) return null;
 
-  // Parse simple key: value lines
-  for (const line of frontmatter.split('\n')) {
-    const keyValueMatch = line.match(/^(\w+):\s*(.+)$/);
-    if (keyValueMatch) {
-      const [, key, value] = keyValueMatch;
-      if (key === 'name') {
-        result.name = value.trim();
-      } else if (key === 'description') {
-        result.description = value.trim();
-      }
+    const name = typeof parsed.name === 'string' ? parsed.name.trim() : undefined;
+    const description = typeof parsed.description === 'string' ? parsed.description.trim() : undefined;
+
+    if (!name || !description) {
+      return null;
     }
-  }
 
-  if (!result.name || !result.description) {
+    return {name, description};
+  } catch {
     return null;
   }
-
-  return {name: result.name, description: result.description};
 }
 
 /**
