@@ -394,7 +394,8 @@ jobs:
       - name: Create GitHub Release
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
-          # Determine the release tag — prefer CLI as the user-facing product
+          # Determine the release tag — prefer CLI as the user-facing product.
+          # VSX is excluded: it gets its own dedicated release to avoid tag collisions.
           if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
           elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
@@ -403,18 +404,27 @@ jobs:
             RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
           elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
-          elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
             RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
           elif [[ "${{ steps.packages.outputs.publish_plugins }}" == "true" ]]; then
             RELEASE_TAG="b2c-agent-plugins@${{ steps.packages.outputs.version_plugins }}"
           else
-            echo "No packages published, skipping release"
+            echo "No non-VSX packages published, skipping main release"
             exit 0
           fi
 
-          gh release create "$RELEASE_TAG" --notes-file /tmp/release-notes.md
+          # Build a human-readable title from published package versions
+          TITLE_PARTS=()
+          [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]] && TITLE_PARTS+=("b2c-cli ${{ steps.packages.outputs.version_cli }}")
+          [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]] && TITLE_PARTS+=("b2c-tooling-sdk ${{ steps.packages.outputs.version_sdk }}")
+          [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]] && TITLE_PARTS+=("b2c-dx-mcp ${{ steps.packages.outputs.version_mcp }}")
+          [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]] && TITLE_PARTS+=("mrt-utilities ${{ steps.packages.outputs.version_mrt }}")
+          [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]] && TITLE_PARTS+=("b2c-vs-extension ${{ steps.packages.outputs.version_vsx }}")
+          [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]] && TITLE_PARTS+=("docs ${{ steps.packages.outputs.version_docs }}")
+          [[ "${{ steps.packages.outputs.publish_plugins }}" == "true" ]] && TITLE_PARTS+=("agent-plugins ${{ steps.packages.outputs.version_plugins }}")
+          RELEASE_TITLE="Version Packages — $(IFS=', '; echo "${TITLE_PARTS[*]}")"
+
+          gh release create "$RELEASE_TAG" --title "$RELEASE_TITLE" --notes-file /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -433,7 +443,7 @@ jobs:
       - name: Upload skills to release
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_plugins == 'true'
         run: |
-          # Determine the release tag (same priority as Create GitHub Release)
+          # Determine the release tag (same priority as Create GitHub Release, excludes VSX)
           if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
           elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
@@ -442,8 +452,6 @@ jobs:
             RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
           elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
-          elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
             RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
           else
@@ -454,35 +462,38 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload VS Code extension to release
-        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
-        run: |
-          # Determine the release tag (same logic as Create GitHub Release)
-          if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
-          elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
-          elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
-          elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
-          elif [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            RELEASE_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
-          else
-            echo "No release to upload to"
-            exit 0
-          fi
-
-          gh release upload "$RELEASE_TAG" packages/b2c-vs-extension/*.vsix
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create VS Code extension release
         if: >-
           steps.release-type.outputs.type == 'stable'
           && steps.packages.outputs.publish_vsx == 'true'
         run: |
           VSX_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
+          VSX_VERSION="${{ steps.packages.outputs.version_vsx }}"
+
+          # Extract extension changelog for the dedicated release
+          extract_latest() {
+            awk '
+              /^## / { if (found) exit; found=1; next }
+              found { print }
+            ' "$1"
+          }
+
+          VSX_CHANGELOG=$(extract_latest packages/b2c-vs-extension/CHANGELOG.md)
+
+          VSX_NOTES="## B2C DX VS Code Extension v${VSX_VERSION}
+
+Download the \`.vsix\` file below and install via:
+\`\`\`
+code --install-extension b2c-vs-extension-${VSX_VERSION}.vsix
+\`\`\`
+
+Or in VS Code: Extensions → ⋯ → Install from VSIX...
+
+---
+
+### Changelog
+
+${VSX_CHANGELOG}"
 
           # Create a dedicated release for the extension (not latest — main releases own that)
           # Use --clobber on upload in case a previous run partially completed
@@ -491,21 +502,10 @@ jobs:
             gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix --clobber
           else
             gh release create "$VSX_TAG" \
-              --title "VS Code Extension ${{ steps.packages.outputs.version_vsx }}" \
+              --title "VS Code Extension ${VSX_VERSION}" \
               --latest=false \
-              --notes "$(cat <<'NOTES'
-          ## B2C DX VS Code Extension v${{ steps.packages.outputs.version_vsx }}
+              --notes "$VSX_NOTES"
 
-          Download the `.vsix` file below and install via:
-          ```
-          code --install-extension b2c-vs-extension-${{ steps.packages.outputs.version_vsx }}.vsix
-          ```
-
-          Or in VS Code: Extensions → ⋯ → Install from VSIX...
-          NOTES
-          )"
-
-            # Upload the VSIX to the dedicated release
             gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
           fi
         env:
