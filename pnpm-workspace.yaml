@@ -18,7 +18,7 @@ catalog:
   '@salesforce/dev-config': ^4.3.2
   '@types/chai': ^4
   '@types/mocha': ^10
-  '@types/node': ^22
+  '@types/node': ^24.12.2
   '@types/sinon': ^21.0.0
   c8: ^11.0.0
   chai: ^4
@@ -34,7 +34,7 @@ catalog:
   shx: ^0.3.3
   sinon: ^21.0.1
   tsx: ^4
-  typescript: ^5
+  typescript: ^6.0.3
   typescript-eslint: ^8
 
 minimumReleaseAge: 2880
