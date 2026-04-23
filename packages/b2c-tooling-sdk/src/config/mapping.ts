@@ -172,6 +172,10 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // JWT Bearer auth options
+    jwtCertPath: json.jwtCertPath,
+    jwtKeyPath: json.jwtKeyPath,
+    jwtPassphrase: json.jwtPassphrase,
     // Safety
     safety: mapDwJsonSafety(json.safety),
   };
@@ -303,6 +307,15 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.jwtCertPath !== undefined) {
+    result.jwtCertPath = config.jwtCertPath;
+  }
+  if (config.jwtKeyPath !== undefined) {
+    result.jwtKeyPath = config.jwtKeyPath;
+  }
+  if (config.jwtPassphrase !== undefined) {
+    result.jwtPassphrase = config.jwtPassphrase;
   }
   if (config.safety !== undefined) {
     result.safety = {
@@ -438,6 +451,10 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // JWT Bearer auth options
+      jwtCertPath: overrides.jwtCertPath ?? base.jwtCertPath,
+      jwtKeyPath: overrides.jwtKeyPath ?? base.jwtKeyPath,
+      jwtPassphrase: overrides.jwtPassphrase ?? base.jwtPassphrase,
       // Safety
       safety: overrides.safety ?? base.safety,
     },

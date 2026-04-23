@@ -43,6 +43,12 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
+  // JWT Bearer auth env vars
+  SFCC_JWT_CERT: 'jwtCertPath',
+  SFCC_JWT_CERT_PATH: 'jwtCertPath',
+  SFCC_JWT_KEY: 'jwtKeyPath',
+  SFCC_JWT_KEY_PATH: 'jwtKeyPath',
+  SFCC_JWT_PASSPHRASE: 'jwtPassphrase',
   // MRT env vars — MRT_* listed first as fallback, SFCC_MRT_* listed second to take precedence
   MRT_API_KEY: 'mrtApiKey',
   SFCC_MRT_API_KEY: 'mrtApiKey',
