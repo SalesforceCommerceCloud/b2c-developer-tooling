@@ -77,9 +77,9 @@ Detailed setup: [Claude Code](/guide/agent-skills#claude-code) · [Codex](/guide
 
 ```bash [Claude Code]
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Use --scope user to install globally (available in all projects)
-claude plugin install b2c-cli --scope project
-claude plugin install b2c --scope project
+# Use --scope project to install for current project only
+claude plugin install b2c-cli
+claude plugin install b2c
 ```
 
 ```text [Copilot (VS Code)]

@@ -20,7 +20,21 @@ export type IdeType =
 /**
  * Skill set categories matching the plugins directory structure.
  */
-export type SkillSet = 'b2c' | 'b2c-cli';
+export type SkillSet = 'b2c' | 'b2c-cli' | 'cap-dev';
+
+/**
+ * Configuration for a skill source — defines how to fetch skills from a particular repository.
+ */
+export interface SkillSourceConfig {
+  id: SkillSet;
+  displayName: string;
+  type: 'release-artifact' | 'repo-contents';
+  repo: string;
+  assetName?: string;
+  tagPattern?: (version: string) => string;
+  ref?: string;
+  skillsPath?: string;
+}
 
 /**
  * IDE path configuration for skill installation.
@@ -159,4 +173,6 @@ export interface CachedArtifact {
   path: string;
   /** ISO date string when artifact was downloaded */
   downloadedAt: string;
+  /** For repo-contents sources: the resolved commit SHA */
+  commitSha?: string;
 }
