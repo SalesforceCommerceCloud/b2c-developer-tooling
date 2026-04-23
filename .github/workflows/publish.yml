@@ -480,20 +480,24 @@ jobs:
 
           VSX_CHANGELOG=$(extract_latest packages/b2c-vs-extension/CHANGELOG.md)
 
-          VSX_NOTES="## B2C DX VS Code Extension v${VSX_VERSION}
+          {
+            cat <<HEADER
+          ## B2C DX VS Code Extension v${VSX_VERSION}
 
-Download the \`.vsix\` file below and install via:
-\`\`\`
-code --install-extension b2c-vs-extension-${VSX_VERSION}.vsix
-\`\`\`
+          Download the \`.vsix\` file below and install via:
+          \`\`\`
+          code --install-extension b2c-vs-extension-${VSX_VERSION}.vsix
+          \`\`\`
 
-Or in VS Code: Extensions → ⋯ → Install from VSIX...
+          Or in VS Code: Extensions → ⋯ → Install from VSIX...
 
----
+          ---
 
-### Changelog
+          ### Changelog
 
-${VSX_CHANGELOG}"
+          HEADER
+            echo "$VSX_CHANGELOG"
+          } | sed 's/^          //' > /tmp/vsx-release-notes.md
 
           # Create a dedicated release for the extension (not latest — main releases own that)
           # Use --clobber on upload in case a previous run partially completed
@@ -504,7 +508,7 @@ ${VSX_CHANGELOG}"
             gh release create "$VSX_TAG" \
               --title "VS Code Extension ${VSX_VERSION}" \
               --latest=false \
-              --notes "$VSX_NOTES"
+              --notes-file /tmp/vsx-release-notes.md
 
             gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
           fi
