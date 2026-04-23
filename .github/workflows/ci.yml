@@ -76,9 +76,15 @@ jobs:
         working-directory: packages/b2c-cli
         run: pnpm run pretest && pnpm run test:ci && pnpm run lint
 
+      - name: Run MRT Utilities tests
+        id: mrt-test
+        if: always() && steps.cli-test.conclusion != 'cancelled'
+        working-directory: packages/mrt-utilities
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+
       - name: Run VS Extension checks
         id: vs-extension-test
-        if: always() && steps.cli-test.conclusion != 'cancelled'
+        if: always() && steps.mrt-test.conclusion != 'cancelled'
         working-directory: packages/b2c-vs-extension
         run: pnpm run typecheck:agent && pnpm run lint
 
@@ -167,8 +173,13 @@ jobs:
         # the Linux-calibrated 70% threshold even though the tests pass.
         # Coverage is still generated and uploaded for inspection.
         run: pnpm run pretest && pnpm run test:ci:win && pnpm run lint
-      - name: Run VS Extension checks
+      - name: Run MRT Utilities tests
+        id: mrt-test
         if: always() && steps.cli-test.conclusion != 'cancelled'
+        working-directory: packages/mrt-utilities
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run VS Extension checks
+        if: always() && steps.mrt-test.conclusion != 'cancelled'
         working-directory: packages/b2c-vs-extension
         run: pnpm run typecheck:agent && pnpm run lint
       - name: Print Windows test failures

@@ -14,9 +14,9 @@ Skills follow the open [Agent Skills](https://agentskills.io/home) standard and 
 
 ```bash [Claude Code]
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Use --scope user to install globally (available in all projects)
-claude plugin install b2c-cli --scope project
-claude plugin install b2c --scope project
+# Use --scope project to install for current project only
+claude plugin install b2c-cli
+claude plugin install b2c
 ```
 
 ```text [Copilot (VS Code)]
@@ -87,16 +87,16 @@ Install plugins at your preferred scope:
 
 ::: code-group
 
+```bash [User Scope (default)]
+claude plugin install b2c-cli
+claude plugin install b2c
+claude plugin install b2c-dx-mcp
+```
+
 ```bash [Project Scope]
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
 claude plugin install b2c-dx-mcp --scope project
-```
-
-```bash [User Scope]
-claude plugin install b2c-cli --scope user
-claude plugin install b2c --scope user
-claude plugin install b2c-dx-mcp --scope user
 ```
 
 :::

@@ -1,5 +1,29 @@
 # Change Log
 
+## 0.4.3
+
+### Patch Changes
+
+- [`63bcb49`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/63bcb4907585bea7ea41a6be483e7078a2cf5113) - Activate extension on startup so the instance selector status bar appears without needing to open the B2C sidebar first (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`485ef63`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/485ef63b901d91f7b08c56366d1f1756a03f60dc)]:
+  - @salesforce/b2c-tooling-sdk@1.6.1
+
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [[`1dc1ee5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dc1ee55642f0d478d260867d538f02e32057d7e)]:
+  - @salesforce/b2c-tooling-sdk@1.6.0
+
+## 0.4.1
+
+### Patch Changes
+
+- [`bad9034`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bad903469353654a4b3cdbafecf2cbce5a863ea1) - Improved CAP skill with better guidance and UX refinements (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`1b07a5d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b07a5d400a3c684c391940bbd44c0dfa80d5dc9) - Fix OAuth redirect URI trailing slash mismatch that caused authentication failures in VS Code (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.0
 
 ### Minor Changes

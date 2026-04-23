@@ -27,6 +27,26 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
+    },
+    {
+      "name": "cap-dev",
+      "description": "Skills for scaffolding, packaging, validating, and submitting Commerce App Packages (CAPs) for Salesforce Commerce Cloud.",
+      "source": {
+        "source": "git-subdir",
+        "url": "SalesforceCommerceCloud/commerce-apps",
+        "path": ".claude",
+        "ref": "feature/codex-copilot-plugin-docs"
+      },
+      "interface": {
+        "displayName": "Commerce Apps Dev",
+        "shortDescription": "Scaffold, validate, package, and submit Commerce App Packages.",
+        "longDescription": "Skills for building Salesforce Commerce Cloud app packages — scaffold new apps (UI-only, backend-only, or fullstack), generate IMPEX configurations for services, custom objects, and site preferences, validate packages against registry requirements, and submit pull requests to the commerce-apps registry."
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
   ]
 }

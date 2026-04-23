@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.4.0",
+  "version": "0.4.3",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -18,17 +18,13 @@
     "vscode": "^1.105.1"
   },
   "activationEvents": [
+    "onStartupFinished",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
     "onFileSystem:b2c-content",
-    "onCommand:b2c-dx.openUI",
-    "onCommand:b2c-dx.promptAgent",
-    "onCommand:b2c-dx.listWebDav",
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
-    "onCommand:b2c-dx.scaffold.generate",
-    "onCommand:b2c-dx.cap.install",
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],

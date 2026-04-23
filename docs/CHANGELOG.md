@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.18
+
+### Patch Changes
+
+- [`c5edd5d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c5edd5dccc5e472528c08c3fb2fc12b1872440c6) - Updated plugin install examples to default to user scope (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.17
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.6.1
+
+### Patch Changes
+
+- [`485ef63`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/485ef63b901d91f7b08c56366d1f1756a03f60dc) - Fix skills version resolution to correctly parse release tags and invalidate cached version on download errors (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.6.0
+
+### Minor Changes
+
+- [#373](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/373) [`1dc1ee5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dc1ee55642f0d478d260867d538f02e32057d7e) - Add support for Commerce Apps (CAP) development skills via `b2c setup skills cap-dev`. Introduces a skill source registry to support external skill repositories alongside existing release-artifact sources. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.5.0
 
 ### Minor Changes

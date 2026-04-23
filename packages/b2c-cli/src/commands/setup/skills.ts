@@ -12,6 +12,8 @@ import {
   type SkillMetadata,
   type InstallSkillsResult,
   ALL_IDE_TYPES,
+  ALL_SKILL_SETS,
+  SKILL_SOURCES,
   detectInstalledIdes,
   downloadSkillsArtifact,
   scanSkills,
@@ -60,8 +62,8 @@ interface SetupSkillsResponse {
 export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static args = {
     skillset: Args.string({
-      description: 'Skill set to install: b2c or b2c-cli',
-      options: ['b2c', 'b2c-cli'],
+      description: 'Skill set to install: b2c, b2c-cli, or cap-dev',
+      options: ALL_SKILL_SETS,
     }),
   };
 
@@ -75,6 +77,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static examples = [
     '<%= config.bin %> <%= command.id %> b2c',
     '<%= config.bin %> <%= command.id %> b2c-cli --ide cursor --global',
+    '<%= config.bin %> <%= command.id %> cap-dev --ide claude-code --global',
     '<%= config.bin %> <%= command.id %> b2c --list',
     '<%= config.bin %> <%= command.id %> b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor',
     '<%= config.bin %> <%= command.id %> b2c --global --update --force',
@@ -130,16 +133,16 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       this.error(
         t(
           'commands.setup.skills.skillsetRequired',
-          'Skillset argument required in non-interactive mode. Specify b2c or b2c-cli.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, or cap-dev.',
         ),
       );
     } else {
       skillsets = await checkbox({
         message: t('commands.setup.skills.selectSkillset', 'Select skill set(s) to install:'),
-        choices: [
-          {name: 'b2c - B2C Commerce development patterns', value: 'b2c' as SkillSet},
-          {name: 'b2c-cli - B2C CLI commands and operations', value: 'b2c-cli' as SkillSet},
-        ],
+        choices: ALL_SKILL_SETS.map((id) => ({
+          name: `${id} - ${SKILL_SOURCES[id].displayName}`,
+          value: id,
+        })),
       });
       if (skillsets.length === 0) {
         ux.stdout(t('commands.setup.skills.noSkillsetsSelected', 'No skill sets selected.'));
@@ -148,11 +151,23 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     }
 
     // Download and scan skills
-    this.log(
-      t('commands.setup.skills.downloading', 'Downloading skills from release {{version}}...', {
-        version: this.flags.version || 'latest',
-      }),
-    );
+    const hasReleaseArtifacts = skillsets.some((s) => SKILL_SOURCES[s].type === 'release-artifact');
+    const hasRepoContents = skillsets.some((s) => SKILL_SOURCES[s].type === 'repo-contents');
+    if (hasReleaseArtifacts && hasRepoContents) {
+      this.log(t('commands.setup.skills.downloading', 'Downloading skills...'));
+    } else if (hasRepoContents) {
+      this.log(
+        t('commands.setup.skills.downloadingRepo', 'Downloading skills from repository ({{ref}})...', {
+          ref: this.flags.version || 'main',
+        }),
+      );
+    } else {
+      this.log(
+        t('commands.setup.skills.downloadingRelease', 'Downloading skills from release {{version}}...', {
+          version: this.flags.version || 'latest',
+        }),
+      );
+    }
 
     // Download skills for all skillsets in parallel
     const downloadResults = await Promise.all(
