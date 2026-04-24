@@ -20,7 +20,7 @@ export type IdeType =
 /**
  * Skill set categories matching the plugins directory structure.
  */
-export type SkillSet = 'b2c' | 'b2c-cli' | 'cap-dev';
+export type SkillSet = 'b2c' | 'b2c-cli' | 'cap-dev' | 'storefront-next';
 
 /**
  * Configuration for a skill source — defines how to fetch skills from a particular repository.
@@ -92,6 +92,8 @@ export interface ReleaseInfo {
   b2cSkillsAssetUrl: string | null;
   /** Download URL for b2c-cli-skills.zip asset, or null if not present */
   b2cCliSkillsAssetUrl: string | null;
+  /** Download URL for storefront-next-skills.zip asset, or null if not present */
+  storefrontNextSkillsAssetUrl: string | null;
 }
 
 /**

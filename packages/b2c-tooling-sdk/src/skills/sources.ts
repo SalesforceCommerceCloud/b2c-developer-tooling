@@ -28,6 +28,14 @@ export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
     assetName: 'b2c-cli-skills.zip',
     tagPattern: pluginsTag,
   },
+  'storefront-next': {
+    id: 'storefront-next',
+    displayName: 'Storefront Next development skills',
+    type: 'release-artifact',
+    repo: 'SalesforceCommerceCloud/b2c-developer-tooling',
+    assetName: 'storefront-next-skills.zip',
+    tagPattern: pluginsTag,
+  },
   'cap-dev': {
     id: 'cap-dev',
     displayName: 'Commerce Apps development skills',

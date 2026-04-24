@@ -186,7 +186,7 @@ Changeset guidelines:
   - HOW a consumer should update their code
 - Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
-Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`
+Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`, `@salesforce/b2c-agent-plugins`
 
 Create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 
@@ -201,3 +201,4 @@ Description of the change explaining WHAT, WHY, and HOW to update
 
 - Include only the packages that were directly modified
 - For doc-only changes, target `@salesforce/b2c-dx-docs` instead of the CLI/SDK/MCP packages
+- For changes to agent skills/plugins in `skills/` (adding or updating skill content, adding a new plugin), target `@salesforce/b2c-agent-plugins`
