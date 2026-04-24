@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.2.0
+
+### Minor Changes
+
+- [#377](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/377) [`cb66b56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb66b563d5d5ca6a0f584d9007629ba392cb3424) - Add `storefront-next` plugin with 14 skills covering the full Storefront Next development lifecycle — project setup, routing, data fetching, components, Page Designer, authentication, i18n, extensions, testing, performance, and deployment to Managed Runtime. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.1.3
 
 ### Patch Changes

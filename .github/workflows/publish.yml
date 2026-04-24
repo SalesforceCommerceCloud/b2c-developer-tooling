@@ -434,6 +434,9 @@ jobs:
           # Create b2c-cli-skills.zip containing skills/b2c-cli/skills/
           cd skills/b2c-cli && zip -r ../../b2c-cli-skills.zip skills/
           cd ../..
+          # Create storefront-next-skills.zip containing skills/storefront-next/skills/
+          cd skills/storefront-next && zip -r ../../storefront-next-skills.zip skills/
+          cd ../..
           echo "Created skills artifacts:"
           ls -la *.zip
 
@@ -446,7 +449,7 @@ jobs:
             --title "Agent Plugins ${{ steps.packages.outputs.version_plugins }}" \
             --notes "Skills artifacts for b2c-agent-plugins v${{ steps.packages.outputs.version_plugins }}"
 
-          gh release upload "$RELEASE_TAG" b2c-skills.zip b2c-cli-skills.zip
+          gh release upload "$RELEASE_TAG" b2c-skills.zip b2c-cli-skills.zip storefront-next-skills.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
