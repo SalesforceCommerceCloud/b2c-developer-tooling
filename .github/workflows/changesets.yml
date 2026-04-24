@@ -48,6 +48,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Trigger checks on PR branch
+        if: steps.changesets.outputs.pullRequestNumber
+        run: |
+          PR_BRANCH=$(gh pr view ${{ steps.changesets.outputs.pullRequestNumber }} --json headRefName -q '.headRefName')
+          git remote set-url origin https://x-access-token:${{ secrets.CHANGESETS_TOKEN }}@github.com/${{ github.repository }}
+          git fetch origin "$PR_BRANCH"
+          git checkout "$PR_BRANCH"
+          git commit --allow-empty -m "chore: trigger CI checks"
+          git push origin "$PR_BRANCH"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Add release label to PR
         if: steps.changesets.outputs.pullRequestNumber
         run: gh pr edit ${{ steps.changesets.outputs.pullRequestNumber }} --add-label release
