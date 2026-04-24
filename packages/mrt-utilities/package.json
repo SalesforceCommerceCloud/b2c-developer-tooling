@@ -102,7 +102,9 @@
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
-    "test:watch": "mocha --watch \"test/**/*.test.ts\""
+    "test:watch": "mocha --watch \"test/**/*.test.ts\"",
+    "prepack": "node scripts/strip-dev-exports.cjs",
+    "postpack": "git checkout package.json"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "3.952.0",
