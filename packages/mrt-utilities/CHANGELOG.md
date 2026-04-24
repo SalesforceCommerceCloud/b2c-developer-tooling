@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.1.4
+
+### Patch Changes
+
+- [#379](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/379) [`c89e045`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c89e045546dab14722f00b63ffe87db02942e486) - Fix package export resolution for consumers by stripping `development` export conditions during `prepack`, so published tarballs always resolve to shipped `dist` files. (Thanks [@bendvc](https://github.com/bendvc)!)
+
 ## 0.1.3
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.19
+
+### Patch Changes
+
+- [`3ffd72d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3ffd72d6c43f2ac812559e7ea22de3206cf6df9d) - Update agent skills guide and CLI setup reference for storefront-next plugin (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.18
 
 ### Patch Changes
