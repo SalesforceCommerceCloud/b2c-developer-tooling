@@ -395,7 +395,7 @@ jobs:
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
           # Determine the release tag — prefer CLI as the user-facing product.
-          # VSX is excluded: it gets its own dedicated release to avoid tag collisions.
+          # Plugins and VSX get their own dedicated releases, so they are excluded here.
           if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
             RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
           elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
@@ -406,10 +406,8 @@ jobs:
             RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
             RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
-          elif [[ "${{ steps.packages.outputs.publish_plugins }}" == "true" ]]; then
-            RELEASE_TAG="b2c-agent-plugins@${{ steps.packages.outputs.version_plugins }}"
           else
-            echo "No non-VSX packages published, skipping main release"
+            echo "No non-VSX/non-plugins packages published, skipping main release"
             exit 0
           fi
 
@@ -421,7 +419,6 @@ jobs:
           [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]] && TITLE_PARTS+=("mrt-utilities ${{ steps.packages.outputs.version_mrt }}")
           [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]] && TITLE_PARTS+=("b2c-vs-extension ${{ steps.packages.outputs.version_vsx }}")
           [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]] && TITLE_PARTS+=("docs ${{ steps.packages.outputs.version_docs }}")
-          [[ "${{ steps.packages.outputs.publish_plugins }}" == "true" ]] && TITLE_PARTS+=("agent-plugins ${{ steps.packages.outputs.version_plugins }}")
           RELEASE_TITLE="Version Packages — $(IFS=', '; echo "${TITLE_PARTS[*]}")"
 
           gh release create "$RELEASE_TAG" --title "$RELEASE_TITLE" --notes-file /tmp/release-notes.md
@@ -443,20 +440,11 @@ jobs:
       - name: Upload skills to release
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_plugins == 'true'
         run: |
-          # Determine the release tag (same priority as Create GitHub Release, excludes VSX)
-          if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
-          elif [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
-          elif [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
-          elif [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
-            RELEASE_TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
-          elif [[ "${{ steps.packages.outputs.publish_docs }}" == "true" ]]; then
-            RELEASE_TAG="docs@${{ steps.packages.outputs.version_docs }}"
-          else
-            RELEASE_TAG="b2c-agent-plugins@${{ steps.packages.outputs.version_plugins }}"
-          fi
+          RELEASE_TAG="b2c-agent-plugins@${{ steps.packages.outputs.version_plugins }}"
+
+          gh release create "$RELEASE_TAG" \
+            --title "Agent Plugins ${{ steps.packages.outputs.version_plugins }}" \
+            --notes "Skills artifacts for b2c-agent-plugins v${{ steps.packages.outputs.version_plugins }}"
 
           gh release upload "$RELEASE_TAG" b2c-skills.zip b2c-cli-skills.zip
         env:

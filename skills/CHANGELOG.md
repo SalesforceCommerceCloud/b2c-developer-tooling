@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.1.3
+
+### Patch Changes
+
+- [`485ef63`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/485ef63b901d91f7b08c56366d1f1756a03f60dc) - Fix skills artifact download by publishing zip assets to dedicated agent-plugins releases (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.1.2
 
 ### Patch Changes

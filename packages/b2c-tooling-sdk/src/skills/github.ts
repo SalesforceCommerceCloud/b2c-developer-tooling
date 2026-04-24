@@ -52,6 +52,15 @@ function writeLatestVersionCache(version: string): void {
   }
 }
 
+function clearLatestVersionCache(): void {
+  try {
+    const p = getLatestVersionCachePath();
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  } catch {
+    // Best-effort
+  }
+}
+
 function isRateLimited(response: Response): boolean {
   if (response.status !== 403 && response.status !== 429) return false;
   const remaining = response.headers.get('x-ratelimit-remaining');
@@ -130,9 +139,12 @@ function parseRelease(release: {
   const b2cAsset = release.assets.find((a) => a.name === b2cSource.assetName);
   const b2cCliAsset = release.assets.find((a) => a.name === b2cCliSource.assetName);
 
+  const versionMatch = release.tag_name.match(/@(\d+\.\d+\.\d+.*)$/);
+  const version = versionMatch ? versionMatch[1] : release.tag_name.replace(/^v/, '');
+
   return {
     tagName: release.tag_name,
-    version: release.tag_name.replace(/^v/, ''),
+    version,
     publishedAt: release.published_at,
     b2cSkillsAssetUrl: b2cAsset?.browser_download_url ?? null,
     b2cCliSkillsAssetUrl: b2cCliAsset?.browser_download_url ?? null,
@@ -167,6 +179,7 @@ export async function getRelease(version: string = 'latest'): Promise<ReleaseInf
   });
 
   if (!response.ok) {
+    clearLatestVersionCache();
     if (response.status === 404) {
       throw new Error(`Release not found: ${tag}`);
     }
@@ -212,7 +225,10 @@ export async function listReleases(limit: number = 10): Promise<ReleaseInfo[]> {
     assets: Array<{name: string; browser_download_url: string}>;
   }>;
 
-  return data.map(parseRelease).filter((r) => r.b2cSkillsAssetUrl || r.b2cCliSkillsAssetUrl);
+  return data
+    .filter((r) => r.tag_name.startsWith('b2c-agent-plugins@'))
+    .map(parseRelease)
+    .filter((r) => r.b2cSkillsAssetUrl || r.b2cCliSkillsAssetUrl);
 }
 
 /**
@@ -264,6 +280,7 @@ async function downloadReleaseArtifact(
   });
 
   if (!response.ok) {
+    clearLatestVersionCache();
     if (response.status === 404) {
       throw new Error(`Skills artifact '${source.assetName}' not found for release ${tag}`);
     }
