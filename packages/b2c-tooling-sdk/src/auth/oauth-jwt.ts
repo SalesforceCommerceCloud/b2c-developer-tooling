@@ -22,6 +22,7 @@ import {
   invalidateCachedOAuthToken,
   decodeJWT,
 } from './oauth.js';
+import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
 
 /**
  * Configuration for JWT Bearer authentication.
@@ -325,14 +326,23 @@ export class JwtOAuthStrategy implements AuthStrategy {
       '[JwtOAuthStrategy] Sending JWT Bearer token request',
     );
 
-    const response = await fetch(tokenUrl, {
+    // Build request object for middleware
+    let request = new Request(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        // NO Authorization header - this is key difference from client_credentials
       },
       body: params.toString(),
     });
+
+    // Apply auth middleware (e.g., User-Agent)
+    const middleware = globalAuthMiddlewareRegistry.getMiddleware();
+    request = await applyAuthRequestMiddleware(request, middleware);
+
+    let response = await fetch(request);
+
+    // Apply auth response middleware
+    response = await applyAuthResponseMiddleware(request, response, middleware);
 
     if (!response.ok) {
       const errorText = await response.text();

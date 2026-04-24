@@ -9,6 +9,7 @@ import {createRequire} from 'node:module';
 import protobuf from 'protobufjs';
 import type {AuthStrategy, FetchInit} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
+import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {getLogger} from '../logging/logger.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry, type UnifiedMiddleware} from './middleware-registry.js';
 
@@ -790,6 +791,7 @@ export class CipClient {
  */
 export function createCipClient(config: CipClientConfig, auth: AuthStrategy): CipClient {
   const cipScope = `SALESFORCE_COMMERCE_API:${config.instance}`;
-  const scopedAuth = auth instanceof OAuthStrategy ? auth.withAdditionalScopes([cipScope]) : auth;
+  const scopedAuth =
+    auth instanceof OAuthStrategy || auth instanceof JwtOAuthStrategy ? auth.withAdditionalScopes([cipScope]) : auth;
   return new CipClient(config, scopedAuth);
 }
