@@ -371,7 +371,7 @@ b2c setup skills [SKILLSET]
 
 | Argument   | Description                              | Default                |
 | ---------- | ---------------------------------------- | ---------------------- |
-| `SKILLSET` | Skill set to install: `b2c` or `b2c-cli` | Prompted interactively |
+| `SKILLSET` | Skill set to install: `b2c`, `b2c-cli`, `storefront-next`, or `cap-dev` | Prompted interactively |
 
 ### Flags
 
@@ -411,6 +411,7 @@ b2c setup skills
 # List available skills in a skillset
 b2c setup skills b2c --list
 b2c setup skills b2c-cli --list
+b2c setup skills storefront-next --list
 
 # Install b2c skills to Cursor (project scope)
 b2c setup skills b2c --ide cursor
@@ -447,7 +448,7 @@ b2c setup skills b2c --list --json
 
 When run without `--force`, the command provides an interactive experience:
 
-1. Prompts you to select skill set(s) (if not provided as argument) - you can select both `b2c` and `b2c-cli`
+1. Prompts you to select skill set(s) (if not provided as argument) - you can select multiple sets
 2. Downloads skills from the latest release (or specified version)
 3. Auto-detects installed IDEs
 4. Prompts you to select target IDEs
@@ -465,6 +466,7 @@ For Claude Code users, we recommend using the plugin marketplace for automatic u
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install storefront-next
 ```
 
 The marketplace provides:
@@ -477,10 +479,12 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 
 ### Skill Sets
 
-| Skill Set | Description                                     |
-| --------- | ----------------------------------------------- |
-| `b2c`     | B2C Commerce development patterns and practices |
-| `b2c-cli` | B2C CLI commands and operations                 |
+| Skill Set          | Description                                                    |
+| ------------------ | -------------------------------------------------------------- |
+| `b2c`              | B2C Commerce development patterns and practices                |
+| `b2c-cli`          | B2C CLI commands and operations                                |
+| `storefront-next`  | Storefront Next development — routing, components, deployment  |
+| `cap-dev`          | Commerce App Package scaffolding, validation, and submission   |
 
 ### Output
 

@@ -49,7 +49,8 @@ describe('skill sources', () => {
       expect(ALL_SKILL_SETS).to.include('b2c');
       expect(ALL_SKILL_SETS).to.include('b2c-cli');
       expect(ALL_SKILL_SETS).to.include('cap-dev');
-      expect(ALL_SKILL_SETS).to.have.lengthOf(3);
+      expect(ALL_SKILL_SETS).to.include('storefront-next');
+      expect(ALL_SKILL_SETS).to.have.lengthOf(4);
     });
   });
 

@@ -135,9 +135,11 @@ function parseRelease(release: {
 }): ReleaseInfo {
   const b2cSource = getSkillSource('b2c');
   const b2cCliSource = getSkillSource('b2c-cli');
+  const sfNextSource = getSkillSource('storefront-next');
 
   const b2cAsset = release.assets.find((a) => a.name === b2cSource.assetName);
   const b2cCliAsset = release.assets.find((a) => a.name === b2cCliSource.assetName);
+  const sfNextAsset = release.assets.find((a) => a.name === sfNextSource.assetName);
 
   const versionMatch = release.tag_name.match(/@(\d+\.\d+\.\d+.*)$/);
   const version = versionMatch ? versionMatch[1] : release.tag_name.replace(/^v/, '');
@@ -148,6 +150,7 @@ function parseRelease(release: {
     publishedAt: release.published_at,
     b2cSkillsAssetUrl: b2cAsset?.browser_download_url ?? null,
     b2cCliSkillsAssetUrl: b2cCliAsset?.browser_download_url ?? null,
+    storefrontNextSkillsAssetUrl: sfNextAsset?.browser_download_url ?? null,
   };
 }
 
@@ -228,7 +231,7 @@ export async function listReleases(limit: number = 10): Promise<ReleaseInfo[]> {
   return data
     .filter((r) => r.tag_name.startsWith('b2c-agent-plugins@'))
     .map(parseRelease)
-    .filter((r) => r.b2cSkillsAssetUrl || r.b2cCliSkillsAssetUrl);
+    .filter((r) => r.b2cSkillsAssetUrl || r.b2cCliSkillsAssetUrl || r.storefrontNextSkillsAssetUrl);
 }
 
 /**

@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.7.0
+
+### Minor Changes
+
+- [#377](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/377) [`cb66b56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb66b563d5d5ca6a0f584d9007629ba392cb3424) - Add `storefront-next` skill set to `b2c setup skills`. Install Storefront Next development skills with `b2c setup skills storefront-next`, or via the plugin marketplace with `claude plugin install storefront-next`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.6.1
 
 ### Patch Changes

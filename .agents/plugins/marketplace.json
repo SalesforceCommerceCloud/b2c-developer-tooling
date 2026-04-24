@@ -29,6 +29,19 @@
       "category": "Productivity"
     },
     {
+      "name": "storefront-next",
+      "description": "Storefront Next development skills for building React 19 storefronts on Salesforce B2C Commerce.",
+      "source": {
+        "source": "local",
+        "path": "./skills/storefront-next"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
       "name": "cap-dev",
       "description": "Skills for scaffolding, packaging, validating, and submitting Commerce App Packages (CAPs) for Salesforce Commerce Cloud.",
       "source": {
