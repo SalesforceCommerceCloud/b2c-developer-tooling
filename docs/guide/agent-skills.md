@@ -17,6 +17,7 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Use --scope project to install for current project only
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install storefront-next
 ```
 
 ```text [Copilot (VS Code)]
@@ -30,6 +31,7 @@ Then enter:
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
+copilot plugin install storefront-next@b2c-developer-tooling
 ```
 
 ```bash [Codex]
@@ -69,6 +71,10 @@ npx @salesforce/b2c-cli setup skills
       <td>B2C Commerce development patterns — controllers, ISML, forms, localization, logging, metadata, web services, custom job steps, Page Designer, Business Manager extensions, Custom APIs</td>
     </tr>
     <tr>
+      <td><a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next/skills"><code>storefront-next</code></a></td>
+      <td>Storefront Next development — project setup, routing, data fetching, components, Page Designer, authentication, i18n, extensions, testing, and deployment to Managed Runtime</td>
+    </tr>
+    <tr>
       <td><a href="/mcp/"><code>b2c-dx-mcp</code></a></td>
       <td>Automatic project type detection and B2C Commerce workflows for your AI assistant. See <a href="/mcp/installation">MCP Installation</a></td>
     </tr>
@@ -90,12 +96,14 @@ Install plugins at your preferred scope:
 ```bash [User Scope (default)]
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install storefront-next
 claude plugin install b2c-dx-mcp
 ```
 
 ```bash [Project Scope]
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
+claude plugin install storefront-next --scope project
 claude plugin install b2c-dx-mcp --scope project
 ```
 
@@ -107,6 +115,7 @@ Verify, update, or uninstall:
 claude plugin list
 claude plugin marketplace update
 claude plugin update b2c-cli@b2c-developer-tooling
+claude plugin update storefront-next@b2c-developer-tooling
 claude plugin uninstall b2c-cli@b2c-developer-tooling
 claude plugin marketplace remove b2c-developer-tooling
 ```
@@ -145,6 +154,7 @@ List available skills:
 ```bash
 b2c setup skills b2c --list
 b2c setup skills b2c-cli --list
+b2c setup skills storefront-next --list
 ```
 
 Install to specific IDEs:
@@ -240,3 +250,7 @@ Once installed, ask your AI assistant:
 - "Help me create a Custom API for loyalty information"
 - "Add logging to my checkout controller"
 - "Create an HTTP service to call the payment gateway API"
+- "Set up a new Storefront Next project"
+- "Add a new route with a loader to my Storefront Next app"
+- "Deploy my Storefront Next storefront to Managed Runtime"
+- "Add Page Designer support to my storefront component"
