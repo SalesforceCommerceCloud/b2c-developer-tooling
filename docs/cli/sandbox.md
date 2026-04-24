@@ -1344,7 +1344,7 @@ b2c sandbox realm update zzzz \
 b2c sandbox realm update zzzz --stop-scheduler "null"
 
 # Update realm emails and local user setting
-b2c realm update zzzz --emails dev@example.com,ops@example.com --local-users-allowed
+b2c sandbox realm update zzzz --emails dev@example.com,ops@example.com --local-users-allowed
 ```
 
 If no update flags are provided, the command fails with a helpful error explaining which flags can be used.

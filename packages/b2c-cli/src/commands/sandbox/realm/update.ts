@@ -8,6 +8,7 @@ import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../../i18n/index.js';
+import {parseSchedulerFlag} from '../../../utils/ods/scheduler.js';
 
 type RealmConfigurationUpdateRequestModel = OdsComponents['schemas']['RealmConfigurationUpdateRequestModel'];
 type RealmConfigurationResponse = OdsComponents['schemas']['RealmConfigurationResponse'];
@@ -36,9 +37,8 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
     '<%= config.bin %> <%= command.id %> zzzz --max-sandbox-ttl 72',
     '<%= config.bin %> <%= command.id %> zzzz --default-sandbox-ttl 24',
     '<%= config.bin %> <%= command.id %> zzzz --emails dev@example.com,ops@example.com',
-    '<%= config.bin %> <%= command.id %> zzzz --local-users-allowed',
     '<%= config.bin %> <%= command.id %> zzzz --start-scheduler \'{"weekdays":["MONDAY"],"time":"08:00:00Z"}\'',
-    '<%= config.bin %> <%= command.id %> zzzz --stop-scheduler "null"',
+    '<%= config.bin %> <%= command.id %> zzzz --clear-stop-scheduler',
   ];
 
   static flags = {
@@ -49,12 +49,20 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
       description: 'Default sandbox TTL in hours when no TTL is specified at creation',
     }),
     'start-scheduler': Flags.string({
-      description:
-        'Start schedule JSON for sandboxes in this realm (use "null" to remove). Format: {"weekdays":[...],"time":"..."}',
+      description: 'Start schedule JSON for sandboxes in this realm. Format: {"weekdays":[...],"time":"..."}',
+      exclusive: ['clear-start-scheduler'],
+    }),
+    'clear-start-scheduler': Flags.boolean({
+      description: 'Remove existing start scheduler for sandboxes in this realm',
+      exclusive: ['start-scheduler'],
     }),
     'stop-scheduler': Flags.string({
-      description:
-        'Stop schedule JSON for sandboxes in this realm (use "null" to remove). Format: {"weekdays":[...],"time":"..."}',
+      description: 'Stop schedule JSON for sandboxes in this realm. Format: {"weekdays":[...],"time":"..."}',
+      exclusive: ['clear-stop-scheduler'],
+    }),
+    'clear-stop-scheduler': Flags.boolean({
+      description: 'Remove existing stop scheduler for sandboxes in this realm',
+      exclusive: ['stop-scheduler'],
     }),
     emails: Flags.string({
       description: 'Comma-separated list of notification email addresses at realm level',
@@ -62,6 +70,7 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
     'local-users-allowed': Flags.boolean({
       description: 'Enable or disable local user management for sandboxes in this realm',
       allowNo: true,
+      hidden: true,
     }),
   } as const;
 
@@ -75,7 +84,9 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
       flags['max-sandbox-ttl'] !== undefined ||
       flags['default-sandbox-ttl'] !== undefined ||
       flags['start-scheduler'] !== undefined ||
+      flags['clear-start-scheduler'] !== undefined ||
       flags['stop-scheduler'] !== undefined ||
+      flags['clear-stop-scheduler'] !== undefined ||
       flags.emails !== undefined ||
       flags['local-users-allowed'] !== undefined;
 
@@ -83,7 +94,7 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
       this.error(
         t(
           'commands.realm.update.noChanges',
-          'No update flags specified. Use --max-sandbox-ttl, --default-sandbox-ttl, --start-scheduler, --stop-scheduler, --emails, or --local-users-allowed.',
+          'No update flags specified. Use --max-sandbox-ttl, --default-sandbox-ttl, --start-scheduler, --clear-start-scheduler, --stop-scheduler, --clear-stop-scheduler, --emails, or --local-users-allowed.',
         ),
       );
     }
@@ -121,22 +132,16 @@ export default class SandboxRealmUpdate extends OdsCommand<typeof SandboxRealmUp
       (body.sandbox as any).localUsersAllowed = flags['local-users-allowed'];
     }
 
-    // Helper to parse scheduler flags (JSON or "null")
-    const parseScheduler = (value: string | undefined) => {
-      if (!value) return;
-      if (value === 'null') return null;
+    // Parse scheduler flags using shared utility
+    let startScheduler: null | OdsComponents['schemas']['WeekdaySchedule'] | undefined;
+    let stopScheduler: null | OdsComponents['schemas']['WeekdaySchedule'] | undefined;
 
-      try {
-        return JSON.parse(value) as OdsComponents['schemas']['WeekdaySchedule'];
-      } catch {
-        this.error(
-          t('commands.realm.update.schedulerParseError', 'Invalid JSON for scheduler. Use valid JSON or "null".'),
-        );
-      }
-    };
-
-    const startScheduler = parseScheduler(flags['start-scheduler']);
-    const stopScheduler = parseScheduler(flags['stop-scheduler']);
+    try {
+      startScheduler = parseSchedulerFlag(flags['start-scheduler'], flags['clear-start-scheduler']);
+      stopScheduler = parseSchedulerFlag(flags['stop-scheduler'], flags['clear-stop-scheduler']);
+    } catch {
+      this.error(t('commands.realm.update.schedulerParseError', 'Invalid JSON for scheduler.'));
+    }
 
     if (startScheduler !== undefined) {
       body.sandbox = body.sandbox ?? {};
