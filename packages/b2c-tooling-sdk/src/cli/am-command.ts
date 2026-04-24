@@ -65,10 +65,11 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
   /**
    * Gets the auth method type that was used, based on the stored strategy.
    */
-  protected get authMethodUsed(): 'implicit' | 'client-credentials' | 'stateful' | undefined {
+  protected get authMethodUsed(): 'implicit' | 'client-credentials' | 'jwt' | 'stateful' | undefined {
     if (!this._authStrategy) return undefined;
     if (this._authStrategy instanceof ImplicitOAuthStrategy) return 'implicit';
     if (this._authStrategy instanceof StatefulOAuthStrategy) return 'stateful';
+    if (this._authStrategy instanceof JwtOAuthStrategy) return 'jwt';
     return 'client-credentials';
   }
 

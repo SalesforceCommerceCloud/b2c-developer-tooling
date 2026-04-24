@@ -104,13 +104,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     'jwt-cert': Flags.string({
       description: 'Path to JWT certificate file (cert.pem) for JWT Bearer authentication',
       env: 'SFCC_JWT_CERT',
-      default: async () => process.env.SFCC_JWT_CERT_PATH || undefined,
       helpGroup: 'AUTH',
     }),
     'jwt-key': Flags.string({
       description: 'Path to JWT private key file (key.pem) for JWT Bearer authentication',
       env: 'SFCC_JWT_KEY',
-      default: async () => process.env.SFCC_JWT_KEY_PATH || undefined,
       helpGroup: 'AUTH',
     }),
     'jwt-passphrase': Flags.string({
@@ -228,15 +226,24 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
         case 'jwt':
           // JWT Bearer authentication - requires client ID and cert/key pair
           if (config.clientId && config.jwtCertPath && config.jwtKeyPath) {
-            this.logger.debug('[Auth] Using JWT Bearer authentication');
-            return new JwtOAuthStrategy({
-              clientId: config.clientId,
-              certPath: config.jwtCertPath,
-              keyPath: config.jwtKeyPath,
-              passphrase: config.jwtPassphrase,
-              accountManagerHost,
-              scopes: config.scopes,
-            });
+            try {
+              this.logger.debug('[Auth] Using JWT Bearer authentication');
+              return new JwtOAuthStrategy({
+                clientId: config.clientId,
+                certPath: config.jwtCertPath,
+                keyPath: config.jwtKeyPath,
+                passphrase: config.jwtPassphrase,
+                accountManagerHost,
+                scopes: config.scopes,
+              });
+            } catch (error) {
+              // JWT config is present but invalid (corrupted files, wrong passphrase, etc.)
+              // Log warning and fall through to next auth method
+              const message = error instanceof Error ? error.message : String(error);
+              this.logger.warn(
+                `[Auth] JWT authentication configured but invalid: ${message}. Trying next auth method.`,
+              );
+            }
           }
           break;
 

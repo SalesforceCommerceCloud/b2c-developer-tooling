@@ -41,27 +41,15 @@ export interface JwtOAuthConfig {
   scopes?: string[];
 }
 
-/**
- * JWT payload structure for OAuth 2.0 JWT Bearer flow.
- */
 interface JwtPayload {
-  /** Issuer - OAuth client ID */
   iss: string;
-  /** Subject - OAuth client ID */
   sub: string;
-  /** Audience - token endpoint URL */
   aud: string;
-  /** Expiration time (Unix timestamp in seconds) */
   exp: number;
 }
 
-/**
- * JWT header structure.
- */
 interface JwtHeader {
-  /** Algorithm - must be RS256 for RSA-SHA256 */
   alg: string;
-  /** Type - must be JWT */
   typ: string;
 }
 
@@ -92,11 +80,20 @@ export class JwtOAuthStrategy implements AuthStrategy {
   private readonly config: JwtOAuthConfig;
   private readonly logger = getLogger();
   private readonly cacheKey: string;
+  private _hasHadSuccess = false;
+  private readonly privateKey: crypto.KeyObject;
 
   constructor(config: JwtOAuthConfig) {
     this.validateConfig(config);
     this.config = config;
     this.cacheKey = getOAuthCacheKey(this.config.clientId, 'jwt', this.config.accountManagerHost, this.config.scopes);
+
+    // Cache private key to avoid file I/O on every token request
+    const keyContent = fs.readFileSync(config.keyPath, 'utf8');
+    this.privateKey = crypto.createPrivateKey({
+      key: keyContent,
+      passphrase: config.passphrase,
+    });
   }
 
   /**
@@ -194,18 +191,33 @@ export class JwtOAuthStrategy implements AuthStrategy {
   /**
    * Performs a fetch request with JWT Bearer authentication.
    * Automatically injects the Authorization header with a fresh access token.
+   * Includes 401 retry logic and x-dw-client-id header.
    */
-  async fetch(url: string, init?: FetchInit): Promise<Response> {
+  async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     const token = await this.getAccessToken();
 
-    const headers = new Headers(init?.headers);
+    const headers = new Headers(init.headers);
     headers.set('Authorization', `Bearer ${token}`);
+    headers.set('x-dw-client-id', this.config.clientId);
 
-    // Type assertion needed for undici dispatcher compatibility
-    return fetch(url, {
-      ...init,
-      headers,
-    } as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support
+    let res = await fetch(url, {...init, headers} as RequestInit);
+
+    if (res.status !== 401) {
+      this._hasHadSuccess = true;
+    }
+
+    // If we previously had a successful response and now get a 401,
+    // the token likely expired. Retry once after invalidating the cached token.
+    // Skip retry on initial 401 to avoid retrying with bad credentials.
+    if (res.status === 401 && this._hasHadSuccess) {
+      this.invalidateToken();
+      const newToken = await this.getAccessToken();
+      headers.set('Authorization', `Bearer ${newToken}`);
+      res = await fetch(url, {...init, headers} as RequestInit);
+    }
+
+    return res;
   }
 
   /**
@@ -214,6 +226,29 @@ export class JwtOAuthStrategy implements AuthStrategy {
   async getAuthorizationHeader(): Promise<string> {
     const token = await this.getAccessToken();
     return `Bearer ${token}`;
+  }
+
+  /**
+   * Gets the decoded JWT payload.
+   */
+  async getJWT(): Promise<ReturnType<typeof decodeJWT>> {
+    const token = await this.getAccessToken();
+    return decodeJWT(token);
+  }
+
+  /**
+   * Creates a new JwtOAuthStrategy with additional scopes merged in.
+   * Used by clients that have specific scope requirements.
+   *
+   * @param additionalScopes - Scopes to add to this strategy's existing scopes
+   * @returns A new JwtOAuthStrategy instance with merged scopes
+   */
+  withAdditionalScopes(additionalScopes: string[]): JwtOAuthStrategy {
+    const mergedScopes = [...new Set([...(this.config.scopes || []), ...additionalScopes])];
+    return new JwtOAuthStrategy({
+      ...this.config,
+      scopes: mergedScopes,
+    });
   }
 
   /**
@@ -228,16 +263,8 @@ export class JwtOAuthStrategy implements AuthStrategy {
       return cached;
     }
 
-    // Get new token
-    await this.getAccessToken();
-
-    // Return from cache (getAccessToken stores it)
-    const tokenResponse = getCachedOAuthToken(this.cacheKey, this.config.scopes || []);
-    if (!tokenResponse) {
-      throw new Error('Failed to retrieve token response from cache');
-    }
-
-    return tokenResponse;
+    // Get new token (returns full response)
+    return this.requestNewToken();
   }
 
   /**
@@ -249,7 +276,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Gets an access token, using cached token if still valid.
+   * Gets an access token string, using cached token if still valid.
    */
   private async getAccessToken(): Promise<string> {
     // Check global cache first
@@ -259,6 +286,16 @@ export class JwtOAuthStrategy implements AuthStrategy {
       return cached.accessToken;
     }
 
+    // Request new token and return just the access token string
+    const tokenResponse = await this.requestNewToken();
+    return tokenResponse.accessToken;
+  }
+
+  /**
+   * Requests a new access token from Account Manager using JWT Bearer flow.
+   * Returns the full token response and caches it.
+   */
+  private async requestNewToken(): Promise<AccessTokenResponse> {
     this.logger.trace('[JwtOAuthStrategy] Requesting new access token with JWT Bearer flow');
 
     // Generate signed JWT
@@ -336,7 +373,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
     const scope = decoded.payload.scope as string | string[] | undefined;
     const scopes = Array.isArray(scope) ? scope : scope?.split(' ') || this.config.scopes || [];
 
-    // Store in global cache
+    // Build and cache token response
     const tokenResponse: AccessTokenResponse = {
       accessToken: data.access_token,
       expires: expiryDate,
@@ -353,51 +390,33 @@ export class JwtOAuthStrategy implements AuthStrategy {
       '[JwtOAuthStrategy] Access token obtained successfully',
     );
 
-    return data.access_token;
+    return tokenResponse;
   }
 
   /**
    * Creates and signs a JWT token for OAuth authentication.
-   *
-   * JWT structure: HEADER.PAYLOAD.SIGNATURE
-   * - HEADER: {"alg":"RS256","typ":"JWT"}
-   * - PAYLOAD: {"iss":"clientId","sub":"clientId","aud":"tokenUrl","exp":timestamp}
-   * - SIGNATURE: RSA-SHA256 signature of HEADER.PAYLOAD
-   *
-   * All parts are Base64URL encoded (not standard Base64).
+   * Uses RS256 algorithm and Base64URL encoding per RFC 7519.
    */
   private async createSignedJwt(): Promise<string> {
-    // 1. Read private key from file
-    const keyContent = fs.readFileSync(this.config.keyPath, 'utf8');
-    const privateKey = crypto.createPrivateKey({
-      key: keyContent,
-      passphrase: this.config.passphrase,
-    });
-
-    // 2. Create JWT header (Base64URL encoded)
     const header: JwtHeader = {
       alg: 'RS256',
       typ: 'JWT',
     };
     const encodedHeader = base64UrlEncode(JSON.stringify(header));
-
-    // 3. Create JWT payload (Base64URL encoded)
     const now = Math.floor(Date.now() / 1000);
     const tokenUrl = `https://${this.config.accountManagerHost}/dwsso/oauth2/access_token`;
     const payload: JwtPayload = {
-      iss: this.config.clientId, // Issuer (client ID)
-      sub: this.config.clientId, // Subject (client ID)
-      aud: tokenUrl, // Audience (token endpoint)
-      exp: now + 60, // Expiration (1 minute from now)
+      iss: this.config.clientId,
+      sub: this.config.clientId,
+      aud: tokenUrl,
+      exp: now + 60,
     };
     const encodedPayload = base64UrlEncode(JSON.stringify(payload));
 
-    // 4. Create signature using RSA-SHA256
     const signatureInput = `${encodedHeader}.${encodedPayload}`;
-    const signature = crypto.sign('RSA-SHA256', Buffer.from(signatureInput), privateKey);
+    const signature = crypto.sign('RSA-SHA256', Buffer.from(signatureInput), this.privateKey);
     const encodedSignature = base64UrlEncode(signature);
 
-    // 5. Combine into final JWT
     const jwt = `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
 
     this.logger.trace(
@@ -417,26 +436,10 @@ export class JwtOAuthStrategy implements AuthStrategy {
 
 /**
  * Encodes data as Base64URL (RFC 4648 Section 5).
- *
- * Base64URL is a URL-safe variant of Base64 that:
- * - Replaces '+' with '-'
- * - Replaces '/' with '_'
- * - Removes padding '=' characters
- *
- * This encoding is required for JWTs to be safely used in URLs and HTTP headers.
- *
- * @param data - String or Buffer to encode
- * @returns Base64URL encoded string
- *
- * @example
- * ```typescript
- * base64UrlEncode('{"alg":"RS256"}'); // eyJhbGciOiJSUzI1NiJ9
- * base64UrlEncode(Buffer.from([1, 2, 3])); // AQID
- * ```
+ * Replaces +/= with URL-safe characters.
  */
 function base64UrlEncode(data: string | Buffer): string {
   const buffer = typeof data === 'string' ? Buffer.from(data) : data;
   const base64 = buffer.toString('base64');
-  // Replace standard Base64 characters with URL-safe variants and remove padding
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
