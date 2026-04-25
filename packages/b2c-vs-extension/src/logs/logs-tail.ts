@@ -38,7 +38,7 @@ export class LogTailManager implements vscode.Disposable {
 
   constructor() {
     this.outputChannel = vscode.window.createOutputChannel('B2C Logs');
-    this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 49);
+    this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 48);
     this.statusBar.command = 'b2c-dx.logs.stopTail';
     this.updateStatusBar();
   }

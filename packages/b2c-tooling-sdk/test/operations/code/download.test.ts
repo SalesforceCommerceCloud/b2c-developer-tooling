@@ -31,6 +31,14 @@ async function createTestZip(codeVersion: string, cartridges: Record<string, Rec
   return zip.generateAsync({type: 'nodebuffer'});
 }
 
+async function createCartridgeZip(cartridgeName: string, files: Record<string, string>): Promise<Buffer> {
+  const zip = new JSZip();
+  for (const [filePath, content] of Object.entries(files)) {
+    zip.file(`${cartridgeName}/${filePath}`, content);
+  }
+  return zip.generateAsync({type: 'nodebuffer'});
+}
+
 describe('operations/code/download', () => {
   const server = setupServer();
   let mockInstance: any;
@@ -106,17 +114,21 @@ describe('operations/code/download', () => {
       expect(coreJs).to.equal('module.exports = {};');
     });
 
-    it('should apply include filter', async () => {
-      const zipBuffer = await createTestZip('v1', {
-        app_storefront: {'main.js': 'storefront'},
-        app_core: {'core.js': 'core'},
-      });
+    it('should apply include filter with per-cartridge download', async () => {
+      const cartridgeZip = await createCartridgeZip('app_storefront', {'main.js': 'storefront'});
 
       server.use(
         http.all(`${WEBDAV_BASE}/*`, ({request}) => {
-          if (request.method === 'POST') return new HttpResponse(null, {status: 204});
-          if (request.method === 'GET') return new HttpResponse(zipBuffer, {status: 200});
-          if (request.method === 'DELETE') return new HttpResponse(null, {status: 204});
+          const url = new URL(request.url);
+          if (request.method === 'POST' && url.pathname.includes('/Cartridges/v1/app_storefront')) {
+            return new HttpResponse(null, {status: 204});
+          }
+          if (request.method === 'GET' && url.pathname.endsWith('/Cartridges/v1/app_storefront.zip')) {
+            return new HttpResponse(cartridgeZip, {status: 200});
+          }
+          if (request.method === 'DELETE' && url.pathname.endsWith('/Cartridges/v1/app_storefront.zip')) {
+            return new HttpResponse(null, {status: 204});
+          }
           return new HttpResponse(null, {status: 404});
         }),
       );
@@ -125,7 +137,7 @@ describe('operations/code/download', () => {
 
       expect(result.cartridges).to.deep.equal(['app_storefront']);
       expect(fs.existsSync(path.join(tempDir, 'app_storefront/main.js'))).to.be.true;
-      expect(fs.existsSync(path.join(tempDir, 'app_core/core.js'))).to.be.false;
+      expect(fs.existsSync(path.join(tempDir, 'app_core'))).to.be.false;
     });
 
     it('should apply exclude filter', async () => {
