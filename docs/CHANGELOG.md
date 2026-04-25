@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.21
+
+### Patch Changes
+
+- [`70ccffb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/70ccffbbe22df80f536edbb935847c76463a42af) - Add rename notice to homepage explaining B2C DX is now the Agentic B2C Developer Toolkit (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.20
 
 ### Patch Changes

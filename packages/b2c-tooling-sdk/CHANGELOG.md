@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.8.0
+
+### Minor Changes
+
+- [#382](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/382) [`4f30de7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f30de783a049e33a121ec80a2cbd1c455f5d4e8) - Add `uploadFiles` and `downloadSingleCartridge` functions for efficient per-file and per-cartridge operations. Extract batch upload pipeline from `watchCartridges` into reusable `uploadFiles` function. `downloadCartridges` now downloads individual cartridges when `include` filter is specified instead of zipping the entire code version. Add `autoUpload` config field for IDE auto-sync. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.7.0
 
 ### Minor Changes
