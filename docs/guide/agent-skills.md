@@ -27,6 +27,10 @@ Then enter:
   SalesforceCommerceCloud/b2c-developer-tooling
 ```
 
+::: tip Updating Copilot Skills in VS Code
+To update the extension marketplace for the latest skills, open the Extensions view sidebar, click **`···`** (the ellipsis menu), and select **Check for Extension Updates**.
+:::
+
 ```bash [Copilot CLI]
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
