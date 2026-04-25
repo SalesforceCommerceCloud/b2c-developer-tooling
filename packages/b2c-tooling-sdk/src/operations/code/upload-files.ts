@@ -41,10 +41,7 @@ export interface UploadFilesOptions {
  * @param cartridges - The list of discovered cartridge mappings
  * @returns The file change with src and dest, or undefined if the path is not inside any cartridge
  */
-export function fileToCartridgePath(
-  absolutePath: string,
-  cartridges: CartridgeMapping[],
-): FileChange | undefined {
+export function fileToCartridgePath(absolutePath: string, cartridges: CartridgeMapping[]): FileChange | undefined {
   const cartridge = cartridges.find((c) => absolutePath.startsWith(c.src));
 
   if (!cartridge) {
