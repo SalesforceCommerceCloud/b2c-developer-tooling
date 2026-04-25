@@ -1,5 +1,5 @@
 ---
-description: AI agent skills and plugins for Salesforce B2C Commerce — teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
+description: Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
 ---
 
 # Agent Skills & Plugins

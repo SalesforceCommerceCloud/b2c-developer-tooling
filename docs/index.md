@@ -1,15 +1,15 @@
 ---
-description: Developer tools for Salesforce B2C Commerce — the full power of the platform as a CLI, Agent Skills, MCP Server, SDK, and IDE extensions.
+description: Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE extensions for Salesforce B2C Commerce.
 layout: b2c-home
 isHome: true
 
 hero:
-  name: B2C DX
-  text: Developer tools for Salesforce B2C Commerce
-  tagline: The full power of B2C Commerce, available as a CLI, Agent Skills, and IDE extensions — so you and your coding agent can build, deploy, and operate together.
+  name: Agentic B2C Developer Toolkit
+  text: ""
+  tagline: CLI, Agent Skills, MCP Server, and IDE extensions for Salesforce Agentforce Commerce — everything you and your coding agent need to build, deploy, and operate B2C Commerce together.
   image:
     src: /hero-collage.png
-    alt: B2C DX — CLI, Agentforce Vibes, and Claude Code
+    alt: Agentic B2C Developer Toolkit — CLI, Agentforce Vibes, and Claude Code
   actions:
     - theme: brand
       text: Get Started
