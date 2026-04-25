@@ -52,7 +52,16 @@
       }
     },
     "./data-store": {
-      "development": "./src/data-store/index.ts",
+      "development": {
+        "import": {
+          "types": "./dist/esm/data-store/development.d.ts",
+          "default": "./dist/esm/data-store/development.js"
+        },
+        "require": {
+          "types": "./dist/cjs/data-store/development.d.ts",
+          "default": "./dist/cjs/data-store/development.js"
+        }
+      },
       "import": {
         "types": "./dist/esm/data-store/index.d.ts",
         "default": "./dist/esm/data-store/index.js"
