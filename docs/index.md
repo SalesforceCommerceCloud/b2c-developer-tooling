@@ -3,6 +3,10 @@ description: Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SD
 layout: b2c-home
 isHome: true
 
+renameNotice:
+  title: Formerly B2C DX
+  text: "The project previously known as B2C DX (B2C Developer Tooling) is now the Agentic B2C Developer Toolkit. The CLI package name (@salesforce/b2c-cli), commands, and configuration remain the same."
+
 hero:
   name: Agentic B2C Developer Toolkit
   text: ""
@@ -112,3 +116,4 @@ npx @salesforce/b2c-cli setup skills
 ```
 
 :::
+
