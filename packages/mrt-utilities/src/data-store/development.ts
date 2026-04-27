@@ -75,7 +75,7 @@ export class DataStore {
 }
 
 function readDefaultsFromEnv(): Record<string, Record<string, unknown>> {
-  const raw = process.env.SFNEXT_DATA_STORE_DEFAULTS;
+  const raw = process.env.MRT_DATA_STORE_DEFAULTS ?? process.env.SFNEXT_DATA_STORE_DEFAULTS;
   if (!raw) {
     return {};
   }
@@ -86,14 +86,14 @@ function readDefaultsFromEnv(): Record<string, Record<string, unknown>> {
       return parsed as Record<string, Record<string, unknown>>;
     }
   } catch (error) {
-    console.warn('Failed to parse SFNEXT_DATA_STORE_DEFAULTS JSON.', error);
+    console.warn('Failed to parse MRT_DATA_STORE_DEFAULTS JSON.', error);
   }
 
   return {};
 }
 
 function readWarnOnMissingFromEnv(): boolean {
-  const raw = process.env.SFNEXT_DATA_STORE_WARN_ON_MISSING;
+  const raw = process.env.MRT_DATA_STORE_WARN_ON_MISSING ?? process.env.SFNEXT_DATA_STORE_WARN_ON_MISSING;
   if (!raw) {
     return true;
   }

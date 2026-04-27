@@ -28,8 +28,8 @@ describe('DataStore (development)', () => {
     expect(store.isDataStoreAvailable()).to.equal(true);
   });
 
-  it('returns entries from SFNEXT_DATA_STORE_DEFAULTS', async () => {
-    process.env.SFNEXT_DATA_STORE_DEFAULTS = JSON.stringify({
+  it('returns entries from MRT_DATA_STORE_DEFAULTS', async () => {
+    process.env.MRT_DATA_STORE_DEFAULTS = JSON.stringify({
       'my-key': {theme: 'dark'},
     });
 
@@ -42,8 +42,22 @@ describe('DataStore (development)', () => {
     });
   });
 
-  it('throws DataStoreNotFoundError for missing keys by default', async () => {
+  it('falls back to SFNEXT_DATA_STORE_DEFAULTS for backward compatibility', async () => {
     process.env.SFNEXT_DATA_STORE_DEFAULTS = JSON.stringify({
+      'my-key': {theme: 'legacy'},
+    });
+
+    const store = DataStore.getDataStore();
+    const result = await store.getEntry('my-key');
+
+    expect(result).to.deep.equal({
+      key: 'my-key',
+      value: {theme: 'legacy'},
+    });
+  });
+
+  it('throws DataStoreNotFoundError for missing keys by default', async () => {
+    process.env.MRT_DATA_STORE_DEFAULTS = JSON.stringify({
       'other-key': {theme: 'dark'},
     });
 
@@ -59,7 +73,7 @@ describe('DataStore (development)', () => {
   });
 
   it('warns once per missing key when warnings are enabled', async () => {
-    process.env.SFNEXT_DATA_STORE_DEFAULTS = '{}';
+    process.env.MRT_DATA_STORE_DEFAULTS = '{}';
     const warnStub = sinon.stub(console, 'warn');
     const store = DataStore.getDataStore();
 
@@ -75,8 +89,25 @@ describe('DataStore (development)', () => {
     expect(warnStub.firstCall.firstArg).to.include("Local data-store provider did not find 'my-key'");
   });
 
-  it('does not warn for missing keys when SFNEXT_DATA_STORE_WARN_ON_MISSING=false', async () => {
-    process.env.SFNEXT_DATA_STORE_DEFAULTS = '{}';
+  it('does not warn for missing keys when MRT_DATA_STORE_WARN_ON_MISSING=false', async () => {
+    process.env.MRT_DATA_STORE_DEFAULTS = '{}';
+    process.env.MRT_DATA_STORE_WARN_ON_MISSING = 'false';
+
+    const warnStub = sinon.stub(console, 'warn');
+    const store = DataStore.getDataStore();
+
+    try {
+      await store.getEntry('my-key');
+      expect.fail('should have thrown');
+    } catch (error) {
+      expect(error).to.be.an.instanceOf(DataStoreNotFoundError);
+    }
+
+    expect(warnStub.called).to.equal(false);
+  });
+
+  it('falls back to SFNEXT_DATA_STORE_WARN_ON_MISSING for backward compatibility', async () => {
+    process.env.MRT_DATA_STORE_DEFAULTS = '{}';
     process.env.SFNEXT_DATA_STORE_WARN_ON_MISSING = 'false';
 
     const warnStub = sinon.stub(console, 'warn');
@@ -92,9 +123,9 @@ describe('DataStore (development)', () => {
     expect(warnStub.called).to.equal(false);
   });
 
-  it('warns when SFNEXT_DATA_STORE_DEFAULTS is invalid JSON', async () => {
-    process.env.SFNEXT_DATA_STORE_DEFAULTS = '{"my-key": ';
-    process.env.SFNEXT_DATA_STORE_WARN_ON_MISSING = 'false';
+  it('warns when MRT_DATA_STORE_DEFAULTS is invalid JSON', async () => {
+    process.env.MRT_DATA_STORE_DEFAULTS = '{"my-key": ';
+    process.env.MRT_DATA_STORE_WARN_ON_MISSING = 'false';
 
     const warnStub = sinon.stub(console, 'warn');
     const store = DataStore.getDataStore();
@@ -107,6 +138,6 @@ describe('DataStore (development)', () => {
     }
 
     expect(warnStub.calledOnce).to.equal(true);
-    expect(warnStub.firstCall.firstArg).to.equal('Failed to parse SFNEXT_DATA_STORE_DEFAULTS JSON.');
+    expect(warnStub.firstCall.firstArg).to.equal('Failed to parse MRT_DATA_STORE_DEFAULTS JSON.');
   });
 });
