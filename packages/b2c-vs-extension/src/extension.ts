@@ -19,6 +19,7 @@ import {registerSandboxTree} from './sandbox-tree/index.js';
 import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
+import {registerCodeSync} from './code-sync/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
@@ -402,6 +403,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   }
   if (settings.get<boolean>('features.cap', true)) {
     registerCap(context, configProvider, log);
+  }
+  if (settings.get<boolean>('features.codeSync', true)) {
+    registerCodeSync(context, configProvider, log);
   }
 
   registerDebugger(context, configProvider);

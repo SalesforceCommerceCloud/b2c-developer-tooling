@@ -23,6 +23,15 @@ const {frontmatter, theme} = useData();
     <VPHomeFeatures />
 
     <HomePackages />
+
+    <div v-if="frontmatter.renameNotice" class="home-rename-notice">
+      <VPHomeContent>
+        <div class="custom-block info">
+          <p class="custom-block-title">{{ frontmatter.renameNotice.title }}</p>
+          <p>{{ frontmatter.renameNotice.text }}</p>
+        </div>
+      </VPHomeContent>
+    </div>
   </div>
 </template>
 

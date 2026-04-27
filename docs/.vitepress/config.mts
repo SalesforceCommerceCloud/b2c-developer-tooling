@@ -168,8 +168,8 @@ document.addEventListener('click', (e) => {
 `;
 
 export default defineConfig({
-  title: 'B2C DX',
-  description: 'Salesforce B2C Commerce Developer Experience - CLI, MCP Server, and SDK',
+  title: 'B2C Developer Toolkit',
+  description: 'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE extensions for Salesforce B2C Commerce',
   base: basePath,
 
   head: [['script', {}, versionSwitchScript]],

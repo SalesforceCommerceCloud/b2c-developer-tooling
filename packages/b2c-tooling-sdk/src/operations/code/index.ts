@@ -86,8 +86,12 @@ export {findAndDeployCartridges, uploadCartridges, deleteCartridges} from './dep
 export type {DeployOptions, DeployResult, UploadOptions, UploadProgressInfo} from './deploy.js';
 
 // Download
-export {downloadCartridges} from './download.js';
+export {downloadCartridges, downloadSingleCartridge} from './download.js';
 export type {DownloadOptions, DownloadProgressInfo, DownloadResult} from './download.js';
+
+// File upload pipeline
+export {uploadFiles, fileToCartridgePath} from './upload-files.js';
+export type {FileChange, UploadFilesOptions} from './upload-files.js';
 
 // Watch
 export {watchCartridges} from './watch.js';
