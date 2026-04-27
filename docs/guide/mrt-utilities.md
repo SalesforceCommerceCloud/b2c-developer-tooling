@@ -168,14 +168,14 @@ const entry = await store.getEntry('custom-global-preferences');
 
 Provide local data-store values through environment variables:
 
-- `SFNEXT_DATA_STORE_DEFAULTS`: JSON map of data-store keys to object values
-- `SFNEXT_DATA_STORE_WARN_ON_MISSING`: set to `false` to suppress missing-key warnings
+- `MRT_DATA_STORE_DEFAULTS`: JSON map of data-store keys to object values
+- `MRT_DATA_STORE_WARN_ON_MISSING`: set to `false` to suppress missing-key warnings
 
 Example:
 
 ```bash
-export SFNEXT_DATA_STORE_DEFAULTS='{"custom-global-preferences":{"featureFlag":true}}'
-export SFNEXT_DATA_STORE_WARN_ON_MISSING=true
+export MRT_DATA_STORE_DEFAULTS='{"custom-global-preferences":{"featureFlag":true}}'
+export MRT_DATA_STORE_WARN_ON_MISSING=true
 ```
 
 The development pseudo store keeps production parity for missing keys and throws `DataStoreNotFoundError` when a key is not found.

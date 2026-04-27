@@ -12,8 +12,8 @@ This behavior should be activated through the existing package export condition:
 
 The pseudo local implementation must read default entry values from environment variables (as implied by the provided prototype):
 
-- `SFNEXT_DATA_STORE_DEFAULTS` (JSON object map of key -> value object)
-- `SFNEXT_DATA_STORE_WARN_ON_MISSING` (`"false"` disables warnings; default is warning enabled)
+- `MRT_DATA_STORE_DEFAULTS` (JSON object map of key -> value object)
+- `MRT_DATA_STORE_WARN_ON_MISSING` (`"false"` disables warnings; default is warning enabled)
 
 ## Current State
 
@@ -61,7 +61,7 @@ Use conditional exports to load the development implementation for local dev fro
 
 ## 4) Environment variable behavior in dev store
 
-### `SFNEXT_DATA_STORE_DEFAULTS`
+### `MRT_DATA_STORE_DEFAULTS`
 
 - Parse as JSON object.
 - Expected shape:
@@ -70,7 +70,7 @@ Use conditional exports to load the development implementation for local dev fro
   - fall back to empty defaults
   - warn once with clear message
 
-### `SFNEXT_DATA_STORE_WARN_ON_MISSING`
+### `MRT_DATA_STORE_WARN_ON_MISSING`
 
 - If unset: warnings enabled
 - If set to `"false"` (case-insensitive): disable missing-key warnings
@@ -91,10 +91,10 @@ Add/adjust tests to cover both modes:
 - **Production tests**
   - Keep current behavior assertions unchanged.
 - **Development tests**
-  - Reads defaults from `SFNEXT_DATA_STORE_DEFAULTS`
+  - Reads defaults from `MRT_DATA_STORE_DEFAULTS`
   - Throws `DataStoreNotFoundError` when key is absent (default behavior)
   - Warns once per missing key when warnings enabled
-  - Does not warn when `SFNEXT_DATA_STORE_WARN_ON_MISSING=false`
+  - Does not warn when `MRT_DATA_STORE_WARN_ON_MISSING=false`
   - Handles invalid JSON safely
   - (If lenient mode is added) returns `{}` only when explicitly enabled
 
@@ -128,8 +128,8 @@ Update `packages/mrt-utilities/README.md` (or docs page if preferred) with:
 ## Acceptance Criteria
 
 - Local development using `--conditions development` no longer fails due to missing DynamoDB/MRT runtime vars.
-- Dev data-store entries are sourced from `SFNEXT_DATA_STORE_DEFAULTS`.
-- Missing-key behavior is predictable and configurable via `SFNEXT_DATA_STORE_WARN_ON_MISSING`.
+- Dev data-store entries are sourced from `MRT_DATA_STORE_DEFAULTS`.
+- Missing-key behavior is predictable and configurable via `MRT_DATA_STORE_WARN_ON_MISSING`.
 - Production behavior and API remain backward-compatible.
 - No breaking public interface changes: existing import paths, exported symbols, and type surface for `@salesforce/mrt-utilities` and `@salesforce/mrt-utilities/data-store` remain intact (except correcting the `development` export target to built `dist` output).
 - Default dev missing-key semantics match production (`DataStoreNotFoundError`), with no implicit `{}` fallback.
