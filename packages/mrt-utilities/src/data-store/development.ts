@@ -4,29 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export class DataStoreNotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DataStoreNotFoundError';
-    Object.setPrototypeOf(this, DataStoreNotFoundError.prototype);
-  }
-}
+import {DataStoreNotFoundError} from './errors.js';
 
-export class DataStoreServiceError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DataStoreServiceError';
-    Object.setPrototypeOf(this, DataStoreServiceError.prototype);
-  }
-}
-
-export class DataStoreUnavailableError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DataStoreUnavailableError';
-    Object.setPrototypeOf(this, DataStoreUnavailableError.prototype);
-  }
-}
+export {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
 
 /**
  * Development-only pseudo data store backed by environment variables.
@@ -87,7 +67,6 @@ export class DataStore {
 
     if (this.warnOnMissing && !this.warnedKeys.has(key)) {
       this.warnedKeys.add(key);
-      // eslint-disable-next-line no-console
       console.warn(`Local data-store provider did not find '${key}'.`);
     }
 
@@ -107,7 +86,6 @@ function readDefaultsFromEnv(): Record<string, Record<string, unknown>> {
       return parsed as Record<string, Record<string, unknown>>;
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.warn('Failed to parse SFNEXT_DATA_STORE_DEFAULTS JSON.', error);
   }
 

@@ -7,31 +7,10 @@
 import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 import {DynamoDBDocumentClient, GetCommand, type GetCommandOutput} from '@aws-sdk/lib-dynamodb';
 
+import {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
 import {logMRTError} from '../utils/utils.js';
 
-export class DataStoreNotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DataStoreNotFoundError';
-    Object.setPrototypeOf(this, DataStoreNotFoundError.prototype);
-  }
-}
-
-export class DataStoreServiceError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DataStoreServiceError';
-    Object.setPrototypeOf(this, DataStoreServiceError.prototype);
-  }
-}
-
-export class DataStoreUnavailableError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DataStoreUnavailableError';
-    Object.setPrototypeOf(this, DataStoreUnavailableError.prototype);
-  }
-}
+export {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
 
 /**
  * A class for reading entries from the data store.
