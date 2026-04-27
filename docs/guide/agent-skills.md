@@ -1,5 +1,5 @@
 ---
-description: AI agent skills and plugins for Salesforce B2C Commerce — teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
+description: Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
 ---
 
 # Agent Skills & Plugins
@@ -26,6 +26,10 @@ In VS Code, open the Command Palette (Cmd/Ctrl+Shift+P) and run:
 Then enter:
   SalesforceCommerceCloud/b2c-developer-tooling
 ```
+
+::: tip Updating Copilot Skills in VS Code
+To update the extension marketplace for the latest skills, open the Extensions view sidebar, click **`···`** (the ellipsis menu), and select **Check for Extension Updates**.
+:::
 
 ```bash [Copilot CLI]
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling

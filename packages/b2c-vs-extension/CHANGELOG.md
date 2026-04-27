@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.5.0
+
+### Minor Changes
+
+- [#382](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/382) [`4f30de7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f30de783a049e33a121ec80a2cbd1c455f5d4e8) - Add Code Sync feature: file watcher with automatic upload to instance, deploy command, cartridge tree view with download/upload/site path management, and code version management. Includes status bar toggle, per-instance state persistence, and `autoUpload` dw.json support. Move API Browser to separate SCAPI sidebar. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`4f30de7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f30de783a049e33a121ec80a2cbd1c455f5d4e8)]:
+  - @salesforce/b2c-tooling-sdk@1.8.0
+
 ## 0.4.4
 
 ### Patch Changes

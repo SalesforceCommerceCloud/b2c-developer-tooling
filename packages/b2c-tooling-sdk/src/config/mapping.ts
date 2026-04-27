@@ -156,6 +156,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     tenantId: json.tenantId,
     sandboxApiHost: json.sandboxApiHost,
     realm: json.realm,
+    autoUpload: json.autoUpload,
     cartridges: parseCartridges(json.cartridges),
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
@@ -277,6 +278,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.accountManagerHost !== undefined) {
     result.accountManagerHost = config.accountManagerHost;
+  }
+  if (config.autoUpload !== undefined) {
+    result.autoUpload = config.autoUpload;
   }
   if (config.cartridges !== undefined) {
     result.cartridges = config.cartridges;
@@ -433,6 +437,7 @@ export function mergeConfigsWithProtection(
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
+      autoUpload: overrides.autoUpload ?? base.autoUpload,
       cartridges: overrides.cartridges ?? base.cartridges,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,

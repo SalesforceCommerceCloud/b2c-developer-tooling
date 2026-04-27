@@ -97,6 +97,10 @@ export interface NormalizedConfig {
   /** MRT API origin URL override */
   mrtOrigin?: string;
 
+  // Code upload
+  /** Whether to auto-start code upload/sync in IDE extensions */
+  autoUpload?: boolean;
+
   // Cartridges
   /** Cartridge names to include in deploy/watch operations */
   cartridges?: string[];
