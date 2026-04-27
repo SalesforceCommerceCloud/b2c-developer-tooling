@@ -50,10 +50,10 @@ export const createApp = (): Express => {
 
 ## Development data-store usage
 
-Use the `data-store` subpath with Node's `development` condition to load the pseudo local data-store implementation:
+Use the `data-store` subpath with Node's `dev-data-store` condition to load the pseudo local data-store implementation:
 
 ```bash
-node --conditions development your-app.js
+node --conditions dev-data-store your-app.js
 ```
 
 ```ts

@@ -151,10 +151,12 @@ Use when you need to emit metrics from the same process that serves requests (e.
 
 ## Data Store In Development
 
-If your app reads MRT data-store entries locally, import from the `data-store` subpath and run with the Node `development` condition:
+The production MRT data store is not available during local development because it depends on deployed runtime infrastructure. `@salesforce/mrt-utilities` provides an equivalent development data-store implementation for local use.
+
+To use that local equivalent, import from the `data-store` subpath and run Node with the `dev-data-store` condition:
 
 ```bash
-node --conditions development server.js
+node --conditions dev-data-store server.js
 ```
 
 ```typescript
