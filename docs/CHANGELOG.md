@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.2.22
+
+### Patch Changes
+
+- [`ca921ae`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ca921ae7b890902a0e00d6cdbff562aa78723889) - Add tip for updating Copilot skills marketplace in VS Code via Check for Extension Updates (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.21
 
 ### Patch Changes

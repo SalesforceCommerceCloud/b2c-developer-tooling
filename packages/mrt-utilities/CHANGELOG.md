@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.1.5
+
+### Patch Changes
+
+- [`7ae80fe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ae80fea7141d72182cc192756dbe2f5ee8e61fc) - Add a development-mode pseudo data-store implementation for `@salesforce/mrt-utilities/data-store` with environment-variable-backed defaults, while preserving the existing public API and production behavior. (Thanks [@bendvc](https://github.com/bendvc)!)
+
 ## 0.1.4
 
 ### Patch Changes
