@@ -569,6 +569,136 @@
         "title": "Activate Code Version",
         "icon": "$(check)",
         "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.walkthrough.createDwJson",
+        "title": "Create dw.json Configuration",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.open",
+        "title": "Open Getting Started Guide",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.walkthrough.validate",
+        "title": "Validate Walkthrough Configuration",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.checkAccessibility",
+        "title": "Check Walkthrough Accessibility",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.showTelemetry",
+        "title": "Show Walkthrough Telemetry",
+        "category": "B2C DX - Development"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "b2c-dx.gettingStarted",
+        "title": "Get Started with B2C Commerce Development",
+        "description": "Learn how to connect to your B2C instance, manage cartridges, and deploy code in under 30 minutes.",
+        "when": "workspaceFolderCount > 0",
+        "steps": [
+          {
+            "id": "b2c-dx.welcome",
+            "title": "Welcome to B2C Commerce Development",
+            "description": "The B2C DX extension brings powerful Commerce Cloud development tools directly into VS Code. You'll learn how to:\n\n- Connect to your B2C Commerce instance\n- Browse and edit remote files with WebDAV\n- Manage development sandboxes\n- Deploy cartridges automatically\n\n[Learn More](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling)\n\n**When you're ready to continue, click the 'Mark Done' button above.**",
+            "media": {
+              "markdown": "media/walkthrough/welcome.md"
+            },
+            "completionEvents": []
+          },
+          {
+            "id": "b2c-dx.configureDwJson",
+            "title": "Connect to Your B2C Instance",
+            "description": "Configure your B2C Commerce instance by creating a `dw.json` file in your workspace root.\n\n[Create dw.json Template](command:b2c-dx.walkthrough.createDwJson)\n\nAlready have one? [Open dw.json](command:workbench.action.quickOpen?%22dw.json%22)\n\n**Tip:** You'll need your instance hostname, username, and password.\n\n**This step completes automatically when dw.json exists in your workspace.**",
+            "media": {
+              "markdown": "media/walkthrough/dw-json-setup.md"
+            },
+            "completionEvents": [
+              "onContext:workspaceContains:dw.json"
+            ]
+          },
+          {
+            "id": "b2c-dx.setupOAuth",
+            "title": "Set Up OAuth Credentials (Optional)",
+            "description": "Add SCAPI OAuth credentials to enable advanced features like sandbox management and API browsing.\n\n[Edit dw.json](command:workbench.action.quickOpen?%22dw.json%22)\n\nAdd these fields:\n- `clientId`\n- `clientSecret`\n- `shortCode`\n\nNeed credentials? [Get them from Account Manager](https://account.demandware.com/)",
+            "media": {
+              "markdown": "media/walkthrough/oauth-setup.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.sandbox.refresh"
+            ]
+          },
+          {
+            "id": "b2c-dx.exploreWebdav",
+            "title": "Browse Your Instance with WebDAV",
+            "description": "Explore remote files on your B2C instance using the WebDAV browser. View and edit cartridges, catalogs, and libraries directly from VS Code.\n\n[Open WebDAV Browser](command:b2c-dx.listWebDav)\n\nYou can browse cartridges, upload files, and even mount remote folders as workspace folders!\n\n**This step completes when you open the WebDAV Browser.**",
+            "media": {
+              "markdown": "media/walkthrough/webdav-browser.md"
+            },
+            "completionEvents": [
+              "onView:b2cWebdavExplorer"
+            ]
+          },
+          {
+            "id": "b2c-dx.setupCartridges",
+            "title": "Set Up Cartridge Development",
+            "description": "The extension automatically detects cartridges in your workspace. Cartridges are identified by folders containing a `.project` file.\n\n**Don't have a cartridge yet?**\n\n[Create New Cartridge](command:b2c-dx.scaffold.generate)\n\n**Already have cartridges?**\n\n[Refresh Cartridge List](command:b2c-dx.codeSync.refreshCartridges)\n\n**This step completes when you open the Cartridges view.**",
+            "media": {
+              "markdown": "media/walkthrough/cartridge-structure.md"
+            },
+            "completionEvents": [
+              "onView:b2cCartridgeExplorer"
+            ]
+          },
+          {
+            "id": "b2c-dx.deployCode",
+            "title": "Deploy Your First Cartridge",
+            "description": "Upload your cartridge code to your B2C instance. This is the core development workflow!\n\n**Deploy all cartridges:**\n[Deploy All Cartridges](command:b2c-dx.codeSync.deploy)\n\n**Or:** Right-click a cartridge in the **Cartridges** view and select **Upload Cartridge**.\n\nWatch the Output panel (B2C DX) for deployment progress.",
+            "media": {
+              "markdown": "media/walkthrough/deploy-cartridge.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.codeSync.deploy",
+              "onCommand:b2c-dx.codeSync.uploadCartridge"
+            ]
+          },
+          {
+            "id": "b2c-dx.manageSandboxes",
+            "title": "Work with Development Sandboxes",
+            "description": "Manage your sandbox lifecycle: create, start, stop, restart, and extend sandboxes directly from VS Code.\n\n[Open Sandbox Explorer](command:workbench.view.extension.b2c-dx-sandboxes)\n\n**Note:** Requires OAuth credentials configured in dw.json.",
+            "media": {
+              "markdown": "media/walkthrough/sandbox-explorer.md"
+            },
+            "completionEvents": [
+              "onView:b2cSandboxExplorer"
+            ]
+          },
+          {
+            "id": "b2c-dx.enableCodeSync",
+            "title": "Automate Deployment with Code Sync",
+            "description": "Enable Code Sync to automatically upload cartridge changes as you save files. Perfect for rapid development!\n\n[Start Code Sync](command:b2c-dx.codeSync.start)\n\n**Watch the status bar** for sync status and activity.\n\n[Stop Code Sync](command:b2c-dx.codeSync.stop)",
+            "media": {
+              "markdown": "media/walkthrough/code-sync.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.codeSync.start"
+            ]
+          },
+          {
+            "id": "b2c-dx.nextSteps",
+            "title": "You're Ready! Explore More Features",
+            "description": "🎉 **Congratulations!** You've completed the B2C DX getting started guide.\n\n**Explore More Features:**\n- [API Browser](command:workbench.view.extension.b2c-dx-scapi) - Browse SCAPI OpenAPI schemas\n- [Content Libraries](command:workbench.view.extension.b2c-dx) - Manage Page Designer content\n- [Full Documentation](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling)\n\n**Need Help?**\n[Report an Issue](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues) | [Contributing Guide](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/CONTRIBUTING.md)",
+            "media": {
+              "markdown": "media/walkthrough/next-steps.md"
+            }
+          }
+        ]
       }
     ],
     "menus": {

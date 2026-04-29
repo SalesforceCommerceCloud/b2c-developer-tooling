@@ -21,6 +21,13 @@ import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
+import {
+  registerWalkthroughCommands,
+  showWalkthroughOnFirstActivation,
+  initializeTelemetry,
+  validateWalkthroughCommand,
+  checkWalkthroughAccessibilityCommand,
+} from './walkthrough/index.js';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
   const htmlPath = path.join(context.extensionPath, 'src', 'webview.html');
@@ -139,6 +146,26 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // This ensures plugin config sources and middleware are available
   // before the first resolveConfig() call. Failures are non-fatal.
   await initializePlugins();
+
+  // Initialize walkthrough telemetry
+  const walkthroughTelemetry = initializeTelemetry(log);
+
+  // Register walkthrough commands early so they're available for first-time users
+  registerWalkthroughCommands(context);
+
+  // Register walkthrough validation commands (for development/testing)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('b2c-dx.walkthrough.validate', async () => {
+      await validateWalkthroughCommand(context.extensionPath, log);
+    }),
+    vscode.commands.registerCommand('b2c-dx.walkthrough.checkAccessibility', async () => {
+      await checkWalkthroughAccessibilityCommand(context.extensionPath, log);
+    }),
+    vscode.commands.registerCommand('b2c-dx.walkthrough.showTelemetry', () => {
+      walkthroughTelemetry.logSummary();
+      log.show();
+    }),
+  );
 
   registerJobLogViewer(context);
 
@@ -430,4 +457,10 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     configChangeListener,
   );
   log.appendLine('B2C DX extension activated.');
+
+  // Show walkthrough on first activation (optional, non-blocking)
+  // This runs asynchronously after activation is complete
+  showWalkthroughOnFirstActivation(context).catch((err) => {
+    log.appendLine(`Warning: Failed to show walkthrough: ${err instanceof Error ? err.message : String(err)}`);
+  });
 }

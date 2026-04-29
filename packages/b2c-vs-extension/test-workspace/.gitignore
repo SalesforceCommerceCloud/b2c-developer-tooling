@@ -1,0 +1,17 @@
+# B2C Commerce credentials
+dw.json
+
+# Node modules
+node_modules/
+
+# Build artifacts
+dist/
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
