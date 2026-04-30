@@ -140,6 +140,12 @@
           "name": "Cartridges",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        },
+        {
+          "id": "b2cCipAnalytics",
+          "name": "CIP Analytics",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX"
         }
       ],
       "b2c-dx-scapi": [
@@ -178,6 +184,10 @@
       {
         "view": "b2cCartridgeExplorer",
         "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+      },
+      {
+        "view": "b2cCipAnalytics",
+        "contents": "$(zap) **CIP Query Builder** — the fastest way to explore Commerce Intelligence data.\n\nBuild SQL queries visually, browse 245+ tables, and run curated reports.\n\n[$(zap) Open Query Builder](command:b2c-dx.cipAnalytics.queryBuilder)\n\n[$(table) Browse Tables](command:b2c-dx.cipAnalytics.browseTables)\n\nRequires OAuth credentials (clientId, clientSecret) in dw.json.\n\n[$(refresh) Refresh](command:b2c-dx.cipAnalytics.refresh)"
       }
     ],
     "debuggers": [
@@ -243,6 +253,29 @@
         "command": "b2c-dx.apiBrowser.openSwagger",
         "title": "Open API Documentation",
         "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - CIP Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.openReport",
+        "title": "Open Report",
+        "category": "B2C DX - CIP Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.browseTables",
+        "title": "Browse Tables",
+        "icon": "$(table)",
+        "category": "B2C DX - CIP Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.queryBuilder",
+        "title": "Open Query Builder",
+        "icon": "$(zap)",
+        "category": "B2C DX - CIP Analytics"
       },
       {
         "command": "b2c-dx.sandbox.refresh",
@@ -617,6 +650,21 @@
           "command": "b2c-dx.codeSync.refreshCartridges",
           "when": "view == b2cCartridgeExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.browseTables",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@3"
         },
         {
           "command": "b2c-dx.codeSync.deploy",
