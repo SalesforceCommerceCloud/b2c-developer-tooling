@@ -12,7 +12,7 @@ catalog:
   open: 11.0.0
 
   # Dev dependencies (shared across packages)
-  '@eslint/compat': ^1
+  '@eslint/compat': ^2.0.5
   '@oclif/prettier-config': ^0.2.1
   '@oclif/test': ^4
   '@salesforce/dev-config': ^4.3.2
@@ -22,7 +22,7 @@ catalog:
   '@types/sinon': ^21.0.0
   c8: ^11.0.0
   chai: ^4
-  eslint: ^9
+  eslint: ^10.3.0
   eslint-config-oclif: ^6
   eslint-config-prettier: ^10
   eslint-plugin-header: ^3.1.1
