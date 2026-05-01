@@ -18,6 +18,8 @@ export interface SandboxInfo {
   createdBy?: string;
   autoScheduled?: boolean;
   links?: Array<{href: string; rel: string}>;
+  clonedFrom?: string;
+  sourceInstanceIdentifier?: string;
   [key: string]: unknown;
 }
 
