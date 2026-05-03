@@ -46,7 +46,7 @@ def main():
     parser.add_argument("--skill-path", help="Evaluate a single skill directory (overrides discovery)")
     parser.add_argument("--discover", nargs="*", default=["skills/"], help="Directories to search for skills with trigger evals (default: skills/)")
     parser.add_argument("--model", default=None, help="Model to use for claude -p")
-    parser.add_argument("--num-workers", type=int, default=10, help="Number of parallel workers")
+    parser.add_argument("--num-workers", type=int, default=1, help="Number of parallel workers (default: 1, serial)")
     parser.add_argument("--timeout", type=int, default=30, help="Timeout per query in seconds")
     parser.add_argument("--runs-per-query", type=int, default=1, help="Number of runs per query")
     parser.add_argument("--trigger-threshold", type=float, default=0.5, help="Trigger rate threshold")
