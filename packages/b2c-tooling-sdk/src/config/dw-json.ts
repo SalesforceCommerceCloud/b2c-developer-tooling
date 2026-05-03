@@ -227,16 +227,13 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
   }
 
   // Find active config
-  if (json.active === false) {
-    // Root is inactive, look for active in configs
-    const activeConfig = json.configs.find((c) => c.active === true);
-    if (activeConfig) {
-      logger.trace(
-        {selection: 'active', instanceName: activeConfig.name},
-        `[DwJsonSource] Selected config "${activeConfig.name}" by active flag`,
-      );
-      return activeConfig;
-    }
+  const activeConfig = json.configs.find((c) => c.active === true);
+  if (activeConfig) {
+    logger.trace(
+      {selection: 'active', instanceName: activeConfig.name},
+      `[DwJsonSource] Selected config "${activeConfig.name}" by active flag`,
+    );
+    return activeConfig;
   }
 
   // Default to root config

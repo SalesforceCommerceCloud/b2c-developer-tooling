@@ -150,6 +150,21 @@ describe('config/dw-json', () => {
       expect(result?.config.name).to.equal('production');
     });
 
+    it('selects active config when root has no active field', async () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      const multiConfig = {
+        configs: [
+          {name: 'sandbox1', hostname: 'sandbox1.demandware.net', active: true},
+          {name: 'sandbox2', hostname: 'sandbox2.demandware.net'},
+        ],
+      };
+      fs.writeFileSync(dwJsonPath, JSON.stringify(multiConfig));
+
+      const result = await loadDwJson();
+      expect(result?.config.hostname).to.equal('sandbox1.demandware.net');
+      expect(result?.config.name).to.equal('sandbox1');
+    });
+
     it('returns root config when no active config found', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       const multiConfig = {
