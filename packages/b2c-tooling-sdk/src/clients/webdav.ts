@@ -286,7 +286,15 @@ export class WebDavClient {
     const response = await this.request(path, {method: 'PUT', headers, body: content});
 
     if (!response.ok) {
-      throw new HTTPError(`PUT failed: ${response.status} ${response.statusText}`, response, 'PUT');
+      const hints: Record<number, string> = {
+        413: '(sandbox may be stopped or unavailable)',
+      };
+      const hint = hints[response.status];
+      throw new HTTPError(
+        `PUT failed: ${response.status} ${response.statusText}${hint ? ` ${hint}` : ''}`,
+        response,
+        'PUT',
+      );
     }
   }
 
