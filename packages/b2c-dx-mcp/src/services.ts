@@ -176,6 +176,16 @@ export class Services {
   }
 
   /**
+   * Get Basic auth credentials for SDAPI operations (script debugger).
+   * Returns undefined if credentials are not configured.
+   */
+  public getBasicAuthCredentials(): undefined | {hostname: string; username: string; password: string} {
+    const {hostname, username, password} = this.resolvedConfig.values;
+    if (!hostname || !username || !password) return undefined;
+    return {hostname, username, password};
+  }
+
+  /**
    * Get Custom APIs client for managing custom SCAPI endpoints.
    * Requires shortCode, tenantId, and OAuth credentials to be configured.
    *

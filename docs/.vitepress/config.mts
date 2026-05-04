@@ -106,6 +106,7 @@ const referenceSidebar = [
       {text: 'CIP', link: '/cli/cip'},
       {text: 'CAP (Commerce Apps)', link: '/cli/cap'},
       {text: 'Code', link: '/cli/code'},
+      {text: 'Debug', link: '/cli/debug'},
       {text: 'Content', link: '/cli/content'},
       {text: 'Custom APIs', link: '/cli/custom-apis'},
       {text: 'Docs', link: '/cli/docs'},
