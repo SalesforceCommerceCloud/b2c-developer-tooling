@@ -15,6 +15,12 @@ interface ListSessionsOutput {
     hostname: string;
     client_id: string;
     halted_threads: number[];
+    breakpoints: Array<{
+      id: number;
+      file: null | string;
+      line: number;
+      script_path: string;
+    }>;
     created_at: string;
     last_activity_at: string;
   }>;
@@ -28,9 +34,9 @@ export function createDebugListSessionsTool(
     {
       name: 'debug_list_sessions',
       description:
-        'List all active script debugger sessions. ' +
-        'Returns session IDs, connected hostnames, and any currently halted threads. ' +
-        'Use this to discover existing sessions before creating a new one.',
+        'List all active script debugger sessions with their breakpoints and halted threads. ' +
+        'Use this to check session state: whether breakpoints are armed, which threads are halted, and whether you need to call debug_get_variables or debug_continue. ' +
+        'This is the recommended way to poll for halted threads in the non-blocking debug workflow.',
       toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {},
       async execute(_args, context) {
@@ -49,6 +55,12 @@ export function createDebugListSessionsTool(
               .getKnownThreads()
               .filter((t) => t.status === 'halted')
               .map((t) => t.id),
+            breakpoints: entry.breakpoints.map((bp) => ({
+              id: bp.id,
+              file: entry.sourceMapper.toLocalPath(bp.script_path) ?? null,
+              line: bp.line_number,
+              script_path: bp.script_path,
+            })),
             created_at: new Date(entry.createdAt).toISOString(),
             last_activity_at: new Date(entry.lastActivityAt).toISOString(),
           })),

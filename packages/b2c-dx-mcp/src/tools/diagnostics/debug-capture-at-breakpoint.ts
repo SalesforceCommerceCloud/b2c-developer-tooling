@@ -28,6 +28,7 @@ interface CaptureInput {
   expressions?: string[];
   timeout_ms?: number;
   auto_continue?: boolean;
+  trigger_url?: string;
 }
 
 interface CaptureOutput {
@@ -58,6 +59,7 @@ interface CaptureOutput {
     result: string;
   }>;
   auto_continued: boolean;
+  trigger_status?: number;
 }
 
 export function createDebugCaptureAtBreakpointTool(
@@ -68,10 +70,10 @@ export function createDebugCaptureAtBreakpointTool(
     {
       name: 'debug_capture_at_breakpoint',
       description:
-        'Set a breakpoint, wait for it to be hit, and capture a diagnostic snapshot (stack, variables, expression results). ' +
-        'IMPORTANT: This tool BLOCKS until the breakpoint is hit or the timeout expires — the user or an external process must trigger a request on the instance while this tool is waiting. ' +
-        'Optionally resumes the thread after capture. ' +
-        'Combines debug_set_breakpoints, debug_wait_for_stop, debug_get_stack, debug_get_variables, and debug_evaluate in a single call.',
+        'Set a breakpoint, optionally trigger an HTTP request, wait for the breakpoint to be hit, and capture a diagnostic snapshot (stack, variables, expression results). ' +
+        'Use trigger_url to have the tool fire the request itself (recommended) — this avoids needing to coordinate a separate request while the tool blocks. ' +
+        'Without trigger_url, the tool BLOCKS until the breakpoint is hit or timeout expires and requires the user to trigger a request externally. ' +
+        'For more control, use the non-blocking workflow: debug_set_breakpoints → trigger request → debug_list_sessions (check halted_threads) → debug_get_variables.',
       toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
@@ -92,6 +94,13 @@ export function createDebugCaptureAtBreakpointTool(
           .boolean()
           .optional()
           .describe('If true, resume the thread after capturing the snapshot. Defaults to false.'),
+        trigger_url: z
+          .string()
+          .optional()
+          .describe(
+            'URL to request after arming the breakpoint. The tool fires this HTTP GET in the background, then waits for the breakpoint to halt. ' +
+              'This is the recommended approach — it avoids needing to coordinate a separate request while the tool blocks.',
+          ),
       },
       async execute(args, context) {
         const registry = context.serverContext?.debugSessions;
@@ -104,7 +113,6 @@ export function createDebugCaptureAtBreakpointTool(
 
         const scriptPath = resolveBreakpointPath(args.file, entry.sourceMapper, entry.cartridges);
 
-        // Set breakpoint (adds to existing)
         const bpInput: BreakpointInput = {
           script_path: scriptPath,
           line_number: args.line,
@@ -125,6 +133,14 @@ export function createDebugCaptureAtBreakpointTool(
           line: args.line,
           script_path: scriptPath,
         };
+
+        // Fire trigger URL in the background (it will hang when the breakpoint halts the thread)
+        let triggerPromise: Promise<number | undefined> | undefined;
+        if (args.trigger_url) {
+          triggerPromise = fetch(args.trigger_url, {redirect: 'follow'})
+            .then((r) => r.status)
+            .catch((): undefined => undefined);
+        }
 
         // Wait for halt
         const haltedThread = entry.manager.getKnownThreads().find((t) => t.status === 'halted');
@@ -150,7 +166,6 @@ export function createDebugCaptureAtBreakpointTool(
           };
         }
 
-        // Capture stack
         const threadDetail = await entry.manager.client.getThread(thread.id);
         const stack = threadDetail.call_stack.map((frame) => ({
           index: frame.index,
@@ -160,7 +175,6 @@ export function createDebugCaptureAtBreakpointTool(
           script_path: frame.location.script_path,
         }));
 
-        // Capture variables (top frame)
         const varsResult = await entry.manager.client.getVariables(thread.id, 0);
         const variables = varsResult.object_members.map((m) => ({
           name: m.name,
@@ -170,7 +184,6 @@ export function createDebugCaptureAtBreakpointTool(
           has_children: !PRIMITIVE_TYPES.has(m.type),
         }));
 
-        // Evaluate expressions (sequential — each must complete before the next on the debugger)
         const evaluations: Array<{expression: string; result: string}> = [];
         if (args.expressions) {
           for (const expr of args.expressions) {
@@ -187,12 +200,13 @@ export function createDebugCaptureAtBreakpointTool(
           }
         }
 
-        // Optionally continue
         let autoContinued = false;
         if (args.auto_continue) {
           await entry.manager.resume(thread.id);
           autoContinued = true;
         }
+
+        const triggerStatus = triggerPromise ? await triggerPromise : undefined;
 
         return {
           breakpoint: breakpointInfo,
@@ -202,6 +216,7 @@ export function createDebugCaptureAtBreakpointTool(
           variables,
           evaluations: evaluations.length > 0 ? evaluations : undefined,
           auto_continued: autoContinued,
+          trigger_status: triggerStatus,
         };
       },
       formatOutput: (output) => jsonResult(output),

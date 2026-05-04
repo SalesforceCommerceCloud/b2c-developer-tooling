@@ -16,15 +16,18 @@ interface SetBreakpointsInput {
   breakpoints: Array<{file: string; line: number; condition?: string}>;
 }
 
+interface BreakpointResult {
+  id: number;
+  file: null | string;
+  line: number;
+  script_path: string;
+  verified: boolean;
+  condition?: string;
+}
+
 interface SetBreakpointsOutput {
-  breakpoints: Array<{
-    id: number;
-    file: null | string;
-    line: number;
-    script_path: string;
-    verified: boolean;
-    condition?: string;
-  }>;
+  breakpoints: BreakpointResult[];
+  warnings?: string[];
 }
 
 export function createDebugSetBreakpointsTool(
@@ -36,8 +39,8 @@ export function createDebugSetBreakpointsTool(
       name: 'debug_set_breakpoints',
       description:
         'Set breakpoints in a debug session. Replaces all previously set breakpoints. ' +
-        'Accepts local file paths which are mapped to server script paths via cartridge mappings. ' +
-        'You can also pass server paths directly (starting with /).',
+        'Accepts local file paths (mapped to server paths via cartridge discovery), cartridge-prefixed paths (e.g. app_storefront/cartridge/controllers/Cart.js), or server paths starting with /. ' +
+        'Check the "verified" field and "warnings" in the response — if a path could not be mapped to a known cartridge, it will be flagged.',
       toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
@@ -65,12 +68,23 @@ export function createDebugSetBreakpointsTool(
         }
 
         const entry = registry.getSessionOrThrow(args.session_id);
+        const warnings: string[] = [];
 
-        const bpInputs: BreakpointInput[] = args.breakpoints.map((bp) => ({
-          script_path: resolveBreakpointPath(bp.file, entry.sourceMapper, entry.cartridges),
-          line_number: bp.line,
-          condition: bp.condition,
-        }));
+        const bpInputs: BreakpointInput[] = args.breakpoints.map((bp) => {
+          const scriptPath = resolveBreakpointPath(bp.file, entry.sourceMapper, entry.cartridges);
+          const roundTrip = entry.sourceMapper.toLocalPath(scriptPath);
+          if (!roundTrip) {
+            warnings.push(
+              `"${bp.file}" resolved to server path "${scriptPath}" but could not be mapped back to a local file. ` +
+                `Verify this path exists on the instance.`,
+            );
+          }
+          return {
+            script_path: scriptPath,
+            line_number: bp.line,
+            condition: bp.condition,
+          };
+        });
 
         const result = await entry.manager.setBreakpoints(bpInputs);
         entry.breakpoints = result;
@@ -81,9 +95,10 @@ export function createDebugSetBreakpointsTool(
             file: entry.sourceMapper.toLocalPath(bp.script_path) ?? null,
             line: bp.line_number,
             script_path: bp.script_path,
-            verified: true,
+            verified: entry.sourceMapper.toLocalPath(bp.script_path) !== undefined,
             condition: bp.condition,
           })),
+          warnings: warnings.length > 0 ? warnings : undefined,
         };
       },
       formatOutput: (output) => jsonResult(output),

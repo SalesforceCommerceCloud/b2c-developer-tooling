@@ -26,6 +26,7 @@ interface StartSessionOutput {
   session_id: string;
   hostname: string;
   cartridges: string[];
+  cartridge_mappings: Record<string, string>;
   warnings: string[];
 }
 
@@ -105,10 +106,16 @@ export function createDebugStartSessionTool(
 
         const entry = registry.registerSession(hostname, clientId, manager, sourceMapper, cartridges);
 
+        const cartridgeMappings: Record<string, string> = {};
+        for (const c of cartridges) {
+          cartridgeMappings[c.name] = c.src;
+        }
+
         return {
           session_id: entry.sessionId,
           hostname,
           cartridges: cartridges.map((c) => c.name),
+          cartridge_mappings: cartridgeMappings,
           warnings,
         };
       },
