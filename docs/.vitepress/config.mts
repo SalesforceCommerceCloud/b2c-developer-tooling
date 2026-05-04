@@ -130,12 +130,12 @@ const referenceSidebar = [
     items: [
       {
         text: 'Cartridges',
-        collapsed: false,
+        collapsed: true,
         items: [{text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'}],
       },
       {
         text: 'SCAPI',
-        collapsed: false,
+        collapsed: true,
         items: [
           {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
           {text: 'scapi_custom_api_generate_scaffold', link: '/mcp/tools/scapi-custom-api-generate-scaffold'},
@@ -144,7 +144,7 @@ const referenceSidebar = [
       },
       {
         text: 'PWA Kit',
-        collapsed: false,
+        collapsed: true,
         items: [
           {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
           {text: 'pwakit_get_guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
@@ -152,7 +152,7 @@ const referenceSidebar = [
       },
       {
         text: 'Storefront Next',
-        collapsed: false,
+        collapsed: true,
         items: [
           {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
           {text: 'sfnext_start_figma_workflow', link: '/mcp/tools/sfnext-start-figma-workflow'},
@@ -164,7 +164,7 @@ const referenceSidebar = [
       },
       {
         text: 'Diagnostics',
-        collapsed: false,
+        collapsed: true,
         items: [{text: 'Script Debugger', link: '/mcp/tools/diagnostics'}],
       },
     ],
