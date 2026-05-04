@@ -128,18 +128,40 @@ const referenceSidebar = [
   {
     text: 'MCP Tools',
     items: [
-      {text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'},
-      {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
-      {text: 'pwakit_get_guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
-      {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
-      {text: 'scapi_custom_api_generate_scaffold', link: '/mcp/tools/scapi-custom-api-generate-scaffold'},
-      {text: 'scapi_custom_apis_get_status', link: '/mcp/tools/scapi-custom-apis-get-status'},
-      {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
-      {text: 'sfnext_start_figma_workflow', link: '/mcp/tools/sfnext-start-figma-workflow'},
-      {text: 'sfnext_analyze_component', link: '/mcp/tools/sfnext-analyze-component'},
-      {text: 'sfnext_match_tokens_to_theme', link: '/mcp/tools/sfnext-match-tokens-to-theme'},
-      {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
-      {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
+      {
+        text: 'Cartridges',
+        collapsed: false,
+        items: [{text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'}],
+      },
+      {
+        text: 'SCAPI',
+        collapsed: false,
+        items: [
+          {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
+          {text: 'scapi_custom_api_generate_scaffold', link: '/mcp/tools/scapi-custom-api-generate-scaffold'},
+          {text: 'scapi_custom_apis_get_status', link: '/mcp/tools/scapi-custom-apis-get-status'},
+        ],
+      },
+      {
+        text: 'PWA Kit',
+        collapsed: false,
+        items: [
+          {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
+          {text: 'pwakit_get_guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
+        ],
+      },
+      {
+        text: 'Storefront Next',
+        collapsed: false,
+        items: [
+          {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
+          {text: 'sfnext_start_figma_workflow', link: '/mcp/tools/sfnext-start-figma-workflow'},
+          {text: 'sfnext_analyze_component', link: '/mcp/tools/sfnext-analyze-component'},
+          {text: 'sfnext_match_tokens_to_theme', link: '/mcp/tools/sfnext-match-tokens-to-theme'},
+          {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
+          {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
+        ],
+      },
       {
         text: 'Diagnostics',
         collapsed: false,
