@@ -69,8 +69,9 @@ export function createDebugCaptureAtBreakpointTool(
       name: 'debug_capture_at_breakpoint',
       description:
         'Set a breakpoint, wait for it to be hit, and capture a diagnostic snapshot (stack, variables, expression results). ' +
+        'IMPORTANT: This tool BLOCKS until the breakpoint is hit or the timeout expires — the user or an external process must trigger a request on the instance while this tool is waiting. ' +
         'Optionally resumes the thread after capture. ' +
-        'This is a higher-level tool that combines debug_set_breakpoints, debug_wait_for_stop, debug_get_stack, debug_get_variables, and debug_evaluate.',
+        'Combines debug_set_breakpoints, debug_wait_for_stop, debug_get_stack, debug_get_variables, and debug_evaluate in a single call.',
       toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),

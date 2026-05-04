@@ -73,7 +73,7 @@ Each breakpoint object:
 
 ### debug_wait_for_stop
 
-Wait for a thread to halt at a breakpoint or step. Returns immediately if a thread is already halted.
+Wait for a thread to halt at a breakpoint or step. Returns immediately if a thread is already halted. Otherwise **blocks** until a halt occurs or the timeout expires — the user or an external process must trigger a request on the instance while this tool is waiting.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
@@ -163,6 +163,8 @@ Evaluate an expression in the context of a halted thread and stack frame.
 ### debug_capture_at_breakpoint
 
 Set a breakpoint, wait for it to be hit, and capture a diagnostic snapshot — stack, variables, and optional expression results in a single call. Optionally resumes the thread after capture.
+
+> **Important:** This tool **blocks** until the breakpoint is hit or the timeout expires. The user or an external process must trigger a request on the instance while this tool is waiting.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
