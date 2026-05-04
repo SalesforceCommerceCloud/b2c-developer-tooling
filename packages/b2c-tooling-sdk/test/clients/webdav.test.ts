@@ -269,6 +269,27 @@ describe('clients/webdav', () => {
           expect((error as HTTPError).message).to.include('507');
         }
       });
+
+      it('includes sandbox hint in error message on 413', async () => {
+        server.use(
+          http.all(`${BASE_URL}/*`, ({request}) => {
+            if (request.method === 'PUT') {
+              return new HttpResponse(null, {status: 413, statusText: 'Payload Too Large'});
+            }
+            return new HttpResponse(null, {status: 404});
+          }),
+        );
+
+        try {
+          await client.put('Cartridges/v1/large.zip', Buffer.from('content'));
+          expect.fail('Should have thrown');
+        } catch (error) {
+          expect(error).to.be.instanceOf(HTTPError);
+          expect((error as HTTPError).message).to.include('PUT failed');
+          expect((error as HTTPError).message).to.include('413');
+          expect((error as HTTPError).message).to.include('sandbox may be stopped');
+        }
+      });
     });
 
     describe('get', () => {
