@@ -140,6 +140,11 @@ const referenceSidebar = [
       {text: 'sfnext_match_tokens_to_theme', link: '/mcp/tools/sfnext-match-tokens-to-theme'},
       {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
       {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
+      {
+        text: 'Diagnostics',
+        collapsed: false,
+        items: [{text: 'Script Debugger', link: '/mcp/tools/diagnostics'}],
+      },
     ],
   },
 ];
