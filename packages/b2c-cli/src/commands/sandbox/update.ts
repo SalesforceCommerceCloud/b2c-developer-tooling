@@ -8,6 +8,7 @@ import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
+import {parseSchedulerFlag} from '../../utils/ods/scheduler.js';
 
 type SandboxModel = OdsComponents['schemas']['SandboxModel'];
 type SandboxUpdateRequestModel = OdsComponents['schemas']['SandboxUpdateRequestModel'];
@@ -44,6 +45,8 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
     '<%= config.bin %> <%= command.id %> zzzv-123 --resource-profile large',
     '<%= config.bin %> <%= command.id %> zzzv-123 --tags tag1,tag2',
     '<%= config.bin %> <%= command.id %> zzzv-123 --emails user@example.com,dev@example.com',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --start-scheduler \'{"weekdays":["MONDAY"],"time":"08:00:00Z"}\'',
+    '<%= config.bin %> <%= command.id %> zzzv-123 --clear-stop-scheduler',
     '<%= config.bin %> <%= command.id %> zzzv-123 --ttl 48 --resource-profile xlarge --tags ci,nightly --json',
   ];
 
@@ -65,11 +68,37 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
     emails: Flags.string({
       description: 'Comma-separated list of notification email addresses',
     }),
+    'start-scheduler': Flags.string({
+      description: 'Start schedule JSON. Format: {"weekdays":[...],"time":"..."}',
+      exclusive: ['clear-start-scheduler'],
+    }),
+    'clear-start-scheduler': Flags.boolean({
+      description: 'Remove existing start scheduler',
+      exclusive: ['start-scheduler'],
+    }),
+    'stop-scheduler': Flags.string({
+      description: 'Stop schedule JSON. Format: {"weekdays":[...],"time":"..."}',
+      exclusive: ['clear-stop-scheduler'],
+    }),
+    'clear-stop-scheduler': Flags.boolean({
+      description: 'Remove existing stop scheduler',
+      exclusive: ['stop-scheduler'],
+    }),
   };
 
   async run(): Promise<SandboxModel> {
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
-    const {ttl, 'auto-scheduled': autoScheduled, 'resource-profile': resourceProfile, tags, emails} = this.flags;
+    const {
+      ttl,
+      'auto-scheduled': autoScheduled,
+      'resource-profile': resourceProfile,
+      tags,
+      emails,
+      'start-scheduler': startSchedulerRaw,
+      'clear-start-scheduler': clearStartScheduler,
+      'stop-scheduler': stopSchedulerRaw,
+      'clear-stop-scheduler': clearStopScheduler,
+    } = this.flags;
 
     // Require at least one update flag
     if (
@@ -77,10 +106,17 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
       autoScheduled === undefined &&
       resourceProfile === undefined &&
       tags === undefined &&
-      emails === undefined
+      emails === undefined &&
+      startSchedulerRaw === undefined &&
+      clearStartScheduler === undefined &&
+      stopSchedulerRaw === undefined &&
+      clearStopScheduler === undefined
     ) {
       this.error(
-        'At least one update flag is required. Use --ttl, --auto-scheduled, --resource-profile, --tags, or --emails.',
+        t(
+          'commands.sandbox.update.no_flags',
+          'At least one update flag is required. Use --ttl, --auto-scheduled, --resource-profile, --tags, --emails, --start-scheduler, --clear-start-scheduler, --stop-scheduler, or --clear-stop-scheduler.',
+        ),
       );
     }
 
@@ -106,6 +142,20 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
       body.emails = emails.split(',').map((email) => email.trim());
     }
 
+    try {
+      const startScheduler = parseSchedulerFlag(startSchedulerRaw, clearStartScheduler);
+      if (startScheduler !== undefined) {
+        body.startScheduler = startScheduler as unknown as SandboxUpdateRequestModel['startScheduler'];
+      }
+
+      const stopScheduler = parseSchedulerFlag(stopSchedulerRaw, clearStopScheduler);
+      if (stopScheduler !== undefined) {
+        body.stopScheduler = stopScheduler as unknown as SandboxUpdateRequestModel['stopScheduler'];
+      }
+    } catch {
+      this.error(t('commands.sandbox.update.invalid_json', 'Invalid JSON for scheduler flag.'));
+    }
+
     this.log(t('commands.sandbox.update.updating', 'Updating sandbox {{sandboxId}}...', {sandboxId}));
 
     const result = await this.odsClient.PATCH('/sandboxes/{sandboxId}', {
@@ -117,7 +167,7 @@ export default class SandboxUpdate extends OdsCommand<typeof SandboxUpdate> {
 
     if (!result.data?.data) {
       const message = getApiErrorMessage(result.error, result.response);
-      this.error(`Failed to update sandbox: ${message}`);
+      this.error(t('commands.sandbox.update.error', 'Failed to update sandbox: {{message}}', {message}));
     }
 
     const sandbox = result.data.data;
