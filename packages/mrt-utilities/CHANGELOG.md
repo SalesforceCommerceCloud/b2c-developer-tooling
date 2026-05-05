@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.1.7
+
+### Patch Changes
+
+- [#398](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/398) [`18471af`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18471af19de7cf99c45227d53476e0aa73985f68) - Keep ACH header in request (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
 ## 0.1.6
 
 ### Patch Changes

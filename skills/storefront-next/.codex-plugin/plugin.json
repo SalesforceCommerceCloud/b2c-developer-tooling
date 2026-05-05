@@ -1,6 +1,6 @@
 {
   "name": "storefront-next",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Storefront Next development skills for building React 19 storefronts on Salesforce B2C Commerce.",
   "author": {
     "name": "Salesforce"
