@@ -777,7 +777,6 @@ export const X_HEADERS_TO_REMOVE_ORIGIN: string[] = [
   'x-apigateway-event',
   'x-apigateway-context',
   'x-mobify-access-key',
-  'x-sfdc-access-control',
 ];
 
 /**

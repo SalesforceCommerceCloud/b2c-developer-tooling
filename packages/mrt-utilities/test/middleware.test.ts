@@ -198,6 +198,7 @@ describe('middleware', () => {
 
           expect((mockRequest as Request).headers['x-api-key']).to.be.undefined;
           expect((mockRequest as Request).headers['x-mobify-access-key']).to.be.undefined;
+          expect((mockRequest as Request).headers['x-sfdc-access-control']).to.equal('control');
           expect((mockRequest as Request).headers['content-type']).to.equal('application/json');
         });
 
