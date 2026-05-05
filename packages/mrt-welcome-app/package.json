@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@salesforce/b2c-cli": "workspace:*",
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
     "@salesforce/dev-config": "catalog:",
     "@serverless/event-mocks": "1.1.1",
     "@types/aws-lambda": "8.10.160",

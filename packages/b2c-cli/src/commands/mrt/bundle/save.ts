@@ -57,11 +57,9 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
     }),
     'ssr-only': Flags.string({
       description: 'Glob patterns for server-only files (comma-separated or JSON array)',
-      default: 'ssr.js,ssr.mjs,server/**/*',
     }),
     'ssr-shared': Flags.string({
       description: 'Glob patterns for shared files (comma-separated or JSON array)',
-      default: 'static/**/*,client/**/*',
     }),
     'node-version': Flags.string({
       char: 'n',
@@ -83,8 +81,8 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
 
     const saveDir = this.flags['save-dir'];
     const buildDir = this.flags['build-dir'];
-    const ssrOnly = parseGlobPatterns(this.flags['ssr-only']);
-    const ssrShared = parseGlobPatterns(this.flags['ssr-shared']);
+    const ssrOnly = this.flags['ssr-only'] ? parseGlobPatterns(this.flags['ssr-only']) : undefined;
+    const ssrShared = this.flags['ssr-shared'] ? parseGlobPatterns(this.flags['ssr-shared']) : undefined;
     const ssrParameters: Record<string, unknown> = {};
 
     if (this.flags['node-version']) {

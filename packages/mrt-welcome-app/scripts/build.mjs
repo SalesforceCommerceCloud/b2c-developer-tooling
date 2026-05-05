@@ -51,6 +51,12 @@ async function copyDir(src, dest) {
   }
 }
 
+function formatSize(bytes) {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(2)} kB`;
+  return `${bytes} B`;
+}
+
 async function build() {
   await fs.rm(buildDir, {recursive: true, force: true});
   await fs.mkdir(buildDir, {recursive: true});
@@ -71,10 +77,23 @@ async function build() {
     entryPoints: {ssr: path.join(pkgRoot, 'src', 'ssr.ts')},
   });
 
+  const ssrStat = await fs.stat(path.join(buildDir, 'ssr.js'));
+  console.log(`  build/ssr.js  ${formatSize(ssrStat.size)}`);
+
   // Copy views
   const viewsSrc = path.join(pkgRoot, 'src', 'views');
   const viewsDest = path.join(buildDir, 'views');
   await copyDir(viewsSrc, viewsDest);
+
+  // Build config.server.ts so the CLI can load ssrOnly/ssrShared/ssrParameters
+  await esbuild.build({
+    bundle: false,
+    platform: 'node',
+    target: 'node22',
+    format: 'cjs',
+    outdir: buildDir,
+    entryPoints: {'config.server': path.join(pkgRoot, 'config.server.ts')},
+  });
 
   // Create empty loader.js required by MRT
   await fs.writeFile(path.join(buildDir, 'loader.js'), '// This file is intentionally empty\n');
@@ -84,7 +103,7 @@ async function build() {
   delete pkg.type;
   await fs.writeFile(path.join(buildDir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
 
-  console.log('Build complete → build/ssr.js');
+  console.log('Build complete');
 }
 
 build().catch((err) => {
