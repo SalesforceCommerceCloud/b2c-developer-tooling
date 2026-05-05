@@ -149,6 +149,37 @@ import { MetricsSender } from '@salesforce/mrt-utilities/metrics';
 
 Use when you need to emit metrics from the same process that serves requests (e.g. custom middleware or request processor).
 
+## Data Store In Development
+
+The production MRT data store is not available during local development because it depends on deployed runtime infrastructure. `@salesforce/mrt-utilities` provides an equivalent development data-store implementation for local use.
+
+To use that local equivalent, import from the `data-store` subpath and run Node with the `dev-data-store` condition:
+
+```bash
+node --conditions dev-data-store server.js
+```
+
+```typescript
+import {DataStore} from '@salesforce/mrt-utilities/data-store';
+
+const store = DataStore.getDataStore();
+const entry = await store.getEntry('custom-global-preferences');
+```
+
+Provide local data-store values through environment variables:
+
+- `MRT_DATA_STORE_DEFAULTS`: JSON map of data-store keys to object values
+- `MRT_DATA_STORE_WARN_ON_MISSING`: set to `false` to suppress missing-key warnings
+
+Example:
+
+```bash
+export MRT_DATA_STORE_DEFAULTS='{"custom-global-preferences":{"featureFlag":true}}'
+export MRT_DATA_STORE_WARN_ON_MISSING=true
+```
+
+The development pseudo store keeps production parity for missing keys and throws `DataStoreNotFoundError` when a key is not found.
+
 ## Related
 
 - [MRT CLI commands](/cli/mrt) — manage MRT projects, environments, and bundles from the CLI.

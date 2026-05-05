@@ -36,18 +36,21 @@ Most CLI operations require an Account Manager API Client. This is configured in
 
 ### Authentication Methods
 
-The CLI supports four authentication methods:
+The CLI supports five authentication methods:
 
 | Method                             | When Used                                                                                      | Role Configuration                        |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | **User Authentication**            | When `--user-auth` is passed, or when only a client ID is provided (no secret)                 | Roles configured on your **user account** |
 | **Client Credentials**             | When both `--client-id` and `--client-secret` are provided                                     | Roles configured on the **API client**    |
+| **JWT Bearer**                     | When `--jwt-cert` and `--jwt-key` are provided (certificate-based authentication)              | Roles configured on the **API client**    |
 | **Stateful User Authentication**   | After running `b2c auth login` — browser-based login, token stored and reused                  | Roles configured on your **user account** |
 | **Stateful Client Authentication** | After running `b2c auth client` — client credentials login, token stored and reused            | Roles configured on the **API client**    |
 
 **User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods implicit` on any OAuth command.
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
+
+**JWT Bearer** uses a public/private certificate pair for secure authentication without storing client secrets. This is ideal for production environments and CI/CD where you want stronger security. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
 
 **Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once, then stores the session on disk. Subsequent commands automatically use the stored token when it is present and valid, without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
 
@@ -75,9 +78,14 @@ For Account Manager operations that require user-level roles (organization and A
    - **Password**: A strong client secret (save this securely for Client Credentials auth)
 5. Configure the **Token Endpoint Auth Method**:
    - `client_secret_basic` for client credentials flow
+   - `private_key_jwt` for JWT Bearer authentication (certificate-based)
+
+::: tip Certificate-Based Authentication
+For enhanced security, use JWT Bearer authentication instead of client secrets. This requires uploading a certificate to the API client and using the `--jwt-cert` and `--jwt-key` flags. See [JWT Authentication](#jwt-authentication-certificate-based) for setup instructions.
+:::
 
 ::: warning
-The B2C CLI only supports `client_secret_basic` for the Token Endpoint Auth Method. `client_secret_post` and `private_key_jwt` aren't currently supported.
+For client credentials with secrets, only `client_secret_basic` is supported. `client_secret_post` isn't currently supported.
 :::
 
 ### Assigning Roles
@@ -150,11 +158,157 @@ For **User Authentication** (implicit flow), configure redirect URLs in your API
 | `http://localhost:8080`                                              | Required for B2C CLI user authentication                  |
 | `https://admin.dx.commercecloud.salesforce.com/oauth2-redirect.html` | Optional - enables ODS Swagger interface with same client |
 
-**Note:** Redirect URLs are not required for API clients using only Client Credentials authentication.
+**Note:** Redirect URLs are not required for API clients using only Client Credentials or JWT Bearer authentication.
 
 ::: tip Running Behind a Proxy
 If you're running the CLI behind a proxy where `localhost:8080` isn't reachable by the browser, set `SFCC_REDIRECT_URI` to the proxy URL (e.g., `https://proxy.example.com:8080`). The proxy should forward traffic to the CLI's local server. You can also change the local server port with `SFCC_OAUTH_LOCAL_PORT`. Make sure to add your proxy URL to the API client's redirect URLs in Account Manager.
 :::
+
+## JWT Authentication (Certificate-Based)
+
+JWT Bearer authentication (RFC 7523) provides a more secure alternative to client secrets by using public/private certificate pairs. This is ideal for production environments and CI/CD pipelines where you want to avoid storing sensitive secrets.
+
+### How It Works
+
+1. You generate a certificate pair (public certificate + private key)
+2. You register the **public certificate** in Account Manager
+3. The CLI uses the **private key** to sign JWT tokens for authentication
+4. Account Manager verifies the signature using your registered certificate
+
+### Benefits
+
+- **More secure**: Private key never leaves your machine
+- **No secrets to leak**: No client secret to store or compromise
+- **Better for CI/CD**: Certificates can be rotated without updating secrets across pipelines
+- **Industry standard**: Implements OAuth 2.0 JWT Bearer (RFC 7523)
+
+### Setup Instructions
+
+#### Step 1: Generate Certificate Pair
+
+Generate an RSA certificate pair using OpenSSL:
+
+```bash
+openssl req -x509 -newkey rsa:4096 \
+  -keyout key.pem \
+  -out cert.pem \
+  -days 365 \
+  -nodes \
+  -subj "/CN=B2C CLI"
+```
+
+This creates two files:
+- `cert.pem` - Public certificate (upload to Account Manager)
+- `key.pem` - Private key (keep secure on your machine)
+
+::: tip Encrypted Keys
+For additional security, generate an encrypted private key by omitting `-nodes` and adding a passphrase when prompted. You'll provide the passphrase via `--jwt-passphrase` when using the CLI.
+:::
+
+#### Step 2: Register Certificate in Account Manager
+
+1. Log in to [Account Manager](https://account.demandware.com)
+2. Navigate to **API Client** and select your client
+3. Set **Token Endpoint Auth Method** to `private_key_jwt`
+4. Upload `cert.pem` in the **Certificates** section
+5. Save changes
+
+::: tip Multiple Certificates per Client
+You can register **multiple certificates** for the same API client. This is useful for:
+- **Team collaboration**: Each developer generates their own key pair and registers their certificate
+- **Key rotation**: Add a new certificate before removing the old one (zero downtime)
+- **Multi-environment**: Different certificates for CI/CD, staging, production
+
+Account Manager will verify JWT signatures against all registered certificates, so each team member can authenticate with their own private key while sharing the same client ID.
+:::
+
+#### Step 3: Configure CLI
+
+You can provide JWT credentials via CLI flags, environment variables, or configuration files.
+
+**Using CLI flags:**
+
+```bash
+b2c code list \
+  --client-id your-client-id \
+  --jwt-cert ./cert.pem \
+  --jwt-key ./key.pem
+```
+
+**Using environment variables:**
+
+```bash
+export SFCC_CLIENT_ID=your-client-id
+export SFCC_JWT_CERT=/path/to/cert.pem
+export SFCC_JWT_KEY=/path/to/key.pem
+
+b2c code list
+```
+
+**Using dw.json:**
+
+```json
+{
+  "hostname": "your-instance.demandware.net",
+  "client-id": "your-client-id",
+  "jwt-cert-path": "./cert.pem",
+  "jwt-key-path": "./key.pem"
+}
+```
+
+**For encrypted keys:**
+
+```bash
+b2c code list \
+  --client-id your-client-id \
+  --jwt-cert ./cert.pem \
+  --jwt-key ./key.pem \
+  --jwt-passphrase "your-passphrase"
+
+# Or via environment variable
+export SFCC_JWT_PASSPHRASE=your-passphrase
+```
+
+### Authentication Priority
+
+JWT authentication is tried **after** client credentials (if client secret is available) but **before** implicit flow:
+
+1. `client-credentials` - Uses client secret if available
+2. `jwt` - Uses JWT certificate if configured (no client secret)
+3. `implicit` - Opens browser for user authentication
+
+To force JWT authentication even when a client secret is configured:
+
+```bash
+b2c code list --auth-methods jwt
+```
+
+### Troubleshooting
+
+**"JWT certificate file not found"**
+- Verify the certificate path is correct
+- Use absolute paths or paths relative to current directory
+
+**"Invalid JWT private key"**
+- Check that the key file is in PEM format
+- If encrypted, ensure you provide the correct passphrase via `--jwt-passphrase`
+
+**"JWT authentication failed (401)"**
+- Verify the certificate is registered in Account Manager
+- Ensure the Token Endpoint Auth Method is set to `private_key_jwt`
+- Check that the client ID matches the API client with the registered certificate
+
+**"Invalid certificate format"**
+- The certificate must be in PEM format (starts with `-----BEGIN CERTIFICATE-----`)
+- Regenerate the certificate using the OpenSSL command above
+
+### Security Best Practices
+
+- **Keep private keys secure**: Never commit `key.pem` to version control
+- **Add to .gitignore**: Include `*.pem` and `*.key` in your `.gitignore`
+- **Use encrypted keys in production**: Generate keys with passphrases for production use
+- **Rotate certificates regularly**: Generate new certificates periodically (every 90-365 days)
+- **Store passphrases securely**: Use secret managers for passphrases in CI/CD
 
 ## OCAPI Configuration
 

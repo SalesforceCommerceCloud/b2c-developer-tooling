@@ -19,9 +19,10 @@ export interface OAuthConfig {
 }
 
 /**
- * Decodes a JWT token without verification
+ * Decodes a JWT token without verification.
+ * Exported for use by other auth strategies.
  */
-function decodeJWT(jwt: string): DecodedJWT {
+export function decodeJWT(jwt: string): DecodedJWT {
   const parts = jwt.split('.');
   if (parts.length !== 3) {
     throw new Error('Invalid JWT format');
@@ -31,12 +32,81 @@ function decodeJWT(jwt: string): DecodedJWT {
   return {header, payload};
 }
 
+/**
+ * Generates a cache key for OAuth tokens.
+ * Includes auth method to distinguish between client-credentials and JWT tokens.
+ *
+ * @param clientId - OAuth client ID
+ * @param method - Authentication method (client-credentials or jwt)
+ * @param accountManagerHost - Account Manager hostname
+ * @param scopes - OAuth scopes (optional)
+ * @returns Cache key string
+ */
+export function getOAuthCacheKey(
+  clientId: string,
+  method: 'client-credentials' | 'jwt',
+  accountManagerHost: string,
+  scopes?: string[],
+): string {
+  const scopesKey = scopes?.sort().join(',') || '';
+  return `${accountManagerHost}:${clientId}:${method}:${scopesKey}`;
+}
+
+/**
+ * Gets a cached OAuth token if valid.
+ *
+ * @param cacheKey - Cache key from getOAuthCacheKey()
+ * @param requiredScopes - Scopes that must be present in the cached token
+ * @returns Cached token response if valid, undefined otherwise
+ */
+export function getCachedOAuthToken(cacheKey: string, requiredScopes: string[] = []): AccessTokenResponse | undefined {
+  const cached = ACCESS_TOKEN_CACHE.get(cacheKey);
+  if (!cached) return undefined;
+
+  const now = new Date();
+  const hasAllScopes = requiredScopes.every((scope) => cached.scopes.includes(scope));
+
+  // Check if token is expired or missing required scopes
+  if (!hasAllScopes || now.getTime() > cached.expires.getTime()) {
+    ACCESS_TOKEN_CACHE.delete(cacheKey);
+    return undefined;
+  }
+
+  return cached;
+}
+
+/**
+ * Stores an OAuth token in the global cache.
+ *
+ * @param cacheKey - Cache key from getOAuthCacheKey()
+ * @param tokenResponse - Token response to cache
+ */
+export function setCachedOAuthToken(cacheKey: string, tokenResponse: AccessTokenResponse): void {
+  ACCESS_TOKEN_CACHE.set(cacheKey, tokenResponse);
+}
+
+/**
+ * Invalidates a cached OAuth token.
+ *
+ * @param cacheKey - Cache key from getOAuthCacheKey()
+ */
+export function invalidateCachedOAuthToken(cacheKey: string): void {
+  ACCESS_TOKEN_CACHE.delete(cacheKey);
+}
+
 export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private _hasHadSuccess = false;
+  private cacheKey: string;
 
   constructor(private config: OAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
+    this.cacheKey = getOAuthCacheKey(
+      this.config.clientId,
+      'client-credentials',
+      this.accountManagerHost,
+      this.config.scopes,
+    );
   }
 
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
@@ -86,22 +156,16 @@ export class OAuthStrategy implements AuthStrategy {
    */
   async getTokenResponse(): Promise<AccessTokenResponse> {
     const logger = getLogger();
-    const cached = ACCESS_TOKEN_CACHE.get(this.config.clientId);
+    const cached = getCachedOAuthToken(this.cacheKey, this.config.scopes || []);
 
     if (cached) {
-      const now = new Date();
-      const requiredScopes = this.config.scopes || [];
-      const hasAllScopes = requiredScopes.every((scope) => cached.scopes.includes(scope));
-
-      if (hasAllScopes && now.getTime() <= cached.expires.getTime()) {
-        logger.debug('Reusing cached access token');
-        return cached;
-      }
+      logger.debug('[OAuthStrategy] Reusing cached access token');
+      return cached;
     }
 
     // Get new token via client credentials
     const tokenResponse = await this.clientCredentialsGrant();
-    ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
+    setCachedOAuthToken(this.cacheKey, tokenResponse);
     return tokenResponse;
   }
 
@@ -109,7 +173,7 @@ export class OAuthStrategy implements AuthStrategy {
    * Invalidates the cached token, forcing re-authentication on next request
    */
   invalidateToken(): void {
-    ACCESS_TOKEN_CACHE.delete(this.config.clientId);
+    invalidateCachedOAuthToken(this.cacheKey);
   }
 
   /**
@@ -132,28 +196,17 @@ export class OAuthStrategy implements AuthStrategy {
    */
   private async getAccessToken(): Promise<string> {
     const logger = getLogger();
-    const cached = ACCESS_TOKEN_CACHE.get(this.config.clientId);
+    const cached = getCachedOAuthToken(this.cacheKey, this.config.scopes || []);
 
     if (cached) {
-      const now = new Date();
-      const requiredScopes = this.config.scopes || [];
-      const hasAllScopes = requiredScopes.every((scope) => cached.scopes.includes(scope));
-
-      if (!hasAllScopes) {
-        logger.warn('Access token missing scopes; invalidating and re-authenticating');
-        ACCESS_TOKEN_CACHE.delete(this.config.clientId);
-      } else if (now.getTime() > cached.expires.getTime()) {
-        logger.warn('Access token expired; invalidating and re-authenticating');
-        ACCESS_TOKEN_CACHE.delete(this.config.clientId);
-      } else {
-        logger.debug('Reusing cached access token');
-        return cached.accessToken;
-      }
+      logger.debug('[OAuthStrategy] Reusing cached access token');
+      return cached.accessToken;
     }
 
     // Get new token via client credentials
+    logger.debug('[OAuthStrategy] Requesting new access token');
     const tokenResponse = await this.clientCredentialsGrant();
-    ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
+    setCachedOAuthToken(this.cacheKey, tokenResponse);
     return tokenResponse.accessToken;
   }
 
@@ -254,5 +307,3 @@ export class OAuthStrategy implements AuthStrategy {
     };
   }
 }
-
-export {decodeJWT};
