@@ -36,7 +36,10 @@ function createMockManager(overrides?: Record<string, unknown>): DebugSessionMan
         id: 1,
         status: 'halted',
         call_stack: [
-          {index: 0, location: {function_name: 'show', line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}},
+          {
+            index: 0,
+            location: {function_name: 'show', line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'},
+          },
         ],
       }),
       getVariables: sinon.stub().resolves({object_members: [], count: 0, start: 0, total: 0, _v: '2.0'}),
@@ -108,7 +111,9 @@ describe('tools/diagnostics', () => {
 
       const tool = createDebugListSessionsTool(loadServices, serverContext);
       const result = await tool.handler({});
-      const json = getResultJson<{sessions: Array<{session_id: string; halted_threads: number[]; breakpoints: unknown[]}>}>(result);
+      const json = getResultJson<{
+        sessions: Array<{session_id: string; halted_threads: number[]; breakpoints: unknown[]}>;
+      }>(result);
 
       expect(json.sessions).to.have.lengthOf(1);
       expect(json.sessions[0].session_id).to.equal(entry.sessionId);

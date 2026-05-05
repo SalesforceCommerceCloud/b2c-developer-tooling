@@ -11,7 +11,7 @@ import type {DebugSessionManager, SourceMapper} from '@salesforce/b2c-tooling-sd
 
 function createMockManager(overrides?: Partial<DebugSessionManager>): DebugSessionManager {
   return {
-    client: {} as any,
+    client: {} as unknown,
     connect: sinon.stub().resolves(),
     disconnect: sinon.stub().resolves(),
     setBreakpoints: sinon.stub().resolves([]),
@@ -95,7 +95,13 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should return the session entry', () => {
-      const entry = registry.registerSession('host.example.com', 'c', createMockManager(), createMockSourceMapper(), []);
+      const entry = registry.registerSession(
+        'host.example.com',
+        'c',
+        createMockManager(),
+        createMockSourceMapper(),
+        [],
+      );
       expect(registry.getSession(entry.sessionId)).to.equal(entry);
     });
   });
@@ -106,7 +112,13 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should return entry and update lastActivityAt', () => {
-      const entry = registry.registerSession('host.example.com', 'c', createMockManager(), createMockSourceMapper(), []);
+      const entry = registry.registerSession(
+        'host.example.com',
+        'c',
+        createMockManager(),
+        createMockSourceMapper(),
+        [],
+      );
       const before = entry.lastActivityAt;
 
       // Small delay to ensure timestamp changes
@@ -123,7 +135,13 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should find matching entry', () => {
-      const entry = registry.registerSession('host.example.com', 'c', createMockManager(), createMockSourceMapper(), []);
+      const entry = registry.registerSession(
+        'host.example.com',
+        'c',
+        createMockManager(),
+        createMockSourceMapper(),
+        [],
+      );
       expect(registry.findByHostAndClientId('host.example.com', 'c')).to.equal(entry);
     });
   });
@@ -159,13 +177,13 @@ describe('DebugSessionRegistry', () => {
       const waiterPromise = new Promise<string>((resolve, reject) => {
         const timer = setTimeout(() => resolve('timeout'), 5000);
         entry.haltWaiters.push({
-          resolve: () => {
+          resolve() {
             clearTimeout(timer);
             resolve('resolved');
           },
-          reject: (err) => {
+          reject(e) {
             clearTimeout(timer);
-            reject(err);
+            reject(e);
           },
           timer,
         });
@@ -176,8 +194,8 @@ describe('DebugSessionRegistry', () => {
       try {
         await waiterPromise;
         expect.fail('Should have rejected');
-      } catch (err) {
-        expect((err as Error).message).to.equal('Debug session ended');
+      } catch (error) {
+        expect((error as Error).message).to.equal('Debug session ended');
       }
     });
 
