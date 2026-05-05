@@ -38,63 +38,179 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* === ICON SYSTEM ===
+ * Use inline SVGs via mask-image so each icon inherits `currentColor`. The mask approach keeps
+ * icons crisp at any size and avoids bundling an icon font. `--cip-icon-size` lets consumers
+ * override the size when needed (`style="--cip-icon-size: 16px"`).
+ */
+.ic {
+  display: inline-block;
+  width: var(--cip-icon-size, 14px);
+  height: var(--cip-icon-size, 14px);
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  flex-shrink: 0;
+  vertical-align: -2px;
+}
+.ic-play      { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M4 2.5v11L13 8 4 2.5z'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M4 2.5v11L13 8 4 2.5z'/></svg>"); }
+.ic-plus      { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M8 2v12M2 8h12' stroke='currentColor' stroke-width='1.5'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M8 2v12M2 8h12' stroke='currentColor' stroke-width='1.5'/></svg>"); }
+.ic-close     { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>"); }
+.ic-check     { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.5 3.5L13 5' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.5 3.5L13 5' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>"); }
+.ic-search    { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>"); }
+.ic-table     { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M2 7h12M8 3v10' stroke='currentColor' stroke-width='1.3'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M2 7h12M8 3v10' stroke='currentColor' stroke-width='1.3'/></svg>"); }
+.ic-columns   { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M6 3v10M10 3v10' stroke='currentColor' stroke-width='1.3'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M6 3v10M10 3v10' stroke='currentColor' stroke-width='1.3'/></svg>"); }
+.ic-filter    { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 3h12l-4.5 5v5l-3-1.5v-3.5L2 3z' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 3h12l-4.5 5v5l-3-1.5v-3.5L2 3z' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-sort      { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 3v10M3 5l2-2 2 2M11 13V3M9 11l2 2 2-2' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 3v10M3 5l2-2 2 2M11 13V3M9 11l2 2 2-2' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-hash      { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 2l-1 12M11 2l-1 12M2 6h12M2 10h12' stroke='currentColor' stroke-width='1.3' fill='none'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 2l-1 12M11 2l-1 12M2 6h12M2 10h12' stroke='currentColor' stroke-width='1.3' fill='none'/></svg>"); }
+.ic-refresh   { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-download  { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2v8M4 7l4 4 4-4M2 13h12' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2v8M4 7l4 4 4-4M2 13h12' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-code      { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5.5 4L2 8l3.5 4M10.5 4L14 8l-3.5 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5.5 4L2 8l3.5 4M10.5 4L14 8l-3.5 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-inbox     { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 9l1.5-5.5h9L14 9v4H2V9z M2 9h4l1 2h2l1-2h4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 9l1.5-5.5h9L14 9v4H2V9z M2 9h4l1 2h2l1-2h4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-arrow-up  { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 13V3M4 7l4-4 4 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 13V3M4 7l4-4 4 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-arrow-down{ mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 3v10M4 9l4 4 4-4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 3v10M4 9l4 4 4-4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+.ic-alert     { mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2L1.5 13h13L8 2zM8 6v4M8 12v.01' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2L1.5 13h13L8 2zM8 6v4M8 12v.01' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>"); }
+
 /* === PAGE / APP SHELL === */
 .page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px 24px 40px;
+  padding: 16px 20px 32px;
 }
 
-/* === HERO HEADER === */
-.hero {
-  position: relative;
-  padding: 20px 24px;
-  background: var(--cip-accent-soft);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: var(--cip-card-radius);
-  margin-bottom: 20px;
+/* === PAGE HEADER ===
+ * Salesforce-style page header: small eyebrow (category) + title + subtitle on the left,
+ * context metadata (connection) on the right. One thin bottom border separates it from content.
+ */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--vscode-panel-border);
 }
+
+.page-header__body { flex: 1; min-width: 0; }
+
+.page-header__eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 2px;
+}
+
+.page-header__title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--vscode-foreground);
+  letter-spacing: -0.1px;
+}
+
+.page-header__subtitle {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.page-header__meta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === CONNECTION INFO BAR ===
+ * A compact, horizontally-packed summary: STATUS · Tenant · Host.
+ * Each item uses a small uppercase label + value so the info is scannable without any icon noise.
+ */
+.conn-bar {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--cip-radius-sm);
+  overflow: hidden;
+  height: 32px;
+}
+
+.conn-bar__item {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3px 10px;
+  min-width: 0;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
+.conn-bar__item:last-child { border-right: none; }
+
+.conn-bar__label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1;
+}
+
+.conn-bar__value {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-foreground);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+/* Status slot — keeps the existing .conn-pill look but sits at the far left. */
+.conn-bar .conn-pill {
+  align-self: center;
+  padding: 0 4px 0 0;
+}
+
+/* Legacy hero selectors — kept as a no-op bridge so any stale markup compiles cleanly. */
+.hero { padding: 10px 14px; border-left: 2px solid var(--cip-accent); border-bottom: 1px solid var(--vscode-panel-border); margin: 0 0 16px; }
 
 .hero-row {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  position: relative;
+  align-items: baseline;
+  gap: 10px;
 }
 
-.hero-icon {
-  width: 44px;
-  height: 44px;
-  background: var(--cip-accent);
-  color: var(--cip-accent-contrast);
-  border-radius: var(--cip-card-radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  flex-shrink: 0;
-}
+/* Legacy icon class kept for back-compat; rendered invisible. */
+.hero-icon { display: none; }
 
-.hero-body {
-  flex: 1;
-  min-width: 0;
-}
+.hero-body { flex: 1; min-width: 0; }
 
 .hero-category {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--cip-accent);
-  margin-bottom: 4px;
+  color: var(--vscode-descriptionForeground);
+  margin: 0 0 2px;
 }
 
 .hero-title {
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
   color: var(--vscode-foreground);
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .hero-description,
@@ -102,54 +218,47 @@ body {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
   line-height: 1.4;
+  margin-top: 2px;
 }
 
-/* === CARDS === */
+/* === CARDS — lightweight containers with a simple header === */
 .card {
   background-color: var(--vscode-editor-background);
   border: 1px solid var(--vscode-panel-border);
   border-radius: var(--cip-card-radius);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   overflow: hidden;
 }
 
 .card-header {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: var(--vscode-editorWidget-background);
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  background: transparent;
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
-.card-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--cip-radius-sm);
-  background: var(--cip-accent-soft);
-  color: var(--cip-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-}
+/* Legacy colored icon tile — removed. Kept hidden so older markup still compiles. */
+.card-icon { display: none; }
 
-.card-title-group { flex: 1; }
+.card-title-group { flex: 1; min-width: 0; }
 
 .card-title {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--vscode-foreground);
   line-height: 1.3;
+  letter-spacing: 0.2px;
 }
 
 .card-subtitle {
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
-.card-body { padding: 14px 16px; }
+.card-body { padding: 12px 14px; }
 
 /* === LAYOUT GRIDS === */
 .config-grid {
@@ -748,49 +857,57 @@ html.cip-query-builder, body.cip-query-builder {
 
 .app {
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto auto 1fr;
   grid-template-columns: var(--cip-sidebar-width) 1fr;
   grid-template-areas:
     "hero hero"
-    "config config"
     "toolbar toolbar"
     "sidebar main";
   height: 100vh;
   overflow: hidden;
-  background-color: var(--vscode-sideBar-background);
+  background-color: var(--vscode-editor-background);
   gap: 0;
 }
 
+/* === QUERY BUILDER HEADER ===
+ * The `.hero-header` lives in the `hero` grid slot and hosts the shared .page-header layout.
+ * All visual styling is inherited from .page-header — these rules only carve out the slot. */
 .hero-header {
   grid-area: hero;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 12px 20px;
-  margin: 12px 20px 0;
-  background: var(--cip-accent-soft);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: var(--cip-radius-lg);
+  margin: 0;
+  border-radius: 0;
 }
+
+.hero-header .hero-icon { display: none; }
 
 .hero-text {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: center;
+  align-items: baseline;
+  flex-direction: row;
+  gap: 10px;
+  text-align: left;
+  flex: 1;
 }
 
-.hero-text .hero-title { font-size: 15px; }
-.hero-text .hero-subtitle { font-size: 11px; }
+.hero-text .hero-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  letter-spacing: 0.2px;
+}
+.hero-text .hero-subtitle {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
 
 .config-bar {
   grid-area: config;
-  padding: 10px 16px;
-  margin: 8px 20px 0;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: var(--cip-radius-lg);
+  padding: 8px 16px;
+  margin: 6px 16px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
 }
 
 .config-bar-inner {
@@ -827,37 +944,163 @@ html.cip-query-builder, body.cip-query-builder {
   font-size: 13px;
 }
 
+/* === CIP HOST INPUT (disabled vs editable) === */
+.config-field .input[readonly] {
+  opacity: 0.75;
+  cursor: not-allowed;
+  background-color: var(--vscode-editorWidget-background);
+}
+
+/* === ENV SEGMENTED CONTROL === */
+.env-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: var(--cip-radius-sm);
+  height: 32px;
+}
+
+.env-segment button {
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 3px;
+  font-family: var(--vscode-font-family);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.env-segment button:hover:not(.active) { background: var(--cip-accent-soft); }
+
+.env-segment button.active {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+/* === CONNECTION STATUS PILL ===
+ * Background stays transparent in every state. Icon + text color change.
+ * Uses emoji glyphs so the pill looks the same whether rendered in light or dark theme.
+ */
+.conn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Circular status dot in place of the emoji glyph. */
+.conn-pill::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.conn-pill.connected { color: #1b5e20; }
+.conn-pill.disconnected { color: #c62828; }
+.conn-pill.testing { color: var(--cip-accent); }
+.conn-pill.testing::before {
+  animation: cip-spin 1.2s linear infinite;
+  border-radius: 0;
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.5' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.5' fill='none' stroke-linejoin='round'/></svg>");
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  width: 12px;
+  height: 12px;
+}
+
+/* VS Code sets `.vscode-dark` / `.vscode-high-contrast` on the webview body. In those themes the
+ * deep colors above lose contrast against the near-black background, so nudge them brighter while
+ * still reading as "deep" rather than the faded success/error tokens. */
+.vscode-dark .conn-pill.connected,
+.vscode-high-contrast .conn-pill.connected { color: #00c853; }
+.vscode-dark .conn-pill.disconnected,
+.vscode-high-contrast .conn-pill.disconnected { color: #ff5252; }
+
+/* Row for status + detail text under the config bar */
+.config-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 20px 0;
+  margin: 0 20px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
 .toolbar-bar {
   grid-area: toolbar;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
-  margin: 8px 20px 10px;
+  margin: 0;
   background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: var(--cip-radius-lg);
+  border: none;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
 }
+
+.toolbar-inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.toolbar-inline-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.toolbar-bar .toolbar-inline-field .select {
+  height: 28px;
+  padding: 0 8px;
+  min-width: 140px;
+  font-size: 12px;
+}
+
+.toolbar-bar .btn { height: 28px; padding: 0 12px; font-size: 12px; }
 
 .toolbar-title {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 700;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--vscode-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
-.toolbar-title .dot {
-  width: 8px;
-  height: 8px;
-  background: var(--cip-accent);
-  border-radius: 50%;
-}
+.toolbar-title .dot { display: none; }
 
 .toolbar-title .subtitle {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--vscode-descriptionForeground);
   margin-left: 4px;
 }
@@ -914,12 +1157,11 @@ html.cip-query-builder, body.cip-query-builder {
 /* === SIDEBAR === */
 .sidebar {
   grid-area: sidebar;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  background-color: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: var(--cip-radius-lg);
-  margin: 0 0 12px 20px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--vscode-sideBar-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  margin: 0;
   overflow: hidden;
   min-height: 0;
 }
@@ -932,32 +1174,39 @@ html.cip-query-builder, body.cip-query-builder {
   min-height: 0;
 }
 
-.sidebar-section.tables { max-height: 45%; min-height: 200px; }
-.sidebar-section.columns { flex: 1; }
+/* Split the sidebar roughly in half: tables on top, columns below. */
+.sidebar-section.tables { flex: 1 1 45%; min-height: 180px; }
+.sidebar-section.columns { flex: 1 1 55%; min-height: 180px; }
 .sidebar-section:last-child { border-bottom: none; }
 
 .section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px 8px;
+  padding: 10px 14px 8px;
   flex-shrink: 0;
-  background: var(--vscode-editorWidget-background);
+  background: transparent;
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
 .section-title {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--vscode-foreground);
+  color: var(--vscode-descriptionForeground);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.section-title-icon { color: var(--cip-accent); font-size: 14px; }
+/* Sidebar section icon — small monochrome SVG via the shared .ic system. */
+.section-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+}
 
 .count-badge {
   font-size: 10px;
@@ -970,8 +1219,9 @@ html.cip-query-builder, body.cip-query-builder {
 }
 
 .search-bar {
-  padding: 0 12px 10px;
+  padding: 8px 14px;
   flex-shrink: 0;
+  border-bottom: 1px solid var(--vscode-panel-border);
 }
 
 .search-input {
@@ -979,7 +1229,7 @@ html.cip-query-builder, body.cip-query-builder {
   padding: 6px 10px;
   background-color: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, transparent);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
   border-radius: var(--cip-radius-sm);
   font-size: 12px;
   outline: none;
@@ -990,21 +1240,23 @@ html.cip-query-builder, body.cip-query-builder {
 .list {
   flex: 1;
   overflow-y: auto;
-  padding: 2px 8px 8px;
+  padding: 4px 0;
   min-height: 0;
 }
 
+/* Each row gets real horizontal padding, no margin tricks — so the hover and selected
+ * backgrounds fill to the sidebar edges and the label text aligns to the section title. */
 .list-item {
-  padding: 6px 10px;
+  padding: 6px 14px;
   cursor: pointer;
   font-size: 12px;
   font-family: var(--vscode-editor-font-family);
-  border-radius: var(--cip-radius-sm);
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 1px;
   user-select: none;
+  border-left: 2px solid transparent;
+  color: var(--vscode-foreground);
 }
 
 .list-item:hover { background-color: var(--vscode-list-hoverBackground); }
@@ -1012,10 +1264,18 @@ html.cip-query-builder, body.cip-query-builder {
 .list-item.selected {
   background-color: var(--vscode-list-activeSelectionBackground);
   color: var(--vscode-list-activeSelectionForeground);
+  border-left-color: var(--cip-accent);
   font-weight: 600;
 }
 
-.list-item .icon { flex-shrink: 0; font-size: 11px; }
+.list-item .icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+}
+.list-item.selected .icon { color: var(--vscode-list-activeSelectionForeground); }
 
 .list-item .label {
   flex: 1;
@@ -1045,23 +1305,23 @@ html.cip-query-builder, body.cip-query-builder {
   flex-shrink: 0;
 }
 
-/* Empty states */
+/* Empty states — quiet, inline text; no card, no dashed border. */
 .empty {
-  padding: 16px 14px;
+  padding: 20px 14px;
   text-align: center;
   color: var(--vscode-descriptionForeground);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px dashed var(--vscode-panel-border);
-  border-radius: var(--cip-radius-sm);
-  margin: 4px;
+  background: transparent;
+  border: none;
+  margin: 0;
 }
 
-.empty-icon { font-size: 22px; opacity: 0.6; }
-.empty-title { font-weight: 700; color: var(--vscode-foreground); font-size: 11px; }
+.empty-icon { display: inline-flex; align-items: center; justify-content: center; opacity: 0.6; color: var(--vscode-descriptionForeground); }
+.empty-icon .ic { --cip-icon-size: 18px; }
+.empty-title { font-weight: 600; color: var(--vscode-foreground); font-size: 11px; }
 .empty-hint { font-size: 11px; line-height: 1.4; opacity: 0.85; }
 
 /* === MAIN CONTENT === */
@@ -1071,9 +1331,9 @@ html.cip-query-builder, body.cip-query-builder {
   grid-template-rows: 1fr auto;
   overflow: hidden;
   background-color: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: var(--cip-radius-lg);
-  margin: 0 20px 12px 12px;
+  border: none;
+  border-radius: 0;
+  margin: 0;
   min-height: 0;
 }
 
@@ -1091,10 +1351,10 @@ html.cip-query-builder, body.cip-query-builder {
 }
 
 .builder {
-  padding: 12px 16px 16px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   max-width: 1100px;
 }
 
@@ -1114,11 +1374,13 @@ html.cip-query-builder, body.cip-query-builder {
 
 .builder.hidden, .editor.hidden { display: none; }
 
-/* === CLAUSE CARDS === */
+/* === CLAUSE CARDS ===
+ * Subtle surface tint on the head (similar to VS Code input/widget background) so each
+ * SQL clause reads as its own bounded section against the editor canvas below. */
 .clause {
   background-color: var(--vscode-editor-background);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: var(--cip-radius-lg);
+  border-radius: var(--cip-radius-md);
   overflow: hidden;
 }
 
@@ -1131,18 +1393,8 @@ html.cip-query-builder, body.cip-query-builder {
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
-.clause-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--cip-radius-sm);
-  background: var(--cip-accent);
-  color: var(--cip-accent-contrast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
-}
+/* The old colored clause icon tile is gone; keyword tag alone carries the meaning. */
+.clause-icon { display: none; }
 
 .clause-title-group {
   flex: 1;
@@ -1155,7 +1407,7 @@ html.cip-query-builder, body.cip-query-builder {
 
 .clause-title {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--vscode-foreground);
   display: flex;
   align-items: center;
@@ -1164,11 +1416,12 @@ html.cip-query-builder, body.cip-query-builder {
 
 .clause-title .kw {
   font-family: var(--vscode-editor-font-family);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.7px;
-  color: var(--cip-accent);
-  background: var(--cip-accent-soft);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
   padding: 1px 6px;
   border-radius: 3px;
   text-transform: uppercase;
@@ -1208,21 +1461,21 @@ html.cip-query-builder, body.cip-query-builder {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 4px 4px 10px;
-  background: var(--cip-accent-soft);
-  color: var(--cip-accent);
+  padding: 3px 4px 3px 10px;
+  background: transparent;
+  color: var(--vscode-foreground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 14px;
+  border-radius: 3px;
   font-size: 11px;
   font-family: var(--vscode-editor-font-family);
   font-weight: 500;
 }
 
 .chip.primary {
-  background: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border: none;
-  padding: 5px 12px;
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-panel-border);
+  padding: 3px 10px;
   font-weight: 600;
 }
 

@@ -10,8 +10,6 @@ import {
 } from '@salesforce/b2c-tooling-sdk/operations/cip';
 import {
   createCipClient,
-  DEFAULT_CIP_HOST,
-  DEFAULT_CIP_STAGING_HOST,
   type CipClient,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import {randomBytes} from 'node:crypto';
@@ -19,6 +17,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import type {CipConnectionService} from './cip-connection-service.js';
 
 type QueryResultData = {columns: string[]; rows: Array<Record<string, unknown>>};
 
@@ -45,11 +44,49 @@ interface ConnectionTestResult {
 export class CipWebviewManager {
   private panels = new Map<string, vscode.WebviewPanel>();
 
+  private readonly disposables: vscode.Disposable[] = [];
+
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly configProvider: B2CExtensionConfig,
+    private readonly connection: CipConnectionService,
     private readonly log: vscode.OutputChannel,
-  ) {}
+  ) {
+    // Forward connection status to every open panel so each can refresh its banner.
+    this.disposables.push(
+      this.connection.onDidChange((c) => {
+        for (const panel of this.panels.values()) {
+          panel.webview.postMessage({command: 'connectionState', connection: c});
+        }
+      }),
+    );
+    context.subscriptions.push(...this.disposables);
+  }
+
+  private requireConnectedClient(): {client: CipClient; tenantId: string; host: string} | null {
+    const conn = this.connection.get();
+    if (!conn.tenantId) {
+      void vscode.window
+        .showWarningMessage(
+          'CIP Analytics is not configured. Set the tenant and environment first.',
+          'Configure',
+        )
+        .then((choice) => {
+          if (choice === 'Configure') {
+            void vscode.commands.executeCommand('b2c-dx.cipAnalytics.configureConnection');
+          }
+        });
+      return null;
+    }
+    const config = this.configProvider.getConfig();
+    if (!config) {
+      void vscode.window.showErrorMessage('No B2C configuration found (dw.json / .env).');
+      return null;
+    }
+    const host = this.connection.resolvedHost();
+    const client = createCipClient({instance: conn.tenantId, host}, config.createOAuth());
+    return {client, tenantId: conn.tenantId, host};
+  }
 
   /**
    * Open or reveal a webview panel for the given report.
@@ -219,8 +256,8 @@ export class CipWebviewManager {
         await this.exportToJson(message.params?.data);
         break;
       }
-      case 'testConnection': {
-        await this.testConnection(message.params as Record<string, string>, panel);
+      case 'configureConnection': {
+        await vscode.commands.executeCommand('b2c-dx.cipAnalytics.configureConnection');
         break;
       }
       case 'log': {
@@ -236,11 +273,15 @@ export class CipWebviewManager {
   private async handleTablesBrowserMessage(message: WebviewMessage, panel: vscode.WebviewPanel): Promise<void> {
     switch (message.command) {
       case 'loadTables': {
-        await this.loadTables(message.params as Record<string, string>, panel);
+        await this.loadTables(panel);
         break;
       }
       case 'describeTable': {
-        await this.describeTable(message.params as Record<string, string>, panel);
+        await this.describeTable((message.params ?? {}) as Record<string, string>, panel);
+        break;
+      }
+      case 'configureConnection': {
+        await vscode.commands.executeCommand('b2c-dx.cipAnalytics.configureConnection');
         break;
       }
       case 'log': {
@@ -256,15 +297,19 @@ export class CipWebviewManager {
   private async handleQueryBuilderMessage(message: WebviewMessage, panel: vscode.WebviewPanel): Promise<void> {
     switch (message.command) {
       case 'loadTables': {
-        await this.loadTables(message.params as Record<string, string>, panel);
+        await this.loadTables(panel);
         break;
       }
       case 'describeTable': {
-        await this.describeTable(message.params as Record<string, string>, panel);
+        await this.describeTable((message.params ?? {}) as Record<string, string>, panel);
         break;
       }
       case 'executeRawQuery': {
-        await this.executeRawQuery(message.params as Record<string, string>, panel);
+        await this.executeRawQuery((message.params ?? {}) as Record<string, string>, panel);
+        break;
+      }
+      case 'configureConnection': {
+        await vscode.commands.executeCommand('b2c-dx.cipAnalytics.configureConnection');
         break;
       }
       case 'exportCsv': {
@@ -286,109 +331,41 @@ export class CipWebviewManager {
    * Execute a raw SQL query and return results.
    */
   private async executeRawQuery(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
+    const sql = params.sql;
+    const fetchSize = parseInt(params.fetchSize || '1000', 10);
+    if (!sql) {
+      panel.webview.postMessage({command: 'queryError', error: 'SQL query is required'});
+      return;
+    }
+    const ctx = this.requireConnectedClient();
+    if (!ctx) {
+      panel.webview.postMessage({command: 'queryError', error: 'CIP connection is not configured.'});
+      return;
+    }
     try {
-      const tenantId = params.tenantId;
-      const sql = params.sql;
-      const useStaging = params.useStaging === 'true';
-      const fetchSize = parseInt(params.fetchSize || '1000', 10);
-
-      if (!tenantId || !sql) {
-        throw new Error('Tenant ID and SQL query are required');
-      }
-
       this.log.appendLine(`[CIP Query Builder] Executing SQL: ${sql.substring(0, 200)}${sql.length > 200 ? '...' : ''}`);
-
       panel.webview.postMessage({command: 'queryExecuting'});
 
-      const config = this.configProvider.getConfig();
-      if (!config) {
-        throw new Error('No configuration found');
-      }
-
-      const cipHost = config.values.cipHost ?? (useStaging ? DEFAULT_CIP_STAGING_HOST : DEFAULT_CIP_HOST);
-      const oauthStrategy = config.createOAuth();
-      const cipClient = createCipClient({instance: tenantId, host: cipHost}, oauthStrategy);
-
       const startTime = Date.now();
-      const result = await cipClient.query(sql, {fetchSize});
+      const result = await ctx.client.query(sql, {fetchSize});
       const executionTime = Date.now() - startTime;
+      this.connection.markConnected(`Query OK · ${result.rows.length} rows in ${executionTime}ms`);
 
-      const columns = result.columns ?? [];
-      const rows = result.rows ?? [];
-
-      this.log.appendLine(`[CIP Query Builder] Query returned ${rows.length} rows in ${executionTime}ms`);
-
+      this.log.appendLine(`[CIP Query Builder] Query returned ${result.rows.length} rows in ${executionTime}ms`);
       panel.webview.postMessage({
         command: 'queryResult',
         data: {
-          columns,
-          rows,
-          rowCount: rows.length,
+          columns: result.columns ?? [],
+          rows: result.rows ?? [],
+          rowCount: result.rows?.length ?? 0,
           executionTime,
         },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.log.appendLine(`[CIP Query Builder] Query failed: ${errorMessage}`);
-
-      panel.webview.postMessage({
-        command: 'queryError',
-        error: this.formatConnectionError(error),
-      });
-    }
-  }
-
-  /**
-   * Test CIP connection with provided tenant ID.
-   */
-  private async testConnection(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
-    try {
-      const tenantId = params.tenantId;
-      if (!tenantId) {
-        throw new Error('Tenant ID is required');
-      }
-
-      const useStaging = params.useStaging === 'true';
-      this.log.appendLine(`[CIP Analytics] Testing connection to tenant: ${tenantId} (staging: ${useStaging})`);
-
-      const config = this.configProvider.getConfig();
-      if (!config) {
-        throw new Error('No configuration found');
-      }
-
-      const cipHost = config.values.cipHost ?? (useStaging ? DEFAULT_CIP_STAGING_HOST : DEFAULT_CIP_HOST);
-      const oauthStrategy = config.createOAuth();
-
-      const cipClient = createCipClient({instance: tenantId, host: cipHost}, oauthStrategy);
-
-      // Test with simple metadata query
-      const result = await listCipTables(cipClient, {fetchSize: 1});
-
-      const testResult: ConnectionTestResult = {
-        success: true,
-        message: `✅ Connected successfully! ${result.tableCount} tables available.`,
-        tableCount: result.tableCount,
-      };
-
-      this.log.appendLine(`[CIP Analytics] Connection test succeeded: ${result.tableCount} tables`);
-
-      panel.webview.postMessage({
-        command: 'connectionTestResult',
-        result: testResult,
-      });
-    } catch (error) {
       const errorMessage = this.formatConnectionError(error);
-      this.log.appendLine(`[CIP Analytics] Connection test failed: ${errorMessage}`);
-
-      const testResult: ConnectionTestResult = {
-        success: false,
-        message: errorMessage,
-      };
-
-      panel.webview.postMessage({
-        command: 'connectionTestResult',
-        result: testResult,
-      });
+      this.log.appendLine(`[CIP Query Builder] Query failed: ${errorMessage}`);
+      this.connection.markDisconnected(errorMessage);
+      panel.webview.postMessage({command: 'queryError', error: errorMessage});
     }
   }
 
@@ -399,63 +376,74 @@ export class CipWebviewManager {
     const msg = error instanceof Error ? error.message : String(error);
 
     if (msg.includes('invalid_scope')) {
-      return '❌ Invalid tenant ID or no CIP access. Verify tenant ID with your admin, or check if CIP is provisioned.';
+      return 'Invalid tenant ID or no CIP access. Verify tenant ID with your admin, or check if CIP is provisioned.';
     }
     if (msg.includes('Authentication') || msg.includes('401')) {
-      return '❌ Authentication failed. Check OAuth credentials (clientId/clientSecret).';
+      return 'Authentication failed. Check OAuth credentials (clientId/clientSecret).';
     }
     if (msg.includes('timeout') || msg.includes('ETIMEDOUT')) {
-      return '❌ Connection timeout. CIP may not be provisioned yet (wait 2 hours after enabling).';
+      return 'Connection timeout. CIP may not be provisioned yet (wait 2 hours after enabling).';
     }
     if (msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
-      return '❌ Cannot reach CIP host. Check network connection or CIP host configuration.';
+      return 'Cannot reach CIP host. Check network connection or CIP host configuration.';
     }
-    return `❌ Connection failed: ${msg}`;
+    return `Connection failed: ${msg}`;
   }
 
   /**
-   * Load all CIP tables for the given tenant.
+   * Load all CIP tables for the current connection.
    */
-  private async loadTables(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
+  private async loadTables(panel: vscode.WebviewPanel): Promise<void> {
+    const ctx = this.requireConnectedClient();
+    if (!ctx) {
+      panel.webview.postMessage({command: 'tablesLoadError', error: 'CIP connection is not configured.'});
+      return;
+    }
     try {
-      const tenantId = params.tenantId;
-      if (!tenantId) {
-        throw new Error('Tenant ID is required');
+      this.log.appendLine(`[CIP Tables Browser] Loading tables for tenant ${ctx.tenantId} @ ${ctx.host}`);
+      panel.webview.postMessage({command: 'tablesLoading'});
+
+      const result = await listCipTables(ctx.client);
+
+      // The webview renders a flat string list. The SDK sometimes returns rows keyed by the
+      // raw JDBC column label (e.g., TABLE_NAME / TABLE_SCHEM) instead of the camelCase aliases
+      // the SDK expects, leaving tableName blank. Fall back to a raw SQL query when that happens.
+      let tableNames = result.tables.map((t) => t.tableName).filter((n) => n.length > 0);
+
+      if (tableNames.length === 0 && result.tableCount > 0) {
+        this.log.appendLine(
+          `[CIP Tables Browser] SDK returned ${result.tableCount} tables but names were blank. Re-querying metadata directly.`,
+        );
+        const raw = await ctx.client.query(
+          `SELECT tableName FROM metadata.TABLES ORDER BY tableSchem, tableName`,
+        );
+        const extractName = (row: Record<string, unknown>): string => {
+          for (const key of Object.keys(row)) {
+            if (/^table[_ ]?name$/i.test(key)) {
+              const v = row[key];
+              if (typeof v === 'string' && v.length > 0) return v;
+            }
+          }
+          return '';
+        };
+        tableNames = raw.rows.map(extractName).filter((n) => n.length > 0);
       }
 
-      const useStaging = params.useStaging === 'true';
-      this.log.appendLine(`[CIP Tables Browser] Loading tables for tenant: ${tenantId} (staging: ${useStaging})`);
-
-      panel.webview.postMessage({
-        command: 'tablesLoading',
-      });
-
-      const config = this.configProvider.getConfig();
-      if (!config) {
-        throw new Error('No configuration found');
-      }
-
-      const cipHost = config.values.cipHost ?? (useStaging ? DEFAULT_CIP_STAGING_HOST : DEFAULT_CIP_HOST);
-      const oauthStrategy = config.createOAuth();
-      const cipClient = createCipClient({instance: tenantId, host: cipHost}, oauthStrategy);
-
-      const result = await listCipTables(cipClient);
-
-      this.log.appendLine(`[CIP Tables Browser] Loaded ${result.tables.length} tables`);
+      this.connection.markConnected(`${tableNames.length} tables available`);
+      this.log.appendLine(
+        `[CIP Tables Browser] Loaded ${tableNames.length}/${result.tableCount} tables; sample: ${JSON.stringify(tableNames.slice(0, 3))}`,
+      );
 
       panel.webview.postMessage({
         command: 'tablesLoaded',
-        tables: result.tables,
-        tableCount: result.tableCount,
+        tables: tableNames,
+        tableCount: tableNames.length,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = this.formatConnectionError(error);
       this.log.appendLine(`[CIP Tables Browser] Failed to load tables: ${errorMessage}`);
-
-      panel.webview.postMessage({
-        command: 'tablesLoadError',
-        error: this.formatConnectionError(error),
-      });
+      this.connection.markDisconnected(errorMessage);
+      panel.webview.postMessage({command: 'tablesLoadError', error: errorMessage});
     }
   }
 
@@ -463,49 +451,69 @@ export class CipWebviewManager {
    * Describe a specific CIP table to get its schema.
    */
   private async describeTable(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
-    try {
-      const tenantId = params.tenantId;
-      const tableName = params.tableName;
-      const useStaging = params.useStaging === 'true';
-
-      if (!tenantId || !tableName) {
-        throw new Error('Tenant ID and table name are required');
-      }
-
-      this.log.appendLine(`[CIP Tables Browser] Describing table: ${tableName}`);
-
-      panel.webview.postMessage({
-        command: 'tableDescribing',
-        tableName,
-      });
-
-      const config = this.configProvider.getConfig();
-      if (!config) {
-        throw new Error('No configuration found');
-      }
-
-      const cipHost = config.values.cipHost ?? (useStaging ? DEFAULT_CIP_STAGING_HOST : DEFAULT_CIP_HOST);
-      const oauthStrategy = config.createOAuth();
-      const cipClient = createCipClient({instance: tenantId, host: cipHost}, oauthStrategy);
-
-      const schema = await describeCipTable(cipClient, tableName);
-
-      this.log.appendLine(`[CIP Tables Browser] Table ${tableName} has ${schema.columns.length} columns`);
-
-      panel.webview.postMessage({
-        command: 'tableDescribed',
-        tableName,
-        schema,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.log.appendLine(`[CIP Tables Browser] Failed to describe table: ${errorMessage}`);
-
+    const tableName = params.tableName;
+    if (!tableName) {
+      panel.webview.postMessage({command: 'tableDescribeError', error: 'Table name is required'});
+      return;
+    }
+    const ctx = this.requireConnectedClient();
+    if (!ctx) {
       panel.webview.postMessage({
         command: 'tableDescribeError',
-        tableName: params.tableName,
-        error: errorMessage,
+        tableName,
+        error: 'CIP connection is not configured.',
       });
+      return;
+    }
+    try {
+      this.log.appendLine(`[CIP Tables Browser] Describing table: ${tableName}`);
+      panel.webview.postMessage({command: 'tableDescribing', tableName});
+
+      const schema = await describeCipTable(ctx.client, tableName);
+
+      // Webview expects {name, type, nullable}; SDK emits {columnName, dataType, isNullable}.
+      let columns = schema.columns
+        .map((c) => ({name: c.columnName, type: c.dataType, nullable: c.isNullable}))
+        .filter((c) => c.name.length > 0);
+
+      // Fallback: SDK sometimes receives rows keyed by the raw JDBC label casing.
+      if (columns.length === 0 && schema.columns.length > 0) {
+        this.log.appendLine(
+          `[CIP Tables Browser] SDK returned ${schema.columns.length} columns but names were blank. Re-querying metadata directly.`,
+        );
+        const raw = await ctx.client.query(
+          `SELECT columnName, typeName, isNullable FROM metadata.COLUMNS WHERE tableName = '${tableName.replace(/'/g, "''")}' ORDER BY ordinalPosition`,
+        );
+        const pick = (row: Record<string, unknown>, pattern: RegExp): string => {
+          for (const key of Object.keys(row)) {
+            if (pattern.test(key)) {
+              const v = row[key];
+              if (typeof v === 'string' && v.length > 0) return v;
+              if (v !== null && v !== undefined) return String(v);
+            }
+          }
+          return '';
+        };
+        columns = raw.rows
+          .map((row) => ({
+            name: pick(row, /^column[_ ]?name$/i),
+            type: pick(row, /^(type[_ ]?name|data[_ ]?type)$/i),
+            nullable: /^(1|true|yes)$/i.test(pick(row, /^(is[_ ]?nullable|nullable)$/i)),
+          }))
+          .filter((c) => c.name.length > 0);
+      }
+
+      this.connection.markConnected();
+      this.log.appendLine(
+        `[CIP Tables Browser] Table ${tableName} has ${columns.length} columns; sample: ${JSON.stringify(columns.slice(0, 2).map((c) => c.name))}`,
+      );
+
+      panel.webview.postMessage({command: 'tableDescribed', tableName, schema: {columns}});
+    } catch (error) {
+      const errorMessage = this.formatConnectionError(error);
+      this.log.appendLine(`[CIP Tables Browser] Failed to describe table: ${errorMessage}`);
+      this.connection.markDisconnected(errorMessage);
+      panel.webview.postMessage({command: 'tableDescribeError', tableName, error: errorMessage});
     }
   }
 
@@ -600,68 +608,36 @@ export class CipWebviewManager {
   }
 
   /**
-   * Execute the CIP query and send results back to webview.
+   * Execute the CIP report query and send results back to webview.
    */
   private async executeQuery(
     params: Record<string, string>,
     panel: vscode.WebviewPanel,
     report: CipReportDefinition,
   ): Promise<void> {
+    const ctx = this.requireConnectedClient();
+    if (!ctx) {
+      panel.webview.postMessage({command: 'queryError', error: 'CIP connection is not configured.'});
+      return;
+    }
     try {
-      this.log.appendLine(`[CIP Analytics] Executing report: ${report.name} with params: ${JSON.stringify(params)}`);
-
-      // Get config
-      const config = this.configProvider.getConfig();
-      if (!config) {
-        throw new Error('No B2C Commerce configuration found. Ensure dw.json exists in workspace.');
-      }
-
-      // Extract tenant ID from form params (user input)
-      const tenantId = params.tenantId;
-      if (!tenantId) {
-        throw new Error('Tenant ID is required. Enter a tenant ID in the form (e.g., "zzat_prd").');
-      }
-
-      // Extract staging flag from form params
-      const useStaging = params.useStaging === 'true';
-
-      // Extract fetch size from form params
       const fetchSize = parseInt(params.fetchSize || '1000', 10);
-
-      this.log.appendLine(`[CIP Analytics] Using tenant ID: ${tenantId} (staging: ${useStaging}, fetchSize: ${fetchSize})`);
-
-      // Determine CIP host
-      const cipHost = config.values.cipHost ?? (useStaging ? DEFAULT_CIP_STAGING_HOST : DEFAULT_CIP_HOST);
-
-      this.log.appendLine(`[CIP Analytics] Using CIP host: ${cipHost}`);
-
-      // Create OAuth strategy for CIP
-      const oauthStrategy = config.createOAuth();
-
-      // Create CIP client with form-provided tenant ID
-      const cipClient: CipClient = createCipClient(
-        {
-          instance: tenantId,
-          host: cipHost,
-        },
-        oauthStrategy,
-      );
-
-      // Extract report parameters (not tenant/staging/fetchSize)
+      // Only forward report parameters; tenant/host come from the shared connection.
       const reportParams = {...params};
-      delete reportParams.tenantId;
-      delete reportParams.useStaging;
       delete reportParams.fetchSize;
 
-      // Execute report with fetch size
-      const result = await executeCipReport(cipClient, report.name, {
+      this.log.appendLine(
+        `[CIP Analytics] Executing report ${report.name} @ ${ctx.host} (tenant=${ctx.tenantId}, fetchSize=${fetchSize})`,
+      );
+
+      const result = await executeCipReport(ctx.client, report.name, {
         params: reportParams,
         fetchSize,
       });
 
+      this.connection.markConnected(`Report OK · ${result.rows.length} rows`);
       this.log.appendLine(`[CIP Analytics] Query successful: ${result.rows.length} rows returned`);
 
-      // Send results to webview
       panel.webview.postMessage({
         command: 'queryResults',
         data: {
@@ -671,31 +647,11 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = this.formatConnectionError(error);
       this.log.appendLine(`[CIP Analytics] Query failed: ${errorMessage}`);
-
-      // Send error to webview
-      panel.webview.postMessage({
-        command: 'queryError',
-        error: errorMessage,
-      });
+      this.connection.markDisconnected(errorMessage);
+      panel.webview.postMessage({command: 'queryError', error: errorMessage});
     }
-  }
-
-  /**
-   * Get connection info for display in webview.
-   */
-  private getConnectionInfo(): {tenantId: string; host: string; staging: boolean} | null {
-    const config = this.configProvider.getConfig();
-    if (!config) {
-      return null;
-    }
-
-    const tenantId = config.values.tenantId ?? '';
-    // Default to production; user can toggle via the checkbox in each panel.
-    const host = config.values.cipHost ?? DEFAULT_CIP_HOST;
-
-    return {tenantId, host, staging: false};
   }
 
   /** Uri to the cip-analytics source folder, used as the sole localResourceRoots entry. */
@@ -728,11 +684,14 @@ export class CipWebviewManager {
 
     const nonce = randomBytes(16).toString('hex');
     const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this.cipAnalyticsUri, 'cip-styles.css')).toString();
+    const conn = this.connection.get();
 
     const all: Record<string, string> = {
       __NONCE__: nonce,
       __CSP_SOURCE__: webview.cspSource,
       __STYLES_URI__: stylesUri,
+      // Snapshot of the shared connection for the initial banner render.
+      __CONNECTION_JSON__: JSON.stringify(conn),
       ...replacements,
     };
 
@@ -743,7 +702,6 @@ export class CipWebviewManager {
   }
 
   private getReportDashboardContent(webview: vscode.Webview, report: CipReportDefinition): string {
-    const connectionInfo = this.getConnectionInfo();
     const parameterFields = report.parameters
       .map((param) => {
         const nameAttr = CipWebviewManager.escapeAttr(param.name);
@@ -789,25 +747,15 @@ export class CipWebviewManager {
       __REPORT_NAME_JSON__: JSON.stringify(report.name),
       __REPORT_CATEGORY__: CipWebviewManager.escapeHtml(report.category),
       __REPORT_DESCRIPTION__: CipWebviewManager.escapeHtml(report.description),
-      __TENANT_ID__: CipWebviewManager.escapeAttr(connectionInfo?.tenantId ?? ''),
-      __USE_STAGING_CHECKED__: connectionInfo?.staging ? 'checked' : '',
       __PARAMETER_FIELDS__: parameterFields,
     });
   }
 
   private getTablesBrowserContent(webview: vscode.Webview): string {
-    const connectionInfo = this.getConnectionInfo();
-    return this.renderTemplate(webview, 'tables-browser.html', {
-      __TENANT_ID__: CipWebviewManager.escapeAttr(connectionInfo?.tenantId ?? ''),
-      __USE_STAGING_CHECKED__: connectionInfo?.staging ? 'checked' : '',
-    });
+    return this.renderTemplate(webview, 'tables-browser.html', {});
   }
 
   private getQueryBuilderContent(webview: vscode.Webview): string {
-    const connectionInfo = this.getConnectionInfo();
-    return this.renderTemplate(webview, 'query-builder.html', {
-      __TENANT_ID__: CipWebviewManager.escapeAttr(connectionInfo?.tenantId ?? ''),
-      __USE_STAGING_CHECKED__: connectionInfo?.staging ? 'checked' : '',
-    });
+    return this.renderTemplate(webview, 'query-builder.html', {});
   }
 }

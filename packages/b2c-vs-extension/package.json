@@ -290,6 +290,18 @@
         "category": "B2C-DX Analytics"
       },
       {
+        "command": "b2c-dx.cipAnalytics.configureConnection",
+        "title": "Configure Connection…",
+        "icon": "$(gear)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.testConnection",
+        "title": "Test Connection",
+        "icon": "$(debug-disconnect)",
+        "category": "B2C-DX Analytics"
+      },
+      {
         "command": "b2c-dx.sandbox.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -664,19 +676,24 @@
           "group": "navigation"
         },
         {
-          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "command": "b2c-dx.cipAnalytics.configureConnection",
           "when": "view == b2cCipAnalytics",
           "group": "navigation@1"
         },
         {
-          "command": "b2c-dx.cipAnalytics.browseTables",
+          "command": "b2c-dx.cipAnalytics.queryBuilder",
           "when": "view == b2cCipAnalytics",
           "group": "navigation@2"
         },
         {
-          "command": "b2c-dx.cipAnalytics.refresh",
+          "command": "b2c-dx.cipAnalytics.browseTables",
           "when": "view == b2cCipAnalytics",
           "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@4"
         },
         {
           "command": "b2c-dx.codeSync.deploy",
