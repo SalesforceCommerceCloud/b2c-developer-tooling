@@ -15,6 +15,7 @@
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
+import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import type {paths, components} from './scapi-schemas.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
@@ -185,8 +186,11 @@ export function createScapiSchemasClient(config: ScapiSchemasClientConfig, auth:
   // Build required scopes: domain scope + tenant-specific scope
   const requiredScopes = config.scopes ?? [...SCAPI_SCHEMAS_DEFAULT_SCOPES, buildTenantScope(config.tenantId)];
 
-  // If OAuth strategy, add required scopes; otherwise use as-is
-  const scopedAuth = auth instanceof OAuthStrategy ? auth.withAdditionalScopes(requiredScopes) : auth;
+  // If auth supports scopes, add required scopes; otherwise use as-is
+  const scopedAuth =
+    auth instanceof OAuthStrategy || auth instanceof JwtOAuthStrategy
+      ? auth.withAdditionalScopes(requiredScopes)
+      : auth;
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(scopedAuth));

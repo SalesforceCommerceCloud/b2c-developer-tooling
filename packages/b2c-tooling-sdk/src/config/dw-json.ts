@@ -93,6 +93,12 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /** Path to JWT certificate file (cert.pem) for JWT authentication */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for JWT authentication */
+  jwtKeyPath?: string;
+  /** Optional passphrase for encrypted JWT private key */
+  jwtPassphrase?: string;
   /**
    * Safety configuration for this instance.
    *

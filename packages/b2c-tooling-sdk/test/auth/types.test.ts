@@ -9,6 +9,6 @@ import {ALL_AUTH_METHODS} from '@salesforce/b2c-tooling-sdk/auth';
 
 describe('auth/types', () => {
   it('exports ALL_AUTH_METHODS in default priority order', () => {
-    expect(ALL_AUTH_METHODS).to.deep.equal(['client-credentials', 'implicit', 'basic', 'api-key']);
+    expect(ALL_AUTH_METHODS).to.deep.equal(['client-credentials', 'jwt', 'implicit', 'basic', 'api-key']);
   });
 });
