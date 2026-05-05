@@ -57,7 +57,7 @@
 
       <button type="button" id="loadTablesBtn" class="btn btn-primary">
         <span class="ic ic-refresh" data-role="icon"></span>
-        <span data-role="label">Load Tables</span>
+        <span data-role="label">Load Entities</span>
       </button>
 
       <div class="view-toggle qb-view-toggle">
@@ -71,18 +71,18 @@
         <div class="section-head">
           <div class="section-title">
             <span class="section-title-icon"><span class="ic ic-table"></span></span>
-            <span>Tables</span>
+            <span>Entities</span>
           </div>
           <span class="count-badge" id="tableCount">0</span>
         </div>
         <div class="search-bar">
-          <input type="text" class="search-input" id="tableSearch" placeholder="Search tables..." />
+          <input type="text" class="search-input" id="tableSearch" placeholder="Search entities..." />
         </div>
         <div class="list" id="tableList">
           <div class="empty">
             <div class="empty-icon"><span class="ic ic-inbox"></span></div>
-            <div class="empty-title">No tables loaded</div>
-            <div class="empty-hint">Click Load Tables to discover tables.</div>
+            <div class="empty-title">No entities loaded</div>
+            <div class="empty-hint">Click Load Entities to discover entities.</div>
           </div>
         </div>
       </div>
@@ -101,8 +101,8 @@
         <div class="list" id="fieldList">
           <div class="empty">
             <div class="empty-icon"><span class="ic ic-columns"></span></div>
-            <div class="empty-title">Pick a table</div>
-            <div class="empty-hint">Select a table above to see its columns.</div>
+            <div class="empty-title">Pick an entity</div>
+            <div class="empty-hint">Select an entity above to see its columns.</div>
           </div>
         </div>
       </div>
@@ -141,19 +141,19 @@
               <div class="clause-head">
                 <span class="clause-step" aria-hidden="true">2</span>
                 <div class="clause-title-group">
-                  <div class="clause-title"><span class="kw">FROM</span> <span class="clause-heading">Source Table</span></div>
-                  <div class="clause-desc">The CIP data warehouse table to query.</div>
+                  <div class="clause-title"><span class="kw">FROM</span> <span class="clause-heading">Source Entity</span></div>
+                  <div class="clause-desc">The CIP data warehouse entity to query.</div>
                 </div>
                 <div class="clause-actions">
                   <button class="btn-ghost" id="changeFromBtn" disabled>
                     <span class="ic ic-refresh"></span>
-                    <span>Change Table</span>
+                    <span>Change Entity</span>
                   </button>
                 </div>
               </div>
               <div class="clause-body">
                 <div id="fromContainer">
-                  <span class="placeholder">Pick a table from the sidebar to begin.</span>
+                  <span class="placeholder">Pick an entity from the sidebar to begin.</span>
                 </div>
               </div>
             </div>
@@ -243,7 +243,7 @@
               <span>Copy</span>
             </button>
           </div>
-          <pre id="queryPreviewText">-- Select a table and fields to generate query</pre>
+          <pre id="queryPreviewText">-- Select an entity and fields to generate query</pre>
         </div>
       </div>
 
@@ -380,7 +380,7 @@
       }
       setLoadTablesBusy(true);
       renderTablesLoadingState();
-      setStatusHtml('loading', '<span class="spinner"></span> Loading tables...');
+      setStatusHtml('loading', '<span class="spinner"></span> Loading entities...');
       vscode.postMessage({command: 'loadTables'});
     });
 
@@ -406,7 +406,7 @@
           icon.classList.remove('spinner');
           icon.classList.add('ic', 'ic-refresh');
         }
-        if (label) label.textContent = 'Load Tables';
+        if (label) label.textContent = 'Load Entities';
       }
     }
 
@@ -426,7 +426,7 @@
       iconWrap.appendChild(spinner);
       const title = document.createElement('div');
       title.className = 'empty-title';
-      title.textContent = 'Loading tables…';
+      title.textContent = 'Loading entities…';
       const hint = document.createElement('div');
       hint.className = 'empty-hint';
       hint.textContent = 'Fetching metadata from the CIP data warehouse.';
@@ -582,8 +582,8 @@
         empty.className = 'empty';
         empty.innerHTML =
           '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
-          '<div class="empty-title">No tables loaded</div>' +
-          '<div class="empty-hint">Click Load Tables to try again.</div>';
+          '<div class="empty-title">No entities loaded</div>' +
+          '<div class="empty-hint">Click Load Entities to try again.</div>';
         el.tableList.appendChild(empty);
         return;
       }
@@ -660,8 +660,8 @@
         empty.className = 'empty';
         empty.innerHTML =
           '<div class="empty-icon"><span class="ic ic-columns"></span></div>' +
-          '<div class="empty-title">Pick a table</div>' +
-          '<div class="empty-hint">Select a table above to see its columns.</div>';
+          '<div class="empty-title">Pick an entity</div>' +
+          '<div class="empty-hint">Select an entity above to see its columns.</div>';
         el.fieldList.appendChild(empty);
         return;
       }
@@ -755,7 +755,7 @@
       if (!state.currentTable) {
         const placeholder = document.createElement('span');
         placeholder.className = 'placeholder';
-        placeholder.textContent = 'Pick a table from the sidebar to begin.';
+        placeholder.textContent = 'Pick an entity from the sidebar to begin.';
         el.fromContainer.appendChild(placeholder);
       } else {
         const chip = document.createElement('div');
@@ -916,7 +916,7 @@
     }
 
     function buildSql() {
-      if (!state.currentTable) return '-- Select a table to generate query';
+      if (!state.currentTable) return '-- Select an entity to generate query';
 
       const fields = state.selectedFields.length > 0 ? state.selectedFields.join(', ') : '*';
       let sql = 'SELECT ' + fields + '\nFROM ' + state.currentTable;
@@ -976,7 +976,7 @@
 
       const sql = state.currentView === 'editor' ? state.customSql : buildSql();
       if (!sql || sql.startsWith('--')) {
-        setStatus('error', 'No valid query — select a table first.');
+        setStatus('error', 'No valid query — select an entity first.');
         return;
       }
 
@@ -1068,7 +1068,7 @@
             pendingLoadAfterConfigure = false;
             setLoadTablesBusy(true);
             renderTablesLoadingState();
-            setStatusHtml('loading', '<span class="spinner"></span> Loading tables...');
+            setStatusHtml('loading', '<span class="spinner"></span> Loading entities...');
             vscode.postMessage({command: 'loadTables'});
           }
           break;
@@ -1085,7 +1085,7 @@
           state.tables = message.tables || [];
           renderTableList();
           renderFromClause();
-          setStatus('success', 'Loaded ' + message.tableCount + ' tables — search and click to explore.');
+          setStatus('success', 'Loaded ' + message.tableCount + ' entities — search and click to explore.');
           break;
 
         case 'tablesLoadError':
@@ -1101,8 +1101,8 @@
             empty.className = 'empty';
             empty.innerHTML =
               '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
-              '<div class="empty-title">No tables loaded</div>' +
-              '<div class="empty-hint">Click Load Tables to try again.</div>';
+              '<div class="empty-title">No entities loaded</div>' +
+              '<div class="empty-hint">Click Load Entities to try again.</div>';
             el.tableList.appendChild(empty);
           }
           break;

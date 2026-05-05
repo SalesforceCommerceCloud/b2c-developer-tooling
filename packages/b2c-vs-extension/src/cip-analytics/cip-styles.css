@@ -2078,17 +2078,19 @@ html.cip-query-builder, body.cip-query-builder {
   background-color: var(--vscode-sideBar-background);
 }
 
+/* Section heads (Entities / Columns) sit on the same white editor background as their
+ * body so each panel reads as one clean card. The title text is lighter weight and muted
+ * color — it's a category label, not an interactive row. */
 .cip-query-builder .section-head {
   padding: 12px 14px 10px;
-  background: linear-gradient(180deg,
-    var(--vscode-editorWidget-background) 0%,
-    transparent 100%);
+  background: var(--vscode-editor-background);
 }
 
 .cip-query-builder .section-title {
   font-size: 10.5px;
   letter-spacing: 0.9px;
-  color: var(--vscode-foreground);
+  font-weight: 500;
+  color: var(--vscode-descriptionForeground);
   gap: 7px;
 }
 
