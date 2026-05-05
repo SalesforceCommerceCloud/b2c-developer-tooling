@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none'; script-src 'nonce-__NONCE__'; style-src __CSP_SOURCE__; img-src __CSP_SOURCE__ data:; font-src __CSP_SOURCE__;"
+  />
+  <title>CIP Tables Browser</title>
+  <link rel="stylesheet" href="__STYLES_URI__" />
+  <style>body { padding: 16px; }</style>
+</head>
+<body>
+  <div class="header">
+    <h1>📋 CIP Tables Browser</h1>
+    <p>Browse and explore all CIP data warehouse tables and their schemas</p>
+  </div>
+
+  <div class="config-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="tenantId">Tenant ID *</label>
+        <input type="text" id="tenantId" placeholder="e.g., zzat_prd" value="__TENANT_ID__" />
+      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="useStaging" __USE_STAGING_CHECKED__>
+        Use staging
+      </label>
+      <button type="button" class="btn btn-primary" id="loadTablesBtn">
+        Load Tables
+      </button>
+    </div>
+  </div>
+
+  <div class="status-message" id="statusMessage"></div>
+
+  <div class="search-box" id="searchBox" style="display: none;">
+    <input type="text" id="searchInput" placeholder="Search tables..." />
+  </div>
+
+  <div class="tables-grid" id="tablesGrid" style="display: none;">
+    <div class="tables-list" id="tablesList"></div>
+    <div class="table-detail empty" id="tableDetail">
+      Select a table to view its schema
+    </div>
+  </div>
+
+  <script nonce="__NONCE__">
+    const vscode = acquireVsCodeApi();
+
+    const tenantIdInput = document.getElementById('tenantId');
+    const useStagingCheckbox = document.getElementById('useStaging');
+    const loadTablesBtn = document.getElementById('loadTablesBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const searchBox = document.getElementById('searchBox');
+    const searchInput = document.getElementById('searchInput');
+    const tablesGrid = document.getElementById('tablesGrid');
+    const tablesList = document.getElementById('tablesList');
+    const tableDetail = document.getElementById('tableDetail');
+
+    let allTables = [];
+    let selectedTable = null;
+
+    loadTablesBtn.addEventListener('click', () => {
+      const tenantId = tenantIdInput.value.trim();
+      if (!tenantId) {
+        showStatus('error', 'Please enter a tenant ID');
+        return;
+      }
+
+      vscode.postMessage({
+        command: 'loadTables',
+        params: {
+          tenantId: tenantId,
+          useStaging: String(useStagingCheckbox.checked)
+        }
+      });
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      filterTables(query);
+    });
+
+    function filterTables(query) {
+      const filtered = query ? allTables.filter(t => t.toLowerCase().includes(query)) : allTables;
+      renderTablesList(filtered);
+    }
+
+    function showStatus(type, message) {
+      statusMessage.className = 'status-message ' + type;
+      statusMessage.textContent = message;
+    }
+
+    function showStatusHtml(type, html) {
+      statusMessage.className = 'status-message ' + type;
+      statusMessage.innerHTML = html;
+    }
+
+    function renderTablesList(tables) {
+      tablesList.replaceChildren();
+
+      if (tables.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.padding = '12px';
+        empty.style.color = 'var(--vscode-descriptionForeground)';
+        empty.textContent = 'No tables found';
+        tablesList.appendChild(empty);
+        return;
+      }
+
+      tables.forEach(tableName => {
+        const item = document.createElement('div');
+        item.className = 'table-item';
+        if (selectedTable === tableName) {
+          item.classList.add('selected');
+        }
+        item.textContent = tableName;
+        item.addEventListener('click', () => selectTable(tableName));
+        tablesList.appendChild(item);
+      });
+    }
+
+    function selectTable(tableName) {
+      selectedTable = tableName;
+
+      document.querySelectorAll('.table-item').forEach(item => {
+        if (item.textContent === tableName) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+
+      vscode.postMessage({
+        command: 'describeTable',
+        params: {
+          tenantId: tenantIdInput.value.trim(),
+          useStaging: String(useStagingCheckbox.checked),
+          tableName: tableName
+        }
+      });
+    }
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+
+      switch (message.command) {
+        case 'tablesLoading':
+          showStatusHtml('loading', '<span class="spinner"></span> Loading tables...');
+          loadTablesBtn.disabled = true;
+          break;
+
+        case 'tablesLoaded':
+          allTables = message.tables || [];
+          showStatus('success', '✅ Loaded ' + message.tableCount + ' tables');
+          loadTablesBtn.disabled = false;
+          searchBox.style.display = 'block';
+          tablesGrid.style.display = 'grid';
+          renderTablesList(allTables);
+          break;
+
+        case 'tablesLoadError':
+          showStatus('error', message.error);
+          loadTablesBtn.disabled = false;
+          break;
+
+        case 'tableDescribing': {
+          tableDetail.replaceChildren();
+          const loading = document.createElement('div');
+          loading.style.padding = '12px';
+          loading.innerHTML = '<span class="spinner"></span> Loading schema...';
+          tableDetail.appendChild(loading);
+          tableDetail.classList.remove('empty');
+          break;
+        }
+
+        case 'tableDescribed':
+          renderTableSchema(message.tableName, message.schema);
+          break;
+
+        case 'tableDescribeError': {
+          tableDetail.replaceChildren();
+          const err = document.createElement('div');
+          err.style.padding = '12px';
+          err.style.color = 'var(--vscode-errorForeground)';
+          err.textContent = '❌ Failed to load schema: ' + message.error;
+          tableDetail.appendChild(err);
+          tableDetail.classList.remove('empty');
+          break;
+        }
+      }
+    });
+
+    function renderTableSchema(tableName, schema) {
+      tableDetail.classList.remove('empty');
+      tableDetail.replaceChildren();
+
+      const h2 = document.createElement('h2');
+      h2.textContent = tableName;
+      tableDetail.appendChild(h2);
+
+      const meta = document.createElement('p');
+      meta.style.marginBottom = '12px';
+      meta.style.color = 'var(--vscode-descriptionForeground)';
+      meta.style.fontSize = '11px';
+      meta.textContent = schema.columns.length + ' columns';
+      tableDetail.appendChild(meta);
+
+      const table = document.createElement('table');
+      table.className = 'columns-table';
+
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      ['Column Name', 'Type', 'Nullable'].forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      schema.columns.forEach(col => {
+        const tr = document.createElement('tr');
+
+        const nameTd = document.createElement('td');
+        nameTd.style.fontFamily = 'var(--vscode-editor-font-family)';
+        nameTd.textContent = col.name;
+        tr.appendChild(nameTd);
+
+        const typeTd = document.createElement('td');
+        const typeBadge = document.createElement('span');
+        typeBadge.className = 'type-badge';
+        typeBadge.textContent = col.type;
+        typeTd.appendChild(typeBadge);
+        tr.appendChild(typeTd);
+
+        const nullTd = document.createElement('td');
+        nullTd.textContent = col.nullable ? 'Yes' : 'No';
+        tr.appendChild(nullTd);
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      tableDetail.appendChild(table);
+    }
+  </script>
+</body>
+</html>

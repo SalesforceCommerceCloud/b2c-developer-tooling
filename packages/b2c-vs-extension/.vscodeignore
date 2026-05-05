@@ -6,6 +6,8 @@ src/**
 !src/storefront-next-cartridge.html
 !src/scapi-explorer.html
 !src/ods-management.html
+!src/cip-analytics/*.html
+!src/cip-analytics/*.css
 out/**
 **/node_modules/**
 

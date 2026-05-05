@@ -409,8 +409,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     registerCodeSync(context, configProvider, log);
   }
 
-  // Register CIP Analytics
-  registerCipAnalytics(context, configProvider, log);
+  if (settings.get<boolean>('features.cipAnalytics', true)) {
+    registerCipAnalytics(context, configProvider, log);
+  }
 
   registerDebugger(context, configProvider);
 

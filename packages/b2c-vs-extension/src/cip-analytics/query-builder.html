@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en" class="cip-query-builder">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none'; script-src 'nonce-__NONCE__'; style-src __CSP_SOURCE__; img-src __CSP_SOURCE__ data:; font-src __CSP_SOURCE__;"
+  />
+  <title>CIP Query Builder</title>
+  <link rel="stylesheet" href="__STYLES_URI__" />
+</head>
+<body class="cip-query-builder">
+  <div class="app">
+    <div class="hero-header">
+      <div class="hero-icon">⚡</div>
+      <div class="hero-text">
+        <div class="hero-title">Query Builder</div>
+        <div class="hero-subtitle">Build custom SQL queries against CIP data warehouse · Visual or raw SQL</div>
+      </div>
+    </div>
+
+    <div class="config-bar">
+      <div class="config-bar-inner">
+        <div class="config-field">
+          <label class="config-label" for="tenantId">🔗 Tenant ID</label>
+          <input type="text" id="tenantId" class="input" placeholder="e.g., zzat_sbx" value="__TENANT_ID__" style="width: 180px;" />
+        </div>
+
+        <div class="config-field">
+          <label class="config-label">🌍 Environment</label>
+          <label class="checkbox-pill" style="height: 32px;">
+            <input type="checkbox" id="useStaging" __USE_STAGING_CHECKED__>
+            <span>Use Staging Host</span>
+          </label>
+        </div>
+
+        <div class="config-field">
+          <label class="config-label" for="fetchSize">📊 Fetch Size</label>
+          <select id="fetchSize" class="select" style="width: 140px;">
+            <option value="100">100 rows</option>
+            <option value="500">500 rows</option>
+            <option value="1000" selected>1,000 rows</option>
+            <option value="5000">5,000 rows</option>
+          </select>
+        </div>
+
+        <div class="config-field">
+          <label class="config-label">&nbsp;</label>
+          <button id="loadTablesBtn" class="btn btn-primary">
+            <span>📥</span>
+            <span>Load Tables</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar-bar">
+      <div class="toolbar-title">
+        <span class="dot"></span>
+        <span>Query Composer</span>
+        <span class="subtitle">· Switch between visual builder and raw SQL</span>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="view-toggle">
+        <button id="builderViewBtn" class="active">
+          <span>⚙</span>
+          <span>Builder</span>
+        </button>
+        <button id="editorViewBtn">
+          <span>{ }</span>
+          <span>SQL</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-section tables">
+        <div class="section-head">
+          <div class="section-title">
+            <span class="section-title-icon">📂</span>
+            <span>Tables</span>
+          </div>
+          <span class="count-badge" id="tableCount">0</span>
+        </div>
+        <div class="search-bar">
+          <input type="text" class="search-input" id="tableSearch" placeholder="Search tables..." />
+        </div>
+        <div class="list" id="tableList">
+          <div class="empty">
+            <div class="empty-icon">📭</div>
+            <div class="empty-title">No tables loaded</div>
+            <div class="empty-hint">Click "Load Tables"<br/>to discover tables</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section columns">
+        <div class="section-head">
+          <div class="section-title">
+            <span class="section-title-icon">🔖</span>
+            <span>Columns</span>
+          </div>
+          <span class="count-badge" id="fieldCount">0</span>
+        </div>
+        <div class="search-bar">
+          <input type="text" class="search-input" id="fieldSearch" placeholder="Search columns..." />
+        </div>
+        <div class="list" id="fieldList">
+          <div class="empty">
+            <div class="empty-icon">👈</div>
+            <div class="empty-title">Pick a table</div>
+            <div class="empty-hint">Choose a table from above<br/>to see its columns</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="main-top">
+        <div class="content-scroll">
+          <div class="builder" id="builderView">
+            <div class="clause">
+              <div class="clause-head">
+                <div class="clause-icon">🎯</div>
+                <div class="clause-title-group">
+                  <div class="clause-title">Choose Columns <span class="kw">SELECT</span></div>
+                  <div class="clause-desc">Pick which fields to retrieve — defaults to all columns (*)</div>
+                </div>
+                <div class="clause-actions">
+                  <button class="btn-ghost" id="selectAllFieldsBtn" disabled>
+                    <span>✓</span>
+                    <span>Select All</span>
+                  </button>
+                  <button class="btn-ghost" id="clearFieldsBtn" disabled>
+                    <span>✕</span>
+                    <span>Clear</span>
+                  </button>
+                </div>
+              </div>
+              <div class="clause-body">
+                <div id="selectedFieldsContainer">
+                  <span class="placeholder">No columns selected — will use SELECT * (all columns)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="clause">
+              <div class="clause-head">
+                <div class="clause-icon">📄</div>
+                <div class="clause-title-group">
+                  <div class="clause-title">Source Table <span class="kw">FROM</span></div>
+                  <div class="clause-desc">The CIP data warehouse table to query</div>
+                </div>
+                <div class="clause-actions">
+                  <button class="btn-ghost" id="changeFromBtn" disabled>
+                    <span>🔄</span>
+                    <span>Change Table</span>
+                  </button>
+                </div>
+              </div>
+              <div class="clause-body">
+                <div id="fromContainer">
+                  <span class="placeholder">Pick a table from the sidebar to begin</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="clause">
+              <div class="clause-head">
+                <div class="clause-icon">🔍</div>
+                <div class="clause-title-group">
+                  <div class="clause-title">Filter Results <span class="kw">WHERE</span></div>
+                  <div class="clause-desc">Add conditions to narrow down your results</div>
+                </div>
+                <div class="clause-actions">
+                  <button class="btn-ghost" id="addFilterBtn">
+                    <span>+</span>
+                    <span>Add Filter</span>
+                  </button>
+                </div>
+              </div>
+              <div class="clause-body">
+                <div class="logic-segment" id="logicToggle" style="display: none;">
+                  <button data-logic="AND" class="active">AND</button>
+                  <button data-logic="OR">OR</button>
+                </div>
+                <div id="filtersContainer">
+                  <span class="placeholder">No filters applied — all rows will be returned</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="clause">
+              <div class="clause-head">
+                <div class="clause-icon">↕</div>
+                <div class="clause-title-group">
+                  <div class="clause-title">Sort Results <span class="kw">ORDER BY</span></div>
+                  <div class="clause-desc">Order rows by one or more columns</div>
+                </div>
+                <div class="clause-actions">
+                  <button class="btn-ghost" id="addOrderBtn">
+                    <span>+</span>
+                    <span>Add Sort</span>
+                  </button>
+                </div>
+              </div>
+              <div class="clause-body">
+                <div id="orderByContainer">
+                  <span class="placeholder">No sorting applied — results in default order</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="clause">
+              <div class="clause-head">
+                <div class="clause-icon">#</div>
+                <div class="clause-title-group">
+                  <div class="clause-title">Result Cap <span class="kw">LIMIT</span></div>
+                  <div class="clause-desc">Maximum number of rows to return</div>
+                </div>
+              </div>
+              <div class="clause-body">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <input type="number" id="limitInput" class="field-input" placeholder="100" min="1" max="10000" value="100" style="width: 80px; height: 28px; font-size: 12px; font-weight: 600; text-align: center;" />
+                  <span style="font-size: 11px; color: var(--vscode-descriptionForeground);">rows max · up to 10,000</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor hidden" id="editorView">
+            <textarea class="sql-editor" id="sqlEditor" spellcheck="false" placeholder="SELECT * FROM ccdw_aggr_sales_summary LIMIT 10"></textarea>
+          </div>
+
+          <div class="run-bar">
+            <span class="run-hint">Press <kbd>⌘</kbd> <kbd>↵</kbd> to run</span>
+            <button id="runQueryBtnBottom" class="btn btn-run" disabled>
+              <span>▶</span>
+              <span>Run Query</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="preview-panel">
+          <div class="preview-label">Generated SQL</div>
+          <pre id="queryPreviewText">-- Select a table and fields to generate query</pre>
+        </div>
+      </div>
+
+      <div class="results-panel" id="resultsPanel">
+        <div class="results-head">
+          <div class="results-title">Results</div>
+          <div class="badges" id="resultsBadges"></div>
+          <div class="results-actions">
+            <button class="btn btn-secondary" id="exportCsvBtn" disabled>
+              <span>📄</span>
+              <span>CSV</span>
+            </button>
+            <button class="btn btn-secondary" id="exportJsonBtn" disabled>
+              <span>{ }</span>
+              <span>JSON</span>
+            </button>
+          </div>
+        </div>
+        <div class="results-body" id="resultsBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusBar" style="display: none;"></div>
+
+  <script nonce="__NONCE__">
+    const vscode = acquireVsCodeApi();
+
+    const state = {
+      tables: [],
+      currentTable: null,
+      columns: [],
+      selectedFields: [],
+      filters: [],
+      filterLogic: 'AND',
+      orderBy: [],
+      limit: 100,
+      currentView: 'builder',
+      customSql: '',
+      results: null,
+    };
+
+    const el = {
+      tenantId: document.getElementById('tenantId'),
+      useStaging: document.getElementById('useStaging'),
+      fetchSize: document.getElementById('fetchSize'),
+      loadTablesBtn: document.getElementById('loadTablesBtn'),
+      runQueryBtn: document.getElementById('runQueryBtnBottom'),
+      builderViewBtn: document.getElementById('builderViewBtn'),
+      editorViewBtn: document.getElementById('editorViewBtn'),
+      builderView: document.getElementById('builderView'),
+      editorView: document.getElementById('editorView'),
+      sqlEditor: document.getElementById('sqlEditor'),
+      tableCount: document.getElementById('tableCount'),
+      fieldCount: document.getElementById('fieldCount'),
+      tableSearch: document.getElementById('tableSearch'),
+      fieldSearch: document.getElementById('fieldSearch'),
+      tableList: document.getElementById('tableList'),
+      fieldList: document.getElementById('fieldList'),
+      selectedFieldsContainer: document.getElementById('selectedFieldsContainer'),
+      fromContainer: document.getElementById('fromContainer'),
+      selectAllFieldsBtn: document.getElementById('selectAllFieldsBtn'),
+      clearFieldsBtn: document.getElementById('clearFieldsBtn'),
+      changeFromBtn: document.getElementById('changeFromBtn'),
+      addFilterBtn: document.getElementById('addFilterBtn'),
+      filtersContainer: document.getElementById('filtersContainer'),
+      logicToggle: document.getElementById('logicToggle'),
+      addOrderBtn: document.getElementById('addOrderBtn'),
+      orderByContainer: document.getElementById('orderByContainer'),
+      limitInput: document.getElementById('limitInput'),
+      queryPreviewText: document.getElementById('queryPreviewText'),
+      resultsPanel: document.getElementById('resultsPanel'),
+      resultsBadges: document.getElementById('resultsBadges'),
+      resultsBody: document.getElementById('resultsBody'),
+      exportCsvBtn: document.getElementById('exportCsvBtn'),
+      exportJsonBtn: document.getElementById('exportJsonBtn'),
+      statusBar: document.getElementById('statusBar'),
+    };
+
+    el.loadTablesBtn.addEventListener('click', () => {
+      const tenantId = el.tenantId.value.trim();
+      if (!tenantId) {
+        setStatus('error', '❌ Tenant ID is required');
+        el.tenantId.focus();
+        return;
+      }
+      setStatusHtml('loading', '<span class="spinner"></span> Loading tables...');
+      vscode.postMessage({
+        command: 'loadTables',
+        params: {tenantId, useStaging: String(el.useStaging.checked)}
+      });
+    });
+
+    el.tableSearch.addEventListener('input', () => renderTableList());
+    el.fieldSearch.addEventListener('input', () => renderFieldList());
+    el.builderViewBtn.addEventListener('click', () => switchView('builder'));
+    el.editorViewBtn.addEventListener('click', () => switchView('editor'));
+    el.runQueryBtn.addEventListener('click', () => runQuery());
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!el.runQueryBtn.disabled) runQuery();
+      }
+    });
+
+    el.limitInput.addEventListener('input', () => {
+      state.limit = parseInt(el.limitInput.value) || null;
+      updateQueryPreview();
+    });
+
+    el.selectAllFieldsBtn.addEventListener('click', () => {
+      if (state.columns.length === 0) return;
+      state.selectedFields = state.columns.map(c => c.name);
+      renderSelectedFields();
+      renderFieldList();
+      updateQueryPreview();
+    });
+
+    el.clearFieldsBtn.addEventListener('click', () => {
+      state.selectedFields = [];
+      renderSelectedFields();
+      renderFieldList();
+      updateQueryPreview();
+    });
+
+    el.changeFromBtn.addEventListener('click', () => {
+      el.tableSearch.focus();
+      el.tableSearch.select();
+    });
+
+    el.addFilterBtn.addEventListener('click', () => {
+      state.filters.push({column: '', operator: '=', value: ''});
+      renderFilters();
+      updateQueryPreview();
+    });
+
+    el.addOrderBtn.addEventListener('click', () => {
+      state.orderBy.push({column: '', direction: 'ASC'});
+      renderOrderBy();
+      updateQueryPreview();
+    });
+
+    el.logicToggle.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.filterLogic = btn.dataset.logic;
+        el.logicToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateQueryPreview();
+      });
+    });
+
+    el.sqlEditor.addEventListener('input', () => {
+      state.customSql = el.sqlEditor.value;
+      if (state.currentView === 'editor') {
+        el.runQueryBtn.disabled = !state.customSql.trim();
+      }
+    });
+
+    el.exportCsvBtn.addEventListener('click', () => {
+      if (state.results) {
+        vscode.postMessage({command: 'exportCsv', params: {data: state.results}});
+      }
+    });
+
+    el.exportJsonBtn.addEventListener('click', () => {
+      if (state.results) {
+        vscode.postMessage({command: 'exportJson', params: {data: state.results}});
+      }
+    });
+
+    function setStatus(type, message) {
+      el.statusBar.className = 'footer ' + (type || '');
+      el.statusBar.textContent = message;
+    }
+
+    function setStatusHtml(type, html) {
+      el.statusBar.className = 'footer ' + (type || '');
+      el.statusBar.innerHTML = html;
+    }
+
+    function switchView(view) {
+      state.currentView = view;
+      el.builderViewBtn.classList.toggle('active', view === 'builder');
+      el.editorViewBtn.classList.toggle('active', view === 'editor');
+      el.builderView.classList.toggle('hidden', view !== 'builder');
+      el.editorView.classList.toggle('hidden', view !== 'editor');
+      if (view === 'editor') {
+        const existingSql = buildSql();
+        if (existingSql && !existingSql.startsWith('--')) {
+          el.sqlEditor.value = existingSql;
+        }
+        state.customSql = el.sqlEditor.value;
+        el.runQueryBtn.disabled = !state.customSql.trim();
+      } else {
+        el.runQueryBtn.disabled = !state.currentTable;
+      }
+    }
+
+    function getTypeClass(type) {
+      const t = (type || '').toLowerCase();
+      if (t.includes('char') || t.includes('text') || t.includes('str')) return 'str';
+      if (t.includes('int') || t.includes('long') || t.includes('num') || t.includes('decimal') || t.includes('double') || t.includes('float') || t.includes('big')) return 'int';
+      if (t.includes('date') || t.includes('time')) return 'date';
+      if (t.includes('bool')) return 'bool';
+      return '';
+    }
+
+    function renderTableList() {
+      const query = el.tableSearch.value.toLowerCase();
+      const filtered = state.tables.filter(t => t.toLowerCase().includes(query));
+      el.tableCount.textContent = state.tables.length === 0 ? '0' :
+        (query ? filtered.length + '/' + state.tables.length : String(state.tables.length));
+
+      if (state.tables.length === 0) return;
+
+      el.tableList.replaceChildren();
+
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.innerHTML = '<div class="empty-icon">🔍</div><div class="empty-title">No matches</div>';
+        el.tableList.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'list-item' + (state.currentTable === t ? ' selected' : '');
+        item.dataset.table = t;
+
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = '📄';
+        item.appendChild(icon);
+
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = t;
+        item.appendChild(label);
+
+        item.addEventListener('click', () => selectTable(t));
+        el.tableList.appendChild(item);
+      });
+    }
+
+    function selectTable(tableName) {
+      state.currentTable = tableName;
+      state.selectedFields = [];
+      state.filters = [];
+      state.orderBy = [];
+      state.columns = [];
+
+      renderTableList();
+      renderSelectedFields();
+      renderFromClause();
+      renderFilters();
+      renderOrderBy();
+
+      el.fieldList.replaceChildren();
+      const loading = document.createElement('div');
+      loading.className = 'empty';
+      loading.innerHTML = '<div class="empty-icon"><span class="spinner" style="width: 20px; height: 20px;"></span></div><div class="empty-hint">Loading columns...</div>';
+      el.fieldList.appendChild(loading);
+
+      vscode.postMessage({
+        command: 'describeTable',
+        params: {
+          tenantId: el.tenantId.value.trim(),
+          useStaging: String(el.useStaging.checked),
+          tableName: tableName,
+        }
+      });
+
+      updateQueryPreview();
+      el.runQueryBtn.disabled = false;
+    }
+
+    function renderFieldList() {
+      const query = el.fieldSearch.value.toLowerCase();
+      const filtered = state.columns.filter(c => c.name.toLowerCase().includes(query));
+      el.fieldCount.textContent = state.columns.length === 0 ? '0' :
+        (query ? filtered.length + '/' + state.columns.length : String(state.columns.length));
+
+      if (state.columns.length === 0) return;
+
+      el.fieldList.replaceChildren();
+
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.innerHTML = '<div class="empty-icon">🔍</div><div class="empty-title">No matches</div>';
+        el.fieldList.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach(c => {
+        const isSelected = state.selectedFields.includes(c.name);
+        const typeClass = getTypeClass(c.type);
+
+        const label = document.createElement('label');
+        label.className = 'list-item';
+        label.style.cursor = 'pointer';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'field-checkbox';
+        cb.dataset.field = c.name;
+        cb.checked = isSelected;
+        cb.addEventListener('change', () => toggleField(c.name));
+        label.appendChild(cb);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'label';
+        nameSpan.textContent = c.name;
+        label.appendChild(nameSpan);
+
+        const typeTag = document.createElement('span');
+        typeTag.className = 'type-tag ' + typeClass;
+        typeTag.textContent = c.type;
+        label.appendChild(typeTag);
+
+        el.fieldList.appendChild(label);
+      });
+    }
+
+    function toggleField(fieldName) {
+      const idx = state.selectedFields.indexOf(fieldName);
+      if (idx >= 0) {
+        state.selectedFields.splice(idx, 1);
+      } else {
+        state.selectedFields.push(fieldName);
+      }
+      renderSelectedFields();
+      updateQueryPreview();
+    }
+
+    function renderSelectedFields() {
+      el.selectAllFieldsBtn.disabled = state.columns.length === 0 || state.selectedFields.length === state.columns.length;
+      el.clearFieldsBtn.disabled = state.selectedFields.length === 0;
+
+      el.selectedFieldsContainer.replaceChildren();
+
+      if (state.selectedFields.length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'placeholder';
+        placeholder.textContent = 'No columns selected — will use SELECT * (all columns)';
+        el.selectedFieldsContainer.appendChild(placeholder);
+        return;
+      }
+
+      const chipsWrap = document.createElement('div');
+      chipsWrap.className = 'chips';
+      state.selectedFields.forEach(f => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.append(f);
+
+        const remove = document.createElement('span');
+        remove.className = 'remove';
+        remove.textContent = '✕';
+        remove.addEventListener('click', () => {
+          toggleField(f);
+          renderFieldList();
+        });
+        chip.appendChild(remove);
+        chipsWrap.appendChild(chip);
+      });
+      el.selectedFieldsContainer.appendChild(chipsWrap);
+    }
+
+    function renderFromClause() {
+      el.changeFromBtn.disabled = state.tables.length === 0;
+      el.fromContainer.replaceChildren();
+      if (!state.currentTable) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'placeholder';
+        placeholder.textContent = '👈 Pick a table from the sidebar to begin';
+        el.fromContainer.appendChild(placeholder);
+      } else {
+        const chip = document.createElement('div');
+        chip.className = 'chip primary';
+        chip.textContent = '📄 ' + state.currentTable;
+        el.fromContainer.appendChild(chip);
+      }
+    }
+
+    function renderFilters() {
+      el.filtersContainer.replaceChildren();
+      if (state.filters.length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'placeholder';
+        placeholder.textContent = 'No filters applied';
+        el.filtersContainer.appendChild(placeholder);
+        el.logicToggle.style.display = 'none';
+        return;
+      }
+
+      el.logicToggle.style.display = state.filters.length > 1 ? 'inline-flex' : 'none';
+
+      const operators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'IS NULL', 'IS NOT NULL'];
+
+      state.filters.forEach((f, idx) => {
+        const row = document.createElement('div');
+        row.className = 'filter-row';
+
+        const colSelect = document.createElement('select');
+        colSelect.className = 'field-select';
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = 'Select column...';
+        colSelect.appendChild(emptyOpt);
+        state.columns.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.name;
+          opt.textContent = c.name;
+          if (f.column === c.name) opt.selected = true;
+          colSelect.appendChild(opt);
+        });
+        colSelect.addEventListener('change', (e) => {
+          state.filters[idx].column = e.target.value;
+          updateQueryPreview();
+        });
+        row.appendChild(colSelect);
+
+        const opSelect = document.createElement('select');
+        opSelect.className = 'field-select';
+        operators.forEach(op => {
+          const opt = document.createElement('option');
+          opt.value = op;
+          opt.textContent = op;
+          if (f.operator === op) opt.selected = true;
+          opSelect.appendChild(opt);
+        });
+        opSelect.addEventListener('change', (e) => {
+          state.filters[idx].operator = e.target.value;
+          renderFilters();
+          updateQueryPreview();
+        });
+        row.appendChild(opSelect);
+
+        const needsValue = !['IS NULL', 'IS NOT NULL'].includes(f.operator);
+        if (needsValue) {
+          const valInput = document.createElement('input');
+          valInput.type = 'text';
+          valInput.className = 'field-input';
+          valInput.placeholder = 'Value';
+          valInput.value = f.value || '';
+          valInput.addEventListener('input', (e) => {
+            state.filters[idx].value = e.target.value;
+            updateQueryPreview();
+          });
+          row.appendChild(valInput);
+        } else {
+          row.appendChild(document.createElement('span'));
+        }
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.title = 'Remove filter';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', () => {
+          state.filters.splice(idx, 1);
+          renderFilters();
+          updateQueryPreview();
+        });
+        row.appendChild(removeBtn);
+
+        el.filtersContainer.appendChild(row);
+      });
+    }
+
+    function renderOrderBy() {
+      el.orderByContainer.replaceChildren();
+      if (state.orderBy.length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'placeholder';
+        placeholder.textContent = 'No sorting applied';
+        el.orderByContainer.appendChild(placeholder);
+        return;
+      }
+
+      state.orderBy.forEach((o, idx) => {
+        const row = document.createElement('div');
+        row.className = 'order-row';
+
+        const colSelect = document.createElement('select');
+        colSelect.className = 'field-select';
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = 'Select column...';
+        colSelect.appendChild(emptyOpt);
+        state.columns.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.name;
+          opt.textContent = c.name;
+          if (o.column === c.name) opt.selected = true;
+          colSelect.appendChild(opt);
+        });
+        colSelect.addEventListener('change', (e) => {
+          state.orderBy[idx].column = e.target.value;
+          updateQueryPreview();
+        });
+        row.appendChild(colSelect);
+
+        const dirSelect = document.createElement('select');
+        dirSelect.className = 'field-select';
+        ['ASC', 'DESC'].forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = d === 'ASC' ? '↑ ASC' : '↓ DESC';
+          if (o.direction === d) opt.selected = true;
+          dirSelect.appendChild(opt);
+        });
+        dirSelect.addEventListener('change', (e) => {
+          state.orderBy[idx].direction = e.target.value;
+          updateQueryPreview();
+        });
+        row.appendChild(dirSelect);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.title = 'Remove sort';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', () => {
+          state.orderBy.splice(idx, 1);
+          renderOrderBy();
+          updateQueryPreview();
+        });
+        row.appendChild(removeBtn);
+
+        el.orderByContainer.appendChild(row);
+      });
+    }
+
+    function buildSql() {
+      if (!state.currentTable) return '-- Select a table to generate query';
+
+      const fields = state.selectedFields.length > 0 ? state.selectedFields.join(', ') : '*';
+      let sql = 'SELECT ' + fields + '\nFROM ' + state.currentTable;
+
+      const validFilters = state.filters.filter(f => f.column);
+      if (validFilters.length > 0) {
+        const conditions = validFilters.map(f => {
+          if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
+            return f.column + ' ' + f.operator;
+          }
+          const needsQuotes = f.operator === 'LIKE' || f.operator === 'NOT LIKE' || isNaN(Number(f.value));
+          if (f.operator === 'IN' || f.operator === 'NOT IN') {
+            return f.column + ' ' + f.operator + ' (' + f.value + ')';
+          }
+          const value = needsQuotes ? "'" + (f.value || '').replace(/'/g, "''") + "'" : f.value;
+          return f.column + ' ' + f.operator + ' ' + value;
+        });
+        sql += '\nWHERE ' + conditions.join(' ' + state.filterLogic + ' ');
+      }
+
+      const validOrder = state.orderBy.filter(o => o.column);
+      if (validOrder.length > 0) {
+        sql += '\nORDER BY ' + validOrder.map(o => o.column + ' ' + o.direction).join(', ');
+      }
+
+      if (state.limit && state.limit > 0) {
+        sql += '\nLIMIT ' + state.limit;
+      }
+
+      return sql;
+    }
+
+    function highlightSql(sql) {
+      const keywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY', 'LIMIT', 'AND', 'OR', 'NOT', 'IS NULL', 'IS NOT NULL', 'LIKE', 'IN', 'ASC', 'DESC'];
+      let highlighted = escapeHtml(sql);
+      keywords.forEach(kw => {
+        const regex = new RegExp('\\b(' + kw + ')\\b', 'g');
+        highlighted = highlighted.replace(regex, '<span class="sql-keyword">$1</span>');
+      });
+      highlighted = highlighted.replace(/'([^']*)'/g, "<span class=\"sql-string\">'$1'</span>");
+      highlighted = highlighted.replace(/\b(\d+)\b/g, '<span class="sql-number">$1</span>');
+      highlighted = highlighted.replace(/(--[^\n]*)/g, '<span class="sql-comment">$1</span>');
+      return highlighted;
+    }
+
+    function updateQueryPreview() {
+      const sql = buildSql();
+      el.queryPreviewText.innerHTML = highlightSql(sql);
+    }
+
+    function runQuery() {
+      const tenantId = el.tenantId.value.trim();
+      if (!tenantId) {
+        setStatus('error', '❌ Tenant ID required');
+        el.tenantId.focus();
+        return;
+      }
+
+      const sql = state.currentView === 'editor' ? state.customSql : buildSql();
+      if (!sql || sql.startsWith('--')) {
+        setStatus('error', '❌ No valid query — select a table first');
+        return;
+      }
+
+      el.runQueryBtn.disabled = true;
+      setStatusHtml('loading', '<span class="spinner"></span> Executing query...');
+
+      vscode.postMessage({
+        command: 'executeRawQuery',
+        params: {
+          tenantId,
+          sql,
+          useStaging: String(el.useStaging.checked),
+          fetchSize: el.fetchSize.value,
+        }
+      });
+    }
+
+    function renderResults(data) {
+      state.results = data;
+      el.resultsPanel.classList.add('visible');
+      el.exportCsvBtn.disabled = !data.rows || data.rows.length === 0;
+      el.exportJsonBtn.disabled = !data.rows || data.rows.length === 0;
+
+      el.resultsBadges.replaceChildren();
+      const countBadge = document.createElement('span');
+      countBadge.className = 'badge';
+      countBadge.textContent = (data.rowCount || 0).toLocaleString() + ' rows';
+      el.resultsBadges.appendChild(countBadge);
+      if (data.executionTime) {
+        const timeBadge = document.createElement('span');
+        timeBadge.className = 'badge neutral';
+        timeBadge.textContent = '⏱ ' + data.executionTime + 'ms';
+        el.resultsBadges.appendChild(timeBadge);
+      }
+
+      if (!data.rows || data.rows.length === 0) {
+        el.resultsBody.replaceChildren();
+        const noResults = document.createElement('div');
+        noResults.className = 'no-results';
+        noResults.innerHTML = '<div class="icon">📭</div><div>Query successful. No rows returned.</div>';
+        el.resultsBody.appendChild(noResults);
+        return;
+      }
+
+      const cols = data.columns;
+      const table = document.createElement('table');
+      table.className = 'table';
+
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      cols.forEach(c => {
+        const th = document.createElement('th');
+        th.textContent = c;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      data.rows.slice(0, 1000).forEach(row => {
+        const tr = document.createElement('tr');
+        cols.forEach(c => {
+          const td = document.createElement('td');
+          const value = row[c];
+          const display = value === null || value === undefined ? '—' :
+                          typeof value === 'object' ? JSON.stringify(value) :
+                          String(value);
+          td.title = display;
+          td.textContent = display;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+
+      el.resultsBody.replaceChildren(table);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = String(text == null ? '' : text);
+      return div.innerHTML;
+    }
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+      switch (message.command) {
+        case 'tablesLoaded':
+          state.tables = message.tables || [];
+          renderTableList();
+          renderFromClause();
+          setStatus('success', '✅ Loaded ' + message.tableCount + ' tables — search and click to explore');
+          break;
+
+        case 'tablesLoadError':
+          setStatus('error', message.error);
+          break;
+
+        case 'tableDescribed':
+          state.columns = (message.schema.columns || []).map(c => ({name: c.name, type: c.type}));
+          renderFieldList();
+          renderSelectedFields();
+          renderFilters();
+          renderOrderBy();
+          break;
+
+        case 'tableDescribeError': {
+          el.fieldList.replaceChildren();
+          const err = document.createElement('div');
+          err.className = 'empty';
+          const icon = document.createElement('div');
+          icon.className = 'empty-icon';
+          icon.textContent = '⚠️';
+          const title = document.createElement('div');
+          title.className = 'empty-title';
+          title.textContent = 'Failed to load';
+          const hint = document.createElement('div');
+          hint.className = 'empty-hint';
+          hint.textContent = String(message.error);
+          err.append(icon, title, hint);
+          el.fieldList.appendChild(err);
+          break;
+        }
+
+        case 'queryExecuting':
+          setStatusHtml('loading', '<span class="spinner"></span> Executing query...');
+          break;
+
+        case 'queryResult':
+          el.runQueryBtn.disabled = false;
+          renderResults(message.data);
+          setStatus('success', '✅ Query returned ' + message.data.rowCount + ' rows in ' + message.data.executionTime + 'ms');
+          break;
+
+        case 'queryError':
+          el.runQueryBtn.disabled = false;
+          setStatus('error', message.error);
+          break;
+      }
+    });
+
+    updateQueryPreview();
+  </script>
+</body>
+</html>
