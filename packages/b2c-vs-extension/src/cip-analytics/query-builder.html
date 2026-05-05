@@ -19,8 +19,8 @@
         <div class="page-header__subtitle">Build SQL queries against the CIP data warehouse.</div>
       </div>
       <div class="page-header__meta">
-        <div class="conn-bar" role="status" aria-label="CIP connection">
-          <div class="conn-bar__item">
+        <div class="conn-bar is-disconnected" id="connBar" role="status" aria-label="CIP connection">
+          <div class="conn-bar__status">
             <span id="connPill" class="conn-pill disconnected">Disconnected</span>
           </div>
           <div class="conn-bar__item" id="connTenantWrap" hidden>
@@ -275,6 +275,7 @@
     let currentConnection = __CONNECTION_JSON__;
 
     const el = {
+      connBar: document.getElementById('connBar'),
       connPill: document.getElementById('connPill'),
       connDetail: document.getElementById('connDetail'),
       connTenantWrap: document.getElementById('connTenantWrap'),
@@ -319,6 +320,8 @@
     function renderConnection() {
       const c = currentConnection || {};
       const status = c.status || 'disconnected';
+      el.connBar.classList.remove('is-connected', 'is-disconnected', 'is-testing');
+      el.connBar.classList.add('is-' + status);
       el.connPill.className = 'conn-pill ' + status;
       if (status === 'connected') {
         el.connPill.textContent = 'Connected';

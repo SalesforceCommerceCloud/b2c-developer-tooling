@@ -133,22 +133,82 @@ body {
  * A compact, horizontally-packed summary: STATUS · Tenant · Host.
  * Each item uses a small uppercase label + value so the info is scannable without any icon noise.
  */
+/* State-scoped surface tints. Using soft transparent fills so the bar reads as a single shape
+ * whose color telegraphs status at a glance. Strong cues sit on the status cell (left) only;
+ * tenant/host cells keep neutral foreground so values stay legible against the wash. */
 .conn-bar {
   display: inline-flex;
   align-items: stretch;
   gap: 0;
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-panel-border);
+  border-left-width: 3px;
   border-radius: var(--cip-radius-sm);
   overflow: hidden;
-  height: 32px;
+  height: 34px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Connected — distinct green wash with an emphasized left accent. */
+.conn-bar.is-connected {
+  background: rgba(22, 133, 68, 0.10);
+  border-color: var(--vscode-panel-border);
+  border-left-color: #1b5e20;
+}
+
+/* Disconnected — subtle red wash so the user notices the problem without it shouting. */
+.conn-bar.is-disconnected {
+  background: rgba(198, 40, 40, 0.08);
+  border-left-color: #c62828;
+}
+
+.conn-bar.is-testing {
+  background: var(--cip-accent-soft);
+  border-left-color: var(--cip-accent);
+}
+
+/* Status cell sits flush-left, carries the colored pill. In the connected state we add a small
+ * solid-green emblem so the user's eye lands on it first. */
+.conn-bar__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border-right: 1px solid var(--vscode-panel-border);
+  background: transparent;
+}
+
+.conn-bar.is-connected .conn-bar__status {
+  background: rgba(22, 133, 68, 0.12);
+  color: #1b5e20;
+}
+.vscode-dark .conn-bar.is-connected .conn-bar__status,
+.vscode-high-contrast .conn-bar.is-connected .conn-bar__status {
+  background: rgba(0, 200, 83, 0.15);
+  color: #00c853;
+}
+
+.conn-bar.is-disconnected .conn-bar__status {
+  background: rgba(198, 40, 40, 0.10);
+  color: #c62828;
+}
+.vscode-dark .conn-bar.is-disconnected .conn-bar__status,
+.vscode-high-contrast .conn-bar.is-disconnected .conn-bar__status {
+  color: #ff5252;
+}
+
+.conn-bar.is-testing .conn-bar__status {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
 }
 
 .conn-bar__item {
   display: inline-flex;
   flex-direction: column;
   justify-content: center;
-  padding: 3px 10px;
+  padding: 3px 12px;
   min-width: 0;
   border-right: 1px solid var(--vscode-panel-border);
 }
@@ -173,13 +233,27 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 260px;
+  max-width: 280px;
 }
 
-/* Status slot — keeps the existing .conn-pill look but sits at the far left. */
-.conn-bar .conn-pill {
-  align-self: center;
-  padding: 0 4px 0 0;
+/* Pill embedded in the status cell — remove its own dot, keep just the text. */
+.conn-bar__status .conn-pill {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+.conn-bar__status .conn-pill::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-right: 6px;
+}
+.conn-bar.is-testing .conn-bar__status .conn-pill::before {
+  /* Override the SVG refresh mask set at the base `.conn-pill.testing::before` rule so the
+   * dot stays clean in the tinted bar. The spin animation still applies. */
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 
 /* Legacy hero selectors — kept as a no-op bridge so any stale markup compiles cleanly. */
