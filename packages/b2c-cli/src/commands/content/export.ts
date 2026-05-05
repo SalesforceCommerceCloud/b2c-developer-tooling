@@ -48,9 +48,8 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
     }),
     'asset-query': Flags.string({
       char: 'q',
-      description: 'JSON dot-paths for asset extraction',
+      description: 'JSON dot-paths for asset extraction (falls back to config "assetQuery", then ["image.path"])',
       multiple: true,
-      default: ['image.path'],
     }),
     regex: Flags.boolean({
       char: 'r',
@@ -117,12 +116,13 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
     }
 
     const waitOptions = flags.timeout ? {timeoutSeconds: flags.timeout} : undefined;
+    const assetQuery = flags['asset-query'] ?? this.resolvedConfig.values.assetQuery ?? ['image.path'];
 
     if (flags['dry-run']) {
       const {library} = await this.operations.fetchContentLibrary(this.instance, libraryId, {
         libraryFile: flags['library-file'],
         isSiteLibrary: flags['site-library'],
-        assetQuery: flags['asset-query'],
+        assetQuery,
         keepOrphans: flags['keep-orphans'],
         waitOptions,
       });
@@ -222,7 +222,7 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
 
     const result = await this.operations.exportContent(this.instance, pageIds, libraryId, outputPath, {
       isSiteLibrary: flags['site-library'],
-      assetQuery: flags['asset-query'],
+      assetQuery,
       libraryFile: flags['library-file'],
       offline: flags.offline,
       folders: flags.folder,

@@ -161,6 +161,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
     libraries: json.libraries,
+    assetQuery: json.assetQuery,
     cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
@@ -290,6 +291,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.libraries !== undefined) {
     result.libraries = config.libraries;
+  }
+  if (config.assetQuery !== undefined) {
+    result.assetQuery = config.assetQuery;
   }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
@@ -442,6 +446,7 @@ export function mergeConfigsWithProtection(
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
+      assetQuery: overrides.assetQuery ?? base.assetQuery,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,

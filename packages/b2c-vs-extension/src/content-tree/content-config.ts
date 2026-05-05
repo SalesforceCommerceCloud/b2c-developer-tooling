@@ -41,6 +41,10 @@ export class ContentConfigProvider {
     return config?.values.contentLibrary ?? config?.values.libraries?.[0];
   }
 
+  getAssetQuery(): string[] | undefined {
+    return this.configProvider.getConfig()?.values.assetQuery;
+  }
+
   getLibraries(): BrowsedLibrary[] {
     return this.libraries;
   }
