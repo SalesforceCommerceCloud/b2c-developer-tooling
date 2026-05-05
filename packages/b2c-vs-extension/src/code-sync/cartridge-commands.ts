@@ -22,6 +22,7 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {registerSafeCommand} from '../safety.js';
 import {CartridgeItem, type CartridgeTreeItem, type CartridgeTreeProvider} from './cartridge-tree-provider.js';
 
 function getInstance(configProvider: B2CExtensionConfig): B2CInstance | undefined {
@@ -420,31 +421,28 @@ export function registerCartridgeCommands(
   const tempDirs: string[] = [];
 
   const disposables = [
-    vscode.commands.registerCommand(
+    registerSafeCommand(
       'b2c-dx.codeSync.downloadCartridge',
       createDownloadCartridgeCommand(configProvider, outputChannel),
     ),
-    vscode.commands.registerCommand(
+    registerSafeCommand(
       'b2c-dx.codeSync.diffCartridge',
       createDiffCartridgeCommand(configProvider, outputChannel, tempDirs),
     ),
-    vscode.commands.registerCommand(
-      'b2c-dx.codeSync.addToSitePath',
-      createAddToSitePathCommand(configProvider, outputChannel),
-    ),
-    vscode.commands.registerCommand(
+    registerSafeCommand('b2c-dx.codeSync.addToSitePath', createAddToSitePathCommand(configProvider, outputChannel)),
+    registerSafeCommand(
       'b2c-dx.codeSync.removeFromSitePath',
       createRemoveFromSitePathCommand(configProvider, outputChannel),
     ),
-    vscode.commands.registerCommand(
+    registerSafeCommand(
       'b2c-dx.codeSync.listCodeVersions',
       createListCodeVersionsCommand(configProvider, treeView, outputChannel),
     ),
-    vscode.commands.registerCommand(
+    registerSafeCommand(
       'b2c-dx.codeSync.createCodeVersion',
       createCreateCodeVersionCommand(configProvider, treeProvider, outputChannel),
     ),
-    vscode.commands.registerCommand(
+    registerSafeCommand(
       'b2c-dx.codeSync.activateCodeVersion',
       createActivateCodeVersionCommand(configProvider, treeView, outputChannel),
     ),
