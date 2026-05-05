@@ -225,17 +225,13 @@
           <div class="editor hidden" id="editorView">
             <textarea class="sql-editor" id="sqlEditor" spellcheck="false" placeholder="SELECT * FROM ccdw_aggr_sales_summary LIMIT 10"></textarea>
           </div>
-
-          <div class="run-bar">
-            <span class="run-hint">Press <kbd>⌘</kbd> <kbd>↵</kbd> to run</span>
-            <button id="runQueryBtnBottom" class="btn btn-run" disabled>
-              <span class="ic ic-play"></span>
-              <span>Run Query</span>
-            </button>
-          </div>
         </div>
 
-        <div class="preview-panel">
+        <!-- Collapsible "finalize" zone. Defaults to collapsed so the clause workspace
+             keeps its full vertical real estate; the Show SQL toggle in the run bar
+             slides the preview open between the clauses and the run button when the
+             user wants to verify what they're about to execute. -->
+        <div class="preview-panel is-collapsed" id="previewPanel" hidden>
           <div class="preview-head">
             <span class="preview-label">Generated SQL</span>
             <button type="button" class="btn-ghost btn-ghost--inline" id="copySqlBtn" title="Copy to clipboard">
@@ -244,6 +240,18 @@
             </button>
           </div>
           <pre id="queryPreviewText">-- Select an entity and fields to generate query</pre>
+        </div>
+
+        <div class="run-bar">
+          <button type="button" class="btn-ghost" id="toggleSqlBtn" aria-expanded="false" aria-controls="previewPanel">
+            <span class="ic ic-code"></span>
+            <span data-role="label">Show SQL</span>
+          </button>
+          <span class="run-hint">Press <kbd>⌘</kbd> <kbd>↵</kbd> to run</span>
+          <button id="runQueryBtnBottom" class="btn btn-run" disabled>
+            <span class="ic ic-play"></span>
+            <span>Run Query</span>
+          </button>
         </div>
       </div>
 
@@ -330,6 +338,8 @@
       exportCsvBtn: document.getElementById('exportCsvBtn'),
       exportJsonBtn: document.getElementById('exportJsonBtn'),
       copySqlBtn: document.getElementById('copySqlBtn'),
+      toggleSqlBtn: document.getElementById('toggleSqlBtn'),
+      previewPanel: document.getElementById('previewPanel'),
       statusBar: document.getElementById('statusBar'),
     };
 
@@ -441,6 +451,14 @@
     el.builderViewBtn.addEventListener('click', () => switchView('builder'));
     el.editorViewBtn.addEventListener('click', () => switchView('editor'));
     el.runQueryBtn.addEventListener('click', () => runQuery());
+
+    // SQL preview is hidden by default — users opt in to the extra vertical real estate.
+    el.toggleSqlBtn.addEventListener('click', () => {
+      const open = el.previewPanel.hidden === true;
+      el.previewPanel.hidden = !open;
+      el.toggleSqlBtn.setAttribute('aria-expanded', String(open));
+      el.toggleSqlBtn.querySelector('[data-role="label"]').textContent = open ? 'Hide SQL' : 'Show SQL';
+    });
 
     document.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -698,6 +716,10 @@
         const typeTag = document.createElement('span');
         typeTag.className = 'type-tag ' + typeClass;
         typeTag.textContent = c.type;
+        // Full datatype surfaces as a native tooltip on hover — the pill itself
+        // is max-width 96px with ellipsis, so long types (e.g., DECIMAL(38, 10)
+        // or VARCHAR(65536)) would otherwise be unreadable.
+        typeTag.title = c.type;
         label.appendChild(typeTag);
 
         el.fieldList.appendChild(label);

@@ -25,6 +25,20 @@
   --cip-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
   --cip-transition: all 0.12s ease;
   --cip-sidebar-width: 320px;
+
+  /* Shared dark-grey background for low-emphasis action controls (Load Entities, Run Query,
+   * AND/OR, Builder/SQL switch, count badges). One token means every surface shifts together
+   * when the palette evolves. */
+  --cip-neutral: #3c4149;
+  --cip-neutral-hover: #2b2f36;
+  --cip-neutral-fg: #ffffff;
+}
+
+/* Dark themes push the neutral a little lighter so it stays visible against near-black
+ * editor backgrounds without turning into a solid black slab. */
+.vscode-dark, .vscode-high-contrast {
+  --cip-neutral: #5a616b;
+  --cip-neutral-hover: #6f7782;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,28 +110,28 @@ body {
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
+/* Stack eyebrow / title / subtitle on their own rows so the header reads top-to-bottom.
+ * Previously eyebrow + title shared a grid row which let "B2C-DX ANALYTICS" inline next
+ * to the title text — visually inconsistent with the Entity Browser layout. */
 .page-header__body {
   flex: 1;
   min-width: 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 10px;
-  row-gap: 2px;
-  align-items: baseline;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
-/* Eyebrow now reads like a subtle tag — muted foreground, no border, so it recedes to a label
- * rather than competing with the title. */
+/* Eyebrow — sits on its own line above the title. */
 .page-header__eyebrow {
   font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--vscode-descriptionForeground);
-  grid-row: 1;
-  grid-column: 1;
-  line-height: 1;
+  line-height: 1.2;
   white-space: nowrap;
+  margin-bottom: 2px;
 }
 
 .page-header__title {
@@ -126,19 +140,17 @@ body {
   line-height: 1.25;
   color: var(--vscode-foreground);
   letter-spacing: -0.1px;
-  grid-row: 1;
-  grid-column: 2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .page-header__subtitle {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
   line-height: 1.4;
-  grid-row: 2;
-  grid-column: 1 / -1;
+  margin-top: 1px;
 }
 
 .page-header__meta {
@@ -460,13 +472,14 @@ body {
 }
 
 .btn-primary {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border-color: var(--vscode-button-border, transparent);
+  background-color: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--vscode-button-hoverBackground);
+  background-color: var(--cip-neutral-hover);
+  border-color: var(--cip-neutral-hover);
 }
 
 .btn-primary:disabled {
@@ -475,15 +488,16 @@ body {
 }
 
 .btn-run {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border-color: var(--vscode-button-border, transparent);
+  background-color: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
   padding: 8px 18px;
   font-size: 13px;
 }
 
 .btn-run:hover:not(:disabled) {
-  background-color: var(--vscode-button-hoverBackground);
+  background-color: var(--cip-neutral-hover);
+  border-color: var(--cip-neutral-hover);
 }
 
 .btn-run:disabled {
@@ -1019,6 +1033,13 @@ html.cip-query-builder, body.cip-query-builder {
     var(--vscode-editor-background) 100%);
 }
 
+/* Entity Browser (and any other flat page) uses the same .qb-hero typography but without
+ * the Query Builder's grid-slot gradient; it keeps the standard .page-header bottom border. */
+.qb-hero--flat {
+  padding: 14px 20px;
+  background: var(--vscode-editorWidget-background);
+}
+
 .hero-header .hero-icon { display: none; }
 
 /* Enterprise title treatment — larger, heavier, tighter letter-spacing. */
@@ -1034,7 +1055,7 @@ html.cip-query-builder, body.cip-query-builder {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.1px;
-  color: var(--cip-accent);
+  color: var(--vscode-descriptionForeground);
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -1328,8 +1349,8 @@ html.cip-query-builder, body.cip-query-builder {
 .view-toggle button:hover:not(.active) { background: var(--cip-accent-soft); }
 
 .view-toggle button.active {
-  background: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
@@ -1510,26 +1531,47 @@ html.cip-query-builder, body.cip-query-builder {
   accent-color: var(--cip-accent);
 }
 
-/* Type tag — neutral by default, type-scoped colored versions below pick up accent/success/
- * warning/error tokens so the eye can skim column types at a glance. */
+/* Type tag — one uniform dark-grey pill across every SQL type. Tight max-width with
+ * ellipsis so long types like `VARCHAR(65536) CHARACTER SET "UTF-8" NOT NULL` never
+ * overrun the column name. Full value surfaces via the `title` attr on hover. */
 .type-tag {
   font-size: 9px;
   font-weight: 600;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 3px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   font-family: var(--vscode-font-family);
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
   flex-shrink: 0;
-  border: 1px solid transparent;
+  border: 1px solid var(--cip-neutral);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.4;
 }
 
-.type-tag.str     { background: transparent; color: var(--cip-accent); border-color: var(--cip-accent); opacity: 0.85; }
-.type-tag.int     { background: transparent; color: var(--cip-success); border-color: var(--cip-success); opacity: 0.85; }
-.type-tag.date    { background: transparent; color: var(--cip-warning); border-color: var(--cip-warning); opacity: 0.85; }
-.type-tag.bool    { background: transparent; color: var(--cip-error); border-color: var(--cip-error); opacity: 0.85; }
+/* Drop the type-scoped color variants — single neutral pill reads quieter and stays
+ * aligned with the "low-emphasis controls share one neutral" rule. */
+.type-tag.str,
+.type-tag.int,
+.type-tag.date,
+.type-tag.bool,
+.type-tag.varchar,
+.type-tag.text,
+.type-tag.decimal,
+.type-tag.double,
+.type-tag.float,
+.type-tag.num,
+.type-tag.timestamp {
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
+  opacity: 1;
+}
 
 /* Empty states — quiet, balanced, with a bit more breathing room so the icon feels intentional. */
 .empty {
@@ -1621,13 +1663,11 @@ html.cip-query-builder, body.cip-query-builder {
   border: 1px solid var(--vscode-panel-border);
   border-radius: var(--cip-radius-md);
   overflow: hidden;
-  border-left: 3px solid var(--cip-accent);
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .clause:hover {
-  border-color: var(--vscode-focusBorder);
-  border-left-color: var(--cip-accent);
+  border-color: var(--vscode-panel-border);
   box-shadow: var(--cip-shadow-sm);
 }
 
@@ -1806,7 +1846,7 @@ html.cip-query-builder, body.cip-query-builder {
 .filter-row { grid-template-columns: minmax(0, 2fr) 140px minmax(0, 2fr) 32px; }
 .order-row { grid-template-columns: minmax(0, 2fr) 120px 32px; }
 
-.filter-row:hover, .order-row:hover { border-color: var(--vscode-focusBorder); }
+.filter-row:hover, .order-row:hover { border-color: var(--vscode-panel-border); }
 .filter-row:last-child, .order-row:last-child { margin-bottom: 0; }
 
 .field-select, .field-input {
@@ -1878,8 +1918,8 @@ html.cip-query-builder, body.cip-query-builder {
 .logic-segment button:hover:not(.active) { background: var(--cip-accent-soft); }
 
 .logic-segment button.active {
-  background: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
@@ -2057,16 +2097,21 @@ html.cip-query-builder, body.cip-query-builder {
   font-size: 12px;
 }
 
-/* Toolbar view-toggle — deeper contrast for active segment, sharper corners. */
+/* Toolbar view-toggle — matches `.qb-toolbar .btn` height (30px). Zero inner padding
+ * so the inner buttons fill the full 30px active area, visually aligning the
+ * Builder/SQL switch with the Load Entities button beside it. */
 .qb-view-toggle {
   height: 30px;
+  padding: 0;
   border-radius: 5px;
+  align-items: stretch;
 }
 
 .qb-view-toggle button {
   padding: 0 16px;
   font-size: 12px;
   letter-spacing: 0.2px;
+  height: auto;
 }
 
 .qb-view-toggle button.active {
@@ -2094,11 +2139,12 @@ html.cip-query-builder, body.cip-query-builder {
   gap: 7px;
 }
 
-.cip-query-builder .section-title-icon { color: var(--cip-accent); }
+.cip-query-builder .section-title-icon { color: var(--vscode-descriptionForeground); }
 
 .cip-query-builder .count-badge {
-  background: var(--cip-accent-soft);
-  color: var(--cip-accent);
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
   padding: 2px 9px;
   letter-spacing: 0.4px;
 }
@@ -2134,48 +2180,85 @@ html.cip-query-builder, body.cip-query-builder {
   font-size: 12px;
 }
 
+/* Match the Entity Browser's list chrome: sidebar rows render in the regular UI font at
+ * normal weight, with the selected row switching to the monospace editor font + semibold
+ * so the active entity/column reads as "this is the identifier" without every row feeling
+ * bold. Base `.list-item` uses the monospace font + a 600-weight `.label` child (inherited
+ * from the form-level `.label` rule), which is why every row was loud. */
 .cip-query-builder .list-item {
   padding: 7px 14px;
   border-radius: 0;
+  font-family: var(--vscode-font-family);
+  font-weight: 400;
   transition: background-color 0.1s ease, border-left-color 0.1s ease;
 }
 
-.cip-query-builder .list-item.selected {
-  background-color: var(--cip-accent-soft);
+.cip-query-builder .list-item .label {
+  font-weight: 400;
   color: var(--vscode-foreground);
-  border-left-color: var(--cip-accent);
 }
 
-.cip-query-builder .list-item .icon { color: var(--cip-accent); }
+.cip-query-builder .list-item.selected {
+  background-color: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+  border-left-color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 600;
+}
 
+.cip-query-builder .list-item.selected .label { font-weight: 600; }
+
+.cip-query-builder .list-item .icon { color: var(--vscode-descriptionForeground); }
+
+/* Query Builder column-type tags — light grey pill with dark text so the badge
+ * is clearly visible but reads as an understated tag, not a primary-color shout.
+ * Theme-scoped: lighter grey wash in light mode, darker grey fill in dark mode. */
 .cip-query-builder .type-tag {
   font-size: 9px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 10px;
+  background: #e5e7eb;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  max-width: 96px;
+  font-weight: 500;
+  opacity: 1;
 }
 
 .cip-query-builder .type-tag.str,
 .cip-query-builder .type-tag.varchar,
-.cip-query-builder .type-tag.text {
-  background: var(--cip-success-soft);
-  color: var(--cip-success);
-}
+.cip-query-builder .type-tag.text,
 .cip-query-builder .type-tag.int,
 .cip-query-builder .type-tag.decimal,
 .cip-query-builder .type-tag.double,
 .cip-query-builder .type-tag.float,
-.cip-query-builder .type-tag.num {
-  background: var(--cip-accent-soft);
-  color: var(--cip-accent);
-}
+.cip-query-builder .type-tag.num,
 .cip-query-builder .type-tag.date,
-.cip-query-builder .type-tag.timestamp {
-  background: var(--cip-warning-soft);
-  color: var(--cip-warning);
-}
+.cip-query-builder .type-tag.timestamp,
 .cip-query-builder .type-tag.bool {
-  background: var(--cip-error-soft);
-  color: var(--cip-error);
+  background: #e5e7eb;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+/* Dark themes: darker grey surface with light-grey text so the pill still reads
+ * as neutral against the near-black editor background. */
+.vscode-dark .cip-query-builder .type-tag,
+.vscode-high-contrast .cip-query-builder .type-tag,
+.vscode-dark .cip-query-builder .type-tag.str,
+.vscode-dark .cip-query-builder .type-tag.varchar,
+.vscode-dark .cip-query-builder .type-tag.text,
+.vscode-dark .cip-query-builder .type-tag.int,
+.vscode-dark .cip-query-builder .type-tag.decimal,
+.vscode-dark .cip-query-builder .type-tag.double,
+.vscode-dark .cip-query-builder .type-tag.float,
+.vscode-dark .cip-query-builder .type-tag.num,
+.vscode-dark .cip-query-builder .type-tag.date,
+.vscode-dark .cip-query-builder .type-tag.timestamp,
+.vscode-dark .cip-query-builder .type-tag.bool {
+  background: #3c4149;
+  color: #d1d5db;
+  border-color: #4b5563;
 }
 
 /* --- CLAUSE CARDS ---------------------------------------------------------- */
@@ -2189,7 +2272,7 @@ html.cip-query-builder, body.cip-query-builder {
 }
 
 .clause:hover {
-  border-color: var(--vscode-focusBorder, var(--cip-accent));
+  border-color: var(--vscode-panel-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -2306,20 +2389,23 @@ html.cip-query-builder, body.cip-query-builder {
   color: var(--vscode-descriptionForeground);
 }
 
-/* --- CHIPS (selected columns) --------------------------------------------- */
+/* --- CHIPS (selected columns) ---------------------------------------------
+ * Neutral dark-grey pills so the FROM entity chip reads as an identifier tag,
+ * not a blue "tap me" affordance. Uses the same `--cip-neutral` token shared
+ * with other low-emphasis controls. */
 .cip-query-builder .chip {
-  background: var(--cip-accent-soft);
-  color: var(--cip-accent);
-  border: 1px solid var(--cip-accent);
+  background: rgba(128, 128, 128, 0.14);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-panel-border);
   border-radius: 11px;
   padding: 3px 4px 3px 11px;
   font-weight: 600;
 }
 
 .cip-query-builder .chip.primary {
-  background: var(--cip-accent);
-  color: var(--cip-accent-contrast);
-  border-color: var(--cip-accent);
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
   padding: 3px 12px;
 }
 
@@ -2334,7 +2420,7 @@ html.cip-query-builder, body.cip-query-builder {
 
 .filter-row:hover,
 .order-row:hover {
-  border-color: var(--vscode-focusBorder, var(--cip-accent));
+  border-color: var(--vscode-panel-border);
 }
 
 .field-select,
@@ -2344,11 +2430,17 @@ html.cip-query-builder, body.cip-query-builder {
 }
 
 /* --- RUN BAR + SQL PREVIEW ------------------------------------------------- */
+/* Run bar layout: Show SQL toggle (left) · run hint (center-ish) · Run Query (right).
+ * `justify-content: flex-end` is overridden here because the toggle now shares the row. */
 .cip-query-builder .run-bar {
   padding: 12px 20px 14px;
   border-top: 1px solid var(--vscode-panel-border);
   background: var(--vscode-editorWidget-background);
+  justify-content: flex-start;
 }
+
+.cip-query-builder .run-bar .run-hint { margin-left: 12px; }
+.cip-query-builder .run-bar .btn-run { margin-left: auto; }
 
 .cip-query-builder .btn-run {
   padding: 8px 22px;
@@ -2431,3 +2523,294 @@ html.cip-query-builder, body.cip-query-builder {
 .cip-query-builder .empty-icon .ic { --cip-icon-size: 22px; opacity: 0.55; }
 .cip-query-builder .empty-title { font-size: 12px; }
 .cip-query-builder .empty-hint { font-size: 11.5px; }
+
+/* ============================================================================
+ * ENTITY BROWSER (tables-browser.html)
+ * Lives here (not inline in the template) because the page's CSP only allows
+ * styles from `cspSource` — inline <style> blocks without a nonce are stripped,
+ * which collapses the whole layout into an unstyled stack.
+ * ============================================================================ */
+
+/* Flat page shell: full-bleed header, single 20px gutter around the workspace. */
+body.cip-entity-browser { margin: 0; padding: 0 0 24px; }
+body.cip-entity-browser > .page-header,
+body.cip-entity-browser > header { margin: 0 0 12px; }
+
+.eb-page { padding: 0 20px; max-width: 1400px; }
+
+/* Toolbar row — search flexes, Load/Refresh holds its width on the right. */
+.eb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.eb-search {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.eb-search .ic-search {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vscode-descriptionForeground);
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.eb-search input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 0 12px 0 30px;
+  margin: 0;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  line-height: 1.4;
+  outline: none;
+  box-shadow: none;
+}
+.eb-search input::placeholder { color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground)); }
+.eb-search input:hover,
+.eb-search input:focus { border-color: var(--vscode-focusBorder); }
+.eb-search input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.eb-load-btn {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Status strip — reserves 20px so layout doesn't jump when a message appears. */
+.eb-status { min-height: 20px; margin-bottom: 10px; font-size: 12px; }
+.eb-status:empty { display: none; }
+
+/* Pre-first-load placeholder. */
+.eb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 20px;
+  border: 1px dashed var(--vscode-panel-border);
+  border-radius: 6px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+.eb-empty strong { color: var(--vscode-foreground); font-weight: 600; }
+.eb-empty[hidden] { display: none; }
+
+/* Two-pane split: entity list (~320px) + schema detail. Each pane scrolls on its own. */
+.eb-split {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 12px;
+  height: calc(100vh - 260px);
+  min-height: 360px;
+}
+
+.eb-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.eb-pane__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--vscode-sideBar-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.eb-pane__title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.eb-pane__title-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eb-pane__meta {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.eb-pane__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Entity list rows — 2px accent rail on selected. */
+.eb-pane__body .table-item {
+  padding: 7px 14px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  transition: background-color 0.1s ease, border-left-color 0.1s ease;
+}
+.eb-pane__body .table-item:last-child { border-bottom: none; }
+.eb-pane__body .table-item:hover { background-color: var(--vscode-list-hoverBackground); }
+.eb-pane__body .table-item.selected {
+  background-color: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+  border-left-color: var(--cip-accent);
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 600;
+}
+
+.eb-pane__body .eb-pane__placeholder {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+/* First-load copy inside the Entities pane. Centered in the pane body with icon
+ * above two lines of copy, so the pane reads as a guided call-to-action rather
+ * than an empty scroll area. */
+.eb-pane__body .eb-pane__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.eb-pane__body .eb-pane__empty strong { color: var(--vscode-foreground); font-weight: 600; }
+
+.eb-pane--detail .eb-pane__body.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+/* Schema table — sticky header, zebra rows, fixed column proportions. */
+.eb-schema {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.eb-schema thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 8px 14px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+.eb-schema tbody tr { transition: background-color 0.1s ease; }
+.eb-schema tbody tr:nth-child(even) { background-color: var(--vscode-sideBar-background); }
+.eb-schema tbody tr:hover { background-color: var(--vscode-list-hoverBackground); }
+.eb-schema td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eb-schema td.col-name {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-foreground);
+}
+.eb-schema td.col-type .type-badge {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eb-schema td.col-nullable {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.eb-schema col.col-name { width: 42%; }
+.eb-schema col.col-type { width: 42%; }
+.eb-schema col.col-nullable { width: 16%; }
+
+.eb-schema__meta {
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+}
+.eb-schema__meta strong { color: var(--vscode-foreground); font-family: var(--vscode-editor-font-family); font-weight: 600; }
+
+.eb-error {
+  padding: 14px 16px;
+  color: var(--cip-error);
+  font-size: 12px;
+  background: var(--cip-error-soft);
+  border-bottom: 1px solid var(--cip-error);
+}
