@@ -27,6 +27,8 @@ import {
   initializeTelemetry,
   validateWalkthroughCommand,
   checkWalkthroughAccessibilityCommand,
+  OnboardingStateStore,
+  OnboardingPanel,
 } from './walkthrough/index.js';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
@@ -152,6 +154,23 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   // Register walkthrough commands early so they're available for first-time users
   registerWalkthroughCommands(context);
+
+  // Onboarding (next-gen walkthrough) state + panel
+  const onboardingStore = new OnboardingStateStore(context);
+  context.subscriptions.push(onboardingStore);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('b2c-dx.onboarding.open', () => {
+      OnboardingPanel.show(context, onboardingStore, log);
+    }),
+    vscode.commands.registerCommand('b2c-dx.onboarding.reset', async () => {
+      await onboardingStore.reset();
+      OnboardingPanel.show(context, onboardingStore, log);
+    }),
+    vscode.commands.registerCommand('b2c-dx.onboarding.changePersona', async () => {
+      await onboardingStore.setPersona(null);
+      OnboardingPanel.show(context, onboardingStore, log);
+    }),
+  );
 
   // Register walkthrough validation commands (for development/testing)
   context.subscriptions.push(

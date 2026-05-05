@@ -53,15 +53,13 @@ const DW_JSON_MULTI_INSTANCE_TEMPLATE = {
  * These commands support the getting started walkthrough experience.
  */
 export function registerWalkthroughCommands(context: vscode.ExtensionContext): void {
-  // Command: Open the getting started walkthrough
+  // Command: Open the getting started walkthrough.
+  // The new onboarding panel replaces the built-in walkthrough surface; we
+  // redirect this legacy command to keep existing menu entries working.
   context.subscriptions.push(
     vscode.commands.registerCommand('b2c-dx.walkthrough.open', async () => {
       try {
-        await vscode.commands.executeCommand(
-          'workbench.action.openWalkthrough',
-          'Salesforce.b2c-vs-extension#b2c-dx.gettingStarted',
-          false,
-        );
+        await vscode.commands.executeCommand('b2c-dx.onboarding.open');
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         vscode.window.showErrorMessage(`Failed to open walkthrough: ${message}`);
@@ -144,30 +142,18 @@ async function createDwJsonTemplate(): Promise<void> {
   const template = templateType.value === 'multi' ? DW_JSON_MULTI_INSTANCE_TEMPLATE : DW_JSON_TEMPLATE;
 
   try {
-    // Write the template file
     const content = JSON.stringify(template, null, 2);
     await fs.writeFile(dwJsonPath, content, 'utf-8');
-
-    // Show success message
-    vscode.window
-      .showInformationMessage(
-        '✅ dw.json created! Update it with your B2C Commerce credentials.',
-        'Open File',
-        'Add to .gitignore',
-      )
-      .then(async (action) => {
-        if (action === 'Open File') {
-          await openFile(dwJsonPath);
-        } else if (action === 'Add to .gitignore') {
-          await addToGitignore(workspaceFolder.uri.fsPath);
-        }
-      });
-
-    // Automatically open the file for editing
     await openFile(dwJsonPath);
 
-    // Show helpful info message
-    vscode.window.showInformationMessage('💡 Tip: Add dw.json to .gitignore to avoid committing credentials');
+    const action = await vscode.window.showInformationMessage(
+      'dw.json created. Update it with your B2C Commerce credentials.',
+      'Add to .gitignore',
+      'Dismiss',
+    );
+    if (action === 'Add to .gitignore') {
+      await addToGitignore(workspaceFolder.uri.fsPath);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     vscode.window.showErrorMessage(`Failed to create dw.json: ${message}`);
@@ -246,30 +232,19 @@ async function addToGitignore(workspaceRoot: string): Promise<void> {
 }
 
 /**
- * Show the walkthrough on first activation if user hasn't seen it yet.
- * Call this from the main activate() function.
+ * Open the onboarding panel automatically on first activation.
+ * Users can reopen it any time via "B2C DX: Open Onboarding Panel",
+ * and reset progress via "B2C DX: Reset Onboarding Progress".
+ *
+ * Uses a dedicated key (separate from the legacy walkthrough flag) so
+ * machines that dismissed the old prompt still see the new panel once.
  */
 export async function showWalkthroughOnFirstActivation(context: vscode.ExtensionContext): Promise<void> {
-  const WALKTHROUGH_SEEN_KEY = 'b2c-dx.walkthroughSeen';
-  const hasSeenWalkthrough = context.globalState.get<boolean>(WALKTHROUGH_SEEN_KEY, false);
-
-  if (!hasSeenWalkthrough && vscode.workspace.workspaceFolders) {
-    // Small delay to ensure extension is fully activated
-    setTimeout(async () => {
-      const action = await vscode.window.showInformationMessage(
-        '👋 Welcome to B2C Commerce Development! Would you like to see the getting started guide?',
-        'Yes',
-        'Not Now',
-        "Don't Show Again",
-      );
-
-      if (action === 'Yes') {
-        await vscode.commands.executeCommand('b2c-dx.walkthrough.open');
-        await context.globalState.update(WALKTHROUGH_SEEN_KEY, true);
-      } else if (action === "Don't Show Again") {
-        await context.globalState.update(WALKTHROUGH_SEEN_KEY, true);
-      }
-      // "Not Now" doesn't update state, so prompt will show again next time
-    }, 2000);
-  }
+  const ONBOARDING_SEEN_KEY = 'b2c-dx.onboarding.autoOpened';
+  if (context.globalState.get<boolean>(ONBOARDING_SEEN_KEY, false)) return;
+  if (!vscode.workspace.workspaceFolders) return;
+  setTimeout(() => {
+    void vscode.commands.executeCommand('b2c-dx.onboarding.open');
+    void context.globalState.update(ONBOARDING_SEEN_KEY, true);
+  }, 1000);
 }

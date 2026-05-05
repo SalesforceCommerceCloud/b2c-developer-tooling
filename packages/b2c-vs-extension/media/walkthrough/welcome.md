@@ -31,4 +31,4 @@ Explore SCAPI OpenAPI schemas with interactive Swagger UI.
 
 ---
 
-**Ready to get started?** Use the navigation on the left to move to the next step, or click **Mark Done** to complete this step.
+**Ready to get started?** Use the **Next** button below, or pick a step from the sidebar on the left.

@@ -12,3 +12,7 @@ export {
   checkWalkthroughAccessibilityCommand,
 } from './accessibility.js';
 export {validateWalkthroughConfiguration, formatValidationResult, validateWalkthroughCommand} from './validator.js';
+export {OnboardingStateStore} from './state.js';
+export {OnboardingPanel} from './onboardingPanel.js';
+export {PERSONAS, listPersonas, resolveSteps, STEP_CATALOG} from './personas.js';
+export type {PersonaId, PersonaDefinition, StepDefinition, StepAction} from './personas.js';
