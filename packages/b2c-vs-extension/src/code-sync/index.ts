@@ -5,6 +5,7 @@
  */
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
 import {CartridgeTreeProvider, CartridgeItem} from './cartridge-tree-provider.js';
 import {createDeployCommand} from './deploy-command.js';
@@ -21,7 +22,7 @@ export function registerCodeSync(
 
   // --- Core sync commands ---
 
-  const toggleCmd = vscode.commands.registerCommand('b2c-dx.codeSync.toggle', async () => {
+  const toggleCmd = registerSafeCommand('b2c-dx.codeSync.toggle', async () => {
     const instance = configProvider.getInstance();
     if (!instance) {
       vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
@@ -32,7 +33,7 @@ export function registerCodeSync(
     treeProvider.refresh();
   });
 
-  const startCmd = vscode.commands.registerCommand('b2c-dx.codeSync.start', async () => {
+  const startCmd = registerSafeCommand('b2c-dx.codeSync.start', async () => {
     const instance = configProvider.getInstance();
     if (!instance) {
       vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
@@ -44,18 +45,18 @@ export function registerCodeSync(
     treeProvider.refresh();
   });
 
-  const stopCmd = vscode.commands.registerCommand('b2c-dx.codeSync.stop', async () => {
+  const stopCmd = registerSafeCommand('b2c-dx.codeSync.stop', async () => {
     const hostname = configProvider.getConfig()?.values.hostname ?? '';
     await manager.stopWatch();
     await manager.setPersistedState(hostname, false);
   });
 
-  const deployCmd = vscode.commands.registerCommand(
+  const deployCmd = registerSafeCommand(
     'b2c-dx.codeSync.deploy',
     createDeployCommand(configProvider, manager.outputChannel),
   );
 
-  const refreshCmd = vscode.commands.registerCommand('b2c-dx.codeSync.refreshCartridges', () => {
+  const refreshCmd = registerSafeCommand('b2c-dx.codeSync.refreshCartridges', () => {
     treeProvider.refresh();
     manager.refreshCartridges(configProvider.getWorkingDirectory());
   });
@@ -70,30 +71,24 @@ export function registerCodeSync(
     treeProvider.refresh();
   });
 
-  const uploadCartridgeCmd = vscode.commands.registerCommand(
-    'b2c-dx.codeSync.uploadCartridge',
-    async (item: CartridgeItem) => {
-      const instance = configProvider.getInstance();
-      if (!instance) {
-        vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
-        return;
-      }
-      await manager.uploadSingleCartridge(instance, item.cartridge);
-    },
-  );
+  const uploadCartridgeCmd = registerSafeCommand('b2c-dx.codeSync.uploadCartridge', async (item: CartridgeItem) => {
+    const instance = configProvider.getInstance();
+    if (!instance) {
+      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      return;
+    }
+    await manager.uploadSingleCartridge(instance, item.cartridge);
+  });
 
-  const uploadToInstanceCmd = vscode.commands.registerCommand(
-    'b2c-dx.codeSync.uploadToInstance',
-    async (uri?: vscode.Uri) => {
-      if (!uri) return;
-      const instance = configProvider.getInstance();
-      if (!instance) {
-        vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
-        return;
-      }
-      await manager.uploadFileOrFolder(instance, uri, configProvider.getWorkingDirectory());
-    },
-  );
+  const uploadToInstanceCmd = registerSafeCommand('b2c-dx.codeSync.uploadToInstance', async (uri?: vscode.Uri) => {
+    if (!uri) return;
+    const instance = configProvider.getInstance();
+    if (!instance) {
+      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      return;
+    }
+    await manager.uploadFileOrFolder(instance, uri, configProvider.getWorkingDirectory());
+  });
 
   // --- Cartridge commands (download, diff, site path, code versions) ---
   const cartridgeCmdDisposables = registerCartridgeCommands(

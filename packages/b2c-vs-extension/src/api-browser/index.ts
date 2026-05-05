@@ -5,6 +5,7 @@
  */
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {registerSafeCommand} from '../safety.js';
 import {ApiBrowserTreeDataProvider, type SchemaEntry} from './api-browser-tree-provider.js';
 import {SwaggerWebviewManager} from './swagger-webview.js';
 
@@ -21,16 +22,13 @@ export function registerApiBrowser(
     showCollapseAll: true,
   });
 
-  const refreshDisposable = vscode.commands.registerCommand('b2c-dx.apiBrowser.refresh', () => {
+  const refreshDisposable = registerSafeCommand('b2c-dx.apiBrowser.refresh', () => {
     treeProvider.refresh();
   });
 
-  const openSwaggerDisposable = vscode.commands.registerCommand(
-    'b2c-dx.apiBrowser.openSwagger',
-    (schema: SchemaEntry) => {
-      swaggerManager.openSwaggerPanel(schema);
-    },
-  );
+  const openSwaggerDisposable = registerSafeCommand('b2c-dx.apiBrowser.openSwagger', (schema: SchemaEntry) => {
+    swaggerManager.openSwaggerPanel(schema);
+  });
 
   configProvider.onDidReset(() => {
     treeProvider.refresh();

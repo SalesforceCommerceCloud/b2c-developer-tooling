@@ -25,6 +25,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'shortCode',
   'clientId',
   'contentLibrary',
+  'assetQuery',
   'mrtProject',
   'mrtOrigin',
   'accountManagerHost',
@@ -39,6 +40,7 @@ interface PackageJsonB2CConfig {
   shortCode?: string;
   clientId?: string;
   contentLibrary?: string;
+  assetQuery?: string[];
   mrtProject?: string;
   mrtOrigin?: string;
   accountManagerHost?: string;

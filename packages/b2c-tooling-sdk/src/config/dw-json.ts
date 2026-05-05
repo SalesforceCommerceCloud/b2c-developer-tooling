@@ -85,6 +85,8 @@ export interface DwJsonConfig {
   catalogs?: string[];
   /** Library IDs for WebDAV browsing */
   libraries?: string[];
+  /** JSON dot-paths for asset extraction during content library parsing (defaults to ['image.path']) */
+  assetQuery?: string[];
   /** Optional CIP analytics host override */
   cipHost?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
