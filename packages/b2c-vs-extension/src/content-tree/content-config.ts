@@ -19,6 +19,11 @@ export class ContentConfigProvider {
 
   constructor(private readonly configProvider: B2CExtensionConfig) {
     configProvider.onDidReset(() => {
+      // Reset browsed libraries so the next tree refresh re-seeds from the
+      // newly active instance's contentLibrary. Libraries from the previous
+      // instance may not exist on the new one, and the user can re-add any
+      // extras via "Add Library".
+      this.libraries = [];
       this.libraryCache.clear();
     });
   }
