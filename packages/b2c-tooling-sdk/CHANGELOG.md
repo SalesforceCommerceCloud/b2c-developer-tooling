@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.8.1
+
+### Patch Changes
+
+- [#392](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/392) [`51aed02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/51aed020426f1ce3869b3d260d9af796db8a19e7) - Fix `active: true` on `configs[]` instances being ignored unless the root object also has `active: false` (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.8.0
 
 ### Minor Changes

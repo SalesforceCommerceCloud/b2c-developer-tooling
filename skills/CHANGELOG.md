@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.2.1
+
+### Patch Changes
+
+- [#394](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/394) [`5ae3691`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5ae369114e33f8b24d54f0c233dd71d50fbb92d4) - Improve skill trigger accuracy: rewrite b2c-scapi-admin and b2c-site-import-export descriptions, merge b2c-users-roles into b2c-am, fix weak eval prompts for b2c-job (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.2.0
 
 ### Minor Changes
