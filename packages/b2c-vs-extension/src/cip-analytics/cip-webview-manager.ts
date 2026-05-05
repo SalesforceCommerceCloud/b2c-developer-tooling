@@ -14,6 +14,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/clients';
 import {randomBytes} from 'node:crypto';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -43,6 +44,10 @@ interface ConnectionTestResult {
  */
 export class CipWebviewManager {
   private panels = new Map<string, vscode.WebviewPanel>();
+  /** De-duplicates concurrent Load Tables clicks per panel so Avatica doesn't get hammered. */
+  private tablesInFlight = new WeakMap<vscode.WebviewPanel, Promise<void>>();
+  /** De-duplicates concurrent Describe Table calls per panel+table. */
+  private describeInFlight = new WeakMap<vscode.WebviewPanel, Map<string, Promise<void>>>();
 
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -273,11 +278,11 @@ export class CipWebviewManager {
   private async handleTablesBrowserMessage(message: WebviewMessage, panel: vscode.WebviewPanel): Promise<void> {
     switch (message.command) {
       case 'loadTables': {
-        await this.loadTables(panel);
+        await this.loadTablesOnce(panel);
         break;
       }
       case 'describeTable': {
-        await this.describeTable((message.params ?? {}) as Record<string, string>, panel);
+        await this.describeTableOnce((message.params ?? {}) as Record<string, string>, panel);
         break;
       }
       case 'configureConnection': {
@@ -297,11 +302,11 @@ export class CipWebviewManager {
   private async handleQueryBuilderMessage(message: WebviewMessage, panel: vscode.WebviewPanel): Promise<void> {
     switch (message.command) {
       case 'loadTables': {
-        await this.loadTables(panel);
+        await this.loadTablesOnce(panel);
         break;
       }
       case 'describeTable': {
-        await this.describeTable((message.params ?? {}) as Record<string, string>, panel);
+        await this.describeTableOnce((message.params ?? {}) as Record<string, string>, panel);
         break;
       }
       case 'executeRawQuery': {
@@ -375,6 +380,11 @@ export class CipWebviewManager {
   private formatConnectionError(error: unknown): string {
     const msg = error instanceof Error ? error.message : String(error);
 
+    // 429 from CIP usually means we fired too many handshakes in a short window.
+    // Tell the user to back off rather than retry immediately.
+    if (/\b429\b/.test(msg) || /Too Many Requests/i.test(msg)) {
+      return 'Rate-limited by CIP (HTTP 429). Wait ~30 seconds before retrying.';
+    }
     if (msg.includes('invalid_scope')) {
       return 'Invalid tenant ID or no CIP access. Verify tenant ID with your admin, or check if CIP is provisioned.';
     }
@@ -388,6 +398,47 @@ export class CipWebviewManager {
       return 'Cannot reach CIP host. Check network connection or CIP host configuration.';
     }
     return `Connection failed: ${msg}`;
+  }
+
+  /**
+   * De-duped wrapper around {@link loadTables}. If another Load Tables call is already in
+   * flight for the same panel, reuse that promise instead of firing a second Avatica
+   * handshake — keeps rapid clicks from tripping the CIP 429 rate limit.
+   */
+  private async loadTablesOnce(panel: vscode.WebviewPanel): Promise<void> {
+    const existing = this.tablesInFlight.get(panel);
+    if (existing) {
+      this.log.appendLine('[CIP Tables] Load already in flight — reusing');
+      return existing;
+    }
+    const promise = this.loadTables(panel).finally(() => {
+      this.tablesInFlight.delete(panel);
+    });
+    this.tablesInFlight.set(panel, promise);
+    return promise;
+  }
+
+  /**
+   * De-duped wrapper around {@link describeTable}. Coalesces per panel + table name so a
+   * user clicking the same table repeatedly doesn't fan out metadata requests.
+   */
+  private async describeTableOnce(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
+    const tableName = params.tableName ?? '';
+    let panelMap = this.describeInFlight.get(panel);
+    if (!panelMap) {
+      panelMap = new Map();
+      this.describeInFlight.set(panel, panelMap);
+    }
+    const existing = panelMap.get(tableName);
+    if (existing) {
+      this.log.appendLine(`[CIP Tables] Describe already in flight for ${tableName} — reusing`);
+      return existing;
+    }
+    const promise = this.describeTable(params, panel).finally(() => {
+      panelMap?.delete(tableName);
+    });
+    panelMap.set(tableName, promise);
+    return promise;
   }
 
   /**
@@ -405,14 +456,16 @@ export class CipWebviewManager {
 
       const result = await listCipTables(ctx.client);
 
-      // The webview renders a flat string list. The SDK sometimes returns rows keyed by the
-      // raw JDBC column label (e.g., TABLE_NAME / TABLE_SCHEM) instead of the camelCase aliases
-      // the SDK expects, leaving tableName blank. Fall back to a raw SQL query when that happens.
+      // The SDK hard-codes `row.tableName` (camelCase) when mapping metadata rows. When the
+      // JDBC driver returns the raw uppercase label (TABLE_NAME), the SDK produces N rows of
+      // {tableName: ''} and the raw labels are gone by the time we see the result — no amount
+      // of key-pattern matching on `result.tables` can recover them. In that case fall back to
+      // a direct `client.query()` which gives us rows keyed by whatever label the driver emitted.
       let tableNames = result.tables.map((t) => t.tableName).filter((n) => n.length > 0);
 
       if (tableNames.length === 0 && result.tableCount > 0) {
         this.log.appendLine(
-          `[CIP Tables Browser] SDK returned ${result.tableCount} tables but names were blank. Re-querying metadata directly.`,
+          `[CIP Tables Browser] SDK returned ${result.tableCount} tables but names were blank — re-querying metadata directly.`,
         );
         const raw = await ctx.client.query(
           `SELECT tableName FROM metadata.TABLES ORDER BY tableSchem, tableName`,
@@ -472,14 +525,15 @@ export class CipWebviewManager {
       const schema = await describeCipTable(ctx.client, tableName);
 
       // Webview expects {name, type, nullable}; SDK emits {columnName, dataType, isNullable}.
+      // Same mapping gap as listCipTables: if the driver returned uppercase labels the SDK
+      // silently produced empty columnName fields, so fall back to a direct metadata query.
       let columns = schema.columns
         .map((c) => ({name: c.columnName, type: c.dataType, nullable: c.isNullable}))
         .filter((c) => c.name.length > 0);
 
-      // Fallback: SDK sometimes receives rows keyed by the raw JDBC label casing.
       if (columns.length === 0 && schema.columns.length > 0) {
         this.log.appendLine(
-          `[CIP Tables Browser] SDK returned ${schema.columns.length} columns but names were blank. Re-querying metadata directly.`,
+          `[CIP Tables Browser] SDK returned ${schema.columns.length} columns but names were blank — re-querying metadata directly.`,
         );
         const raw = await ctx.client.query(
           `SELECT columnName, typeName, isNullable FROM metadata.COLUMNS WHERE tableName = '${tableName.replace(/'/g, "''")}' ORDER BY ordinalPosition`,
@@ -520,6 +574,19 @@ export class CipWebviewManager {
   /**
    * Export results to CSV file.
    */
+  /**
+   * Resolves a writable directory for the Save dialog's default location.
+   * Falls back in this order: first workspace folder → user's home → OS temp.
+   * Without this, `Uri.file('filename.csv')` resolves to `/filename.csv` which is read-only.
+   */
+  private defaultExportDir(): vscode.Uri {
+    const ws = vscode.workspace.workspaceFolders?.[0]?.uri;
+    if (ws && ws.scheme === 'file') return ws;
+    const home = os.homedir();
+    if (home) return vscode.Uri.file(home);
+    return vscode.Uri.file(os.tmpdir());
+  }
+
   private async exportToCsv(data?: {columns: string[]; rows: Array<Record<string, unknown>>}): Promise<void> {
     if (!data || !data.rows || data.rows.length === 0) {
       vscode.window.showWarningMessage('No data to export');
@@ -530,9 +597,10 @@ export class CipWebviewManager {
       const csv = this.generateCsv(data.columns, data.rows);
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
       const defaultFileName = `cip-results-${timestamp}.csv`;
+      const defaultUri = vscode.Uri.joinPath(this.defaultExportDir(), defaultFileName);
 
       const uri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(defaultFileName),
+        defaultUri,
         filters: {
           'CSV Files': ['csv'],
           'All Files': ['*'],
@@ -564,9 +632,10 @@ export class CipWebviewManager {
       const json = JSON.stringify(data.rows, null, 2);
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
       const defaultFileName = `cip-results-${timestamp}.json`;
+      const defaultUri = vscode.Uri.joinPath(this.defaultExportDir(), defaultFileName);
 
       const uri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(defaultFileName),
+        defaultUri,
         filters: {
           'JSON Files': ['json'],
           'All Files': ['*'],

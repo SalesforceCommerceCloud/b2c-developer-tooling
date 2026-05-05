@@ -83,50 +83,69 @@ body {
 }
 
 /* === PAGE HEADER ===
- * Salesforce-style page header: small eyebrow (category) + title + subtitle on the left,
- * context metadata (connection) on the right. One thin bottom border separates it from content.
- */
+ * Compact app-shell header. Small pill eyebrow + title inline, subtitle on a new row,
+ * right-aligned connection metadata + action button. Hairline bottom border. */
 .page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
-  margin: 0 0 16px;
+  gap: 24px;
+  padding: 10px 20px;
+  margin: 0 0 12px;
+  background: var(--vscode-editorWidget-background);
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
-.page-header__body { flex: 1; min-width: 0; }
+.page-header__body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: baseline;
+}
 
+/* Eyebrow now reads like a subtle tag — muted foreground, no border, so it recedes to a label
+ * rather than competing with the title. */
 .page-header__eyebrow {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.9px;
+  letter-spacing: 1px;
   color: var(--vscode-descriptionForeground);
-  margin-bottom: 2px;
+  grid-row: 1;
+  grid-column: 1;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .page-header__title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
   color: var(--vscode-foreground);
   letter-spacing: -0.1px;
+  grid-row: 1;
+  grid-column: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .page-header__subtitle {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
-  margin-top: 2px;
   line-height: 1.4;
+  grid-row: 2;
+  grid-column: 1 / -1;
 }
 
 .page-header__meta {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 /* === CONNECTION INFO BAR ===
@@ -486,13 +505,15 @@ body {
 
 .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Ghost button — secondary action inside a clause head. Reads as a subtle tag, hovers into
+ * a clear accent state so the user sees it's actionable. */
 .btn-ghost {
   height: 26px;
   padding: 0 10px;
   font-size: 11px;
   font-weight: 600;
   background: transparent;
-  color: var(--cip-accent);
+  color: var(--vscode-foreground);
   border: 1px solid var(--vscode-panel-border);
   border-radius: var(--cip-radius-sm);
   cursor: pointer;
@@ -503,10 +524,14 @@ body {
   transition: var(--cip-transition);
 }
 
+.btn-ghost .ic { --cip-icon-size: 12px; opacity: 0.85; }
+
 .btn-ghost:hover:not(:disabled) {
   background: var(--cip-accent-soft);
   border-color: var(--cip-accent);
+  color: var(--cip-accent);
 }
+.btn-ghost:hover:not(:disabled) .ic { opacity: 1; }
 
 .btn-ghost:disabled {
   opacity: 0.5;
@@ -616,7 +641,9 @@ kbd {
   border-left: 2px solid var(--cip-success);
 }
 
-/* === SPINNER === */
+/* === SPINNER ===
+ * Sized via width/height + border so variants can reuse the same keyframe.
+ */
 .spinner {
   display: inline-block;
   width: 12px;
@@ -627,6 +654,42 @@ kbd {
   animation: cip-spin 0.8s linear infinite;
   flex-shrink: 0;
 }
+
+/* Medium spinner — inline with button labels and toolbar text. */
+.spinner--md {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+/* Large spinner — used inside empty list panels while metadata is loading. */
+.spinner--lg {
+  width: 22px;
+  height: 22px;
+  border-width: 2.5px;
+}
+
+/* A full-panel loading block used in place of the `.empty` placeholder when we're
+ * waiting on remote data (Tables list, Columns list). Keeps visual rhythm identical
+ * to the empty state so the panel doesn't jump around. */
+.loading-panel {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+
+.loading-panel .spinner--lg { color: var(--cip-accent); }
+.loading-panel__title { font-weight: 600; color: var(--vscode-foreground); font-size: 12px; }
+.loading-panel__hint { font-size: 11px; line-height: 1.45; opacity: 0.85; max-width: 220px; }
+
+/* When a primary button is in its loading state, swap its icon for a spinner and
+ * keep the label flush so the button doesn't resize mid-click. */
+.btn.is-loading { cursor: progress; }
+.btn.is-loading .spinner { color: currentColor; }
 
 @keyframes cip-spin { to { transform: rotate(360deg); } }
 
@@ -950,9 +1013,38 @@ html.cip-query-builder, body.cip-query-builder {
   grid-area: hero;
   margin: 0;
   border-radius: 0;
+  padding: 14px 20px;
+  background: linear-gradient(180deg,
+    var(--vscode-editorWidget-background) 0%,
+    var(--vscode-editor-background) 100%);
 }
 
 .hero-header .hero-icon { display: none; }
+
+/* Enterprise title treatment — larger, heavier, tighter letter-spacing. */
+.qb-hero .qb-hero__title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  color: var(--vscode-foreground);
+}
+
+.qb-hero .page-header__eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  color: var(--cip-accent);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.qb-hero .page-header__subtitle {
+  font-size: 12.5px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 4px;
+  max-width: 640px;
+}
 
 .hero-text {
   display: flex;
@@ -1119,24 +1211,30 @@ html.cip-query-builder, body.cip-query-builder {
   color: var(--vscode-descriptionForeground);
 }
 
+/* Toolbar sits directly below the page header. Section label on the left, contextual settings
+ * on the right. No nested border since the page-header already supplies one. */
 .toolbar-bar {
   grid-area: toolbar;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: 14px;
+  padding: 8px 20px;
   margin: 0;
-  background: var(--vscode-editorWidget-background);
+  background: var(--vscode-editor-background);
   border: none;
   border-bottom: 1px solid var(--vscode-panel-border);
   border-radius: 0;
+  min-height: 48px;
 }
 
 .toolbar-inline-field {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: default;
+  padding-right: 10px;
+  border-right: 1px solid var(--vscode-panel-border);
+  height: 28px;
 }
 
 .toolbar-inline-label {
@@ -1150,19 +1248,21 @@ html.cip-query-builder, body.cip-query-builder {
 
 .toolbar-bar .toolbar-inline-field .select {
   height: 28px;
-  padding: 0 8px;
-  min-width: 140px;
+  padding: 0 10px;
+  min-width: 130px;
   font-size: 12px;
 }
 
-.toolbar-bar .btn { height: 28px; padding: 0 12px; font-size: 12px; }
+.toolbar-bar .btn { height: 28px; padding: 0 14px; font-size: 12px; font-weight: 600; }
 
+/* The "Query Composer" label is now a quiet section heading — small, baseline-aligned,
+ * and the helper text sits right next to it for context. */
 .toolbar-title {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 10px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--vscode-foreground);
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -1176,7 +1276,6 @@ html.cip-query-builder, body.cip-query-builder {
   text-transform: none;
   letter-spacing: 0;
   color: var(--vscode-descriptionForeground);
-  margin-left: 4px;
 }
 
 .spacer { flex: 1; }
@@ -1196,17 +1295,20 @@ html.cip-query-builder, body.cip-query-builder {
 
 .checkbox-pill:hover { border-color: var(--vscode-focusBorder); }
 
+/* Segmented control — both segments share equal weight; active state uses the theme's
+ * button background for a clear pressed look. Minimum width keeps labels from jiggling. */
 .view-toggle {
   display: inline-flex;
   background-color: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, transparent);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
   border-radius: var(--cip-radius-md);
   padding: 2px;
   gap: 2px;
-  height: 32px;
+  height: 30px;
 }
 
 .view-toggle button {
+  min-width: 72px;
   padding: 0 14px;
   border: none;
   background: transparent;
@@ -1214,11 +1316,13 @@ html.cip-query-builder, body.cip-query-builder {
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  border-radius: var(--cip-radius-sm);
+  border-radius: 4px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   font-family: var(--vscode-font-family);
+  transition: var(--cip-transition);
 }
 
 .view-toggle button:hover:not(.active) { background: var(--cip-accent-soft); }
@@ -1226,9 +1330,12 @@ html.cip-query-builder, body.cip-query-builder {
 .view-toggle button.active {
   background: var(--vscode-button-background);
   color: var(--vscode-button-foreground);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
-/* === SIDEBAR === */
+/* === SIDEBAR ===
+ * Inspector-style vertical split: Tables on top, Columns on bottom. Both panes share the
+ * same head/search/list chrome so the rhythm repeats, which reduces visual noise. */
 .sidebar {
   grid-area: sidebar;
   display: flex;
@@ -1248,68 +1355,101 @@ html.cip-query-builder, body.cip-query-builder {
   min-height: 0;
 }
 
-/* Split the sidebar roughly in half: tables on top, columns below. */
-.sidebar-section.tables { flex: 1 1 45%; min-height: 180px; }
-.sidebar-section.columns { flex: 1 1 55%; min-height: 180px; }
+/* Roughly equal split. */
+.sidebar-section.tables { flex: 1 1 50%; min-height: 180px; }
+.sidebar-section.columns { flex: 1 1 50%; min-height: 180px; }
 .sidebar-section:last-child { border-bottom: none; }
 
+/* Denser section head. Uses the widget surface so the sidebar lists read as lifted panes
+ * sitting on the sidebar background. */
 .section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px 8px;
+  padding: 6px 12px;
   flex-shrink: 0;
-  background: transparent;
+  background: var(--vscode-editorWidget-background);
   border-bottom: 1px solid var(--vscode-panel-border);
+  min-height: 32px;
 }
 
 .section-title {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--vscode-descriptionForeground);
+  letter-spacing: 0.7px;
+  color: var(--vscode-foreground);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
 }
 
-/* Sidebar section icon — small monochrome SVG via the shared .ic system. */
 .section-title-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--vscode-descriptionForeground);
+  opacity: 0.85;
 }
+.section-title-icon .ic { --cip-icon-size: 13px; }
 
+/* Count badge reads as metadata — border-only pill, tabular numerals. */
 .count-badge {
   font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
+  font-weight: 600;
+  padding: 1px 7px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-panel-border);
   border-radius: 10px;
   font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  min-width: 22px;
+  text-align: center;
 }
 
+/* Search row — compact, with a leading glyph so the empty field reads as "search". */
 .search-bar {
-  padding: 8px 14px;
+  padding: 6px 10px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+  position: relative;
 }
 
 .search-input {
   width: 100%;
-  padding: 6px 10px;
+  padding: 5px 10px 5px 26px;
   background-color: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
   border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
   border-radius: var(--cip-radius-sm);
   font-size: 12px;
   outline: none;
+  height: 26px;
 }
 
 .search-input:focus { border-color: var(--vscode-focusBorder); }
+
+/* Leading magnifier glyph rendered via a CSS mask so it inherits `currentColor`. */
+.search-bar::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-color: var(--vscode-descriptionForeground);
+  opacity: 0.7;
+  pointer-events: none;
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
 
 .list {
   flex: 1;
@@ -1318,10 +1458,10 @@ html.cip-query-builder, body.cip-query-builder {
   min-height: 0;
 }
 
-/* Each row gets real horizontal padding, no margin tricks — so the hover and selected
- * backgrounds fill to the sidebar edges and the label text aligns to the section title. */
+/* Row styling. Rows run edge-to-edge so hover/selected fill reads as a full strip. Left accent
+ * rail is reserved for the selected row — hovering should feel cheaper than selecting. */
 .list-item {
-  padding: 6px 14px;
+  padding: 4px 12px 4px 10px;
   cursor: pointer;
   font-size: 12px;
   font-family: var(--vscode-editor-font-family);
@@ -1331,6 +1471,7 @@ html.cip-query-builder, body.cip-query-builder {
   user-select: none;
   border-left: 2px solid transparent;
   color: var(--vscode-foreground);
+  min-height: 26px;
 }
 
 .list-item:hover { background-color: var(--vscode-list-hoverBackground); }
@@ -1339,7 +1480,7 @@ html.cip-query-builder, body.cip-query-builder {
   background-color: var(--vscode-list-activeSelectionBackground);
   color: var(--vscode-list-activeSelectionForeground);
   border-left-color: var(--cip-accent);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .list-item .icon {
@@ -1348,8 +1489,10 @@ html.cip-query-builder, body.cip-query-builder {
   align-items: center;
   justify-content: center;
   color: var(--vscode-descriptionForeground);
+  opacity: 0.85;
 }
-.list-item.selected .icon { color: var(--vscode-list-activeSelectionForeground); }
+.list-item.selected .icon { color: var(--vscode-list-activeSelectionForeground); opacity: 1; }
+.list-item .icon .ic { --cip-icon-size: 12px; }
 
 .list-item .label {
   flex: 1;
@@ -1364,11 +1507,14 @@ html.cip-query-builder, body.cip-query-builder {
   cursor: pointer;
   flex-shrink: 0;
   margin: 0;
+  accent-color: var(--cip-accent);
 }
 
+/* Type tag — neutral by default, type-scoped colored versions below pick up accent/success/
+ * warning/error tokens so the eye can skim column types at a glance. */
 .type-tag {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 1px 6px;
   border-radius: 3px;
   text-transform: uppercase;
@@ -1377,26 +1523,43 @@ html.cip-query-builder, body.cip-query-builder {
   background: var(--vscode-badge-background);
   color: var(--vscode-badge-foreground);
   flex-shrink: 0;
+  border: 1px solid transparent;
 }
 
-/* Empty states — quiet, inline text; no card, no dashed border. */
+.type-tag.str     { background: transparent; color: var(--cip-accent); border-color: var(--cip-accent); opacity: 0.85; }
+.type-tag.int     { background: transparent; color: var(--cip-success); border-color: var(--cip-success); opacity: 0.85; }
+.type-tag.date    { background: transparent; color: var(--cip-warning); border-color: var(--cip-warning); opacity: 0.85; }
+.type-tag.bool    { background: transparent; color: var(--cip-error); border-color: var(--cip-error); opacity: 0.85; }
+
+/* Empty states — quiet, balanced, with a bit more breathing room so the icon feels intentional. */
 .empty {
-  padding: 20px 14px;
+  padding: 22px 16px;
   text-align: center;
   color: var(--vscode-descriptionForeground);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: transparent;
   border: none;
   margin: 0;
 }
 
-.empty-icon { display: inline-flex; align-items: center; justify-content: center; opacity: 0.6; color: var(--vscode-descriptionForeground); }
-.empty-icon .ic { --cip-icon-size: 18px; }
-.empty-title { font-weight: 600; color: var(--vscode-foreground); font-size: 11px; }
-.empty-hint { font-size: 11px; line-height: 1.4; opacity: 0.85; }
+.empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.9;
+}
+.empty-icon .ic { --cip-icon-size: 16px; }
+.empty-title { font-weight: 600; color: var(--vscode-foreground); font-size: 12px; }
+.empty-hint { font-size: 11px; line-height: 1.45; opacity: 0.85; max-width: 220px; }
 
 /* === MAIN CONTENT === */
 .main {
@@ -1428,7 +1591,7 @@ html.cip-query-builder, body.cip-query-builder {
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   max-width: 1100px;
 }
 
@@ -1449,25 +1612,36 @@ html.cip-query-builder, body.cip-query-builder {
 .builder.hidden, .editor.hidden { display: none; }
 
 /* === CLAUSE CARDS ===
- * Subtle surface tint on the head (similar to VS Code input/widget background) so each
- * SQL clause reads as its own bounded section against the editor canvas below. */
+ * Each SQL clause sits in its own card with a left accent rail matching the SQL keyword color.
+ * The head has a subtle widget-surface background so the whole card reads as a bounded
+ * section against the editor canvas. Cards tighten on hover (no translate/scale — that feels
+ * jumpy in a form UI) and surface a small focus ring via box-shadow. */
 .clause {
   background-color: var(--vscode-editor-background);
   border: 1px solid var(--vscode-panel-border);
   border-radius: var(--cip-radius-md);
   overflow: hidden;
+  border-left: 3px solid var(--cip-accent);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
+.clause:hover {
+  border-color: var(--vscode-focusBorder);
+  border-left-color: var(--cip-accent);
+  box-shadow: var(--cip-shadow-sm);
+}
+
+/* Compact head: keyword capsule (monospaced) + title + description, all on one baseline.
+ * The keyword is what telegraphs the clause, so it sits first and reads visually loud. */
 .clause-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 8px 14px;
   background: var(--vscode-editorWidget-background);
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
-/* The old colored clause icon tile is gone; keyword tag alone carries the meaning. */
 .clause-icon { display: none; }
 
 .clause-title-group {
@@ -1483,27 +1657,31 @@ html.cip-query-builder, body.cip-query-builder {
   font-size: 12px;
   font-weight: 600;
   color: var(--vscode-foreground);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
 }
 
+/* Monospaced keyword capsule — filled with accent-soft, accent foreground, so the clause
+ * reads like a keyword tag the way SQL editors highlight keywords. */
 .clause-title .kw {
   font-family: var(--vscode-editor-font-family);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 700;
   letter-spacing: 0.6px;
-  color: var(--vscode-descriptionForeground);
-  background: transparent;
-  border: 1px solid var(--vscode-panel-border);
-  padding: 1px 6px;
+  color: var(--cip-accent);
+  background: var(--cip-accent-soft);
+  border: 1px solid transparent;
+  padding: 2px 8px;
   border-radius: 3px;
   text-transform: uppercase;
+  line-height: 1.3;
 }
 
 .clause-desc {
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
+  line-height: 1.35;
 }
 
 .clause-actions {
@@ -1513,15 +1691,45 @@ html.cip-query-builder, body.cip-query-builder {
 }
 
 .clause-body {
-  padding: 10px 14px;
+  padding: 12px 14px;
   min-height: 40px;
 }
 
+/* Placeholder text inside a clause body — conversational, not italic (italic feels dated). */
 .placeholder {
   color: var(--vscode-descriptionForeground);
   font-size: 12px;
-  font-style: italic;
   line-height: 1.5;
+  font-style: normal;
+}
+
+/* LIMIT clause — inline row with a numeric input, a bolder suffix label, and a lighter hint. */
+.limit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.limit-input {
+  width: 84px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit-suffix {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+}
+
+.limit-hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  padding-left: 6px;
+  border-left: 1px solid var(--vscode-panel-border);
 }
 
 /* === CHIPS === */
@@ -1535,22 +1743,29 @@ html.cip-query-builder, body.cip-query-builder {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 4px 3px 10px;
-  background: transparent;
+  padding: 3px 6px 3px 10px;
+  background: var(--vscode-editor-inactiveSelectionBackground, var(--cip-accent-soft));
   color: var(--vscode-foreground);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
+  border: 1px solid transparent;
+  border-radius: 12px;
   font-size: 11px;
   font-family: var(--vscode-editor-font-family);
   font-weight: 500;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Primary chip — highlights the currently selected FROM table so it reads distinctly from
+ * neutral SELECT chips. Uses accent-soft + accent border to match the clause rail. */
 .chip.primary {
-  background: var(--vscode-editor-inactiveSelectionBackground);
-  color: var(--vscode-foreground);
-  border: 1px solid var(--vscode-panel-border);
-  padding: 3px 10px;
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+  border-color: var(--cip-accent);
+  padding: 3px 12px;
   font-weight: 600;
+  max-width: none;
 }
 
 .chip .remove {
@@ -1563,6 +1778,8 @@ html.cip-query-builder, body.cip-query-builder {
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
+  line-height: 1;
+  transition: var(--cip-transition);
 }
 
 .chip .remove:hover {
@@ -1570,22 +1787,26 @@ html.cip-query-builder, body.cip-query-builder {
   color: var(--cip-error);
 }
 
-/* === FILTER / ORDER ROWS === */
+/* === FILTER / ORDER ROWS ===
+ * Tight grid, subtle card background so the row groups feel contained. Hover only adds a
+ * border tint — we don't shift the row's background because the inputs already have their
+ * own surface. */
 .filter-row, .order-row {
   display: grid;
   gap: 8px;
   margin-bottom: 6px;
   align-items: center;
-  padding: 6px;
-  background-color: var(--vscode-sideBar-background);
+  padding: 8px 10px;
+  background-color: var(--vscode-editorWidget-background);
   border-radius: var(--cip-radius-sm);
-  border: 1px solid transparent;
+  border: 1px solid var(--vscode-panel-border);
+  transition: border-color 0.12s ease;
 }
 
 .filter-row { grid-template-columns: minmax(0, 2fr) 140px minmax(0, 2fr) 32px; }
 .order-row { grid-template-columns: minmax(0, 2fr) 120px 32px; }
 
-.filter-row:hover, .order-row:hover { border-color: var(--vscode-panel-border); }
+.filter-row:hover, .order-row:hover { border-color: var(--vscode-focusBorder); }
 .filter-row:last-child, .order-row:last-child { margin-bottom: 0; }
 
 .field-select, .field-input {
@@ -1624,27 +1845,34 @@ html.cip-query-builder, body.cip-query-builder {
   border-color: var(--cip-error);
 }
 
+/* AND/OR segmented control — subtle border, labeled "Combine conditions with" via a
+ * pseudo-element so the purpose is self-evident even without a separate tooltip. */
 .logic-segment {
   display: inline-flex;
   gap: 2px;
   padding: 2px;
   background-color: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, transparent);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
   border-radius: var(--cip-radius-sm);
   margin-bottom: 10px;
+  height: 26px;
+  align-self: flex-start;
 }
 
 .logic-segment button {
-  height: 24px;
-  padding: 0 14px;
+  height: 22px;
+  min-width: 44px;
+  padding: 0 12px;
   border: none;
   background: transparent;
   color: var(--vscode-foreground);
   cursor: pointer;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   border-radius: 3px;
   font-family: var(--vscode-editor-font-family);
+  letter-spacing: 0.5px;
+  transition: var(--cip-transition);
 }
 
 .logic-segment button:hover:not(.active) { background: var(--cip-accent-soft); }
@@ -1652,6 +1880,7 @@ html.cip-query-builder, body.cip-query-builder {
 .logic-segment button.active {
   background: var(--vscode-button-background);
   color: var(--vscode-button-foreground);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* === SQL EDITOR === */
@@ -1787,3 +2016,416 @@ html.cip-query-builder, body.cip-query-builder {
 @media (max-width: 900px) {
   .app { grid-template-columns: 260px 1fr; }
 }
+
+/* ============================================================================
+ * QUERY BUILDER — ENTERPRISE POLISH
+ * Targeted overrides layered on top of the base styles above. Keeping the
+ * polish here keeps the existing structure intact and concentrates the visual
+ * refinements in one place that's easy to tweak.
+ * ============================================================================ */
+
+/* --- TOOLBAR ---------------------------------------------------------------- */
+.qb-toolbar {
+  padding: 10px 20px;
+  gap: 16px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.qb-toolbar__title { gap: 10px; }
+
+.qb-toolbar__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--vscode-foreground);
+}
+
+.qb-toolbar .toolbar-inline-label {
+  font-size: 9.5px;
+  letter-spacing: 0.8px;
+}
+
+.qb-toolbar .select {
+  min-width: 150px;
+  height: 30px;
+}
+
+.qb-toolbar .btn {
+  height: 30px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+/* Toolbar view-toggle — deeper contrast for active segment, sharper corners. */
+.qb-view-toggle {
+  height: 30px;
+  border-radius: 5px;
+}
+
+.qb-view-toggle button {
+  padding: 0 16px;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.qb-view-toggle button.active {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* --- SIDEBAR --------------------------------------------------------------- */
+.cip-query-builder .sidebar {
+  background-color: var(--vscode-sideBar-background);
+}
+
+.cip-query-builder .section-head {
+  padding: 12px 14px 10px;
+  background: linear-gradient(180deg,
+    var(--vscode-editorWidget-background) 0%,
+    transparent 100%);
+}
+
+.cip-query-builder .section-title {
+  font-size: 10.5px;
+  letter-spacing: 0.9px;
+  color: var(--vscode-foreground);
+  gap: 7px;
+}
+
+.cip-query-builder .section-title-icon { color: var(--cip-accent); }
+
+.cip-query-builder .count-badge {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+  padding: 2px 9px;
+  letter-spacing: 0.4px;
+}
+
+.cip-query-builder .search-bar {
+  padding: 8px 12px;
+  position: relative;
+}
+
+/* Inline search icon inside the input. Uses currentColor so theme-aware. */
+.cip-query-builder .search-bar::before {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  background-color: var(--vscode-descriptionForeground);
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.cip-query-builder .search-input {
+  padding-left: 30px;
+  height: 30px;
+  font-size: 12px;
+}
+
+.cip-query-builder .list-item {
+  padding: 7px 14px;
+  border-radius: 0;
+  transition: background-color 0.1s ease, border-left-color 0.1s ease;
+}
+
+.cip-query-builder .list-item.selected {
+  background-color: var(--cip-accent-soft);
+  color: var(--vscode-foreground);
+  border-left-color: var(--cip-accent);
+}
+
+.cip-query-builder .list-item .icon { color: var(--cip-accent); }
+
+.cip-query-builder .type-tag {
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.cip-query-builder .type-tag.str,
+.cip-query-builder .type-tag.varchar,
+.cip-query-builder .type-tag.text {
+  background: var(--cip-success-soft);
+  color: var(--cip-success);
+}
+.cip-query-builder .type-tag.int,
+.cip-query-builder .type-tag.decimal,
+.cip-query-builder .type-tag.double,
+.cip-query-builder .type-tag.float,
+.cip-query-builder .type-tag.num {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+}
+.cip-query-builder .type-tag.date,
+.cip-query-builder .type-tag.timestamp {
+  background: var(--cip-warning-soft);
+  color: var(--cip-warning);
+}
+.cip-query-builder .type-tag.bool {
+  background: var(--cip-error-soft);
+  color: var(--cip-error);
+}
+
+/* --- CLAUSE CARDS ---------------------------------------------------------- */
+/* Accent strip on the left + keyword pill colored per clause. Each clause
+ * reads as a distinct SQL step while sharing the same shell. */
+.clause {
+  position: relative;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.clause:hover {
+  border-color: var(--vscode-focusBorder, var(--cip-accent));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.clause::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  background: var(--cip-accent);
+  opacity: 0.8;
+}
+
+.clause[data-clause="select"]::before { background: #5b7fff; }
+.clause[data-clause="from"]::before   { background: #16a34a; }
+.clause[data-clause="where"]::before  { background: #eab308; }
+.clause[data-clause="order"]::before  { background: #a855f7; }
+.clause[data-clause="limit"]::before  { background: #f97316; }
+
+.clause-head {
+  padding: 10px 16px;
+  gap: 12px;
+}
+
+/* Small numbered badge indicating build order (1 SELECT → 5 LIMIT). */
+.clause-step {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+}
+
+.clause[data-clause="select"] .clause-step { background: rgba(91, 127, 255, 0.16); color: #5b7fff; }
+.clause[data-clause="from"]   .clause-step { background: rgba(22, 163, 74, 0.16); color: #16a34a; }
+.clause[data-clause="where"]  .clause-step { background: rgba(234, 179, 8, 0.18);  color: #b58a00; }
+.clause[data-clause="order"]  .clause-step { background: rgba(168, 85, 247, 0.16); color: #a855f7; }
+.clause[data-clause="limit"]  .clause-step { background: rgba(249, 115, 22, 0.16); color: #f97316; }
+.vscode-dark .clause[data-clause="where"] .clause-step { color: #eab308; }
+
+.clause-title {
+  font-size: 13px;
+  gap: 8px;
+}
+
+.clause-heading {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+/* Keyword pill — colored per clause, monospace for the SQL feel. */
+.clause-title .kw {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: none;
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+}
+
+.clause[data-clause="select"] .kw { background: rgba(91, 127, 255, 0.14); color: #5b7fff; }
+.clause[data-clause="from"]   .kw { background: rgba(22, 163, 74, 0.14); color: #16a34a; }
+.clause[data-clause="where"]  .kw { background: rgba(234, 179, 8, 0.16);  color: #b58a00; }
+.clause[data-clause="order"]  .kw { background: rgba(168, 85, 247, 0.14); color: #a855f7; }
+.clause[data-clause="limit"]  .kw { background: rgba(249, 115, 22, 0.14); color: #f97316; }
+.vscode-dark .clause[data-clause="where"] .kw { color: #eab308; }
+
+.clause-desc {
+  font-size: 11.5px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+}
+
+.clause-body {
+  padding: 12px 16px;
+}
+
+.placeholder {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.85;
+}
+
+/* LIMIT row — dedicated, labeled input. */
+.limit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.limit-input {
+  width: 96px;
+  height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit-hint {
+  font-size: 11.5px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* --- CHIPS (selected columns) --------------------------------------------- */
+.cip-query-builder .chip {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+  border: 1px solid var(--cip-accent);
+  border-radius: 11px;
+  padding: 3px 4px 3px 11px;
+  font-weight: 600;
+}
+
+.cip-query-builder .chip.primary {
+  background: var(--cip-accent);
+  color: var(--cip-accent-contrast);
+  border-color: var(--cip-accent);
+  padding: 3px 12px;
+}
+
+/* --- FILTER / ORDER ROWS --------------------------------------------------- */
+.filter-row,
+.order-row {
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-panel-border);
+  padding: 8px;
+  gap: 10px;
+}
+
+.filter-row:hover,
+.order-row:hover {
+  border-color: var(--vscode-focusBorder, var(--cip-accent));
+}
+
+.field-select,
+.field-input {
+  height: 30px;
+  font-size: 12.5px;
+}
+
+/* --- RUN BAR + SQL PREVIEW ------------------------------------------------- */
+.cip-query-builder .run-bar {
+  padding: 12px 20px 14px;
+  border-top: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editorWidget-background);
+}
+
+.cip-query-builder .btn-run {
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.cip-query-builder .btn-run:hover:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+  transform: translateY(-1px);
+}
+
+.cip-query-builder .preview-panel {
+  padding: 10px 20px 12px;
+  max-height: 160px;
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.preview-head .preview-label {
+  margin-bottom: 0;
+  letter-spacing: 1px;
+}
+
+.btn-ghost--inline {
+  margin-left: auto;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+
+.cip-query-builder #queryPreviewText {
+  padding: 8px 10px;
+  background: var(--vscode-textCodeBlock-background, rgba(127, 127, 127, 0.08));
+  border-radius: 4px;
+  border: 1px solid var(--vscode-panel-border);
+}
+
+/* --- GHOST BUTTONS (clause actions) --------------------------------------- */
+.cip-query-builder .clause-actions .btn-ghost {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  border-radius: 4px;
+}
+
+/* --- RESULTS PANEL --------------------------------------------------------- */
+.cip-query-builder .results-panel {
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.cip-query-builder .results-head {
+  padding: 12px 20px;
+}
+
+.cip-query-builder .results-title {
+  font-size: 11px;
+  letter-spacing: 0.9px;
+  color: var(--vscode-foreground);
+}
+
+.cip-query-builder .badge {
+  padding: 3px 11px;
+  font-size: 11px;
+}
+
+/* --- EMPTY STATES (sidebar) ----------------------------------------------- */
+.cip-query-builder .empty {
+  padding: 28px 16px;
+  gap: 8px;
+}
+
+.cip-query-builder .empty-icon .ic { --cip-icon-size: 22px; opacity: 0.55; }
+.cip-query-builder .empty-title { font-size: 12px; }
+.cip-query-builder .empty-hint { font-size: 11.5px; }

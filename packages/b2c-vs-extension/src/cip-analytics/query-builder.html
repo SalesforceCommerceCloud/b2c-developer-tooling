@@ -12,11 +12,11 @@
 </head>
 <body class="cip-query-builder">
   <div class="app">
-    <header class="hero-header page-header">
+    <header class="hero-header page-header qb-hero">
       <div class="page-header__body">
         <div class="page-header__eyebrow">B2C-DX Analytics</div>
-        <div class="page-header__title">Query Builder</div>
-        <div class="page-header__subtitle">Build SQL queries against the CIP data warehouse.</div>
+        <div class="page-header__title qb-hero__title">Query Builder</div>
+        <div class="page-header__subtitle">Explore and query the CIP data warehouse with a visual builder or raw SQL.</div>
       </div>
       <div class="page-header__meta">
         <div class="conn-bar is-disconnected" id="connBar" role="status" aria-label="CIP connection">
@@ -37,9 +37,9 @@
     </header>
     <span id="connDetail" hidden></span>
 
-    <div class="toolbar-bar">
-      <div class="toolbar-title">
-        <span>Query Composer</span>
+    <div class="toolbar-bar qb-toolbar">
+      <div class="toolbar-title qb-toolbar__title">
+        <span class="qb-toolbar__label">Query Composer</span>
         <span class="subtitle">Switch between visual builder and raw SQL</span>
       </div>
 
@@ -55,9 +55,12 @@
         </select>
       </label>
 
-      <button type="button" id="loadTablesBtn" class="btn btn-primary">Load Tables</button>
+      <button type="button" id="loadTablesBtn" class="btn btn-primary">
+        <span class="ic ic-refresh" data-role="icon"></span>
+        <span data-role="label">Load Tables</span>
+      </button>
 
-      <div class="view-toggle">
+      <div class="view-toggle qb-view-toggle">
         <button id="builderViewBtn" class="active">Builder</button>
         <button id="editorViewBtn">SQL</button>
       </div>
@@ -109,10 +112,11 @@
       <div class="main-top">
         <div class="content-scroll">
           <div class="builder" id="builderView">
-            <div class="clause">
+            <div class="clause" data-clause="select">
               <div class="clause-head">
+                <span class="clause-step" aria-hidden="true">1</span>
                 <div class="clause-title-group">
-                  <div class="clause-title"><span class="kw">SELECT</span> Choose Columns</div>
+                  <div class="clause-title"><span class="kw">SELECT</span> <span class="clause-heading">Choose Columns</span></div>
                   <div class="clause-desc">Pick which fields to retrieve — defaults to all columns (*).</div>
                 </div>
                 <div class="clause-actions">
@@ -133,10 +137,11 @@
               </div>
             </div>
 
-            <div class="clause">
+            <div class="clause" data-clause="from">
               <div class="clause-head">
+                <span class="clause-step" aria-hidden="true">2</span>
                 <div class="clause-title-group">
-                  <div class="clause-title"><span class="kw">FROM</span> Source Table</div>
+                  <div class="clause-title"><span class="kw">FROM</span> <span class="clause-heading">Source Table</span></div>
                   <div class="clause-desc">The CIP data warehouse table to query.</div>
                 </div>
                 <div class="clause-actions">
@@ -153,10 +158,11 @@
               </div>
             </div>
 
-            <div class="clause">
+            <div class="clause" data-clause="where">
               <div class="clause-head">
+                <span class="clause-step" aria-hidden="true">3</span>
                 <div class="clause-title-group">
-                  <div class="clause-title"><span class="kw">WHERE</span> Filter Results</div>
+                  <div class="clause-title"><span class="kw">WHERE</span> <span class="clause-heading">Filter Results</span></div>
                   <div class="clause-desc">Add conditions to narrow down your results.</div>
                 </div>
                 <div class="clause-actions">
@@ -177,10 +183,11 @@
               </div>
             </div>
 
-            <div class="clause">
+            <div class="clause" data-clause="order">
               <div class="clause-head">
+                <span class="clause-step" aria-hidden="true">4</span>
                 <div class="clause-title-group">
-                  <div class="clause-title"><span class="kw">ORDER BY</span> Sort Results</div>
+                  <div class="clause-title"><span class="kw">ORDER BY</span> <span class="clause-heading">Sort Results</span></div>
                   <div class="clause-desc">Order rows by one or more columns.</div>
                 </div>
                 <div class="clause-actions">
@@ -197,17 +204,19 @@
               </div>
             </div>
 
-            <div class="clause">
+            <div class="clause" data-clause="limit">
               <div class="clause-head">
+                <span class="clause-step" aria-hidden="true">5</span>
                 <div class="clause-title-group">
-                  <div class="clause-title"><span class="kw">LIMIT</span> Result Cap</div>
+                  <div class="clause-title"><span class="kw">LIMIT</span> <span class="clause-heading">Result Cap</span></div>
                   <div class="clause-desc">Maximum number of rows to return.</div>
                 </div>
               </div>
               <div class="clause-body">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <input type="number" id="limitInput" class="field-input" placeholder="100" min="1" max="10000" value="100" style="width: 80px; height: 28px; font-size: 12px; font-weight: 600; text-align: center;" />
-                  <span style="font-size: 11px; color: var(--vscode-descriptionForeground);">rows max · up to 10,000</span>
+                <div class="limit-row">
+                  <input type="number" id="limitInput" class="field-input limit-input" placeholder="100" min="1" max="10000" value="100" aria-label="Row limit" />
+                  <span class="limit-suffix">rows maximum</span>
+                  <span class="limit-hint">up to 10,000</span>
                 </div>
               </div>
             </div>
@@ -227,7 +236,13 @@
         </div>
 
         <div class="preview-panel">
-          <div class="preview-label">Generated SQL</div>
+          <div class="preview-head">
+            <span class="preview-label">Generated SQL</span>
+            <button type="button" class="btn-ghost btn-ghost--inline" id="copySqlBtn" title="Copy to clipboard">
+              <span class="ic ic-code"></span>
+              <span>Copy</span>
+            </button>
+          </div>
           <pre id="queryPreviewText">-- Select a table and fields to generate query</pre>
         </div>
       </div>
@@ -314,6 +329,7 @@
       resultsBody: document.getElementById('resultsBody'),
       exportCsvBtn: document.getElementById('exportCsvBtn'),
       exportJsonBtn: document.getElementById('exportJsonBtn'),
+      copySqlBtn: document.getElementById('copySqlBtn'),
       statusBar: document.getElementById('statusBar'),
     };
 
@@ -350,15 +366,75 @@
       vscode.postMessage({command: 'configureConnection'});
     });
 
+    // Flag set when the user clicks Load Tables without being configured. After the
+    // configure flow completes and a tenantId arrives via connectionState, we auto-trigger
+    // the load so the user doesn't have to click the button a second time.
+    let pendingLoadAfterConfigure = false;
+
     el.loadTablesBtn.addEventListener('click', () => {
       if (!currentConnection || !currentConnection.tenantId) {
         setStatus('error', 'Configure CIP connection first');
+        pendingLoadAfterConfigure = true;
         vscode.postMessage({command: 'configureConnection'});
         return;
       }
+      setLoadTablesBusy(true);
+      renderTablesLoadingState();
       setStatusHtml('loading', '<span class="spinner"></span> Loading tables...');
       vscode.postMessage({command: 'loadTables'});
     });
+
+    // Toggle the Load Tables button between idle and loading. When loading we swap the
+    // refresh icon for an inline spinner, change the label, and disable clicks so rapid
+    // re-presses can't fan out Avatica RPCs (the backend also coalesces, but this makes
+    // the state visible to the user).
+    function setLoadTablesBusy(busy) {
+      const btn = el.loadTablesBtn;
+      if (!btn) return;
+      const icon = btn.querySelector('[data-role="icon"]');
+      const label = btn.querySelector('[data-role="label"]');
+      btn.disabled = !!busy;
+      btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+      if (busy) {
+        if (icon) {
+          icon.classList.remove('ic', 'ic-refresh');
+          icon.classList.add('spinner');
+        }
+        if (label) label.textContent = 'Loading…';
+      } else {
+        if (icon) {
+          icon.classList.remove('spinner');
+          icon.classList.add('ic', 'ic-refresh');
+        }
+        if (label) label.textContent = 'Load Tables';
+      }
+    }
+
+    // Replace the Tables list empty-state with a centered spinner so the sidebar also
+    // reflects the in-flight load. We don't render this inside the .list row stream
+    // because the list gets cleared on 'tablesLoaded'.
+    function renderTablesLoadingState() {
+      el.tableList.replaceChildren();
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      const iconWrap = document.createElement('div');
+      iconWrap.className = 'empty-icon';
+      const spinner = document.createElement('span');
+      spinner.className = 'spinner';
+      spinner.style.width = '18px';
+      spinner.style.height = '18px';
+      iconWrap.appendChild(spinner);
+      const title = document.createElement('div');
+      title.className = 'empty-title';
+      title.textContent = 'Loading tables…';
+      const hint = document.createElement('div');
+      hint.className = 'empty-hint';
+      hint.textContent = 'Fetching metadata from the CIP data warehouse.';
+      empty.append(iconWrap, title, hint);
+      el.tableList.appendChild(empty);
+      // Reset count badge to an em-dash so stale counts don't linger.
+      el.tableCount.textContent = '—';
+    }
 
     el.tableSearch.addEventListener('input', () => renderTableList());
     el.fieldSearch.addEventListener('input', () => renderFieldList());
@@ -438,6 +514,21 @@
       }
     });
 
+    el.copySqlBtn.addEventListener('click', () => {
+      const sql = state.currentView === 'editor' ? state.customSql : buildSql();
+      if (!sql || sql.startsWith('--')) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(sql).then(
+          () => {
+            const original = el.copySqlBtn.innerHTML;
+            el.copySqlBtn.innerHTML = '<span class="ic ic-check"></span><span>Copied</span>';
+            setTimeout(() => { el.copySqlBtn.innerHTML = original; }, 1400);
+          },
+          () => {}
+        );
+      }
+    });
+
     function setStatus(type, message) {
       el.statusBar.className = 'footer ' + (type || '');
       el.statusBar.textContent = message;
@@ -481,9 +572,21 @@
       el.tableCount.textContent = state.tables.length === 0 ? '0' :
         (query ? filtered.length + '/' + state.tables.length : String(state.tables.length));
 
-      if (state.tables.length === 0) return;
-
       el.tableList.replaceChildren();
+
+      // When the backend returns zero tables, render the "no tables" empty state explicitly.
+      // Previously we early-returned here, which left the loading-spinner placeholder drawn
+      // by renderTablesLoadingState() stuck on screen forever.
+      if (state.tables.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.innerHTML =
+          '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
+          '<div class="empty-title">No tables loaded</div>' +
+          '<div class="empty-hint">Click Load Tables to try again.</div>';
+        el.tableList.appendChild(empty);
+        return;
+      }
 
       if (filtered.length === 0) {
         const empty = document.createElement('div');
@@ -547,9 +650,21 @@
       el.fieldCount.textContent = state.columns.length === 0 ? '0' :
         (query ? filtered.length + '/' + state.columns.length : String(state.columns.length));
 
-      if (state.columns.length === 0) return;
-
       el.fieldList.replaceChildren();
+
+      // Guard: if no columns came back, draw the pick-a-table empty state rather than
+      // leaving whatever placeholder (e.g., the "Loading columns..." spinner from
+      // selectTable()) on screen.
+      if (state.columns.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.innerHTML =
+          '<div class="empty-icon"><span class="ic ic-columns"></span></div>' +
+          '<div class="empty-title">Pick a table</div>' +
+          '<div class="empty-hint">Select a table above to see its columns.</div>';
+        el.fieldList.appendChild(empty);
+        return;
+      }
 
       if (filtered.length === 0) {
         const empty = document.createElement('div');
@@ -947,9 +1062,26 @@
         case 'connectionState':
           currentConnection = message.connection || currentConnection;
           renderConnection();
+          // If the user clicked Load Tables while unconfigured, auto-trigger the load
+          // as soon as configuration completes with a valid tenantId.
+          if (pendingLoadAfterConfigure && currentConnection && currentConnection.tenantId) {
+            pendingLoadAfterConfigure = false;
+            setLoadTablesBusy(true);
+            renderTablesLoadingState();
+            setStatusHtml('loading', '<span class="spinner"></span> Loading tables...');
+            vscode.postMessage({command: 'loadTables'});
+          }
+          break;
+
+        case 'tablesLoading':
+          // Backend signalled it has started the fetch. Keep the spinner state until
+          // we receive a terminal tablesLoaded or tablesLoadError message.
+          setLoadTablesBusy(true);
+          renderTablesLoadingState();
           break;
 
         case 'tablesLoaded':
+          setLoadTablesBusy(false);
           state.tables = message.tables || [];
           renderTableList();
           renderFromClause();
@@ -957,7 +1089,22 @@
           break;
 
         case 'tablesLoadError':
+          setLoadTablesBusy(false);
           setStatus('error', message.error);
+          // Reset the list to the original no-tables empty state. renderTableList() bails
+          // out early when state.tables is empty, so render the placeholder explicitly.
+          state.tables = [];
+          el.tableList.replaceChildren();
+          el.tableCount.textContent = '0';
+          {
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            empty.innerHTML =
+              '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
+              '<div class="empty-title">No tables loaded</div>' +
+              '<div class="empty-hint">Click Load Tables to try again.</div>';
+            el.tableList.appendChild(empty);
+          }
           break;
 
         case 'tableDescribed':
