@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from '@salesforce/b2c-tooling-sdk/clients';
 import {listCipReports} from '@salesforce/b2c-tooling-sdk/operations/cip';
@@ -107,9 +108,8 @@ export function registerCipAnalytics(
     await webviewManager.openQueryBuilder();
   });
 
-  const configureDisposable = vscode.commands.registerCommand(
-    'b2c-dx.cipAnalytics.configureConnection',
-    async () => configureConnectionFlow(connection),
+  const configureDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.configureConnection', async () =>
+    configureConnectionFlow(connection),
   );
 
   const testDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.testConnection', async () => {

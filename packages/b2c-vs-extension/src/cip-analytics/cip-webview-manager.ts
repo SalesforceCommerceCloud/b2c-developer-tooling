@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
   executeCipReport,
@@ -8,10 +9,7 @@ import {
   describeCipTable,
   type CipReportDefinition,
 } from '@salesforce/b2c-tooling-sdk/operations/cip';
-import {
-  createCipClient,
-  type CipClient,
-} from '@salesforce/b2c-tooling-sdk/clients';
+import {createCipClient, type CipClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {randomBytes} from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -30,12 +28,6 @@ interface WebviewMessage {
     data?: QueryResultData;
     message?: string;
   };
-}
-
-interface ConnectionTestResult {
-  success: boolean;
-  message: string;
-  tableCount?: number;
 }
 
 /**
@@ -72,10 +64,7 @@ export class CipWebviewManager {
     const conn = this.connection.get();
     if (!conn.tenantId) {
       void vscode.window
-        .showWarningMessage(
-          'CIP Analytics is not configured. Set the tenant and environment first.',
-          'Configure',
-        )
+        .showWarningMessage('CIP Analytics is not configured. Set the tenant and environment first.', 'Configure')
         .then((choice) => {
           if (choice === 'Configure') {
             void vscode.commands.executeCommand('b2c-dx.cipAnalytics.configureConnection');
@@ -107,16 +96,11 @@ export class CipWebviewManager {
     }
 
     // Create new panel
-    const panel = vscode.window.createWebviewPanel(
-      'cipAnalyticsDashboard',
-      report.name,
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true,
-        localResourceRoots: [this.cipAnalyticsUri],
-      },
-    );
+    const panel = vscode.window.createWebviewPanel('cipAnalyticsDashboard', report.name, vscode.ViewColumn.One, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      localResourceRoots: [this.cipAnalyticsUri],
+    });
 
     this.panels.set(columnKey, panel);
 
@@ -158,16 +142,11 @@ export class CipWebviewManager {
     }
 
     // Create new panel
-    const panel = vscode.window.createWebviewPanel(
-      'cipTablesBrowser',
-      'CIP Tables Browser',
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true,
-        localResourceRoots: [this.cipAnalyticsUri],
-      },
-    );
+    const panel = vscode.window.createWebviewPanel('cipTablesBrowser', 'CIP Tables Browser', vscode.ViewColumn.One, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      localResourceRoots: [this.cipAnalyticsUri],
+    });
 
     this.panels.set(columnKey, panel);
 
@@ -207,16 +186,11 @@ export class CipWebviewManager {
       return;
     }
 
-    const panel = vscode.window.createWebviewPanel(
-      'cipQueryBuilder',
-      'CIP Query Builder',
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true,
-        localResourceRoots: [this.cipAnalyticsUri],
-      },
-    );
+    const panel = vscode.window.createWebviewPanel('cipQueryBuilder', 'CIP Query Builder', vscode.ViewColumn.One, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      localResourceRoots: [this.cipAnalyticsUri],
+    });
 
     this.panels.set(columnKey, panel);
     panel.webview.html = this.getQueryBuilderContent(panel.webview);
@@ -348,7 +322,9 @@ export class CipWebviewManager {
       return;
     }
     try {
-      this.log.appendLine(`[CIP Query Builder] Executing SQL: ${sql.substring(0, 200)}${sql.length > 200 ? '...' : ''}`);
+      this.log.appendLine(
+        `[CIP Query Builder] Executing SQL: ${sql.substring(0, 200)}${sql.length > 200 ? '...' : ''}`,
+      );
       panel.webview.postMessage({command: 'queryExecuting'});
 
       const startTime = Date.now();
@@ -467,9 +443,7 @@ export class CipWebviewManager {
         this.log.appendLine(
           `[CIP Tables Browser] SDK returned ${result.tableCount} tables but names were blank — re-querying metadata directly.`,
         );
-        const raw = await ctx.client.query(
-          `SELECT tableName FROM metadata.TABLES ORDER BY tableSchem, tableName`,
-        );
+        const raw = await ctx.client.query(`SELECT tableName FROM metadata.TABLES ORDER BY tableSchem, tableName`);
         const extractName = (row: Record<string, unknown>): string => {
           for (const key of Object.keys(row)) {
             if (/^table[_ ]?name$/i.test(key)) {

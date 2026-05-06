@@ -1,17 +1,16 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {CipReportDefinition} from '@salesforce/b2c-tooling-sdk/operations/cip';
 import * as vscode from 'vscode';
 
 /**
- * Extension-specific report entry type.
- * Extends SDK's CipReportDefinition with any extension-specific metadata.
+ * Extension-specific report entry type. Aliased to the SDK's `CipReportDefinition` for now;
+ * convert back to an interface if/when extension-only fields are needed.
  */
-export interface CipReportEntry extends CipReportDefinition {
-  // Extension-specific fields can be added here if needed
-}
+export type CipReportEntry = CipReportDefinition;
 
 /**
  * Featured tree item for Query Builder - the highlighted primary entry point.

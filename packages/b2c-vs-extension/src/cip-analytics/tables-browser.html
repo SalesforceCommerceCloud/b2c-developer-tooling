@@ -1,371 +1,368 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta
-    http-equiv="Content-Security-Policy"
-    content="default-src 'none'; script-src 'nonce-__NONCE__'; style-src __CSP_SOURCE__; img-src __CSP_SOURCE__ data:; font-src __CSP_SOURCE__;"
-  />
-  <title>CIP Entity Browser</title>
-  <link rel="stylesheet" href="__STYLES_URI__" />
-</head>
-<body class="cip-entity-browser">
-  <!-- Wears the same `qb-hero` class as Query Builder so title size, eyebrow color, and
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'nonce-__NONCE__'; style-src __CSP_SOURCE__; img-src __CSP_SOURCE__ data:; font-src __CSP_SOURCE__;"
+    />
+    <title>CIP Entity Browser</title>
+    <link rel="stylesheet" href="__STYLES_URI__" />
+  </head>
+  <body class="cip-entity-browser">
+    <!-- Wears the same `qb-hero` class as Query Builder so title size, eyebrow color, and
        subtitle treatment are byte-for-byte identical across both pages. -->
-  <header class="page-header qb-hero qb-hero--flat">
-    <div class="page-header__body">
-      <div class="page-header__eyebrow">B2C-DX Analytics</div>
-      <div class="page-header__title qb-hero__title">Entity Browser</div>
-      <div class="page-header__subtitle">Browse CIP data warehouse entities and inspect their schemas.</div>
-    </div>
-    <div class="page-header__meta">
-      <div class="conn-bar is-disconnected" id="connBar" role="status" aria-label="CIP connection">
-        <div class="conn-bar__status">
-          <span id="connPill" class="conn-pill disconnected">Disconnected</span>
-        </div>
-        <div class="conn-bar__item" id="connTenantWrap" hidden>
-          <span class="conn-bar__label">Tenant</span>
-          <span class="conn-bar__value" id="connTenant"></span>
-        </div>
-        <div class="conn-bar__item" id="connHostWrap" hidden>
-          <span class="conn-bar__label">Host</span>
-          <span class="conn-bar__value" id="connHost"></span>
-        </div>
+    <header class="page-header qb-hero qb-hero--flat">
+      <div class="page-header__body">
+        <div class="page-header__eyebrow">B2C-DX Analytics</div>
+        <div class="page-header__title qb-hero__title">Entity Browser</div>
+        <div class="page-header__subtitle">Browse CIP data warehouse entities and inspect their schemas.</div>
       </div>
-      <button type="button" class="btn btn-secondary" id="configureBtn">Configure</button>
-    </div>
-  </header>
-  <span id="connDetail" hidden></span>
+      <div class="page-header__meta">
+        <div class="conn-bar is-disconnected" id="connBar" role="status" aria-label="CIP connection">
+          <div class="conn-bar__status">
+            <span id="connPill" class="conn-pill disconnected">Disconnected</span>
+          </div>
+          <div class="conn-bar__item" id="connTenantWrap" hidden>
+            <span class="conn-bar__label">Tenant</span>
+            <span class="conn-bar__value" id="connTenant"></span>
+          </div>
+          <div class="conn-bar__item" id="connHostWrap" hidden>
+            <span class="conn-bar__label">Host</span>
+            <span class="conn-bar__value" id="connHost"></span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary" id="configureBtn">Configure</button>
+      </div>
+    </header>
+    <span id="connDetail" hidden></span>
 
-  <main class="eb-page">
-    <!-- Toolbar: search (client-side filter of already-loaded entities) + Load/Refresh button.
+    <main class="eb-page">
+      <!-- Toolbar: search (client-side filter of already-loaded entities) + Load/Refresh button.
          The button's label adapts: "Load Entities" before the first load, "Refresh" after. -->
-    <div class="eb-toolbar" id="searchBox">
-      <div class="eb-search">
-        <span class="ic ic-search" aria-hidden="true"></span>
-        <input type="text" id="searchInput" placeholder="Search entities…" disabled />
+      <div class="eb-toolbar" id="searchBox">
+        <div class="eb-search">
+          <span class="ic ic-search" aria-hidden="true"></span>
+          <input type="text" id="searchInput" placeholder="Search entities…" disabled />
+        </div>
+        <button type="button" class="btn btn-primary eb-load-btn" id="loadTablesBtn">
+          <span class="ic ic-refresh" aria-hidden="true"></span>
+          <span data-role="label">Load Entities</span>
+        </button>
       </div>
-      <button type="button" class="btn btn-primary eb-load-btn" id="loadTablesBtn">
-        <span class="ic ic-refresh" aria-hidden="true"></span>
-        <span data-role="label">Load Entities</span>
-      </button>
-    </div>
 
-    <div class="eb-status status-message" id="statusMessage"></div>
+      <div class="eb-status status-message" id="statusMessage"></div>
 
-    <!-- Split workspace: entity list (left) + schema detail (right).
+      <!-- Split workspace: entity list (left) + schema detail (right).
          First-load copy lives inside the Entities pane body so the page reads as one
          workspace rather than splitting the user's attention across separate sections. -->
-    <div class="eb-split" id="tablesGrid">
-      <section class="eb-pane eb-pane--list" aria-label="Entity list">
-        <header class="eb-pane__head">
-          <div class="eb-pane__title">
-            <span class="ic ic-table" aria-hidden="true"></span>
-            <span class="eb-pane__title-text">Entities</span>
+      <div class="eb-split" id="tablesGrid">
+        <section class="eb-pane eb-pane--list" aria-label="Entity list">
+          <header class="eb-pane__head">
+            <div class="eb-pane__title">
+              <span class="ic ic-table" aria-hidden="true"></span>
+              <span class="eb-pane__title-text">Entities</span>
+            </div>
+            <span class="eb-pane__meta" id="tableCount" aria-live="polite">0</span>
+          </header>
+          <div class="eb-pane__body" id="tablesList">
+            <div class="eb-pane__empty" id="emptyState">
+              <span class="ic ic-table" style="--cip-icon-size: 24px" aria-hidden="true"></span>
+              <div><strong>No entities loaded yet</strong></div>
+              <div>Click <strong>Load Entities</strong> to fetch the entity list from your connected CIP tenant.</div>
+            </div>
           </div>
-          <span class="eb-pane__meta" id="tableCount" aria-live="polite">0</span>
-        </header>
-        <div class="eb-pane__body" id="tablesList">
-          <div class="eb-pane__empty" id="emptyState">
-            <span class="ic ic-table" style="--cip-icon-size: 24px;" aria-hidden="true"></span>
-            <div><strong>No entities loaded yet</strong></div>
-            <div>Click <strong>Load Entities</strong> to fetch the entity list from your connected CIP tenant.</div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="eb-pane eb-pane--detail" aria-label="Entity schema">
-        <header class="eb-pane__head">
-          <div class="eb-pane__title">
-            <span class="ic ic-columns" aria-hidden="true"></span>
-            <span class="eb-pane__title-text" id="detailTitle">Schema</span>
-          </div>
-          <span class="eb-pane__meta" id="detailMeta" hidden>0</span>
-        </header>
-        <div class="eb-pane__body is-empty" id="tableDetail">
-          Select an entity from the list to view its schema.
-        </div>
-      </section>
-    </div>
-  </main>
+        <section class="eb-pane eb-pane--detail" aria-label="Entity schema">
+          <header class="eb-pane__head">
+            <div class="eb-pane__title">
+              <span class="ic ic-columns" aria-hidden="true"></span>
+              <span class="eb-pane__title-text" id="detailTitle">Schema</span>
+            </div>
+            <span class="eb-pane__meta" id="detailMeta" hidden>0</span>
+          </header>
+          <div class="eb-pane__body is-empty" id="tableDetail">Select an entity from the list to view its schema.</div>
+        </section>
+      </div>
+    </main>
 
-  <script nonce="__NONCE__">
-    const vscode = acquireVsCodeApi();
-    let currentConnection = __CONNECTION_JSON__;
+    <script nonce="__NONCE__">
+      const vscode = acquireVsCodeApi();
+      let currentConnection = __CONNECTION_JSON__;
 
-    const connBar = document.getElementById('connBar');
-    const connPill = document.getElementById('connPill');
-    const connDetail = document.getElementById('connDetail');
-    const connTenantWrap = document.getElementById('connTenantWrap');
-    const connTenant = document.getElementById('connTenant');
-    const connHostWrap = document.getElementById('connHostWrap');
-    const connHost = document.getElementById('connHost');
-    const configureBtn = document.getElementById('configureBtn');
-    const loadTablesBtn = document.getElementById('loadTablesBtn');
-    const statusMessage = document.getElementById('statusMessage');
-    const searchBox = document.getElementById('searchBox');
-    const searchInput = document.getElementById('searchInput');
-    const tablesGrid = document.getElementById('tablesGrid');
-    const tablesList = document.getElementById('tablesList');
-    const tableDetail = document.getElementById('tableDetail');
-    const tableCountEl = document.getElementById('tableCount');
-    const detailTitle = document.getElementById('detailTitle');
-    const detailMeta = document.getElementById('detailMeta');
-    const loadBtnLabel = loadTablesBtn.querySelector('[data-role="label"]');
+      const connBar = document.getElementById('connBar');
+      const connPill = document.getElementById('connPill');
+      const connDetail = document.getElementById('connDetail');
+      const connTenantWrap = document.getElementById('connTenantWrap');
+      const connTenant = document.getElementById('connTenant');
+      const connHostWrap = document.getElementById('connHostWrap');
+      const connHost = document.getElementById('connHost');
+      const configureBtn = document.getElementById('configureBtn');
+      const loadTablesBtn = document.getElementById('loadTablesBtn');
+      const statusMessage = document.getElementById('statusMessage');
+      const searchBox = document.getElementById('searchBox');
+      const searchInput = document.getElementById('searchInput');
+      const tablesGrid = document.getElementById('tablesGrid');
+      const tablesList = document.getElementById('tablesList');
+      const tableDetail = document.getElementById('tableDetail');
+      const tableCountEl = document.getElementById('tableCount');
+      const detailTitle = document.getElementById('detailTitle');
+      const detailMeta = document.getElementById('detailMeta');
+      const loadBtnLabel = loadTablesBtn.querySelector('[data-role="label"]');
 
-    let allTables = [];
-    let selectedTable = null;
-    let hasLoadedOnce = false;
+      let allTables = [];
+      let selectedTable = null;
+      let hasLoadedOnce = false;
 
-    function renderConnection() {
-      const c = currentConnection || {};
-      const status = c.status || 'disconnected';
-      connBar.classList.remove('is-connected', 'is-disconnected', 'is-testing');
-      connBar.classList.add('is-' + status);
-      connPill.className = 'conn-pill ' + status;
-      if (status === 'connected') {
-        connPill.textContent = 'Connected';
-      } else if (status === 'testing') {
-        connPill.textContent = 'Connecting';
-      } else {
-        connPill.textContent = 'Disconnected';
-      }
-      if (c.tenantId) {
-        connTenant.textContent = c.tenantId;
-        connTenantWrap.hidden = false;
-      } else {
-        connTenantWrap.hidden = true;
-      }
-      if (c.host) {
-        connHost.textContent = c.host;
-        connHostWrap.hidden = false;
-      } else {
-        connHostWrap.hidden = true;
-      }
-      connDetail.textContent = c.message || '';
-    }
-    renderConnection();
-
-    configureBtn.addEventListener('click', () => {
-      vscode.postMessage({command: 'configureConnection'});
-    });
-
-    loadTablesBtn.addEventListener('click', () => {
-      if (!currentConnection || !currentConnection.tenantId) {
-        showStatus('error', 'Configure CIP connection first');
-        vscode.postMessage({command: 'configureConnection'});
-        return;
-      }
-      vscode.postMessage({command: 'loadTables'});
-    });
-
-    searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      filterTables(query);
-    });
-
-    function filterTables(query) {
-      const filtered = query ? allTables.filter(t => t.toLowerCase().includes(query)) : allTables;
-      renderTablesList(filtered);
-    }
-
-    function showStatus(type, message) {
-      statusMessage.className = 'status-message ' + type;
-      statusMessage.textContent = message;
-    }
-
-    function showStatusHtml(type, html) {
-      statusMessage.className = 'status-message ' + type;
-      statusMessage.innerHTML = html;
-    }
-
-    function renderTablesList(tables) {
-      tablesList.replaceChildren();
-      // Count reflects the filtered view vs. the total loaded set.
-      if (allTables.length > 0) {
-        tableCountEl.textContent = tables.length === allTables.length
-          ? String(allTables.length)
-          : tables.length + '/' + allTables.length;
-      } else {
-        tableCountEl.textContent = '0';
-      }
-
-      if (tables.length === 0) {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'eb-pane__placeholder';
-        placeholder.textContent = allTables.length === 0 ? 'No entities loaded' : 'No entities match your filter';
-        tablesList.appendChild(placeholder);
-        return;
-      }
-
-      const frag = document.createDocumentFragment();
-      tables.forEach(tableName => {
-        const item = document.createElement('div');
-        item.className = 'table-item';
-        if (selectedTable === tableName) {
-          item.classList.add('selected');
-        }
-        item.textContent = tableName;
-        item.title = tableName;
-        item.addEventListener('click', () => selectTable(tableName));
-        frag.appendChild(item);
-      });
-      tablesList.appendChild(frag);
-    }
-
-    function selectTable(tableName) {
-      selectedTable = tableName;
-
-      document.querySelectorAll('.table-item').forEach(item => {
-        if (item.textContent === tableName) {
-          item.classList.add('selected');
+      function renderConnection() {
+        const c = currentConnection || {};
+        const status = c.status || 'disconnected';
+        connBar.classList.remove('is-connected', 'is-disconnected', 'is-testing');
+        connBar.classList.add('is-' + status);
+        connPill.className = 'conn-pill ' + status;
+        if (status === 'connected') {
+          connPill.textContent = 'Connected';
+        } else if (status === 'testing') {
+          connPill.textContent = 'Connecting';
         } else {
-          item.classList.remove('selected');
+          connPill.textContent = 'Disconnected';
         }
-      });
-
-      vscode.postMessage({
-        command: 'describeTable',
-        params: {tableName: tableName},
-      });
-    }
-
-    window.addEventListener('message', event => {
-      const message = event.data;
-
-      switch (message.command) {
-        case 'connectionState':
-          currentConnection = message.connection || currentConnection;
-          renderConnection();
-          break;
-
-        case 'tablesLoading':
-          showStatusHtml('loading', '<span class="spinner"></span> Loading entities…');
-          loadTablesBtn.disabled = true;
-          break;
-
-        case 'tablesLoaded':
-          allTables = message.tables || [];
-          hasLoadedOnce = true;
-          showStatus('success', 'Loaded ' + message.tableCount + ' entities.');
-          loadTablesBtn.disabled = false;
-          loadBtnLabel.textContent = 'Refresh';
-          searchInput.disabled = false;
-          renderTablesList(allTables);
-          break;
-
-        case 'tablesLoadError':
-          showStatus('error', message.error);
-          loadTablesBtn.disabled = false;
-          break;
-
-        case 'tableDescribing': {
-          detailTitle.textContent = message.tableName || 'Schema';
-          detailMeta.hidden = true;
-          tableDetail.classList.remove('is-empty');
-          tableDetail.replaceChildren();
-          const loading = document.createElement('div');
-          loading.className = 'eb-pane__placeholder';
-          loading.innerHTML = '<span class="spinner"></span> Loading schema…';
-          tableDetail.appendChild(loading);
-          break;
+        if (c.tenantId) {
+          connTenant.textContent = c.tenantId;
+          connTenantWrap.hidden = false;
+        } else {
+          connTenantWrap.hidden = true;
         }
-
-        case 'tableDescribed':
-          renderTableSchema(message.tableName, message.schema);
-          break;
-
-        case 'tableDescribeError': {
-          detailTitle.textContent = message.tableName || 'Schema';
-          detailMeta.hidden = true;
-          tableDetail.classList.remove('is-empty');
-          tableDetail.replaceChildren();
-          const err = document.createElement('div');
-          err.className = 'eb-error';
-          err.textContent = 'Failed to load schema: ' + message.error;
-          tableDetail.appendChild(err);
-          break;
+        if (c.host) {
+          connHost.textContent = c.host;
+          connHostWrap.hidden = false;
+        } else {
+          connHostWrap.hidden = true;
         }
+        connDetail.textContent = c.message || '';
       }
-    });
+      renderConnection();
 
-    function renderTableSchema(tableName, schema) {
-      const columns = Array.isArray(schema?.columns) ? schema.columns : [];
-      detailTitle.textContent = tableName;
-      detailMeta.hidden = false;
-      detailMeta.textContent = String(columns.length);
+      configureBtn.addEventListener('click', () => {
+        vscode.postMessage({command: 'configureConnection'});
+      });
 
-      tableDetail.classList.remove('is-empty');
-      tableDetail.replaceChildren();
+      loadTablesBtn.addEventListener('click', () => {
+        if (!currentConnection || !currentConnection.tenantId) {
+          showStatus('error', 'Configure CIP connection first');
+          vscode.postMessage({command: 'configureConnection'});
+          return;
+        }
+        vscode.postMessage({command: 'loadTables'});
+      });
 
-      // A tiny meta strip gives context (qualified name, column count) without pushing the
-      // schema table down with an h2.
-      const meta = document.createElement('div');
-      meta.className = 'eb-schema__meta';
-      meta.innerHTML = '<strong></strong> · ';
-      meta.querySelector('strong').textContent = tableName;
-      meta.append(columns.length + ' column' + (columns.length === 1 ? '' : 's'));
-      tableDetail.appendChild(meta);
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        filterTables(query);
+      });
 
-      if (columns.length === 0) {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'eb-pane__placeholder';
-        placeholder.textContent = 'No columns returned for this entity.';
-        tableDetail.appendChild(placeholder);
-        return;
+      function filterTables(query) {
+        const filtered = query ? allTables.filter((t) => t.toLowerCase().includes(query)) : allTables;
+        renderTablesList(filtered);
       }
 
-      const table = document.createElement('table');
-      table.className = 'eb-schema';
+      function showStatus(type, message) {
+        statusMessage.className = 'status-message ' + type;
+        statusMessage.textContent = message;
+      }
 
-      const colgroup = document.createElement('colgroup');
-      ['col-name', 'col-type', 'col-nullable'].forEach(cls => {
-        const cEl = document.createElement('col');
-        cEl.className = cls;
-        colgroup.appendChild(cEl);
+      function showStatusHtml(type, html) {
+        statusMessage.className = 'status-message ' + type;
+        statusMessage.innerHTML = html;
+      }
+
+      function renderTablesList(tables) {
+        tablesList.replaceChildren();
+        // Count reflects the filtered view vs. the total loaded set.
+        if (allTables.length > 0) {
+          tableCountEl.textContent =
+            tables.length === allTables.length ? String(allTables.length) : tables.length + '/' + allTables.length;
+        } else {
+          tableCountEl.textContent = '0';
+        }
+
+        if (tables.length === 0) {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'eb-pane__placeholder';
+          placeholder.textContent = allTables.length === 0 ? 'No entities loaded' : 'No entities match your filter';
+          tablesList.appendChild(placeholder);
+          return;
+        }
+
+        const frag = document.createDocumentFragment();
+        tables.forEach((tableName) => {
+          const item = document.createElement('div');
+          item.className = 'table-item';
+          if (selectedTable === tableName) {
+            item.classList.add('selected');
+          }
+          item.textContent = tableName;
+          item.title = tableName;
+          item.addEventListener('click', () => selectTable(tableName));
+          frag.appendChild(item);
+        });
+        tablesList.appendChild(frag);
+      }
+
+      function selectTable(tableName) {
+        selectedTable = tableName;
+
+        document.querySelectorAll('.table-item').forEach((item) => {
+          if (item.textContent === tableName) {
+            item.classList.add('selected');
+          } else {
+            item.classList.remove('selected');
+          }
+        });
+
+        vscode.postMessage({
+          command: 'describeTable',
+          params: {tableName: tableName},
+        });
+      }
+
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+
+        switch (message.command) {
+          case 'connectionState':
+            currentConnection = message.connection || currentConnection;
+            renderConnection();
+            break;
+
+          case 'tablesLoading':
+            showStatusHtml('loading', '<span class="spinner"></span> Loading entities…');
+            loadTablesBtn.disabled = true;
+            break;
+
+          case 'tablesLoaded':
+            allTables = message.tables || [];
+            hasLoadedOnce = true;
+            showStatus('success', 'Loaded ' + message.tableCount + ' entities.');
+            loadTablesBtn.disabled = false;
+            loadBtnLabel.textContent = 'Refresh';
+            searchInput.disabled = false;
+            renderTablesList(allTables);
+            break;
+
+          case 'tablesLoadError':
+            showStatus('error', message.error);
+            loadTablesBtn.disabled = false;
+            break;
+
+          case 'tableDescribing': {
+            detailTitle.textContent = message.tableName || 'Schema';
+            detailMeta.hidden = true;
+            tableDetail.classList.remove('is-empty');
+            tableDetail.replaceChildren();
+            const loading = document.createElement('div');
+            loading.className = 'eb-pane__placeholder';
+            loading.innerHTML = '<span class="spinner"></span> Loading schema…';
+            tableDetail.appendChild(loading);
+            break;
+          }
+
+          case 'tableDescribed':
+            renderTableSchema(message.tableName, message.schema);
+            break;
+
+          case 'tableDescribeError': {
+            detailTitle.textContent = message.tableName || 'Schema';
+            detailMeta.hidden = true;
+            tableDetail.classList.remove('is-empty');
+            tableDetail.replaceChildren();
+            const err = document.createElement('div');
+            err.className = 'eb-error';
+            err.textContent = 'Failed to load schema: ' + message.error;
+            tableDetail.appendChild(err);
+            break;
+          }
+        }
       });
-      table.appendChild(colgroup);
 
-      const thead = document.createElement('thead');
-      const headRow = document.createElement('tr');
-      ['Column', 'Type', 'Nullable'].forEach(h => {
-        const th = document.createElement('th');
-        th.textContent = h;
-        headRow.appendChild(th);
-      });
-      thead.appendChild(headRow);
-      table.appendChild(thead);
+      function renderTableSchema(tableName, schema) {
+        const columns = Array.isArray(schema?.columns) ? schema.columns : [];
+        detailTitle.textContent = tableName;
+        detailMeta.hidden = false;
+        detailMeta.textContent = String(columns.length);
 
-      const tbody = document.createElement('tbody');
-      columns.forEach(col => {
-        const tr = document.createElement('tr');
+        tableDetail.classList.remove('is-empty');
+        tableDetail.replaceChildren();
 
-        const nameTd = document.createElement('td');
-        nameTd.className = 'col-name';
-        nameTd.textContent = col.name;
-        nameTd.title = col.name;
-        tr.appendChild(nameTd);
+        // A tiny meta strip gives context (qualified name, column count) without pushing the
+        // schema table down with an h2.
+        const meta = document.createElement('div');
+        meta.className = 'eb-schema__meta';
+        meta.innerHTML = '<strong></strong> · ';
+        meta.querySelector('strong').textContent = tableName;
+        meta.append(columns.length + ' column' + (columns.length === 1 ? '' : 's'));
+        tableDetail.appendChild(meta);
 
-        const typeTd = document.createElement('td');
-        typeTd.className = 'col-type';
-        const typeBadge = document.createElement('span');
-        typeBadge.className = 'type-badge';
-        typeBadge.textContent = col.type;
-        typeBadge.title = col.type;
-        typeTd.appendChild(typeBadge);
-        tr.appendChild(typeTd);
+        if (columns.length === 0) {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'eb-pane__placeholder';
+          placeholder.textContent = 'No columns returned for this entity.';
+          tableDetail.appendChild(placeholder);
+          return;
+        }
 
-        const nullTd = document.createElement('td');
-        nullTd.className = 'col-nullable';
-        nullTd.textContent = col.nullable ? 'Yes' : 'No';
-        tr.appendChild(nullTd);
+        const table = document.createElement('table');
+        table.className = 'eb-schema';
 
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      tableDetail.appendChild(table);
-    }
-  </script>
-</body>
+        const colgroup = document.createElement('colgroup');
+        ['col-name', 'col-type', 'col-nullable'].forEach((cls) => {
+          const cEl = document.createElement('col');
+          cEl.className = cls;
+          colgroup.appendChild(cEl);
+        });
+        table.appendChild(colgroup);
+
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        ['Column', 'Type', 'Nullable'].forEach((h) => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        columns.forEach((col) => {
+          const tr = document.createElement('tr');
+
+          const nameTd = document.createElement('td');
+          nameTd.className = 'col-name';
+          nameTd.textContent = col.name;
+          nameTd.title = col.name;
+          tr.appendChild(nameTd);
+
+          const typeTd = document.createElement('td');
+          typeTd.className = 'col-type';
+          const typeBadge = document.createElement('span');
+          typeBadge.className = 'type-badge';
+          typeBadge.textContent = col.type;
+          typeBadge.title = col.type;
+          typeTd.appendChild(typeBadge);
+          tr.appendChild(typeTd);
+
+          const nullTd = document.createElement('td');
+          nullTd.className = 'col-nullable';
+          nullTd.textContent = col.nullable ? 'Yes' : 'No';
+          tr.appendChild(nullTd);
+
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        tableDetail.appendChild(table);
+      }
+    </script>
+  </body>
 </html>

@@ -1,12 +1,9 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {
-  createCipClient,
-  DEFAULT_CIP_HOST,
-  DEFAULT_CIP_STAGING_HOST,
-} from '@salesforce/b2c-tooling-sdk/clients';
+import {createCipClient, DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from '@salesforce/b2c-tooling-sdk/clients';
 import {listCipTables} from '@salesforce/b2c-tooling-sdk/operations/cip';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
