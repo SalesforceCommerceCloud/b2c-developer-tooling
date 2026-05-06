@@ -160,6 +160,13 @@ body {
   gap: 10px;
 }
 
+/* Match the connection bar's 40px height so the two chips stand shoulder-to-shoulder
+ * without the button looking stubby next to the taller info bar. */
+.page-header__meta .btn {
+  height: 40px;
+  padding: 0 16px;
+}
+
 /* === CONNECTION INFO BAR ===
  * A compact, horizontally-packed summary: STATUS · Tenant · Host.
  * Each item uses a small uppercase label + value so the info is scannable without any icon noise.
@@ -176,7 +183,7 @@ body {
   border-left-width: 3px;
   border-radius: var(--cip-radius-sm);
   overflow: hidden;
-  height: 34px;
+  height: 40px;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -235,11 +242,15 @@ body {
   color: var(--cip-accent);
 }
 
+/* Each meta cell gets generous horizontal padding so long host values don't visually
+ * collide with the tenant ID next to them. Vertical rhythm: label sits above value
+ * with a 3px gap so the two lines read as a labeled pair, not a mashed-together run. */
 .conn-bar__item {
   display: inline-flex;
   flex-direction: column;
   justify-content: center;
-  padding: 3px 12px;
+  gap: 3px;
+  padding: 4px 14px;
   min-width: 0;
   border-right: 1px solid var(--vscode-panel-border);
 }
@@ -260,7 +271,7 @@ body {
   font-weight: 600;
   font-family: var(--vscode-editor-font-family);
   color: var(--vscode-foreground);
-  line-height: 1.3;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -335,12 +346,15 @@ body {
   overflow: hidden;
 }
 
+/* Soft widget-surface wash so section headings ("Fetch Size", "Report Parameters")
+ * read as bounded caps on their cards instead of blending into the body. Matches
+ * the toolbar + preview panel surface so all chrome shares one muted background. */
 .card-header {
   display: flex;
   align-items: baseline;
   gap: 12px;
   padding: 10px 14px;
-  background: transparent;
+  background: var(--vscode-editorWidget-background);
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 
@@ -391,6 +405,13 @@ body {
 }
 
 .field.full { grid-column: 1 / -1; }
+
+/* Date fields (from/to ranges in Curated Reports) break onto a new grid row so
+ * scalar inputs and date ranges don't mingle. A date always starts at column 1
+ * (forcing a row break if it was about to auto-flow into column 2), then the
+ * very next adjacent date slides into column 2 to pair with it. */
+.field--date { grid-column-start: 1; }
+.field--date + .field--date { grid-column-start: 2; }
 
 .label {
   font-size: 12px;
@@ -541,9 +562,9 @@ body {
 .btn-ghost .ic { --cip-icon-size: 12px; opacity: 0.85; }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--cip-accent-soft);
-  border-color: var(--cip-accent);
-  color: var(--cip-accent);
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-panel-border);
+  color: var(--vscode-foreground);
 }
 .btn-ghost:hover:not(:disabled) .ic { opacity: 1; }
 
@@ -1055,7 +1076,7 @@ html.cip-query-builder, body.cip-query-builder {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.1px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--cip-accent);
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -2272,6 +2293,17 @@ html.cip-query-builder, body.cip-query-builder {
 }
 
 .clause:hover {
+  border-color: var(--vscode-panel-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Suppress the system's blue focus ring when a clause card gets keyboard focus —
+ * we use the existing border/box-shadow to convey focus state, not the default
+ * browser outline which resolves to VS Code's accent blue. */
+.clause:focus,
+.clause:focus-within,
+.clause:focus-visible {
+  outline: none;
   border-color: var(--vscode-panel-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }

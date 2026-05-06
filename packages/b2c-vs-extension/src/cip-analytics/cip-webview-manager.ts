@@ -780,7 +780,12 @@ export class CipWebviewManager {
         const required = param.required ? 'required' : '';
 
         let inputHtml = '';
+        // Dates get a `.field--date` modifier so CSS can break them onto their own
+        // grid row — keeps from/to ranges visually paired instead of wrapping the
+        // second date to a lonely third row.
+        let fieldModifier = '';
         if (param.type === 'date') {
+          fieldModifier = ' field--date';
           inputHtml = `<input type="date" id="${nameAttr}" name="${nameAttr}" ${required} class="input" />`;
         } else if (param.type === 'boolean') {
           inputHtml = `
@@ -799,7 +804,7 @@ export class CipWebviewManager {
         }
 
         return `
-          <div class="field">
+          <div class="field${fieldModifier}">
             <label class="label" for="${nameAttr}">
               ${nameText}${param.required ? ' <span class="required">*</span>' : ''}
             </label>

@@ -69,6 +69,32 @@ export class CipSectionTreeItem extends vscode.TreeItem {
 }
 
 /**
+ * Maps each report category to a distinct codicon so the curated-reports tree is scannable
+ * by category at a glance. Falls back to `folder` for any unmapped category.
+ */
+const CATEGORY_CODICON: Record<string, string> = {
+  'Sales Analytics': 'graph-line',
+  'Product Analytics': 'package',
+  'Customer Analytics': 'account',
+  'Search Analytics': 'search',
+  'Promotion Analytics': 'tag',
+  'Payment Analytics': 'credit-card',
+  'Traffic Analytics': 'globe',
+  'Technical Analytics': 'gear',
+};
+
+/**
+ * Humanize a report slug (e.g., `customer-registration-trends` → `Customer Registration Trends`).
+ */
+function humanizeSlug(slug: string): string {
+  return slug
+    .split(/[-_]/)
+    .filter((part) => part.length > 0)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+/**
  * Tree item representing a report category (e.g., "Sales Analytics").
  * Collapsible parent node that groups related reports.
  */
@@ -81,7 +107,7 @@ export class CipCategoryTreeItem extends vscode.TreeItem {
   ) {
     super(category, vscode.TreeItemCollapsibleState.Collapsed);
     this.contextValue = 'cipCategory';
-    this.iconPath = new vscode.ThemeIcon('folder');
+    this.iconPath = new vscode.ThemeIcon(CATEGORY_CODICON[category] ?? 'folder');
     this.description = `${reportCount} report${reportCount !== 1 ? 's' : ''}`;
     this.tooltip = `${category} (${reportCount} reports)`;
   }
@@ -95,11 +121,11 @@ export class CipReportTreeItem extends vscode.TreeItem {
   readonly nodeType = 'report' as const;
 
   constructor(readonly report: CipReportEntry) {
-    super(report.name, vscode.TreeItemCollapsibleState.None);
+    super(humanizeSlug(report.name), vscode.TreeItemCollapsibleState.None);
     this.contextValue = 'cipReport';
     this.iconPath = new vscode.ThemeIcon('graph');
-    this.description = this.getCategoryEmoji(report.category);
-    this.tooltip = report.description;
+    this.description = report.description;
+    this.tooltip = `${humanizeSlug(report.name)} — ${report.description}`;
 
     // Command executed when user double-clicks the report
     this.command = {
@@ -107,20 +133,6 @@ export class CipReportTreeItem extends vscode.TreeItem {
       title: 'Open Report',
       arguments: [report],
     };
-  }
-
-  private getCategoryEmoji(category: string): string {
-    const icons: Record<string, string> = {
-      'Sales Analytics': '💰',
-      'Product Analytics': '🛒',
-      'Customer Analytics': '👥',
-      'Search Analytics': '🔍',
-      'Promotion Analytics': '🎁',
-      'Payment Analytics': '💳',
-      'Traffic Analytics': '🚦',
-      'Technical Analytics': '⚙️',
-    };
-    return icons[category] ?? '📊';
   }
 }
 
