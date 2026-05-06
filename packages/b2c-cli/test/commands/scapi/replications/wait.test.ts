@@ -30,7 +30,7 @@ describe('scapi replications wait', () => {
 
     it('waits for process to complete', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-123'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-123'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -74,7 +74,7 @@ describe('scapi replications wait', () => {
 
     it('returns failed status', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-456'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-456'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -102,7 +102,7 @@ describe('scapi replications wait', () => {
 
     it('logs status updates in non-JSON mode', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-789'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-789'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -164,7 +164,7 @@ describe('scapi replications wait', () => {
 
     it('handles API errors during polling', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-error'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-error'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
