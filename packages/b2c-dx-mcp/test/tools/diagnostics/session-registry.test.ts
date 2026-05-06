@@ -202,6 +202,39 @@ describe('DebugSessionRegistry', () => {
     it('should be a no-op for unknown session ID', async () => {
       await registry.destroySession('nonexistent'); // Should not throw
     });
+
+    it('should swallow disconnect errors (best-effort cleanup)', async () => {
+      const manager = createMockManager({disconnect: sinon.stub().rejects(new Error('boom'))});
+      const entry = registry.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+
+      await registry.destroySession(entry.sessionId); // Should not throw
+      expect(registry.getSession(entry.sessionId)).to.be.undefined;
+    });
+  });
+
+  describe('cleanupIdleSessions', () => {
+    it('should destroy sessions idle past TTL', async () => {
+      const manager = createMockManager();
+      const entry = registry.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+
+      // Fake an ancient lastActivityAt
+      entry.lastActivityAt = Date.now() - 31 * 60 * 1000;
+
+      // Invoke the private method via any-cast for coverage
+      await (registry as unknown as {cleanupIdleSessions: () => Promise<void>}).cleanupIdleSessions();
+
+      expect(registry.getSession(entry.sessionId)).to.be.undefined;
+      expect((manager.disconnect as sinon.SinonStub).calledOnce).to.be.true;
+    });
+
+    it('should leave active sessions alone', async () => {
+      const manager = createMockManager();
+      const entry = registry.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+
+      await (registry as unknown as {cleanupIdleSessions: () => Promise<void>}).cleanupIdleSessions();
+
+      expect(registry.getSession(entry.sessionId)).to.equal(entry);
+    });
   });
 
   describe('destroyAll', () => {
