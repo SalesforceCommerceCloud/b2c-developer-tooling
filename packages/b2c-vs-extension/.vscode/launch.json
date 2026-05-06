@@ -10,7 +10,8 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"/Users/ctadakanti/b2c-test-workspace"
 			],
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"
@@ -22,7 +23,8 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"/Users/ctadakanti/b2c-test-workspace"
 			],
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"

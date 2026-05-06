@@ -93,6 +93,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable Code Sync (watch and deploy cartridges)."
+        },
+        "b2c-dx.features.cipAnalytics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports."
         }
       }
     },
@@ -118,6 +123,11 @@
           "id": "b2c-dx-sandboxes",
           "title": "B2C-DX Sandboxes",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "b2c-dx-analytics",
+          "title": "B2C-DX Analytics",
+          "icon": "$(graph)"
         }
       ]
     },
@@ -140,6 +150,14 @@
           "name": "Cartridges",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        }
+      ],
+      "b2c-dx-analytics": [
+        {
+          "id": "b2cCipAnalytics",
+          "name": "CIP Analytics",
+          "icon": "$(graph)",
+          "contextualTitle": "B2C-DX Analytics"
         }
       ],
       "b2c-dx-scapi": [
@@ -178,6 +196,10 @@
       {
         "view": "b2cCartridgeExplorer",
         "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+      },
+      {
+        "view": "b2cCipAnalytics",
+        "contents": "Explore Commerce Intelligence Platform (CIP) data — build SQL queries visually, browse tables, and run curated reports.\n\n[Open Query Builder](command:b2c-dx.cipAnalytics.queryBuilder)\n[Browse Tables](command:b2c-dx.cipAnalytics.browseTables)\n\nRequires OAuth credentials (clientId, clientSecret) in dw.json.\n\n[Refresh](command:b2c-dx.cipAnalytics.refresh)"
       }
     ],
     "debuggers": [
@@ -243,6 +265,41 @@
         "command": "b2c-dx.apiBrowser.openSwagger",
         "title": "Open API Documentation",
         "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.openReport",
+        "title": "Open Report",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.browseTables",
+        "title": "Browse Tables",
+        "icon": "$(table)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.queryBuilder",
+        "title": "Open Query Builder",
+        "icon": "$(zap)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.configureConnection",
+        "title": "Configure Connection…",
+        "icon": "$(gear)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.testConnection",
+        "title": "Test Connection",
+        "icon": "$(debug-disconnect)",
+        "category": "B2C-DX Analytics"
       },
       {
         "command": "b2c-dx.sandbox.refresh",
@@ -617,6 +674,26 @@
           "command": "b2c-dx.codeSync.refreshCartridges",
           "when": "view == b2cCartridgeExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.browseTables",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@4"
         },
         {
           "command": "b2c-dx.codeSync.deploy",

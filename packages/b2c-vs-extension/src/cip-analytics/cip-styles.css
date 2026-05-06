@@ -1,0 +1,3180 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Shared styles for the B2C-DX Analytics (CIP) webview panels.
+ * Uses VS Code theme tokens so the UI adapts to the user's theme.
+ */
+
+:root {
+  --cip-accent: var(--vscode-textLink-foreground, var(--vscode-button-background, #0e639c));
+  --cip-accent-hover: var(--vscode-textLink-activeForeground, var(--vscode-button-hoverBackground, #1177bb));
+  --cip-accent-contrast: var(--vscode-button-foreground, #ffffff);
+  --cip-accent-soft: var(--vscode-editor-inactiveSelectionBackground, rgba(14, 99, 156, 0.12));
+  --cip-accent-softer: var(--vscode-list-hoverBackground, rgba(14, 99, 156, 0.06));
+  --cip-success: var(--vscode-testing-iconPassed, var(--vscode-gitDecoration-addedResourceForeground, #2ea043));
+  --cip-success-soft: var(--vscode-diffEditor-insertedTextBackground, rgba(46, 160, 67, 0.12));
+  --cip-error: var(--vscode-errorForeground, var(--vscode-inputValidation-errorBorder, #f14c4c));
+  --cip-error-soft: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.12));
+  --cip-warning: var(--vscode-editorWarning-foreground, #cca700);
+  --cip-warning-soft: var(--vscode-inputValidation-warningBackground, rgba(204, 167, 0, 0.12));
+  --cip-card-radius: 6px;
+  --cip-radius-sm: 4px;
+  --cip-radius-md: 6px;
+  --cip-radius-lg: 8px;
+  --cip-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --cip-transition: all 0.12s ease;
+  --cip-sidebar-width: 320px;
+
+  /* Shared dark-grey background for low-emphasis action controls (Load Entities, Run Query,
+   * AND/OR, Builder/SQL switch, count badges). One token means every surface shifts together
+   * when the palette evolves. */
+  --cip-neutral: #3c4149;
+  --cip-neutral-hover: #2b2f36;
+  --cip-neutral-fg: #ffffff;
+}
+
+/* Dark themes push the neutral a little lighter so it stays visible against near-black
+ * editor backgrounds without turning into a solid black slab. */
+.vscode-dark,
+.vscode-high-contrast {
+  --cip-neutral: #5a616b;
+  --cip-neutral-hover: #6f7782;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: 13px;
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === ICON SYSTEM ===
+ * Use inline SVGs via mask-image so each icon inherits `currentColor`. The mask approach keeps
+ * icons crisp at any size and avoids bundling an icon font. `--cip-icon-size` lets consumers
+ * override the size when needed (`style="--cip-icon-size: 16px"`).
+ */
+.ic {
+  display: inline-block;
+  width: var(--cip-icon-size, 14px);
+  height: var(--cip-icon-size, 14px);
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  flex-shrink: 0;
+  vertical-align: -2px;
+}
+.ic-play {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M4 2.5v11L13 8 4 2.5z'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M4 2.5v11L13 8 4 2.5z'/></svg>");
+}
+.ic-plus {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M8 2v12M2 8h12' stroke='currentColor' stroke-width='1.5'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='currentColor' d='M8 2v12M2 8h12' stroke='currentColor' stroke-width='1.5'/></svg>");
+}
+.ic-close {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+}
+.ic-check {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.5 3.5L13 5' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.5 3.5L13 5' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+}
+.ic-search {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+}
+.ic-table {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M2 7h12M8 3v10' stroke='currentColor' stroke-width='1.3'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M2 7h12M8 3v10' stroke='currentColor' stroke-width='1.3'/></svg>");
+}
+.ic-columns {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M6 3v10M10 3v10' stroke='currentColor' stroke-width='1.3'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='3' width='12' height='10' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M6 3v10M10 3v10' stroke='currentColor' stroke-width='1.3'/></svg>");
+}
+.ic-filter {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 3h12l-4.5 5v5l-3-1.5v-3.5L2 3z' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 3h12l-4.5 5v5l-3-1.5v-3.5L2 3z' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-sort {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 3v10M3 5l2-2 2 2M11 13V3M9 11l2 2 2-2' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 3v10M3 5l2-2 2 2M11 13V3M9 11l2 2 2-2' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-hash {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 2l-1 12M11 2l-1 12M2 6h12M2 10h12' stroke='currentColor' stroke-width='1.3' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5 2l-1 12M11 2l-1 12M2 6h12M2 10h12' stroke='currentColor' stroke-width='1.3' fill='none'/></svg>");
+}
+.ic-refresh {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-download {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2v8M4 7l4 4 4-4M2 13h12' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2v8M4 7l4 4 4-4M2 13h12' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-code {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5.5 4L2 8l3.5 4M10.5 4L14 8l-3.5 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M5.5 4L2 8l3.5 4M10.5 4L14 8l-3.5 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-inbox {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 9l1.5-5.5h9L14 9v4H2V9z M2 9h4l1 2h2l1-2h4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 9l1.5-5.5h9L14 9v4H2V9z M2 9h4l1 2h2l1-2h4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-arrow-up {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 13V3M4 7l4-4 4 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 13V3M4 7l4-4 4 4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-arrow-down {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 3v10M4 9l4 4 4-4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 3v10M4 9l4 4 4-4' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-alert {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2L1.5 13h13L8 2zM8 6v4M8 12v.01' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 2L1.5 13h13L8 2zM8 6v4M8 12v.01' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+
+/* === PAGE / APP SHELL === */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 20px 32px;
+}
+
+/* Header inside .page: card-like container with rounded corners, proper padding,
+ * and a bottom margin so it reads as a distinct section above the form cards. */
+.page > .page-header {
+  border-radius: var(--cip-card-radius);
+  border: 1px solid var(--vscode-panel-border) !important;
+  border-bottom: 1px solid var(--vscode-panel-border) !important;
+  background: var(--vscode-editor-background) !important;
+  margin-bottom: 12px;
+  padding: 16px 14px;
+}
+
+/* === PAGE HEADER ===
+ * Compact app-shell header. Small pill eyebrow + title inline, subtitle on a new row,
+ * right-aligned connection metadata + action button. Hairline bottom border. */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 10px 20px;
+  margin: 0 0 12px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+/* Stack eyebrow / title / subtitle on their own rows so the header reads top-to-bottom.
+ * Previously eyebrow + title shared a grid row which let "B2C-DX ANALYTICS" inline next
+ * to the title text — visually inconsistent with the Entity Browser layout. */
+.page-header__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* Eyebrow — sits on its own line above the title. */
+.page-header__eyebrow {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.2;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+.page-header__title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--vscode-foreground);
+  letter-spacing: -0.1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.page-header__subtitle {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+.page-header__meta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Match the connection bar's 40px height so the two chips stand shoulder-to-shoulder
+ * without the button looking stubby next to the taller info bar. */
+.page-header__meta .btn {
+  height: 40px;
+  padding: 0 16px;
+}
+
+/* === CONNECTION INFO BAR ===
+ * A compact, horizontally-packed summary: STATUS · Tenant · Host.
+ * Each item uses a small uppercase label + value so the info is scannable without any icon noise.
+ */
+/* State-scoped surface tints. Using soft transparent fills so the bar reads as a single shape
+ * whose color telegraphs status at a glance. Strong cues sit on the status cell (left) only;
+ * tenant/host cells keep neutral foreground so values stay legible against the wash. */
+.conn-bar {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-left-width: 3px;
+  border-radius: var(--cip-radius-sm);
+  overflow: hidden;
+  height: 40px;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+/* Connected — distinct green wash with an emphasized left accent. */
+.conn-bar.is-connected {
+  background: rgba(22, 133, 68, 0.1);
+  border-color: var(--vscode-panel-border);
+  border-left-color: #1b5e20;
+}
+
+/* Disconnected — subtle red wash so the user notices the problem without it shouting. */
+.conn-bar.is-disconnected {
+  background: rgba(198, 40, 40, 0.08);
+  border-left-color: #c62828;
+}
+
+.conn-bar.is-testing {
+  background: var(--cip-accent-soft);
+  border-left-color: var(--cip-accent);
+}
+
+/* Status cell sits flush-left, carries the colored pill. In the connected state we add a small
+ * solid-green emblem so the user's eye lands on it first. */
+.conn-bar__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border-right: 1px solid var(--vscode-panel-border);
+  background: transparent;
+}
+
+.conn-bar.is-connected .conn-bar__status {
+  background: rgba(22, 133, 68, 0.12);
+  color: #1b5e20;
+}
+.vscode-dark .conn-bar.is-connected .conn-bar__status,
+.vscode-high-contrast .conn-bar.is-connected .conn-bar__status {
+  background: rgba(0, 200, 83, 0.15);
+  color: #00c853;
+}
+
+.conn-bar.is-disconnected .conn-bar__status {
+  background: rgba(198, 40, 40, 0.1);
+  color: #c62828;
+}
+.vscode-dark .conn-bar.is-disconnected .conn-bar__status,
+.vscode-high-contrast .conn-bar.is-disconnected .conn-bar__status {
+  color: #ff5252;
+}
+
+.conn-bar.is-testing .conn-bar__status {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+}
+
+/* Each meta cell gets generous horizontal padding so long host values don't visually
+ * collide with the tenant ID next to them. Vertical rhythm: label sits above value
+ * with a 3px gap so the two lines read as a labeled pair, not a mashed-together run. */
+.conn-bar__item {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 14px;
+  min-width: 0;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
+.conn-bar__item:last-child {
+  border-right: none;
+}
+
+.conn-bar__label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1;
+}
+
+.conn-bar__value {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-foreground);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+/* Pill embedded in the status cell — remove its own dot, keep just the text. */
+.conn-bar__status .conn-pill {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+.conn-bar__status .conn-pill::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-right: 6px;
+}
+.conn-bar.is-testing .conn-bar__status .conn-pill::before {
+  /* Override the SVG refresh mask set at the base `.conn-pill.testing::before` rule so the
+   * dot stays clean in the tinted bar. The spin animation still applies. */
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/* Legacy hero selectors — kept as a no-op bridge so any stale markup compiles cleanly. */
+.hero {
+  padding: 10px 14px;
+  border-left: 2px solid var(--cip-accent);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  margin: 0 0 16px;
+}
+
+.hero-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+/* Legacy icon class kept for back-compat; rendered invisible. */
+.hero-icon {
+  display: none;
+}
+
+.hero-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-category {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--vscode-descriptionForeground);
+  margin: 0 0 2px;
+}
+
+.hero-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--vscode-foreground);
+  line-height: 1.3;
+}
+
+.hero-description,
+.hero-subtitle {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+/* === CARDS — lightweight containers with a simple header === */
+.card {
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--cip-card-radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+/* Soft widget-surface wash so section headings ("Fetch Size", "Report Parameters")
+ * read as bounded caps on their cards instead of blending into the body. Matches
+ * the toolbar + preview panel surface so all chrome shares one muted background. */
+.card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+/* Legacy colored icon tile — removed. Kept hidden so older markup still compiles. */
+.card-icon {
+  display: none;
+}
+
+.card-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  line-height: 1.3;
+  letter-spacing: 0.2px;
+}
+
+.card-subtitle {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 1px;
+}
+
+.card-body {
+  padding: 12px 14px;
+}
+
+/* === LAYOUT GRIDS === */
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 700px) {
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === FORM === */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field.inline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+/* Date fields (from/to ranges in Curated Reports) break onto a new grid row so
+ * scalar inputs and date ranges don't mingle. A date always starts at column 1
+ * (forcing a row break if it was about to auto-flow into column 2), then the
+ * very next adjacent date slides into column 2 to pair with it. */
+.field--date {
+  grid-column-start: 1;
+}
+.field--date + .field--date {
+  grid-column-start: 2;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.label .required {
+  color: var(--cip-error);
+  font-weight: 700;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 6px 10px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border, #c0c4cc));
+  border-radius: var(--cip-radius-sm);
+  font-size: 13px;
+  font-family: var(--vscode-font-family);
+  outline: none;
+}
+
+.input:focus,
+.select:focus {
+  border-color: var(--vscode-input-foreground, #6b7280);
+  outline: none;
+}
+
+.input[type='date'] {
+  cursor: pointer;
+}
+
+.checkbox-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: var(--cip-radius-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-card:hover {
+  border-color: var(--vscode-panel-border);
+}
+
+.checkbox-card input[type='checkbox'] {
+  cursor: pointer;
+}
+.checkbox-card-content {
+  flex: 1;
+}
+.checkbox-card-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+.checkbox-card-hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+}
+
+/* === BUTTONS === */
+.btn {
+  padding: 6px 14px;
+  border-radius: var(--cip-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: var(--vscode-font-family);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: var(--cip-transition);
+}
+
+.btn-primary {
+  background-color: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--cip-neutral-hover);
+  border-color: var(--cip-neutral-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-run {
+  background-color: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
+  padding: 8px 18px;
+  font-size: 13px;
+}
+
+.btn-run:hover:not(:disabled) {
+  background-color: var(--cip-neutral-hover);
+  border-color: var(--cip-neutral-hover);
+}
+
+.btn-run:disabled {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-button-border, transparent);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ghost button — secondary action inside a clause head. Reads as a subtle tag, hovers into
+ * a clear accent state so the user sees it's actionable. */
+.btn-ghost {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--cip-radius-sm);
+  cursor: pointer;
+  font-family: var(--vscode-font-family);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: var(--cip-transition);
+}
+
+.btn-ghost .ic {
+  --cip-icon-size: 12px;
+  opacity: 0.85;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-panel-border);
+  color: var(--vscode-foreground);
+}
+.btn-ghost:hover:not(:disabled) .ic {
+  opacity: 1;
+}
+
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* === ACTION BAR === */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--vscode-editor-background);
+  border-top: 1px solid var(--vscode-panel-border);
+  margin-top: 8px;
+  z-index: 10;
+}
+
+.action-bar .info {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  flex: 1;
+}
+
+kbd {
+  padding: 1px 6px;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family);
+}
+
+/* === CONNECTION / STATUS === */
+.conn-status {
+  display: none;
+  padding: 8px 12px;
+  border-radius: var(--cip-radius-sm);
+  font-size: 12px;
+  margin-top: 8px;
+  line-height: 1.4;
+  gap: 8px;
+  align-items: center;
+}
+
+.conn-status.visible {
+  display: flex;
+}
+
+.conn-status.testing {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+  border-left: 3px solid var(--cip-accent);
+}
+
+.conn-status.success {
+  background: var(--cip-success-soft);
+  color: var(--cip-success);
+  border-left: 3px solid var(--cip-success);
+}
+
+.conn-status.error {
+  background: var(--cip-error-soft);
+  color: var(--cip-error);
+  border-left: 3px solid var(--cip-error);
+}
+
+.status-msg {
+  display: none;
+  padding: 8px 12px;
+  border-radius: var(--cip-radius-sm);
+  font-size: 12px;
+  margin-top: 12px;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-msg.visible {
+  display: flex;
+}
+.status-msg.loading {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+}
+.status-msg.success {
+  background: var(--cip-success-soft);
+  color: var(--cip-success);
+}
+.status-msg.error {
+  background: var(--cip-error-soft);
+  color: var(--cip-error);
+}
+
+.status-message {
+  padding: 8px 10px;
+  border-radius: var(--cip-radius-sm);
+  margin-bottom: 12px;
+  font-size: 12px;
+  display: none;
+}
+
+.status-message.loading {
+  display: block;
+  background-color: var(--cip-accent-soft);
+  border-left: 2px solid var(--vscode-inputValidation-infoBorder, var(--cip-accent));
+}
+
+.status-message.error {
+  display: block;
+  background-color: var(--cip-error-soft);
+  border-left: 2px solid var(--vscode-inputValidation-errorBorder, var(--cip-error));
+}
+
+.status-message.success {
+  display: block;
+  background-color: var(--cip-success-soft);
+  border-left: 2px solid var(--cip-success);
+}
+
+/* === SPINNER ===
+ * Sized via width/height + border so variants can reuse the same keyframe.
+ */
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: cip-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Medium spinner — inline with button labels and toolbar text. */
+.spinner--md {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+/* Large spinner — used inside empty list panels while metadata is loading. */
+.spinner--lg {
+  width: 22px;
+  height: 22px;
+  border-width: 2.5px;
+}
+
+/* A full-panel loading block used in place of the `.empty` placeholder when we're
+ * waiting on remote data (Tables list, Columns list). Keeps visual rhythm identical
+ * to the empty state so the panel doesn't jump around. */
+.loading-panel {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+
+.loading-panel .spinner--lg {
+  color: var(--cip-accent);
+}
+.loading-panel__title {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  font-size: 12px;
+}
+.loading-panel__hint {
+  font-size: 11px;
+  line-height: 1.45;
+  opacity: 0.85;
+  max-width: 220px;
+}
+
+/* When a primary button is in its loading state, swap its icon for a spinner and
+ * keep the label flush so the button doesn't resize mid-click. */
+.btn.is-loading {
+  cursor: progress;
+}
+.btn.is-loading .spinner {
+  color: currentColor;
+}
+
+@keyframes cip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* === RESULTS TABLES === */
+.results {
+  display: none;
+}
+.results.visible {
+  display: block;
+}
+
+.results-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.results-meta {
+  display: flex;
+  gap: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  background: var(--cip-success-soft);
+  color: var(--cip-success);
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge.neutral {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.results-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.results-scroll {
+  max-height: 600px;
+  overflow: auto;
+}
+
+.results-scroll::-webkit-scrollbar,
+.content-scroll::-webkit-scrollbar,
+.list::-webkit-scrollbar,
+.results-body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.results-scroll::-webkit-scrollbar-thumb,
+.content-scroll::-webkit-scrollbar-thumb,
+.list::-webkit-scrollbar-thumb,
+.results-body::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 5px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table th {
+  text-align: left;
+  padding: 8px 14px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 2px solid var(--cip-accent);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.table th:hover {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+}
+
+.table th .sort {
+  margin-left: 6px;
+  opacity: 0.5;
+  font-size: 10px;
+}
+
+.table th.sorted .sort {
+  opacity: 1;
+  color: var(--cip-accent);
+}
+
+.table td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-family: var(--vscode-editor-font-family);
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table tr:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.null-cell {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.no-results {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+}
+
+.no-results .icon {
+  font-size: 36px;
+  opacity: 0.4;
+  margin-bottom: 8px;
+}
+
+/* === TABLES BROWSER SPECIFIC === */
+.header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header p {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.config-form {
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--cip-radius-sm);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 0;
+}
+
+.form-group {
+  flex: 1;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.form-group input[type='text'] {
+  width: 100%;
+  padding: 6px 8px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: var(--cip-radius-sm);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+}
+
+.form-group input[type='text']:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.search-box {
+  margin-bottom: 12px;
+}
+.search-box input {
+  width: 100%;
+}
+
+.tables-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+  height: calc(100vh - 280px);
+}
+
+.tables-list {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--cip-radius-sm);
+  overflow-y: auto;
+  background-color: var(--vscode-editor-background);
+}
+
+.table-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.table-item:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.table-item.selected {
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
+}
+
+.table-detail {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--cip-radius-sm);
+  padding: 12px;
+  overflow-y: auto;
+  background-color: var(--vscode-editor-background);
+}
+
+.table-detail.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.table-detail h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.columns-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.columns-table th {
+  text-align: left;
+  padding: 6px 8px;
+  background-color: var(--vscode-editor-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-weight: 600;
+}
+
+.columns-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.columns-table tr:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.type-badge {
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  padding: 2px 6px;
+  border-radius: var(--cip-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* === QUERY BUILDER APP SHELL === */
+html.cip-query-builder,
+body.cip-query-builder {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  grid-template-columns: var(--cip-sidebar-width) 1fr;
+  grid-template-areas:
+    'hero hero'
+    'toolbar toolbar'
+    'sidebar main';
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--vscode-editor-background);
+  gap: 0;
+}
+
+/* === QUERY BUILDER HEADER ===
+ * The `.hero-header` lives in the `hero` grid slot and hosts the shared .page-header layout.
+ * All visual styling is inherited from .page-header — these rules only carve out the slot. */
+.hero-header {
+  grid-area: hero;
+  margin: 0;
+  border-radius: 0;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, var(--vscode-editorWidget-background) 0%, var(--vscode-editor-background) 100%);
+}
+
+/* Entity Browser (and any other flat page) uses the same .qb-hero typography but without
+ * the Query Builder's grid-slot gradient; it keeps the standard .page-header bottom border. */
+.qb-hero--flat {
+  padding: 14px 20px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.hero-header .hero-icon {
+  display: none;
+}
+
+/* Enterprise title treatment — larger, heavier, tighter letter-spacing. */
+.qb-hero .qb-hero__title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  color: var(--vscode-foreground);
+}
+
+.qb-hero .page-header__eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  color: var(--cip-accent);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.qb-hero .page-header__subtitle {
+  font-size: 12.5px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 4px;
+  max-width: 640px;
+}
+
+.hero-text {
+  display: flex;
+  align-items: baseline;
+  flex-direction: row;
+  gap: 10px;
+  text-align: left;
+  flex: 1;
+}
+
+.hero-text .hero-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  letter-spacing: 0.2px;
+}
+.hero-text .hero-subtitle {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.config-bar {
+  grid-area: config;
+  padding: 8px 16px;
+  margin: 6px 16px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
+}
+
+.config-bar-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.config-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vscode-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
+}
+
+.config-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.config-field .input,
+.config-field .select,
+.config-field .checkbox-pill,
+.config-field .btn {
+  height: 32px;
+  font-size: 13px;
+}
+
+/* === CIP HOST INPUT (disabled vs editable) === */
+.config-field .input[readonly] {
+  opacity: 0.75;
+  cursor: not-allowed;
+  background-color: var(--vscode-editorWidget-background);
+}
+
+/* === ENV SEGMENTED CONTROL === */
+.env-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: var(--cip-radius-sm);
+  height: 32px;
+}
+
+.env-segment button {
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 3px;
+  font-family: var(--vscode-font-family);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.env-segment button:hover:not(.active) {
+  background: var(--cip-accent-soft);
+}
+
+.env-segment button.active {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+/* === CONNECTION STATUS PILL ===
+ * Background stays transparent in every state. Icon + text color change.
+ * Uses emoji glyphs so the pill looks the same whether rendered in light or dark theme.
+ */
+.conn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Circular status dot in place of the emoji glyph. */
+.conn-pill::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.conn-pill.connected {
+  color: #1b5e20;
+}
+.conn-pill.disconnected {
+  color: #c62828;
+}
+.conn-pill.testing {
+  color: var(--cip-accent);
+}
+.conn-pill.testing::before {
+  animation: cip-spin 1.2s linear infinite;
+  border-radius: 0;
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.5' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M13 4.5A6 6 0 1 0 14 9' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M13 2v3h-3' stroke='currentColor' stroke-width='1.5' fill='none' stroke-linejoin='round'/></svg>");
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  width: 12px;
+  height: 12px;
+}
+
+/* VS Code sets `.vscode-dark` / `.vscode-high-contrast` on the webview body. In those themes the
+ * deep colors above lose contrast against the near-black background, so nudge them brighter while
+ * still reading as "deep" rather than the faded success/error tokens. */
+.vscode-dark .conn-pill.connected,
+.vscode-high-contrast .conn-pill.connected {
+  color: #00c853;
+}
+.vscode-dark .conn-pill.disconnected,
+.vscode-high-contrast .conn-pill.disconnected {
+  color: #ff5252;
+}
+
+/* Row for status + detail text under the config bar */
+.config-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 20px 0;
+  margin: 0 20px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Toolbar sits directly below the page header. Section label on the left, contextual settings
+ * on the right. No nested border since the page-header already supplies one. */
+.toolbar-bar {
+  grid-area: toolbar;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 20px;
+  margin: 0;
+  background: var(--vscode-editor-background);
+  border: none;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
+  min-height: 48px;
+}
+
+.toolbar-inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  padding-right: 10px;
+  border-right: 1px solid var(--vscode-panel-border);
+  height: 28px;
+}
+
+.toolbar-inline-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.toolbar-bar .toolbar-inline-field .select {
+  height: 28px;
+  padding: 0 10px;
+  min-width: 130px;
+  font-size: 12px;
+}
+
+.toolbar-bar .btn {
+  height: 28px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* The "Query Composer" label is now a quiet section heading — small, baseline-aligned,
+ * and the helper text sits right next to it for context. */
+.toolbar-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vscode-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.toolbar-title .dot {
+  display: none;
+}
+
+.toolbar-title .subtitle {
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.checkbox-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: var(--cip-radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  user-select: none;
+}
+
+.checkbox-pill:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* Segmented control — both segments share equal weight; active state uses the theme's
+ * button background for a clear pressed look. Minimum width keeps labels from jiggling. */
+.view-toggle {
+  display: inline-flex;
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: var(--cip-radius-md);
+  padding: 2px;
+  gap: 2px;
+  height: 30px;
+}
+
+.view-toggle button {
+  min-width: 72px;
+  padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--vscode-font-family);
+  transition: var(--cip-transition);
+}
+
+.view-toggle button:hover:not(.active) {
+  background: var(--cip-accent-soft);
+}
+
+.view-toggle button.active {
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* === SIDEBAR ===
+ * Inspector-style vertical split: Tables on top, Columns on bottom. Both panes share the
+ * same head/search/list chrome so the rhythm repeats, which reduces visual noise. */
+.sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--vscode-sideBar-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+/* Roughly equal split. */
+.sidebar-section.tables {
+  flex: 1 1 50%;
+  min-height: 180px;
+}
+.sidebar-section.columns {
+  flex: 1 1 50%;
+  min-height: 180px;
+}
+.sidebar-section:last-child {
+  border-bottom: none;
+}
+
+/* Denser section head. Uses the widget surface so the sidebar lists read as lifted panes
+ * sitting on the sidebar background. */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  flex-shrink: 0;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  min-height: 32px;
+}
+
+.section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--vscode-foreground);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.section-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.85;
+}
+.section-title-icon .ic {
+  --cip-icon-size: 13px;
+}
+
+/* Count badge reads as metadata — border-only pill, tabular numerals. */
+.count-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  min-width: 22px;
+  text-align: center;
+}
+
+/* Search row — compact, with a leading glyph so the empty field reads as "search". */
+.search-bar {
+  padding: 6px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 5px 10px 5px 26px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: var(--cip-radius-sm);
+  font-size: 12px;
+  outline: none;
+  height: 26px;
+}
+
+.search-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* Leading magnifier glyph rendered via a CSS mask so it inherits `currentColor`. */
+.search-bar::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-color: var(--vscode-descriptionForeground);
+  opacity: 0.7;
+  pointer-events: none;
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.list {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  padding: 4px 0;
+  min-height: 0;
+}
+
+/* Row styling. Rows run edge-to-edge so hover/selected fill reads as a full strip. Left accent
+ * rail is reserved for the selected row — hovering should feel cheaper than selecting. */
+.list-item {
+  padding: 4px 12px 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--vscode-editor-font-family);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  border-left: 2px solid transparent;
+  color: var(--vscode-foreground);
+  min-height: 26px;
+  white-space: nowrap;
+  min-width: max-content;
+}
+
+.list-item:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.list-item.selected {
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
+  border-left-color: var(--vscode-descriptionForeground);
+  font-weight: 500;
+}
+
+.list-item .icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.85;
+}
+.list-item.selected .icon {
+  color: var(--vscode-foreground);
+  opacity: 1;
+}
+.list-item .icon .ic {
+  --cip-icon-size: 12px;
+}
+
+.list-item .label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-checkbox {
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--cip-neutral);
+}
+
+/* Type tag — one uniform dark-grey pill across every SQL type. Tight max-width with
+ * ellipsis so long types like `VARCHAR(65536) CHARACTER SET "UTF-8" NOT NULL` never
+ * overrun the column name. Full value surfaces via the `title` attr on hover. */
+.type-tag {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-family: var(--vscode-font-family);
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  flex-shrink: 0;
+  border: 1px solid var(--cip-neutral);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+/* Drop the type-scoped color variants — single neutral pill reads quieter and stays
+ * aligned with the "low-emphasis controls share one neutral" rule. */
+.type-tag.str,
+.type-tag.int,
+.type-tag.date,
+.type-tag.bool,
+.type-tag.varchar,
+.type-tag.text,
+.type-tag.decimal,
+.type-tag.double,
+.type-tag.float,
+.type-tag.num,
+.type-tag.timestamp {
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
+  opacity: 1;
+}
+
+/* Empty states — quiet, balanced, with a bit more breathing room so the icon feels intentional. */
+.empty {
+  padding: 22px 16px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  margin: 0;
+}
+
+.empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.9;
+}
+.empty-icon .ic {
+  --cip-icon-size: 16px;
+}
+.empty-title {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  font-size: 12px;
+}
+.empty-hint {
+  font-size: 11px;
+  line-height: 1.45;
+  opacity: 0.85;
+  max-width: 220px;
+}
+
+/* === MAIN CONTENT === */
+.main {
+  grid-area: main;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  background-color: var(--vscode-editor-background);
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  min-height: 0;
+}
+
+.main-top {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.builder {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1100px;
+}
+
+.run-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 16px 16px;
+  background: var(--vscode-editor-background);
+}
+
+.run-hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.builder.hidden,
+.editor.hidden {
+  display: none;
+}
+
+/* === CLAUSE CARDS ===
+ * Each SQL clause sits in its own card with a left accent rail matching the SQL keyword color.
+ * The head has a subtle widget-surface background so the whole card reads as a bounded
+ * section against the editor canvas. Cards tighten on hover (no translate/scale — that feels
+ * jumpy in a form UI) and surface a small focus ring via box-shadow. */
+.clause {
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--cip-radius-md);
+  overflow: hidden;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.clause:hover {
+  border-color: var(--vscode-panel-border);
+  box-shadow: var(--cip-shadow-sm);
+}
+
+/* Compact head: keyword capsule (monospaced) + title + description, all on one baseline.
+ * The keyword is what telegraphs the clause, so it sits first and reads visually loud. */
+.clause-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.clause-icon {
+  display: none;
+}
+
+.clause-title-group {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.clause-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Monospaced keyword capsule — filled with accent-soft, accent foreground, so the clause
+ * reads like a keyword tag the way SQL editors highlight keywords. */
+.clause-title .kw {
+  font-family: var(--vscode-editor-font-family);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--cip-accent);
+  background: var(--cip-accent-soft);
+  border: 1px solid transparent;
+  padding: 2px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.clause-desc {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.35;
+}
+
+.clause-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.clause-body {
+  padding: 12px 14px;
+  min-height: 40px;
+}
+
+/* Placeholder text inside a clause body — conversational, not italic (italic feels dated). */
+.placeholder {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.5;
+  font-style: normal;
+}
+
+/* LIMIT clause — inline row with a numeric input, a bolder suffix label, and a lighter hint. */
+.limit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.limit-input {
+  width: 84px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit-suffix {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+}
+
+.limit-hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  padding-left: 6px;
+  border-left: 1px solid var(--vscode-panel-border);
+}
+
+/* === CHIPS === */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px 3px 10px;
+  background: var(--vscode-editor-inactiveSelectionBackground, var(--cip-accent-soft));
+  color: var(--vscode-foreground);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 500;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Primary chip — highlights the currently selected FROM table so it reads distinctly from
+ * neutral SELECT chips. Uses accent-soft + accent border to match the clause rail. */
+.chip.primary {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+  border-color: var(--cip-accent);
+  padding: 3px 12px;
+  font-weight: 600;
+  max-width: none;
+}
+
+.chip .remove {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  transition: var(--cip-transition);
+}
+
+.chip .remove:hover {
+  background: var(--cip-error-soft);
+  color: var(--cip-error);
+}
+
+/* === FILTER / ORDER ROWS ===
+ * Tight grid, subtle card background so the row groups feel contained. Hover only adds a
+ * border tint — we don't shift the row's background because the inputs already have their
+ * own surface. */
+.filter-row,
+.order-row {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 6px;
+  align-items: center;
+  padding: 8px 10px;
+  background-color: var(--vscode-editorWidget-background);
+  border-radius: var(--cip-radius-sm);
+  border: 1px solid var(--vscode-panel-border);
+  transition: border-color 0.12s ease;
+}
+
+.filter-row {
+  grid-template-columns: minmax(0, 2fr) 140px minmax(0, 2fr) 32px;
+}
+.order-row {
+  grid-template-columns: minmax(0, 2fr) 120px 32px;
+}
+
+.filter-row:hover,
+.order-row:hover {
+  border-color: var(--vscode-panel-border);
+}
+.filter-row:last-child,
+.order-row:last-child {
+  margin-bottom: 0;
+}
+
+.field-select,
+.field-input {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: var(--cip-radius-sm);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  outline: none;
+}
+
+.field-select:focus,
+.field-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.remove-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--cip-error);
+  border: 1px solid transparent;
+  border-radius: var(--cip-radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.remove-btn:hover {
+  background: var(--cip-error-soft);
+  border-color: var(--cip-error);
+}
+
+/* AND/OR segmented control — subtle border, labeled "Combine conditions with" via a
+ * pseudo-element so the purpose is self-evident even without a separate tooltip. */
+.logic-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: var(--cip-radius-sm);
+  margin-bottom: 10px;
+  height: 26px;
+  align-self: flex-start;
+}
+
+.logic-segment button {
+  height: 22px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 3px;
+  font-family: var(--vscode-editor-font-family);
+  letter-spacing: 0.5px;
+  transition: var(--cip-transition);
+}
+
+.logic-segment button:hover:not(.active) {
+  background: var(--cip-accent-soft);
+}
+
+.logic-segment button.active {
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* === SQL EDITOR === */
+.editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.editor-head {
+  padding: 8px 14px;
+  background: var(--cip-warning-soft);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 11px;
+  color: var(--cip-warning);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sql-editor {
+  flex: 1;
+  width: 100%;
+  padding: 14px 18px;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  border: none;
+  outline: none;
+  font-family: var(--vscode-editor-font-family);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: none;
+  tab-size: 2;
+}
+
+/* === QUERY PREVIEW === */
+.preview-panel {
+  border-top: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editorWidget-background);
+  padding: 10px 14px 12px;
+  max-height: 140px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.preview-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 6px;
+}
+
+#queryPreviewText {
+  font-family: var(--vscode-editor-font-family);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  color: var(--vscode-foreground);
+}
+
+.sql-keyword {
+  color: var(--cip-accent);
+  font-weight: 600;
+}
+.sql-string {
+  color: var(--cip-success);
+}
+.sql-number {
+  color: var(--cip-warning);
+}
+.sql-comment {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+/* === RESULTS PANEL (query builder) === */
+.results-panel {
+  display: none;
+  flex-direction: column;
+  border-top: 2px solid var(--cip-accent);
+  max-height: 50vh;
+  min-height: 200px;
+  background-color: var(--vscode-editor-background);
+  overflow: hidden;
+}
+
+.results-panel.visible {
+  display: flex;
+}
+
+.results-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+}
+
+.results-title {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+}
+
+.results-body {
+  flex: 1;
+  overflow: auto;
+}
+
+/* === FOOTER STATUS BAR === */
+.footer {
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  background: var(--vscode-statusBar-background);
+  color: var(--vscode-statusBar-foreground);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.footer.error {
+  background: var(--cip-error-soft);
+  color: var(--cip-error);
+}
+.footer.success {
+  background: var(--cip-success-soft);
+  color: var(--cip-success);
+}
+.footer.loading {
+  background: var(--cip-accent-soft);
+  color: var(--cip-accent);
+}
+
+.footer .hint {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+/* ============================================================================
+ * QUERY BUILDER — ENTERPRISE POLISH
+ * Targeted overrides layered on top of the base styles above. Keeping the
+ * polish here keeps the existing structure intact and concentrates the visual
+ * refinements in one place that's easy to tweak.
+ * ============================================================================ */
+
+/* --- TOOLBAR ---------------------------------------------------------------- */
+.qb-toolbar {
+  padding: 10px 20px;
+  gap: 16px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.qb-toolbar__title {
+  gap: 10px;
+}
+
+.qb-toolbar__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--vscode-foreground);
+}
+
+.qb-toolbar .toolbar-inline-label {
+  font-size: 9.5px;
+  letter-spacing: 0.8px;
+}
+
+.qb-toolbar .select {
+  min-width: 150px;
+  height: 30px;
+}
+
+.qb-toolbar .btn {
+  height: 30px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+/* Toolbar view-toggle — matches `.qb-toolbar .btn` height (30px). Zero inner padding
+ * so the inner buttons fill the full 30px active area, visually aligning the
+ * Builder/SQL switch with the Load Entities button beside it. */
+.qb-view-toggle {
+  height: 30px;
+  padding: 0;
+  border-radius: 5px;
+  align-items: stretch;
+}
+
+.qb-view-toggle button {
+  padding: 0 16px;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  height: auto;
+}
+
+.qb-view-toggle button.active {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* --- SIDEBAR --------------------------------------------------------------- */
+.cip-query-builder .sidebar {
+  background-color: var(--vscode-sideBar-background);
+}
+
+/* Section heads (Entities / Columns) sit on the same white editor background as their
+ * body so each panel reads as one clean card. The title text is lighter weight and muted
+ * color — it's a category label, not an interactive row. */
+.cip-query-builder .section-head {
+  padding: 12px 14px 10px;
+  background: var(--vscode-editor-background);
+}
+
+.cip-query-builder .section-title {
+  font-size: 10.5px;
+  letter-spacing: 0.9px;
+  font-weight: 500;
+  color: var(--vscode-descriptionForeground);
+  gap: 7px;
+}
+
+.cip-query-builder .section-title-icon {
+  color: var(--vscode-descriptionForeground);
+}
+
+.cip-query-builder .count-badge {
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
+  padding: 2px 9px;
+  letter-spacing: 0.4px;
+}
+
+.cip-query-builder .search-bar {
+  padding: 8px 12px;
+  position: relative;
+}
+
+/* Inline search icon inside the input. Uses currentColor so theme-aware. */
+.cip-query-builder .search-bar::before {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  background-color: var(--vscode-descriptionForeground);
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='4.5' stroke='currentColor' stroke-width='1.5' fill='none'/><path d='M10.5 10.5L14 14' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.cip-query-builder .search-input {
+  padding-left: 30px;
+  height: 30px;
+  font-size: 12px;
+}
+
+/* Match the Entity Browser's list chrome: sidebar rows render in the regular UI font at
+ * normal weight, with the selected row switching to the monospace editor font + semibold
+ * so the active entity/column reads as "this is the identifier" without every row feeling
+ * bold. Base `.list-item` uses the monospace font + a 600-weight `.label` child (inherited
+ * from the form-level `.label` rule), which is why every row was loud. */
+.cip-query-builder .list-item {
+  padding: 7px 14px;
+  border-radius: 0;
+  font-family: var(--vscode-font-family);
+  font-weight: 400;
+  transition:
+    background-color 0.1s ease,
+    border-left-color 0.1s ease;
+}
+
+.cip-query-builder .list-item .label {
+  font-weight: 400;
+  color: var(--vscode-foreground);
+}
+
+.cip-query-builder .list-item.selected {
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
+  border-left-color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 600;
+}
+
+.cip-query-builder .list-item.selected .label {
+  font-weight: 600;
+}
+
+.cip-query-builder .list-item .icon {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Query Builder column-type tags — light grey pill with dark text so the badge
+ * is clearly visible but reads as an understated tag, not a primary-color shout.
+ * Theme-scoped: lighter grey wash in light mode, darker grey fill in dark mode. */
+.cip-query-builder .type-tag {
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  max-width: 96px;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.cip-query-builder .type-tag.str,
+.cip-query-builder .type-tag.varchar,
+.cip-query-builder .type-tag.text,
+.cip-query-builder .type-tag.int,
+.cip-query-builder .type-tag.decimal,
+.cip-query-builder .type-tag.double,
+.cip-query-builder .type-tag.float,
+.cip-query-builder .type-tag.num,
+.cip-query-builder .type-tag.date,
+.cip-query-builder .type-tag.timestamp,
+.cip-query-builder .type-tag.bool {
+  background: #e5e7eb;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+/* Dark themes: darker grey surface with light-grey text so the pill still reads
+ * as neutral against the near-black editor background. */
+.vscode-dark .cip-query-builder .type-tag,
+.vscode-high-contrast .cip-query-builder .type-tag,
+.vscode-dark .cip-query-builder .type-tag.str,
+.vscode-dark .cip-query-builder .type-tag.varchar,
+.vscode-dark .cip-query-builder .type-tag.text,
+.vscode-dark .cip-query-builder .type-tag.int,
+.vscode-dark .cip-query-builder .type-tag.decimal,
+.vscode-dark .cip-query-builder .type-tag.double,
+.vscode-dark .cip-query-builder .type-tag.float,
+.vscode-dark .cip-query-builder .type-tag.num,
+.vscode-dark .cip-query-builder .type-tag.date,
+.vscode-dark .cip-query-builder .type-tag.timestamp,
+.vscode-dark .cip-query-builder .type-tag.bool {
+  background: #3c4149;
+  color: #d1d5db;
+  border-color: #4b5563;
+}
+
+/* --- CLAUSE CARDS ---------------------------------------------------------- */
+/* Accent strip on the left + keyword pill colored per clause. Each clause
+ * reads as a distinct SQL step while sharing the same shell. */
+.clause {
+  position: relative;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition:
+    border-color 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.clause:hover {
+  border-color: var(--vscode-panel-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Suppress the system's blue focus ring when a clause card gets keyboard focus —
+ * we use the existing border/box-shadow to convey focus state, not the default
+ * browser outline which resolves to VS Code's accent blue. */
+.clause:focus,
+.clause:focus-within,
+.clause:focus-visible {
+  outline: none;
+  border-color: var(--vscode-panel-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.clause::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  background: var(--cip-neutral);
+  opacity: 0.35;
+}
+
+
+.clause-head {
+  padding: 10px 16px;
+  gap: 12px;
+}
+
+/* Small numbered badge indicating build order (1 SELECT → 5 LIMIT). */
+.clause-step {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-descriptionForeground);
+}
+
+
+.clause-title {
+  font-size: 13px;
+  gap: 8px;
+}
+
+.clause-heading {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+/* Keyword pill — colored per clause, monospace for the SQL feel. */
+.clause-title .kw {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-panel-border);
+  background: rgba(128, 128, 128, 0.12);
+  color: var(--vscode-foreground);
+}
+
+
+.clause-desc {
+  font-size: 11.5px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+}
+
+.clause-body {
+  padding: 12px 16px;
+}
+
+.placeholder {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.85;
+}
+
+/* LIMIT row — dedicated, labeled input. */
+.limit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.limit-input {
+  width: 96px;
+  height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit-hint {
+  font-size: 11.5px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* --- CHIPS (selected columns) ---------------------------------------------
+ * Neutral dark-grey pills so the FROM entity chip reads as an identifier tag,
+ * not a blue "tap me" affordance. Uses the same `--cip-neutral` token shared
+ * with other low-emphasis controls. */
+.cip-query-builder .chip {
+  background: rgba(128, 128, 128, 0.14);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 11px;
+  padding: 3px 4px 3px 11px;
+  font-weight: 600;
+}
+
+.cip-query-builder .chip.primary {
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  border-color: var(--cip-neutral);
+  padding: 3px 12px;
+}
+
+/* --- FILTER / ORDER ROWS --------------------------------------------------- */
+.filter-row,
+.order-row {
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-panel-border);
+  padding: 8px;
+  gap: 10px;
+}
+
+.filter-row:hover,
+.order-row:hover {
+  border-color: var(--vscode-panel-border);
+}
+
+.field-select,
+.field-input {
+  height: 30px;
+  font-size: 12.5px;
+}
+
+/* --- RUN BAR + SQL PREVIEW ------------------------------------------------- */
+/* Run bar layout: Show SQL toggle (left) · run hint (center-ish) · Run Query (right).
+ * `justify-content: flex-end` is overridden here because the toggle now shares the row. */
+.cip-query-builder .run-bar {
+  padding: 12px 20px 14px;
+  border-top: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editorWidget-background);
+  justify-content: flex-start;
+}
+
+.cip-query-builder .run-bar .run-hint {
+  margin-left: 12px;
+}
+.cip-query-builder .run-bar .btn-run {
+  margin-left: auto;
+}
+
+.cip-query-builder .btn-run {
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.cip-query-builder .btn-run:hover:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+  transform: translateY(-1px);
+}
+
+.cip-query-builder .preview-panel {
+  padding: 10px 20px 12px;
+  max-height: 160px;
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.preview-head .preview-label {
+  margin-bottom: 0;
+  letter-spacing: 1px;
+}
+
+.btn-ghost--inline {
+  margin-left: auto;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+
+.cip-query-builder #queryPreviewText {
+  padding: 8px 10px;
+  background: var(--vscode-textCodeBlock-background, rgba(127, 127, 127, 0.08));
+  border-radius: 4px;
+  border: 1px solid var(--vscode-panel-border);
+}
+
+/* --- GHOST BUTTONS (clause actions) --------------------------------------- */
+.cip-query-builder .clause-actions .btn-ghost {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  border-radius: 4px;
+}
+
+/* --- RESULTS PANEL --------------------------------------------------------- */
+.cip-query-builder .results-panel {
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.cip-query-builder .results-head {
+  padding: 12px 20px;
+}
+
+.cip-query-builder .results-title {
+  font-size: 11px;
+  letter-spacing: 0.9px;
+  color: var(--vscode-foreground);
+}
+
+.cip-query-builder .badge {
+  padding: 3px 11px;
+  font-size: 11px;
+}
+
+/* --- EMPTY STATES (sidebar) ----------------------------------------------- */
+.cip-query-builder .empty {
+  padding: 28px 16px;
+  gap: 8px;
+}
+
+.cip-query-builder .empty-icon .ic {
+  --cip-icon-size: 22px;
+  opacity: 0.55;
+}
+.cip-query-builder .empty-title {
+  font-size: 12px;
+}
+.cip-query-builder .empty-hint {
+  font-size: 11.5px;
+}
+
+/* ============================================================================
+ * ENTITY BROWSER (tables-browser.html)
+ * Lives here (not inline in the template) because the page's CSP only allows
+ * styles from `cspSource` — inline <style> blocks without a nonce are stripped,
+ * which collapses the whole layout into an unstyled stack.
+ * ============================================================================ */
+
+/* Flat page shell: full-bleed header, single 20px gutter around the workspace. */
+body.cip-entity-browser {
+  margin: 0;
+  padding: 0 0 24px;
+}
+body.cip-entity-browser > .page-header,
+body.cip-entity-browser > header {
+  margin: 0 0 12px;
+}
+
+.eb-page {
+  padding: 0 20px;
+  max-width: 1400px;
+}
+
+/* Toolbar row — search flexes, Load/Refresh holds its width on the right. */
+.eb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.eb-search {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.eb-search .ic-search {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vscode-descriptionForeground);
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.eb-search input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 0 12px 0 30px;
+  margin: 0;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  line-height: 1.4;
+  outline: none;
+  box-shadow: none;
+}
+.eb-search input::placeholder {
+  color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
+}
+.eb-search input:hover,
+.eb-search input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+.eb-search input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.eb-load-btn {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Status strip — reserves 20px so layout doesn't jump when a message appears. */
+.eb-status {
+  min-height: 20px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+.eb-status:empty {
+  display: none;
+}
+
+/* Pre-first-load placeholder. */
+.eb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 20px;
+  border: 1px dashed var(--vscode-panel-border);
+  border-radius: 6px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+.eb-empty strong {
+  color: var(--vscode-foreground);
+  font-weight: 600;
+}
+.eb-empty[hidden] {
+  display: none;
+}
+
+/* Two-pane split: entity list (~320px) + schema detail. Each pane scrolls on its own. */
+.eb-split {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 12px;
+  height: calc(100vh - 260px);
+  min-height: 360px;
+}
+
+.eb-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.eb-pane__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--vscode-sideBar-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.eb-pane__title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.eb-pane__title-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eb-pane__meta {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.eb-pane__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Entity list rows — 2px accent rail on selected. */
+.eb-pane__body .table-item {
+  padding: 7px 14px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  transition:
+    background-color 0.1s ease,
+    border-left-color 0.1s ease;
+}
+.eb-pane__body .table-item:last-child {
+  border-bottom: none;
+}
+.eb-pane__body .table-item:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+.eb-pane__body .table-item.selected {
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
+  border-left-color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 600;
+}
+
+.eb-pane__body .eb-pane__placeholder {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+/* First-load copy inside the Entities pane. Centered in the pane body with icon
+ * above two lines of copy, so the pane reads as a guided call-to-action rather
+ * than an empty scroll area. */
+.eb-pane__body .eb-pane__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.eb-pane__body .eb-pane__empty strong {
+  color: var(--vscode-foreground);
+  font-weight: 600;
+}
+
+.eb-pane--detail .eb-pane__body.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+/* Schema table — sticky header, zebra rows, fixed column proportions. */
+.eb-schema {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.eb-schema thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 8px 14px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+.eb-schema tbody tr {
+  transition: background-color 0.1s ease;
+}
+.eb-schema tbody tr:nth-child(even) {
+  background-color: var(--vscode-sideBar-background);
+}
+.eb-schema tbody tr:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+.eb-schema td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eb-schema td.col-name {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-foreground);
+}
+.eb-schema td.col-type .type-badge {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: var(--cip-neutral);
+  color: var(--cip-neutral-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eb-schema td.col-nullable {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.eb-schema col.col-name {
+  width: 42%;
+}
+.eb-schema col.col-type {
+  width: 42%;
+}
+.eb-schema col.col-nullable {
+  width: 16%;
+}
+
+.eb-schema__meta {
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+}
+.eb-schema__meta strong {
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 600;
+}
+
+.eb-error {
+  padding: 14px 16px;
+  color: var(--cip-error);
+  font-size: 12px;
+  background: var(--cip-error-soft);
+  border-bottom: 1px solid var(--cip-error);
+}

@@ -63,6 +63,15 @@ function copySdkScaffolds() {
   fs.cpSync(src, dest, {recursive: true});
 }
 
+function copyCipProtoFiles() {
+  const src = path.join(sdkRoot, 'data', 'cip-proto');
+  const dest = path.join(pkgRoot, 'dist', 'data', 'cip-proto');
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dest, {recursive: true});
+  fs.cpSync(src, dest, {recursive: true});
+  console.log('[cip-proto] Copied proto files to dist/data/cip-proto/');
+}
+
 function inlineSdkPackageJson() {
   const outPath = path.join(pkgRoot, 'dist', 'extension.js');
   let str = fs.readFileSync(outPath, 'utf8');
@@ -110,6 +119,7 @@ const buildOptions = {
 
 if (watchMode) {
   copySdkScaffolds();
+  copyCipProtoFiles();
   const ctx = await esbuild.context(buildOptions);
   await ctx.watch();
   console.log('[esbuild] watching for changes...');
@@ -118,6 +128,7 @@ if (watchMode) {
 
   inlineSdkPackageJson();
   copySdkScaffolds();
+  copyCipProtoFiles();
   copySwaggerUiAssets();
 
   if (result.metafile && process.env.ANALYZE_BUNDLE) {
