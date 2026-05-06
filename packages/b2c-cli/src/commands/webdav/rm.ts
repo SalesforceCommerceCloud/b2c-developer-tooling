@@ -14,14 +14,12 @@ interface RmResult {
 }
 
 export default class WebDavRm extends WebDavCommand<typeof WebDavRm> {
-  protected operations = {confirm};
   static args = {
     path: Args.string({
       description: 'Path to delete relative to root',
       required: true,
     }),
   };
-
   static description = withDocs(
     t('commands.webdav.rm.description', 'Delete a file or directory from WebDAV'),
     '/cli/webdav.html#b2c-webdav-rm',
@@ -43,6 +41,8 @@ export default class WebDavRm extends WebDavCommand<typeof WebDavRm> {
       default: false,
     }),
   };
+
+  protected operations = {confirm};
 
   async run(): Promise<RmResult> {
     this.ensureWebDavAuth();

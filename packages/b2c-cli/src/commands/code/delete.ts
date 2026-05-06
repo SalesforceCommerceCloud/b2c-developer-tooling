@@ -10,8 +10,6 @@ import {t, withDocs} from '../../i18n/index.js';
 import {confirm} from '../../prompts.js';
 
 export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
-  static hiddenAliases = ['code:delete'];
-
   static args = {
     codeVersion: Args.string({
       description: 'Code version ID to delete',
@@ -38,6 +36,8 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
       default: false,
     }),
   };
+
+  static hiddenAliases = ['code:delete'];
 
   protected operations = {
     confirm,

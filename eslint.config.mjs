@@ -52,7 +52,7 @@ export const oclifRules = {
   'perfectionist/sort-interfaces': 'off',
   'perfectionist/sort-named-exports': 'off',
   'perfectionist/sort-named-imports': 'off',
-  'perfectionist/sort-classes': 'warn',
+  'perfectionist/sort-classes': 'error',
   // Disable stylistic rules that conflict with our style
   '@stylistic/lines-between-class-members': 'off',
   '@stylistic/padding-line-between-statements': 'off',

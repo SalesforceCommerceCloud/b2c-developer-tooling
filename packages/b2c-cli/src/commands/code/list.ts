@@ -34,8 +34,6 @@ const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {
 const DEFAULT_COLUMNS = ['id', 'active', 'rollback', 'lastModified', 'cartridges'];
 
 export default class CodeList extends InstanceCommand<typeof CodeList> {
-  static hiddenAliases = ['code:list'];
-
   static description = withDocs(
     t('commands.code.list.description', 'List code versions on a B2C Commerce instance'),
     '/cli/code.html#b2c-code-list',
@@ -48,6 +46,8 @@ export default class CodeList extends InstanceCommand<typeof CodeList> {
     '<%= config.bin %> <%= command.id %> --server my-sandbox.demandware.net',
     '<%= config.bin %> <%= command.id %> --json',
   ];
+
+  static hiddenAliases = ['code:list'];
 
   async run(): Promise<CodeVersionResult> {
     this.requireOAuthCredentials();

@@ -295,7 +295,7 @@ describe('operations/code/download', () => {
       await downloadCartridges(mockInstance, tempDir);
 
       const stat = fs.statSync(filePath);
-      // eslint-disable-next-line no-bitwise
+
       expect(stat.mode & 0o777).to.equal(0o755);
       expect(fs.readFileSync(filePath, 'utf-8')).to.equal('new content');
     });
