@@ -68,7 +68,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Track daily sales performance with AOV and AOS metrics',
     category: 'Sales Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
     ],
@@ -86,7 +86,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     parameters: [
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
-      {name: 'siteId', description: 'Optional natural site id', type: 'string'},
+      {name: 'siteId', description: 'Optional site ID', type: 'string'},
     ],
     buildSql(params) {
       const from = getDateLiteral(params, 'from');
@@ -101,7 +101,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Analyze OCAPI request volume and response latency',
     category: 'Technical Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
     ],
@@ -117,7 +117,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Identify top selling products across channels',
     category: 'Product Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
     ],
@@ -133,7 +133,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Analyze frequently co-purchased products',
     category: 'Product Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
     ],
@@ -163,7 +163,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Identify search terms driving revenue and conversion',
     category: 'Search Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'hasResults', description: 'Filter successful/unsuccessful searches', type: 'boolean', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
@@ -181,7 +181,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Track payment method adoption and transaction metrics',
     category: 'Payment Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
     ],
@@ -197,7 +197,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Track customer registration trends by date and device',
     category: 'Customer Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
     ],
@@ -213,7 +213,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     description: 'Identify top traffic referrers and visit share',
     category: 'Traffic Analytics',
     parameters: [
-      {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
+      {name: 'siteId', description: 'Site ID', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'limit', description: 'Max rows (1-500)', type: 'number', min: 1, max: 500},

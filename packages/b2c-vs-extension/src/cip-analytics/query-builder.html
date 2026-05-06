@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="en" class="cip-query-builder">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'nonce-__NONCE__'; style-src __CSP_SOURCE__; img-src __CSP_SOURCE__ data:; font-src __CSP_SOURCE__;"
+    />
+    <title>CIP Query Builder</title>
+    <link rel="stylesheet" href="__STYLES_URI__" />
+  </head>
+  <body class="cip-query-builder">
+    <div class="app">
+      <header class="hero-header page-header qb-hero">
+        <div class="page-header__body">
+          <div class="page-header__eyebrow">B2C-DX Analytics</div>
+          <div class="page-header__title qb-hero__title">Query Builder</div>
+          <div class="page-header__subtitle">
+            Explore and query the CIP data warehouse with a visual builder or raw SQL.
+          </div>
+        </div>
+        <div class="page-header__meta">
+          <div class="conn-bar is-disconnected" id="connBar" role="status" aria-label="CIP connection">
+            <div class="conn-bar__status">
+              <span id="connPill" class="conn-pill disconnected">Disconnected</span>
+            </div>
+            <div class="conn-bar__item" id="connTenantWrap" hidden>
+              <span class="conn-bar__label">Tenant</span>
+              <span class="conn-bar__value" id="connTenant"></span>
+            </div>
+            <div class="conn-bar__item" id="connHostWrap" hidden>
+              <span class="conn-bar__label">Host</span>
+              <span class="conn-bar__value" id="connHost"></span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary" id="configureBtn">Configure</button>
+        </div>
+      </header>
+      <span id="connDetail" hidden></span>
+
+      <div class="toolbar-bar qb-toolbar">
+        <div class="toolbar-title qb-toolbar__title">
+          <span class="qb-toolbar__label">Query Composer</span>
+          <span class="subtitle">Switch between visual builder and raw SQL</span>
+        </div>
+
+        <div class="spacer"></div>
+
+        <label class="toolbar-inline-field" for="fetchSize">
+          <span class="toolbar-inline-label">Retrieval Size</span>
+          <select id="fetchSize" class="select">
+            <option value="100">100 rows</option>
+            <option value="500">500 rows</option>
+            <option value="1000" selected>1,000 rows</option>
+            <option value="5000">5,000 rows</option>
+          </select>
+        </label>
+
+        <button type="button" id="loadTablesBtn" class="btn btn-primary">
+          <span class="ic ic-refresh" data-role="icon"></span>
+          <span data-role="label">Load Entities</span>
+        </button>
+
+        <div class="view-toggle qb-view-toggle">
+          <button id="builderViewBtn" class="active">Builder</button>
+          <button id="editorViewBtn">SQL</button>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div class="sidebar-section tables">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="section-title-icon"><span class="ic ic-table"></span></span>
+              <span>Entities</span>
+            </div>
+            <span class="count-badge" id="tableCount">0</span>
+          </div>
+          <div class="search-bar">
+            <input type="text" class="search-input" id="tableSearch" placeholder="Search entities..." />
+          </div>
+          <div class="list" id="tableList">
+            <div class="empty">
+              <div class="empty-icon"><span class="ic ic-inbox"></span></div>
+              <div class="empty-title">No entities loaded</div>
+              <div class="empty-hint">Click Load Entities to discover entities.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section columns">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="section-title-icon"><span class="ic ic-columns"></span></span>
+              <span>Columns</span>
+            </div>
+            <span class="count-badge" id="fieldCount">0</span>
+          </div>
+          <div class="search-bar">
+            <input type="text" class="search-input" id="fieldSearch" placeholder="Search columns..." />
+          </div>
+          <div class="list" id="fieldList">
+            <div class="empty">
+              <div class="empty-icon"><span class="ic ic-columns"></span></div>
+              <div class="empty-title">Pick an entity</div>
+              <div class="empty-hint">Select an entity above to see its columns.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="main">
+        <div class="main-top">
+          <div class="content-scroll">
+            <div class="builder" id="builderView">
+              <div class="clause" data-clause="select">
+                <div class="clause-head">
+                  <span class="clause-step" aria-hidden="true">1</span>
+                  <div class="clause-title-group">
+                    <div class="clause-title">
+                      <span class="kw">SELECT</span> <span class="clause-heading">Choose Columns</span>
+                    </div>
+                    <div class="clause-desc">Pick which fields to retrieve — defaults to all columns (*).</div>
+                  </div>
+                  <div class="clause-actions">
+                    <button class="btn-ghost" id="selectAllFieldsBtn" disabled>
+                      <span class="ic ic-check"></span>
+                      <span>Select All</span>
+                    </button>
+                    <button class="btn-ghost" id="clearFieldsBtn" disabled>
+                      <span class="ic ic-close"></span>
+                      <span>Clear</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="clause-body">
+                  <div id="selectedFieldsContainer">
+                    <span class="placeholder">No columns selected — will use SELECT * (all columns).</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="clause" data-clause="from">
+                <div class="clause-head">
+                  <span class="clause-step" aria-hidden="true">2</span>
+                  <div class="clause-title-group">
+                    <div class="clause-title">
+                      <span class="kw">FROM</span> <span class="clause-heading">Source Entity</span>
+                    </div>
+                    <div class="clause-desc">The CIP data warehouse entity to query.</div>
+                  </div>
+                  <div class="clause-actions">
+                    <button class="btn-ghost" id="changeFromBtn" disabled>
+                      <span class="ic ic-refresh"></span>
+                      <span>Change Entity</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="clause-body">
+                  <div id="fromContainer">
+                    <span class="placeholder">Pick an entity from the sidebar to begin.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="clause" data-clause="where">
+                <div class="clause-head">
+                  <span class="clause-step" aria-hidden="true">3</span>
+                  <div class="clause-title-group">
+                    <div class="clause-title">
+                      <span class="kw">WHERE</span> <span class="clause-heading">Filter Results</span>
+                    </div>
+                    <div class="clause-desc">Add conditions to narrow down your results.</div>
+                  </div>
+                  <div class="clause-actions">
+                    <button class="btn-ghost" id="addFilterBtn">
+                      <span class="ic ic-plus"></span>
+                      <span>Add Filter</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="clause-body">
+                  <div class="logic-segment" id="logicToggle" style="display: none">
+                    <button data-logic="AND" class="active">AND</button>
+                    <button data-logic="OR">OR</button>
+                  </div>
+                  <div id="filtersContainer">
+                    <span class="placeholder">No filters applied — all rows will be returned.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="clause" data-clause="order">
+                <div class="clause-head">
+                  <span class="clause-step" aria-hidden="true">4</span>
+                  <div class="clause-title-group">
+                    <div class="clause-title">
+                      <span class="kw">ORDER BY</span> <span class="clause-heading">Sort Results</span>
+                    </div>
+                    <div class="clause-desc">Order rows by one or more columns.</div>
+                  </div>
+                  <div class="clause-actions">
+                    <button class="btn-ghost" id="addOrderBtn">
+                      <span class="ic ic-plus"></span>
+                      <span>Add Sort</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="clause-body">
+                  <div id="orderByContainer">
+                    <span class="placeholder">No sorting applied — results in default order.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="clause" data-clause="limit">
+                <div class="clause-head">
+                  <span class="clause-step" aria-hidden="true">5</span>
+                  <div class="clause-title-group">
+                    <div class="clause-title">
+                      <span class="kw">LIMIT</span> <span class="clause-heading">Result Cap</span>
+                    </div>
+                    <div class="clause-desc">Maximum number of rows to return.</div>
+                  </div>
+                </div>
+                <div class="clause-body">
+                  <div class="limit-row">
+                    <input
+                      type="number"
+                      id="limitInput"
+                      class="field-input limit-input"
+                      placeholder="100"
+                      min="1"
+                      max="10000"
+                      value="100"
+                      aria-label="Row limit"
+                    />
+                    <span class="limit-suffix">rows maximum</span>
+                    <span class="limit-hint">up to 10,000</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="editor hidden" id="editorView">
+              <textarea
+                class="sql-editor"
+                id="sqlEditor"
+                spellcheck="false"
+                placeholder="SELECT * FROM ccdw_aggr_sales_summary LIMIT 10"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Collapsible "finalize" zone. Defaults to collapsed so the clause workspace
+             keeps its full vertical real estate; the Show SQL toggle in the run bar
+             slides the preview open between the clauses and the run button when the
+             user wants to verify what they're about to execute. -->
+          <div class="preview-panel is-collapsed" id="previewPanel" hidden>
+            <div class="preview-head">
+              <span class="preview-label">Generated SQL</span>
+              <button type="button" class="btn-ghost btn-ghost--inline" id="copySqlBtn" title="Copy to clipboard">
+                <span class="ic ic-code"></span>
+                <span>Copy</span>
+              </button>
+            </div>
+            <pre id="queryPreviewText">-- Select an entity and fields to generate query</pre>
+          </div>
+
+          <div class="run-bar">
+            <button
+              type="button"
+              class="btn-ghost"
+              id="toggleSqlBtn"
+              aria-expanded="false"
+              aria-controls="previewPanel"
+            >
+              <span class="ic ic-code"></span>
+              <span data-role="label">Show SQL</span>
+            </button>
+            <button
+              type="button"
+              class="btn-ghost"
+              id="toggleResultsBtn"
+              aria-expanded="false"
+              aria-controls="resultsPanel"
+              disabled
+            >
+              <span class="ic ic-table"></span>
+              <span data-role="label">Show Results</span>
+            </button>
+            <span class="run-hint">Press <kbd>⌘</kbd> <kbd>↵</kbd> to run</span>
+            <button id="runQueryBtnBottom" class="btn btn-run" disabled>
+              <span class="ic ic-play"></span>
+              <span>Run Query</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="results-panel" id="resultsPanel">
+          <div class="results-head">
+            <div class="results-title">Results</div>
+            <div class="badges" id="resultsBadges"></div>
+            <div class="results-actions">
+              <button class="btn btn-secondary" id="exportCsvBtn" disabled>
+                <span class="ic ic-download"></span>
+                <span>CSV</span>
+              </button>
+              <button class="btn btn-secondary" id="exportJsonBtn" disabled>
+                <span class="ic ic-code"></span>
+                <span>JSON</span>
+              </button>
+            </div>
+          </div>
+          <div class="results-body" id="resultsBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="statusBar" style="display: none"></div>
+
+    <script nonce="__NONCE__">
+      const vscode = acquireVsCodeApi();
+
+      const state = {
+        tables: [],
+        currentTable: null,
+        columns: [],
+        selectedFields: [],
+        filters: [],
+        filterLogic: 'AND',
+        orderBy: [],
+        limit: 100,
+        currentView: 'builder',
+        customSql: '',
+        results: null,
+      };
+
+      // Initial connection snapshot from the extension. Updated via `connectionState` messages.
+      let currentConnection = __CONNECTION_JSON__;
+
+      const el = {
+        connBar: document.getElementById('connBar'),
+        connPill: document.getElementById('connPill'),
+        connDetail: document.getElementById('connDetail'),
+        connTenantWrap: document.getElementById('connTenantWrap'),
+        connTenant: document.getElementById('connTenant'),
+        connHostWrap: document.getElementById('connHostWrap'),
+        connHost: document.getElementById('connHost'),
+        configureBtn: document.getElementById('configureBtn'),
+        fetchSize: document.getElementById('fetchSize'),
+        loadTablesBtn: document.getElementById('loadTablesBtn'),
+        runQueryBtn: document.getElementById('runQueryBtnBottom'),
+        builderViewBtn: document.getElementById('builderViewBtn'),
+        editorViewBtn: document.getElementById('editorViewBtn'),
+        builderView: document.getElementById('builderView'),
+        editorView: document.getElementById('editorView'),
+        sqlEditor: document.getElementById('sqlEditor'),
+        tableCount: document.getElementById('tableCount'),
+        fieldCount: document.getElementById('fieldCount'),
+        tableSearch: document.getElementById('tableSearch'),
+        fieldSearch: document.getElementById('fieldSearch'),
+        tableList: document.getElementById('tableList'),
+        fieldList: document.getElementById('fieldList'),
+        selectedFieldsContainer: document.getElementById('selectedFieldsContainer'),
+        fromContainer: document.getElementById('fromContainer'),
+        selectAllFieldsBtn: document.getElementById('selectAllFieldsBtn'),
+        clearFieldsBtn: document.getElementById('clearFieldsBtn'),
+        changeFromBtn: document.getElementById('changeFromBtn'),
+        addFilterBtn: document.getElementById('addFilterBtn'),
+        filtersContainer: document.getElementById('filtersContainer'),
+        logicToggle: document.getElementById('logicToggle'),
+        addOrderBtn: document.getElementById('addOrderBtn'),
+        orderByContainer: document.getElementById('orderByContainer'),
+        limitInput: document.getElementById('limitInput'),
+        queryPreviewText: document.getElementById('queryPreviewText'),
+        resultsPanel: document.getElementById('resultsPanel'),
+        resultsBadges: document.getElementById('resultsBadges'),
+        resultsBody: document.getElementById('resultsBody'),
+        exportCsvBtn: document.getElementById('exportCsvBtn'),
+        exportJsonBtn: document.getElementById('exportJsonBtn'),
+        copySqlBtn: document.getElementById('copySqlBtn'),
+        toggleSqlBtn: document.getElementById('toggleSqlBtn'),
+        toggleResultsBtn: document.getElementById('toggleResultsBtn'),
+        previewPanel: document.getElementById('previewPanel'),
+        statusBar: document.getElementById('statusBar'),
+      };
+
+      function renderConnection() {
+        const c = currentConnection || {};
+        const status = c.status || 'disconnected';
+        el.connBar.classList.remove('is-connected', 'is-disconnected', 'is-testing');
+        el.connBar.classList.add('is-' + status);
+        el.connPill.className = 'conn-pill ' + status;
+        if (status === 'connected') {
+          el.connPill.textContent = 'Connected';
+        } else if (status === 'testing') {
+          el.connPill.textContent = 'Connecting';
+        } else {
+          el.connPill.textContent = 'Disconnected';
+        }
+        if (c.tenantId) {
+          el.connTenant.textContent = c.tenantId;
+          el.connTenantWrap.hidden = false;
+        } else {
+          el.connTenantWrap.hidden = true;
+        }
+        if (c.host) {
+          el.connHost.textContent = c.host;
+          el.connHostWrap.hidden = false;
+        } else {
+          el.connHostWrap.hidden = true;
+        }
+        el.connDetail.textContent = c.message || '';
+
+        const connected = status === 'connected';
+        el.loadTablesBtn.disabled = !connected;
+        if (!connected) el.runQueryBtn.disabled = true;
+      }
+      renderConnection();
+
+      el.configureBtn.addEventListener('click', () => {
+        vscode.postMessage({command: 'configureConnection'});
+      });
+
+      // Flag set when the user clicks Load Tables without being configured. After the
+      // configure flow completes and a tenantId arrives via connectionState, we auto-trigger
+      // the load so the user doesn't have to click the button a second time.
+      let pendingLoadAfterConfigure = false;
+
+      el.loadTablesBtn.addEventListener('click', () => {
+        if (!currentConnection || !currentConnection.tenantId) {
+          setStatus('error', 'Configure CIP connection first');
+          pendingLoadAfterConfigure = true;
+          vscode.postMessage({command: 'configureConnection'});
+          return;
+        }
+        setLoadTablesBusy(true);
+        renderTablesLoadingState();
+        setStatusHtml('loading', '<span class="spinner"></span> Loading entities...');
+        vscode.postMessage({command: 'loadTables'});
+      });
+
+      // Toggle the Load Tables button between idle and loading. When loading we swap the
+      // refresh icon for an inline spinner, change the label, and disable clicks so rapid
+      // re-presses can't fan out Avatica RPCs (the backend also coalesces, but this makes
+      // the state visible to the user).
+      function setLoadTablesBusy(busy) {
+        const btn = el.loadTablesBtn;
+        if (!btn) return;
+        const icon = btn.querySelector('[data-role="icon"]');
+        const label = btn.querySelector('[data-role="label"]');
+        btn.disabled = !!busy;
+        btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+        if (busy) {
+          if (icon) {
+            icon.classList.remove('ic', 'ic-refresh');
+            icon.classList.add('spinner');
+          }
+          if (label) label.textContent = 'Loading…';
+        } else {
+          if (icon) {
+            icon.classList.remove('spinner');
+            icon.classList.add('ic', 'ic-refresh');
+          }
+          if (label) label.textContent = 'Load Entities';
+        }
+      }
+
+      // Replace the Tables list empty-state with a centered spinner so the sidebar also
+      // reflects the in-flight load. We don't render this inside the .list row stream
+      // because the list gets cleared on 'tablesLoaded'.
+      function renderTablesLoadingState() {
+        el.tableList.replaceChildren();
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        const iconWrap = document.createElement('div');
+        iconWrap.className = 'empty-icon';
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner';
+        spinner.style.width = '18px';
+        spinner.style.height = '18px';
+        iconWrap.appendChild(spinner);
+        const title = document.createElement('div');
+        title.className = 'empty-title';
+        title.textContent = 'Loading entities…';
+        const hint = document.createElement('div');
+        hint.className = 'empty-hint';
+        hint.textContent = 'Fetching metadata from the CIP data warehouse.';
+        empty.append(iconWrap, title, hint);
+        el.tableList.appendChild(empty);
+        // Reset count badge to an em-dash so stale counts don't linger.
+        el.tableCount.textContent = '—';
+      }
+
+      el.tableSearch.addEventListener('input', () => renderTableList());
+      el.fieldSearch.addEventListener('input', () => renderFieldList());
+      el.builderViewBtn.addEventListener('click', () => switchView('builder'));
+      el.editorViewBtn.addEventListener('click', () => switchView('editor'));
+      el.runQueryBtn.addEventListener('click', () => runQuery());
+
+      // SQL preview is hidden by default — users opt in to the extra vertical real estate.
+      el.toggleSqlBtn.addEventListener('click', () => {
+        const open = el.previewPanel.hidden === true;
+        el.previewPanel.hidden = !open;
+        el.toggleSqlBtn.setAttribute('aria-expanded', String(open));
+        el.toggleSqlBtn.querySelector('[data-role="label"]').textContent = open ? 'Hide SQL' : 'Show SQL';
+      });
+
+      // Results panel toggle — enabled once results are available.
+      el.toggleResultsBtn.addEventListener('click', () => {
+        const open = !el.resultsPanel.classList.contains('visible');
+        el.resultsPanel.classList.toggle('visible', open);
+        el.toggleResultsBtn.setAttribute('aria-expanded', String(open));
+        el.toggleResultsBtn.querySelector('[data-role="label"]').textContent = open ? 'Hide Results' : 'Show Results';
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          if (!el.runQueryBtn.disabled) runQuery();
+        }
+      });
+
+      el.limitInput.addEventListener('input', () => {
+        state.limit = parseInt(el.limitInput.value) || null;
+        updateQueryPreview();
+      });
+
+      el.selectAllFieldsBtn.addEventListener('click', () => {
+        if (state.columns.length === 0) return;
+        state.selectedFields = state.columns.map((c) => c.name);
+        renderSelectedFields();
+        renderFieldList();
+        updateQueryPreview();
+      });
+
+      el.clearFieldsBtn.addEventListener('click', () => {
+        state.selectedFields = [];
+        renderSelectedFields();
+        renderFieldList();
+        updateQueryPreview();
+      });
+
+      el.changeFromBtn.addEventListener('click', () => {
+        el.tableSearch.focus();
+        el.tableSearch.select();
+      });
+
+      el.addFilterBtn.addEventListener('click', () => {
+        state.filters.push({column: '', operator: '=', value: ''});
+        renderFilters();
+        updateQueryPreview();
+      });
+
+      el.addOrderBtn.addEventListener('click', () => {
+        state.orderBy.push({column: '', direction: 'ASC'});
+        renderOrderBy();
+        updateQueryPreview();
+      });
+
+      el.logicToggle.querySelectorAll('button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.filterLogic = btn.dataset.logic;
+          el.logicToggle.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          updateQueryPreview();
+        });
+      });
+
+      el.sqlEditor.addEventListener('input', () => {
+        state.customSql = el.sqlEditor.value;
+        if (state.currentView === 'editor') {
+          el.runQueryBtn.disabled = !state.customSql.trim();
+        }
+      });
+
+      el.exportCsvBtn.addEventListener('click', () => {
+        if (state.results) {
+          vscode.postMessage({command: 'exportCsv', params: {data: state.results}});
+        }
+      });
+
+      el.exportJsonBtn.addEventListener('click', () => {
+        if (state.results) {
+          vscode.postMessage({command: 'exportJson', params: {data: state.results}});
+        }
+      });
+
+      el.copySqlBtn.addEventListener('click', () => {
+        const sql = state.currentView === 'editor' ? state.customSql : buildSql();
+        if (!sql || sql.startsWith('--')) return;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(sql).then(
+            () => {
+              const original = el.copySqlBtn.innerHTML;
+              el.copySqlBtn.innerHTML = '<span class="ic ic-check"></span><span>Copied</span>';
+              setTimeout(() => {
+                el.copySqlBtn.innerHTML = original;
+              }, 1400);
+            },
+            () => {},
+          );
+        }
+      });
+
+      function setStatus(type, message) {
+        el.statusBar.className = 'footer ' + (type || '');
+        el.statusBar.textContent = message;
+      }
+
+      function setStatusHtml(type, html) {
+        el.statusBar.className = 'footer ' + (type || '');
+        el.statusBar.innerHTML = html;
+      }
+
+      function switchView(view) {
+        state.currentView = view;
+        el.builderViewBtn.classList.toggle('active', view === 'builder');
+        el.editorViewBtn.classList.toggle('active', view === 'editor');
+        el.builderView.classList.toggle('hidden', view !== 'builder');
+        el.editorView.classList.toggle('hidden', view !== 'editor');
+        const isConnected = (currentConnection?.status ?? 'disconnected') === 'connected';
+        if (view === 'editor') {
+          const existingSql = buildSql();
+          if (existingSql && !existingSql.startsWith('--')) {
+            el.sqlEditor.value = existingSql;
+          }
+          state.customSql = el.sqlEditor.value;
+          el.runQueryBtn.disabled = !isConnected || !state.customSql.trim();
+        } else {
+          el.runQueryBtn.disabled = !isConnected || !state.currentTable;
+        }
+      }
+
+      function getTypeClass(type) {
+        const t = (type || '').toLowerCase();
+        if (t.includes('char') || t.includes('text') || t.includes('str')) return 'str';
+        if (
+          t.includes('int') ||
+          t.includes('long') ||
+          t.includes('num') ||
+          t.includes('decimal') ||
+          t.includes('double') ||
+          t.includes('float') ||
+          t.includes('big')
+        )
+          return 'int';
+        if (t.includes('date') || t.includes('time')) return 'date';
+        if (t.includes('bool')) return 'bool';
+        return '';
+      }
+
+      function renderTableList() {
+        const query = el.tableSearch.value.toLowerCase();
+        const filtered = state.tables.filter((t) => t.toLowerCase().includes(query));
+        el.tableCount.textContent =
+          state.tables.length === 0
+            ? '0'
+            : query
+              ? filtered.length + '/' + state.tables.length
+              : String(state.tables.length);
+
+        el.tableList.replaceChildren();
+
+        // When the backend returns zero tables, render the "no tables" empty state explicitly.
+        // Previously we early-returned here, which left the loading-spinner placeholder drawn
+        // by renderTablesLoadingState() stuck on screen forever.
+        if (state.tables.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.innerHTML =
+            '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
+            '<div class="empty-title">No entities loaded</div>' +
+            '<div class="empty-hint">Click Load Entities to try again.</div>';
+          el.tableList.appendChild(empty);
+          return;
+        }
+
+        if (filtered.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.innerHTML =
+            '<div class="empty-icon"><span class="ic ic-search"></span></div><div class="empty-title">No matches</div>';
+          el.tableList.appendChild(empty);
+          return;
+        }
+
+        filtered.forEach((t) => {
+          const item = document.createElement('div');
+          item.className = 'list-item' + (state.currentTable === t ? ' selected' : '');
+          item.dataset.table = t;
+
+          const icon = document.createElement('span');
+          icon.className = 'icon';
+          icon.innerHTML = '<span class="ic ic-table"></span>';
+          item.appendChild(icon);
+
+          const label = document.createElement('span');
+          label.className = 'label';
+          label.textContent = t;
+          item.appendChild(label);
+
+          item.addEventListener('click', () => selectTable(t));
+          el.tableList.appendChild(item);
+        });
+      }
+
+      function selectTable(tableName) {
+        state.currentTable = tableName;
+        state.selectedFields = [];
+        state.filters = [];
+        state.orderBy = [];
+        state.columns = [];
+
+        renderTableList();
+        renderSelectedFields();
+        renderFromClause();
+        renderFilters();
+        renderOrderBy();
+
+        el.fieldList.replaceChildren();
+        const loading = document.createElement('div');
+        loading.className = 'empty';
+        loading.innerHTML =
+          '<div class="empty-icon"><span class="spinner" style="width: 20px; height: 20px;"></span></div><div class="empty-hint">Loading columns...</div>';
+        el.fieldList.appendChild(loading);
+
+        vscode.postMessage({
+          command: 'describeTable',
+          params: {tableName: tableName},
+        });
+
+        updateQueryPreview();
+        const isConnected = (currentConnection?.status ?? 'disconnected') === 'connected';
+        el.runQueryBtn.disabled = !isConnected;
+      }
+
+      function renderFieldList() {
+        const query = el.fieldSearch.value.toLowerCase();
+        const filtered = state.columns.filter((c) => c.name.toLowerCase().includes(query));
+        el.fieldCount.textContent =
+          state.columns.length === 0
+            ? '0'
+            : query
+              ? filtered.length + '/' + state.columns.length
+              : String(state.columns.length);
+
+        el.fieldList.replaceChildren();
+
+        // Guard: if no columns came back, draw the pick-a-table empty state rather than
+        // leaving whatever placeholder (e.g., the "Loading columns..." spinner from
+        // selectTable()) on screen.
+        if (state.columns.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.innerHTML =
+            '<div class="empty-icon"><span class="ic ic-columns"></span></div>' +
+            '<div class="empty-title">Pick an entity</div>' +
+            '<div class="empty-hint">Select an entity above to see its columns.</div>';
+          el.fieldList.appendChild(empty);
+          return;
+        }
+
+        if (filtered.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.innerHTML =
+            '<div class="empty-icon"><span class="ic ic-search"></span></div><div class="empty-title">No matches</div>';
+          el.fieldList.appendChild(empty);
+          return;
+        }
+
+        filtered.forEach((c) => {
+          const isSelected = state.selectedFields.includes(c.name);
+          const typeClass = getTypeClass(c.type);
+
+          const label = document.createElement('label');
+          label.className = 'list-item';
+          label.style.cursor = 'pointer';
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.className = 'field-checkbox';
+          cb.dataset.field = c.name;
+          cb.checked = isSelected;
+          cb.addEventListener('change', () => toggleField(c.name));
+          label.appendChild(cb);
+
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'label';
+          nameSpan.textContent = c.name;
+          label.appendChild(nameSpan);
+
+          const typeTag = document.createElement('span');
+          typeTag.className = 'type-tag ' + typeClass;
+          typeTag.textContent = c.type;
+          // Full datatype surfaces as a native tooltip on hover — the pill itself
+          // is max-width 96px with ellipsis, so long types (e.g., DECIMAL(38, 10)
+          // or VARCHAR(65536)) would otherwise be unreadable.
+          typeTag.title = c.type;
+          label.appendChild(typeTag);
+
+          el.fieldList.appendChild(label);
+        });
+      }
+
+      function toggleField(fieldName) {
+        const idx = state.selectedFields.indexOf(fieldName);
+        if (idx >= 0) {
+          state.selectedFields.splice(idx, 1);
+        } else {
+          state.selectedFields.push(fieldName);
+        }
+        renderSelectedFields();
+        updateQueryPreview();
+      }
+
+      function renderSelectedFields() {
+        el.selectAllFieldsBtn.disabled =
+          state.columns.length === 0 || state.selectedFields.length === state.columns.length;
+        el.clearFieldsBtn.disabled = state.selectedFields.length === 0;
+
+        el.selectedFieldsContainer.replaceChildren();
+
+        if (state.selectedFields.length === 0) {
+          const placeholder = document.createElement('span');
+          placeholder.className = 'placeholder';
+          placeholder.textContent = 'No columns selected — will use SELECT * (all columns)';
+          el.selectedFieldsContainer.appendChild(placeholder);
+          return;
+        }
+
+        const chipsWrap = document.createElement('div');
+        chipsWrap.className = 'chips';
+        state.selectedFields.forEach((f) => {
+          const chip = document.createElement('div');
+          chip.className = 'chip';
+          chip.append(f);
+
+          const remove = document.createElement('span');
+          remove.className = 'remove';
+          remove.textContent = '✕';
+          remove.addEventListener('click', () => {
+            toggleField(f);
+            renderFieldList();
+          });
+          chip.appendChild(remove);
+          chipsWrap.appendChild(chip);
+        });
+        el.selectedFieldsContainer.appendChild(chipsWrap);
+      }
+
+      function renderFromClause() {
+        el.changeFromBtn.disabled = state.tables.length === 0;
+        el.fromContainer.replaceChildren();
+        if (!state.currentTable) {
+          const placeholder = document.createElement('span');
+          placeholder.className = 'placeholder';
+          placeholder.textContent = 'Pick an entity from the sidebar to begin.';
+          el.fromContainer.appendChild(placeholder);
+        } else {
+          const chip = document.createElement('div');
+          chip.className = 'chip primary';
+          const icon = document.createElement('span');
+          icon.className = 'ic ic-table';
+          chip.append(icon, ' ' + state.currentTable);
+          el.fromContainer.appendChild(chip);
+        }
+      }
+
+      function renderFilters() {
+        el.filtersContainer.replaceChildren();
+        if (state.filters.length === 0) {
+          const placeholder = document.createElement('span');
+          placeholder.className = 'placeholder';
+          placeholder.textContent = 'No filters applied';
+          el.filtersContainer.appendChild(placeholder);
+          el.logicToggle.style.display = 'none';
+          return;
+        }
+
+        el.logicToggle.style.display = state.filters.length > 1 ? 'inline-flex' : 'none';
+
+        const operators = [
+          '=',
+          '!=',
+          '>',
+          '<',
+          '>=',
+          '<=',
+          'LIKE',
+          'NOT LIKE',
+          'IN',
+          'NOT IN',
+          'IS NULL',
+          'IS NOT NULL',
+        ];
+
+        state.filters.forEach((f, idx) => {
+          const row = document.createElement('div');
+          row.className = 'filter-row';
+
+          const colSelect = document.createElement('select');
+          colSelect.className = 'field-select';
+          const emptyOpt = document.createElement('option');
+          emptyOpt.value = '';
+          emptyOpt.textContent = 'Select column...';
+          colSelect.appendChild(emptyOpt);
+          state.columns.forEach((c) => {
+            const opt = document.createElement('option');
+            opt.value = c.name;
+            opt.textContent = c.name;
+            if (f.column === c.name) opt.selected = true;
+            colSelect.appendChild(opt);
+          });
+          colSelect.addEventListener('change', (e) => {
+            state.filters[idx].column = e.target.value;
+            updateQueryPreview();
+          });
+          row.appendChild(colSelect);
+
+          const opSelect = document.createElement('select');
+          opSelect.className = 'field-select';
+          operators.forEach((op) => {
+            const opt = document.createElement('option');
+            opt.value = op;
+            opt.textContent = op;
+            if (f.operator === op) opt.selected = true;
+            opSelect.appendChild(opt);
+          });
+          opSelect.addEventListener('change', (e) => {
+            state.filters[idx].operator = e.target.value;
+            renderFilters();
+            updateQueryPreview();
+          });
+          row.appendChild(opSelect);
+
+          const needsValue = !['IS NULL', 'IS NOT NULL'].includes(f.operator);
+          if (needsValue) {
+            const valInput = document.createElement('input');
+            valInput.type = 'text';
+            valInput.className = 'field-input';
+            valInput.placeholder = 'Value';
+            valInput.value = f.value || '';
+            valInput.addEventListener('input', (e) => {
+              state.filters[idx].value = e.target.value;
+              updateQueryPreview();
+            });
+            row.appendChild(valInput);
+          } else {
+            row.appendChild(document.createElement('span'));
+          }
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.title = 'Remove filter';
+          removeBtn.textContent = '✕';
+          removeBtn.addEventListener('click', () => {
+            state.filters.splice(idx, 1);
+            renderFilters();
+            updateQueryPreview();
+          });
+          row.appendChild(removeBtn);
+
+          el.filtersContainer.appendChild(row);
+        });
+      }
+
+      function renderOrderBy() {
+        el.orderByContainer.replaceChildren();
+        if (state.orderBy.length === 0) {
+          const placeholder = document.createElement('span');
+          placeholder.className = 'placeholder';
+          placeholder.textContent = 'No sorting applied';
+          el.orderByContainer.appendChild(placeholder);
+          return;
+        }
+
+        state.orderBy.forEach((o, idx) => {
+          const row = document.createElement('div');
+          row.className = 'order-row';
+
+          const colSelect = document.createElement('select');
+          colSelect.className = 'field-select';
+          const emptyOpt = document.createElement('option');
+          emptyOpt.value = '';
+          emptyOpt.textContent = 'Select column...';
+          colSelect.appendChild(emptyOpt);
+          state.columns.forEach((c) => {
+            const opt = document.createElement('option');
+            opt.value = c.name;
+            opt.textContent = c.name;
+            if (o.column === c.name) opt.selected = true;
+            colSelect.appendChild(opt);
+          });
+          colSelect.addEventListener('change', (e) => {
+            state.orderBy[idx].column = e.target.value;
+            updateQueryPreview();
+          });
+          row.appendChild(colSelect);
+
+          const dirSelect = document.createElement('select');
+          dirSelect.className = 'field-select';
+          ['ASC', 'DESC'].forEach((d) => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = d === 'ASC' ? '↑ ASC' : '↓ DESC';
+            if (o.direction === d) opt.selected = true;
+            dirSelect.appendChild(opt);
+          });
+          dirSelect.addEventListener('change', (e) => {
+            state.orderBy[idx].direction = e.target.value;
+            updateQueryPreview();
+          });
+          row.appendChild(dirSelect);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.title = 'Remove sort';
+          removeBtn.textContent = '✕';
+          removeBtn.addEventListener('click', () => {
+            state.orderBy.splice(idx, 1);
+            renderOrderBy();
+            updateQueryPreview();
+          });
+          row.appendChild(removeBtn);
+
+          el.orderByContainer.appendChild(row);
+        });
+      }
+
+      function buildSql() {
+        if (!state.currentTable) return '-- Select an entity to generate query';
+
+        const fields = state.selectedFields.length > 0 ? state.selectedFields.join(', ') : '*';
+        let sql = 'SELECT ' + fields + '\nFROM ' + state.currentTable;
+
+        const validFilters = state.filters.filter((f) => f.column);
+        if (validFilters.length > 0) {
+          const conditions = validFilters.map((f) => {
+            if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
+              return f.column + ' ' + f.operator;
+            }
+            const needsQuotes = f.operator === 'LIKE' || f.operator === 'NOT LIKE' || isNaN(Number(f.value));
+            if (f.operator === 'IN' || f.operator === 'NOT IN') {
+              return f.column + ' ' + f.operator + ' (' + f.value + ')';
+            }
+            const value = needsQuotes ? "'" + (f.value || '').replace(/'/g, "''") + "'" : f.value;
+            return f.column + ' ' + f.operator + ' ' + value;
+          });
+          sql += '\nWHERE ' + conditions.join(' ' + state.filterLogic + ' ');
+        }
+
+        const validOrder = state.orderBy.filter((o) => o.column);
+        if (validOrder.length > 0) {
+          sql += '\nORDER BY ' + validOrder.map((o) => o.column + ' ' + o.direction).join(', ');
+        }
+
+        if (state.limit && state.limit > 0) {
+          sql += '\nLIMIT ' + state.limit;
+        }
+
+        return sql;
+      }
+
+      function highlightSql(sql) {
+        const keywords = [
+          'SELECT',
+          'FROM',
+          'WHERE',
+          'ORDER BY',
+          'LIMIT',
+          'AND',
+          'OR',
+          'NOT',
+          'IS NULL',
+          'IS NOT NULL',
+          'LIKE',
+          'IN',
+          'ASC',
+          'DESC',
+        ];
+        let highlighted = escapeHtml(sql);
+        keywords.forEach((kw) => {
+          const regex = new RegExp('\\b(' + kw + ')\\b', 'g');
+          highlighted = highlighted.replace(regex, '<span class="sql-keyword">$1</span>');
+        });
+        highlighted = highlighted.replace(/'([^']*)'/g, '<span class="sql-string">\'$1\'</span>');
+        highlighted = highlighted.replace(/\b(\d+)\b/g, '<span class="sql-number">$1</span>');
+        highlighted = highlighted.replace(/(--[^\n]*)/g, '<span class="sql-comment">$1</span>');
+        return highlighted;
+      }
+
+      function updateQueryPreview() {
+        const sql = buildSql();
+        el.queryPreviewText.innerHTML = highlightSql(sql);
+      }
+
+      function runQuery() {
+        if (!currentConnection || !currentConnection.tenantId) {
+          setStatus('error', 'Configure the CIP connection first.');
+          vscode.postMessage({command: 'configureConnection'});
+          return;
+        }
+
+        const sql = state.currentView === 'editor' ? state.customSql : buildSql();
+        if (!sql || sql.startsWith('--')) {
+          setStatus('error', 'No valid query — select an entity first.');
+          return;
+        }
+
+        el.runQueryBtn.disabled = true;
+        setStatusHtml('loading', '<span class="spinner"></span> Executing query...');
+
+        vscode.postMessage({
+          command: 'executeRawQuery',
+          params: {sql: sql, fetchSize: el.fetchSize.value},
+        });
+      }
+
+      function renderResults(data) {
+        state.results = data;
+        el.resultsPanel.classList.add('visible');
+        el.toggleResultsBtn.disabled = false;
+        el.toggleResultsBtn.setAttribute('aria-expanded', 'true');
+        el.toggleResultsBtn.querySelector('[data-role="label"]').textContent = 'Hide Results';
+        el.exportCsvBtn.disabled = !data.rows || data.rows.length === 0;
+        el.exportJsonBtn.disabled = !data.rows || data.rows.length === 0;
+
+        el.resultsBadges.replaceChildren();
+        const countBadge = document.createElement('span');
+        countBadge.className = 'badge';
+        countBadge.textContent = (data.rowCount || 0).toLocaleString() + ' rows';
+        el.resultsBadges.appendChild(countBadge);
+        if (data.executionTime) {
+          const timeBadge = document.createElement('span');
+          timeBadge.className = 'badge neutral';
+          timeBadge.textContent = '⏱ ' + data.executionTime + 'ms';
+          el.resultsBadges.appendChild(timeBadge);
+        }
+
+        if (!data.rows || data.rows.length === 0) {
+          el.resultsBody.replaceChildren();
+          const noResults = document.createElement('div');
+          noResults.className = 'no-results';
+          noResults.innerHTML =
+            '<div class="icon"><span class="ic ic-inbox"></span></div><div>Query successful. No rows returned.</div>';
+          el.resultsBody.appendChild(noResults);
+          return;
+        }
+
+        const cols = data.columns;
+        const table = document.createElement('table');
+        table.className = 'table';
+
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        cols.forEach((c) => {
+          const th = document.createElement('th');
+          th.textContent = c;
+          headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        data.rows.slice(0, 1000).forEach((row) => {
+          const tr = document.createElement('tr');
+          cols.forEach((c) => {
+            const td = document.createElement('td');
+            const value = row[c];
+            const display =
+              value === null || value === undefined
+                ? '—'
+                : typeof value === 'object'
+                  ? JSON.stringify(value)
+                  : String(value);
+            td.title = display;
+            td.textContent = display;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+
+        el.resultsBody.replaceChildren(table);
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = String(text == null ? '' : text);
+        return div.innerHTML;
+      }
+
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        switch (message.command) {
+          case 'connectionState':
+            currentConnection = message.connection || currentConnection;
+            renderConnection();
+            // If the user clicked Load Tables while unconfigured, auto-trigger the load
+            // as soon as configuration completes with a valid tenantId.
+            if (pendingLoadAfterConfigure && currentConnection && currentConnection.tenantId) {
+              pendingLoadAfterConfigure = false;
+              setLoadTablesBusy(true);
+              renderTablesLoadingState();
+              setStatusHtml('loading', '<span class="spinner"></span> Loading entities...');
+              vscode.postMessage({command: 'loadTables'});
+            }
+            break;
+
+          case 'tablesLoading':
+            // Backend signalled it has started the fetch. Keep the spinner state until
+            // we receive a terminal tablesLoaded or tablesLoadError message.
+            setLoadTablesBusy(true);
+            renderTablesLoadingState();
+            break;
+
+          case 'tablesLoaded':
+            setLoadTablesBusy(false);
+            state.tables = message.tables || [];
+            renderTableList();
+            renderFromClause();
+            setStatus('success', 'Loaded ' + message.tableCount + ' entities — search and click to explore.');
+            break;
+
+          case 'tablesLoadError':
+            setLoadTablesBusy(false);
+            setStatus('error', message.error);
+            // Reset the list to the original no-tables empty state. renderTableList() bails
+            // out early when state.tables is empty, so render the placeholder explicitly.
+            state.tables = [];
+            el.tableList.replaceChildren();
+            el.tableCount.textContent = '0';
+            {
+              const empty = document.createElement('div');
+              empty.className = 'empty';
+              empty.innerHTML =
+                '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
+                '<div class="empty-title">No entities loaded</div>' +
+                '<div class="empty-hint">Click Load Entities to try again.</div>';
+              el.tableList.appendChild(empty);
+            }
+            break;
+
+          case 'tableDescribed':
+            state.columns = (message.schema.columns || []).map((c) => ({name: c.name, type: c.type}));
+            renderFieldList();
+            renderSelectedFields();
+            renderFilters();
+            renderOrderBy();
+            break;
+
+          case 'tableDescribeError': {
+            el.fieldList.replaceChildren();
+            const err = document.createElement('div');
+            err.className = 'empty';
+            const icon = document.createElement('div');
+            icon.className = 'empty-icon';
+            icon.innerHTML = '<span class="ic ic-alert"></span>';
+            const title = document.createElement('div');
+            title.className = 'empty-title';
+            title.textContent = 'Failed to load';
+            const hint = document.createElement('div');
+            hint.className = 'empty-hint';
+            hint.textContent = String(message.error);
+            err.append(icon, title, hint);
+            el.fieldList.appendChild(err);
+            break;
+          }
+
+          case 'queryExecuting':
+            setStatusHtml('loading', '<span class="spinner"></span> Executing query...');
+            break;
+
+          case 'queryResult': {
+            const isConn = (currentConnection?.status ?? 'disconnected') === 'connected';
+            el.runQueryBtn.disabled = !isConn;
+            renderResults(message.data);
+            setStatus(
+              'success',
+              'Query returned ' + message.data.rowCount + ' rows in ' + message.data.executionTime + 'ms.',
+            );
+            break;
+          }
+
+          case 'queryError': {
+            const isConn = (currentConnection?.status ?? 'disconnected') === 'connected';
+            el.runQueryBtn.disabled = !isConn;
+            setStatus('error', message.error);
+            break;
+          }
+        }
+      });
+
+      updateQueryPreview();
+    </script>
+  </body>
+</html>
