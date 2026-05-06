@@ -148,6 +148,7 @@ import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
+import {ServerContext} from '../server-context.js';
 import {registerToolsets} from '../registry.js';
 import {TOOLSETS, type StartupFlags} from '../utils/index.js';
 
@@ -218,6 +219,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       default: false,
     }),
   };
+
+  /** Server-scoped persistent state (debug sessions, log watches, etc.) */
+  private serverContext?: ServerContext;
 
   /** Signal that triggered shutdown (if any) - used to exit process after finally() */
   private shutdownSignal?: string;
@@ -350,9 +354,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       },
     );
 
+    // Create server context for persistent state (debug sessions, log watches)
+    this.serverContext = new ServerContext();
+
     // Register toolsets with loader function that loads config and creates Services on each tool call
     // This allows tools to pick up changes to config files (dw.json, ~/.mobify) between invocations
-    await registerToolsets(startupFlags, server, this.loadServices.bind(this));
+    await registerToolsets(startupFlags, server, this.loadServices.bind(this), this.serverContext);
 
     // Connect to stdio transport
     const transport = new StdioServerTransport();
@@ -363,11 +370,16 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     this.stdinClosePromise = new Promise((resolve) => {
       const sendStopAndResolve = (signal: string): void => {
         this.shutdownSignal = signal;
-        this.telemetry?.sendEvent('SERVER_STOPPED', {signal});
-        // Flush telemetry before resolving to ensure SERVER_STOPPED is sent
-        // before finally() proceeds to stop telemetry
-        const flushPromise = this.telemetry?.flush() ?? Promise.resolve();
-        flushPromise.then(() => resolve()).catch(() => resolve());
+        const cleanup = this.serverContext?.destroyAll() ?? Promise.resolve();
+        cleanup
+          .catch(() => {})
+          .then(() => {
+            this.telemetry?.sendEvent('SERVER_STOPPED', {signal});
+            const flushPromise = this.telemetry?.flush() ?? Promise.resolve();
+            return flushPromise;
+          })
+          .then(() => resolve())
+          .catch(() => resolve());
       };
 
       // Handle stdin close (MCP client disconnects normally)
