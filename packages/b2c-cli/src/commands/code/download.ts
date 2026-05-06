@@ -13,8 +13,6 @@ import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> {
-  static hiddenAliases = ['code:download'];
-
   static args = {
     ...CartridgeCommand.baseArgs,
   };
@@ -51,6 +49,8 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
       exclusive: ['output'],
     }),
   };
+
+  static hiddenAliases = ['code:download'];
 
   protected operations = {
     downloadCartridges,

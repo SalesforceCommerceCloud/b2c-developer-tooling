@@ -38,7 +38,6 @@ function createDAPReader(stream: PassThrough, handler: (msg: DAPMessage) => void
   stream.on('data', (chunk: Buffer) => {
     buffer += chunk.toString();
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const headerEnd = buffer.indexOf('\r\n\r\n');
       if (headerEnd === -1) break;
