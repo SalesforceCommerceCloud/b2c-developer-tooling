@@ -430,13 +430,13 @@ describe('operations/mrt/env', () => {
       let receivedBody: any;
 
       server.use(
-        http.post(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/clone/`, async ({request, params}) => {
-          receivedBody = await request.json();
-          return HttpResponse.json(
-            {slug: params.targetSlug, name: 'qa', state: 'CREATE_IN_PROGRESS'},
-            {status: 201},
-          );
-        }),
+        http.post(
+          `${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/clone/`,
+          async ({request, params}) => {
+            receivedBody = await request.json();
+            return HttpResponse.json({slug: params.targetSlug, name: 'qa', state: 'CREATE_IN_PROGRESS'}, {status: 201});
+          },
+        ),
       );
 
       const auth = new MockAuthStrategy();
