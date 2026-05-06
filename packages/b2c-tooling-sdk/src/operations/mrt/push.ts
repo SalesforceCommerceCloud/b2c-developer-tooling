@@ -413,3 +413,134 @@ export async function downloadBundle(
     downloadUrl: data.download_url,
   };
 }
+
+/**
+ * Options for deleting a single bundle.
+ */
+export interface DeleteBundleOptions {
+  /** The project slug containing the bundle. */
+  projectSlug: string;
+  /** The bundle ID to delete. */
+  bundleId: number;
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Requests deletion of a single bundle. Bundles are deleted asynchronously.
+ * Only project admins can perform this operation.
+ *
+ * @param options - Delete options
+ * @param auth - Authentication strategy
+ * @throws Error if the request fails
+ */
+export async function deleteBundle(options: DeleteBundleOptions, auth: AuthStrategy): Promise<void> {
+  const logger = getLogger();
+  const {projectSlug, bundleId, origin} = options;
+
+  logger.debug({projectSlug, bundleId}, '[MRT] Deleting bundle');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+
+  const {error} = await client.DELETE('/api/projects/{project_slug}/bundles/{bundle_id}/', {
+    params: {
+      path: {project_slug: projectSlug, bundle_id: String(bundleId)},
+    },
+  });
+
+  if (error) {
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to delete bundle: ${errorMessage}`);
+  }
+
+  logger.debug({bundleId}, '[MRT] Bundle queued for deletion');
+}
+
+/**
+ * Options for bulk-deleting bundles.
+ */
+export interface BulkDeleteBundlesOptions {
+  /** The project slug containing the bundles. */
+  projectSlug: string;
+  /** Bundle IDs to delete. */
+  bundleIds: number[];
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * A bundle that the server rejected during a bulk-delete request.
+ */
+export interface BulkDeleteRejectedBundle {
+  /** Bundle ID that was rejected. May be null when the server returned a batch error without a specific id. */
+  bundleId?: number;
+  /** Reason the bundle was rejected. */
+  reason: string;
+}
+
+/**
+ * Result of a bulk-delete request.
+ */
+export interface BulkDeleteBundlesResult {
+  /** Bundle IDs that were queued for asynchronous deletion. */
+  queued: number[];
+  /** Bundles the server rejected, with reasons. */
+  rejected: BulkDeleteRejectedBundle[];
+}
+
+/**
+ * Requests deletion of multiple bundles in a single call.
+ *
+ * The response indicates which bundles were queued and which were rejected.
+ * Only project admins can perform this operation.
+ *
+ * @param options - Bulk delete options
+ * @param auth - Authentication strategy
+ * @returns Lists of queued and rejected bundle IDs
+ * @throws Error if the request itself fails
+ */
+export async function bulkDeleteBundles(
+  options: BulkDeleteBundlesOptions,
+  auth: AuthStrategy,
+): Promise<BulkDeleteBundlesResult> {
+  const logger = getLogger();
+  const {projectSlug, bundleIds, origin} = options;
+
+  logger.debug({projectSlug, count: bundleIds.length}, '[MRT] Bulk-deleting bundles');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+
+  const {data, error} = await client.POST('/api/projects/{project_slug}/bundles/bulk-delete/', {
+    params: {
+      path: {project_slug: projectSlug},
+    },
+    body: {bundle_ids: bundleIds},
+  });
+
+  if (error) {
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to bulk-delete bundles: ${errorMessage}`);
+  }
+
+  const rejected: BulkDeleteRejectedBundle[] = (data?.rejected_bundles ?? []).map((entry) => ({
+    bundleId: entry.bundle_id,
+    reason: entry.errors,
+  }));
+
+  return {
+    queued: data?.bundles_queued_for_cleanup ?? [],
+    rejected,
+  };
+}

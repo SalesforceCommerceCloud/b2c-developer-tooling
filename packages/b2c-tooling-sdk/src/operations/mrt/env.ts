@@ -483,6 +483,140 @@ export async function waitForEnv(options: WaitForEnvOptions, auth: AuthStrategy)
 export type MrtEnvironmentUpdate = components['schemas']['APITargetV2Update'];
 
 /**
+ * Options for cloning an MRT environment.
+ */
+export interface CloneEnvOptions {
+  /**
+   * The project slug containing the source and new environment.
+   */
+  projectSlug: string;
+
+  /**
+   * Slug for the new environment created by the clone.
+   */
+  slug: string;
+
+  /**
+   * Slug of the source environment to clone from.
+   */
+  fromSlug: string;
+
+  /**
+   * Full external hostname (e.g., www.example.com).
+   * Required when not using an MRT-managed certificate.
+   */
+  externalHostname?: string | null;
+
+  /**
+   * External domain for Universal PWA SSR (e.g., example.com).
+   */
+  externalDomain?: string | null;
+
+  /**
+   * ID of the certificate to associate with the new environment.
+   * Required when using a custom domain.
+   */
+  certificateId?: number | null;
+
+  /**
+   * Clone redirects from the source environment.
+   * @default false
+   */
+  cloneRedirects?: boolean;
+
+  /**
+   * Clone environment variables from the source environment.
+   * @default false
+   */
+  cloneEnvironmentVariables?: boolean;
+
+  /**
+   * Clone B2C target info from the source environment.
+   * @default false
+   */
+  cloneB2cTargetInfo?: boolean;
+
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Clones an environment (target) from an existing source environment.
+ *
+ * The new environment receives the source's configuration (excluding proxies and
+ * production flag) and is automatically deployed with the same bundle as the
+ * source target's current deployment (if any).
+ *
+ * @param options - Clone options
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns The newly created environment
+ * @throws Error if the clone fails
+ *
+ * @example
+ * ```typescript
+ * const env = await cloneEnv({
+ *   projectSlug: 'my-storefront',
+ *   slug: 'staging-copy',
+ *   fromSlug: 'staging',
+ *   cloneRedirects: true,
+ *   cloneEnvironmentVariables: true
+ * }, auth);
+ * ```
+ */
+export async function cloneEnv(options: CloneEnvOptions, auth: AuthStrategy): Promise<MrtEnvironment> {
+  const logger = getLogger();
+  const {projectSlug, slug, fromSlug, origin} = options;
+
+  logger.debug({projectSlug, slug, fromSlug}, '[MRT] Cloning environment');
+
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+
+  const body: components['schemas']['APITargetV2Clone'] = {
+    from_target_slug: fromSlug,
+    clone_redirects: options.cloneRedirects ?? false,
+    clone_environment_variables: options.cloneEnvironmentVariables ?? false,
+    clone_b2c_target_info: options.cloneB2cTargetInfo ?? false,
+  };
+
+  if (options.externalHostname !== undefined) {
+    body.ssr_external_hostname = options.externalHostname;
+  }
+
+  if (options.externalDomain !== undefined) {
+    body.ssr_external_domain = options.externalDomain;
+  }
+
+  if (options.certificateId !== undefined) {
+    body.certificate_id = options.certificateId;
+  }
+
+  const {data, error} = await client.POST('/api/projects/{project_slug}/target/{target_slug}/clone/', {
+    params: {
+      path: {project_slug: projectSlug, target_slug: slug},
+    },
+    body,
+  });
+
+  if (error) {
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as {message: unknown}).message)
+        : JSON.stringify(error);
+    throw new Error(`Failed to clone environment: ${errorMessage}`);
+  }
+
+  // The OpenAPI spec types this response as APITargetV2Clone (the request body schema),
+  // but the API actually returns a target object (slug, name, state, ssr_*, etc.).
+  // Cast through unknown rather than re-fetching to avoid a second round-trip.
+  logger.debug({slug, fromSlug}, '[MRT] Environment cloned successfully');
+
+  return data as unknown as MrtEnvironment;
+}
+
+/**
  * Patched environment for partial updates.
  */
 export type PatchedMrtEnvironment = components['schemas']['PatchedAPITargetV2Update'];

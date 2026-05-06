@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {createMrtClient, DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
-import {uploadBundle, listBundles} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {uploadBundle, listBundles, deleteBundle, bulkDeleteBundles} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {Bundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
@@ -234,6 +234,65 @@ describe('operations/mrt/push', () => {
       } catch (error) {
         expect((error as Error).message).to.include('Failed to list bundles');
       }
+    });
+  });
+
+  describe('deleteBundle', () => {
+    it('should DELETE the bundle and resolve on 202', async () => {
+      let receivedPath: string | undefined;
+      server.use(
+        http.delete(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/bundles/:bundleId/`, ({params}) => {
+          receivedPath = `${params.projectSlug}/${params.bundleId}`;
+          return new HttpResponse(null, {status: 204});
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      await deleteBundle({projectSlug: 'my-project', bundleId: 42}, auth);
+
+      expect(receivedPath).to.equal('my-project/42');
+    });
+
+    it('should throw on error response', async () => {
+      server.use(
+        http.delete(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/bundles/:bundleId/`, () =>
+          HttpResponse.json({message: 'Bundle in use'}, {status: 403}),
+        ),
+      );
+
+      const auth = new MockAuthStrategy();
+      try {
+        await deleteBundle({projectSlug: 'my-project', bundleId: 42}, auth);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect((error as Error).message).to.include('delete bundle');
+      }
+    });
+  });
+
+  describe('bulkDeleteBundles', () => {
+    it('should send all bundle IDs and return queued/rejected lists', async () => {
+      let receivedBody: {bundle_ids?: number[]} | undefined;
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/bundles/bulk-delete/`, async ({request}) => {
+          receivedBody = (await request.json()) as {bundle_ids?: number[]};
+          return HttpResponse.json(
+            {
+              bundles_queued_for_cleanup: [1, 3],
+              rejected_bundles: [{bundle_id: 2, errors: 'Bundle in use'}],
+            },
+            {status: 202},
+          );
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const result = await bulkDeleteBundles({projectSlug: 'my-project', bundleIds: [1, 2, 3]}, auth);
+
+      expect(receivedBody?.bundle_ids).to.deep.equal([1, 2, 3]);
+      expect(result.queued).to.deep.equal([1, 3]);
+      expect(result.rejected).to.have.lengthOf(1);
+      expect(result.rejected[0]).to.deep.equal({bundleId: 2, reason: 'Bundle in use'});
     });
   });
 });

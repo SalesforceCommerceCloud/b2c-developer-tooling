@@ -21,6 +21,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizations/{organization_slug}/certificates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List certificates for an organization with filtering and search */
+        get: operations["organizations_certificates_list"];
+        put?: never;
+        /** @description Create a new certificate for an organization */
+        post: operations["organizations_certificates_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organization_slug}/certificates/{cert_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Retrieve a specific certificate for an organization */
+        get: operations["organizations_certificates_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Delete a specific certificate for an organization */
+        delete: operations["organizations_certificates_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organization_slug}/certificates/{cert_id}/restart-validation/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Restart validation for a certificate. Creates a new certificate in AWS and updates the existing certificate record. Only works for certificates that are not yet validated. */
+        put: operations["organizations_certificates_restart_validation_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Restart validation for a specific certificate for an organization. */
+        patch: operations["organizations_certificates_restart_validation_partial_update"];
+        trace?: never;
+    };
+    "/api/organizations/{organization_slug}/members/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all the members of an organization. */
+        get: operations["list_organization_members"];
+        put?: never;
+        /** @description Add a new member to an organization. */
+        post: operations["organizations_members_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organization_slug}/members/{email}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read data about an organization member's permissions. */
+        get: operations["organizations_members_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Remove a member from an organization. */
+        delete: operations["organizations_members_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Update an organization member's permissions. */
+        patch: operations["organizations_members_partial_update"];
+        trace?: never;
+    };
     "/api/projects/": {
         parameters: {
             query?: never;
@@ -109,6 +200,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_slug}/bundles/{bundle_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Request deletion of a bundle. The bundle will be asynchronously deleted. This operation can only be performed by project admins. */
+        delete: operations["projects_bundles_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_slug}/bundles/{bundle_id}/download/": {
         parameters: {
             query?: never;
@@ -120,6 +228,23 @@ export interface paths {
         get: operations["projects_bundles_download_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_slug}/bundles/bulk-delete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Request deletion for multiple bundles. Bundles are deleted asynchronously. Only project admins can perform this call. The response indicates which bundles were successfully queued for deletion and which failed validation. */
+        post: operations["projects_bundles_bulk_delete_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -268,6 +393,23 @@ export interface paths {
         post?: never;
         /** @description Delete an access control header by its id. */
         delete: operations["projects_target_access_control_header_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_slug}/target/{target_slug}/clone/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Clone a target from another target in the same project. This creates a new target with the same configuration as the source target, excluding proxies and production flag. Optionally clones redirects and environment variables. The new target will be automatically deployed with the same bundle as the source target's current deployment (if source has a deployed bundle) or with a reset bundle. */
+        post: operations["projects_target_clone_create"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -454,7 +596,7 @@ export interface components {
              * @description Timestamp in the extended ISO 8601 format for when the object was created.
              */
             readonly created_at?: string;
-            readonly publishing_status?: components["schemas"]["PublishingStatusEnum"];
+            readonly publishing_status?: components["schemas"]["Status1d2Enum"];
             readonly publishing_status_description?: string;
         };
         APIOrganization: {
@@ -479,6 +621,48 @@ export interface components {
             readonly has_mobify_tag_project?: boolean;
             readonly limits?: components["schemas"]["OrganizationLimits"];
             readonly auto_delete?: components["schemas"]["OrganizationAutoDelete"];
+            /** @description Enable SSR architecture selection (x86 or arm64) for this organization */
+            readonly can_configure_ssr_architecture?: boolean;
+        };
+        APIOrganizationMember: {
+            /**
+             * Email address
+             * Format: email
+             */
+            readonly user?: string;
+            readonly email?: string;
+            role: components["schemas"]["RoleEnum"];
+            readonly first_name?: string;
+            readonly last_name?: string;
+            readonly can_view_all_projects?: boolean;
+            readonly custom_domain_cert_permission?: components["schemas"]["Status1d2Enum"];
+        };
+        /** @description Serializer for creating organization members. */
+        APIOrganizationMemberCreate: {
+            /**
+             * Email address
+             * Format: email
+             */
+            user: string;
+            role: components["schemas"]["RoleEnum"];
+            can_view_all_projects?: boolean;
+            custom_domain_cert_permission?: components["schemas"]["Status1d2Enum"];
+        };
+        /**
+         * @description Serializer for updating organization role permissions.
+         *     Allows updating can_view_all_projects and custom_domain_cert_permission.
+         */
+        APIOrganizationMemberUpdate: {
+            /**
+             * Email address
+             * Format: email
+             */
+            readonly user?: string;
+            readonly role?: components["schemas"]["RoleEnum"];
+            readonly first_name?: string;
+            readonly last_name?: string;
+            can_view_all_projects?: boolean;
+            custom_domain_cert_permission?: components["schemas"]["Status1d2Enum"];
         };
         APIProjectMember: {
             /**
@@ -498,7 +682,6 @@ export interface components {
             /** Format: uri */
             url?: string;
             slug?: string;
-            /** @description User-friendly identifier for this instance. */
             organization: string;
             readonly deletion_status?: components["schemas"]["DeletionStatusEnum"];
             readonly project_type?: components["schemas"]["ProjectTypeEnum"];
@@ -523,6 +706,7 @@ export interface components {
                 upload_bundle?: boolean;
                 edit_environment_variable?: boolean;
                 edit_access_control_header?: boolean;
+                edit_data_access_layer_entry?: boolean;
             };
             /**
              * SSR AWS Region
@@ -554,6 +738,13 @@ export interface components {
              */
             ssr_region?: components["schemas"]["SsrRegionEnum"];
             /**
+             * @description Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.
+             *
+             *     * `x86` - x86
+             *     * `arm64` - ARM64
+             */
+            ssr_architecture?: (components["schemas"]["SsrArchitectureEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
              * Format: date-time
              * @description Timestamp in the extended ISO 8601 format for when the object was created.
              */
@@ -563,6 +754,14 @@ export interface components {
              * @description Timestamp in the extended ISO 8601 format for when the object was last updated.
              */
             readonly updated_at?: string;
+            /**
+             * @description Source of the project. One of: ecom, core, direct.
+             *
+             *     * `ecom` - ecom
+             *     * `core` - core
+             *     * `direct` - direct
+             */
+            readonly source?: (components["schemas"]["SourceEnum"] | components["schemas"]["NullEnum"]) | null;
         };
         APIProjectV2Update: {
             /** @description User-friendly name for this project */
@@ -595,6 +794,7 @@ export interface components {
                 upload_bundle?: boolean;
                 edit_environment_variable?: boolean;
                 edit_access_control_header?: boolean;
+                edit_data_access_layer_entry?: boolean;
             };
             /**
              * SSR AWS Region
@@ -626,6 +826,13 @@ export interface components {
              */
             ssr_region?: components["schemas"]["SsrRegionEnum"];
             /**
+             * @description Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.
+             *
+             *     * `x86` - x86
+             *     * `arm64` - ARM64
+             */
+            ssr_architecture?: (components["schemas"]["SsrArchitectureEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
              * Format: date-time
              * @description Timestamp in the extended ISO 8601 format for when the object was created.
              */
@@ -635,6 +842,14 @@ export interface components {
              * @description Timestamp in the extended ISO 8601 format for when the object was last updated.
              */
             readonly updated_at?: string;
+            /**
+             * @description Source of the project. One of: ecom, core, direct.
+             *
+             *     * `ecom` - ecom
+             *     * `core` - core
+             *     * `direct` - direct
+             */
+            readonly source?: (components["schemas"]["SourceEnum"] | components["schemas"]["NullEnum"]) | null;
         };
         APIRedirectV2Clone: {
             from_target_slug: string;
@@ -680,6 +895,35 @@ export interface components {
              */
             readonly updated_by?: string;
         };
+        /**
+         * @description Serializer for target cloning request.
+         *     Inherits from APITargetV2BaseSerializer to reuse validation helper methods.
+         */
+        APITargetV2Clone: {
+            /** @description The slug of the target to clone from. */
+            from_target_slug: string;
+            /** @description Full hostname to be used by the cloned environment. Required when using non-MRT managed certificate. */
+            ssr_external_hostname?: string | null;
+            /** @description The domain to be used for a Universal PWA SSR deployment (e.g. customer.com). If not provided and hostname is provided, will be extracted from hostname. */
+            ssr_external_domain?: string | null;
+            /** @description The ID of the certificate to associate with the cloned target's custom domain. Required for custom domains. */
+            certificate_id?: number | null;
+            /**
+             * @description Whether to clone redirects from the source target.
+             * @default false
+             */
+            clone_redirects: boolean;
+            /**
+             * @description Whether to clone environment variables from the source target.
+             * @default false
+             */
+            clone_environment_variables: boolean;
+            /**
+             * @description Whether to clone B2C target info from the source target.
+             * @default false
+             */
+            clone_b2c_target_info: boolean;
+        };
         /** @description This is the serializer for target create/list APIs. */
         APITargetV2Create: {
             slug?: string;
@@ -701,7 +945,7 @@ export interface components {
             readonly current_deploy?: {
                 [key: string]: unknown;
             };
-            /** @description Full hostname to used by the environment eg. www.customer.com. */
+            /** @description Full hostname to be used by the environment eg. www.customer.com. */
             ssr_external_hostname?: string | null;
             /** @description The domain to be used for a Universal PWA SSR deployment (e.g. customer.com) */
             ssr_external_domain?: string | null;
@@ -734,12 +978,21 @@ export interface components {
              *     * `sa-east-1` - South America (Sao Paulo)
              */
             ssr_region?: components["schemas"]["SsrRegionEnum"] | components["schemas"]["BlankEnum"];
+            /**
+             * @description The architecture for the Server-Side Rendering function (x86 or ARM64). If not specified, the ssr_architecture that's set in the project is used.
+             *
+             *     * `x86` - x86
+             *     * `arm64` - ARM64
+             */
+            ssr_architecture?: (components["schemas"]["SsrArchitectureEnum"] | components["schemas"]["NullEnum"]) | null;
             /** @description Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs. */
             ssr_whitelisted_ips?: string | null;
             ssr_proxy_configs?: {
                 host: string;
                 protocol?: string;
             }[] | null;
+            /** @description The Managed Runtime CDN origin domain name. */
+            readonly cdn_domain_name?: string;
             /**
              * Production
              * @description Treat this target as a production environment.
@@ -750,15 +1003,39 @@ export interface components {
             /** @description Set true to enable source map support. This will set the NODE_OPTIONS environment variable to "--enable-source-maps" in your MRT environment. */
             enable_source_maps?: boolean | null;
             /**
-             * @description The minimum log level emitted for this target.n
-             *     * `TRACE`
-             *     * `DEBUG`
-             *     * `INFO`
-             *     * `WARN`
-             *     * `ERROR`
-             *     * `FATAL`
+             * @description The minimum log level that will be emitted for this target
+             *
+             *     * `TRACE` - TRACE
+             *     * `DEBUG` - DEBUG
+             *     * `INFO` - INFO
+             *     * `WARN` - WARN
+             *     * `ERROR` - ERROR
+             *     * `FATAL` - FATAL
              */
             log_level?: (components["schemas"]["LogLevelEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description The ID of the certificate to associate with this target's custom domain. Must be an integer unique within the organization. */
+            certificate_id?: number | null;
+            /** @description The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name. */
+            readonly certificate_domain?: string;
+            /**
+             * @description The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.
+             *
+             *     * `unknown` - unknown
+             *     * `mrt_cdn` - mrt_cdn
+             *     * `ecdn` - ecdn
+             *     * `stacked_cdn` - stacked_cdn
+             */
+            readonly configured_cdn?: (components["schemas"]["ConfiguredCdnEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain. */
+            readonly cdn_public_hostname?: string | null;
+            /**
+             * @description Source of the environment. One of: ecom, core, direct.
+             *
+             *     * `ecom` - ecom
+             *     * `core` - core
+             *     * `direct` - direct
+             */
+            readonly source?: (components["schemas"]["SourceEnum"] | components["schemas"]["NullEnum"]) | null;
         };
         /** @description This is the serializer for cache invalidation API endpoint. */
         APITargetV2CreateInvalidation: {
@@ -797,7 +1074,7 @@ export interface components {
             readonly current_deploy?: {
                 [key: string]: unknown;
             };
-            /** @description Full hostname to used by the environment eg. www.customer.com. */
+            /** @description Full hostname to be used by the environment eg. www.customer.com. */
             ssr_external_hostname?: string | null;
             /** @description The domain to be used for a Universal PWA SSR deployment (e.g. customer.com) */
             ssr_external_domain?: string | null;
@@ -830,12 +1107,21 @@ export interface components {
              *     * `sa-east-1` - South America (Sao Paulo)
              */
             ssr_region?: components["schemas"]["SsrRegionEnum"] | components["schemas"]["BlankEnum"];
+            /**
+             * @description The architecture for the Server-Side Rendering function (x86 or ARM64). If not specified, the ssr_architecture that's set in the project is used.
+             *
+             *     * `x86` - x86
+             *     * `arm64` - ARM64
+             */
+            ssr_architecture?: (components["schemas"]["SsrArchitectureEnum"] | components["schemas"]["NullEnum"]) | null;
             /** @description Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs. */
             ssr_whitelisted_ips?: string | null;
             ssr_proxy_configs?: {
                 host: string;
                 protocol?: string;
             }[] | null;
+            /** @description The Managed Runtime CDN origin domain name. */
+            readonly cdn_domain_name?: string;
             /**
              * Production
              * @description Treat this target as a production environment.
@@ -846,15 +1132,39 @@ export interface components {
             /** @description Set true to enable source map support. This will set the NODE_OPTIONS environment variable to "--enable-source-maps" in your MRT environment. */
             enable_source_maps?: boolean | null;
             /**
-             * @description The minimum log level emitted for this target.n
-             *     * `TRACE`
-             *     * `DEBUG`
-             *     * `INFO`
-             *     * `WARN`
-             *     * `ERROR`
-             *     * `FATAL`
+             * @description The minimum log level that will be emitted for this target
+             *
+             *     * `TRACE` - TRACE
+             *     * `DEBUG` - DEBUG
+             *     * `INFO` - INFO
+             *     * `WARN` - WARN
+             *     * `ERROR` - ERROR
+             *     * `FATAL` - FATAL
              */
             log_level?: (components["schemas"]["LogLevelEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description The ID of the certificate to associate with this target's custom domain. Must be an integer unique within the organization. Set to null to remove the certificate association. */
+            certificate_id?: number | null;
+            /** @description The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name. */
+            readonly certificate_domain?: string;
+            /**
+             * @description The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.
+             *
+             *     * `unknown` - unknown
+             *     * `mrt_cdn` - mrt_cdn
+             *     * `ecdn` - ecdn
+             *     * `stacked_cdn` - stacked_cdn
+             */
+            readonly configured_cdn?: (components["schemas"]["ConfiguredCdnEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain. */
+            readonly cdn_public_hostname?: string | null;
+            /**
+             * @description Source of the environment. One of: ecom, core, direct.
+             *
+             *     * `ecom` - ecom
+             *     * `core` - core
+             *     * `direct` - direct
+             */
+            readonly source?: (components["schemas"]["SourceEnum"] | components["schemas"]["NullEnum"]) | null;
         };
         APIUserProfile: {
             first_name?: string;
@@ -891,6 +1201,21 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        BundleBulkDelete: {
+            bundle_ids: number[];
+        };
+        BundleBulkDeleteFailedRequest: {
+            /** @description The ID of the bundle that failed validation. */
+            bundle_id: number;
+            /** @description Error message that explains why the bundle can't be queued for deletion. */
+            errors: string;
+        };
+        BundleBulkDeleteResponse: {
+            /** @description Bundles that failed validation and couldn't be queued for deletion. */
+            rejected_bundles?: components["schemas"]["BundleBulkDeleteFailedRequest"][];
+            /** @description Bundle IDs for bundles that were queued for deletion. */
+            bundles_queued_for_cleanup?: number[];
+        };
         BundleDownload: {
             /** Format: uri */
             download_url: string;
@@ -917,6 +1242,109 @@ export interface components {
              */
             readonly updated_at?: string;
         };
+        /** @description Base serializer for certificate serializers with common fields and methods. */
+        CertificateBase: {
+            /** @description An ID unique within a business. */
+            readonly id?: number;
+            /**
+             * Certificate domain
+             * @description The domain for the certificate either wildcard (e.g. *.example.com) or single domain (e.g. sub.example.com)
+             */
+            domain_name: string;
+            readonly validation_requested_at?: string;
+            /**
+             * @description Current validation status of the certificate
+             *
+             *     * `pending_validation` - Pending Validation
+             *     * `validation_succeeded` - Validation Succeeded
+             *     * `validation_failed` - Validation Failed
+             */
+            readonly validation_status?: components["schemas"]["ValidationStatusEnum"];
+            readonly validation_record?: string;
+            /**
+             * Certificate Expiry Date
+             * Format: date-time
+             * @description Expiry date of the certificate from ACM.
+             */
+            readonly expires_at?: string | null;
+            /**
+             * @description Current status of certificate renewal.
+             *
+             *     * `PENDING_AUTO_RENEWAL` - Pending Auto Renewal
+             *     * `FAILED` - Failed
+             */
+            readonly renewal_status?: (components["schemas"]["RenewalStatusEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * @description Whether the certificate is eligible for renewal.
+             *
+             *     * `ELIGIBLE` - Eligible
+             *     * `INELIGIBLE` - Ineligible
+             */
+            readonly renewal_eligibility?: (components["schemas"]["RenewalEligibilityEnum"] | components["schemas"]["NullEnum"]) | null;
+            readonly targets?: string;
+            readonly created_by?: string;
+            /**
+             * Format: date-time
+             * @description Timestamp in the extended ISO 8601 format for when the object was created.
+             */
+            readonly created_at?: string;
+            readonly is_mrt_managed?: string;
+            readonly deletion_status?: components["schemas"]["DeletionStatusEnum"];
+        };
+        /** @description Base serializer for certificate serializers with common fields and methods. */
+        CertificateListCreate: {
+            /** @description An ID unique within a business. */
+            readonly id?: number;
+            /** @description The domain for the certificate (e.g. shop.example.com) */
+            domain_name: string;
+            readonly validation_requested_at?: string;
+            /**
+             * @description Current validation status of the certificate
+             *
+             *     * `pending_validation` - Pending Validation
+             *     * `validation_succeeded` - Validation Succeeded
+             *     * `validation_failed` - Validation Failed
+             */
+            readonly validation_status?: components["schemas"]["ValidationStatusEnum"];
+            readonly validation_record?: string;
+            /**
+             * Certificate Expiry Date
+             * Format: date-time
+             * @description Expiry date of the certificate from ACM.
+             */
+            readonly expires_at?: string | null;
+            /**
+             * @description Current status of certificate renewal.
+             *
+             *     * `PENDING_AUTO_RENEWAL` - Pending Auto Renewal
+             *     * `FAILED` - Failed
+             */
+            readonly renewal_status?: (components["schemas"]["RenewalStatusEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * @description Whether the certificate is eligible for renewal.
+             *
+             *     * `ELIGIBLE` - Eligible
+             *     * `INELIGIBLE` - Ineligible
+             */
+            readonly renewal_eligibility?: (components["schemas"]["RenewalEligibilityEnum"] | components["schemas"]["NullEnum"]) | null;
+            readonly targets?: string;
+            readonly created_by?: string;
+            /**
+             * Format: date-time
+             * @description Timestamp in the extended ISO 8601 format for when the object was created.
+             */
+            readonly created_at?: string;
+            readonly is_mrt_managed?: string;
+            readonly deletion_status?: components["schemas"]["DeletionStatusEnum"];
+        };
+        /**
+         * @description * `unknown` - unknown
+         *     * `mrt_cdn` - mrt_cdn
+         *     * `ecdn` - ecdn
+         *     * `stacked_cdn` - stacked_cdn
+         * @enum {string}
+         */
+        ConfiguredCdnEnum: "unknown" | "mrt_cdn" | "ecdn" | "stacked_cdn";
         /**
          * @description * `ACTIVE` - Active
          *     * `CLEANUP_REQUESTED` - Cleanup Requested
@@ -1017,7 +1445,6 @@ export interface components {
          */
         EncodingEnum: "base64";
         EnvironmentVariableList: {
-            /** @description Name of the Environment Variable. */
             name: string;
             /** @description Value to be encrypted. */
             value: string;
@@ -1041,7 +1468,7 @@ export interface components {
              * Format: email
              */
             readonly updated_by?: string;
-            readonly publishing_status?: components["schemas"]["PublishingStatusEnum"];
+            readonly publishing_status?: components["schemas"]["Status1d2Enum"];
             readonly publishing_status_description?: string;
         };
         /**
@@ -1051,7 +1478,12 @@ export interface components {
          */
         HttpStatusCodeEnum: 301 | 302;
         /**
-         * @description The minimum log level emitted for a target.
+         * @description * `TRACE` - TRACE
+         *     * `DEBUG` - DEBUG
+         *     * `INFO` - INFO
+         *     * `WARN` - WARN
+         *     * `ERROR` - ERROR
+         *     * `FATAL` - FATAL
          * @enum {string}
          */
         LogLevelEnum: "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "FATAL";
@@ -1094,6 +1526,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["APIOrganization"][];
+        };
+        PaginatedAPIOrganizationMemberList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["APIOrganizationMember"][];
         };
         PaginatedAPIProjectMemberList: {
             /** @example 123 */
@@ -1170,6 +1617,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["BundleList"][];
         };
+        PaginatedCertificateListCreateList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["CertificateListCreate"][];
+        };
         PaginatedDeployListList: {
             /** @example 123 */
             count: number;
@@ -1215,6 +1677,22 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["PolymorphicNotification"][];
         };
+        /**
+         * @description Serializer for updating organization role permissions.
+         *     Allows updating can_view_all_projects and custom_domain_cert_permission.
+         */
+        PatchedAPIOrganizationMemberUpdate: {
+            /**
+             * Email address
+             * Format: email
+             */
+            readonly user?: string;
+            readonly role?: components["schemas"]["RoleEnum"];
+            readonly first_name?: string;
+            readonly last_name?: string;
+            can_view_all_projects?: boolean;
+            custom_domain_cert_permission?: components["schemas"]["Status1d2Enum"];
+        };
         PatchedAPIProjectMember: {
             /**
              * Email address
@@ -1258,6 +1736,7 @@ export interface components {
                 upload_bundle?: boolean;
                 edit_environment_variable?: boolean;
                 edit_access_control_header?: boolean;
+                edit_data_access_layer_entry?: boolean;
             };
             /**
              * SSR AWS Region
@@ -1289,6 +1768,13 @@ export interface components {
              */
             ssr_region?: components["schemas"]["SsrRegionEnum"];
             /**
+             * @description Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.
+             *
+             *     * `x86` - x86
+             *     * `arm64` - ARM64
+             */
+            ssr_architecture?: (components["schemas"]["SsrArchitectureEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
              * Format: date-time
              * @description Timestamp in the extended ISO 8601 format for when the object was created.
              */
@@ -1298,6 +1784,14 @@ export interface components {
              * @description Timestamp in the extended ISO 8601 format for when the object was last updated.
              */
             readonly updated_at?: string;
+            /**
+             * @description Source of the project. One of: ecom, core, direct.
+             *
+             *     * `ecom` - ecom
+             *     * `core` - core
+             *     * `direct` - direct
+             */
+            readonly source?: (components["schemas"]["SourceEnum"] | components["schemas"]["NullEnum"]) | null;
         };
         PatchedAPIRedirectV2CreateUpdate: {
             /** @description A relative URL. For example, the `from_path` value `/spring` redirects shoppers from the URL `www.example.com/spring`. An asterisk (`*`) at the end of the `from_path` indicates a wildcard. For example, a redirect from `/a/*` matches `/a/`, `/a/b`, and `/a/b/c`. */
@@ -1361,7 +1855,7 @@ export interface components {
             readonly current_deploy?: {
                 [key: string]: unknown;
             };
-            /** @description Full hostname to used by the environment eg. www.customer.com. */
+            /** @description Full hostname to be used by the environment eg. www.customer.com. */
             ssr_external_hostname?: string | null;
             /** @description The domain to be used for a Universal PWA SSR deployment (e.g. customer.com) */
             ssr_external_domain?: string | null;
@@ -1394,12 +1888,21 @@ export interface components {
              *     * `sa-east-1` - South America (Sao Paulo)
              */
             ssr_region?: components["schemas"]["SsrRegionEnum"] | components["schemas"]["BlankEnum"];
+            /**
+             * @description The architecture for the Server-Side Rendering function (x86 or ARM64). If not specified, the ssr_architecture that's set in the project is used.
+             *
+             *     * `x86` - x86
+             *     * `arm64` - ARM64
+             */
+            ssr_architecture?: (components["schemas"]["SsrArchitectureEnum"] | components["schemas"]["NullEnum"]) | null;
             /** @description Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs. */
             ssr_whitelisted_ips?: string | null;
             ssr_proxy_configs?: {
                 host: string;
                 protocol?: string;
             }[] | null;
+            /** @description The Managed Runtime CDN origin domain name. */
+            readonly cdn_domain_name?: string;
             /**
              * Production
              * @description Treat this target as a production environment.
@@ -1410,16 +1913,88 @@ export interface components {
             /** @description Set true to enable source map support. This will set the NODE_OPTIONS environment variable to "--enable-source-maps" in your MRT environment. */
             enable_source_maps?: boolean | null;
             /**
-             * @description The minimum log level emitted for this target.
+             * @description The minimum log level that will be emitted for this target
              *
-             *     * `TRACE`
-             *     * `DEBUG`
-             *     * `INFO`
-             *     * `WARN`
-             *     * `ERROR`
-             *     * `FATAL`
+             *     * `TRACE` - TRACE
+             *     * `DEBUG` - DEBUG
+             *     * `INFO` - INFO
+             *     * `WARN` - WARN
+             *     * `ERROR` - ERROR
+             *     * `FATAL` - FATAL
              */
             log_level?: (components["schemas"]["LogLevelEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description The ID of the certificate to associate with this target's custom domain. Must be an integer unique within the organization. Set to null to remove the certificate association. */
+            certificate_id?: number | null;
+            /** @description The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name. */
+            readonly certificate_domain?: string;
+            /**
+             * @description The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.
+             *
+             *     * `unknown` - unknown
+             *     * `mrt_cdn` - mrt_cdn
+             *     * `ecdn` - ecdn
+             *     * `stacked_cdn` - stacked_cdn
+             */
+            readonly configured_cdn?: (components["schemas"]["ConfiguredCdnEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain. */
+            readonly cdn_public_hostname?: string | null;
+            /**
+             * @description Source of the environment. One of: ecom, core, direct.
+             *
+             *     * `ecom` - ecom
+             *     * `core` - core
+             *     * `direct` - direct
+             */
+            readonly source?: (components["schemas"]["SourceEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
+        /** @description Base serializer for certificate serializers with common fields and methods. */
+        PatchedCertificateBase: {
+            /** @description An ID unique within a business. */
+            readonly id?: number;
+            /**
+             * Certificate domain
+             * @description The domain for the certificate either wildcard (e.g. *.example.com) or single domain (e.g. sub.example.com)
+             */
+            domain_name?: string;
+            readonly validation_requested_at?: string;
+            /**
+             * @description Current validation status of the certificate
+             *
+             *     * `pending_validation` - Pending Validation
+             *     * `validation_succeeded` - Validation Succeeded
+             *     * `validation_failed` - Validation Failed
+             */
+            readonly validation_status?: components["schemas"]["ValidationStatusEnum"];
+            readonly validation_record?: string;
+            /**
+             * Certificate Expiry Date
+             * Format: date-time
+             * @description Expiry date of the certificate from ACM.
+             */
+            readonly expires_at?: string | null;
+            /**
+             * @description Current status of certificate renewal.
+             *
+             *     * `PENDING_AUTO_RENEWAL` - Pending Auto Renewal
+             *     * `FAILED` - Failed
+             */
+            readonly renewal_status?: (components["schemas"]["RenewalStatusEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * @description Whether the certificate is eligible for renewal.
+             *
+             *     * `ELIGIBLE` - Eligible
+             *     * `INELIGIBLE` - Ineligible
+             */
+            readonly renewal_eligibility?: (components["schemas"]["RenewalEligibilityEnum"] | components["schemas"]["NullEnum"]) | null;
+            readonly targets?: string;
+            readonly created_by?: string;
+            /**
+             * Format: date-time
+             * @description Timestamp in the extended ISO 8601 format for when the object was created.
+             */
+            readonly created_at?: string;
+            readonly is_mrt_managed?: string;
+            readonly deletion_status?: components["schemas"]["DeletionStatusEnum"];
         };
         PatchedEmailNotification: {
             /** Format: uuid */
@@ -1459,8 +2034,10 @@ export interface components {
         };
         PatchedPolymorphicNotification: components["schemas"]["PatchedEmailNotificationTyped"];
         PatchedUserEmailPreferences: {
-            /** @description The user's email notification preferences for Node.js runtime's deprecation and retirement. */
+            /** @description Receive email notifications about Node.js runtime deprecations */
             node_deprecation_notifications?: boolean;
+            /** @description Receive email notifications about custom domain certificate changes */
+            custom_domain_certificate_notifications?: boolean;
             /**
              * Format: date-time
              * @description Timestamp in the extended ISO 8601 format for when the object was created.
@@ -1483,16 +2060,40 @@ export interface components {
          */
         ProjectTypeEnum: "MOBIFY_STUDIO" | "MOBIFYJS_CLIENT" | "MOBIFY_ADAPTIVEJS" | "MOBIFY_TAG_BASED_PWA" | "SSR";
         /**
-         * @description * `0` - Pending
-         *     * `1` - Completed
-         *     * `2` - Failed
-         * @enum {integer}
+         * @description * `ELIGIBLE` - Eligible
+         *     * `INELIGIBLE` - Ineligible
+         * @enum {string}
          */
-        PublishingStatusEnum: 0 | 1 | 2;
+        RenewalEligibilityEnum: "ELIGIBLE" | "INELIGIBLE";
+        /**
+         * @description * `PENDING_AUTO_RENEWAL` - Pending Auto Renewal
+         *     * `FAILED` - Failed
+         * @enum {string}
+         */
+        RenewalStatusEnum: "PENDING_AUTO_RENEWAL" | "FAILED";
         ResourceLimit: {
             limit: number;
             used: number;
         };
+        /**
+         * @description * `0` - Owner
+         *     * `1` - Member
+         * @enum {integer}
+         */
+        RoleEnum: 0 | 1;
+        /**
+         * @description * `ecom` - ecom
+         *     * `core` - core
+         *     * `direct` - direct
+         * @enum {string}
+         */
+        SourceEnum: "ecom" | "core" | "direct";
+        /**
+         * @description * `x86` - x86
+         *     * `arm64` - ARM64
+         * @enum {string}
+         */
+        SsrArchitectureEnum: "x86" | "arm64";
         /**
          * @description * `us-east-1` - US East (N. Virginia)
          *     * `us-east-2` - US East (Ohio)
@@ -1530,15 +2131,17 @@ export interface components {
          */
         StateEnum: "CREATE_IN_PROGRESS" | "PUBLISH_IN_PROGRESS" | "ACTIVE" | "CREATE_FAILED" | "PUBLISH_FAILED";
         /**
-         * @description * `0` - ok
-         *     * `1` - broken
-         *     * `2` - preparing
+         * @description * `0` - Pending
+         *     * `1` - Completed
+         *     * `2` - Failed
          * @enum {integer}
          */
         Status1d2Enum: 0 | 1 | 2;
         UserEmailPreferences: {
-            /** @description The user's email notification preferences for Node.js runtime's deprecation and retirement. */
+            /** @description Receive email notifications about Node.js runtime deprecations */
             node_deprecation_notifications?: boolean;
+            /** @description Receive email notifications about custom domain certificate changes */
+            custom_domain_certificate_notifications?: boolean;
             /**
              * Format: date-time
              * @description Timestamp in the extended ISO 8601 format for when the object was created.
@@ -1550,6 +2153,13 @@ export interface components {
              */
             readonly updated_at?: string;
         };
+        /**
+         * @description * `pending_validation` - Pending Validation
+         *     * `validation_succeeded` - Validation Succeeded
+         *     * `validation_failed` - Validation Failed
+         * @enum {string}
+         */
+        ValidationStatusEnum: "pending_validation" | "validation_succeeded" | "validation_failed";
     };
     responses: never;
     parameters: never;
@@ -1579,6 +2189,316 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedAPIOrganizationList"];
+                };
+            };
+        };
+    };
+    organizations_certificates_list: {
+        parameters: {
+            query?: {
+                /** @description If true, returns only custom domain certificates created by the customer. */
+                custom_only?: boolean;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCertificateListCreateList"];
+                };
+            };
+        };
+    };
+    organizations_certificates_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificateListCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["CertificateListCreate"];
+                "multipart/form-data": components["schemas"]["CertificateListCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateListCreate"];
+                };
+            };
+        };
+    };
+    organizations_certificates_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The certificate's id */
+                cert_id: string;
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateBase"];
+                };
+            };
+        };
+    };
+    organizations_certificates_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The certificate's id */
+                cert_id: string;
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    organizations_certificates_restart_validation_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certificate ID */
+                cert_id: string;
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificateBase"];
+                "application/x-www-form-urlencoded": components["schemas"]["CertificateBase"];
+                "multipart/form-data": components["schemas"]["CertificateBase"];
+            };
+        };
+        responses: {
+            /** @description Certificate validation restarted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateBase"];
+                };
+            };
+            /** @description Certificate is already validated or cannot be restarted */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    organizations_certificates_restart_validation_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cert_id: string;
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCertificateBase"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCertificateBase"];
+                "multipart/form-data": components["schemas"]["PatchedCertificateBase"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateBase"];
+                };
+            };
+        };
+    };
+    list_organization_members: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAPIOrganizationMemberList"];
+                };
+            };
+        };
+    };
+    organizations_members_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["APIOrganizationMemberCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["APIOrganizationMemberCreate"];
+                "multipart/form-data": components["schemas"]["APIOrganizationMemberCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIOrganizationMemberCreate"];
+                };
+            };
+        };
+    };
+    organizations_members_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The email address of the organization member. */
+                email: string;
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIOrganizationMember"];
+                };
+            };
+        };
+    };
+    organizations_members_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The email address of the organization member. */
+                email: string;
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    organizations_members_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The email address of the organization member. */
+                email: string;
+                /** @description The organization identifier. */
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAPIOrganizationMemberUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedAPIOrganizationMemberUpdate"];
+                "multipart/form-data": components["schemas"]["PatchedAPIOrganizationMemberUpdate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIOrganizationMemberUpdate"];
                 };
             };
         };
@@ -1774,6 +2694,8 @@ export interface operations {
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
                 /** @description A search term. */
                 search?: string;
             };
@@ -1793,6 +2715,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaginatedBundleListList"];
                 };
+            };
+        };
+    };
+    projects_bundles_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bundle's id */
+                bundle_id: string;
+                /** @description The project identifier. */
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bundle deletion request accepted. The bundle will be asynchronously deleted. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bundle deployed to one or more target, cannot delete. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bundle not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bundle cannot be deleted (in progress, in failed state). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1817,6 +2783,42 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BundleDownload"];
                 };
+            };
+        };
+    };
+    projects_bundles_bulk_delete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project identifier. */
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BundleBulkDelete"];
+                "application/x-www-form-urlencoded": components["schemas"]["BundleBulkDelete"];
+                "multipart/form-data": components["schemas"]["BundleBulkDelete"];
+            };
+        };
+        responses: {
+            /** @description Bundle deletion was requested. Check the response body for details about the bundles that were queued and that failed deletion. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundleBulkDeleteResponse"];
+                };
+            };
+            /** @description An unexpected error occurred during the bulk delete operation. The operation has been rolled back and no bundles were deleted. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2350,6 +3352,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    projects_target_clone_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project identifier. */
+                project_slug: string;
+                /** @description The target identifier. */
+                target_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["APITargetV2Clone"];
+                "application/x-www-form-urlencoded": components["schemas"]["APITargetV2Clone"];
+                "multipart/form-data": components["schemas"]["APITargetV2Clone"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APITargetV2Clone"];
+                };
             };
         };
     };

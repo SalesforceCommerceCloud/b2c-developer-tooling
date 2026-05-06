@@ -13,15 +13,17 @@ Use the `b2c` CLI to manage Managed Runtime (MRT) projects, environments, bundle
 
 ```
 mrt
-├── org (list, b2c)              - Organizations and B2C connections
+├── org                          - Organizations and B2C connections
+│   ├── member                   - Organization-level member management
+│   └── cert                     - Custom domain certificates
 ├── project                      - Project management
 │   ├── member                   - Team member management
 │   └── notification             - Deployment notifications
-├── env                          - Environment management
+├── env                          - Environment management (incl. clone)
 │   ├── var                      - Environment variables
 │   ├── redirect                 - URL redirects
 │   └── access-control           - Access control headers
-├── bundle                       - Bundle and deployment management
+├── bundle                       - Bundle and deployment management (incl. delete)
 └── user                         - User profile and settings
 ```
 
@@ -48,6 +50,9 @@ b2c mrt env list -p my-storefront
 
 # Create a new environment
 b2c mrt env create qa -p my-storefront --name "QA Environment"
+
+# Clone an existing environment (optionally copy redirects, env vars, B2C info)
+b2c mrt env clone qa -p my-storefront --from staging --clone-redirects --clone-env-vars
 
 # Get environment details
 b2c mrt env get -p my-storefront -e production
@@ -80,6 +85,29 @@ b2c mrt bundle history -p my-storefront -e production
 
 # Download a bundle artifact
 b2c mrt bundle download 12345 -p my-storefront
+
+# Delete one or more bundles (uses bulk-delete for >1)
+b2c mrt bundle delete 12345 -p my-storefront
+b2c mrt bundle delete 12345 12346 12347 -p my-storefront --force
+```
+
+### Organization Members and Certificates
+
+Organization members are distinct from project members; they hold a role at the organization level. Custom-domain certificates are organization-scoped and referenced by `b2c mrt env create`/`update`/`clone` via `--certificate-id`.
+
+```bash
+# List, add, update, remove organization members
+b2c mrt org member list --org my-org
+b2c mrt org member add alice@example.com --org my-org --role member --view-all-projects
+b2c mrt org member update alice@example.com --org my-org --no-cert-permission
+b2c mrt org member remove alice@example.com --org my-org
+
+# Manage custom domain certificates
+b2c mrt org cert list --org my-org
+b2c mrt org cert create shop.example.com --org my-org   # output includes the DNS validation record
+b2c mrt org cert get 123 --org my-org
+b2c mrt org cert restart-validation 123 --org my-org
+b2c mrt org cert delete 123 --org my-org
 ```
 
 ### Project Management

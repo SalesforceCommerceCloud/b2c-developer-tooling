@@ -60,6 +60,7 @@
                           "name": "my org",
                           "slug": "my-org",
                           "has_mobify_tag_project": false,
+                          "can_configure_ssr_architecture": false,
                           "created_at": "2020-07-14T19:33:21.197800Z",
                           "updated_at": "2020-07-21T17:02:38.745978Z",
                           "permissions": {
@@ -76,6 +77,893 @@
               }
             },
             "description": ""
+          }
+        }
+      }
+    },
+    "/api/organizations/{organization_slug}/certificates/": {
+      "get": {
+        "operationId": "organizations_certificates_list",
+        "description": "List certificates for an organization with filtering and search",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "custom_only",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "If true, returns only custom domain certificates created by the customer."
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCertificateListCreateList"
+                },
+                "examples": {
+                  "ListCertificates": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        {
+                          "count": 2,
+                          "next": null,
+                          "previous": null,
+                          "results": [
+                            {
+                              "id": "123e4567-e89b-12d3-a456-426614174000",
+                              "domain_name": "*.example.com",
+                              "validation_status": "PENDING_VALIDATION",
+                              "validation_record": {
+                                "name": "_acme-challenge.example.com",
+                                "value": "validation123.example.com"
+                              },
+                              "aws_arns": [
+                                "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+                              ],
+                              "created_at": "2023-10-28T10:00:00Z",
+                              "updated_at": "2023-10-28T10:00:00Z",
+                              "validation_requested_at": "2023-10-28T10:00:00Z",
+                              "validation_requested_by": "user@example.com",
+                              "expires_at": "2024-10-28T10:00:00Z",
+                              "targets": [],
+                              "created_by": "user@example.com"
+                            }
+                          ],
+                          "limits": {
+                            "max_certificates": {
+                              "limit": 10,
+                              "used": 2
+                            }
+                          },
+                          "customer_action_needed": true
+                        }
+                      ]
+                    },
+                    "summary": "List certificates"
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "organizations_certificates_create",
+        "description": "Create a new certificate for an organization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateListCreate"
+              },
+              "examples": {
+                "CreateCertificateRequest": {
+                  "value": {
+                    "domain_name": "*.example.com"
+                  },
+                  "summary": "Create certificate request"
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateListCreate"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateListCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateListCreate"
+                },
+                "examples": {
+                  "CreateCertificateResponse": {
+                    "value": {
+                      "id": "123e4567-e89b-12d3-a456-426614174000",
+                      "domain_name": "*.example.com",
+                      "validation_status": "PENDING_VALIDATION",
+                      "validation_record": {
+                        "name": "_acme-challenge.example.com",
+                        "value": "validation123.example.com"
+                      },
+                      "aws_arns": [
+                        "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+                      ],
+                      "created_at": "2023-10-28T10:00:00Z",
+                      "updated_at": "2023-10-28T10:00:00Z",
+                      "validation_requested_at": "2023-10-28T10:00:00Z",
+                      "validation_requested_by": "user@example.com",
+                      "targets": []
+                    },
+                    "summary": "Create certificate response"
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/organizations/{organization_slug}/certificates/{cert_id}/": {
+      "get": {
+        "operationId": "organizations_certificates_retrieve",
+        "description": "Retrieve a specific certificate for an organization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cert_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The certificate's id",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateBase"
+                },
+                "examples": {
+                  "GetCertificateResponse": {
+                    "value": {
+                      "id": "123e4567-e89b-12d3-a456-426614174000",
+                      "domain_name": "*.example.com",
+                      "validation_status": "PENDING_VALIDATION",
+                      "validation_record": {
+                        "name": "_acme-challenge.example.com",
+                        "value": "validation123.example.com"
+                      },
+                      "aws_arns": [
+                        "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+                      ],
+                      "created_at": "2023-10-28T10:00:00Z",
+                      "updated_at": "2023-10-28T10:00:00Z",
+                      "validation_requested_at": "2023-10-28T10:00:00Z",
+                      "validation_requested_by": "user@example.com",
+                      "targets": []
+                    },
+                    "summary": "Get certificate response"
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "organizations_certificates_destroy",
+        "description": "Delete a specific certificate for an organization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cert_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The certificate's id",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/organizations/{organization_slug}/certificates/{cert_id}/restart-validation/": {
+      "put": {
+        "operationId": "organizations_certificates_restart_validation_update",
+        "description": "Restart validation for a certificate. Creates a new certificate in AWS and updates the existing certificate record. Only works for certificates that are not yet validated.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cert_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Certificate ID",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateBase"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateBase"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateBase"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateBase"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "id": "uuid",
+                      "domain_name": "shop.example.com",
+                      "validation_status": "pending_validation",
+                      "validation_record": {
+                        "name": "_abc.shop.example.com",
+                        "value": "_xyz.acm-validations.aws"
+                      },
+                      "validation_requested_at": "2025-10-16T12:00:00Z",
+                      "deletion_status": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Certificate validation restarted successfully"
+          },
+          "400": {
+            "description": "Certificate is already validated or cannot be restarted"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "organizations_certificates_restart_validation_partial_update",
+        "description": "Restart validation for a specific certificate for an organization.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cert_id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedCertificateBase"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedCertificateBase"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedCertificateBase"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateBase"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/organizations/{organization_slug}/members/": {
+      "get": {
+        "operationId": "list_organization_members",
+        "description": "List all the members of an organization.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A search term.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPIOrganizationMemberList"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "count": 123,
+                      "next": "http://api.example.org/accounts/?offset=400&limit=100",
+                      "previous": "http://api.example.org/accounts/?offset=200&limit=100",
+                      "results": [
+                        [
+                          {
+                            "user": "user1@example.com",
+                            "role": {
+                              "name": "Owner",
+                              "value": 0
+                            },
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "can_view_all_projects": true,
+                            "custom_domain_cert_permission": {
+                              "name": "Manage",
+                              "value": 0
+                            }
+                          },
+                          {
+                            "user": "user2@example.com",
+                            "role": {
+                              "name": "Member",
+                              "value": 1
+                            },
+                            "first_name": "Jane",
+                            "last_name": "Smith",
+                            "can_view_all_projects": false,
+                            "custom_domain_cert_permission": {
+                              "name": "View Only",
+                              "value": 1
+                            }
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "organizations_members_create",
+        "description": "Add a new member to an organization.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIOrganizationMemberCreate"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "user": "newuser@example.com",
+                    "role": 1,
+                    "can_view_all_projects": false,
+                    "custom_domain_cert_permission": 2
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APIOrganizationMemberCreate"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APIOrganizationMemberCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIOrganizationMemberCreate"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "user": "newuser@example.com",
+                      "role": {
+                        "name": "Member",
+                        "value": 1
+                      },
+                      "first_name": "New",
+                      "last_name": "User",
+                      "can_view_all_projects": false,
+                      "custom_domain_cert_permission": {
+                        "name": "No Access",
+                        "value": 2
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/organizations/{organization_slug}/members/{email}/": {
+      "get": {
+        "operationId": "organizations_members_retrieve",
+        "description": "Read data about an organization member's permissions.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The email address of the organization member.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIOrganizationMember"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "user": "user@example.com",
+                      "role": {
+                        "name": "Owner",
+                        "value": 0
+                      },
+                      "first_name": "John",
+                      "last_name": "Doe",
+                      "can_view_all_projects": true,
+                      "custom_domain_cert_permission": {
+                        "name": "Manage",
+                        "value": 0
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "organizations_members_partial_update",
+        "description": "Update an organization member's permissions.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The email address of the organization member.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIOrganizationMemberUpdate"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "role": {
+                      "name": "Member",
+                      "value": 1
+                    },
+                    "can_view_all_projects": false,
+                    "custom_domain_cert_permission": 1
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIOrganizationMemberUpdate"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIOrganizationMemberUpdate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIOrganizationMemberUpdate"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "user": "user@example.com",
+                      "role": {
+                        "name": "Member",
+                        "value": 1
+                      },
+                      "first_name": "John",
+                      "last_name": "Doe",
+                      "can_view_all_projects": false,
+                      "custom_domain_cert_permission": {
+                        "name": "View Only",
+                        "value": 1
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "organizations_members_destroy",
+        "description": "Remove a member from an organization.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The email address of the organization member.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The organization identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
           }
         }
       }
@@ -163,7 +1051,8 @@
                             "create_jwt": true,
                             "upload_bundle": true,
                             "edit_environment_variable": true,
-                            "edit_access_control_header": true
+                            "edit_access_control_header": true,
+                            "edit_data_access_layer_entry": true
                           },
                           "deletion_status": "ACTIVE",
                           "created_at": "2025-07-24T07:30:22.288165Z",
@@ -256,7 +1145,8 @@
                         "create_jwt": true,
                         "upload_bundle": true,
                         "edit_environment_variable": true,
-                        "edit_access_control_header": true
+                        "edit_access_control_header": true,
+                        "edit_data_access_layer_entry": true
                       },
                       "deletion_status": "ACTIVE",
                       "created_at": "2025-07-24T07:30:22.288165Z",
@@ -331,7 +1221,8 @@
                         "create_jwt": true,
                         "upload_bundle": true,
                         "edit_environment_variable": true,
-                        "edit_access_control_header": true
+                        "edit_access_control_header": true,
+                        "edit_data_access_layer_entry": true
                       },
                       "deletion_status": "ACTIVE",
                       "created_at": "2025-07-24T07:30:22.288165Z",
@@ -432,7 +1323,8 @@
                         "create_jwt": true,
                         "upload_bundle": true,
                         "edit_environment_variable": true,
-                        "edit_access_control_header": true
+                        "edit_access_control_header": true,
+                        "edit_data_access_layer_entry": true
                       },
                       "deletion_status": "ACTIVE",
                       "created_at": "2025-07-24T07:30:22.288165Z",
@@ -649,6 +1541,15 @@
             }
           },
           {
+            "name": "ordering",
+            "required": false,
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "in": "path",
             "name": "project_slug",
             "schema": {
@@ -703,7 +1604,12 @@
                           "is_uploaded": true,
                           "is_ssr_bundle": true,
                           "ssr_runtime": "12.x",
-                          "ssr_runtime_description": "NodeJS 12.x"
+                          "ssr_runtime_description": "NodeJS 12.x",
+                          "in_use": true,
+                          "in_use_by": [
+                            "production",
+                            "staging"
+                          ]
                         }
                       ]
                     }
@@ -725,7 +1631,9 @@
                           "is_uploaded": true,
                           "is_ssr_bundle": true,
                           "ssr_runtime": "10.x",
-                          "ssr_runtime_description": "NodeJS 10.x"
+                          "ssr_runtime_description": "NodeJS 10.x",
+                          "in_use": false,
+                          "in_use_by": []
                         }
                       ]
                     }
@@ -747,7 +1655,11 @@
                           "is_uploaded": true,
                           "is_ssr_bundle": true,
                           "ssr_runtime": "8.10",
-                          "ssr_runtime_description": "NodeJS 8.10"
+                          "ssr_runtime_description": "NodeJS 8.10",
+                          "in_use": true,
+                          "in_use_by": [
+                            "development"
+                          ]
                         }
                       ]
                     }
@@ -756,6 +1668,57 @@
               }
             },
             "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/bundles/{bundle_id}/": {
+      "delete": {
+        "operationId": "projects_bundles_destroy",
+        "description": "Request deletion of a bundle. The bundle will be asynchronously deleted. This operation can only be performed by project admins.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bundle_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The bundle's id",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Bundle deletion request accepted. The bundle will be asynchronously deleted."
+          },
+          "404": {
+            "description": "Bundle not found."
+          },
+          "409": {
+            "description": "Bundle cannot be deleted (in progress, in failed state)."
+          },
+          "403": {
+            "description": "Bundle deployed to one or more target, cannot delete."
           }
         }
       }
@@ -812,6 +1775,158 @@
               }
             },
             "description": ""
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/bundles/bulk-delete/": {
+      "post": {
+        "operationId": "projects_bundles_bulk_delete_create",
+        "description": "Request deletion for multiple bundles. Bundles are deleted asynchronously. Only project admins can perform this call. The response indicates which bundles were successfully queued for deletion and which failed validation.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BundleBulkDelete"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "bundle_ids": [
+                      1,
+                      2,
+                      3
+                    ]
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/BundleBulkDelete"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BundleBulkDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BundleBulkDeleteResponse"
+                },
+                "examples": {
+                  "ResponseExample1-AllSuccessful": {
+                    "value": {
+                      "bundles_queued_for_cleanup": [
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    "summary": "ResponseExample1 - All Successful"
+                  },
+                  "ResponseExample2-PartialSuccess": {
+                    "value": {
+                      "bundles_queued_for_cleanup": [
+                        1,
+                        3
+                      ],
+                      "rejected_bundles": [
+                        {
+                          "bundle_id": 2,
+                          "detail": "We can't delete this bundle because it's in use by 1 target(s)."
+                        }
+                      ]
+                    },
+                    "summary": "ResponseExample2 - Partial Success"
+                  },
+                  "ResponseExample2-PartialSuccess2": {
+                    "value": {
+                      "bundles_queued_for_cleanup": [
+                        1
+                      ],
+                      "rejected_bundles": [
+                        {
+                          "bundle_ids": [
+                            9999
+                          ],
+                          "detail": "Bundles not found in project testproject."
+                        },
+                        {
+                          "bundle_id": 2,
+                          "detail": "We can't delete this bundle because it's in use by 3 target(s)."
+                        },
+                        {
+                          "bundle_id": 3,
+                          "detail": "We can't delete this bundle because bundle deletion is in progress."
+                        },
+                        {
+                          "bundle_id": 4,
+                          "detail": "We can't delete this bundle because bundle deletion is in progress."
+                        },
+                        {
+                          "bundle_id": 5,
+                          "detail": "We can't delete this bundle because bundle deletion is in progress."
+                        },
+                        {
+                          "bundle_id": 6,
+                          "detail": "Bundle deletion failed. We've been notified of this error and are working to resolve it."
+                        }
+                      ]
+                    },
+                    "summary": "ResponseExample2 - Partial Success 2"
+                  },
+                  "ResponseExample3-AllFailed": {
+                    "value": {
+                      "rejected_bundles": [
+                        {
+                          "bundle_id": 1,
+                          "detail": "We can't delete this bundle because bundle deletion is in progress."
+                        },
+                        {
+                          "bundle_id": 2,
+                          "detail": "We can't delete this bundle because it's in use by 1 target(s)."
+                        }
+                      ]
+                    },
+                    "summary": "ResponseExample3 - All Failed"
+                  }
+                }
+              }
+            },
+            "description": "Bundle deletion was requested. Check the response body for details about the bundles that were queued and that failed deletion."
+          },
+          "500": {
+            "description": "An unexpected error occurred during the bulk delete operation. The operation has been rolled back and no bundles were deleted."
           }
         }
       }
@@ -1517,6 +2632,7 @@
                           "ssr_external_hostname": "www-testing.example.com",
                           "ssr_external_domain": "example.com",
                           "ssr_region": "eu-central-1",
+                          "ssr_architecture": "x86",
                           "ssr_whitelisted_ips": "103.12.25.0/24",
                           "ssr_proxy_configs": [
                             {
@@ -1529,7 +2645,9 @@
                           ],
                           "allow_cookies": false,
                           "enable_source_maps": false,
-                          "log_level": "INFO"
+                          "log_level": "INFO",
+                          "certificate_id": 0,
+                          "certificate_domain": "*.example.com"
                         }
                       ]
                     }
@@ -1572,6 +2690,7 @@
                     "ssr_external_hostname": "www-testing.example.com",
                     "ssr_external_domain": "example.com",
                     "ssr_region": "eu-central-1",
+                    "ssr_architecture": "x86",
                     "ssr_whitelisted_ips": "103.12.25.0/24",
                     "ssr_proxy_configs": [
                       {
@@ -1584,7 +2703,8 @@
                     ],
                     "allow_cookies": false,
                     "enable_source_maps": false,
-                    "log_level": "INFO"
+                    "log_level": "INFO",
+                    "certificate_id": 0
                   }
                 }
               }
@@ -1625,6 +2745,7 @@
                       "ssr_external_hostname": "www-testing.example.com",
                       "ssr_external_domain": "example.com",
                       "ssr_region": "eu-central-1",
+                      "ssr_architecture": "x86",
                       "ssr_whitelisted_ips": "103.12.25.0/24",
                       "ssr_proxy_configs": [
                         {
@@ -1637,7 +2758,9 @@
                       ],
                       "allow_cookies": true,
                       "enable_source_maps": false,
-                      "log_level": "INFO"
+                      "log_level": "INFO",
+                      "certificate_id": 0,
+                      "certificate_domain": "*.example.com"
                     }
                   }
                 }
@@ -1737,6 +2860,7 @@
                       "ssr_external_hostname": "www-testing.example.com",
                       "ssr_external_domain": "example.com",
                       "ssr_region": "eu-central-1",
+                      "ssr_architecture": "x86",
                       "ssr_whitelisted_ips": "103.12.25.0/24",
                       "ssr_proxy_configs": [
                         {
@@ -1750,7 +2874,9 @@
                       ],
                       "allow_cookies": false,
                       "enable_source_maps": false,
-                      "log_level": "INFO"
+                      "log_level": "INFO",
+                      "certificate_id": 0,
+                      "certificate_domain": "*.example.com"
                     }
                   }
                 }
@@ -1799,6 +2925,7 @@
                     "ssr_external_hostname": "www-testing.example.com",
                     "ssr_external_domain": "example.com",
                     "ssr_region": "eu-central-1",
+                    "ssr_architecture": "arm64",
                     "ssr_whitelisted_ips": "103.12.25.0/24",
                     "ssr_proxy_configs": [
                       {
@@ -1812,7 +2939,8 @@
                     ],
                     "allow_cookies": true,
                     "enable_source_maps": true,
-                    "log_level": "INFO"
+                    "log_level": "INFO",
+                    "certificate_id": 123
                   }
                 }
               }
@@ -1889,6 +3017,7 @@
                       "ssr_external_hostname": "www-testing.example.com",
                       "ssr_external_domain": "example.com",
                       "ssr_region": "eu-central-1",
+                      "ssr_architecture": "arm64",
                       "ssr_whitelisted_ips": "103.12.25.0/24",
                       "ssr_proxy_configs": [
                         {
@@ -1902,7 +3031,9 @@
                       ],
                       "allow_cookies": true,
                       "enable_source_maps": true,
-                      "log_level": "INFO"
+                      "log_level": "INFO",
+                      "certificate_id": 0,
+                      "certificate_domain": "*.example.com"
                     }
                   }
                 }
@@ -2258,6 +3389,108 @@
         "responses": {
           "204": {
             "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/clone/": {
+      "post": {
+        "operationId": "projects_target_clone_create",
+        "description": "Clone a target from another target in the same project. This creates a new target with the same configuration as the source target, excluding proxies and production flag. Optionally clones redirects and environment variables. The new target will be automatically deployed with the same bundle as the source target's current deployment (if source has a deployed bundle) or with a reset bundle.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2Clone"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "from_target_slug": "staging",
+                    "ssr_external_hostname": "www-copy.example.com",
+                    "certificate_id": 123,
+                    "clone_redirects": true,
+                    "clone_environment_variables": true,
+                    "clone_b2c_target_info": true
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2Clone"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APITargetV2Clone"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APITargetV2Clone"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "slug": "staging-copy",
+                      "name": "Staging Copy",
+                      "state": "CREATE_IN_PROGRESS",
+                      "deletion_status": "ACTIVE",
+                      "hostname": null,
+                      "ssr_external_hostname": "www-copy.example.com",
+                      "ssr_external_domain": "example.com",
+                      "ssr_region": "eu-central-1",
+                      "ssr_architecture": "x86",
+                      "ssr_whitelisted_ips": "103.12.25.0/24",
+                      "allow_cookies": false,
+                      "enable_source_maps": false,
+                      "log_level": "INFO",
+                      "certificate_id": 123,
+                      "certificate_domain": "*.example.com"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -3313,7 +4546,7 @@
                 "examples": {
                   "ResponseExample1": {
                     "value": {
-                      "api_key": "qLh_IRpIh594lPeURV4giczpW0q-Ki0YIcOdDz0aw0g"
+                      "api_key": "qLh_IRpIh59..."
                     }
                   }
                 }
@@ -3350,6 +4583,7 @@
                   "ResponseExample1": {
                     "value": {
                       "node_deprecation_notifications": true,
+                      "custom_domain_certificate_notifications": true,
                       "created_at": "2024-01-15T10:30:00Z",
                       "updated_at": "2024-01-15T10:30:00Z"
                     }
@@ -3376,7 +4610,8 @@
               "examples": {
                 "RequestExample1": {
                   "value": {
-                    "node_deprecation_notifications": false
+                    "node_deprecation_notifications": false,
+                    "custom_domain_certificate_notifications": false
                   }
                 }
               }
@@ -3412,6 +4647,7 @@
                   "ResponseExample1": {
                     "value": {
                       "node_deprecation_notifications": false,
+                      "custom_domain_certificate_notifications": false,
                       "created_at": "2024-01-15T10:30:00Z",
                       "updated_at": "2024-01-15T10:35:00Z"
                     }
@@ -3493,7 +4729,7 @@
           "publishing_status": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/PublishingStatusEnum"
+                "$ref": "#/components/schemas/Status1d2Enum"
               }
             ],
             "readOnly": true
@@ -3572,12 +4808,116 @@
               }
             ],
             "readOnly": true
+          },
+          "can_configure_ssr_architecture": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Enable SSR architecture selection (x86 or arm64) for this organization"
           }
         },
         "required": [
           "name",
           "slug"
         ]
+      },
+      "APIOrganizationMember": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "email": {
+            "type": "string",
+            "readOnly": true
+          },
+          "role": {
+            "$ref": "#/components/schemas/RoleEnum"
+          },
+          "first_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "can_view_all_projects": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "custom_domain_cert_permission": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Status1d2Enum"
+              }
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "APIOrganizationMemberCreate": {
+        "type": "object",
+        "description": "Serializer for creating organization members.",
+        "properties": {
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address"
+          },
+          "role": {
+            "$ref": "#/components/schemas/RoleEnum"
+          },
+          "can_view_all_projects": {
+            "type": "boolean"
+          },
+          "custom_domain_cert_permission": {
+            "$ref": "#/components/schemas/Status1d2Enum"
+          }
+        },
+        "required": [
+          "role",
+          "user"
+        ]
+      },
+      "APIOrganizationMemberUpdate": {
+        "type": "object",
+        "description": "Serializer for updating organization role permissions.\nAllows updating can_view_all_projects and custom_domain_cert_permission.",
+        "properties": {
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "first_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "can_view_all_projects": {
+            "type": "boolean"
+          },
+          "custom_domain_cert_permission": {
+            "$ref": "#/components/schemas/Status1d2Enum"
+          }
+        }
       },
       "APIProjectMember": {
         "type": "object",
@@ -3629,8 +4969,7 @@
             "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
           },
           "organization": {
-            "type": "string",
-            "description": "User-friendly identifier for this instance."
+            "type": "string"
           },
           "deletion_status": {
             "allOf": [
@@ -3710,6 +5049,9 @@
               },
               "edit_access_control_header": {
                 "type": "boolean"
+              },
+              "edit_data_access_layer_entry": {
+                "type": "boolean"
               }
             },
             "readOnly": true
@@ -3723,6 +5065,18 @@
             "title": "SSR AWS Region",
             "description": "The default AWS region for newly created targets\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)"
           },
+          "ssr_architecture": {
+            "nullable": true,
+            "description": "Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.\n\n* `x86` - x86\n* `arm64` - ARM64",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrArchitectureEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3734,6 +5088,19 @@
             "format": "date-time",
             "readOnly": true,
             "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "source": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Source of the project. One of: ecom, core, direct.\n\n* `ecom` - ecom\n* `core` - core\n* `direct` - direct",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
           }
         },
         "required": [
@@ -3841,6 +5208,9 @@
               },
               "edit_access_control_header": {
                 "type": "boolean"
+              },
+              "edit_data_access_layer_entry": {
+                "type": "boolean"
               }
             },
             "readOnly": true
@@ -3854,6 +5224,18 @@
             "title": "SSR AWS Region",
             "description": "The default AWS region for newly created targets\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)"
           },
+          "ssr_architecture": {
+            "nullable": true,
+            "description": "Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.\n\n* `x86` - x86\n* `arm64` - ARM64",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrArchitectureEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3865,6 +5247,19 @@
             "format": "date-time",
             "readOnly": true,
             "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "source": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Source of the project. One of: ecom, core, direct.\n\n* `ecom` - ecom\n* `core` - core\n* `direct` - direct",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
           }
         },
         "required": [
@@ -3951,6 +5346,53 @@
           "to_url"
         ]
       },
+      "APITargetV2Clone": {
+        "type": "object",
+        "description": "Serializer for target cloning request.\nInherits from APITargetV2BaseSerializer to reuse validation helper methods.",
+        "properties": {
+          "from_target_slug": {
+            "type": "string",
+            "description": "The slug of the target to clone from.",
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "ssr_external_hostname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Full hostname to be used by the cloned environment. Required when using non-MRT managed certificate.",
+            "maxLength": 128
+          },
+          "ssr_external_domain": {
+            "type": "string",
+            "nullable": true,
+            "description": "The domain to be used for a Universal PWA SSR deployment (e.g. customer.com). If not provided and hostname is provided, will be extracted from hostname.",
+            "maxLength": 128
+          },
+          "certificate_id": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "description": "The ID of the certificate to associate with the cloned target's custom domain. Required for custom domains."
+          },
+          "clone_redirects": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to clone redirects from the source target."
+          },
+          "clone_environment_variables": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to clone environment variables from the source target."
+          },
+          "clone_b2c_target_info": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to clone B2C target info from the source target."
+          }
+        },
+        "required": [
+          "from_target_slug"
+        ]
+      },
       "APITargetV2Create": {
         "type": "object",
         "description": "This is the serializer for target create/list APIs.",
@@ -3996,7 +5438,7 @@
           "ssr_external_hostname": {
             "type": "string",
             "nullable": true,
-            "description": "Full hostname to used by the environment eg. www.customer.com.",
+            "description": "Full hostname to be used by the environment eg. www.customer.com.",
             "maxLength": 128
           },
           "ssr_external_domain": {
@@ -4014,6 +5456,18 @@
               },
               {
                 "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "ssr_architecture": {
+            "nullable": true,
+            "description": "The architecture for the Server-Side Rendering function (x86 or ARM64). If not specified, the ssr_architecture that's set in the project is used.\n\n* `x86` - x86\n* `arm64` - ARM64",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrArchitectureEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
               }
             ]
           },
@@ -4040,6 +5494,11 @@
               ]
             }
           },
+          "cdn_domain_name": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The Managed Runtime CDN origin domain name."
+          },
           "is_production": {
             "type": "boolean",
             "title": "Production",
@@ -4057,10 +5516,54 @@
           },
           "log_level": {
             "nullable": true,
-            "description": "The minimum log level emitted for this target.n\n* `TRACE`\n* `DEBUG`\n* `INFO`\n* `WARN`\n* `ERROR`\n* `FATAL`",     
+            "description": "The minimum log level that will be emitted for this target\n\n* `TRACE` - TRACE\n* `DEBUG` - DEBUG\n* `INFO` - INFO\n* `WARN` - WARN\n* `ERROR` - ERROR\n* `FATAL` - FATAL",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/LogLevelEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "certificate_id": {
+            "type": "integer",
+            "minimum": 0,
+            "writeOnly": true,
+            "nullable": true,
+            "description": "The ID of the certificate to associate with this target's custom domain. Must be an integer unique within the organization."
+          },
+          "certificate_domain": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name."
+          },
+          "configured_cdn": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.\n\n* `unknown` - unknown\n* `mrt_cdn` - mrt_cdn\n* `ecdn` - ecdn\n* `stacked_cdn` - stacked_cdn",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConfiguredCdnEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "cdn_public_hostname": {
+            "type": "string",
+            "readOnly": true,
+            "nullable": true,
+            "description": "Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain."
+          },
+          "source": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Source of the environment. One of: ecom, core, direct.\n\n* `ecom` - ecom\n* `core` - core\n* `direct` - direct",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceEnum"
               },
               {
                 "$ref": "#/components/schemas/NullEnum"
@@ -4146,7 +5649,7 @@
           "ssr_external_hostname": {
             "type": "string",
             "nullable": true,
-            "description": "Full hostname to used by the environment eg. www.customer.com.",
+            "description": "Full hostname to be used by the environment eg. www.customer.com.",
             "maxLength": 128
           },
           "ssr_external_domain": {
@@ -4164,6 +5667,18 @@
               },
               {
                 "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "ssr_architecture": {
+            "nullable": true,
+            "description": "The architecture for the Server-Side Rendering function (x86 or ARM64). If not specified, the ssr_architecture that's set in the project is used.\n\n* `x86` - x86\n* `arm64` - ARM64",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrArchitectureEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
               }
             ]
           },
@@ -4190,6 +5705,11 @@
               ]
             }
           },
+          "cdn_domain_name": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The Managed Runtime CDN origin domain name."
+          },
           "is_production": {
             "type": "boolean",
             "title": "Production",
@@ -4207,10 +5727,54 @@
           },
           "log_level": {
             "nullable": true,
-            "description": "The minimum log level emitted for this target.n\n* `TRACE`\n* `DEBUG`\n* `INFO`\n* `WARN`\n* `ERROR`\n* `FATAL`",
+            "description": "The minimum log level that will be emitted for this target\n\n* `TRACE` - TRACE\n* `DEBUG` - DEBUG\n* `INFO` - INFO\n* `WARN` - WARN\n* `ERROR` - ERROR\n* `FATAL` - FATAL",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/LogLevelEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "certificate_id": {
+            "type": "integer",
+            "minimum": 0,
+            "writeOnly": true,
+            "nullable": true,
+            "description": "The ID of the certificate to associate with this target's custom domain. Must be an integer unique within the organization. Set to null to remove the certificate association."
+          },
+          "certificate_domain": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name."
+          },
+          "configured_cdn": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.\n\n* `unknown` - unknown\n* `mrt_cdn` - mrt_cdn\n* `ecdn` - ecdn\n* `stacked_cdn` - stacked_cdn",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConfiguredCdnEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "cdn_public_hostname": {
+            "type": "string",
+            "readOnly": true,
+            "nullable": true,
+            "description": "Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain."
+          },
+          "source": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Source of the environment. One of: ecom, core, direct.\n\n* `ecom` - ecom\n* `core` - core\n* `direct` - direct",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceEnum"
               },
               {
                 "$ref": "#/components/schemas/NullEnum"
@@ -4307,6 +5871,56 @@
           "message"
         ]
       },
+      "BundleBulkDelete": {
+        "type": "object",
+        "properties": {
+          "bundle_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "bundle_ids"
+        ]
+      },
+      "BundleBulkDeleteFailedRequest": {
+        "type": "object",
+        "properties": {
+          "bundle_id": {
+            "type": "integer",
+            "description": "The ID of the bundle that failed validation."
+          },
+          "errors": {
+            "type": "string",
+            "description": "Error message that explains why the bundle can't be queued for deletion."
+          }
+        },
+        "required": [
+          "bundle_id",
+          "errors"
+        ]
+      },
+      "BundleBulkDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "rejected_bundles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundleBulkDeleteFailedRequest"
+            },
+            "description": "Bundles that failed validation and couldn't be queued for deletion."
+          },
+          "bundles_queued_for_cleanup": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Bundle IDs for bundles that were queued for deletion."
+          }
+        }
+      },
       "BundleDownload": {
         "type": "object",
         "properties": {
@@ -4367,6 +5981,209 @@
           "id",
           "message"
         ]
+      },
+      "CertificateBase": {
+        "type": "object",
+        "description": "Base serializer for certificate serializers with common fields and methods.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "An ID unique within a business."
+          },
+          "domain_name": {
+            "type": "string",
+            "title": "Certificate domain",
+            "description": "The domain for the certificate either wildcard (e.g. *.example.com) or single domain (e.g. sub.example.com)",
+            "maxLength": 255
+          },
+          "validation_requested_at": {
+            "type": "string",
+            "readOnly": true
+          },
+          "validation_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ValidationStatusEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
+          },
+          "validation_record": {
+            "type": "string",
+            "readOnly": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "nullable": true,
+            "title": "Certificate Expiry Date",
+            "description": "Expiry date of the certificate from ACM."
+          },
+          "renewal_status": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Current status of certificate renewal.\n\n* `PENDING_AUTO_RENEWAL` - Pending Auto Renewal\n* `FAILED` - Failed",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RenewalStatusEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "renewal_eligibility": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Whether the certificate is eligible for renewal.\n\n* `ELIGIBLE` - Eligible\n* `INELIGIBLE` - Ineligible",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RenewalEligibilityEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "targets": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_by": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "is_mrt_managed": {
+            "type": "string",
+            "readOnly": true
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "domain_name"
+        ]
+      },
+      "CertificateListCreate": {
+        "type": "object",
+        "description": "Base serializer for certificate serializers with common fields and methods.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "An ID unique within a business."
+          },
+          "domain_name": {
+            "type": "string",
+            "description": "The domain for the certificate (e.g. shop.example.com)",
+            "maxLength": 255
+          },
+          "validation_requested_at": {
+            "type": "string",
+            "readOnly": true
+          },
+          "validation_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ValidationStatusEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
+          },
+          "validation_record": {
+            "type": "string",
+            "readOnly": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "nullable": true,
+            "title": "Certificate Expiry Date",
+            "description": "Expiry date of the certificate from ACM."
+          },
+          "renewal_status": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Current status of certificate renewal.\n\n* `PENDING_AUTO_RENEWAL` - Pending Auto Renewal\n* `FAILED` - Failed",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RenewalStatusEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "renewal_eligibility": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Whether the certificate is eligible for renewal.\n\n* `ELIGIBLE` - Eligible\n* `INELIGIBLE` - Ineligible",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RenewalEligibilityEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "targets": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_by": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "is_mrt_managed": {
+            "type": "string",
+            "readOnly": true
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "domain_name"
+        ]
+      },
+      "ConfiguredCdnEnum": {
+        "enum": [
+          "unknown",
+          "mrt_cdn",
+          "ecdn",
+          "stacked_cdn"
+        ],
+        "type": "string",
+        "description": "* `unknown` - unknown\n* `mrt_cdn` - mrt_cdn\n* `ecdn` - ecdn\n* `stacked_cdn` - stacked_cdn"
       },
       "DeletionStatusEnum": {
         "enum": [
@@ -4560,7 +6377,6 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Name of the Environment Variable.",
             "maxLength": 512
           },
           "value": {
@@ -4594,7 +6410,7 @@
           "publishing_status": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/PublishingStatusEnum"
+                "$ref": "#/components/schemas/Status1d2Enum"
               }
             ],
             "readOnly": true
@@ -4627,7 +6443,7 @@
           "FATAL"
         ],
         "type": "string",
-        "description": "The minimum log level emitted for a target."
+        "description": "* `TRACE` - TRACE\n* `DEBUG` - DEBUG\n* `INFO` - INFO\n* `WARN` - WARN\n* `ERROR` - ERROR\n* `FATAL` - FATAL"
       },
       "NullEnum": {
         "enum": [
@@ -4722,6 +6538,37 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/APIOrganization"
+            }
+          }
+        }
+      },
+      "PaginatedAPIOrganizationMemberList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIOrganizationMember"
             }
           }
         }
@@ -4881,6 +6728,37 @@
           }
         }
       },
+      "PaginatedCertificateListCreateList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificateListCreate"
+            }
+          }
+        }
+      },
       "PaginatedDeployListList": {
         "type": "object",
         "required": [
@@ -4971,6 +6849,40 @@
             "items": {
               "$ref": "#/components/schemas/PolymorphicNotification"
             }
+          }
+        }
+      },
+      "PatchedAPIOrganizationMemberUpdate": {
+        "type": "object",
+        "description": "Serializer for updating organization role permissions.\nAllows updating can_view_all_projects and custom_domain_cert_permission.",
+        "properties": {
+          "user": {
+            "type": "string",
+            "format": "email",
+            "title": "Email address",
+            "readOnly": true
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleEnum"
+              }
+            ],
+            "readOnly": true
+          },
+          "first_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "can_view_all_projects": {
+            "type": "boolean"
+          },
+          "custom_domain_cert_permission": {
+            "$ref": "#/components/schemas/Status1d2Enum"
           }
         }
       },
@@ -5101,6 +7013,9 @@
               },
               "edit_access_control_header": {
                 "type": "boolean"
+              },
+              "edit_data_access_layer_entry": {
+                "type": "boolean"
               }
             },
             "readOnly": true
@@ -5114,6 +7029,18 @@
             "title": "SSR AWS Region",
             "description": "The default AWS region for newly created targets\n\n* `us-east-1` - US East (N. Virginia)\n* `us-east-2` - US East (Ohio)\n* `us-west-1` - US West (N. California)\n* `us-west-2` - US West (Oregon)\n* `ap-south-1` - Asia Pacific (Mumbai)\n* `ap-south-2` - Asia Pacific (Hyderabad)\n* `ap-northeast-2` - Asia Pacific (Seoul)\n* `ap-southeast-1` - Asia Pacific (Singapore)\n* `ap-southeast-2` - Asia Pacific (Sydney)\n* `ap-southeast-3` - Asia Pacific (Jakarta)\n* `ap-northeast-1` - Asia Pacific (Tokyo)\n* `ap-northeast-3` - Asia Pacific (Osaka)\n* `ca-central-1` - Canada (Central)\n* `eu-central-1` - EU (Frankfurt)\n* `eu-central-2` - EU (Zurich)\n* `eu-west-1` - EU (Ireland)\n* `eu-west-2` - EU (London)\n* `eu-west-3` - EU (Paris)\n* `eu-north-1` - EU (Stockholm)\n* `eu-south-1` - EU (Milan)\n* `il-central-1` - Israel (Tel Aviv)\n* `me-central-1` - Middle East (UAE)\n* `sa-east-1` - South America (Sao Paulo)"
           },
+          "ssr_architecture": {
+            "nullable": true,
+            "description": "Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.\n\n* `x86` - x86\n* `arm64` - ARM64",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrArchitectureEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -5125,6 +7052,19 @@
             "format": "date-time",
             "readOnly": true,
             "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
+          },
+          "source": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Source of the project. One of: ecom, core, direct.\n\n* `ecom` - ecom\n* `core` - core\n* `direct` - direct",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
           }
         }
       },
@@ -5237,7 +7177,7 @@
           "ssr_external_hostname": {
             "type": "string",
             "nullable": true,
-            "description": "Full hostname to used by the environment eg. www.customer.com.",
+            "description": "Full hostname to be used by the environment eg. www.customer.com.",
             "maxLength": 128
           },
           "ssr_external_domain": {
@@ -5255,6 +7195,18 @@
               },
               {
                 "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "ssr_architecture": {
+            "nullable": true,
+            "description": "The architecture for the Server-Side Rendering function (x86 or ARM64). If not specified, the ssr_architecture that's set in the project is used.\n\n* `x86` - x86\n* `arm64` - ARM64",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SsrArchitectureEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
               }
             ]
           },
@@ -5281,6 +7233,11 @@
               ]
             }
           },
+          "cdn_domain_name": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The Managed Runtime CDN origin domain name."
+          },
           "is_production": {
             "type": "boolean",
             "title": "Production",
@@ -5298,7 +7255,7 @@
           },
           "log_level": {
             "nullable": true,
-            "description": "The minimum log level emitted for this target.\n\n* `TRACE`\n* `DEBUG`\n* `INFO`\n* `WARN`\n* `ERROR`\n* `FATAL`",
+            "description": "The minimum log level that will be emitted for this target\n\n* `TRACE` - TRACE\n* `DEBUG` - DEBUG\n* `INFO` - INFO\n* `WARN` - WARN\n* `ERROR` - ERROR\n* `FATAL` - FATAL",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/LogLevelEnum"
@@ -5307,6 +7264,144 @@
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
+          },
+          "certificate_id": {
+            "type": "integer",
+            "minimum": 0,
+            "writeOnly": true,
+            "nullable": true,
+            "description": "The ID of the certificate to associate with this target's custom domain. Must be an integer unique within the organization. Set to null to remove the certificate association."
+          },
+          "certificate_domain": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name."
+          },
+          "configured_cdn": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.\n\n* `unknown` - unknown\n* `mrt_cdn` - mrt_cdn\n* `ecdn` - ecdn\n* `stacked_cdn` - stacked_cdn",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConfiguredCdnEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "cdn_public_hostname": {
+            "type": "string",
+            "readOnly": true,
+            "nullable": true,
+            "description": "Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain."
+          },
+          "source": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Source of the environment. One of: ecom, core, direct.\n\n* `ecom` - ecom\n* `core` - core\n* `direct` - direct",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          }
+        }
+      },
+      "PatchedCertificateBase": {
+        "type": "object",
+        "description": "Base serializer for certificate serializers with common fields and methods.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "An ID unique within a business."
+          },
+          "domain_name": {
+            "type": "string",
+            "title": "Certificate domain",
+            "description": "The domain for the certificate either wildcard (e.g. *.example.com) or single domain (e.g. sub.example.com)",
+            "maxLength": 255
+          },
+          "validation_requested_at": {
+            "type": "string",
+            "readOnly": true
+          },
+          "validation_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ValidationStatusEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
+          },
+          "validation_record": {
+            "type": "string",
+            "readOnly": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "nullable": true,
+            "title": "Certificate Expiry Date",
+            "description": "Expiry date of the certificate from ACM."
+          },
+          "renewal_status": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Current status of certificate renewal.\n\n* `PENDING_AUTO_RENEWAL` - Pending Auto Renewal\n* `FAILED` - Failed",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RenewalStatusEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "renewal_eligibility": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Whether the certificate is eligible for renewal.\n\n* `ELIGIBLE` - Eligible\n* `INELIGIBLE` - Ineligible",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RenewalEligibilityEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "targets": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_by": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "is_mrt_managed": {
+            "type": "string",
+            "readOnly": true
+          },
+          "deletion_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeletionStatusEnum"
+              }
+            ],
+            "readOnly": true
           }
         }
       },
@@ -5398,7 +7493,11 @@
         "properties": {
           "node_deprecation_notifications": {
             "type": "boolean",
-            "description": "The user's email notification preferences for Node.js runtime's deprecation and retirement."
+            "description": "Receive email notifications about Node.js runtime deprecations"
+          },
+          "custom_domain_certificate_notifications": {
+            "type": "boolean",
+            "description": "Receive email notifications about custom domain certificate changes"
           },
           "created_at": {
             "type": "string",
@@ -5438,14 +7537,21 @@
         "type": "string",
         "description": "* `MOBIFY_STUDIO` - MOBIFY_STUDIO\n* `MOBIFYJS_CLIENT` - MOBIFYJS_CLIENT\n* `MOBIFY_ADAPTIVEJS` - MOBIFY_ADAPTIVEJS\n* `MOBIFY_TAG_BASED_PWA` - MOBIFY_TAG_BASED_PWA\n* `SSR` - SSR"
       },
-      "PublishingStatusEnum": {
+      "RenewalEligibilityEnum": {
         "enum": [
-          0,
-          1,
-          2
+          "ELIGIBLE",
+          "INELIGIBLE"
         ],
-        "type": "integer",
-        "description": "* `0` - Pending\n* `1` - Completed\n* `2` - Failed"
+        "type": "string",
+        "description": "* `ELIGIBLE` - Eligible\n* `INELIGIBLE` - Ineligible"
+      },
+      "RenewalStatusEnum": {
+        "enum": [
+          "PENDING_AUTO_RENEWAL",
+          "FAILED"
+        ],
+        "type": "string",
+        "description": "* `PENDING_AUTO_RENEWAL` - Pending Auto Renewal\n* `FAILED` - Failed"
       },
       "ResourceLimit": {
         "type": "object",
@@ -5461,6 +7567,31 @@
           "limit",
           "used"
         ]
+      },
+      "RoleEnum": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "* `0` - Owner\n* `1` - Member"
+      },
+      "SourceEnum": {
+        "enum": [
+          "ecom",
+          "core",
+          "direct"
+        ],
+        "type": "string",
+        "description": "* `ecom` - ecom\n* `core` - core\n* `direct` - direct"
+      },
+      "SsrArchitectureEnum": {
+        "enum": [
+          "x86",
+          "arm64"
+        ],
+        "type": "string",
+        "description": "* `x86` - x86\n* `arm64` - ARM64"
       },
       "SsrRegionEnum": {
         "enum": [
@@ -5509,14 +7640,18 @@
           2
         ],
         "type": "integer",
-        "description": "* `0` - ok\n* `1` - broken\n* `2` - preparing"
+        "description": "* `0` - Pending\n* `1` - Completed\n* `2` - Failed"
       },
       "UserEmailPreferences": {
         "type": "object",
         "properties": {
           "node_deprecation_notifications": {
             "type": "boolean",
-            "description": "The user's email notification preferences for Node.js runtime's deprecation and retirement."
+            "description": "Receive email notifications about Node.js runtime deprecations"
+          },
+          "custom_domain_certificate_notifications": {
+            "type": "boolean",
+            "description": "Receive email notifications about custom domain certificate changes"
           },
           "created_at": {
             "type": "string",
@@ -5531,6 +7666,15 @@
             "description": "Timestamp in the extended ISO 8601 format for when the object was last updated."
           }
         }
+      },
+      "ValidationStatusEnum": {
+        "enum": [
+          "pending_validation",
+          "validation_succeeded",
+          "validation_failed"
+        ],
+        "type": "string",
+        "description": "* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
       }
     },
     "securitySchemes": {
@@ -5549,7 +7693,7 @@
   },
   "servers": [
     {
-      "url": "https://cloud.mobify.com"
+      "url": "https://falcon-cloud-test1.mrt-soak.com"
     }
   ]
 }
