@@ -31,7 +31,7 @@ export function createDebugEndSessionTool(
         'End a script debugger session. ' +
         'Disconnects from the SDAPI, stops polling, and cleans up resources. ' +
         'Optionally clears all breakpoints before disconnecting.',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         clear_breakpoints: z

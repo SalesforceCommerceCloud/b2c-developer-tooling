@@ -41,7 +41,7 @@ export function createDebugSetBreakpointsTool(
         'Set breakpoints in a debug session. Replaces all previously set breakpoints. ' +
         'Accepts local file paths (mapped to server paths via cartridge discovery), cartridge-prefixed paths (e.g. app_storefront/cartridge/controllers/Cart.js), or server paths starting with /. ' +
         'Check the "verified" field and "warnings" in the response — if a path could not be mapped to a known cartridge, it will be flagged.',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         breakpoints: z

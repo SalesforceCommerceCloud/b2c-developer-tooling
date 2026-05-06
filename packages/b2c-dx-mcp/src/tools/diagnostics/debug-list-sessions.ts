@@ -37,7 +37,7 @@ export function createDebugListSessionsTool(
         'List all active script debugger sessions with their breakpoints and halted threads. ' +
         'Use this to check session state: whether breakpoints are armed, which threads are halted, and whether you need to call debug_get_variables or debug_continue. ' +
         'This is the recommended way to poll for halted threads in the non-blocking debug workflow.',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {},
       async execute(_args, context) {
         const registry = context.serverContext?.debugSessions;

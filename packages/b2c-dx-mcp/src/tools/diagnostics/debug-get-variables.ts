@@ -43,7 +43,7 @@ export function createDebugGetVariablesTool(
         'By default returns top-frame local variables. ' +
         'Use scope to filter (local, closure, global). ' +
         'Use object_path to drill into nested objects.',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop.'),

@@ -32,7 +32,7 @@ function createStepTool(
     {
       name: `debug_${action}`,
       description: description + ' Follow with debug_wait_for_stop to see where execution landed.',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         thread_id: z.number().int().describe('Thread ID of the halted thread to step.'),

@@ -33,7 +33,7 @@ export function createDebugEvaluateTool(
         'Evaluate an expression in the context of a halted thread and stack frame. ' +
         'WARNING: Expressions can have side effects (modify variables, call functions). ' +
         'Use with care on production-like instances.',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop.'),

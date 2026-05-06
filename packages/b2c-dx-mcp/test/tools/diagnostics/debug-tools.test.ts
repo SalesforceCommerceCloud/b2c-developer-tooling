@@ -90,7 +90,6 @@ describe('tools/diagnostics', () => {
       const tool = createDebugListSessionsTool(loadServices, serverContext);
       expect(tool.name).to.equal('debug_list_sessions');
       expect(tool.toolsets).to.include('CARTRIDGES');
-      expect(tool.toolsets).to.include('STOREFRONTNEXT');
       expect(tool.toolsets).to.include('SCAPI');
     });
 

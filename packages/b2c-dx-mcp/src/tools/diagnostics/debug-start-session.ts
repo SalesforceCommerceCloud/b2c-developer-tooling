@@ -43,7 +43,7 @@ export function createDebugStartSessionTool(
         'WARNING: Debug sessions can halt remote request threads on the instance. ' +
         'Use debug_end_session to cleanly disconnect when done. ' +
         'Requires Basic auth credentials (username/password).',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         cartridge_directory: z
           .string()

@@ -74,7 +74,7 @@ export function createDebugCaptureAtBreakpointTool(
         'Use trigger_url to have the tool fire the request itself (recommended) — this avoids needing to coordinate a separate request while the tool blocks. ' +
         'Without trigger_url, the tool BLOCKS until the breakpoint is hit or timeout expires and requires the user to trigger a request externally. ' +
         'For more control, use the non-blocking workflow: debug_set_breakpoints → trigger request → debug_list_sessions (check halted_threads) → debug_get_variables.',
-      toolsets: ['CARTRIDGES', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         file: z.string().describe('Local file path or server script path for the breakpoint.'),
