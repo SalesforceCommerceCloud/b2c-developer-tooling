@@ -6,6 +6,7 @@
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createOdsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import * as vscode from 'vscode';
+import {registerSafeCommand, runWithSafety} from '../safety.js';
 import type {SandboxConfigProvider} from './sandbox-config.js';
 import type {RealmTreeItem, SandboxTreeDataProvider, SandboxTreeItem} from './sandbox-tree-provider.js';
 
@@ -47,11 +48,11 @@ export function registerSandboxCommands(
     SANDBOX_DETAIL_SCHEME,
     detailProvider,
   );
-  const refresh = vscode.commands.registerCommand('b2c-dx.sandbox.refresh', () => {
+  const refresh = registerSafeCommand('b2c-dx.sandbox.refresh', () => {
     treeProvider.refresh();
   });
 
-  const addRealm = vscode.commands.registerCommand('b2c-dx.sandbox.addRealm', async () => {
+  const addRealm = registerSafeCommand('b2c-dx.sandbox.addRealm', async () => {
     const defaultRealm = configProvider.getDefaultRealm();
     const realm = await vscode.window.showInputBox({
       title: 'Add Realm',
@@ -65,13 +66,13 @@ export function registerSandboxCommands(
     treeProvider.refresh();
   });
 
-  const removeRealm = vscode.commands.registerCommand('b2c-dx.sandbox.removeRealm', (node: RealmTreeItem) => {
+  const removeRealm = registerSafeCommand('b2c-dx.sandbox.removeRealm', (node: RealmTreeItem) => {
     if (!node || node.nodeType !== 'realm') return;
     configProvider.removeRealm(node.realm);
     treeProvider.refresh();
   });
 
-  const create = vscode.commands.registerCommand('b2c-dx.sandbox.create', async (node?: RealmTreeItem) => {
+  const create = registerSafeCommand('b2c-dx.sandbox.create', async (node?: RealmTreeItem) => {
     // Use the realm directly when invoked from a realm context menu, otherwise prompt
     let realm: string | undefined;
     if (node?.nodeType === 'realm') {
@@ -126,7 +127,7 @@ export function registerSandboxCommands(
     );
   });
 
-  const deleteSandbox = vscode.commands.registerCommand('b2c-dx.sandbox.delete', async (node: SandboxTreeItem) => {
+  const deleteSandbox = registerSafeCommand('b2c-dx.sandbox.delete', async (node: SandboxTreeItem) => {
     if (!node) return;
     const choice = await vscode.window.showWarningMessage(
       `Delete sandbox "${node.sandbox.id}"? This cannot be undone.`,
@@ -141,9 +142,10 @@ export function registerSandboxCommands(
       async () => {
         try {
           const odsClient = await getOdsClientFromConfig(configProvider);
-          const result = await odsClient.DELETE('/sandboxes/{sandboxId}', {
-            params: {path: {sandboxId: node.sandbox.id}},
-          });
+          const result = await runWithSafety(
+            () => odsClient.DELETE('/sandboxes/{sandboxId}', {params: {path: {sandboxId: node.sandbox.id}}}),
+            `Delete sandbox "${node.sandbox.id}"?`,
+          );
           if (result.error) {
             vscode.window.showErrorMessage(
               `Sandbox delete failed: ${getApiErrorMessage(result.error, result.response)}`,
@@ -182,10 +184,14 @@ export function registerSandboxCommands(
       async () => {
         try {
           const odsClient = await getOdsClientFromConfig(configProvider);
-          const result = await odsClient.POST('/sandboxes/{sandboxId}/operations', {
-            params: {path: {sandboxId: node.sandbox.id}},
-            body: {operation: operationType},
-          });
+          const result = await runWithSafety(
+            () =>
+              odsClient.POST('/sandboxes/{sandboxId}/operations', {
+                params: {path: {sandboxId: node.sandbox.id}},
+                body: {operation: operationType},
+              }),
+            `${operationType.charAt(0).toUpperCase() + operationType.slice(1)} sandbox "${node.sandbox.id}"?`,
+          );
           if (result.error) {
             vscode.window.showErrorMessage(
               `Sandbox ${operationType} failed: ${getApiErrorMessage(result.error, result.response)}`,
@@ -203,11 +209,11 @@ export function registerSandboxCommands(
     );
   };
 
-  const start = vscode.commands.registerCommand('b2c-dx.sandbox.start', sandboxOperation('start'));
-  const stop = vscode.commands.registerCommand('b2c-dx.sandbox.stop', sandboxOperation('stop'));
-  const restart = vscode.commands.registerCommand('b2c-dx.sandbox.restart', sandboxOperation('restart'));
+  const start = registerSafeCommand('b2c-dx.sandbox.start', sandboxOperation('start'));
+  const stop = registerSafeCommand('b2c-dx.sandbox.stop', sandboxOperation('stop'));
+  const restart = registerSafeCommand('b2c-dx.sandbox.restart', sandboxOperation('restart'));
 
-  const viewDetails = vscode.commands.registerCommand('b2c-dx.sandbox.viewDetails', async (node: SandboxTreeItem) => {
+  const viewDetails = registerSafeCommand('b2c-dx.sandbox.viewDetails', async (node: SandboxTreeItem) => {
     if (!node) return;
     await vscode.window.withProgress(
       {location: vscode.ProgressLocation.Notification, title: 'Fetching sandbox details...'},
@@ -232,7 +238,7 @@ export function registerSandboxCommands(
     );
   });
 
-  const openBM = vscode.commands.registerCommand('b2c-dx.sandbox.openBM', async (node: SandboxTreeItem) => {
+  const openBM = registerSafeCommand('b2c-dx.sandbox.openBM', async (node: SandboxTreeItem) => {
     if (!node?.sandbox.hostName) {
       vscode.window.showWarningMessage('No hostname available for this sandbox.');
       return;
@@ -240,54 +246,51 @@ export function registerSandboxCommands(
     await vscode.env.openExternal(vscode.Uri.parse(`https://${node.sandbox.hostName}/on/demandware.store/Sites-Site`));
   });
 
-  const extendExpiration = vscode.commands.registerCommand(
-    'b2c-dx.sandbox.extendExpiration',
-    async (node: SandboxTreeItem) => {
-      if (!node) return;
+  const extendExpiration = registerSafeCommand('b2c-dx.sandbox.extendExpiration', async (node: SandboxTreeItem) => {
+    if (!node) return;
 
-      const ttlStr = await vscode.window.showInputBox({
-        title: `Extend Expiration — ${node.label ?? node.sandbox.id}`,
-        prompt: 'Hours to add to sandbox lifetime (0 = infinite)',
-        value: '24',
-        validateInput: (v) => {
-          const n = Number(v);
-          if (Number.isNaN(n) || n < 0) return 'Enter a non-negative number';
-          return null;
-        },
-      });
-      if (ttlStr === undefined) return;
-      const ttl = Number(ttlStr);
+    const ttlStr = await vscode.window.showInputBox({
+      title: `Extend Expiration — ${node.label ?? node.sandbox.id}`,
+      prompt: 'Hours to add to sandbox lifetime (0 = infinite)',
+      value: '24',
+      validateInput: (v) => {
+        const n = Number(v);
+        if (Number.isNaN(n) || n < 0) return 'Enter a non-negative number';
+        return null;
+      },
+    });
+    if (ttlStr === undefined) return;
+    const ttl = Number(ttlStr);
 
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Extending expiration for sandbox ${node.sandbox.id}...`,
-        },
-        async () => {
-          try {
-            const odsClient = await getOdsClientFromConfig(configProvider);
-            const result = await odsClient.PATCH('/sandboxes/{sandboxId}', {
-              params: {path: {sandboxId: node.sandbox.id}},
-              body: {ttl},
-            });
-            if (result.error) {
-              vscode.window.showErrorMessage(
-                `Failed to extend expiration: ${getApiErrorMessage(result.error, result.response)}`,
-              );
-              return;
-            }
-            const message =
-              ttl === 0 ? 'Sandbox expiration removed (infinite).' : `Sandbox expiration extended by ${ttl} hours.`;
-            vscode.window.showInformationMessage(message);
-            treeProvider.refreshRealm(node.realm);
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            vscode.window.showErrorMessage(`Failed to extend expiration: ${message}`);
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `Extending expiration for sandbox ${node.sandbox.id}...`,
+      },
+      async () => {
+        try {
+          const odsClient = await getOdsClientFromConfig(configProvider);
+          const result = await odsClient.PATCH('/sandboxes/{sandboxId}', {
+            params: {path: {sandboxId: node.sandbox.id}},
+            body: {ttl},
+          });
+          if (result.error) {
+            vscode.window.showErrorMessage(
+              `Failed to extend expiration: ${getApiErrorMessage(result.error, result.response)}`,
+            );
+            return;
           }
-        },
-      );
-    },
-  );
+          const message =
+            ttl === 0 ? 'Sandbox expiration removed (infinite).' : `Sandbox expiration extended by ${ttl} hours.`;
+          vscode.window.showInformationMessage(message);
+          treeProvider.refreshRealm(node.realm);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(`Failed to extend expiration: ${message}`);
+        }
+      },
+    );
+  });
 
   return [
     detailRegistration,
