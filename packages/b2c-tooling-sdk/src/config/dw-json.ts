@@ -93,6 +93,12 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /** Path to JWT certificate file (cert.pem) for JWT authentication */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for JWT authentication */
+  jwtKeyPath?: string;
+  /** Optional passphrase for encrypted JWT private key */
+  jwtPassphrase?: string;
   /**
    * Safety configuration for this instance.
    *
@@ -227,16 +233,13 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
   }
 
   // Find active config
-  if (json.active === false) {
-    // Root is inactive, look for active in configs
-    const activeConfig = json.configs.find((c) => c.active === true);
-    if (activeConfig) {
-      logger.trace(
-        {selection: 'active', instanceName: activeConfig.name},
-        `[DwJsonSource] Selected config "${activeConfig.name}" by active flag`,
-      );
-      return activeConfig;
-    }
+  const activeConfig = json.configs.find((c) => c.active === true);
+  if (activeConfig) {
+    logger.trace(
+      {selection: 'active', instanceName: activeConfig.name},
+      `[DwJsonSource] Selected config "${activeConfig.name}" by active flag`,
+    );
+    return activeConfig;
   }
 
   // Default to root config

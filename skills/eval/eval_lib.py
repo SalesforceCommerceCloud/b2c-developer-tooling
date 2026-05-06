@@ -6,6 +6,7 @@ Based on the skill-creator eval harness.
 import html as html_mod
 import json
 import os
+import signal
 import select
 import subprocess
 import time
@@ -190,6 +191,7 @@ def run_single_query(
         stderr=subprocess.DEVNULL,
         cwd=project_root,
         env=env,
+        start_new_session=True,
     )
 
     start_time = time.time()
@@ -284,7 +286,19 @@ def run_single_query(
                     return triggered
     finally:
         if process.poll() is None:
-            process.kill()
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except OSError:
+                pass
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except OSError:
+                    pass
+                process.wait()
+        else:
             process.wait()
 
     return triggered
@@ -302,40 +316,58 @@ def run_eval(
     model: str | None = None,
 ) -> dict:
     """Run the full eval set and return results."""
-    from concurrent.futures import ProcessPoolExecutor, as_completed
+    query_triggers: dict[str, list[bool]] = {}
+    query_items: dict[str, dict] = {}
 
-    results = []
-
-    with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        future_to_info = {}
+    if num_workers <= 1:
         for item in eval_set:
-            for run_idx in range(runs_per_query):
-                future = executor.submit(
-                    run_single_query,
-                    item["query"],
-                    skill_name,
-                    description,
-                    timeout,
-                    str(project_root),
-                    model,
-                )
-                future_to_info[future] = (item, run_idx)
-
-        query_triggers: dict[str, list[bool]] = {}
-        query_items: dict[str, dict] = {}
-        for future in as_completed(future_to_info):
-            item, _ = future_to_info[future]
             query = item["query"]
             query_items[query] = item
             if query not in query_triggers:
                 query_triggers[query] = []
-            try:
-                query_triggers[query].append(future.result())
-            except Exception as e:
-                import sys
-                print(f"Warning: query failed: {e}", file=sys.stderr)
-                query_triggers[query].append(False)
+            for _ in range(runs_per_query):
+                try:
+                    result = run_single_query(
+                        query, skill_name, description,
+                        timeout, str(project_root), model,
+                    )
+                    query_triggers[query].append(result)
+                except Exception as e:
+                    import sys
+                    print(f"Warning: query failed: {e}", file=sys.stderr)
+                    query_triggers[query].append(False)
+    else:
+        from concurrent.futures import ProcessPoolExecutor, as_completed
 
+        with ProcessPoolExecutor(max_workers=num_workers) as executor:
+            future_to_info = {}
+            for item in eval_set:
+                for run_idx in range(runs_per_query):
+                    future = executor.submit(
+                        run_single_query,
+                        item["query"],
+                        skill_name,
+                        description,
+                        timeout,
+                        str(project_root),
+                        model,
+                    )
+                    future_to_info[future] = (item, run_idx)
+
+            for future in as_completed(future_to_info):
+                item, _ = future_to_info[future]
+                query = item["query"]
+                query_items[query] = item
+                if query not in query_triggers:
+                    query_triggers[query] = []
+                try:
+                    query_triggers[query].append(future.result())
+                except Exception as e:
+                    import sys
+                    print(f"Warning: query failed: {e}", file=sys.stderr)
+                    query_triggers[query].append(False)
+
+    results = []
     for query, triggers in query_triggers.items():
         item = query_items[query]
         trigger_rate = sum(triggers) / len(triggers)

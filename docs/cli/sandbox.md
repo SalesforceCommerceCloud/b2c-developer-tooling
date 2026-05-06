@@ -12,7 +12,7 @@ These commands were previously available as `b2c ods <command>`. The `ods` prefi
 
 ## Sandbox ID Formats
 
-Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`) accept two ID formats:
+Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`, `operations list`, `operations get`) accept two ID formats:
 
 | Format | Example | Description |
 |--------|---------|-------------|
@@ -149,6 +149,7 @@ b2c sandbox create --realm <REALM>
 | `--ttl` | Time to live in hours (0 for infinite) | `24` |
 | `--profile` | Resource profile (medium, large, xlarge, xxlarge) | `medium` |
 | `--auto-scheduled` | Enable automatic start/stop scheduling | `false` |
+| `--emails` | Comma-separated list of notification email addresses | |
 | `--wait`, `-w` | Wait for sandbox to reach started or failed state | `false` |
 | `--poll-interval` | Polling interval in seconds when using --wait | `10` |
 | `--timeout` | Maximum wait time in seconds (0 for no timeout) | `600` |
@@ -176,6 +177,9 @@ b2c sandbox create --realm abcd --wait
 
 # Create with auto-scheduling enabled
 b2c sandbox create --realm abcd --auto-scheduled
+
+# Create with notification emails
+b2c sandbox create --realm abcd --emails dev@example.com,ops@example.com
 
 # Create without automatic permissions
 b2c sandbox create --realm abcd --no-set-permissions
@@ -388,6 +392,106 @@ b2c sandbox restart zzzv_123 --json
 
 ---
 
+## b2c sandbox operations list {#b2c-sandbox-operations-list}
+
+List past and current **operations** on a sandbox (for example start, stop, restart, reset, create, delete, upgrade). This maps to the ODS API `GET /sandboxes/{sandboxId}/operations` endpoint.
+
+To **request** a lifecycle operation (`start`, `stop`, `restart`, `reset`), use `b2c sandbox start|stop|restart|reset` instead; those commands call `POST /sandboxes/{sandboxId}/operations`.
+
+### Usage
+
+```bash
+b2c sandbox operations list <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Flags
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--from` | | Earliest operation time (ISO 8601). If omitted, the API defaults to roughly the last 30 days. | |
+| `--to` | | Latest operation time (ISO 8601). If omitted, the API defaults to now. | |
+| `--operation-state` | | Filter by lifecycle state: `pending`, `running`, or `finished` | |
+| `--status` | | Filter finished operations by outcome: `success` or `failure` | |
+| `--operation` | | Filter by operation type: `start`, `stop`, `restart`, `reset`, `create`, `delete`, `upgrade` | |
+| `--sort-order` | | Sort order: `asc` or `desc` | |
+| `--sort-by` | | Sort field: `created`, `operation_state`, `status`, or `operation` | |
+| `--page` | | Page index (0-based) | |
+| `--per-page` | | Page size (API default is typically 20) | |
+| `--columns`, `-c` | | Columns to display (comma-separated); see **Available columns** below | |
+| `--extended`, `-x` | | Include extended columns (for example `operationBy`) | `false` |
+
+### Available columns
+
+`id`, `operation`, `operationState`, `status`, `sandboxState`, `createdAt`, `operationBy` (extended)
+
+**Default columns:** `operation`, `operationState`, `status`, `sandboxState`, `createdAt`, `id`
+
+### Examples
+
+```bash
+# List recent operations for a sandbox
+b2c sandbox operations list zzzv-123
+
+# Only finished operations
+b2c sandbox operations list zzzv-123 --operation-state finished
+
+# Date range and paging
+b2c sandbox operations list zzzv-123 --from 2025-01-01 --to 2025-12-31 --page 0 --per-page 50
+
+# Custom columns
+b2c sandbox operations list zzzv-123 --columns operation,operationState,status,createdAt
+
+# Full API response (includes paging metadata when present)
+b2c sandbox operations list zzzv-123 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a one-line paging summary when metadata is present, then a table of operations. Use `--json` to inspect `metadata` (page, totals) and the raw `data` array.
+
+---
+
+## b2c sandbox operations get {#b2c-sandbox-operations-get}
+
+Return details for a **single** sandbox operation by its operation UUID (maps to `GET /sandboxes/{sandboxId}/operations/{operationId}`). Use the operation `id` from `b2c sandbox operations list` or from the JSON output of `b2c sandbox start|stop|restart|reset` when using `--json`.
+
+### Usage
+
+```bash
+b2c sandbox operations get <SANDBOXID> <OPERATIONID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| `OPERATIONID` | Operation UUID | Yes |
+
+### Examples
+
+```bash
+# Show operation details (human-readable)
+b2c sandbox operations get zzzv-123 550e8400-e29b-41d4-a716-446655440000
+
+# Operation as JSON (sandbox operation model only)
+b2c sandbox operations get zzzv-123 550e8400-e29b-41d4-a716-446655440000 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a short **Operation Details** block including operation type, state, outcome, sandbox state, created time, and who ran the operation when available.
+
+With `--json`, the command returns the **operation object** (not the full API envelope), consistent with `b2c sandbox get`.
+
+---
+
 ## b2c sandbox delete
 
 Delete an on-demand sandbox.
@@ -513,6 +617,8 @@ b2c sandbox update <SANDBOXID> [FLAGS]
 | `--resource-profile` | Resource profile (`medium`, `large`, `xlarge`, `xxlarge`) |
 | `--tags` | Comma-separated list of tags |
 | `--emails` | Comma-separated list of notification email addresses |
+| `--start-scheduler` | Start schedule JSON (or `"null"` to remove existing scheduler) |
+| `--stop-scheduler` | Stop schedule JSON (or `"null"` to remove existing scheduler) |
 
 At least one flag is required.
 
@@ -540,6 +646,9 @@ b2c sandbox update zzzv-123 --resource-profile large
 # Set notification emails
 b2c sandbox update zzzv-123 --emails dev@example.com,qa@example.com
 
+# Enable automatic scheduling and set scheduler values
+b2c sandbox update zzzv-123 --auto-scheduled --start-scheduler '{"weekdays":["MONDAY"],"time":"08:00:00Z"}' --stop-scheduler "null"
+
 # Combine multiple updates
 b2c sandbox update zzzv-123 --ttl 48 --resource-profile xlarge --tags ci,nightly
 
@@ -551,6 +660,8 @@ b2c sandbox update zzzv-123 --ttl 48 --json
 
 - The `--ttl` value is added to the existing sandbox lifetime, not an absolute value. Together with previous extensions, it must adhere to the realm's maximum TTL configuration.
 - Setting `--ttl` to 0 or less gives the sandbox an infinite lifetime (subject to realm configuration).
+- `--auto-scheduled` controls whether automatic start/stop behavior is enabled for the sandbox.
+- `--start-scheduler` and `--stop-scheduler` define scheduler values, but scheduler automation is effective only when `--auto-scheduled` is enabled.
 
 ---
 
@@ -685,6 +796,7 @@ Alias commands are available both under the `sandbox` topic and the legacy `ods`
 
 - `b2c sandbox alias create`
 - `b2c sandbox alias list`
+- `b2c sandbox alias get`
 - `b2c sandbox alias delete`
 
 ### b2c sandbox alias create
@@ -778,6 +890,39 @@ When listing multiple aliases without `--json`, the command prints a table with:
 - Status
 - Whether the alias is unique
 - DNS verification record (if any)
+
+For **one alias** by ID, you can also use **`b2c sandbox alias get`** (same API as `list --alias-id`).
+
+### b2c sandbox alias get {#b2c-sandbox-alias-get}
+
+Get details for a **single** hostname alias (ODS API `GET /sandboxes/{sandboxId}/aliases/{sandboxAliasId}`). This is equivalent to `b2c sandbox alias list <SANDBOXID> --alias-id <ALIASID>` but uses positional arguments only.
+
+#### Usage
+
+```bash
+b2c sandbox alias get <SANDBOXID> <ALIASID>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| `ALIASID` | Alias UUID | Yes |
+
+#### Examples
+
+```bash
+# Human-readable details
+b2c sandbox alias get zzzv-123 some-alias-uuid
+
+# Alias object as JSON (same shape as list/get for a single alias)
+b2c sandbox alias get zzzv-123 some-alias-uuid --json
+```
+
+#### Output
+
+When not using `--json`, the command prints an **Alias Details** section (hostname, status, uniqueness, DNS TXT verification, registration URL when present, optional cookie hint). With `--json`, it returns the **alias object** only.
 
 ### b2c sandbox alias delete
 
@@ -1174,6 +1319,8 @@ b2c sandbox realm update <REALM> [FLAGS]
 | `--default-sandbox-ttl` | Default sandbox TTL in hours when no TTL is specified at creation |
 | `--start-scheduler` | Start schedule JSON for sandboxes in this realm (use `"null"` to remove) |
 | `--stop-scheduler` | Stop schedule JSON for sandboxes in this realm (use `"null"` to remove) |
+| `--emails` | Comma-separated list of realm notification email addresses |
+| `--local-users-allowed` / `--no-local-users-allowed` | Enable or disable local users in realm sandbox configuration |
 
 The scheduler flags expect a JSON value or the literal string `"null"`:
 
@@ -1195,6 +1342,9 @@ b2c sandbox realm update zzzz \
 
 # Remove an existing stop scheduler
 b2c sandbox realm update zzzz --stop-scheduler "null"
+
+# Update realm emails and local user setting
+b2c sandbox realm update zzzz --emails dev@example.com,ops@example.com --local-users-allowed
 ```
 
 If no update flags are provided, the command fails with a helpful error explaining which flags can be used.

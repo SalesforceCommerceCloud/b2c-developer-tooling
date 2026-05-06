@@ -193,6 +193,39 @@ describe('sandbox update', () => {
     expect(result.emails).to.deep.equal(['dev@example.com', 'qa@example.com']);
   });
 
+  it('parses scheduler flags and includes them in PATCH body', async () => {
+    const command = await setupCommand(
+      {
+        'start-scheduler': '{"weekdays":["MONDAY"],"time":"08:00:00Z"}',
+        'stop-scheduler': 'null',
+      },
+      {sandboxId: 'zzzz-001'},
+    );
+
+    sinon.stub(command as any, 'resolveSandboxId').resolves('sb-uuid-123');
+    stubJsonEnabled(command, true);
+
+    let requestOptions: any;
+    stubOdsClient(command, {
+      async PATCH(_: string, options: any) {
+        requestOptions = options;
+        return {
+          data: {
+            data: {
+              id: 'sb-uuid-123',
+              realm: 'zzzz',
+              state: 'started',
+            },
+          },
+        };
+      },
+    });
+
+    await runSilent(() => command.run());
+    expect(requestOptions).to.have.nested.property('body.startScheduler.time', '08:00:00Z');
+    expect(requestOptions).to.have.nested.property('body.stopScheduler', null);
+  });
+
   it('requires at least one update flag including --resource-profile', async () => {
     const command = await setupCommand({}, {sandboxId: 'zzzz-001'});
 

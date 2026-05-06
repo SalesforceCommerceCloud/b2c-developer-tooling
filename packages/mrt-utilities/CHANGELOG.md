@@ -1,5 +1,17 @@
 # @salesforce/mrt-utilities
 
+## 0.1.6
+
+### Patch Changes
+
+- [#385](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/385) [`933ea84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/933ea841a85b8b667823b8acbfc2e401e105a195) - Rename development data-store environment variables from `SFNEXT_DATA_STORE_DEFAULTS`/`SFNEXT_DATA_STORE_WARN_ON_MISSING` to `MRT_DATA_STORE_DEFAULTS`/`MRT_DATA_STORE_WARN_ON_MISSING` and update docs/examples accordingly. (Thanks [@bendvc](https://github.com/bendvc)!)
+
+## 0.1.5
+
+### Patch Changes
+
+- [`7ae80fe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ae80fea7141d72182cc192756dbe2f5ee8e61fc) - Add a development-mode pseudo data-store implementation for `@salesforce/mrt-utilities/data-store` with environment-variable-backed defaults, while preserving the existing public API and production behavior. (Thanks [@bendvc](https://github.com/bendvc)!)
+
 ## 0.1.4
 
 ### Patch Changes

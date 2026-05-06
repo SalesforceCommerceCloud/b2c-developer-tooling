@@ -179,6 +179,9 @@
           },
           "realm": {
             "description": "Manage sandbox realms (alias for 'sandbox realm')"
+          },
+          "operations": {
+            "description": "List and inspect sandbox lifecycle operations (alias for 'sandbox operations')"
           }
         }
       },

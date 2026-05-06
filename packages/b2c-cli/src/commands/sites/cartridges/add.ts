@@ -14,6 +14,13 @@ import {
 import {t, withDocs} from '../../../i18n/index.js';
 
 export default class SitesCartridgesAdd extends InstanceCommand<typeof SitesCartridgesAdd> {
+  static args = {
+    cartridge: Args.string({
+      description: t('args.cartridge.description', 'Cartridge name to add'),
+      required: true,
+    }),
+  };
+
   static description = withDocs(
     t('commands.sites.cartridges.add.description', "Add a cartridge to a site's cartridge path"),
     '/cli/sites.html#b2c-sites-cartridges-add',
@@ -27,15 +34,6 @@ export default class SitesCartridgesAdd extends InstanceCommand<typeof SitesCart
     '<%= config.bin %> sites cartridges add my_cartridge --site-id RefArch --position after --target app_storefront_base',
     '<%= config.bin %> sites cartridges add bm_extension --bm',
   ];
-
-  static hiddenAliases = ['sites:cartridge:add'];
-
-  static args = {
-    cartridge: Args.string({
-      description: t('args.cartridge.description', 'Cartridge name to add'),
-      required: true,
-    }),
-  };
 
   static flags = {
     'site-id': Flags.string({
@@ -55,6 +53,8 @@ export default class SitesCartridgesAdd extends InstanceCommand<typeof SitesCart
       description: t('flags.target.description', 'Target cartridge (required when position is before/after)'),
     }),
   };
+
+  static hiddenAliases = ['sites:cartridge:add'];
 
   async run(): Promise<CartridgePathResult> {
     this.requireOAuthCredentials();

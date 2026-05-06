@@ -11,6 +11,7 @@ import type {ResolvedB2CConfig} from '../config/index.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
+import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {getStoredSession, isStatefulTokenValid} from '../auth/stateful-store.js';
 import {t} from '../i18n/index.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -19,8 +20,13 @@ import {normalizeTenantId, toOrganizationId} from '../clients/custom-apis.js';
 /**
  * Default OAuth authentication methods array used by getOAuthStrategy.
  * Extracted from getOAuthStrategy() to ensure getDefaultAuthMethods() returns the same array.
+ *
+ * Priority order:
+ * 1. client-credentials (requires clientId + clientSecret)
+ * 2. jwt (requires clientId + jwtCertPath + jwtKeyPath)
+ * 3. implicit (requires clientId, browser-based)
  */
-const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'implicit'];
+const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'implicit'];
 
 /**
  * Base command for operations requiring OAuth authentication.
@@ -95,6 +101,21 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       default: async () => process.env.SFCC_LOGIN_URL || undefined,
       helpGroup: 'AUTH',
     }),
+    'jwt-cert': Flags.string({
+      description: 'Path to JWT certificate file (cert.pem) for JWT Bearer authentication',
+      env: 'SFCC_JWT_CERT',
+      helpGroup: 'AUTH',
+    }),
+    'jwt-key': Flags.string({
+      description: 'Path to JWT private key file (key.pem) for JWT Bearer authentication',
+      env: 'SFCC_JWT_KEY',
+      helpGroup: 'AUTH',
+    }),
+    'jwt-passphrase': Flags.string({
+      description: 'Passphrase for encrypted JWT private key',
+      env: 'SFCC_JWT_PASSPHRASE',
+      helpGroup: 'AUTH',
+    }),
   };
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
@@ -139,7 +160,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    *
    * @throws Error if no allowed method has the required credentials configured
    */
-  protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy {
+  protected getOAuthStrategy(): OAuthStrategy | JwtOAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy {
     const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
     const requiredScopes = config.scopes ?? [];
@@ -202,6 +223,30 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           }
           break;
 
+        case 'jwt':
+          // JWT Bearer authentication - requires client ID and cert/key pair
+          if (config.clientId && config.jwtCertPath && config.jwtKeyPath) {
+            try {
+              this.logger.debug('[Auth] Using JWT Bearer authentication');
+              return new JwtOAuthStrategy({
+                clientId: config.clientId,
+                certPath: config.jwtCertPath,
+                keyPath: config.jwtKeyPath,
+                passphrase: config.jwtPassphrase,
+                accountManagerHost,
+                scopes: config.scopes,
+              });
+            } catch (error) {
+              // JWT config is present but invalid (corrupted files, wrong passphrase, etc.)
+              // Log warning and fall through to next auth method
+              const message = error instanceof Error ? error.message : String(error);
+              this.logger.warn(
+                `[Auth] JWT authentication configured but invalid: ${message}. Trying next auth method.`,
+              );
+            }
+          }
+          break;
+
         case 'implicit': {
           const effectiveClientId = config.clientId ?? defaultClientId;
           if (effectiveClientId) {
@@ -237,6 +282,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * Detects explicit CLI flags that indicate intent to use stateless auth.
    * Only flags that mandate a specific auth flow are considered:
    * - --client-secret: indicates client-credentials flow
+   * - --jwt-cert / --jwt-key: indicates JWT Bearer flow
    * - --user-auth: indicates browser-based implicit flow
    * - --auth-methods: explicit auth method selection
    *
@@ -246,7 +292,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    */
   private detectExplicitAuthFlags(): string[] {
     const rawArgs = this._rawArgv;
-    const statelessFlags = ['--client-secret', '--user-auth', '--auth-methods'];
+    const statelessFlags = ['--client-secret', '--jwt-cert', '--jwt-key', '--user-auth', '--auth-methods'];
     return statelessFlags.filter((flag) => rawArgs.some((arg) => arg === flag || arg.startsWith(`${flag}=`)));
   }
 

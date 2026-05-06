@@ -14,17 +14,17 @@ import {
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class CapPull extends JobCommand<typeof CapPull> {
-  static description = withDocs(
-    t('commands.cap.pull.description', 'Pull installed Commerce Apps from a B2C Commerce instance'),
-    '/cli/cap.html#b2c-cap-pull',
-  );
-
   static args = {
     appName: Args.string({
       description: 'Commerce App feature name to pull (e.g. avalara-tax). If omitted, pulls all registry apps.',
       required: false,
     }),
   };
+
+  static description = withDocs(
+    t('commands.cap.pull.description', 'Pull installed Commerce Apps from a B2C Commerce instance'),
+    '/cli/cap.html#b2c-cap-pull',
+  );
 
   static enableJsonFlag = true;
 

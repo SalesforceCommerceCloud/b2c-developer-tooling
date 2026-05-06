@@ -66,6 +66,10 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     authMethods,
     accountManagerHost: flags['account-manager-host'] as string | undefined,
     scopes: scopes && scopes.length > 0 ? scopes : undefined,
+    // JWT Bearer auth flags
+    jwtCertPath: flags['jwt-cert'] as string | undefined,
+    jwtKeyPath: flags['jwt-key'] as string | undefined,
+    jwtPassphrase: flags['jwt-passphrase'] as string | undefined,
   };
 }
 

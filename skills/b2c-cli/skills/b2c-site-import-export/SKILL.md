@@ -1,6 +1,6 @@
 ---
 name: b2c-site-import-export
-description: Import and export site archives with metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import site data, write metadata XML for custom attributes on products/orders/customers, define custom object types, configure site preferences via import, or work with site archive directory structure and IMPEX XML formats. Also use when the user asks about system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml, or any site archive import/export workflow — even if they just say they need to "push metadata" or "add a field to products".
+description: Import and export site archives containing metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import a site archive directory or zip to an instance, export site configuration as XML, structure a site archive folder (sites/site_template/meta/), write or debug metadata XML files (system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml), or push custom attributes, custom object types, or site preferences to a sandbox via site import. Also use when an import job fails with schema validation errors — even if they just say "push metadata to the sandbox" or "import my XML files".
 ---
 
 # Site Import/Export Skill

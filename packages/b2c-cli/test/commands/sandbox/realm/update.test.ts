@@ -101,6 +101,29 @@ describe('sandbox realm update', () => {
     expect(requestOptions).to.have.nested.property('body.sandbox.stopScheduler', null);
   });
 
+  it('includes emails and local-users-allowed in body', async () => {
+    const command = await setupCommand(
+      {
+        emails: 'dev@example.com,ops@example.com',
+        'local-users-allowed': true,
+        json: true,
+      },
+      {realm: 'zzzz'},
+    );
+
+    let requestOptions: any;
+    stubOdsClient(command, {
+      async PATCH(_url: string, options: any) {
+        requestOptions = options;
+        return {data: {}};
+      },
+    });
+
+    await runSilent(() => command.run());
+    expect(requestOptions.body.emails).to.deep.equal(['dev@example.com', 'ops@example.com']);
+    expect(requestOptions).to.have.nested.property('body.sandbox.localUsersAllowed', true);
+  });
+
   it('throws a helpful error on invalid scheduler JSON', async () => {
     const command = await setupCommand({'start-scheduler': 'not-json'}, {realm: 'zzzz'});
 

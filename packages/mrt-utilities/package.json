@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/mrt-utilities",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "Middleware and utilities to simulate a deployed Managed Runtime environment",
   "type": "module",
   "author": "Salesforce",
@@ -52,6 +52,16 @@
       }
     },
     "./data-store": {
+      "dev-data-store": {
+        "import": {
+          "types": "./dist/esm/data-store/development.d.ts",
+          "default": "./dist/esm/data-store/development.js"
+        },
+        "require": {
+          "types": "./dist/cjs/data-store/development.d.ts",
+          "default": "./dist/cjs/data-store/development.js"
+        }
+      },
       "development": "./src/data-store/index.ts",
       "import": {
         "types": "./dist/esm/data-store/index.d.ts",
