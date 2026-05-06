@@ -312,6 +312,13 @@ describe('operations/mrt/env', () => {
 
       const auth = new MockAuthStrategy();
 
+      // Virtual clock that advances by 1s on every call to simulate timeout without real waiting.
+      let virtualNow = 0;
+      const fakeNow = () => {
+        virtualNow += 1000;
+        return virtualNow;
+      };
+
       try {
         await waitForEnv(
           {
@@ -320,6 +327,7 @@ describe('operations/mrt/env', () => {
             pollIntervalSeconds: 1,
             timeoutSeconds: 1,
             sleep: instantSleep,
+            now: fakeNow,
           },
           auth,
         );
