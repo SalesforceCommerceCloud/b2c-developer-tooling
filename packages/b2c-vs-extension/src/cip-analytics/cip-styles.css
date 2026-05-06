@@ -149,7 +149,18 @@ body {
 .page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 16px 20px 32px;
+  padding: 20px 20px 32px;
+}
+
+/* Header inside .page: card-like container with rounded corners, proper padding,
+ * and a bottom margin so it reads as a distinct section above the form cards. */
+.page > .page-header {
+  border-radius: var(--cip-card-radius);
+  border: 1px solid var(--vscode-panel-border) !important;
+  border-bottom: 1px solid var(--vscode-panel-border) !important;
+  background: var(--vscode-editor-background) !important;
+  margin-bottom: 12px;
+  padding: 16px 14px;
 }
 
 /* === PAGE HEADER ===
@@ -524,7 +535,7 @@ body {
   padding: 6px 10px;
   background-color: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, transparent);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border, #c0c4cc));
   border-radius: var(--cip-radius-sm);
   font-size: 13px;
   font-family: var(--vscode-font-family);
@@ -533,7 +544,8 @@ body {
 
 .input:focus,
 .select:focus {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--vscode-input-foreground, #6b7280);
+  outline: none;
 }
 
 .input[type='date'] {
@@ -546,14 +558,14 @@ body {
   gap: 10px;
   padding: 8px 12px;
   background-color: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, transparent);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
   border-radius: var(--cip-radius-sm);
   cursor: pointer;
   user-select: none;
 }
 
 .checkbox-card:hover {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--vscode-panel-border);
 }
 
 .checkbox-card input[type='checkbox'] {
@@ -1115,8 +1127,8 @@ kbd {
 }
 
 .table-item.selected {
-  background-color: var(--vscode-list-activeSelectionBackground);
-  color: var(--vscode-list-activeSelectionForeground);
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
 }
 
 .table-detail {
@@ -1565,7 +1577,8 @@ body.cip-query-builder {
   background-color: var(--vscode-sideBar-background);
   border-right: 1px solid var(--vscode-panel-border);
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   min-height: 0;
 }
 
@@ -1573,7 +1586,8 @@ body.cip-query-builder {
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--vscode-panel-border);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   min-height: 0;
 }
 
@@ -1687,6 +1701,7 @@ body.cip-query-builder {
 
 .list {
   flex: 1;
+  overflow-x: auto;
   overflow-y: auto;
   padding: 4px 0;
   min-height: 0;
@@ -1706,6 +1721,8 @@ body.cip-query-builder {
   border-left: 2px solid transparent;
   color: var(--vscode-foreground);
   min-height: 26px;
+  white-space: nowrap;
+  min-width: max-content;
 }
 
 .list-item:hover {
@@ -1713,9 +1730,9 @@ body.cip-query-builder {
 }
 
 .list-item.selected {
-  background-color: var(--vscode-list-activeSelectionBackground);
-  color: var(--vscode-list-activeSelectionForeground);
-  border-left-color: var(--cip-accent);
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
+  border-left-color: var(--vscode-descriptionForeground);
   font-weight: 500;
 }
 
@@ -1728,7 +1745,7 @@ body.cip-query-builder {
   opacity: 0.85;
 }
 .list-item.selected .icon {
-  color: var(--vscode-list-activeSelectionForeground);
+  color: var(--vscode-foreground);
   opacity: 1;
 }
 .list-item .icon .ic {
@@ -1748,7 +1765,7 @@ body.cip-query-builder {
   cursor: pointer;
   flex-shrink: 0;
   margin: 0;
-  accent-color: var(--cip-accent);
+  accent-color: var(--cip-neutral);
 }
 
 /* Type tag — one uniform dark-grey pill across every SQL type. Tight max-width with
@@ -2484,8 +2501,8 @@ body.cip-query-builder {
 }
 
 .cip-query-builder .list-item.selected {
-  background-color: var(--vscode-list-activeSelectionBackground);
-  color: var(--vscode-list-activeSelectionForeground);
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
   border-left-color: var(--vscode-descriptionForeground);
   font-family: var(--vscode-editor-font-family);
   font-weight: 600;
@@ -2586,25 +2603,10 @@ body.cip-query-builder {
   bottom: 0;
   width: 3px;
   border-radius: 8px 0 0 8px;
-  background: var(--cip-accent);
-  opacity: 0.8;
+  background: var(--cip-neutral);
+  opacity: 0.35;
 }
 
-.clause[data-clause='select']::before {
-  background: #5b7fff;
-}
-.clause[data-clause='from']::before {
-  background: #16a34a;
-}
-.clause[data-clause='where']::before {
-  background: #eab308;
-}
-.clause[data-clause='order']::before {
-  background: #a855f7;
-}
-.clause[data-clause='limit']::before {
-  background: #f97316;
-}
 
 .clause-head {
   padding: 10px 16px;
@@ -2623,33 +2625,10 @@ body.cip-query-builder {
   font-size: 10.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: var(--cip-accent-soft);
-  color: var(--cip-accent);
+  background: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-descriptionForeground);
 }
 
-.clause[data-clause='select'] .clause-step {
-  background: rgba(91, 127, 255, 0.16);
-  color: #5b7fff;
-}
-.clause[data-clause='from'] .clause-step {
-  background: rgba(22, 163, 74, 0.16);
-  color: #16a34a;
-}
-.clause[data-clause='where'] .clause-step {
-  background: rgba(234, 179, 8, 0.18);
-  color: #b58a00;
-}
-.clause[data-clause='order'] .clause-step {
-  background: rgba(168, 85, 247, 0.16);
-  color: #a855f7;
-}
-.clause[data-clause='limit'] .clause-step {
-  background: rgba(249, 115, 22, 0.16);
-  color: #f97316;
-}
-.vscode-dark .clause[data-clause='where'] .clause-step {
-  color: #eab308;
-}
 
 .clause-title {
   font-size: 13px;
@@ -2668,34 +2647,11 @@ body.cip-query-builder {
   letter-spacing: 0.8px;
   padding: 2px 8px;
   border-radius: 4px;
-  border: none;
-  background: var(--cip-accent-soft);
-  color: var(--cip-accent);
+  border: 1px solid var(--vscode-panel-border);
+  background: rgba(128, 128, 128, 0.12);
+  color: var(--vscode-foreground);
 }
 
-.clause[data-clause='select'] .kw {
-  background: rgba(91, 127, 255, 0.14);
-  color: #5b7fff;
-}
-.clause[data-clause='from'] .kw {
-  background: rgba(22, 163, 74, 0.14);
-  color: #16a34a;
-}
-.clause[data-clause='where'] .kw {
-  background: rgba(234, 179, 8, 0.16);
-  color: #b58a00;
-}
-.clause[data-clause='order'] .kw {
-  background: rgba(168, 85, 247, 0.14);
-  color: #a855f7;
-}
-.clause[data-clause='limit'] .kw {
-  background: rgba(249, 115, 22, 0.14);
-  color: #f97316;
-}
-.vscode-dark .clause[data-clause='where'] .kw {
-  color: #eab308;
-}
 
 .clause-desc {
   font-size: 11.5px;
@@ -3086,9 +3042,9 @@ body.cip-entity-browser > header {
   background-color: var(--vscode-list-hoverBackground);
 }
 .eb-pane__body .table-item.selected {
-  background-color: var(--vscode-list-activeSelectionBackground);
-  color: var(--vscode-list-activeSelectionForeground);
-  border-left-color: var(--cip-accent);
+  background-color: rgba(128, 128, 128, 0.18);
+  color: var(--vscode-foreground);
+  border-left-color: var(--vscode-descriptionForeground);
   font-family: var(--vscode-editor-font-family);
   font-weight: 600;
 }

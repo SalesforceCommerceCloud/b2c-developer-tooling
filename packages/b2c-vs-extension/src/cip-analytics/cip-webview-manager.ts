@@ -142,7 +142,7 @@ export class CipWebviewManager {
     }
 
     // Create new panel
-    const panel = vscode.window.createWebviewPanel('cipTablesBrowser', 'CIP Tables Browser', vscode.ViewColumn.One, {
+    const panel = vscode.window.createWebviewPanel('cipTablesBrowser', 'CIP Entity Browser', vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
       localResourceRoots: [this.cipAnalyticsUri],
@@ -750,7 +750,14 @@ export class CipWebviewManager {
         const nameAttr = CipWebviewManager.escapeAttr(param.name);
         const descAttr = CipWebviewManager.escapeAttr(param.description);
         const descText = CipWebviewManager.escapeHtml(param.description);
-        const nameText = CipWebviewManager.escapeHtml(param.name);
+        const labelText = param.name
+          .replace(/([A-Z])/g, ' $1')
+          .trim()
+          .split(' ')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ')
+          .replace(/\bId\b/g, 'ID');
+        const nameText = CipWebviewManager.escapeHtml(labelText);
         const required = param.required ? 'required' : '';
 
         let inputHtml = '';
@@ -758,7 +765,10 @@ export class CipWebviewManager {
         // grid row — keeps from/to ranges visually paired instead of wrapping the
         // second date to a lonely third row.
         let fieldModifier = '';
-        if (param.type === 'date') {
+        if (param.type === 'string') {
+          fieldModifier = ' full';
+          inputHtml = `<input type="text" id="${nameAttr}" name="${nameAttr}" ${required} class="input" placeholder="${descAttr}" />`;
+        } else if (param.type === 'date') {
           fieldModifier = ' field--date';
           inputHtml = `<input type="date" id="${nameAttr}" name="${nameAttr}" ${required} class="input" />`;
         } else if (param.type === 'boolean') {
@@ -789,9 +799,14 @@ export class CipWebviewManager {
       })
       .join('');
 
+    const displayName = report.name
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
     return this.renderTemplate(webview, 'report-dashboard.html', {
-      __REPORT_NAME__: CipWebviewManager.escapeHtml(report.name),
-      __REPORT_NAME_ESC__: CipWebviewManager.escapeHtml(report.name),
+      __REPORT_NAME__: CipWebviewManager.escapeHtml(displayName),
+      __REPORT_NAME_ESC__: CipWebviewManager.escapeHtml(displayName),
       __REPORT_NAME_JSON__: JSON.stringify(report.name),
       __REPORT_CATEGORY__: CipWebviewManager.escapeHtml(report.category),
       __REPORT_DESCRIPTION__: CipWebviewManager.escapeHtml(report.description),

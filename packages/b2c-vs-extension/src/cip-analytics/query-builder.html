@@ -279,6 +279,17 @@
               <span class="ic ic-code"></span>
               <span data-role="label">Show SQL</span>
             </button>
+            <button
+              type="button"
+              class="btn-ghost"
+              id="toggleResultsBtn"
+              aria-expanded="false"
+              aria-controls="resultsPanel"
+              disabled
+            >
+              <span class="ic ic-table"></span>
+              <span data-role="label">Show Results</span>
+            </button>
             <span class="run-hint">Press <kbd>⌘</kbd> <kbd>↵</kbd> to run</span>
             <button id="runQueryBtnBottom" class="btn btn-run" disabled>
               <span class="ic ic-play"></span>
@@ -371,6 +382,7 @@
         exportJsonBtn: document.getElementById('exportJsonBtn'),
         copySqlBtn: document.getElementById('copySqlBtn'),
         toggleSqlBtn: document.getElementById('toggleSqlBtn'),
+        toggleResultsBtn: document.getElementById('toggleResultsBtn'),
         previewPanel: document.getElementById('previewPanel'),
         statusBar: document.getElementById('statusBar'),
       };
@@ -401,6 +413,10 @@
           el.connHostWrap.hidden = true;
         }
         el.connDetail.textContent = c.message || '';
+
+        const connected = status === 'connected';
+        el.loadTablesBtn.disabled = !connected;
+        if (!connected) el.runQueryBtn.disabled = true;
       }
       renderConnection();
 
@@ -490,6 +506,14 @@
         el.previewPanel.hidden = !open;
         el.toggleSqlBtn.setAttribute('aria-expanded', String(open));
         el.toggleSqlBtn.querySelector('[data-role="label"]').textContent = open ? 'Hide SQL' : 'Show SQL';
+      });
+
+      // Results panel toggle — enabled once results are available.
+      el.toggleResultsBtn.addEventListener('click', () => {
+        const open = !el.resultsPanel.classList.contains('visible');
+        el.resultsPanel.classList.toggle('visible', open);
+        el.toggleResultsBtn.setAttribute('aria-expanded', String(open));
+        el.toggleResultsBtn.querySelector('[data-role="label"]').textContent = open ? 'Hide Results' : 'Show Results';
       });
 
       document.addEventListener('keydown', (e) => {
@@ -597,15 +621,16 @@
         el.editorViewBtn.classList.toggle('active', view === 'editor');
         el.builderView.classList.toggle('hidden', view !== 'builder');
         el.editorView.classList.toggle('hidden', view !== 'editor');
+        const isConnected = (currentConnection?.status ?? 'disconnected') === 'connected';
         if (view === 'editor') {
           const existingSql = buildSql();
           if (existingSql && !existingSql.startsWith('--')) {
             el.sqlEditor.value = existingSql;
           }
           state.customSql = el.sqlEditor.value;
-          el.runQueryBtn.disabled = !state.customSql.trim();
+          el.runQueryBtn.disabled = !isConnected || !state.customSql.trim();
         } else {
-          el.runQueryBtn.disabled = !state.currentTable;
+          el.runQueryBtn.disabled = !isConnected || !state.currentTable;
         }
       }
 
@@ -708,7 +733,8 @@
         });
 
         updateQueryPreview();
-        el.runQueryBtn.disabled = false;
+        const isConnected = (currentConnection?.status ?? 'disconnected') === 'connected';
+        el.runQueryBtn.disabled = !isConnected;
       }
 
       function renderFieldList() {
@@ -1097,6 +1123,9 @@
       function renderResults(data) {
         state.results = data;
         el.resultsPanel.classList.add('visible');
+        el.toggleResultsBtn.disabled = false;
+        el.toggleResultsBtn.setAttribute('aria-expanded', 'true');
+        el.toggleResultsBtn.querySelector('[data-role="label"]').textContent = 'Hide Results';
         el.exportCsvBtn.disabled = !data.rows || data.rows.length === 0;
         el.exportJsonBtn.disabled = !data.rows || data.rows.length === 0;
 
@@ -1246,19 +1275,23 @@
             setStatusHtml('loading', '<span class="spinner"></span> Executing query...');
             break;
 
-          case 'queryResult':
-            el.runQueryBtn.disabled = false;
+          case 'queryResult': {
+            const isConn = (currentConnection?.status ?? 'disconnected') === 'connected';
+            el.runQueryBtn.disabled = !isConn;
             renderResults(message.data);
             setStatus(
               'success',
               'Query returned ' + message.data.rowCount + ' rows in ' + message.data.executionTime + 'ms.',
             );
             break;
+          }
 
-          case 'queryError':
-            el.runQueryBtn.disabled = false;
+          case 'queryError': {
+            const isConn = (currentConnection?.status ?? 'disconnected') === 'connected';
+            el.runQueryBtn.disabled = !isConn;
             setStatus('error', message.error);
             break;
+          }
         }
       });
 

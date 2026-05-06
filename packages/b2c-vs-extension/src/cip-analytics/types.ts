@@ -38,7 +38,7 @@ export class CipTablesBrowserTreeItem extends vscode.TreeItem {
   readonly nodeType = 'tablesBrowser' as const;
 
   constructor() {
-    super('Tables Browser', vscode.TreeItemCollapsibleState.None);
+    super('Entity Browser', vscode.TreeItemCollapsibleState.None);
     this.contextValue = 'cipTablesBrowser';
     this.iconPath = new vscode.ThemeIcon('table');
     this.description = 'Explore CIP schemas';

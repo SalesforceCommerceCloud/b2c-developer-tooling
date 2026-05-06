@@ -142,6 +142,8 @@
           connHostWrap.hidden = true;
         }
         connDetail.textContent = c.message || '';
+
+        loadTablesBtn.disabled = status !== 'connected';
       }
       renderConnection();
 
@@ -246,7 +248,7 @@
             allTables = message.tables || [];
             hasLoadedOnce = true;
             showStatus('success', 'Loaded ' + message.tableCount + ' entities.');
-            loadTablesBtn.disabled = false;
+            loadTablesBtn.disabled = (currentConnection?.status ?? 'disconnected') !== 'connected';
             loadBtnLabel.textContent = 'Refresh';
             searchInput.disabled = false;
             renderTablesList(allTables);
@@ -254,7 +256,7 @@
 
           case 'tablesLoadError':
             showStatus('error', message.error);
-            loadTablesBtn.disabled = false;
+            loadTablesBtn.disabled = (currentConnection?.status ?? 'disconnected') !== 'connected';
             break;
 
           case 'tableDescribing': {
