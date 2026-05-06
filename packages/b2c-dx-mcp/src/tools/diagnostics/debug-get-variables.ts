@@ -9,9 +9,8 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-
-const MAX_VALUE_LENGTH = 200;
-const PRIMITIVE_TYPES = new Set(['boolean', 'Boolean', 'null', 'number', 'Number', 'string', 'String', 'undefined']);
+import {projectVariable, type MappedVariable} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {getSessionEntry} from './session-registry.js';
 
 interface GetVariablesInput {
   session_id: string;
@@ -22,13 +21,7 @@ interface GetVariablesInput {
 }
 
 interface GetVariablesOutput {
-  variables: Array<{
-    name: string;
-    type: string;
-    value: string;
-    scope?: string;
-    has_children: boolean;
-  }>;
+  variables: MappedVariable[];
 }
 
 export function createDebugGetVariablesTool(
@@ -40,13 +33,11 @@ export function createDebugGetVariablesTool(
       name: 'debug_get_variables',
       description:
         'Get variables for a stack frame in a halted thread. ' +
-        'By default returns top-frame local variables. ' +
-        'Use scope to filter (local, closure, global). ' +
-        'Use object_path to drill into nested objects.',
+        'Defaults to top-frame locals. Use scope to filter (local/closure/global) or object_path to drill into nested objects.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
-        thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop.'),
+        thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop or debug_list_sessions.'),
         frame_index: z.number().int().min(0).optional().describe('Stack frame index (0 = top frame). Defaults to 0.'),
         scope: z
           .enum(['local', 'closure', 'global'])
@@ -60,51 +51,23 @@ export function createDebugGetVariablesTool(
           ),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
-        const entry = registry.getSessionOrThrow(args.session_id);
+        const entry = getSessionEntry(context, args.session_id);
         const frameIndex = args.frame_index ?? 0;
 
         if (args.object_path) {
           const result = await entry.manager.client.getMembers(args.thread_id, frameIndex, args.object_path);
-          return {
-            variables: result.object_members.map((m) => ({
-              name: m.name,
-              type: m.type,
-              value: truncateValue(m.value),
-              has_children: !PRIMITIVE_TYPES.has(m.type),
-            })),
-          };
+          return {variables: result.object_members.map((m) => projectVariable(m, {includeScope: false}))};
         }
 
         const result = await entry.manager.client.getVariables(args.thread_id, frameIndex);
-        let members = result.object_members;
-
-        if (args.scope) {
-          members = members.filter((m) => m.scope === args.scope);
-        }
-
-        return {
-          variables: members.map((m) => ({
-            name: m.name,
-            type: m.type,
-            value: truncateValue(m.value),
-            scope: m.scope,
-            has_children: !PRIMITIVE_TYPES.has(m.type),
-          })),
-        };
+        const members = args.scope
+          ? result.object_members.filter((m) => m.scope === args.scope)
+          : result.object_members;
+        return {variables: members.map((m) => projectVariable(m))};
       },
       formatOutput: (output) => jsonResult(output),
     },
     loadServices,
     serverContext,
   );
-}
-
-function truncateValue(value: string): string {
-  if (value.length <= MAX_VALUE_LENGTH) return value;
-  return value.slice(0, MAX_VALUE_LENGTH) + '...';
 }

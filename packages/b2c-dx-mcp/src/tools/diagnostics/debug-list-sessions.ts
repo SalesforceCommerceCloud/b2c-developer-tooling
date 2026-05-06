@@ -8,6 +8,8 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {projectBreakpoint, type MappedBreakpoint} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {getRegistry} from './session-registry.js';
 
 interface ListSessionsOutput {
   sessions: Array<{
@@ -15,12 +17,7 @@ interface ListSessionsOutput {
     hostname: string;
     client_id: string;
     halted_threads: number[];
-    breakpoints: Array<{
-      id: number;
-      file: null | string;
-      line: number;
-      script_path: string;
-    }>;
+    breakpoints: MappedBreakpoint[];
     created_at: string;
     last_activity_at: string;
   }>;
@@ -34,17 +31,12 @@ export function createDebugListSessionsTool(
     {
       name: 'debug_list_sessions',
       description:
-        'List all active script debugger sessions with their breakpoints and halted threads. ' +
-        'Use this to check session state: whether breakpoints are armed, which threads are halted, and whether you need to call debug_get_variables or debug_continue. ' +
-        'This is the recommended way to poll for halted threads in the non-blocking debug workflow.',
+        'List active script debugger sessions with their breakpoints and any halted threads. ' +
+        'Use this to discover orphaned sessions, check whether breakpoints are armed, and poll for halted threads in the non-blocking debug workflow.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {},
       async execute(_args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
+        const registry = getRegistry(context);
         const entries = registry.listSessions();
         return {
           sessions: entries.map((entry) => ({
@@ -55,12 +47,7 @@ export function createDebugListSessionsTool(
               .getKnownThreads()
               .filter((t) => t.status === 'halted')
               .map((t) => t.id),
-            breakpoints: entry.breakpoints.map((bp) => ({
-              id: bp.id,
-              file: entry.sourceMapper.toLocalPath(bp.script_path) ?? null,
-              line: bp.line_number,
-              script_path: bp.script_path,
-            })),
+            breakpoints: entry.breakpoints.map((bp) => projectBreakpoint(bp, entry.sourceMapper)),
             created_at: new Date(entry.createdAt).toISOString(),
             last_activity_at: new Date(entry.lastActivityAt).toISOString(),
           })),

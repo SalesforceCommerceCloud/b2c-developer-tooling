@@ -9,6 +9,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {getRegistry, getSessionEntry} from './session-registry.js';
 
 interface EndSessionInput {
   session_id: string;
@@ -28,9 +29,8 @@ export function createDebugEndSessionTool(
     {
       name: 'debug_end_session',
       description:
-        'End a script debugger session. ' +
-        'Disconnects from the SDAPI, stops polling, and cleans up resources. ' +
-        'Optionally clears all breakpoints before disconnecting.',
+        'End a script debugger session and free its slot on the instance. ' +
+        'IMPORTANT: Always call this when finished debugging — leaving sessions open can interfere with other debuggers and consumes a debugger client slot.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
@@ -40,12 +40,7 @@ export function createDebugEndSessionTool(
           .describe('If true, delete all breakpoints before disconnecting. Defaults to false.'),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
-        const entry = registry.getSessionOrThrow(args.session_id);
+        const entry = getSessionEntry(context, args.session_id);
 
         if (args.clear_breakpoints) {
           try {
@@ -55,12 +50,9 @@ export function createDebugEndSessionTool(
           }
         }
 
-        await registry.destroySession(args.session_id);
+        await getRegistry(context).destroySession(args.session_id);
 
-        return {
-          session_id: args.session_id,
-          status: 'disconnected',
-        };
+        return {session_id: args.session_id, status: 'disconnected'};
       },
       formatOutput: (output) => jsonResult(output),
     },

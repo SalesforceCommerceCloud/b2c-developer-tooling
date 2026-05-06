@@ -139,7 +139,13 @@ describe('tools/diagnostics', () => {
         getKnownThreads: sinon.stub().returns([{id: 5, status: 'halted', call_stack: []}]),
       });
       const sourceMapper = createMockSourceMapper();
-      const entry = serverContext.debugSessions.registerSession('host.example.com', 'c1', manager, sourceMapper, []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'c1',
+        manager,
+        sourceMapper,
+        cartridges: [],
+      });
       entry.breakpoints = [{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}];
 
       const tool = createDebugListSessionsTool(loadServices, serverContext);
@@ -165,7 +171,13 @@ describe('tools/diagnostics', () => {
   describe('debug_end_session', () => {
     it('should disconnect and remove the session', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugEndSessionTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId});
@@ -179,7 +191,13 @@ describe('tools/diagnostics', () => {
 
     it('should clear breakpoints when requested', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugEndSessionTool(loadServices, serverContext);
       await tool.handler({session_id: entry.sessionId, clear_breakpoints: true});
@@ -190,7 +208,13 @@ describe('tools/diagnostics', () => {
     it('should handle deleteBreakpoints failure silently', async () => {
       const manager = createMockManager();
       (manager.client.deleteBreakpoints as sinon.SinonStub).rejects(new Error('SDAPI down'));
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugEndSessionTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, clear_breakpoints: true});
@@ -216,7 +240,13 @@ describe('tools/diagnostics', () => {
   describe('debug_continue', () => {
     it('should resume the specified thread', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugContinueTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, thread_id: 5});
@@ -238,7 +268,13 @@ describe('tools/diagnostics', () => {
   describe('debug_get_stack', () => {
     it('should return mapped stack frames', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugGetStackTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, thread_id: 1});
@@ -261,7 +297,13 @@ describe('tools/diagnostics', () => {
   describe('debug_evaluate', () => {
     it('should evaluate expression and return result', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugEvaluateTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, thread_id: 1, expression: 'x'});
@@ -274,7 +316,13 @@ describe('tools/diagnostics', () => {
 
     it('should use frame_index 0 by default', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugEvaluateTool(loadServices, serverContext);
       await tool.handler({session_id: entry.sessionId, thread_id: 1, expression: 'x'});
@@ -284,7 +332,13 @@ describe('tools/diagnostics', () => {
 
     it('should use specified frame_index', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugEvaluateTool(loadServices, serverContext);
       await tool.handler({session_id: entry.sessionId, thread_id: 1, frame_index: 2, expression: 'y'});
@@ -302,7 +356,13 @@ describe('tools/diagnostics', () => {
   describe('debug_get_variables', () => {
     it('should return variables with has_children flag based on type', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugGetVariablesTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, thread_id: 1});
@@ -320,7 +380,13 @@ describe('tools/diagnostics', () => {
 
     it('should filter by scope', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugGetVariablesTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, thread_id: 1, scope: 'global'});
@@ -332,7 +398,13 @@ describe('tools/diagnostics', () => {
 
     it('should use getMembers when object_path is provided', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugGetVariablesTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, thread_id: 1, object_path: 'obj'});
@@ -360,7 +432,13 @@ describe('tools/diagnostics', () => {
           deleteBreakpoints: sinon.stub(),
         },
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugGetVariablesTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, thread_id: 1});
@@ -384,7 +462,13 @@ describe('tools/diagnostics', () => {
           .stub()
           .resolves([{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugSetBreakpointsTool(loadServices, serverContext);
       const result = await tool.handler({
@@ -402,7 +486,13 @@ describe('tools/diagnostics', () => {
       const manager = createMockManager({
         setBreakpoints: sinon.stub().resolves([{id: 1, line_number: 10, script_path: '/unknown/cartridge/foo.js'}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugSetBreakpointsTool(loadServices, serverContext);
       const result = await tool.handler({
@@ -423,7 +513,13 @@ describe('tools/diagnostics', () => {
           {id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js', condition: 'x > 5'},
         ]);
       const manager = createMockManager({setBreakpoints: setBreakpointsStub});
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugSetBreakpointsTool(loadServices, serverContext);
       await tool.handler({
@@ -451,7 +547,13 @@ describe('tools/diagnostics', () => {
 
     it('step_over should call manager.stepOver', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
       const [stepOver] = createDebugStepTools(loadServices, serverContext);
 
       const result = await stepOver.handler({session_id: entry.sessionId, thread_id: 3});
@@ -464,7 +566,13 @@ describe('tools/diagnostics', () => {
 
     it('step_into should call manager.stepInto', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
       const [, stepInto] = createDebugStepTools(loadServices, serverContext);
 
       await stepInto.handler({session_id: entry.sessionId, thread_id: 3});
@@ -474,7 +582,13 @@ describe('tools/diagnostics', () => {
 
     it('step_out should call manager.stepOut', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
       const stepOut = createDebugStepTools(loadServices, serverContext)[2];
 
       await stepOut.handler({session_id: entry.sessionId, thread_id: 3});
@@ -502,7 +616,13 @@ describe('tools/diagnostics', () => {
         ],
       };
       const manager = createMockManager({getKnownThreads: sinon.stub().returns([haltedThread])});
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugWaitForStopTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId});
@@ -518,7 +638,13 @@ describe('tools/diagnostics', () => {
       const manager = createMockManager({
         getKnownThreads: sinon.stub().returns([{id: 5, status: 'halted', call_stack: []}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugWaitForStopTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId});
@@ -530,7 +656,13 @@ describe('tools/diagnostics', () => {
 
     it('should time out when no halt occurs', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugWaitForStopTool(loadServices, serverContext);
       const result = await tool.handler({session_id: entry.sessionId, timeout_ms: 50});
@@ -542,7 +674,13 @@ describe('tools/diagnostics', () => {
 
     it('should resolve when onThreadStopped callback fires', async () => {
       const manager = createMockManager();
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugWaitForStopTool(loadServices, serverContext);
       const promise = tool.handler({session_id: entry.sessionId, timeout_ms: 5000});
@@ -594,7 +732,13 @@ describe('tools/diagnostics', () => {
           .stub()
           .resolves([{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugCaptureAtBreakpointTool(loadServices, serverContext);
       const result = await tool.handler({
@@ -641,7 +785,13 @@ describe('tools/diagnostics', () => {
           .resolves([{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}]),
       });
       (manager.client.evaluate as sinon.SinonStub).rejects(new Error('bad expression'));
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugCaptureAtBreakpointTool(loadServices, serverContext);
       const result = await tool.handler({
@@ -661,7 +811,13 @@ describe('tools/diagnostics', () => {
           .stub()
           .resolves([{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugCaptureAtBreakpointTool(loadServices, serverContext);
       const result = await tool.handler({
@@ -693,7 +849,13 @@ describe('tools/diagnostics', () => {
           .stub()
           .resolves([{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const fetchStub = sinon.stub(globalThis, 'fetch').resolves(new Response('', {status: 200}));
 
@@ -731,7 +893,13 @@ describe('tools/diagnostics', () => {
           .stub()
           .resolves([{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const fetchStub = sinon.stub(globalThis, 'fetch').rejects(new Error('network'));
 
@@ -757,7 +925,13 @@ describe('tools/diagnostics', () => {
           .stub()
           .resolves([{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}]),
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugCaptureAtBreakpointTool(loadServices, serverContext);
       const promise = tool.handler({
@@ -813,7 +987,13 @@ describe('tools/diagnostics', () => {
         total: 1,
         _v: '2.0',
       });
-      const entry = serverContext.debugSessions.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const tool = createDebugCaptureAtBreakpointTool(loadServices, serverContext);
       const result = await tool.handler({

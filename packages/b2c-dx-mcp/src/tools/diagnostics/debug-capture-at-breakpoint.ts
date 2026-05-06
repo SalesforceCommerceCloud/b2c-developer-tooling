@@ -10,15 +10,17 @@ import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {
+  projectFrame,
+  projectVariable,
   resolveBreakpointPath,
   type BreakpointInput,
-  type SdapiScriptThread,
+  type MappedFrame,
+  type MappedVariable,
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {getRegistry, getSessionEntry} from './session-registry.js';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 120_000;
-const MAX_VALUE_LENGTH = 200;
-const PRIMITIVE_TYPES = new Set(['boolean', 'Boolean', 'null', 'number', 'Number', 'string', 'String', 'undefined']);
 
 interface CaptureInput {
   session_id: string;
@@ -40,24 +42,9 @@ interface CaptureOutput {
   halted: boolean;
   timed_out?: boolean;
   thread_id?: number;
-  stack?: Array<{
-    index: number;
-    function_name: string;
-    file: null | string;
-    line: number;
-    script_path: string;
-  }>;
-  variables?: Array<{
-    name: string;
-    type: string;
-    value: string;
-    scope?: string;
-    has_children: boolean;
-  }>;
-  evaluations?: Array<{
-    expression: string;
-    result: string;
-  }>;
+  stack?: MappedFrame[];
+  variables?: MappedVariable[];
+  evaluations?: Array<{expression: string; result: string}>;
   auto_continued: boolean;
   trigger_status?: number;
 }
@@ -103,30 +90,22 @@ export function createDebugCaptureAtBreakpointTool(
           ),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
-        const entry = registry.getSessionOrThrow(args.session_id);
+        const entry = getSessionEntry(context, args.session_id);
+        const registry = getRegistry(context);
         const timeout = Math.min(args.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
 
         const scriptPath = resolveBreakpointPath(args.file, entry.sourceMapper, entry.cartridges);
 
-        const bpInput: BreakpointInput = {
-          script_path: scriptPath,
-          line_number: args.line,
-          condition: args.condition,
-        };
-
-        const existingBps = entry.breakpoints.map((bp) => ({
-          script_path: bp.script_path,
-          line_number: bp.line_number,
-          condition: bp.condition,
-        }));
-        const allBps = [...existingBps, bpInput];
-        const bpResult = await entry.manager.setBreakpoints(allBps);
-        entry.breakpoints = bpResult;
+        // Add breakpoint to existing set
+        const allBps: BreakpointInput[] = [
+          ...entry.breakpoints.map((bp) => ({
+            script_path: bp.script_path,
+            line_number: bp.line_number,
+            condition: bp.condition,
+          })),
+          {script_path: scriptPath, line_number: args.line, condition: args.condition},
+        ];
+        entry.breakpoints = await entry.manager.setBreakpoints(allBps);
 
         const breakpointInfo = {
           file: entry.sourceMapper.toLocalPath(scriptPath) ?? null,
@@ -135,27 +114,13 @@ export function createDebugCaptureAtBreakpointTool(
         };
 
         // Fire trigger URL in the background (it will hang when the breakpoint halts the thread)
-        let triggerPromise: Promise<number | undefined> | undefined;
-        if (args.trigger_url) {
-          triggerPromise = fetch(args.trigger_url, {redirect: 'follow'})
-            .then((r) => r.status)
-            .catch((): undefined => undefined);
-        }
+        const triggerPromise = args.trigger_url
+          ? fetch(args.trigger_url, {redirect: 'follow'})
+              .then((r) => r.status)
+              .catch((): undefined => undefined)
+          : undefined;
 
-        // Wait for halt
-        const haltedThread = entry.manager.getKnownThreads().find((t) => t.status === 'halted');
-        let thread: null | SdapiScriptThread = haltedThread ?? null;
-
-        if (!thread) {
-          thread = await new Promise<null | SdapiScriptThread>((resolve, reject) => {
-            const timer = setTimeout(() => {
-              const idx = entry.haltWaiters.findIndex((w) => w.timer === timer);
-              if (idx !== -1) entry.haltWaiters.splice(idx, 1);
-              resolve(null);
-            }, timeout);
-            entry.haltWaiters.push({resolve: (t) => resolve(t), reject, timer});
-          });
-        }
+        const thread = await registry.waitForHalt(entry, timeout);
 
         if (!thread) {
           return {
@@ -167,22 +132,10 @@ export function createDebugCaptureAtBreakpointTool(
         }
 
         const threadDetail = await entry.manager.client.getThread(thread.id);
-        const stack = threadDetail.call_stack.map((frame) => ({
-          index: frame.index,
-          function_name: frame.location.function_name,
-          file: entry.sourceMapper.toLocalPath(frame.location.script_path) ?? null,
-          line: frame.location.line_number,
-          script_path: frame.location.script_path,
-        }));
+        const stack = threadDetail.call_stack.map((frame) => projectFrame(frame, entry.sourceMapper));
 
         const varsResult = await entry.manager.client.getVariables(thread.id, 0);
-        const variables = varsResult.object_members.map((m) => ({
-          name: m.name,
-          type: m.type,
-          value: m.value.length > MAX_VALUE_LENGTH ? m.value.slice(0, MAX_VALUE_LENGTH) + '...' : m.value,
-          scope: m.scope,
-          has_children: !PRIMITIVE_TYPES.has(m.type),
-        }));
+        const variables = varsResult.object_members.map((m) => projectVariable(m));
 
         const evaluations: Array<{expression: string; result: string}> = [];
         if (args.expressions) {

@@ -47,7 +47,13 @@ describe('DebugSessionRegistry', () => {
       const manager = createMockManager();
       const sourceMapper = createMockSourceMapper();
 
-      const entry = registry.registerSession('host.example.com', 'client-1', manager, sourceMapper, []);
+      const entry = registry.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'client-1',
+        manager,
+        sourceMapper,
+        cartridges: [],
+      });
 
       expect(entry.sessionId).to.be.a('string');
       expect(entry.sessionId).to.match(/^[\da-f-]{36}$/);
@@ -63,18 +69,42 @@ describe('DebugSessionRegistry', () => {
       const manager = createMockManager();
       const sourceMapper = createMockSourceMapper();
 
-      registry.registerSession('host.example.com', 'client-1', manager, sourceMapper, []);
+      registry.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'client-1',
+        manager,
+        sourceMapper,
+        cartridges: [],
+      });
 
       expect(() => {
-        registry.registerSession('host.example.com', 'client-1', createMockManager(), createMockSourceMapper(), []);
+        registry.registerSession({
+          hostname: 'host.example.com',
+          clientId: 'client-1',
+          manager: createMockManager(),
+          sourceMapper: createMockSourceMapper(),
+          cartridges: [],
+        });
       }).to.throw(/already exists.*client-1/);
     });
 
     it('should allow different client IDs on same host', () => {
       const sourceMapper = createMockSourceMapper();
 
-      registry.registerSession('host.example.com', 'client-1', createMockManager(), sourceMapper, []);
-      const entry2 = registry.registerSession('host.example.com', 'client-2', createMockManager(), sourceMapper, []);
+      registry.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'client-1',
+        manager: createMockManager(),
+        sourceMapper,
+        cartridges: [],
+      });
+      const entry2 = registry.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'client-2',
+        manager: createMockManager(),
+        sourceMapper,
+        cartridges: [],
+      });
 
       expect(entry2.sessionId).to.be.a('string');
     });
@@ -82,8 +112,20 @@ describe('DebugSessionRegistry', () => {
     it('should allow same client ID on different hosts', () => {
       const sourceMapper = createMockSourceMapper();
 
-      registry.registerSession('host1.example.com', 'client-1', createMockManager(), sourceMapper, []);
-      const entry2 = registry.registerSession('host2.example.com', 'client-1', createMockManager(), sourceMapper, []);
+      registry.registerSession({
+        hostname: 'host1.example.com',
+        clientId: 'client-1',
+        manager: createMockManager(),
+        sourceMapper,
+        cartridges: [],
+      });
+      const entry2 = registry.registerSession({
+        hostname: 'host2.example.com',
+        clientId: 'client-1',
+        manager: createMockManager(),
+        sourceMapper,
+        cartridges: [],
+      });
 
       expect(entry2.sessionId).to.be.a('string');
     });
@@ -95,13 +137,13 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should return the session entry', () => {
-      const entry = registry.registerSession(
-        'host.example.com',
-        'c',
-        createMockManager(),
-        createMockSourceMapper(),
-        [],
-      );
+      const entry = registry.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'c',
+        manager: createMockManager(),
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
       expect(registry.getSession(entry.sessionId)).to.equal(entry);
     });
   });
@@ -112,13 +154,13 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should return entry and update lastActivityAt', () => {
-      const entry = registry.registerSession(
-        'host.example.com',
-        'c',
-        createMockManager(),
-        createMockSourceMapper(),
-        [],
-      );
+      const entry = registry.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'c',
+        manager: createMockManager(),
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
       const before = entry.lastActivityAt;
 
       // Small delay to ensure timestamp changes
@@ -135,13 +177,13 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should find matching entry', () => {
-      const entry = registry.registerSession(
-        'host.example.com',
-        'c',
-        createMockManager(),
-        createMockSourceMapper(),
-        [],
-      );
+      const entry = registry.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'c',
+        manager: createMockManager(),
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
       expect(registry.findByHostAndClientId('host.example.com', 'c')).to.equal(entry);
     });
   });
@@ -152,8 +194,20 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should return all sessions', () => {
-      registry.registerSession('h1', 'c1', createMockManager(), createMockSourceMapper(), []);
-      registry.registerSession('h2', 'c2', createMockManager(), createMockSourceMapper(), []);
+      registry.registerSession({
+        hostname: 'h1',
+        clientId: 'c1',
+        manager: createMockManager(),
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+      registry.registerSession({
+        hostname: 'h2',
+        clientId: 'c2',
+        manager: createMockManager(),
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const list = registry.listSessions();
       expect(list).to.have.lengthOf(2);
@@ -163,7 +217,13 @@ describe('DebugSessionRegistry', () => {
   describe('destroySession', () => {
     it('should disconnect the manager', async () => {
       const manager = createMockManager();
-      const entry = registry.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = registry.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       await registry.destroySession(entry.sessionId);
 
@@ -172,7 +232,13 @@ describe('DebugSessionRegistry', () => {
     });
 
     it('should reject pending halt waiters', async () => {
-      const entry = registry.registerSession('host', 'c', createMockManager(), createMockSourceMapper(), []);
+      const entry = registry.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager: createMockManager(),
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       const waiterPromise = new Promise<string>((resolve, reject) => {
         const timer = setTimeout(() => resolve('timeout'), 5000);
@@ -205,7 +271,13 @@ describe('DebugSessionRegistry', () => {
 
     it('should swallow disconnect errors (best-effort cleanup)', async () => {
       const manager = createMockManager({disconnect: sinon.stub().rejects(new Error('boom'))});
-      const entry = registry.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = registry.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       await registry.destroySession(entry.sessionId); // Should not throw
       expect(registry.getSession(entry.sessionId)).to.be.undefined;
@@ -215,7 +287,13 @@ describe('DebugSessionRegistry', () => {
   describe('cleanupIdleSessions', () => {
     it('should destroy sessions idle past TTL', async () => {
       const manager = createMockManager();
-      const entry = registry.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = registry.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       // Fake an ancient lastActivityAt
       entry.lastActivityAt = Date.now() - 31 * 60 * 1000;
@@ -229,7 +307,13 @@ describe('DebugSessionRegistry', () => {
 
     it('should leave active sessions alone', async () => {
       const manager = createMockManager();
-      const entry = registry.registerSession('host', 'c', manager, createMockSourceMapper(), []);
+      const entry = registry.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       await (registry as unknown as {cleanupIdleSessions: () => Promise<void>}).cleanupIdleSessions();
 
@@ -241,8 +325,20 @@ describe('DebugSessionRegistry', () => {
     it('should destroy all sessions', async () => {
       const m1 = createMockManager();
       const m2 = createMockManager();
-      registry.registerSession('h1', 'c1', m1, createMockSourceMapper(), []);
-      registry.registerSession('h2', 'c2', m2, createMockSourceMapper(), []);
+      registry.registerSession({
+        hostname: 'h1',
+        clientId: 'c1',
+        manager: m1,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+      registry.registerSession({
+        hostname: 'h2',
+        clientId: 'c2',
+        manager: m2,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
 
       await registry.destroyAll();
 

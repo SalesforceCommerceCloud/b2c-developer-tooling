@@ -13,6 +13,7 @@ import type {
   SdapiScriptThread,
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {ToolExecutionContext} from '../adapter.js';
 
 const IDLE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -34,6 +35,14 @@ export interface DebugSessionEntry {
   haltWaiters: HaltWaiter[];
   createdAt: number;
   lastActivityAt: number;
+}
+
+export interface RegisterSessionOptions {
+  hostname: string;
+  clientId: string;
+  manager: DebugSessionManager;
+  sourceMapper: SourceMapper;
+  cartridges: CartridgeMapping[];
 }
 
 export class DebugSessionRegistry {
@@ -102,13 +111,8 @@ export class DebugSessionRegistry {
     return [...this.sessions.values()];
   }
 
-  registerSession(
-    hostname: string,
-    clientId: string,
-    manager: DebugSessionManager,
-    sourceMapper: SourceMapper,
-    cartridges: CartridgeMapping[],
-  ): DebugSessionEntry {
+  registerSession(opts: RegisterSessionOptions): DebugSessionEntry {
+    const {hostname, clientId, manager, sourceMapper, cartridges} = opts;
     const existing = this.findByHostAndClientId(hostname, clientId);
     if (existing) {
       throw new Error(
@@ -136,6 +140,27 @@ export class DebugSessionRegistry {
     return entry;
   }
 
+  /**
+   * Wait for any thread in the session to halt.
+   *
+   * If a thread is already halted in the session's known threads, returns it
+   * immediately. Otherwise registers a halt waiter that resolves when the
+   * `onThreadStopped` callback fires, or returns null on timeout.
+   */
+  async waitForHalt(entry: DebugSessionEntry, timeoutMs: number): Promise<null | SdapiScriptThread> {
+    const halted = entry.manager.getKnownThreads().find((t) => t.status === 'halted');
+    if (halted) return halted;
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        const idx = entry.haltWaiters.findIndex((w) => w.timer === timer);
+        if (idx !== -1) entry.haltWaiters.splice(idx, 1);
+        resolve(null);
+      }, timeoutMs);
+      entry.haltWaiters.push({resolve: (t) => resolve(t), reject, timer});
+    });
+  }
+
   private async cleanupIdleSessions(): Promise<void> {
     const logger = getLogger();
     const now = Date.now();
@@ -149,4 +174,26 @@ export class DebugSessionRegistry {
       }),
     );
   }
+}
+
+/**
+ * Resolve the registry from the tool execution context, throwing a clear
+ * error if it's missing, then look up the session by ID. Used by every
+ * debug tool that takes a session_id.
+ */
+export function getSessionEntry(context: ToolExecutionContext, sessionId: string): DebugSessionEntry {
+  const registry = context.serverContext?.debugSessions;
+  if (!registry) {
+    throw new Error('Debug session registry not available');
+  }
+  return registry.getSessionOrThrow(sessionId);
+}
+
+/** Resolve the registry from the tool context (for tools that don't need a specific session). */
+export function getRegistry(context: ToolExecutionContext): DebugSessionRegistry {
+  const registry = context.serverContext?.debugSessions;
+  if (!registry) {
+    throw new Error('Debug session registry not available');
+  }
+  return registry;
 }

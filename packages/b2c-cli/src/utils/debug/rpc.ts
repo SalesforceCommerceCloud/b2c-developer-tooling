@@ -12,9 +12,13 @@ import type {
   SourceMapper,
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
-import {resolveBreakpointPath} from '@salesforce/b2c-tooling-sdk/operations/debug';
-
-const MAX_VALUE_LENGTH = 200;
+import {
+  projectBreakpoint,
+  projectFrame,
+  projectThreadLocation,
+  projectVariable,
+  resolveBreakpointPath,
+} from '@salesforce/b2c-tooling-sdk/operations/debug';
 
 interface RpcRequest {
   id?: number | string;
@@ -63,18 +67,9 @@ export class DebugRpc {
     this.currentThreadId = thread.id;
     this.currentFrameIndex = 0;
 
-    const topFrame = thread.call_stack?.[0];
-    const loc = topFrame?.location;
     this.emitEvent('thread_stopped', {
       thread_id: thread.id,
-      location: loc
-        ? {
-            file: this.sourceMapper.toLocalPath(loc.script_path) ?? null,
-            line: loc.line_number,
-            function_name: loc.function_name,
-            script_path: loc.script_path,
-          }
-        : null,
+      location: projectThreadLocation(thread, this.sourceMapper),
     });
   }
 
@@ -113,13 +108,13 @@ export class DebugRpc {
   private async handleCommand(command: string, args: Record<string, unknown>): Promise<unknown> {
     switch (command) {
       case 'continue': {
-        const threadId = (args.thread_id as number) ?? this.getThread();
+        const threadId = this.resolveThreadId(args);
         await this.manager.resume(threadId);
         return {thread_id: threadId, status: 'resumed'};
       }
 
       case 'evaluate': {
-        const threadId = (args.thread_id as number) ?? this.getThread();
+        const threadId = this.resolveThreadId(args);
         const frameIndex = (args.frame_index as number) ?? this.currentFrameIndex;
         const expression = args.expression as string;
         if (!expression) throw new Error('Missing required arg: expression');
@@ -128,86 +123,45 @@ export class DebugRpc {
       }
 
       case 'get_stack': {
-        const threadId = (args.thread_id as number) ?? this.getThread();
+        const threadId = this.resolveThreadId(args);
         const thread = await this.manager.client.getThread(threadId);
         return {
           thread_id: thread.id,
-          frames: thread.call_stack.map((frame) => ({
-            index: frame.index,
-            function_name: frame.location.function_name,
-            file: this.sourceMapper.toLocalPath(frame.location.script_path) ?? null,
-            line: frame.location.line_number,
-            script_path: frame.location.script_path,
-          })),
+          frames: thread.call_stack.map((frame) => projectFrame(frame, this.sourceMapper)),
         };
       }
 
       case 'get_variables': {
-        const threadId = (args.thread_id as number) ?? this.getThread();
+        const threadId = this.resolveThreadId(args);
         const frameIndex = (args.frame_index as number) ?? this.currentFrameIndex;
         const objectPath = args.object_path as string | undefined;
 
         if (objectPath) {
           const result = await this.manager.client.getMembers(threadId, frameIndex, objectPath);
-          return {
-            variables: result.object_members.map((m) => ({
-              name: m.name,
-              type: m.type,
-              value: truncateValue(m.value),
-              has_children: !isPrimitive(m.type),
-            })),
-          };
+          return {variables: result.object_members.map((m) => projectVariable(m, {includeScope: false}))};
         }
 
         const result = await this.manager.client.getVariables(threadId, frameIndex);
-        let members = result.object_members;
-        if (args.scope) {
-          members = members.filter((m) => m.scope === args.scope);
-        }
-        return {
-          variables: members.map((m) => ({
-            name: m.name,
-            type: m.type,
-            value: truncateValue(m.value),
-            scope: m.scope,
-            has_children: !isPrimitive(m.type),
-          })),
-        };
+        const members = args.scope
+          ? result.object_members.filter((m) => m.scope === args.scope)
+          : result.object_members;
+        return {variables: members.map((m) => projectVariable(m))};
       }
 
       case 'list_breakpoints': {
         const bps = await this.manager.client.getBreakpoints();
-        return {
-          breakpoints: bps.map((bp) => ({
-            id: bp.id,
-            file: this.sourceMapper.toLocalPath(bp.script_path) ?? null,
-            line: bp.line_number,
-            script_path: bp.script_path,
-            condition: bp.condition,
-          })),
-        };
+        return {breakpoints: bps.map((bp) => projectBreakpoint(bp, this.sourceMapper))};
       }
 
       case 'list_threads': {
         const threads = this.manager.getKnownThreads();
         return {
-          threads: threads.map((t) => {
-            const topFrame = t.call_stack?.[0];
-            const loc = topFrame?.location;
-            return {
-              thread_id: t.id,
-              status: t.status,
-              current: t.id === this.currentThreadId,
-              location: loc
-                ? {
-                    file: this.sourceMapper.toLocalPath(loc.script_path) ?? null,
-                    line: loc.line_number,
-                    function_name: loc.function_name,
-                    script_path: loc.script_path,
-                  }
-                : null,
-            };
-          }),
+          threads: threads.map((t) => ({
+            thread_id: t.id,
+            status: t.status,
+            current: t.id === this.currentThreadId,
+            location: projectThreadLocation(t, this.sourceMapper),
+          })),
         };
       }
 
@@ -237,31 +191,23 @@ export class DebugRpc {
         }));
 
         const result = await this.manager.setBreakpoints(inputs);
-        return {
-          breakpoints: result.map((bp) => ({
-            id: bp.id,
-            file: this.sourceMapper.toLocalPath(bp.script_path) ?? null,
-            line: bp.line_number,
-            script_path: bp.script_path,
-            condition: bp.condition,
-          })),
-        };
+        return {breakpoints: result.map((bp) => projectBreakpoint(bp, this.sourceMapper))};
       }
 
       case 'step_into': {
-        const threadId = (args.thread_id as number) ?? this.getThread();
+        const threadId = this.resolveThreadId(args);
         await this.manager.stepInto(threadId);
         return {thread_id: threadId, action: 'step_into'};
       }
 
       case 'step_out': {
-        const threadId = (args.thread_id as number) ?? this.getThread();
+        const threadId = this.resolveThreadId(args);
         await this.manager.stepOut(threadId);
         return {thread_id: threadId, action: 'step_out'};
       }
 
       case 'step_over': {
-        const threadId = (args.thread_id as number) ?? this.getThread();
+        const threadId = this.resolveThreadId(args);
         await this.manager.stepOver(threadId);
         return {thread_id: threadId, action: 'step_over'};
       }
@@ -295,16 +241,12 @@ export class DebugRpc {
     }
   }
 
+  /** Resolve a thread_id arg, falling back to the currently selected thread. */
+  private resolveThreadId(args: Record<string, unknown>): number {
+    return (args.thread_id as number) ?? this.getThread();
+  }
+
   private sendResponse(response: RpcResponse): void {
     this.output.write(JSON.stringify(response) + '\n');
   }
-}
-
-function isPrimitive(type: string): boolean {
-  return ['boolean', 'Boolean', 'null', 'number', 'Number', 'string', 'String', 'undefined'].includes(type);
-}
-
-function truncateValue(value: string): string {
-  if (value.length <= MAX_VALUE_LENGTH) return value;
-  return value.slice(0, MAX_VALUE_LENGTH) + '...';
 }

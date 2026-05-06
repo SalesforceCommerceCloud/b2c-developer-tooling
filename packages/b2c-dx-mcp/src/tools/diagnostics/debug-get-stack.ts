@@ -9,6 +9,8 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {projectFrame, type MappedFrame} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {getSessionEntry} from './session-registry.js';
 
 interface GetStackInput {
   session_id: string;
@@ -17,13 +19,7 @@ interface GetStackInput {
 
 interface GetStackOutput {
   thread_id: number;
-  frames: Array<{
-    index: number;
-    function_name: string;
-    file: null | string;
-    line: number;
-    script_path: string;
-  }>;
+  frames: MappedFrame[];
 }
 
 export function createDebugGetStackTool(
@@ -35,30 +31,18 @@ export function createDebugGetStackTool(
       name: 'debug_get_stack',
       description:
         'Get the call stack for a halted thread. ' +
-        'Returns stack frames with mapped local file paths and server script paths.',
+        'Returns frames with mapped local file paths and server script paths.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
-        thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop.'),
+        thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop or debug_list_sessions.'),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
-        const entry = registry.getSessionOrThrow(args.session_id);
+        const entry = getSessionEntry(context, args.session_id);
         const thread = await entry.manager.client.getThread(args.thread_id);
-
         return {
           thread_id: thread.id,
-          frames: thread.call_stack.map((frame) => ({
-            index: frame.index,
-            function_name: frame.location.function_name,
-            file: entry.sourceMapper.toLocalPath(frame.location.script_path) ?? null,
-            line: frame.location.line_number,
-            script_path: frame.location.script_path,
-          })),
+          frames: thread.call_stack.map((frame) => projectFrame(frame, entry.sourceMapper)),
         };
       },
       formatOutput: (output) => jsonResult(output),

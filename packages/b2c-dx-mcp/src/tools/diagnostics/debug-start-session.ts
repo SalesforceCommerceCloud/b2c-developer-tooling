@@ -16,6 +16,7 @@ import {
   type SdapiScriptThread,
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {getRegistry} from './session-registry.js';
 
 interface StartSessionInput {
   cartridge_directory?: string;
@@ -38,11 +39,10 @@ export function createDebugStartSessionTool(
     {
       name: 'debug_start_session',
       description:
-        'Start a new script debugger session on a B2C Commerce instance. ' +
-        'Connects to the SDAPI, discovers cartridge mappings, and begins polling for halted threads. ' +
-        'WARNING: Debug sessions can halt remote request threads on the instance. ' +
-        'Use debug_end_session to cleanly disconnect when done. ' +
-        'Requires Basic auth credentials (username/password).',
+        'Start a script debugger session on a B2C Commerce instance to debug SFRA controllers, custom API scripts, hooks, jobs, or any server-side script. ' +
+        'Returns a session_id for use with other debug tools, plus discovered cartridge mappings. ' +
+        'WARNING: Debug sessions halt remote request threads on the instance. Always call debug_end_session when finished. ' +
+        'Requires Basic auth credentials (username/password) and the script debugger enabled in Business Manager.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         cartridge_directory: z
@@ -57,10 +57,7 @@ export function createDebugStartSessionTool(
           ),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
+        const registry = getRegistry(context);
 
         const credentials = context.services.getBasicAuthCredentials();
         if (!credentials) {
@@ -71,7 +68,6 @@ export function createDebugStartSessionTool(
         }
 
         const {hostname, username, password} = credentials;
-
         const clientId = args.client_id ?? 'b2c-cli';
         const cartridgeDir = context.services.resolveWithProjectDirectory(args.cartridge_directory);
         const cartridges = findCartridges(cartridgeDir);
@@ -87,8 +83,6 @@ export function createDebugStartSessionTool(
           onThreadStopped(thread: SdapiScriptThread) {
             const entry = registry.findByHostAndClientId(hostname, clientId);
             if (!entry) return;
-
-            // Resolve any pending halt waiters
             while (entry.haltWaiters.length > 0) {
               const waiter = entry.haltWaiters.shift()!;
               clearTimeout(waiter.timer);
@@ -104,12 +98,10 @@ export function createDebugStartSessionTool(
 
         await manager.connect();
 
-        const entry = registry.registerSession(hostname, clientId, manager, sourceMapper, cartridges);
+        const entry = registry.registerSession({hostname, clientId, manager, sourceMapper, cartridges});
 
         const cartridgeMappings: Record<string, string> = {};
-        for (const c of cartridges) {
-          cartridgeMappings[c.name] = c.src;
-        }
+        for (const c of cartridges) cartridgeMappings[c.name] = c.src;
 
         return {
           session_id: entry.sessionId,

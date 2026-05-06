@@ -9,6 +9,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {getSessionEntry} from './session-registry.js';
 
 interface EvaluateInput {
   session_id: string;
@@ -30,31 +31,20 @@ export function createDebugEvaluateTool(
     {
       name: 'debug_evaluate',
       description:
-        'Evaluate an expression in the context of a halted thread and stack frame. ' +
-        'WARNING: Expressions can have side effects (modify variables, call functions). ' +
-        'Use with care on production-like instances.',
+        'Evaluate a JavaScript expression in the context of a halted thread and stack frame. ' +
+        'WARNING: Expressions may have side effects (modify variables, call functions). Use with care.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
-        thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop.'),
+        thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop or debug_list_sessions.'),
         frame_index: z.number().int().min(0).optional().describe('Stack frame index (0 = top frame). Defaults to 0.'),
         expression: z.string().describe('JavaScript expression to evaluate in the frame context.'),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
-        const entry = registry.getSessionOrThrow(args.session_id);
+        const entry = getSessionEntry(context, args.session_id);
         const frameIndex = args.frame_index ?? 0;
-
         const result = await entry.manager.client.evaluate(args.thread_id, frameIndex, args.expression);
-
-        return {
-          expression: result.expression,
-          result: result.result,
-        };
+        return {expression: result.expression, result: result.result};
       },
       formatOutput: (output) => jsonResult(output),
     },

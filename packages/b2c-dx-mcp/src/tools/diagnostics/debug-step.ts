@@ -8,7 +8,9 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
+import type {DebugSessionManager} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {getSessionEntry} from './session-registry.js';
 
 interface StepInput {
   session_id: string;
@@ -21,6 +23,12 @@ interface StepOutput {
 }
 
 type StepAction = 'step_into' | 'step_out' | 'step_over';
+
+const STEP_HANDLERS: Record<StepAction, (manager: DebugSessionManager, threadId: number) => Promise<void>> = {
+  step_into: (m, id) => m.stepInto(id),
+  step_out: (m, id) => m.stepOut(id),
+  step_over: (m, id) => m.stepOver(id),
+};
 
 function createStepTool(
   action: StepAction,
@@ -38,33 +46,9 @@ function createStepTool(
         thread_id: z.number().int().describe('Thread ID of the halted thread to step.'),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
-        const entry = registry.getSessionOrThrow(args.session_id);
-        const manager = entry.manager;
-
-        switch (action) {
-          case 'step_into': {
-            await manager.stepInto(args.thread_id);
-            break;
-          }
-          case 'step_out': {
-            await manager.stepOut(args.thread_id);
-            break;
-          }
-          case 'step_over': {
-            await manager.stepOver(args.thread_id);
-            break;
-          }
-        }
-
-        return {
-          thread_id: args.thread_id,
-          action,
-        };
+        const entry = getSessionEntry(context, args.session_id);
+        await STEP_HANDLERS[action](entry.manager, args.thread_id);
+        return {thread_id: args.thread_id, action};
       },
       formatOutput: (output) => jsonResult(output),
     },

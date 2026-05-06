@@ -9,20 +9,21 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import {resolveBreakpointPath, type BreakpointInput} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {
+  projectBreakpoint,
+  resolveBreakpointPath,
+  type BreakpointInput,
+  type MappedBreakpoint,
+} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {getSessionEntry} from './session-registry.js';
 
 interface SetBreakpointsInput {
   session_id: string;
   breakpoints: Array<{file: string; line: number; condition?: string}>;
 }
 
-interface BreakpointResult {
-  id: number;
-  file: null | string;
-  line: number;
-  script_path: string;
+interface BreakpointResult extends MappedBreakpoint {
   verified: boolean;
-  condition?: string;
 }
 
 interface SetBreakpointsOutput {
@@ -39,8 +40,8 @@ export function createDebugSetBreakpointsTool(
       name: 'debug_set_breakpoints',
       description:
         'Set breakpoints in a debug session. Replaces all previously set breakpoints. ' +
-        'Accepts local file paths (mapped to server paths via cartridge discovery), cartridge-prefixed paths (e.g. app_storefront/cartridge/controllers/Cart.js), or server paths starting with /. ' +
-        'Check the "verified" field and "warnings" in the response — if a path could not be mapped to a known cartridge, it will be flagged.',
+        'Accepts local file paths (mapped to server paths via cartridge discovery), cartridge-prefixed paths, or server paths starting with /. ' +
+        'Check the "verified" field and "warnings" — unmapped paths are flagged.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
@@ -62,28 +63,18 @@ export function createDebugSetBreakpointsTool(
           .describe('Array of breakpoints to set. Replaces all existing breakpoints.'),
       },
       async execute(args, context) {
-        const registry = context.serverContext?.debugSessions;
-        if (!registry) {
-          throw new Error('Debug session registry not available');
-        }
-
-        const entry = registry.getSessionOrThrow(args.session_id);
+        const entry = getSessionEntry(context, args.session_id);
         const warnings: string[] = [];
 
         const bpInputs: BreakpointInput[] = args.breakpoints.map((bp) => {
           const scriptPath = resolveBreakpointPath(bp.file, entry.sourceMapper, entry.cartridges);
-          const roundTrip = entry.sourceMapper.toLocalPath(scriptPath);
-          if (!roundTrip) {
+          if (!entry.sourceMapper.toLocalPath(scriptPath)) {
             warnings.push(
               `"${bp.file}" resolved to server path "${scriptPath}" but could not be mapped back to a local file. ` +
                 `Verify this path exists on the instance.`,
             );
           }
-          return {
-            script_path: scriptPath,
-            line_number: bp.line,
-            condition: bp.condition,
-          };
+          return {script_path: scriptPath, line_number: bp.line, condition: bp.condition};
         });
 
         const result = await entry.manager.setBreakpoints(bpInputs);
@@ -91,12 +82,8 @@ export function createDebugSetBreakpointsTool(
 
         return {
           breakpoints: result.map((bp) => ({
-            id: bp.id,
-            file: entry.sourceMapper.toLocalPath(bp.script_path) ?? null,
-            line: bp.line_number,
-            script_path: bp.script_path,
+            ...projectBreakpoint(bp, entry.sourceMapper),
             verified: entry.sourceMapper.toLocalPath(bp.script_path) !== undefined,
-            condition: bp.condition,
           })),
           warnings: warnings.length > 0 ? warnings : undefined,
         };

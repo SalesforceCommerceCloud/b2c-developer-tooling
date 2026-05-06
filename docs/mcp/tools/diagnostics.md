@@ -4,13 +4,25 @@ description: MCP tools for script debugging on B2C Commerce instances.
 
 # Diagnostics Tools
 
-MCP tools for connecting to the B2C Commerce Script Debugger API (SDAPI), setting breakpoints, inspecting variables, and stepping through server-side code. These tools are available in the **CARTRIDGES**, **SCAPI**, and **STOREFRONTNEXT** toolsets.
+MCP tools for connecting to the B2C Commerce Script Debugger API (SDAPI), setting breakpoints, inspecting variables, and stepping through server-side code. These tools are available in the **CARTRIDGES** and **SCAPI** toolsets.
 
 ## Authentication
 
 All debug tools require **Basic Auth** credentials (username and password) for a Business Manager user with the `WebDAV_Manage_Customization` permission.
 
-The script debugger must be enabled on the instance: Business Manager > Administration > Development Configuration > Script Debugger > Enable.
+The script debugger must also be enabled on the instance: Business Manager > Administration > Development Configuration > Script Debugger > Enable.
+
+See the [Authentication guide](../../guide/authentication) and [Configuration guide](../../guide/configuration) for credential setup details.
+
+## Recovery from broken or orphaned sessions
+
+Debug sessions are stateful and live in the MCP server process. If the agent loses track of an active session (context flush, crash, restart), or breakpoints stop firing as expected:
+
+1. **List active sessions** — call `debug_list_sessions` (no args). It returns all sessions known to the server with their `session_id`, `hostname`, halted threads, and currently armed breakpoints.
+2. **End orphaned sessions** — call `debug_end_session` with the `session_id` to free the debugger slot on the instance.
+3. **SDAPI single-client guarantee** — the script debugger only supports one client per `client_id` per host. Calling `debug_start_session` with the same `client_id` against the same host implicitly takes over (replaces) any prior client. This is the safety net when a session is lost without a clean shutdown.
+4. **Idle cleanup** — sessions inactive for 30 minutes are automatically cleaned up by the server.
+5. **Restart the MCP server** — as a last resort, restarting the MCP server destroys all session state. The orphaned debugger slot on the instance will be freed by SDAPI's own 60-second halt-timeout or by the next `debug_start_session` with the same client ID.
 
 ---
 
