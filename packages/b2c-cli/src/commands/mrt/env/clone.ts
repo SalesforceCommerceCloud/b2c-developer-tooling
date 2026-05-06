@@ -54,18 +54,13 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> staging-copy --from staging --project my-storefront',
-    '<%= config.bin %> <%= command.id %> qa --from staging -p my-storefront --clone-redirects --clone-env-vars',
-    '<%= config.bin %> <%= command.id %> qa --from staging -p my-storefront --external-hostname qa.example.com --certificate-id 123 --wait',
+    '<%= config.bin %> <%= command.id %> staging-copy -p my-storefront -e staging',
+    '<%= config.bin %> <%= command.id %> qa -p my-storefront -e staging --clone-redirects --clone-env-vars',
+    '<%= config.bin %> <%= command.id %> qa -p my-storefront -e staging --external-hostname qa.example.com --certificate-id 123 --wait',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
-    from: Flags.string({
-      char: 'f',
-      description: 'Source environment slug to clone from',
-      required: true,
-    }),
     'external-hostname': Flags.string({
       description: 'Full external hostname for the new environment (required for non-MRT-managed certs)',
     }),
@@ -113,14 +108,21 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     this.requireMrtCredentials();
 
     const {slug} = this.args;
-    const {mrtProject: project} = this.resolvedConfig.values;
+    const {mrtProject: project, mrtEnvironment: fromSlug} = this.resolvedConfig.values;
 
     if (!project) {
       this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
     }
+    if (!fromSlug) {
+      this.error(
+        'Source environment is required. Provide --environment / -e, set MRT_ENVIRONMENT, or set mrtEnvironment in dw.json.',
+      );
+    }
+    if (fromSlug === slug) {
+      this.error(`Source and destination environment slugs must differ (both are "${slug}").`);
+    }
 
     const {
-      from: fromSlug,
       'external-hostname': externalHostname,
       'external-domain': externalDomain,
       'certificate-id': certificateId,

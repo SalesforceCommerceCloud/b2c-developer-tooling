@@ -35,10 +35,10 @@ describe('mrt env clone', () => {
 
   it('errors when project is missing', async () => {
     const command = createCommand();
-    stubParse(command, {from: 'staging'}, {slug: 'staging-copy'});
+    stubParse(command, {}, {slug: 'staging-copy'});
     await command.init();
     stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'staging'}}));
     const errorStub = sinon.stub(command, 'error').throws(new Error('expected'));
 
     try {
@@ -49,12 +49,11 @@ describe('mrt env clone', () => {
     }
   });
 
-  it('passes flags through to cloneEnv and returns the new env', async () => {
+  it('uses mrtEnvironment as the source and passes flags through to cloneEnv', async () => {
     const command = createCommand();
     stubParse(
       command,
       {
-        from: 'staging',
         'external-hostname': 'qa.example.com',
         'certificate-id': 123,
         'clone-redirects': true,
@@ -68,7 +67,9 @@ describe('mrt env clone', () => {
     stubCommonAuth(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'p', mrtOrigin: 'https://example.com'}}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'p', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
 
     const cloneStub = sinon.stub().resolves({slug: 'qa', name: 'qa', state: 'CREATE_IN_PROGRESS'} as any);
     const waitStub = sinon.stub();
@@ -90,12 +91,43 @@ describe('mrt env clone', () => {
     expect(result.slug).to.equal('qa');
   });
 
+  it('errors when mrtEnvironment is not set', async () => {
+    const command = createCommand();
+    stubParse(command, {'clone-redirects': false, 'clone-env-vars': false, 'clone-b2c-info': false}, {slug: 'qa'});
+    await command.init();
+    stubCommonAuth(command);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'p'}}));
+    const errorStub = sinon.stub(command, 'error').throws(new Error('expected'));
+
+    try {
+      await command.run();
+      expect.fail('expected error');
+    } catch {
+      expect(errorStub.firstCall.args[0]).to.include('Source environment is required');
+    }
+  });
+
+  it('errors when source and destination slugs are equal', async () => {
+    const command = createCommand();
+    stubParse(command, {'clone-redirects': false, 'clone-env-vars': false, 'clone-b2c-info': false}, {slug: 'staging'});
+    await command.init();
+    stubCommonAuth(command);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'p', mrtEnvironment: 'staging'}}));
+    const errorStub = sinon.stub(command, 'error').throws(new Error('expected'));
+
+    try {
+      await command.run();
+      expect.fail('expected error');
+    } catch {
+      expect(errorStub.firstCall.args[0]).to.include('must differ');
+    }
+  });
+
   it('waits for env when --wait is set', async () => {
     const command = createCommand();
     stubParse(
       command,
       {
-        from: 'staging',
         wait: true,
         'poll-interval': 1,
         timeout: 30,
@@ -109,7 +141,7 @@ describe('mrt env clone', () => {
     stubCommonAuth(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'p'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'p', mrtEnvironment: 'staging'}}));
 
     const cloneStub = sinon.stub().resolves({slug: 'qa', state: 'CREATE_IN_PROGRESS'} as any);
     const waitStub = sinon.stub().resolves({slug: 'qa', state: 'ACTIVE'} as any);

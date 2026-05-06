@@ -51,8 +51,8 @@ b2c mrt env list -p my-storefront
 # Create a new environment
 b2c mrt env create qa -p my-storefront --name "QA Environment"
 
-# Clone an existing environment (optionally copy redirects, env vars, B2C info)
-b2c mrt env clone qa -p my-storefront --from staging --clone-redirects --clone-env-vars
+# Clone an existing environment (-e is the source; positional arg is the new slug)
+b2c mrt env clone qa -p my-storefront -e staging --clone-redirects --clone-env-vars
 
 # Get environment details
 b2c mrt env get -p my-storefront -e production

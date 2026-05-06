@@ -318,21 +318,23 @@ b2c mrt env delete old-env -p my-storefront --force
 
 Clone an environment from an existing source environment. The new target receives the source's configuration (excluding proxies and the production flag) and is automatically deployed with the source target's current bundle (if any). Optionally clones redirects, environment variables, and B2C target info.
 
+The source environment is the one selected by `--environment` / `-e` (or `MRT_ENVIRONMENT` / `mrtEnvironment` in `dw.json`). The positional argument is the **new** environment's slug.
+
 ```bash
-# Clone an environment with default settings
-b2c mrt env clone staging-copy --from staging --project my-storefront
+# Clone the configured environment into a new slug
+b2c mrt env clone staging-copy -p my-storefront -e staging
 
 # Clone with redirects and environment variables
-b2c mrt env clone qa --from staging -p my-storefront --clone-redirects --clone-env-vars
+b2c mrt env clone qa -p my-storefront -e staging --clone-redirects --clone-env-vars
 
 # Clone using a custom domain certificate
-b2c mrt env clone qa --from staging -p my-storefront \
+b2c mrt env clone qa -p my-storefront -e staging \
   --external-hostname qa.example.com --certificate-id 123 --wait
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--from`, `-f` | Source environment slug to clone from (required) |
+| `--environment`, `-e` | Source environment slug (defaults to `mrtEnvironment` / `MRT_ENVIRONMENT`) |
 | `--external-hostname` | Full external hostname (required for non-MRT-managed certificates) |
 | `--external-domain` | External domain for Universal PWA SSR |
 | `--certificate-id` | Certificate ID for custom domain (use `b2c mrt org cert list` to find) |
