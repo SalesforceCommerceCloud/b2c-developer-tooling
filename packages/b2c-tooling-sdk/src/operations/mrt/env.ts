@@ -390,6 +390,11 @@ export interface WaitForEnvOptions extends GetEnvOptions {
    * Custom sleep function for testing.
    */
   sleep?: (ms: number) => Promise<void>;
+
+  /**
+   * Custom clock for testing. Defaults to Date.now.
+   */
+  now?: () => number;
 }
 
 async function defaultSleep(ms: number): Promise<void> {
@@ -441,7 +446,8 @@ export async function waitForEnv(options: WaitForEnvOptions, auth: AuthStrategy)
   const {projectSlug, slug, pollIntervalSeconds = 10, timeoutSeconds = 2700, onPoll, origin} = options;
 
   const sleepFn = options.sleep ?? defaultSleep;
-  const startTime = Date.now();
+  const nowFn = options.now ?? Date.now;
+  const startTime = nowFn();
   const pollIntervalMs = pollIntervalSeconds * 1000;
   const timeoutMs = timeoutSeconds * 1000;
 
@@ -450,9 +456,9 @@ export async function waitForEnv(options: WaitForEnvOptions, auth: AuthStrategy)
   await sleepFn(pollIntervalMs);
 
   while (true) {
-    const elapsedSeconds = Math.round((Date.now() - startTime) / 1000);
+    const elapsedSeconds = Math.round((nowFn() - startTime) / 1000);
 
-    if (timeoutSeconds > 0 && Date.now() - startTime > timeoutMs) {
+    if (timeoutSeconds > 0 && nowFn() - startTime > timeoutMs) {
       throw new Error(`Timeout waiting for environment "${slug}" after ${timeoutSeconds}s`);
     }
 
