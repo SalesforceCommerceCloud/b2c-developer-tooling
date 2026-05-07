@@ -105,6 +105,8 @@ export interface SearchBmUsersOptions {
   start?: number;
   /** Number of items to return (default 25) */
   count?: number;
+  /** Property selector (default returns shallow user fields) */
+  select?: string;
 }
 
 /**
@@ -222,7 +224,19 @@ export async function searchBmUsers(
   instance: B2CInstance,
   options: SearchBmUsersOptions = {},
 ): Promise<BmUserSearchResult> {
-  const {query: providedQuery, searchPhrase, login, email, locked, disabled, sortBy, sortOrder, start, count} = options;
+  const {
+    query: providedQuery,
+    searchPhrase,
+    login,
+    email,
+    locked,
+    disabled,
+    sortBy,
+    sortOrder,
+    start,
+    count,
+    select,
+  } = options;
 
   let query: unknown = providedQuery;
   if (!query) {
@@ -266,6 +280,7 @@ export async function searchBmUsers(
       start,
       count,
       sorts,
+      select: select ?? '(**)',
     } as unknown as components['schemas']['search_request'],
   });
 
