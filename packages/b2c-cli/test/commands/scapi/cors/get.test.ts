@@ -10,6 +10,9 @@ import ScapiCorsGet from '../../../../src/commands/scapi/cors/get.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
 
+const VALID_FLAGS = {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'};
+const RESOLVED_CONFIG = {values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}};
+
 describe('scapi cors get', () => {
   let config: Config;
 
@@ -26,7 +29,7 @@ describe('scapi cors get', () => {
   it('calls command.error when shortCode is missing from resolved config', async () => {
     const command: any = new ScapiCorsGet([], config);
 
-    stubParse(command, {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'}, {});
+    stubParse(command, VALID_FLAGS, {});
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -64,12 +67,12 @@ describe('scapi cors get', () => {
   it('returns CORS preferences in JSON mode', async () => {
     const command: any = new ScapiCorsGet([], config);
 
-    stubParse(command, {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'}, {});
+    stubParse(command, VALID_FLAGS, {});
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => RESOLVED_CONFIG);
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
     });
@@ -94,12 +97,12 @@ describe('scapi cors get', () => {
   it('returns empty list when no preferences configured', async () => {
     const command: any = new ScapiCorsGet([], config);
 
-    stubParse(command, {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'}, {});
+    stubParse(command, VALID_FLAGS, {});
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => RESOLVED_CONFIG);
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
     });
@@ -117,12 +120,12 @@ describe('scapi cors get', () => {
   it('calls command.error on API failure', async () => {
     const command: any = new ScapiCorsGet([], config);
 
-    stubParse(command, {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'}, {});
+    stubParse(command, VALID_FLAGS, {});
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => RESOLVED_CONFIG);
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
     });

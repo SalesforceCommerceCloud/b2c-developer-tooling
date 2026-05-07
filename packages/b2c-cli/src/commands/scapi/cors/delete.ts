@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Flags} from '@oclif/core';
 import {ScapiCorsCommand, getApiErrorMessage} from '../../../utils/scapi/cors.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -33,11 +32,6 @@ export default class ScapiCorsDelete extends ScapiCorsCommand<typeof ScapiCorsDe
 
   static flags = {
     ...ScapiCorsCommand.baseFlags,
-    'site-id': Flags.string({
-      char: 's',
-      description: t('flags.siteId.description', 'The site ID to delete CORS preferences for'),
-      env: 'SFCC_SITE_ID',
-    }),
   };
 
   protected getProgressMessage(): string {

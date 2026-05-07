@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Command} from '@oclif/core';
+import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createScapiCorsClient, toOrganizationId, type ScapiCorsClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {createScapiCorsClient, type ScapiCorsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {configureLogger, getLogger} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
@@ -16,11 +16,19 @@ export {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
  * Provides common helpers for interacting with the CORS Preferences API.
  */
 export abstract class ScapiCorsCommand<T extends typeof Command> extends OAuthCommand<T> {
+  static baseFlags = {
+    ...OAuthCommand.baseFlags,
+    'site-id': Flags.string({
+      char: 's',
+      description: t('flags.siteId.description', 'The site ID for CORS preferences'),
+      env: 'SFCC_SITE_ID',
+    }),
+  };
   /**
    * Get the SCAPI CORS client, ensuring short code and tenant ID are configured.
    */
   protected getCorsClient(): ScapiCorsClient {
-    const {shortCode, tenantId} = this.resolvedConfig.values;
+    const {shortCode} = this.resolvedConfig.values;
 
     if (!shortCode) {
       this.error(
@@ -30,34 +38,10 @@ export abstract class ScapiCorsCommand<T extends typeof Command> extends OAuthCo
         ),
       );
     }
-    if (!tenantId) {
-      this.error(
-        t(
-          'error.tenantIdRequired',
-          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
-      );
-    }
 
+    const tenantId = this.requireTenantId();
     const oauthStrategy = this.getOAuthStrategy();
     return createScapiCorsClient({shortCode, tenantId}, oauthStrategy);
-  }
-
-  /**
-   * Get the organization ID (with f_ecom_ prefix) from resolved config.
-   * @throws Error if tenant ID is not configured
-   */
-  protected getOrganizationId(): string {
-    const {tenantId} = this.resolvedConfig.values;
-    if (!tenantId) {
-      this.error(
-        t(
-          'error.tenantIdRequired',
-          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
-      );
-    }
-    return toOrganizationId(tenantId);
   }
 
   /**

@@ -10,6 +10,9 @@ import ScapiCorsDelete from '../../../../src/commands/scapi/cors/delete.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
 
+const VALID_FLAGS = {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'};
+const RESOLVED_CONFIG = {values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}};
+
 describe('scapi cors delete', () => {
   let config: Config;
 
@@ -26,12 +29,12 @@ describe('scapi cors delete', () => {
   it('returns deleted: true in JSON mode on success', async () => {
     const command: any = new ScapiCorsDelete([], config);
 
-    stubParse(command, {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'}, {});
+    stubParse(command, VALID_FLAGS, {});
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => RESOLVED_CONFIG);
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
     });
@@ -48,12 +51,12 @@ describe('scapi cors delete', () => {
   it('sends the siteId as a query parameter', async () => {
     const command: any = new ScapiCorsDelete([], config);
 
-    stubParse(command, {'tenant-id': 'zzxy_prd', 'site-id': 'SiteB'}, {});
+    stubParse(command, {...VALID_FLAGS, 'site-id': 'SiteB'}, {});
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => RESOLVED_CONFIG);
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
     });
@@ -75,7 +78,7 @@ describe('scapi cors delete', () => {
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => RESOLVED_CONFIG);
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -90,12 +93,12 @@ describe('scapi cors delete', () => {
   it('calls command.error on API failure', async () => {
     const command: any = new ScapiCorsDelete([], config);
 
-    stubParse(command, {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch'}, {});
+    stubParse(command, VALID_FLAGS, {});
     await command.init();
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => RESOLVED_CONFIG);
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
     });

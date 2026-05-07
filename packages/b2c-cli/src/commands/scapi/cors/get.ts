@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Flags} from '@oclif/core';
 import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CorsClientPreferences} from '@salesforce/b2c-tooling-sdk/clients';
 import {ScapiCorsCommand, getApiErrorMessage} from '../../../utils/scapi/cors.js';
@@ -50,11 +49,6 @@ export default class ScapiCorsGet extends ScapiCorsCommand<typeof ScapiCorsGet> 
 
   static flags = {
     ...ScapiCorsCommand.baseFlags,
-    'site-id': Flags.string({
-      char: 's',
-      description: t('flags.siteId.description', 'The site ID to retrieve CORS preferences for'),
-      env: 'SFCC_SITE_ID',
-    }),
   };
 
   protected getProgressMessage(): string {
