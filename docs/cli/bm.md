@@ -8,33 +8,66 @@ Commands for administering instance-level Business Manager resources via the OCA
 
 ## Authentication
 
-Most BM commands accept either client credentials or browser-based user authentication. A handful require a *real BM user identity* — the CLI defaults those to user-auth automatically.
+BM commands authenticate via OAuth against the configured Commerce Cloud instance. Two flows are supported:
+
+- **Client credentials** — for automation and CI/CD. Configure an Account Manager API client and grant it the OCAPI permissions listed below. Pass credentials via `--client-id` / `--client-secret`, the `SFCC_CLIENT_ID` / `SFCC_CLIENT_SECRET` environment variables, or `dw.json`.
+- **User auth (browser)** — for interactive use. Pass `--user-auth` (or run `b2c auth login` once and reuse the saved session). The CLI opens a browser and the resulting token carries your BM user identity.
+
+A handful of endpoints require *a real BM user identity* and cannot use service-client tokens — the CLI defaults those to user-auth automatically:
 
 | Command group | Default auth | Why |
 |---|---|---|
 | `b2c bm roles ...` | client-credentials → jwt → implicit | OCAPI permissions for `/roles` |
 | `b2c bm users {list,get,search,update,delete}` | client-credentials → jwt → implicit | OCAPI permissions for `/users` |
-| `b2c bm whoami` | **implicit (browser)** | OCAPI `/users/this` requires the token to resolve to a BM user |
-| `b2c bm access-key ...` | **implicit (browser)** | OCAPI access-key endpoints require "a valid user" plus the `Manage_Users_Access_Keys` functional permission |
+| `b2c bm whoami` | **implicit (browser)** | `/users/this` requires the token to resolve to a BM user |
+| `b2c bm access-key ...` | **implicit (browser)** | Access-key endpoints require *a valid user* plus the `Manage_Users_Access_Keys` BM functional permission |
 
-Override the default with `--auth-methods client-credentials` (or `--client-secret` flags) when your service-client setup is configured to issue user-bearing tokens.
+Override the auto-defaulted user-auth with `--auth-methods client-credentials` (or `--client-secret`) when your service-client setup is configured to issue user-bearing tokens. The interactive defaults can also be skipped end-to-end by exporting `SFCC_AUTH_METHODS=client-credentials,jwt` in CI.
 
-For complete setup instructions see the [Authentication Guide](/guide/authentication).
+See the [Authentication Guide](/guide/authentication) for end-to-end setup, including the [BM administration OCAPI snippet](/guide/authentication#minimal-configuration-by-feature).
 
 ### Required OCAPI Permissions
 
-| Resource | Methods |
-|----------|---------|
-| `/roles` | GET |
-| `/roles/*` | GET, PUT, DELETE |
-| `/roles/*/users` | GET, PUT, DELETE |
-| `/users` | GET |
-| `/users/*` | GET, PATCH, DELETE |
-| `/users/this` | GET |
-| `/users/*/access_key/*` | GET, PUT, PATCH, DELETE |
-| `/user_search` | POST |
+Add these resources to the Data API client configuration in Business Manager (**Administration** > **Site Development** > **Open Commerce API Settings** > **Data API**):
 
-Access-key writes additionally require the `Manage_Users_Access_Keys` functional permission on the BM user account.
+| Resource | Methods | Used by |
+|----------|---------|---------|
+| `/roles` | GET | `bm roles list` |
+| `/roles/*` | GET, PUT, DELETE | `bm roles get/create/delete` |
+| `/roles/*/users` | GET | `bm roles get --expand users` |
+| `/roles/*/users/*` | PUT, DELETE | `bm roles grant/revoke` |
+| `/roles/*/permissions` | GET, PUT | `bm roles permissions get/set` |
+| `/users` | GET | `bm users list` |
+| `/users/*` | GET, PATCH, DELETE | `bm users get/update/delete` |
+| `/users/this` | GET | `bm whoami`, `bm access-key` (optional login fallback) |
+| `/users/*/access_key/*` | GET, PUT, PATCH, DELETE | `bm access-key get/create/set/delete` |
+| `/user_search` | POST | `bm users search` |
+
+For an importable JSON snippet covering all BM administration endpoints, see [Minimal Configuration by Feature](/guide/authentication#minimal-configuration-by-feature) in the Authentication Guide.
+
+### Required BM Functional Permission
+
+Access-key writes (`bm access-key {create,set,delete}`) additionally require the **Manage_Users_Access_Keys** BM functional permission on the user account performing the request. Grant it via Business Manager: **Administration** > **Roles & Permissions**. This is why the CLI defaults `bm access-key` commands to user-auth — service clients cannot carry BM functional permissions.
+
+### Configuration Examples
+
+```bash
+# Interactive (browser login on first command, session reused after):
+b2c auth login --instance my-sandbox
+b2c bm whoami
+
+# Client credentials (where supported):
+export SFCC_CLIENT_ID=your-client-id
+export SFCC_CLIENT_SECRET=your-client-secret
+export SFCC_SERVER=my-sandbox.demandware.net
+b2c bm users list
+
+# Force user-auth on a command that defaults to client-credentials:
+b2c bm users list --user-auth
+
+# Force client-credentials on a command that defaults to user-auth (advanced):
+b2c bm access-key get --auth-methods client-credentials
+```
 
 ---
 
