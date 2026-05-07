@@ -8,11 +8,16 @@ MCP tools for connecting to the B2C Commerce Script Debugger API (SDAPI), settin
 
 ## Authentication
 
-All debug tools require **Basic Auth** credentials (username and password) for a Business Manager user with the `WebDAV_Manage_Customization` permission.
+Requires **Basic Auth** credentials only. OAuth is not supported by the SDAPI.
+
+**Required:**
+- **Basic Auth** - `hostname`, `username`, and `password` (WebDAV access key) for a Business Manager user with the `WebDAV_Manage_Customization` permission.
+
+**Configuration priority:** Flags → Environment variables → `dw.json` config file
 
 The script debugger must also be enabled on the instance: Business Manager > Administration > Development Configuration > Script Debugger > Enable.
 
-See the [Authentication guide](../../guide/authentication) and [Configuration guide](../../guide/configuration) for credential setup details.
+See [Configuration](../configuration) for complete credential setup details including flags and environment variables. See [Authentication Setup](../../guide/authentication#webdav-access) for WebDAV access key configuration instructions.
 
 ## Recovery from broken or orphaned sessions
 
