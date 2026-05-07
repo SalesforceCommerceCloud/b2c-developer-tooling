@@ -7,7 +7,7 @@ description: Install the B2C CLI via npm, Homebrew, or GitHub releases, and opti
 ## Prerequisites
 
 - macOS, Linux, or Windows
-- Node.js 22.0.0 or higher (for npm installation or SDK usage)
+- Node.js 22.16.0 or higher (for npm installation or SDK usage)
 
 ## Install via npm (Recommended)
 

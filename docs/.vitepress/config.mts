@@ -108,6 +108,7 @@ const referenceSidebar = [
       {text: 'Code', link: '/cli/code'},
       {text: 'Content', link: '/cli/content'},
       {text: 'Custom APIs', link: '/cli/custom-apis'},
+      {text: 'Debug', link: '/cli/debug'},
       {text: 'Docs', link: '/cli/docs'},
       {text: 'eCDN', link: '/cli/ecdn'},
       {text: 'Jobs', link: '/cli/jobs'},

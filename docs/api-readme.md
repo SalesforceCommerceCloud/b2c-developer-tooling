@@ -176,7 +176,8 @@ Used for OCAPI and can be used for WebDAV:
 const config = resolveConfig({
   clientId: 'your-client-id',
   clientSecret: 'your-client-secret',
-  scopes: ['SALESFORCE_COMMERCE_API:...:dwsid'],
+  // Scopes are tenant-specific; replace `zzxy_001` with your tenant short code.
+  scopes: ['SALESFORCE_COMMERCE_API:zzxy_001:sites_rw'],
 });
 
 const instance = config.createB2CInstance();

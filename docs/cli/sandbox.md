@@ -7,7 +7,7 @@ description: Commands for creating, managing, starting, stopping, and deleting O
 Commands for managing On-Demand Sandboxes.
 
 ::: tip Alias
-These commands were previously available as `b2c ods <command>`. The `ods` prefix still works as a backward-compatible alias.
+These commands were previously available as `b2c ods <command>`. The `ods` prefix is still accepted as a backward-compatible alias for every command in this topic (e.g., `b2c ods list`, `b2c ods create`, `b2c ods alias create`).
 :::
 
 ## Sandbox ID Formats
@@ -296,6 +296,44 @@ Displays information about:
 - Authenticated user
 - Available realms
 - System status and limits
+
+---
+
+## b2c sandbox ips
+
+List inbound and outbound IP addresses for ODS sandboxes. Use this to allowlist B2C Commerce traffic in firewalls or third-party services.
+
+### Usage
+
+```bash
+b2c sandbox ips [--realm <REALM>]
+```
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--realm`, `-r` | Realm ID (four-letter ID) to scope IP details to a specific realm | All realms |
+
+### Examples
+
+```bash
+# List IPs across all realms
+b2c sandbox ips
+
+# Output as JSON
+b2c sandbox ips --json
+
+# Scope to a specific realm
+b2c sandbox ips --realm zzzz
+
+# Realm-scoped JSON output
+b2c sandbox ips -r zzzz --json
+```
+
+### Output
+
+Prints inbound and outbound IP addresses, plus per-sandbox IPs when available. With `--json`, returns the raw `SystemInfoResponse` payload.
 
 ---
 

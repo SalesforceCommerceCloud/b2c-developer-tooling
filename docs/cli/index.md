@@ -67,6 +67,9 @@ Safety Mode operates at the HTTP layer and cannot be bypassed by command-line fl
 - [Job Commands](./jobs) - Execute and monitor jobs, import/export site archives
 - [Sites Commands](./sites) - List and manage sites
 - [WebDAV Commands](./webdav) - File operations on instance WebDAV
+- [Logs Commands](./logs) - Tail and retrieve instance logs
+- [Content Commands](./content) - Export Page Designer content from a site
+- [BM Roles Commands](./bm-roles) - Manage Business Manager roles and permissions
 
 ### Services
 
@@ -74,11 +77,16 @@ Safety Mode operates at the HTTP layer and cannot be bypassed by command-line fl
 - [MRT Commands](./mrt) - Manage Managed Runtime (MRT) projects and deployments
 - [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
 - [CIP Commands](./cip) - Run CIP SQL queries and curated analytics reports
+- [eCDN Commands](./ecdn) - Manage eCDN zones, certificates, WAF, Page Shield, and edge configuration
 - [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
+- [SCAPI Schemas](./scapi-schemas) - Browse and retrieve SCAPI OpenAPI schemas
+- [Granular Replications](./replications) - Trigger and monitor SCAPI granular replications
+- [CAP Commands](./cap) - Manage Commerce App Packages
 
 ### Development
 
 - [Scaffold Commands](./scaffold) - Generate cartridges, controllers, hooks, and more from templates
+- [Debug Command](./debug) - Start a DAP adapter for IDE-driven script debugging
 
 ### Account Management
 
@@ -91,10 +99,11 @@ All Account Manager commands are under the `am` topic:
 - `b2c am orgs ...` - Organization management commands
 - `b2c am clients ...` - API client management (list, get, create, update, delete, password)
 
-### Utilities
+### Setup & Utilities
 
-- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
+- [Setup Commands](./setup) - Configure instances, install IDE integrations, and install agent skills
 - [Auth Commands](./auth) - Authentication and token management
+- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
 - [Logging](./logging) - Log levels, output formats, and environment variables
 
 ## Getting Help

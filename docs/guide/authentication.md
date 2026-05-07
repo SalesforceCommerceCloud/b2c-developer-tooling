@@ -84,8 +84,8 @@ For Account Manager operations that require user-level roles (organization and A
 For enhanced security, use JWT Bearer authentication instead of client secrets. This requires uploading a certificate to the API client and using the `--jwt-cert` and `--jwt-key` flags. See [JWT Authentication](#jwt-authentication-certificate-based) for setup instructions.
 :::
 
-::: warning
-For client credentials with secrets, only `client_secret_basic` is supported. `client_secret_post` isn't currently supported.
+::: info
+For client credentials with secrets, use `client_secret_basic` (the default). `client_secret_post` is not currently supported.
 :::
 
 ### Assigning Roles

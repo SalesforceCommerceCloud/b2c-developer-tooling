@@ -7,9 +7,13 @@ import {Flags} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {B2CScriptDebugAdapter, type DebugSessionCallbacks} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {withDocs} from '../../i18n/index.js';
 
 export default class Debug extends InstanceCommand<typeof Debug> {
-  static description = 'Start a DAP debug adapter for B2C Commerce script debugging';
+  static description = withDocs(
+    'Start a DAP debug adapter for B2C Commerce script debugging',
+    '/cli/debug.html#b2c-debug',
+  );
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',
