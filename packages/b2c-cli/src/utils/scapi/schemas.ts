@@ -5,19 +5,12 @@
  */
 import {Command} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  createScapiSchemasClient,
-  getApiErrorMessage,
-  type ScapiSchemasClient,
-} from '@salesforce/b2c-tooling-sdk/clients';
+import {createScapiSchemasClient, type ScapiSchemasClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {t} from '../../i18n/index.js';
 
-/**
- * Format API error for display.
- */
-export function formatApiError(error: unknown, response: Response): string {
-  return getApiErrorMessage(error, response);
-}
+// Backwards-compatible alias for SDK's getApiErrorMessage; existing call sites
+// use this name. New code should import getApiErrorMessage from the SDK directly.
+export {getApiErrorMessage as formatApiError} from '@salesforce/b2c-tooling-sdk/clients';
 
 /**
  * Base command for SCAPI Schemas operations.

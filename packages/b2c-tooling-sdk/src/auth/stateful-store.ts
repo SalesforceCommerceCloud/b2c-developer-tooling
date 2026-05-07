@@ -17,16 +17,13 @@
  *
  * @module auth/stateful-store
  */
-import {existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {homedir, platform} from 'node:os';
-import {decodeJWT} from './oauth.js';
+import {DEFAULT_EXPIRY_BUFFER_SEC, decodeJwtTokenInfo} from './jwt-utils.js';
 import {getLogger} from '../logging/logger.js';
 
 const STATEFUL_AUTH_SESSION_STORE = 'auth-session.json';
-
-/** Default buffer (seconds) before token exp to consider it expired */
-const EXPIRY_BUFFER_SEC = 60;
 
 let storePath: string | null = null;
 
@@ -114,7 +111,11 @@ export function setStoredSession(session: StatefulSession): void {
     renewBase: session.renewBase ?? null,
     user: session.user ?? null,
   };
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  // Atomic write: write to temp file then rename so a concurrent reader (or a
+  // crashed writer) never observes a partially written JSON document.
+  const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+  renameSync(tmpPath, filePath);
 }
 
 /**
@@ -125,8 +126,8 @@ export function clearStoredSession(): void {
   if (existsSync(filePath)) {
     try {
       unlinkSync(filePath);
-    } catch {
-      // ignore — file may have already been removed
+    } catch (err) {
+      getLogger().debug({err, filePath}, '[StatefulAuth] Failed to remove session file');
     }
   }
 }
@@ -146,40 +147,36 @@ export function clearStoredSession(): void {
 export function isStatefulTokenValid(
   session: StatefulSession,
   requiredScopes: string[] = [],
-  expiryBufferSec: number = EXPIRY_BUFFER_SEC,
+  expiryBufferSec: number = DEFAULT_EXPIRY_BUFFER_SEC,
   requiredClientId?: string,
 ): boolean {
   const logger = getLogger();
-  try {
-    if (requiredClientId && session.clientId !== requiredClientId) {
-      logger.debug({storedClientId: session.clientId, requiredClientId}, '[StatefulAuth] Token client ID mismatch');
-      return false;
-    }
-    const decoded = decodeJWT(session.accessToken);
-    const exp = decoded.payload.exp;
-    if (typeof exp !== 'number') {
-      logger.debug('[StatefulAuth] Token has no exp claim; treating as invalid');
-      return false;
-    }
-    const nowSec = Math.floor(Date.now() / 1000);
-    if (nowSec >= exp - expiryBufferSec) {
-      logger.debug('[StatefulAuth] Token missing or expired');
-      return false;
-    }
-    if (requiredScopes.length > 0) {
-      const tokenScopes = (decoded.payload.scope as string | string[] | undefined) ?? [];
-      const scopeList = Array.isArray(tokenScopes) ? tokenScopes : tokenScopes.split(' ');
-      const hasAll = requiredScopes.every((s) => scopeList.includes(s));
-      if (!hasAll) {
-        logger.debug({requiredScopes, tokenScopes: scopeList}, '[StatefulAuth] Token missing required scopes');
-        return false;
-      }
-    }
-    return true;
-  } catch (e) {
-    logger.debug({err: e}, '[StatefulAuth] Token invalid (e.g. not a JWT)');
+  if (requiredClientId && session.clientId !== requiredClientId) {
+    logger.debug({storedClientId: session.clientId, requiredClientId}, '[StatefulAuth] Token client ID mismatch');
     return false;
   }
+  let info: {expires: Date; scopes: string[]};
+  try {
+    info = decodeJwtTokenInfo(session.accessToken);
+  } catch (error) {
+    logger.debug({err: error}, '[StatefulAuth] Token invalid (e.g. not a JWT)');
+    return false;
+  }
+  if (info.expires.getTime() === 0) {
+    logger.debug('[StatefulAuth] Token has no exp claim; treating as invalid');
+    return false;
+  }
+  const nowSec = Math.floor(Date.now() / 1000);
+  const expSec = Math.floor(info.expires.getTime() / 1000);
+  if (nowSec >= expSec - expiryBufferSec) {
+    logger.debug('[StatefulAuth] Token missing or expired');
+    return false;
+  }
+  if (requiredScopes.length > 0 && !requiredScopes.every((s) => info.scopes.includes(s))) {
+    logger.debug({requiredScopes, tokenScopes: info.scopes}, '[StatefulAuth] Token missing required scopes');
+    return false;
+  }
+  return true;
 }
 
 /**

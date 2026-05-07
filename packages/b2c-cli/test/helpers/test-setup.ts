@@ -160,6 +160,21 @@ export function makeCommandThrowOnError(command: any): void {
 }
 
 /**
+ * Stub the lazily-loaded `odsClient` on a sandbox command. Many tests previously
+ * re-implemented this locally — promoted here so all sandbox tests share one
+ * canonical helper.
+ */
+export function stubOdsClient(
+  command: any,
+  client: Partial<{GET: any; POST: any; PUT: any; DELETE: any; PATCH: any}>,
+): void {
+  Object.defineProperty(command, 'odsClient', {
+    value: client,
+    configurable: true,
+  });
+}
+
+/**
  * Mocks getOAuthStrategy to return ImplicitOAuthStrategy with mocked implicitFlowLogin.
  * This follows the pattern from oauth-implicit.test.ts to avoid browser-based OAuth flow.
  * Use this for AM command tests that need to test implicit flow behavior without triggering

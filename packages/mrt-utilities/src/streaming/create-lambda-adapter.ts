@@ -623,6 +623,14 @@ export function createExpressResponse(
       return true;
     } catch (error) {
       console.error('[pipeToDestination] Pipeline error:', error);
+      // Notify the destination so consumers (e.g. an HTTP response in another
+      // adapter) can fail fast instead of hanging waiting for data that will
+      // never arrive. Best-effort: ignore secondary errors from emit/destroy.
+      try {
+        destination.destroy(error instanceof Error ? error : new Error(String(error)));
+      } catch (destroyError) {
+        console.error('[pipeToDestination] Failed to destroy destination after pipeline error:', destroyError);
+      }
       return false;
     }
   };
@@ -923,15 +931,18 @@ export function createExpressResponse(
     // Track the destination for unpipe support
     pipedDestinations.add(destination);
 
-    // Use actual Node.js pipeline for pipe operations
-    pipeToDestination(destination)
-      .then(() => {
-        pipedDestinations.delete(destination);
-      })
-      .catch((error) => {
-        console.error('[res.pipe] Pipeline error:', error);
-        pipedDestinations.delete(destination);
-      });
+    // Use actual Node.js pipeline for pipe operations. Always remove the
+    // destination from the tracking set when the pipeline settles — using a
+    // single `finally`-style callback rather than mirroring the cleanup in both
+    // `then` and `catch`, so we can't accidentally leak entries if either
+    // branch throws.
+    const cleanup = (): void => {
+      pipedDestinations.delete(destination);
+    };
+    pipeToDestination(destination).then(cleanup, (error) => {
+      console.error('[res.pipe] Pipeline error:', error);
+      cleanup();
+    });
 
     return destination;
   };

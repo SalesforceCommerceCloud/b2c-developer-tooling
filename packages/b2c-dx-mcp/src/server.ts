@@ -16,6 +16,7 @@ import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protoco
 import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
 import type {ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 /**
  * Extended server options.
@@ -89,7 +90,9 @@ export class B2CDxMcpServer extends McpServer {
             runTimeMs,
             isError: result.isError ?? false,
           })
-          .catch(() => {});
+          .catch((error_: unknown) => {
+            getLogger().debug({err: error_, toolName: name}, '[mcp] telemetry sendEventAndFlush failed');
+          });
 
         return result;
       } catch (error) {
@@ -101,7 +104,9 @@ export class B2CDxMcpServer extends McpServer {
             runTimeMs,
             isError: true,
           })
-          .catch(() => {});
+          .catch((error_: unknown) => {
+            getLogger().debug({err: error_, toolName: name}, '[mcp] telemetry sendEventAndFlush failed');
+          });
 
         throw error;
       }

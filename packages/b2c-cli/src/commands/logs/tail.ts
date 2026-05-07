@@ -140,21 +140,28 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
       },
     });
 
-    // Handle SIGINT (Ctrl+C) for graceful shutdown
-    const handleSignal = async (): Promise<void> => {
+    // Handle SIGINT (Ctrl+C) for graceful shutdown. Capture handler refs so we
+    // can deregister on exit — otherwise repeated invocations of this command
+    // (e.g. in tests) would stack handlers on the global process.
+    let stopping = false;
+    const handleSignal = (): void => {
+      if (stopping) return;
+      stopping = true;
       this.log(t('commands.logs.tail.stopping', '\nStopping log tail...'));
-      await stop();
+      stop().catch((error: unknown) => {
+        this.logger.debug({err: error}, '[logs:tail] stop() failed during signal handling');
+      });
     };
 
-    process.on('SIGINT', () => {
-      handleSignal().catch(() => {});
-    });
-    process.on('SIGTERM', () => {
-      handleSignal().catch(() => {});
-    });
+    process.on('SIGINT', handleSignal);
+    process.on('SIGTERM', handleSignal);
 
-    // Wait for tailing to complete
-    await done;
+    try {
+      await done;
+    } finally {
+      process.removeListener('SIGINT', handleSignal);
+      process.removeListener('SIGTERM', handleSignal);
+    }
 
     this.log(t('commands.logs.tail.stopped', 'Log tailing stopped.'));
   }

@@ -7,6 +7,7 @@ import {Flags, Errors} from '@oclif/core';
 import {AmCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerUser, UserCollection} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
+import {amPageSizeFlag} from '../../../utils/am/flags.js';
 
 const COLUMNS: Record<string, ColumnDef<AccountManagerUser>> = {
   mail: {
@@ -89,10 +90,7 @@ export default class UserList extends AmCommand<typeof UserList> {
   ];
 
   static flags = {
-    size: Flags.integer({
-      char: 's',
-      description: 'Page size (default: 20, min: 1, max: 4000)',
-    }),
+    size: amPageSizeFlag,
     page: Flags.integer({
       description: 'Page number (zero-based index, default: 0, min: 0)',
     }),

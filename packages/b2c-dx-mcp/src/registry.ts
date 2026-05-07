@@ -169,11 +169,20 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
  * @param server - B2CDxMcpServer instance
  * @param loadServices - Function that loads configuration and returns Services instance
  */
+// Guards against accidental double-registration. The MCP SDK throws on duplicate
+// `addTool` names, but tracking servers we've already populated lets callers fail
+// fast with an explicit message instead of a cryptic SDK error.
+const REGISTERED_SERVERS = new WeakSet<B2CDxMcpServer>();
+
 export async function registerToolsets(
   flags: StartupFlags,
   server: B2CDxMcpServer,
   loadServices: () => Promise<Services> | Services,
 ): Promise<void> {
+  if (REGISTERED_SERVERS.has(server)) {
+    throw new Error('registerToolsets() was called more than once for the same server instance');
+  }
+  REGISTERED_SERVERS.add(server);
   const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];
   const allowNonGaTools = flags.allowNonGaTools ?? false;
