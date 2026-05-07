@@ -13,6 +13,7 @@
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
+import {decodeJwtTokenInfo} from './jwt-utils.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {getStoredSession, setStoredSession, clearStoredSession, type StatefulSession} from './stateful-store.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
@@ -76,15 +77,8 @@ export class StatefulOAuthStrategy implements AuthStrategy {
    */
   async getTokenResponse(): Promise<AccessTokenResponse> {
     const token = await this.getAccessToken();
-    const decoded = decodeJWT(token);
-    const exp = (decoded.payload.exp as number) ?? 0;
-    const scope = decoded.payload.scope as string | string[] | undefined;
-    const scopes = scope == null ? [] : Array.isArray(scope) ? scope : scope.split(' ');
-    return {
-      accessToken: token,
-      expires: new Date(exp * 1000),
-      scopes,
-    };
+    const {expires, scopes} = decodeJwtTokenInfo(token);
+    return {accessToken: token, expires, scopes};
   }
 
   async getJWT(): Promise<DecodedJWT> {

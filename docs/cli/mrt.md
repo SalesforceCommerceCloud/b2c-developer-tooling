@@ -323,6 +323,35 @@ b2c mrt env delete staging --project my-storefront
 b2c mrt env delete old-env -p my-storefront --force
 ```
 
+### b2c mrt env clone
+
+Clone an environment from an existing source environment. The new target receives the source's configuration (excluding proxies and the production flag) and is automatically deployed with the source target's current bundle (if any). Optionally clones redirects, environment variables, and B2C target info.
+
+The source environment is the one selected by `--environment` / `-e` (or `MRT_ENVIRONMENT` / `mrtEnvironment` in `dw.json`). The positional argument is the **new** environment's slug.
+
+```bash
+# Clone the configured environment into a new slug
+b2c mrt env clone staging-copy -p my-storefront -e staging
+
+# Clone with redirects and environment variables
+b2c mrt env clone qa -p my-storefront -e staging --clone-redirects --clone-env-vars
+
+# Clone using a custom domain certificate
+b2c mrt env clone qa -p my-storefront -e staging \
+  --external-hostname qa.example.com --certificate-id 123 --wait
+```
+
+| Flag | Description |
+|------|-------------|
+| `--environment`, `-e` | Source environment slug (defaults to `mrtEnvironment` / `MRT_ENVIRONMENT`) |
+| `--external-hostname` | Full external hostname (required for non-MRT-managed certificates) |
+| `--external-domain` | External domain for Universal PWA SSR |
+| `--certificate-id` | Certificate ID for custom domain (use `b2c mrt org cert list` to find) |
+| `--clone-redirects` | Clone redirects from the source environment |
+| `--clone-env-vars` | Clone environment variables from the source environment |
+| `--clone-b2c-info` | Clone B2C target info from the source environment |
+| `--wait`, `-w` | Wait for the new environment to reach a terminal state |
+
 ### b2c mrt env invalidate
 
 Invalidate CDN cache for an environment. The `--pattern` flag is required and accepts a path pattern (use `/*` to invalidate everything).
@@ -550,6 +579,105 @@ b2c mrt bundle download 12345 -p my-storefront -o ./artifacts/bundle.tgz
 
 # Get download URL only
 b2c mrt bundle download 12345 -p my-storefront --url-only
+```
+
+### b2c mrt bundle delete
+
+Delete one or more bundles. Bundles are deleted asynchronously by the server and only project admins can run this command. With more than one bundle ID the CLI uses the bulk-delete endpoint and reports any rejected bundles (e.g. bundles in use by an active deployment).
+
+```bash
+# Delete a single bundle
+b2c mrt bundle delete 12345 -p my-storefront
+
+# Delete several at once
+b2c mrt bundle delete 12345 12346 12347 -p my-storefront
+
+# Skip the confirmation prompt
+b2c mrt bundle delete 12345 -p my-storefront --force
+```
+
+---
+
+## Organization Member Commands
+
+Organization members are distinct from project members: they hold a role at the organization level and can optionally be granted permission to view all projects and manage custom domain certificates.
+
+### b2c mrt org member list
+
+```bash
+b2c mrt org member list --org my-org
+b2c mrt org member list --org my-org --search alice
+```
+
+### b2c mrt org member add
+
+Roles: `owner` or `member`.
+
+```bash
+b2c mrt org member add alice@example.com --org my-org --role member
+b2c mrt org member add bob@example.com --org my-org --role owner --view-all-projects
+```
+
+### b2c mrt org member get
+
+```bash
+b2c mrt org member get alice@example.com --org my-org
+```
+
+### b2c mrt org member update
+
+```bash
+b2c mrt org member update alice@example.com --org my-org --view-all-projects
+b2c mrt org member update alice@example.com --org my-org --no-cert-permission
+```
+
+### b2c mrt org member remove
+
+```bash
+b2c mrt org member remove alice@example.com --org my-org
+```
+
+---
+
+## Organization Certificate Commands
+
+Manage custom domain certificates for environments that use a non-MRT-managed hostname. Certificates are organization-scoped; reference a certificate from `env create`, `env update`, or `env clone` via `--certificate-id`.
+
+### b2c mrt org cert list
+
+```bash
+b2c mrt org cert list --org my-org
+b2c mrt org cert list --org my-org --custom-only
+```
+
+### b2c mrt org cert get
+
+Returns the validation record (the DNS entry the customer must add to validate the certificate).
+
+```bash
+b2c mrt org cert get 123 --org my-org
+```
+
+### b2c mrt org cert create
+
+```bash
+b2c mrt org cert create shop.example.com --org my-org
+```
+
+The output includes the validation record. Add it to your DNS to complete validation.
+
+### b2c mrt org cert delete
+
+```bash
+b2c mrt org cert delete 123 --org my-org
+```
+
+### b2c mrt org cert restart-validation
+
+Restart validation for a certificate that has not yet been validated. The response includes a fresh validation record.
+
+```bash
+b2c mrt org cert restart-validation 123 --org my-org
 ```
 
 ---

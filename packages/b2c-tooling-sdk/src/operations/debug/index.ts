@@ -18,6 +18,17 @@ export {B2CScriptDebugAdapter} from './dap-adapter.js';
 export {createSourceMapper} from './source-mapping.js';
 export type {SourceMapper} from './source-mapping.js';
 export {VariableStore} from './variable-store.js';
+export {resolveBreakpointPath} from './resolve-path.js';
+export {
+  DEFAULT_MAX_VALUE_LENGTH,
+  isPrimitiveType,
+  projectBreakpoint,
+  projectFrame,
+  projectThreadLocation,
+  projectVariable,
+  truncateValue,
+} from './projections.js';
+export type {MappedBreakpoint, MappedFrame, MappedLocation, MappedVariable} from './projections.js';
 export type {VariableRef} from './variable-store.js';
 export type {
   SdapiLocation,

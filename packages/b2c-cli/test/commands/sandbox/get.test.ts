@@ -9,7 +9,7 @@ import sinon from 'sinon';
 
 import SandboxGet from '../../../src/commands/sandbox/get.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import {runSilent} from '../../helpers/test-setup.js';
+import {makeCommandThrowOnError, runSilent, stubOdsClient} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -29,19 +29,6 @@ function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.tes
 
 function stubJsonEnabled(command: any, enabled: boolean): void {
   command.jsonEnabled = () => enabled;
-}
-
-function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; DELETE: any}>): void {
-  Object.defineProperty(command, 'odsClient', {
-    value: client,
-    configurable: true,
-  });
-}
-
-function makeCommandThrowOnError(command: any): void {
-  command.error = (msg: string) => {
-    throw new Error(msg);
-  };
 }
 
 /**

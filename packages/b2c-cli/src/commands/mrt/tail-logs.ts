@@ -60,10 +60,15 @@ export default class MrtTailLogs extends MrtCommand<typeof MrtTailLogs> {
     const levelFilter = this.flags.level;
     const searchFilter = this.flags.search;
 
-    // Compile search regex (case-insensitive, global for highlighting)
+    // Compile search regexes:
+    //  - `searchTestRegex` (no `g` flag) is used for `.test()` so we don't have
+    //    to manage `lastIndex` on a shared global regex.
+    //  - `searchRegex` (global) is passed to the highlighter to mark every match.
+    let searchTestRegex: RegExp | undefined;
     let searchRegex: RegExp | undefined;
     if (searchFilter) {
       try {
+        searchTestRegex = new RegExp(searchFilter, 'i');
         searchRegex = new RegExp(searchFilter, 'gi');
       } catch {
         this.error(`Invalid search pattern: "${searchFilter}". Must be a valid regular expression.`);
@@ -112,15 +117,10 @@ export default class MrtTailLogs extends MrtCommand<typeof MrtTailLogs> {
           if (upperLevels && (!entry.level || !upperLevels.has(entry.level.toUpperCase()))) return;
 
           // Apply search filter (regex match against message and raw)
-          if (searchRegex) {
-            // Reset lastIndex since we reuse the global regex
-            searchRegex.lastIndex = 0;
-            const matchesMessage = searchRegex.test(entry.message);
-            searchRegex.lastIndex = 0;
-            const matchesRaw = searchRegex.test(entry.raw);
+          if (searchTestRegex) {
+            const matchesMessage = searchTestRegex.test(entry.message);
+            const matchesRaw = searchTestRegex.test(entry.raw);
             if (!matchesMessage && !matchesRaw) return;
-            // Reset for highlighting pass
-            searchRegex.lastIndex = 0;
           }
 
           if (this.jsonEnabled()) {
@@ -147,14 +147,23 @@ export default class MrtTailLogs extends MrtCommand<typeof MrtTailLogs> {
       auth,
     );
 
-    // Graceful shutdown on signals
+    // Graceful shutdown on signals. Capture ref so we can deregister; otherwise
+    // repeated invocations of this command stack handlers on the global process.
+    let stopping = false;
     const handleSignal = (): void => {
+      if (stopping) return;
+      stopping = true;
       stop();
     };
 
     process.on('SIGINT', handleSignal);
     process.on('SIGTERM', handleSignal);
 
-    await done;
+    try {
+      await done;
+    } finally {
+      process.removeListener('SIGINT', handleSignal);
+      process.removeListener('SIGTERM', handleSignal);
+    }
   }
 }

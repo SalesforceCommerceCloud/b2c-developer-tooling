@@ -10,7 +10,9 @@ import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
 import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
 import type {Services} from './services.js';
+import type {ServerContext} from './server-context.js';
 import {createCartridgesTools} from './tools/cartridges/index.js';
+import {createDiagnosticsTools} from './tools/diagnostics/index.js';
 import {createMrtTools} from './tools/mrt/index.js';
 import {createPwav3Tools} from './tools/pwav3/index.js';
 import {createScapiTools} from './tools/scapi/index.js';
@@ -79,7 +81,10 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Complete tool registry
  */
-export function createToolRegistry(loadServices: () => Promise<Services> | Services): ToolRegistry {
+export function createToolRegistry(
+  loadServices: () => Promise<Services> | Services,
+  serverContext?: ServerContext,
+): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
     MRT: [],
@@ -91,6 +96,7 @@ export function createToolRegistry(loadServices: () => Promise<Services> | Servi
   // Collect all tools from all factories
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
+    ...createDiagnosticsTools(loadServices, serverContext),
     ...createMrtTools(loadServices),
     ...createPwav3Tools(loadServices),
     ...createScapiTools(loadServices),
@@ -169,18 +175,28 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
  * @param server - B2CDxMcpServer instance
  * @param loadServices - Function that loads configuration and returns Services instance
  */
+// Guards against accidental double-registration. The MCP SDK throws on duplicate
+// `addTool` names, but tracking servers we've already populated lets callers fail
+// fast with an explicit message instead of a cryptic SDK error.
+const REGISTERED_SERVERS = new WeakSet<B2CDxMcpServer>();
+
 export async function registerToolsets(
   flags: StartupFlags,
   server: B2CDxMcpServer,
   loadServices: () => Promise<Services> | Services,
+  serverContext?: ServerContext,
 ): Promise<void> {
+  if (REGISTERED_SERVERS.has(server)) {
+    throw new Error('registerToolsets() was called more than once for the same server instance');
+  }
+  REGISTERED_SERVERS.add(server);
   const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];
   const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
 
   // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(loadServices);
+  const toolRegistry = createToolRegistry(loadServices, serverContext);
 
   // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();

@@ -67,7 +67,7 @@ What are the exact hex color values?`,
 
       expect(siteThemingStore.has('custom-theming')).to.be.true;
       const guidance = siteThemingStore.get('custom-theming');
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.metadata.fileName).to.equal('custom-theming.md');
       expect(guidance!.guidelines.length).to.be.greaterThan(0);
       expect(guidance!.rules.length).to.be.greaterThan(0);
@@ -103,7 +103,7 @@ Test.
 
     it('should return guidance for existing key', () => {
       const guidance = siteThemingStore.get('theming-questions');
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.questions).to.be.an('array');
       expect(guidance!.guidelines).to.be.an('array');
       expect(guidance!.rules).to.be.an('array');
@@ -143,7 +143,7 @@ Test.
       siteThemingStore.loadFile('workflow-test', filePath);
       const guidance = siteThemingStore.get('workflow-test');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.metadata.fileName).to.equal('workflow-test.md');
       // Workflow is parsed when steps, extraction, or checklist exist
       if (guidance!.workflow) {
@@ -177,7 +177,7 @@ No validation sub-sections here.
       siteThemingStore.loadFile('validation-empty', filePath);
       const guidance = siteThemingStore.get('validation-empty');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.validation).to.be.undefined;
     });
 
@@ -194,7 +194,7 @@ Only plain text, no A. Color, B. Font, C. General, or IMPORTANT.`,
       siteThemingStore.loadFile('validation-no-subsections', filePath);
       const guidance = siteThemingStore.get('validation-no-subsections');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.validation).to.be.undefined;
     });
 
@@ -216,9 +216,9 @@ Ask for clarification on color type mapping. Use exact hex. Primary vs secondary
       siteThemingStore.loadFile('color-mapping-q', filePath);
       const guidance = siteThemingStore.get('color-mapping-q');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const mappingQ = guidance!.questions.find((q) => q.question.includes('primary vs secondary'));
-      expect(mappingQ).to.exist;
+      expect(mappingQ, 'mappingQ must be defined').to.not.be.undefined;
     });
 
     it('should parse validation section from markdown', () => {
@@ -245,7 +245,7 @@ Ask for clarification on color type mapping. Use exact hex. Primary vs secondary
       siteThemingStore.loadFile('validation-test', filePath);
       const guidance = siteThemingStore.get('validation-test');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.metadata.fileName).to.equal('validation-test.md');
       // Validation is parsed when color, font, general, or requirements exist
       if (guidance!.validation) {
@@ -288,7 +288,7 @@ Some critical content.
       siteThemingStore.loadFile('minimal', filePath);
       const guidance = siteThemingStore.get('minimal');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.guidelines).to.have.lengthOf.at.least(1);
       expect(guidance!.rules).to.have.lengthOf.at.least(1);
     });
@@ -311,10 +311,10 @@ Use exact hex values.
       siteThemingStore.loadFile('color-only', filePath);
       const guidance = siteThemingStore.get('color-only');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.questions.length).to.be.greaterThan(0);
       const colorQ = guidance!.questions.find((q) => q.category === 'colors');
-      expect(colorQ).to.exist;
+      expect(colorQ, 'colorQ must be defined').to.not.be.undefined;
     });
 
     it('should generate font fallback question when content has font', () => {
@@ -333,9 +333,9 @@ Typography and font styling. No workflow.
       siteThemingStore.loadFile('font-only', filePath);
       const guidance = siteThemingStore.get('font-only');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const fontQ = guidance!.questions.find((q) => q.category === 'typography');
-      expect(fontQ).to.exist;
+      expect(fontQ, 'fontQ must be defined').to.not.be.undefined;
     });
 
     it('should handle THEMING_FILES with non-existent path', () => {
@@ -399,7 +399,7 @@ Use exact hex code values.
       siteThemingStore.loadFile('questions-extracted', filePath);
       const guidance = siteThemingStore.get('questions-extracted');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       expect(guidance!.questions.length).to.be.greaterThan(0);
       const hasColorQ = guidance!.questions.some((q) => q.question.includes('brand colors'));
       const hasFontQ = guidance!.questions.some((q) => q.question.includes('font family'));
@@ -436,9 +436,9 @@ When layout modifications are needed, they should be explicitly requested by the
       siteThemingStore.loadFile('layout-changes', filePath);
       const guidance = siteThemingStore.get('layout-changes');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const layoutQ = guidance!.questions.find((q) => q.category === 'general' && q.question.includes('layout'));
-      expect(layoutQ).to.exist;
+      expect(layoutQ, 'layoutQ must be defined').to.not.be.undefined;
     });
 
     it('should generate font question for headings and body when content has font usage', () => {
@@ -459,11 +459,11 @@ Use exact font name. Font apply to headings and body.
       siteThemingStore.loadFile('font-usage', filePath);
       const guidance = siteThemingStore.get('font-usage');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const fontQ = guidance!.questions.find(
         (q) => q.category === 'typography' && q.question.includes('headings and body'),
       );
-      expect(fontQ).to.exist;
+      expect(fontQ, 'fontQ must be defined').to.not.be.undefined;
     });
 
     it('should generate color questions for color combinations and dark/light when content has both', () => {
@@ -484,7 +484,7 @@ Propose color combinations. Use exact hex. Dark and light themes.
       siteThemingStore.loadFile('color-combos', filePath);
       const guidance = siteThemingStore.get('color-combos');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const primaryQ = guidance!.questions.find((q) => q.question.includes('primary actions'));
       const hoverQ = guidance!.questions.find((q) => q.question.includes('hover state'));
       const darkLightQ = guidance!.questions.find((q) => q.question.includes('light and dark'));
@@ -509,11 +509,11 @@ Propose color combinations for buttons and links.
       siteThemingStore.loadFile('color-combos-only', filePath);
       const guidance = siteThemingStore.get('color-combos-only');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const primaryQ = guidance!.questions.find((q) => q.question.includes('primary actions'));
       const hoverQ = guidance!.questions.find((q) => q.question.includes('hover state'));
-      expect(primaryQ).to.exist;
-      expect(hoverQ).to.exist;
+      expect(primaryQ, 'primaryQ must be defined').to.not.be.undefined;
+      expect(hoverQ, 'hoverQ must be defined').to.not.be.undefined;
     });
 
     it('should generate font question for Google Fonts when content has font availability', () => {
@@ -533,9 +533,9 @@ Use exact font name. Check font availability and Google Fonts.
       siteThemingStore.loadFile('font-availability', filePath);
       const guidance = siteThemingStore.get('font-availability');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const fontQ = guidance!.questions.find((q) => q.question.includes('Google Fonts'));
-      expect(fontQ).to.exist;
+      expect(fontQ, 'fontQ must be defined').to.not.be.undefined;
     });
 
     it('should assign required to first extracted color/font question when no generated questions', () => {
@@ -558,7 +558,7 @@ Follow user specs exactly.
       siteThemingStore.loadFile('extracted-only', filePath);
       const guidance = siteThemingStore.get('extracted-only');
 
-      expect(guidance).to.exist;
+      expect(guidance, 'guidance must be defined').to.not.be.undefined;
       const colorQ = guidance!.questions.find((q) => q.question.includes('brand colors'));
       const fontQ = guidance!.questions.find((q) => q.question.includes('font family'));
       expect(colorQ?.required).to.be.true;

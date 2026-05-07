@@ -125,6 +125,7 @@ describe('mrt env var push', () => {
 
     await command.run();
 
+    expect(listStub.calledOnce, 'remote env vars must be fetched to compute diff').to.be.true;
     expect(setBatchStub.called).to.be.false;
     expect(setStub.called).to.be.false;
   });

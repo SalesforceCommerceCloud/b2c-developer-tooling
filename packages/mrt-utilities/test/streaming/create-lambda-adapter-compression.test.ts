@@ -133,7 +133,6 @@ describe('Compression Streaming', () => {
 
       // Wait for stream to finish
       await stream.waitForEnd();
-      await new Promise((resolve) => setTimeout(resolve, 50));
 
       const compressedData = stream.getData();
       const metadata = stream.getMetadata();
@@ -156,7 +155,7 @@ describe('Compression Streaming', () => {
       const testData = JSON.stringify({message: 'test', data: Array(100).fill('x').join('')});
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const compressedData = stream.getData();
       const metadata = stream.getMetadata();
@@ -179,7 +178,7 @@ describe('Compression Streaming', () => {
       response.write('chunk3');
       response.end();
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const compressedData = stream.getData();
       const metadata = stream.getMetadata();
@@ -201,7 +200,7 @@ describe('Compression Streaming', () => {
       const testData = 'This is a test string. '.repeat(50);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const compressedData = stream.getData();
       const metadata = stream.getMetadata();
@@ -224,7 +223,7 @@ describe('Compression Streaming', () => {
       const testData = 'This is a test string for brotli compression. '.repeat(100);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const compressedData = stream.getData();
       const metadata = stream.getMetadata();
@@ -245,7 +244,7 @@ describe('Compression Streaming', () => {
       const testData = JSON.stringify({data: 'test'.repeat(100)});
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       // Negotiator prefers based on order in Accept-Encoding, but our code prefers br first
@@ -266,7 +265,7 @@ describe('Compression Streaming', () => {
       const testData = 'body { color: red; } '.repeat(50);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -283,7 +282,7 @@ describe('Compression Streaming', () => {
       const testData = 'function test() { return true; } '.repeat(50);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -300,7 +299,7 @@ describe('Compression Streaming', () => {
       const testData = '<root><item>test</item></root>'.repeat(50);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -317,7 +316,7 @@ describe('Compression Streaming', () => {
       const testData = '<svg><circle r="10"/></svg>'.repeat(50);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -336,7 +335,7 @@ describe('Compression Streaming', () => {
       const testData = Buffer.alloc(1000, 0xff); // Mock JPEG data
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.be.undefined;
@@ -355,7 +354,7 @@ describe('Compression Streaming', () => {
       const testData = Buffer.alloc(1000, 0x89); // Mock PNG data
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.be.undefined;
@@ -372,7 +371,7 @@ describe('Compression Streaming', () => {
       const testData = Buffer.alloc(1000);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.be.undefined;
@@ -389,7 +388,7 @@ describe('Compression Streaming', () => {
       const testData = Buffer.alloc(1000, 0xff);
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       // Note: The compressible package considers application/octet-stream as compressible
@@ -412,7 +411,7 @@ describe('Compression Streaming', () => {
       const testData = 'This should not be compressed';
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.be.undefined;
@@ -434,7 +433,7 @@ describe('Compression Streaming', () => {
       const testData = 'test data';
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -460,7 +459,7 @@ describe('Compression Streaming', () => {
       }
       response.end();
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const compressedData = stream.getData();
       const metadata = stream.getMetadata();
@@ -481,7 +480,7 @@ describe('Compression Streaming', () => {
       response.setHeader('Content-Type', 'text/html');
       response.end('test data');
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       // Should prefer br due to higher quality value
@@ -498,7 +497,7 @@ describe('Compression Streaming', () => {
       response.setHeader('Content-Type', 'text/html');
       response.end('test data');
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       // Should use br as it's first in our preference list
@@ -524,7 +523,7 @@ describe('Compression Streaming', () => {
       // But we can verify the response still works
       response.end('more data');
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       // Response should still complete even if compression has issues
       const metadata = stream.getMetadata();
@@ -544,7 +543,7 @@ describe('Compression Streaming', () => {
       const testData = 'test data';
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -561,7 +560,7 @@ describe('Compression Streaming', () => {
       const testData = 'test data';
       response.end(testData);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       // multipart/form-data is NOT compressible according to the compressible package
@@ -581,7 +580,7 @@ describe('Compression Streaming', () => {
       response.setHeader('Content-Type', 'text/html');
       response.send('test data');
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -596,7 +595,7 @@ describe('Compression Streaming', () => {
 
       response.json({message: 'test', data: 'x'.repeat(100)});
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -612,7 +611,7 @@ describe('Compression Streaming', () => {
       response.writeHead(200, {'Content-Type': 'text/html'});
       response.end('test data');
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -629,7 +628,7 @@ describe('Compression Streaming', () => {
       response.flushHeaders();
       response.end('test data');
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await stream.waitForEnd();
 
       const metadata = stream.getMetadata();
       expect(metadata.headers['content-encoding']).to.equal('gzip');
@@ -652,7 +651,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should use br from compressionConfig, not gzip from Accept-Encoding
@@ -673,7 +672,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should use deflate from compressionConfig, not gzip from Accept-Encoding
@@ -695,7 +694,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should use gzip from compressionConfig even without Accept-Encoding header
@@ -724,7 +723,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         // Verify createGzip was called with the options
         expect(createGzipStub.calledWith(compressionConfig.options)).to.be.true;
@@ -753,7 +752,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         // Verify createBrotliCompress was called with the options
         expect(createBrotliStub.calledWith(compressionConfig.options)).to.be.true;
@@ -780,7 +779,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         // Verify createDeflate was called with the options
         expect(createDeflateStub.calledWith(compressionConfig.options)).to.be.true;
@@ -806,7 +805,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should still use gzip from Accept-Encoding
@@ -828,7 +827,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should work normally without compressionConfig
@@ -846,7 +845,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should work normally with empty compressionConfig
@@ -873,7 +872,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should use br from Accept-Encoding
@@ -899,7 +898,7 @@ describe('Compression Streaming', () => {
         const testData = 'This is a test string that should NOT be compressed. '.repeat(100);
         response.end(testData);
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should NOT have content-encoding header
@@ -924,7 +923,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'application/json');
         response.end(JSON.stringify({message: 'test', data: 'x'.repeat(1000)}));
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should NOT have content-encoding header
@@ -945,7 +944,7 @@ describe('Compression Streaming', () => {
         response.setHeader('Content-Type', 'text/html');
         response.end('test data');
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await stream.waitForEnd();
 
         const metadata = stream.getMetadata();
         // Should NOT have content-encoding header

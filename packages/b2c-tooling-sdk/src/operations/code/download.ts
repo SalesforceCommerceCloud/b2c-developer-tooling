@@ -197,13 +197,17 @@ export async function downloadSingleCartridge(
 
   let stopProgress = startProgress('zipping', onProgress);
   logger.debug({cartridgeName, codeVersion}, 'Requesting server-side zip for single cartridge...');
-  const zipResponse = await webdav.request(cartridgePath, {
-    method: 'POST',
-    body: ZIP_BODY,
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-  });
-  stopProgress();
+  let zipResponse: Response;
+  try {
+    zipResponse = await webdav.request(cartridgePath, {
+      method: 'POST',
+      body: ZIP_BODY,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
+    });
+  } finally {
+    stopProgress();
+  }
 
   if (!zipResponse.ok) {
     const text = await zipResponse.text();
@@ -211,16 +215,19 @@ export async function downloadSingleCartridge(
   }
 
   stopProgress = startProgress('downloading', onProgress);
-  const dlResponse = await webdav.request(zipPath, {
-    method: 'GET',
-    signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-  });
-  if (!dlResponse.ok) {
+  let buffer: ArrayBuffer;
+  try {
+    const dlResponse = await webdav.request(zipPath, {
+      method: 'GET',
+      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
+    });
+    if (!dlResponse.ok) {
+      throw new Error(`Failed to download zip: ${dlResponse.status} ${dlResponse.statusText}`);
+    }
+    buffer = await dlResponse.arrayBuffer();
+  } finally {
     stopProgress();
-    throw new Error(`Failed to download zip: ${dlResponse.status} ${dlResponse.statusText}`);
   }
-  const buffer = await dlResponse.arrayBuffer();
-  stopProgress();
   logger.debug({size: buffer.byteLength}, `Archive downloaded: ${buffer.byteLength} bytes`);
 
   // Cleanup server-side zip (best effort)
@@ -310,15 +317,19 @@ export async function downloadCartridges(
 
   let stopProgress = startProgress('zipping', onProgress);
   logger.debug({codeVersion}, 'Requesting server-side zip...');
-  const zipResponse = await webdav.request(`Cartridges/${codeVersion}`, {
-    method: 'POST',
-    body: ZIP_BODY,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-  });
-  stopProgress();
+  let zipResponse: Response;
+  try {
+    zipResponse = await webdav.request(`Cartridges/${codeVersion}`, {
+      method: 'POST',
+      body: ZIP_BODY,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
+    });
+  } finally {
+    stopProgress();
+  }
 
   if (!zipResponse.ok) {
     const text = await zipResponse.text();
@@ -328,18 +339,19 @@ export async function downloadCartridges(
 
   stopProgress = startProgress('downloading', onProgress);
   logger.debug({zipPath}, 'Downloading zip archive...');
-  const downloadResponse = await webdav.request(zipPath, {
-    method: 'GET',
-    signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-  });
-
-  if (!downloadResponse.ok) {
+  let buffer: ArrayBuffer;
+  try {
+    const downloadResponse = await webdav.request(zipPath, {
+      method: 'GET',
+      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
+    });
+    if (!downloadResponse.ok) {
+      throw new Error(`Failed to download zip: ${downloadResponse.status} ${downloadResponse.statusText}`);
+    }
+    buffer = await downloadResponse.arrayBuffer();
+  } finally {
     stopProgress();
-    throw new Error(`Failed to download zip: ${downloadResponse.status} ${downloadResponse.statusText}`);
   }
-
-  const buffer = await downloadResponse.arrayBuffer();
-  stopProgress();
   logger.debug({size: buffer.byteLength}, `Archive downloaded: ${buffer.byteLength} bytes`);
 
   // Cleanup server-side zip (best-effort)

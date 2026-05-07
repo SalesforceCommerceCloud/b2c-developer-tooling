@@ -50,7 +50,7 @@ export {createBundle, createGlobFilter, getDefaultMessage, DEFAULT_SSR_PARAMETER
 export type {CreateBundleOptions, Bundle} from './bundle.js';
 
 // Push and bundle operations
-export {pushBundle, uploadBundle, listBundles, downloadBundle} from './push.js';
+export {pushBundle, uploadBundle, listBundles, downloadBundle, deleteBundle, bulkDeleteBundles} from './push.js';
 export type {
   PushOptions,
   PushResult,
@@ -58,6 +58,10 @@ export type {
   ListBundlesResult,
   DownloadBundleOptions,
   DownloadBundleResult,
+  DeleteBundleOptions,
+  BulkDeleteBundlesOptions,
+  BulkDeleteBundlesResult,
+  BulkDeleteRejectedBundle,
   MrtBundle,
 } from './push.js';
 
@@ -73,8 +77,9 @@ export type {
 } from './env-var.js';
 
 // Environment (target) operations
-export {createEnv, deleteEnv, getEnv, waitForEnv, listEnvs, updateEnv} from './env.js';
+export {cloneEnv, createEnv, deleteEnv, getEnv, waitForEnv, listEnvs, updateEnv} from './env.js';
 export type {
+  CloneEnvOptions,
   CreateEnvOptions,
   DeleteEnvOptions,
   GetEnvOptions,
@@ -108,6 +113,48 @@ export type {
   MrtOrganization,
   OrganizationLimits,
 } from './organization.js';
+
+// Certificate operations (organization-scoped, used by env clone/create with custom domains)
+export {
+  listCertificates,
+  getCertificate,
+  createCertificate,
+  deleteCertificate,
+  restartCertificateValidation,
+} from './certificate.js';
+export type {
+  ListCertificatesOptions,
+  ListCertificatesResult,
+  GetCertificateOptions,
+  CreateCertificateOptions,
+  DeleteCertificateOptions,
+  RestartCertificateValidationOptions,
+  MrtCertificate,
+  MrtCertificateListCreate,
+} from './certificate.js';
+
+// Organization member operations
+export {
+  listOrgMembers,
+  addOrgMember,
+  getOrgMember,
+  updateOrgMember,
+  removeOrgMember,
+  ORG_ROLES,
+} from './organization-member.js';
+export type {
+  ListOrgMembersOptions,
+  ListOrgMembersResult,
+  AddOrgMemberOptions,
+  GetOrgMemberOptions,
+  UpdateOrgMemberOptions,
+  RemoveOrgMemberOptions,
+  MrtOrgMember,
+  MrtOrgMemberCreate,
+  MrtOrgMemberUpdate,
+  OrgRoleValue,
+  OrgCertPermission,
+} from './organization-member.js';
 
 // Project operations
 export {listProjects, createProject, getProject, updateProject, deleteProject} from './project.js';

@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import CodeDeploy from '../../../src/commands/code/deploy.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, expectError} from '../../helpers/test-setup.js';
 
 describe('code deploy', () => {
   const hooks = createIsolatedConfigHooks();
@@ -54,14 +54,10 @@ describe('code deploy', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.calledOnce).to.equal(true);
+    expect(errorStub.calledOnce).to.be.true;
+    expect(errorStub.firstCall.args[0]).to.include('No cartridges found');
   });
 
   it('calls delete + upload and reload when flags are set', async () => {
@@ -86,14 +82,15 @@ describe('code deploy', () => {
 
     const result = await command.run();
 
-    expect(deleteStub.calledOnceWithExactly(instance, cartridges)).to.equal(true);
-    expect(uploadStub.calledOnce).to.equal(true);
+    expect(deleteStub.calledOnceWithExactly(instance, cartridges)).to.be.true;
+    expect(uploadStub.calledOnce).to.be.true;
     expect(uploadStub.firstCall.args[0]).to.equal(instance);
     expect(uploadStub.firstCall.args[1]).to.equal(cartridges);
-    expect(reloadStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
+    expect(reloadStub.calledOnceWithExactly(instance, 'v1')).to.be.true;
 
     expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: true});
-    expect(afterHooksStub.calledOnce).to.equal(true);
+    expect(afterHooksStub.calledOnce).to.be.true;
+    expect(afterHooksStub.firstCall.args[1]).to.deep.include({success: true});
   });
 
   it('calls activate after deploy when --activate is set', async () => {
@@ -112,7 +109,10 @@ describe('code deploy', () => {
 
     const result = await command.run();
 
-    expect(activateStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
+    expect(activateStub.calledOnceWithExactly(instance, 'v1')).to.be.true;
+    expect(uploadStub.calledOnce).to.be.true;
+    expect(uploadStub.firstCall.args[0]).to.equal(instance);
+    expect(uploadStub.firstCall.args[1]).to.equal(cartridges);
     expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: false});
   });
 
@@ -132,14 +132,9 @@ describe('code deploy', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.called).to.equal(true);
+    expect(errorStub.called).to.be.true;
     const errorMessage = errorStub.firstCall.args[0];
     expect(errorMessage).to.include('activate failed');
     expect(errorMessage).to.include('OCAPI');
@@ -161,14 +156,9 @@ describe('code deploy', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.called).to.equal(true);
+    expect(errorStub.called).to.be.true;
     const errorMessage = errorStub.firstCall.args[0];
     expect(errorMessage).to.include('reload failed');
     expect(errorMessage).to.include('OCAPI');
@@ -185,14 +175,9 @@ describe('code deploy', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.calledOnce).to.equal(true);
+    expect(errorStub.calledOnce).to.be.true;
     const errorMessage = errorStub.firstCall.args[0];
     expect(errorMessage).to.include('auto-discover');
   });
@@ -208,14 +193,9 @@ describe('code deploy', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.calledOnce).to.equal(true);
+    expect(errorStub.calledOnce).to.be.true;
     const errorMessage = errorStub.firstCall.args[0];
     expect(errorMessage).to.include('activate');
   });
@@ -231,14 +211,9 @@ describe('code deploy', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.calledOnce).to.equal(true);
+    expect(errorStub.calledOnce).to.be.true;
     const errorMessage = errorStub.firstCall.args[0];
     expect(errorMessage).to.include('activate');
   });

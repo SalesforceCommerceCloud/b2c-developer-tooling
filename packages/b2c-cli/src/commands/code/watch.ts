@@ -83,18 +83,32 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
       );
       this.log(t('commands.code.watch.pressCtrlC', 'Press Ctrl+C to stop'));
 
-      // Keep the process running until interrupted
+      // Keep the process running until interrupted. Capture handler ref so we
+      // can deregister on resolve — otherwise repeated invocations stack handlers.
+      let cleanupRef: (() => void) | undefined;
       await new Promise<void>((resolve) => {
-        const cleanup = () => {
+        let stopping = false;
+        const cleanup = (): void => {
+          if (stopping) return;
+          stopping = true;
           this.log(t('commands.code.watch.stopping', '\nStopping watcher...'));
-          result.stop().then(() => {
-            resolve();
-          });
+          result.stop().then(
+            () => resolve(),
+            (error: unknown) => {
+              this.logger.debug({err: error}, '[code:watch] stop() failed during signal handling');
+              resolve();
+            },
+          );
         };
+        cleanupRef = cleanup;
 
         process.on('SIGINT', cleanup);
         process.on('SIGTERM', cleanup);
       });
+      if (cleanupRef) {
+        process.removeListener('SIGINT', cleanupRef);
+        process.removeListener('SIGTERM', cleanupRef);
+      }
     } catch (error) {
       if (error instanceof Error) {
         this.error(t('commands.code.watch.failed', 'Watch failed: {{message}}', {message: error.message}));

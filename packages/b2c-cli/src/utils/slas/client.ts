@@ -113,12 +113,9 @@ export function parseRedirectUris(redirectUri: string): string[] {
     .filter(Boolean);
 }
 
-/**
- * Format API error for display.
- */
-export function formatApiError(error: unknown, response: Response): string {
-  return getApiErrorMessage(error, response);
-}
+// Backwards-compatible alias for SDK's getApiErrorMessage; existing call sites
+// use this name. New code should import getApiErrorMessage from the SDK directly.
+export {getApiErrorMessage as formatApiError} from '@salesforce/b2c-tooling-sdk/clients';
 
 /**
  * Base command for SLAS client operations.
@@ -157,7 +154,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
 
     this.error(
       t('commands.slas.client.create.tenantError', 'Failed to check tenant: {{message}}', {
-        message: formatApiError(error, response),
+        message: getApiErrorMessage(error, response),
       }),
     );
   }
@@ -195,7 +192,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (createError) {
       this.error(
         t('commands.slas.client.create.tenantCreateError', 'Failed to create tenant: {{message}}', {
-          message: formatApiError(createError, createResponse),
+          message: getApiErrorMessage(createError, createResponse),
         }),
       );
     }

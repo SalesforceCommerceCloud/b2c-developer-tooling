@@ -42,9 +42,12 @@ describe('auth token', () => {
 
     const result = await command.run();
 
-    expect(strategy.getTokenResponse.calledOnce).to.equal(true);
-    expect(result.accessToken).to.equal('token123');
-    expect(result.scopes).to.have.lengthOf(1);
+    expect(strategy.getTokenResponse.calledOnce).to.be.true;
+    expect(result).to.deep.equal({
+      accessToken: 'token123',
+      expires: new Date('2025-01-01T00:00:00.000Z').toISOString(),
+      scopes: ['scope1'],
+    });
   });
 
   it('prints raw token in non-JSON mode', async () => {
@@ -69,6 +72,6 @@ describe('auth token', () => {
 
     await command.run();
 
-    expect(stdoutStub.calledOnce).to.equal(true);
+    expect(stdoutStub.calledOnceWithExactly('token123')).to.be.true;
   });
 });
