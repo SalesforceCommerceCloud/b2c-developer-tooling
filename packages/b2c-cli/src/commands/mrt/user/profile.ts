@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {getProfile, type MrtUserProfile as UserProfileType} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -22,6 +28,8 @@ const COLUMNS: Record<string, ColumnDef<ProfileEntry>> = {
 
 const DEFAULT_COLUMNS = ['field', 'value'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * Get the current user's profile information.
  */
@@ -37,6 +45,7 @@ export default class MrtUserProfile extends MrtCommand<typeof MrtUserProfile> {
 
   static flags = {
     ...MrtCommand.baseFlags,
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<UserProfileType> {
@@ -60,7 +69,7 @@ export default class MrtUserProfile extends MrtCommand<typeof MrtUserProfile> {
         {field: 'Joined', value: profile.date_joined ? new Date(profile.date_joined).toLocaleString() : '-'},
         {field: 'UUID', value: profile.uuid ?? '-'},
       ];
-      createTable(COLUMNS).render(entries, DEFAULT_COLUMNS);
+      tableRenderer.render(entries, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
     }
 
     return profile;

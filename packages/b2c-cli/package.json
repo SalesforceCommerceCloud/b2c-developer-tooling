@@ -108,6 +108,12 @@
                 "description": "Get and set permissions for Business Manager roles"
               }
             }
+          },
+          "users": {
+            "description": "Manage and search instance-level Business Manager users"
+          },
+          "access-key": {
+            "description": "Manage access keys for externally-managed Business Manager users"
           }
         }
       },

@@ -69,7 +69,7 @@ Safety Mode operates at the HTTP layer and cannot be bypassed by command-line fl
 - [WebDAV Commands](./webdav) - File operations on instance WebDAV
 - [Logs Commands](./logs) - Tail and retrieve instance logs
 - [Content Commands](./content) - Export Page Designer content from a site
-- [BM Roles Commands](./bm-roles) - Manage Business Manager roles and permissions
+- [Business Manager Commands](./bm) - Manage instance-level BM roles, users, access keys, and identity
 
 ### Services
 

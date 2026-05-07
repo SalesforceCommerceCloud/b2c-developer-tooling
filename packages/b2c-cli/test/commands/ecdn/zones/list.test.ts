@@ -42,40 +42,6 @@ describe('ecdn zones list', () => {
     Object.defineProperty(command, '_cdnZonesRwClient', {value: client, configurable: true, writable: true});
   }
 
-  describe('getSelectedColumns', () => {
-    it('returns default columns when no flags provided', async () => {
-      const command: any = await createCommand({});
-      const columns = command.getSelectedColumns();
-
-      expect(columns).to.deep.equal(['name', 'status']);
-    });
-
-    it('returns all columns when --extended flag is set', async () => {
-      const command: any = await createCommand({extended: true});
-      const columns = command.getSelectedColumns();
-
-      expect(columns).to.include('name');
-      expect(columns).to.include('status');
-      expect(columns).to.include('zoneId');
-    });
-
-    it('returns custom columns when --columns flag is set', async () => {
-      const command: any = await createCommand({columns: 'zoneId,name'});
-      const columns = command.getSelectedColumns();
-
-      expect(columns).to.deep.equal(['zoneId', 'name']);
-    });
-
-    it('ignores invalid column names', async () => {
-      const command: any = await createCommand({columns: 'name,invalidColumn,status'});
-      const columns = command.getSelectedColumns();
-
-      expect(columns).to.not.include('invalidColumn');
-      expect(columns).to.include('name');
-      expect(columns).to.include('status');
-    });
-  });
-
   describe('output formatting', () => {
     it('returns zones in JSON mode', async () => {
       const command: any = await createCommand({'tenant-id': 'zzxy_prd'});

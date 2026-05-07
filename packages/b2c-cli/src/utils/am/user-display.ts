@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {ux} from '@oclif/core';
-import cliui from 'cliui';
+import {printFieldsBlock, type DetailField, type DetailSection} from '@salesforce/b2c-tooling-sdk/cli';
 import {resolveToInternalRole} from '@salesforce/b2c-tooling-sdk';
 import type {AccountManagerUser, RoleMapping, OrgMapping} from '@salesforce/b2c-tooling-sdk';
 
@@ -22,14 +21,14 @@ function formatOrgDisplay(orgId: string, orgMapping: OrgMapping): string {
   return name ? `${name} (${orgId})` : orgId;
 }
 
-function printBasicFields(ui: ReturnType<typeof cliui>, user: AccountManagerUser, orgMapping: OrgMapping): void {
+function buildBasicFields(user: AccountManagerUser, orgMapping: OrgMapping): DetailField[] {
   const isPasswordExpired = user.passwordExpirationTimestamp
     ? user.passwordExpirationTimestamp < Date.now()
     : undefined;
   const twoFAEnabled = user.verifiers && user.verifiers.length > 0 ? 'Yes' : 'No';
   const primaryOrg = user.primaryOrganization ? formatOrgDisplay(user.primaryOrganization, orgMapping) : undefined;
 
-  const fields: [string, string | undefined][] = [
+  return [
     ['ID', user.id],
     ['Email', user.mail],
     ['First Name', user.firstName],
@@ -48,72 +47,59 @@ function printBasicFields(ui: ReturnType<typeof cliui>, user: AccountManagerUser
     ['Created At', user.createdAt ? new Date(user.createdAt).toLocaleString() : undefined],
     ['Last Modified', user.lastModified ? new Date(user.lastModified).toLocaleString() : undefined],
   ];
-
-  for (const [label, value] of fields) {
-    if (value !== undefined) {
-      ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
-    }
-  }
 }
 
-function printOrganizations(ui: ReturnType<typeof cliui>, user: AccountManagerUser, orgMapping: OrgMapping): void {
+function buildOrganizationsSection(user: AccountManagerUser, orgMapping: OrgMapping): DetailSection | undefined {
   if (!user.organizations || user.organizations.length === 0) {
-    return;
+    return undefined;
   }
-
-  ui.div({text: 'Organizations', padding: [2, 0, 0, 0]});
-  ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-  for (const o of user.organizations) {
-    const orgId = typeof o === 'string' ? o : o.id || 'Unknown';
-    const name = formatOrgDisplay(orgId, orgMapping);
-    ui.div({text: `- ${name}`, padding: [0, 0, 0, 2]});
-  }
+  return {
+    title: 'Organizations',
+    lines: user.organizations.map((o) => {
+      const orgId = typeof o === 'string' ? o : o.id || 'Unknown';
+      return `- ${formatOrgDisplay(orgId, orgMapping)}`;
+    }),
+  };
 }
 
-function printRoles(ui: ReturnType<typeof cliui>, user: AccountManagerUser, roleMapping: RoleMapping): void {
+function buildRolesSection(user: AccountManagerUser, roleMapping: RoleMapping): DetailSection | undefined {
   if (!user.roles || user.roles.length === 0) {
-    return;
+    return undefined;
   }
-
-  ui.div({text: 'Roles', padding: [2, 0, 0, 0]});
-  ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-  for (const r of user.roles) {
-    const name = typeof r === 'string' ? r : r.roleEnumName || r.id || 'Unknown';
-    const display = formatRoleDisplay(name, roleMapping);
-    ui.div({text: `- ${display}`, padding: [0, 0, 0, 2]});
-  }
+  return {
+    title: 'Roles',
+    lines: user.roles.map((r) => {
+      const name = typeof r === 'string' ? r : r.roleEnumName || r.id || 'Unknown';
+      return `- ${formatRoleDisplay(name, roleMapping)}`;
+    }),
+  };
 }
 
-function printRoleScopes(ui: ReturnType<typeof cliui>, user: AccountManagerUser): void {
+function buildRoleScopesSection(user: AccountManagerUser): DetailSection | undefined {
   if (!user.roleTenantFilterMap || Object.keys(user.roleTenantFilterMap).length === 0) {
-    return;
+    return undefined;
   }
-
-  ui.div({text: 'Role Scopes', padding: [2, 0, 0, 0]});
-  ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-  for (const [roleEnumName, filter] of Object.entries(user.roleTenantFilterMap as Record<string, unknown>)) {
-    const filterValue =
-      typeof filter === 'string' ? filter : Array.isArray(filter) ? filter.join(', ') : String(filter);
-    ui.div({text: `${roleEnumName}:`, width: 30, padding: [0, 2, 0, 0]}, {text: filterValue, padding: [0, 0, 0, 0]});
-  }
+  const fields: DetailField[] = Object.entries(user.roleTenantFilterMap as Record<string, unknown>).map(
+    ([roleEnumName, filter]) => {
+      const filterValue =
+        typeof filter === 'string' ? filter : Array.isArray(filter) ? filter.join(', ') : String(filter);
+      return [roleEnumName, filterValue];
+    },
+  );
+  return {title: 'Role Scopes', fields};
 }
 
 /**
  * Prints user details to stdout using cliui formatting.
  */
 export function printUserDetails(user: AccountManagerUser, roleMapping: RoleMapping, orgMapping: OrgMapping): void {
-  const ui = cliui({width: process.stdout.columns || 80});
+  const sections: DetailSection[] = [];
+  const orgs = buildOrganizationsSection(user, orgMapping);
+  if (orgs) sections.push(orgs);
+  const roles = buildRolesSection(user, roleMapping);
+  if (roles) sections.push(roles);
+  const scopes = buildRoleScopesSection(user);
+  if (scopes) sections.push(scopes);
 
-  ui.div({text: 'User Details', padding: [1, 0, 0, 0]});
-  ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-  printBasicFields(ui, user, orgMapping);
-  printOrganizations(ui, user, orgMapping);
-  printRoles(ui, user, roleMapping);
-  printRoleScopes(ui, user);
-
-  ux.stdout(ui.toString());
+  printFieldsBlock('User Details', buildBasicFields(user, orgMapping), {sections});
 }

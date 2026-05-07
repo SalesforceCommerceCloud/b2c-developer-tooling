@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, Errors} from '@oclif/core';
-import {AmCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {AmCommand, TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerUser, UserCollection} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
@@ -96,15 +96,7 @@ export default class UserList extends AmCommand<typeof UserList> {
     page: Flags.integer({
       description: 'Page number (zero-based index, default: 0, min: 0)',
     }),
-    columns: Flags.string({
-      char: 'c',
-      description: `Columns to display (comma-separated). Available: ${Object.keys(COLUMNS).join(', ')}`,
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Show all columns including extended fields',
-      default: false,
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<UserCollection> {
@@ -151,7 +143,7 @@ export default class UserList extends AmCommand<typeof UserList> {
       return result;
     }
 
-    tableRenderer.render(users, this.getSelectedColumns());
+    tableRenderer.render(users, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     // Check if there are more pages (if we got a full page of results, there might be more)
     if (users.length === pageSize) {
@@ -164,29 +156,5 @@ export default class UserList extends AmCommand<typeof UserList> {
     }
 
     return result;
-  }
-
-  /**
-   * Determines which columns to display based on flags.
-   */
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = tableRenderer.validateColumnKeys(requested);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      return tableRenderer.getColumnKeys();
-    }
-
-    return DEFAULT_COLUMNS;
   }
 }

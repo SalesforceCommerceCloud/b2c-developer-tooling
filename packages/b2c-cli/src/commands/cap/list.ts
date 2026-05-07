@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {JobCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  JobCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   discoverLocalApps,
   listInstalledApps,
@@ -94,6 +100,17 @@ const REMOTE_DEFAULT_COLUMNS = [
   'installedAt',
 ];
 
+const localTableRenderer = new TableRenderer(LOCAL_COLUMNS);
+const remoteTableRenderer = new TableRenderer(REMOTE_COLUMNS);
+
+// Merged column key set used solely so the --columns help text advertises keys
+// from both local and remote tables. Each table validates against its own keys
+// at render time via selectColumns.
+const ALL_COLUMN_KEYS: Record<string, true> = {
+  ...Object.fromEntries(Object.keys(LOCAL_COLUMNS).map((k) => [k, true])),
+  ...Object.fromEntries(Object.keys(REMOTE_COLUMNS).map((k) => [k, true])),
+};
+
 export default class CapList extends JobCommand<typeof CapList> {
   static description = withDocs(
     t('commands.cap.list.description', 'List Commerce Apps locally or installed on a B2C Commerce instance'),
@@ -129,6 +146,7 @@ export default class CapList extends JobCommand<typeof CapList> {
       char: 't',
       description: 'Timeout in seconds (default: no timeout)',
     }),
+    ...columnFlagsFor(ALL_COLUMN_KEYS),
   };
 
   protected operations = {
@@ -163,7 +181,10 @@ export default class CapList extends JobCommand<typeof CapList> {
     this.log(t('commands.cap.list.foundLocal', 'Found {{count}} Commerce App Package(s):', {count: apps.length}));
 
     if (!this.jsonEnabled()) {
-      createTable(LOCAL_COLUMNS).render(apps, LOCAL_DEFAULT_COLUMNS);
+      localTableRenderer.render(
+        apps,
+        selectColumns(this.flags, localTableRenderer, LOCAL_DEFAULT_COLUMNS, this.warn.bind(this)),
+      );
     }
 
     return apps;
@@ -206,7 +227,10 @@ export default class CapList extends JobCommand<typeof CapList> {
     );
 
     if (!this.jsonEnabled()) {
-      createTable(REMOTE_COLUMNS).render(result.features, REMOTE_DEFAULT_COLUMNS);
+      remoteTableRenderer.render(
+        result.features,
+        selectColumns(this.flags, remoteTableRenderer, REMOTE_DEFAULT_COLUMNS, this.warn.bind(this)),
+      );
     }
 
     return result;
