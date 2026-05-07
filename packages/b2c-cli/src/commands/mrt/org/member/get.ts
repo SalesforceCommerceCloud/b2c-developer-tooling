@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
-import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {Args, Flags} from '@oclif/core';
+import {MrtCommand, printFieldsBlock} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getOrgMember,
   ORG_ROLES,
@@ -45,18 +44,13 @@ export default class MrtOrgMemberGet extends MrtCommand<typeof MrtOrgMemberGet> 
     );
 
     if (!this.jsonEnabled()) {
-      const ui = cliui({width: process.stdout.columns || 80});
-      const w = 22;
-      ui.div('');
-      ui.div({text: 'Email:', width: w}, {text: member.email ?? member.user ?? '-'});
-      ui.div({text: 'Name:', width: w}, {text: [member.first_name, member.last_name].filter(Boolean).join(' ') || '-'});
-      ui.div({text: 'Role:', width: w}, {text: ORG_ROLES[member.role as OrgRoleValue] ?? String(member.role)});
-      ui.div({text: 'View All Projects:', width: w}, {text: member.can_view_all_projects ? 'Yes' : 'No'});
-      ui.div(
-        {text: 'Cert Permission:', width: w},
-        {text: member.custom_domain_cert_permission === 2 ? 'Enabled' : 'Disabled'},
-      );
-      ux.stdout(ui.toString());
+      printFieldsBlock('Member', [
+        ['Email', member.email ?? member.user ?? undefined],
+        ['Name', [member.first_name, member.last_name].filter(Boolean).join(' ') || undefined],
+        ['Role', ORG_ROLES[member.role as OrgRoleValue] ?? String(member.role)],
+        ['View All Projects', member.can_view_all_projects ? 'Yes' : 'No'],
+        ['Cert Permission', member.custom_domain_cert_permission === 2 ? 'Enabled' : 'Disabled'],
+      ]);
     }
 
     return member;

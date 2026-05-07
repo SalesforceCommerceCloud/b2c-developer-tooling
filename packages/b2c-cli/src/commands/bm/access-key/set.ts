@@ -4,12 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {setBmUserAccessKeyEnabled, type BmAccessKeyDetails} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
+import {
+  ACCESS_KEY_SCOPES,
+  setBmUserAccessKeyEnabled,
+  type BmAccessKeyDetails,
+} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
 import {BmUserAuthCommand} from '../../../utils/bm/user-auth-command.js';
 import {resolveLoginOrWhoami} from '../../../utils/bm/resolve-login.js';
 import {t} from '../../../i18n/index.js';
-
-const ACCESS_KEY_SCOPES = ['WEBDAV_AND_STUDIO', 'AGENT_USER_AND_OCAPI', 'STOREFRONT'] as const;
 
 export default class BmAccessKeySet extends BmUserAuthCommand<typeof BmAccessKeySet> {
   static args = {

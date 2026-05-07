@@ -52,6 +52,7 @@
  * @module operations/bm-users
  */
 export {
+  ACCESS_KEY_SCOPES,
   listBmUsers,
   getBmUser,
   whoamiBmUser,
@@ -65,6 +66,7 @@ export {
 } from './users.js';
 
 export type {
+  AccessKeyScope,
   BmUser,
   BmUsers,
   BmUserSearchResult,

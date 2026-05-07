@@ -19,18 +19,23 @@ import cliui from 'cliui';
  * A single label / value pair. Tuple form is supported as a shorthand —
  * `['Login', 'user@example.com']` is equivalent to `{label: 'Login', value: 'user@example.com'}`.
  *
- * Values that are `undefined` are skipped entirely (the row is not rendered).
- * `null` is rendered as the literal string "null" — coerce to `undefined` if
- * you want it suppressed instead.
+ * Values that are `null` or `undefined` are skipped entirely (the row is not
+ * rendered). This matches the common shape of optional fields in OpenAPI
+ * responses where missing data is `null`.
  */
-export type DetailField = [label: string, value: string | number | boolean | undefined] | DetailFieldObject;
+export type DetailField = [label: string, value: DetailValue] | DetailFieldObject;
+
+/**
+ * Allowed scalar values for a detail field.
+ */
+export type DetailValue = string | number | boolean | null | undefined;
 
 /**
  * Object form of a {@link DetailField} entry.
  */
 export interface DetailFieldObject {
   label: string;
-  value: string | number | boolean | undefined;
+  value: DetailValue;
 }
 
 /**
@@ -67,7 +72,7 @@ function normalizeField(field: DetailField): DetailFieldObject {
 function renderFields(ui: ReturnType<typeof cliui>, fields: DetailField[], labelWidth: number): void {
   for (const raw of fields) {
     const {label, value} = normalizeField(raw);
-    if (value === undefined) continue;
+    if (value === undefined || value === null) continue;
     ui.div({text: `${label}:`, width: labelWidth, padding: [0, 2, 0, 0]}, {text: String(value), padding: [0, 0, 0, 0]});
   }
 }

@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listCertificates,
   type ListCertificatesResult,
@@ -24,6 +30,8 @@ const COLUMNS: Record<string, ColumnDef<MrtCertificateListCreate>> = {
 };
 
 const DEFAULT_COLUMNS = ['id', 'domain', 'validation', 'expires', 'renewal'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 export default class MrtOrgCertList extends MrtCommand<typeof MrtOrgCertList> {
   static description = withDocs(
@@ -45,6 +53,7 @@ export default class MrtOrgCertList extends MrtCommand<typeof MrtOrgCertList> {
     offset: Flags.integer({description: 'Offset for pagination'}),
     search: Flags.string({description: 'Search term for filtering'}),
     'custom-only': Flags.boolean({description: 'Show only customer-managed certificates'}),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListCertificatesResult> {
@@ -69,7 +78,10 @@ export default class MrtOrgCertList extends MrtCommand<typeof MrtOrgCertList> {
         this.log(t('commands.mrt.org.cert.list.empty', 'No certificates found.'));
       } else {
         this.log(t('commands.mrt.org.cert.list.count', 'Found {{count}} certificate(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.certificates, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.certificates,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

@@ -38,6 +38,17 @@ export type BmUserSearchResult = components['schemas']['user_search_result'];
 export type BmAccessKeyDetails = components['schemas']['access_key_details'];
 
 /**
+ * Valid access-key scopes accepted by the Data API
+ * `/users/{login}/access_key/{scope}` endpoints.
+ */
+export const ACCESS_KEY_SCOPES = ['WEBDAV_AND_STUDIO', 'AGENT_USER_AND_OCAPI', 'STOREFRONT'] as const;
+
+/**
+ * Access-key scope. One of {@link ACCESS_KEY_SCOPES}.
+ */
+export type AccessKeyScope = (typeof ACCESS_KEY_SCOPES)[number];
+
+/**
  * Updatable user fields for `patch` operations.
  *
  * Note: `locked` and `password` cannot be modified via PATCH per the API spec.
@@ -270,7 +281,7 @@ export async function searchBmUsers(
  *
  * @param instance - B2C instance
  * @param login - User login
- * @param scope - Access key scope (e.g. 'WEBDAV', 'OCAPI', 'SCAPI')
+ * @param scope - Access key scope (one of {@link ACCESS_KEY_SCOPES})
  * @returns Access key details
  */
 export async function getBmUserAccessKey(
