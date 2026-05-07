@@ -114,17 +114,4 @@ describe('ecdn page-shield policies list', () => {
       expect(errorStub.calledOnce).to.equal(true);
     }
   });
-
-  it('shows extended columns', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone', extended: true});
-    const columns = command.getSelectedColumns();
-    expect(columns).to.include('value');
-    expect(columns).to.include('expression');
-  });
-
-  it('supports custom columns', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone', columns: 'id,action'});
-    const columns = command.getSelectedColumns();
-    expect(columns).to.deep.equal(['id', 'action']);
-  });
 });

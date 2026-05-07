@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  InstanceCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {listBmRoles, type BmRole, type BmRoles} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
 import {t} from '../../../i18n/index.js';
 
@@ -31,6 +37,8 @@ const COLUMNS: Record<string, ColumnDef<BmRole>> = {
 
 const DEFAULT_COLUMNS = ['id', 'userCount'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 export default class BmRolesList extends InstanceCommand<typeof BmRolesList> {
   static description = t('commands.bm.roles.list.description', 'List Business Manager access roles on an instance');
 
@@ -40,6 +48,8 @@ export default class BmRolesList extends InstanceCommand<typeof BmRolesList> {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --server my-sandbox.demandware.net',
     '<%= config.bin %> <%= command.id %> --count 50',
+    '<%= config.bin %> <%= command.id %> --extended',
+    '<%= config.bin %> <%= command.id %> --columns id,description,userCount',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
@@ -51,6 +61,7 @@ export default class BmRolesList extends InstanceCommand<typeof BmRolesList> {
     start: Flags.integer({
       description: 'Start index for pagination (default 0)',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<BmRoles> {
@@ -73,7 +84,7 @@ export default class BmRolesList extends InstanceCommand<typeof BmRolesList> {
       return roles;
     }
 
-    createTable(COLUMNS).render(items, DEFAULT_COLUMNS);
+    tableRenderer.render(items, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     if (roles.total && roles.total > items.length) {
       this.log(

@@ -132,7 +132,14 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   /**
    * Gets the default authentication methods in priority order.
    * This method is used by getOAuthStrategy() when no auth methods are specified in config.
-   * Subclasses can override this to change the default priority.
+   * Subclasses can override this to change the default priority — for example,
+   * commands that talk to endpoints requiring a real user identity should
+   * return `['implicit']` so that user-auth is preferred when the user has
+   * not explicitly chosen an auth method.
+   *
+   * Explicit user input via `--auth-methods`, `--client-secret`, `--jwt-cert`,
+   * etc. always wins over the default; this method only changes what happens
+   * when the user has not specified anything.
    *
    * @returns Array of auth methods in priority order (first is highest priority)
    */

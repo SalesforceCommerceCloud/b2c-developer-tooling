@@ -45,46 +45,6 @@ describe('sandbox list', () => {
     restoreConfig();
   });
 
-  describe('getSelectedColumns', () => {
-    it('should return default columns when no flags provided', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['realm', 'instance', 'state', 'profile', 'created', 'eol', 'id', 'isCloned']);
-    });
-
-    it('should return all columns when --extended flag is set', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {extended: true};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.include('realm');
-      expect(columns).to.include('hostname');
-      expect(columns).to.include('createdBy');
-      expect(columns).to.include('autoScheduled');
-      expect(columns).to.include('isCloned');
-    });
-
-    it('should return custom columns when --columns flag is set', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {columns: 'id,state,hostname'};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['id', 'state', 'hostname']);
-    });
-
-    it('should ignore invalid column names', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {columns: 'id,invalid,state'};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.not.include('invalid');
-      expect(columns).to.include('id');
-      expect(columns).to.include('state');
-    });
-  });
-
   describe('isCloned column formatting', () => {
     const getIsCloned = COLUMNS.isCloned.get;
 

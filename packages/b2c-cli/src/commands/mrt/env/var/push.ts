@@ -7,7 +7,7 @@ import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {parseEnv} from 'node:util';
 import {Flags, ux} from '@oclif/core';
-import {confirm} from '@inquirer/prompts';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {listEnvVars, setEnvVar, setEnvVars} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
@@ -149,7 +149,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
           environment,
         },
       );
-      const confirmed = await confirm({message, default: false});
+      const confirmed = await confirm(message);
       if (!confirmed) {
         ux.stdout(t('commands.mrt.env.var.push.aborted', 'Aborted.'));
         return {pushed: 0, failed: 0, skipped: diff.remoteOnly.length};

@@ -102,7 +102,7 @@ const referenceSidebar = [
       {text: 'Overview', link: '/cli/'},
       {text: 'Account Manager', link: '/cli/account-manager'},
       {text: 'Auth', link: '/cli/auth'},
-      {text: 'BM Roles', link: '/cli/bm-roles'},
+      {text: 'Business Manager', link: '/cli/bm'},
       {text: 'CIP', link: '/cli/cip'},
       {text: 'CAP (Commerce Apps)', link: '/cli/cap'},
       {text: 'Code', link: '/cli/code'},

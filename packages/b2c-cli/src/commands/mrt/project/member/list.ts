@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listMembers,
   type ListMembersResult,
@@ -29,6 +35,8 @@ const COLUMNS: Record<string, ColumnDef<MrtMember>> = {
 };
 
 const DEFAULT_COLUMNS = ['email', 'role'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * List members for an MRT project.
@@ -63,6 +71,7 @@ export default class MrtMemberList extends MrtCommand<typeof MrtMemberList> {
     search: Flags.string({
       description: 'Search term for filtering',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListMembersResult> {
@@ -96,7 +105,10 @@ export default class MrtMemberList extends MrtCommand<typeof MrtMemberList> {
       } else {
         this.log(t('commands.mrt.member.list.count', 'Found {{count}} member(s):', {count: result.count}));
         this.log(t('commands.mrt.member.list.roles', 'Roles: Admin=0, Developer=1, Marketer=2, Read Only=3'));
-        createTable(COLUMNS).render(result.members, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.members,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

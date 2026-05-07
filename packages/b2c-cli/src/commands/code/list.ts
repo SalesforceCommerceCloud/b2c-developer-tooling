@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  InstanceCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {listCodeVersions, type CodeVersion, type CodeVersionResult} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -33,6 +39,8 @@ const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {
 
 const DEFAULT_COLUMNS = ['id', 'active', 'rollback', 'lastModified', 'cartridges'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 export default class CodeList extends InstanceCommand<typeof CodeList> {
   static description = withDocs(
     t('commands.code.list.description', 'List code versions on a B2C Commerce instance'),
@@ -44,8 +52,14 @@ export default class CodeList extends InstanceCommand<typeof CodeList> {
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --server my-sandbox.demandware.net',
+    '<%= config.bin %> <%= command.id %> --extended',
+    '<%= config.bin %> <%= command.id %> --columns id,active,lastModified',
     '<%= config.bin %> <%= command.id %> --json',
   ];
+
+  static flags = {
+    ...columnFlagsFor(COLUMNS),
+  };
 
   static hiddenAliases = ['code:list'];
 
@@ -75,7 +89,7 @@ export default class CodeList extends InstanceCommand<typeof CodeList> {
       return result;
     }
 
-    createTable(COLUMNS).render(versions, DEFAULT_COLUMNS);
+    tableRenderer.render(versions, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return result;
   }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   SlasClientCommand,
   type Client,
@@ -34,6 +34,8 @@ const COLUMNS: Record<string, ColumnDef<ClientOutput>> = {
 
 const DEFAULT_COLUMNS = ['clientId', 'name', 'isPrivate'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 export default class SlasClientList extends SlasClientCommand<typeof SlasClientList> {
   static description = withDocs(
     t('commands.slas.client.list.description', 'List SLAS clients for a tenant'),
@@ -49,6 +51,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
 
   static flags = {
     ...SlasClientCommand.baseFlags,
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ClientListOutput> {
@@ -93,7 +96,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
       return output;
     }
 
-    createTable(COLUMNS).render(clients, DEFAULT_COLUMNS);
+    tableRenderer.render(clients, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return output;
   }

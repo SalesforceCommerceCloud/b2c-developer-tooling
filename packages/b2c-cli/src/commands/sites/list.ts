@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  InstanceCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
 import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
@@ -29,6 +35,8 @@ const COLUMNS: Record<string, ColumnDef<Site>> = {
 
 const DEFAULT_COLUMNS = ['id', 'displayName', 'status'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 export default class SitesList extends InstanceCommand<typeof SitesList> {
   static description = withDocs(
     t('commands.sites.list.description', 'List sites on a B2C Commerce instance'),
@@ -40,8 +48,14 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --server my-sandbox.demandware.net',
+    '<%= config.bin %> <%= command.id %> --extended',
+    '<%= config.bin %> <%= command.id %> --columns id,status',
     '<%= config.bin %> <%= command.id %> --json',
   ];
+
+  static flags = {
+    ...columnFlagsFor(COLUMNS),
+  };
 
   async run(): Promise<Sites> {
     this.requireOAuthCredentials();
@@ -75,7 +89,10 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
       return sites;
     }
 
-    createTable(COLUMNS).render(sites.data ?? [], DEFAULT_COLUMNS);
+    tableRenderer.render(
+      sites.data ?? [],
+      selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+    );
 
     return sites;
   }

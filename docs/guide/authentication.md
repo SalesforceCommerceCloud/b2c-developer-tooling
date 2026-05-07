@@ -423,6 +423,55 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 }
 ```
 
+**BM administration (`bm roles`, `bm users`, `bm whoami`, `bm access-key`):**
+
+```json
+{
+  "resource_id": "/roles",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/roles/*",
+  "methods": ["get", "put", "delete"]
+},
+{
+  "resource_id": "/roles/*/users",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/roles/*/users/*",
+  "methods": ["put", "delete"]
+},
+{
+  "resource_id": "/roles/*/permissions",
+  "methods": ["get", "put"]
+},
+{
+  "resource_id": "/users",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/users/*",
+  "methods": ["get", "patch", "delete"]
+},
+{
+  "resource_id": "/users/this",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/users/*/access_key/*",
+  "methods": ["get", "put", "patch", "delete"]
+},
+{
+  "resource_id": "/user_search",
+  "methods": ["post"]
+}
+```
+
+::: tip BM functional permissions
+`bm whoami` and the `bm access-key` family additionally require *a real BM user identity*. Service-client tokens cannot resolve to a BM user, so the CLI defaults these commands to browser-based user auth. Access-key writes also require the **Manage_Users_Access_Keys** BM functional permission on the user account performing the request — grant it via **Administration** > **Roles & Permissions** in Business Manager. See [BM Commands → Authentication](/cli/bm#authentication) for details.
+:::
+
 ## SCAPI Authentication
 
 SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication with specific roles and scopes.

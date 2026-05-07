@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listOrgMembers,
   ORG_ROLES,
@@ -39,6 +45,8 @@ const COLUMNS: Record<string, ColumnDef<MrtOrgMember>> = {
 
 const DEFAULT_COLUMNS = ['email', 'name', 'role', 'allProjects', 'certPerm'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 export default class MrtOrgMemberList extends MrtCommand<typeof MrtOrgMemberList> {
   static description = withDocs(
     t('commands.mrt.org.member.list.description', 'List members of a Managed Runtime organization'),
@@ -61,6 +69,7 @@ export default class MrtOrgMemberList extends MrtCommand<typeof MrtOrgMemberList
     limit: Flags.integer({description: 'Maximum number of results to return'}),
     offset: Flags.integer({description: 'Offset for pagination'}),
     search: Flags.string({description: 'Search term for filtering'}),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListOrgMembersResult> {
@@ -84,7 +93,10 @@ export default class MrtOrgMemberList extends MrtCommand<typeof MrtOrgMemberList
         this.log(t('commands.mrt.org.member.list.empty', 'No members found.'));
       } else {
         this.log(t('commands.mrt.org.member.list.count', 'Found {{count}} member(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.members, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.members,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

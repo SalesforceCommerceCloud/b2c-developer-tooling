@@ -167,6 +167,17 @@
         "default": "./dist/cjs/operations/bm-roles/index.js"
       }
     },
+    "./operations/bm-users": {
+      "development": "./src/operations/bm-users/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/bm-users/index.d.ts",
+        "default": "./dist/esm/operations/bm-users/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/bm-users/index.d.ts",
+        "default": "./dist/cjs/operations/bm-users/index.js"
+      }
+    },
     "./operations/sites": {
       "development": "./src/operations/sites/index.ts",
       "import": {

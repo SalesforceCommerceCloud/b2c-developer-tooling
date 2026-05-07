@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2COrgInfo, type B2COrgInfo} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -22,6 +28,8 @@ const COLUMNS: Record<string, ColumnDef<InfoEntry>> = {
 };
 
 const DEFAULT_COLUMNS = ['field', 'value'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * Get B2C Commerce info for an organization.
@@ -45,6 +53,7 @@ export default class MrtB2COrgInfo extends MrtCommand<typeof MrtB2COrgInfo> {
 
   static flags = {
     ...MrtCommand.baseFlags,
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<B2COrgInfo> {
@@ -69,7 +78,7 @@ export default class MrtB2COrgInfo extends MrtCommand<typeof MrtB2COrgInfo> {
         {field: 'B2C Customer', value: info.is_b2c_customer ? 'Yes' : 'No'},
         {field: 'Instances', value: info.instances.length > 0 ? info.instances.join(', ') : 'None'},
       ];
-      createTable(COLUMNS).render(entries, DEFAULT_COLUMNS);
+      tableRenderer.render(entries, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
     }
 
     return info;

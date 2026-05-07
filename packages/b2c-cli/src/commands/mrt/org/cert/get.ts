@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
-import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {Args, Flags} from '@oclif/core';
+import {MrtCommand, printFieldsBlock} from '@salesforce/b2c-tooling-sdk/cli';
 import {getCertificate, type MrtCertificate} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
@@ -40,18 +39,16 @@ export default class MrtOrgCertGet extends MrtCommand<typeof MrtOrgCertGet> {
     );
 
     if (!this.jsonEnabled()) {
-      const ui = cliui({width: process.stdout.columns || 80});
-      const w = 24;
-      ui.div('');
-      ui.div({text: 'ID:', width: w}, {text: cert.id?.toString() ?? '-'});
-      ui.div({text: 'Domain:', width: w}, {text: cert.domain_name ?? '-'});
-      ui.div({text: 'Validation Status:', width: w}, {text: cert.validation_status ?? '-'});
-      ui.div({text: 'Validation Record:', width: w}, {text: cert.validation_record ?? '-'});
-      ui.div({text: 'Validation Requested:', width: w}, {text: cert.validation_requested_at ?? '-'});
-      ui.div({text: 'Expires:', width: w}, {text: cert.expires_at ?? '-'});
-      ui.div({text: 'Renewal Status:', width: w}, {text: (cert.renewal_status as null | string) ?? '-'});
-      ui.div({text: 'Renewal Eligibility:', width: w}, {text: (cert.renewal_eligibility as null | string) ?? '-'});
-      ux.stdout(ui.toString());
+      printFieldsBlock('Certificate', [
+        ['ID', cert.id?.toString()],
+        ['Domain', cert.domain_name],
+        ['Validation Status', cert.validation_status],
+        ['Validation Record', cert.validation_record],
+        ['Validation Requested', cert.validation_requested_at],
+        ['Expires', cert.expires_at],
+        ['Renewal Status', cert.renewal_status as null | string | undefined],
+        ['Renewal Eligibility', cert.renewal_eligibility as null | string | undefined],
+      ]);
     }
 
     return cert;
