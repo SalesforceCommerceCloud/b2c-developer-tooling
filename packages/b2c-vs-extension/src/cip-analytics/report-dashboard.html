@@ -170,10 +170,88 @@
 
         runButton.disabled = status !== 'connected';
       }
+      // Request sites from backend to populate the Site ID dropdown.
+      function loadSitesIfConnected() {
+        const selects = document.querySelectorAll('.site-id-select');
+        if (currentConnection && currentConnection.status === 'connected') {
+          selects.forEach((sel) => {
+            if (sel.options.length <= 1) {
+              sel.innerHTML = '<option value="" disabled selected>— Loading sites… —</option>';
+            }
+          });
+          vscode.postMessage({command: 'loadSites'});
+        } else {
+          selects.forEach((sel) => {
+            if (sel.options.length <= 1) {
+              sel.innerHTML = '<option value="" disabled selected>— Configure connection to load sites —</option>';
+            }
+          });
+        }
+      }
       renderConnection();
+      loadSitesIfConnected();
 
       configureBtn.addEventListener('click', () => {
         vscode.postMessage({command: 'configureConnection'});
+      });
+
+      // === Date range preset logic ===
+      let activePreset = null;
+
+      function toISODate(d) {
+        return d.toISOString().split('T')[0];
+      }
+
+      function resolveDatePreset(preset) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if (preset === 'last-week') {
+          const day = today.getDay(); // 0=Sun
+          const lastMonday = new Date(today);
+          lastMonday.setDate(today.getDate() - ((day + 6) % 7) - 7);
+          const lastSunday = new Date(lastMonday);
+          lastSunday.setDate(lastMonday.getDate() + 6);
+          return {from: toISODate(lastMonday), to: toISODate(lastSunday)};
+        }
+        if (preset === 'last-month') {
+          const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          const last = new Date(today.getFullYear(), today.getMonth(), 0);
+          return {from: toISODate(first), to: toISODate(last)};
+        }
+        if (preset === 'last-6-months') {
+          const first = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+          const last = new Date(today.getFullYear(), today.getMonth(), 0);
+          return {from: toISODate(first), to: toISODate(last)};
+        }
+        return null;
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.date-preset-btn');
+        if (!btn) return;
+        const preset = btn.dataset.preset;
+        activePreset = preset;
+
+        document.querySelectorAll('.date-preset-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const customPanel = document.getElementById('dateRangeCustom');
+        if (preset === 'custom') {
+          if (customPanel) customPanel.classList.remove('date-range-custom--hidden');
+          const fromHidden = document.getElementById('fromHidden');
+          const toHidden = document.getElementById('toHidden');
+          if (fromHidden) fromHidden.value = '';
+          if (toHidden) toHidden.value = '';
+        } else {
+          if (customPanel) customPanel.classList.add('date-range-custom--hidden');
+          const resolved = resolveDatePreset(preset);
+          if (resolved) {
+            const fromHidden = document.getElementById('fromHidden');
+            const toHidden = document.getElementById('toHidden');
+            if (fromHidden) fromHidden.value = resolved.from;
+            if (toHidden) toHidden.value = resolved.to;
+          }
+        }
       });
 
       document.addEventListener('keydown', (e) => {
@@ -193,11 +271,37 @@
           return;
         }
 
+        // Sync custom date inputs into hidden fields before reading FormData.
+        if (activePreset === 'custom') {
+          const fromVal = document.getElementById('from')?.value;
+          const toVal = document.getElementById('to')?.value;
+          const fromHidden = document.getElementById('fromHidden');
+          const toHidden = document.getElementById('toHidden');
+          if (!fromVal || !toVal) {
+            statusMessage.className = 'status-msg error visible';
+            statusMessage.textContent = 'Please select both From and To dates for the custom range.';
+            return;
+          }
+          if (fromHidden) fromHidden.value = fromVal;
+          if (toHidden) toHidden.value = toVal;
+        } else if (document.getElementById('fromHidden') && !document.getElementById('fromHidden').value) {
+          statusMessage.className = 'status-msg error visible';
+          statusMessage.textContent = 'Please select a date range.';
+          return;
+        }
+
         const formData = new FormData(form);
         const params = {};
         for (const [key, value] of formData.entries()) {
           if (value) params[key] = value;
         }
+        // Remove the visible custom date inputs — hidden fields carry the values.
+        delete params['from'];
+        delete params['to'];
+        const fromHidden = document.getElementById('fromHidden');
+        const toHidden = document.getElementById('toHidden');
+        if (fromHidden?.value) params['from'] = fromHidden.value;
+        if (toHidden?.value) params['to'] = toHidden.value;
 
         statusMessage.className = 'status-msg loading visible';
         statusMessage.innerHTML = '<span class="spinner"></span><span>Executing query...</span>';
@@ -218,7 +322,35 @@
           case 'connectionState':
             currentConnection = message.connection || currentConnection;
             renderConnection();
+            loadSitesIfConnected();
             break;
+          case 'sitesLoaded': {
+            const selects = document.querySelectorAll('.site-id-select');
+            selects.forEach((sel) => {
+              const current = sel.value;
+              sel.innerHTML = '<option value="" disabled selected>— Select a site —</option>';
+              if (message.sites && message.sites.length > 0) {
+                message.sites.forEach((site) => {
+                  const opt = document.createElement('option');
+                  opt.value = site;
+                  opt.textContent = site;
+                  if (site === current) opt.selected = true;
+                  sel.appendChild(opt);
+                });
+              } else {
+                sel.innerHTML += '<option value="" disabled>No sites found — type manually</option>';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = sel.id;
+                input.name = sel.name;
+                input.className = 'input full';
+                input.placeholder = 'Enter site ID';
+                if (sel.required) input.required = true;
+                sel.replaceWith(input);
+              }
+            });
+            break;
+          }
           case 'queryResults':
             handleQueryResults(message.data);
             break;

@@ -509,6 +509,46 @@ body {
   grid-column-start: 2;
 }
 
+/* === DATE RANGE PRESET WIDGET === */
+.date-range-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.date-preset-btn {
+  font-size: 12px;
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+
+.date-preset-btn.active {
+  background-color: var(--cip-accent);
+  color: #fff;
+  border-color: var(--cip-accent);
+}
+
+.date-range-custom {
+  margin-top: 12px;
+}
+
+.date-range-custom--hidden {
+  display: none;
+}
+
+.date-range-custom__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 500px) {
+  .date-range-custom__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
 .label {
   font-size: 12px;
   font-weight: 600;
@@ -644,6 +684,13 @@ body {
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--vscode-button-secondaryHoverBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.date-preset-btn.active:hover:not(:disabled) {
+  background-color: var(--cip-accent);
+  color: #fff;
+  border-color: var(--cip-accent);
 }
 
 .btn-secondary:disabled {

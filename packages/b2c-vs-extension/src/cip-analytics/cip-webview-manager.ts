@@ -223,6 +223,10 @@ export class CipWebviewManager {
     report: CipReportDefinition,
   ): Promise<void> {
     switch (message.command) {
+      case 'loadSites': {
+        await this.loadSites(panel);
+        break;
+      }
       case 'executeQuery': {
         await this.executeQuery((message.params ?? {}) as Record<string, string>, panel, report);
         break;
@@ -651,6 +655,27 @@ export class CipWebviewManager {
   }
 
   /**
+   * Fetch the list of site IDs from ccdw_dim_site and send to the webview.
+   */
+  private async loadSites(panel: vscode.WebviewPanel): Promise<void> {
+    const ctx = this.requireConnectedClient();
+    if (!ctx) {
+      panel.webview.postMessage({command: 'sitesLoaded', sites: []});
+      return;
+    }
+    try {
+      const result = await ctx.client.query(
+        `SELECT DISTINCT nsite_id FROM ccdw_dim_site WHERE nsite_id IS NOT NULL ORDER BY nsite_id`,
+        {fetchSize: 500},
+      );
+      const sites = result.rows.map((r) => String(r.nsite_id ?? '')).filter(Boolean);
+      panel.webview.postMessage({command: 'sitesLoaded', sites});
+    } catch {
+      panel.webview.postMessage({command: 'sitesLoaded', sites: []});
+    }
+  }
+
+  /**
    * Execute the CIP report query and send results back to webview.
    */
   private async executeQuery(
@@ -745,59 +770,93 @@ export class CipWebviewManager {
   }
 
   private getReportDashboardContent(webview: vscode.Webview, report: CipReportDefinition): string {
-    const parameterFields = report.parameters
-      .map((param) => {
-        const nameAttr = CipWebviewManager.escapeAttr(param.name);
-        const descAttr = CipWebviewManager.escapeAttr(param.description);
-        const descText = CipWebviewManager.escapeHtml(param.description);
-        const labelText = param.name
-          .replace(/([A-Z])/g, ' $1')
-          .trim()
-          .split(' ')
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ')
-          .replace(/\bId\b/g, 'ID');
-        const nameText = CipWebviewManager.escapeHtml(labelText);
-        const required = param.required ? 'required' : '';
+    const hasDateRange =
+      report.parameters.some((p) => p.name === 'from' && p.type === 'date') &&
+      report.parameters.some((p) => p.name === 'to' && p.type === 'date');
 
-        let inputHtml = '';
-        // Dates get a `.field--date` modifier so CSS can break them onto their own
-        // grid row — keeps from/to ranges visually paired instead of wrapping the
-        // second date to a lonely third row.
-        let fieldModifier = '';
-        if (param.type === 'string') {
-          fieldModifier = ' full';
-          inputHtml = `<input type="text" id="${nameAttr}" name="${nameAttr}" ${required} class="input" placeholder="${descAttr}" />`;
-        } else if (param.type === 'date') {
-          fieldModifier = ' field--date';
-          inputHtml = `<input type="date" id="${nameAttr}" name="${nameAttr}" ${required} class="input" />`;
-        } else if (param.type === 'boolean') {
-          inputHtml = `
-            <select id="${nameAttr}" name="${nameAttr}" ${required} class="select">
-              <option value="">— Select —</option>
-              <option value="true">True</option>
-              <option value="false">False</option>
-            </select>
-          `;
-        } else if (param.type === 'number') {
-          const min = param.min !== undefined ? String(param.min) : '';
-          const max = param.max !== undefined ? String(param.max) : '';
-          inputHtml = `<input type="number" id="${nameAttr}" name="${nameAttr}" min="${min}" max="${max}" ${required} class="input" placeholder="${descAttr}" />`;
-        } else {
-          inputHtml = `<input type="text" id="${nameAttr}" name="${nameAttr}" ${required} class="input" placeholder="${descAttr}" />`;
-        }
-
-        return `
-          <div class="field${fieldModifier}">
-            <label class="label" for="${nameAttr}">
-              ${nameText}${param.required ? ' <span class="required">*</span>' : ''}
-            </label>
-            <span class="hint">${descText}</span>
-            ${inputHtml}
+    const dateRangeWidget = hasDateRange
+      ? `
+        <div class="field full date-range-field">
+          <label class="label">Date Range <span class="required">*</span></label>
+          <div class="date-range-presets">
+            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="last-week">Last Week</button>
+            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="last-month">Last Month</button>
+            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="last-6-months">Last 6 Months</button>
+            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="custom">Custom</button>
           </div>
-        `;
-      })
-      .join('');
+          <div class="date-range-custom date-range-custom--hidden" id="dateRangeCustom">
+            <div class="date-range-custom__fields">
+              <div class="field">
+                <label class="label" for="from">From <span class="required">*</span></label>
+                <input type="date" id="from" name="from" class="input" />
+              </div>
+              <div class="field">
+                <label class="label" for="to">To <span class="required">*</span></label>
+                <input type="date" id="to" name="to" class="input" />
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="fromHidden" name="from" />
+          <input type="hidden" id="toHidden" name="to" />
+        </div>
+      `
+      : '';
+
+    const parameterFields =
+      report.parameters
+        .filter((p) => !(hasDateRange && (p.name === 'from' || p.name === 'to')))
+        .map((param) => {
+          const nameAttr = CipWebviewManager.escapeAttr(param.name);
+          const descAttr = CipWebviewManager.escapeAttr(param.description);
+          const descText = CipWebviewManager.escapeHtml(param.description);
+          const labelText = param.name
+            .replace(/([A-Z])/g, ' $1')
+            .trim()
+            .split(' ')
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ')
+            .replace(/\bId\b/g, 'ID');
+          const nameText = CipWebviewManager.escapeHtml(labelText);
+          const required = param.required ? 'required' : '';
+
+          let inputHtml = '';
+          let fieldModifier = '';
+          if (param.type === 'string' && param.name === 'siteId') {
+            fieldModifier = ' full';
+            inputHtml = `<select id="${nameAttr}" name="${nameAttr}" ${required} class="select site-id-select"><option value="" disabled selected>— Configure connection to load sites —</option></select>`;
+          } else if (param.type === 'string') {
+            fieldModifier = ' full';
+            inputHtml = `<input type="text" id="${nameAttr}" name="${nameAttr}" ${required} class="input" placeholder="${descAttr}" />`;
+          } else if (param.type === 'date') {
+            fieldModifier = ' field--date';
+            inputHtml = `<input type="date" id="${nameAttr}" name="${nameAttr}" ${required} class="input" />`;
+          } else if (param.type === 'boolean') {
+            inputHtml = `
+              <select id="${nameAttr}" name="${nameAttr}" ${required} class="select">
+                <option value="">— Select —</option>
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </select>
+            `;
+          } else if (param.type === 'number') {
+            const min = param.min !== undefined ? String(param.min) : '';
+            const max = param.max !== undefined ? String(param.max) : '';
+            inputHtml = `<input type="number" id="${nameAttr}" name="${nameAttr}" min="${min}" max="${max}" ${required} class="input" placeholder="${descAttr}" />`;
+          } else {
+            inputHtml = `<input type="text" id="${nameAttr}" name="${nameAttr}" ${required} class="input" placeholder="${descAttr}" />`;
+          }
+
+          return `
+            <div class="field${fieldModifier}">
+              <label class="label" for="${nameAttr}">
+                ${nameText}${param.required ? ' <span class="required">*</span>' : ''}
+              </label>
+              <span class="hint">${descText}</span>
+              ${inputHtml}
+            </div>
+          `;
+        })
+        .join('') + dateRangeWidget;
 
     const displayName = report.name
       .split('-')
